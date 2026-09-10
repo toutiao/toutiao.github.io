@@ -5,25 +5,29 @@
 All AI output in this project uses caveman mode: drop filler/articles/pleasantries/hedging. Fragments OK. Short synonyms. Technical terms exact. Code blocks unchanged. This applies to all agents, all tasks, including CI.
 
 **Exception: generated article content.** Chinese summary articles (`_articles/`) stay normal expressive CN. Caveman is for AI ↔ human communication, not published content.
-- Jekyll + GitHub Pages (branch `master`, auto-deployed)
+
+- Jekyll + GitHub Pages (branch `master`, Pages native branch build — **no deploy workflow**, pushed master auto-builds)
 - Domain: `yuedulijie.com`
 - **Local dev**: Docker (ruby:3.2-slim, `docker compose`), **no** local Ruby/Jekyll needed
-- **CI**: `.github/workflows/deploy.yml` — push to master → build → Pages
+- **CI**: `.github/workflows/hn-fetch.yml` (HN 数据抓取 3x daily) + `.github/workflows/hn-auto.yml` (每日 `/hn --auto` 生成文章，gemini-3.5-flash 失败回退 deepseek-v4-flash)
 - **Sub-site**: [UP-6 英语学习导航](https://up-6.yuedulijie.com) — `github.com/Lax/up-6.yuedulijie.com`
 
 ## Project Layout
 ```
 _config.yml       # Site config, collections, permalinks, plugins
-_includes/        # Reusable Liquid fragments (header, per-collection listing)
-_layouts/         # Layouts: default, post, page, home, per-collection pages
+_includes/        # Liquid fragments (header, posts/movies/articles/hn-data listing)
+_layouts/         # default, post, page, home, hn, archives, per-collection pages
 _movies/ (14)     # Movie reviews
 _books/ (0)       # Book reviews (empty)
 _essays/ (0)      # Essays (empty)
-_articles/         # HN discussion summary articles (populated Jun 2026)
-_sass/            # SCSS source (empty — styles in assets/main.scss)
+_articles/YYYY/  # HN discussion summary articles, year subdirs (2026/ = ~80 篇)；旧 root 级 15 篇并存
+_data/hn/         # HN 抓取缓存（gitignored，只存 GH Actions cache；本地/CI 可见，线上不含）
+scripts/          # hn-fetch.rb (数据抓取), hn-repair.rb (front matter 修复门禁)
+playwright-renderer/  # Playwright 文章渲染服务 (renderer mode, self-hosted)
+.opencode/        # agents, skills, designs/hn-data-pipeline.md (HN 管道设计文档, 事实来源)
 assets/           # main.scss (entry, has front matter), main.js, favicon
 ```
-Nav pages (`movies.html`, `books.html`, `articles.html`) use `nav: true` in front matter. `archives.html` is hardcoded in header, not nav.
+Nav pages (`movies.html`, `books.html`, `articles.html`) use `nav: true` in front matter. `archives.html` is hardcoded in header, not nav. `hn.html` = 本地 HN 讨论存档（线上为空，数据不入库 — 设计如此）。
 
 ## Collections & Permalinks
 | Collection | Path | Permalink | Notes |
@@ -34,15 +38,20 @@ Nav pages (`movies.html`, `books.html`, `articles.html`) use `nav: true` in fron
 | articles | `_articles/` | `/articles/:year/:name` | No default author |
 
 ## Front Matter Patterns
-- **Movies**: minimal — usually only `title:` (no `layout`, `date`, `categories` in older posts)
-- **Articles** (HN summaries): `layout: post`, `title:`, `date:`, `categories: [articles]`
+- **Movies**: minimal — usually only `title:`/`excerpt:`/`tagline:` (date 由文件名 `YYYY-MM-DD-` 前缀派生)
+- **Articles** (HN summaries): `layout: post`, `title:`/`excerpt:`/`tagline:` 必须用 `>-` block scalar, `date:`, `categories: [articles]`
 - **Essays**: default author `深井兵太郎` from `_config.yml`
 - **Nav pages**: `layout: <type>`, `title:`, `nav: true`
 
 ## File Naming
-- `YYYY-MM-DD-title-with-hyphens.md`
-- After 2024-03, **movies** add a dot before year: `YYYY-MM-DD-title.YEAR.md`
-- **Articles** (HN summaries): `_articles/YYYY-MM-DD-hn-keywords.md`
+- `YYYY-MM-DD-title-with-hyphens.md`; movies 加点 `YYYY-MM-DD-title.YEAR.md`
+- **Articles**: `_articles/YYYY/YYYY-MM-DD-hn-keywords.md`（年子目录；`scripts/hn-fetch.rb` dedup 用 `_articles/**/*.md` 递归匹配）
+
+## HN 自动管道（事实来源: `.opencode/designs/hn-data-pipeline.md`）
+两 workflow + skill，无 hn-auto.rb 脚本（设计后取消，由 `hn-discussion-summary` skill 替代）：
+1. `hn-fetch.yml` 3x daily 抓 HN best → `_data/hn/YYYY/WNN/` 周目录 → GH Actions cache（gitignored，不入库）
+2. `hn-auto.yml` 每日: restore cache → `opencode run /hn --auto` (gemini-3.5-flash 失败 1 次回退 deepseek-v4-flash) → `hn-repair.rb` front matter 门禁 → `bundle exec jekyll build` 门禁 → git-auto-commit 提交 `_articles/`
+3. 本地: `make fetch url='<hn_url>'` / `make fetch-best`；`/hn` 命令（skill Phase 0-3）
 
 ## Commands
 | Command | Action | Agent |
@@ -52,17 +61,17 @@ Nav pages (`movies.html`, `books.html`, `articles.html`) use `nav: true` in fron
 | `/plan` | Analyze project, suggest next work | project-manager |
 | `/content` | Audit collections and front matter | content-manager |
 | `/evolve` | Self-review agent configs, skills, infrastructure | self-evolve |
-| `/hn [url]` | Create HN discussion summary → `_articles/` | hn-summarizer |
+| `/hn [url]` | Create HN discussion summary → `_articles/YYYY/` | hn-summarizer |
 
 ## Dev Workflow
 1. Edit content/config/layout
 2. `make build` (or `docker compose run --rm build`) — validates in Docker
 3. `make serve` (or `docker compose up jekyll`) — live at http://localhost:4000
-4. Commit & push to master — GH Actions auto-deploys
+4. Commit & push to master — Pages branch build auto-deploys
 
 Build env: `JEKYLL_ENV=production` (build), `development` (serve). Persisted gem volume: `bundle_data`.
 
-**GFW workaround**: If `make build` fails with SSL errors to api.github.com, 
+**GFW workaround**: If `make build` fails with SSL errors to api.github.com,
 create `.env` file (gitignored) in project root:
 ```
 HTTP_PROXY=http://host.docker.internal:64540
@@ -89,11 +98,11 @@ If a git operation fails with an auth or network error, report the error message
 
 ## First Principles (Hard)
 
-Before any change to pipelines (scripts/hn-auto.rb, CI workflows, deployment), decompose the system to its irreducible components and validate each assumption:
+Before any change to pipelines (scripts/*.rb, CI workflows, deployment), decompose the system to its irreducible components and validate each assumption:
 
-1. **State each atomic assumption** (e.g., "Gemini outputs [comment: ID] matching scraped data")
-2. **What violates it?** (e.g., "Gemini fabricates an ID, or real ID with rewritten text")
-3. **Which layer catches the violation?** (e.g., "validate_article check #5 catches fabricated IDs; verify_quotes_inline catches text/user mismatch")
+1. **State each atomic assumption** (e.g., "article 引文行尾 `[c:id]` 为真实 HN comment ID")
+2. **What violates it?** (e.g., "agent fabricates an ID, or real ID paired with rewritten text")
+3. **Which layer catches the violation?** (e.g., "hn-repair.rb Algolia 验证 id 存在+作者匹配；文本级漂移仅 agent 自检 → WARN")
 4. **If undetected, blast radius?** (e.g., "fabricated quote published as real HN comment")
 
 Template:
@@ -127,28 +136,11 @@ The gate passes only if:
 - No MISSED high-severity attacks remain
 - All residual risks documented with explicit acceptance rationale
 
-## hn-auto.rb Future Plans (Post-2026-07-01)
-
-Current version: baseline (pre-e30fc4c) — reliable article generation, no content quality validation.
-
-### Goals (待实现)
-
-| Priority | Goal | Why needed | Approach |
-|----------|------|-----------|----------|
-| P1 | Anti-fabrication — reject fabricated comment IDs | Prevent Gemini from inventing HN comments | `validate_article` check #5: article IDs must belong to scraped discussion IDs |
-| P1 | Content quality — reject empty tables/quotes | Prevent generic filler articles | `validate_article` checks #6–7: ≥4 filled table rows, ≥3 [comment:] in body |
-| P2 | Inline quote verification — text + username match | Detect Gemini rewriting/attribution errors | `verify_quotes_inline`: compare against scraped data, zero network calls |
-| P2 | Retry with error feedback | Give Gemini one more chance with specific guidance | Feed validation errors back into the escalation prompt |
-| P3 | Post-write network verify | Safety net for deleted/edited HN comments | `verify_quotes`: fetch fresh, all-fake → delete, partial → warn |
-| P3 | MAX_TOKENS auto-retry | Handle truncated Gemini responses | 8192 → 16384 on MAX_TOKENS finishReason |
-| P3 | strip_leaked_front_matter | Clean Gemini YAML leaks in body | Regex-based post-processing |
-
-### Constraints
-
-- **API budget**: GEMINI_API_KEY has usage limits. Each failed attempt costs ~$0.15-0.50. Keep max 3 retries.
-- **Test first**: Any change to hn-auto.rb must be tested with a real HN URL locally before CI deployment.
+## Constraints
+- **API budget**: GEMINI/DEEPSEEK keys have usage limits. Keep max 3 retries; fallback is 1 retry (gemini → deepseek).
+- **Test first**: Any change to scripts/*.rb or the skill must be tested with a real HN URL locally before CI deployment.
 - **Build gate**: Every change must pass `make build` (Docker Jekyll compile).
-- **Adversarial gate**: Per AGENTS.md above — run adversarial review before committing.
+- **Adversarial gate**: Per sections above — run adversarial review before committing.
 
 ## Plugin
 Only `jekyll-seo-tag`. HTML compression via `compress_html` in `_config.yml` (production only).
