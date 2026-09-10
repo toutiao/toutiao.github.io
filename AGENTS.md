@@ -50,7 +50,7 @@ Nav pages (`movies.html`, `books.html`, `articles.html`) use `nav: true` in fron
 ## HN 自动管道（事实来源: `.opencode/designs/hn-data-pipeline.md`）
 两 workflow + skill，无 hn-auto.rb 脚本（设计后取消，由 `hn-discussion-summary` skill 替代）：
 1. `hn-fetch.yml` 3x daily 抓 HN best → `_data/hn/YYYY/WNN/` 周目录 → GH Actions cache（gitignored，不入库）
-2. `hn-auto.yml` 每日: restore cache → `opencode run /hn --auto` (gemini-3.5-flash 失败 1 次回退 deepseek-v4-flash) → `hn-repair.rb` front matter 门禁 → `bundle exec jekyll build` 门禁 → git-auto-commit 提交 `_articles/`
+2. `hn-auto.yml` 每日: restore cache → `opencode run /hn --auto` (默认 gemini-3.5-flash；失败或无产出时回退链 minimax-cn-coding-plan/MiniMax-M3 → deepseek-v4-flash) → `hn-repair.rb` front matter+引文门禁 → `bundle exec jekyll build` 门禁 → git-auto-commit 提交 `_articles/`
 3. 本地: `make fetch url='<hn_url>'` / `make fetch-best`；`/hn` 命令（skill Phase 0-3）
 
 ## Commands

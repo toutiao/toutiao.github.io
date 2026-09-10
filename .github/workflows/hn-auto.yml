@@ -15,6 +15,7 @@ on:
           - "google/gemini-2.5-flash-lite"
           - "google/gemini-3.1-flash-lite"
           - "google/gemini-3.5-flash"
+          - "minimax-cn-coding-plan/MiniMax-M3"
           - "deepseek/deepseek-v4-flash"
       mode:
         description: "运行模式 — auto 自动选择 / url 手动指定"
@@ -69,6 +70,7 @@ jobs:
         env:
           GOOGLE_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPSEEK_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MINIMAX_KEY: ${{ secrets.MINIMAX_API_KEY }}
         run: |
           echo "=== Google Gemini ==="
           if [ -n "$GOOGLE_KEY" ]; then
@@ -78,6 +80,15 @@ jobs:
                 "https://generativelanguage.googleapis.com/v1/models/$model?key=$GOOGLE_KEY")
               printf "  %-30s %s\n" "$model" "$CODE"
             done
+          else
+            echo "  no key"
+          fi
+          echo "=== MiniMax (cn token plan) ==="
+          if [ -n "$MINIMAX_KEY" ]; then
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              https://api.minimaxi.com/v1/models \
+              -H "Authorization: Bearer $MINIMAX_KEY")
+            echo "  status: $CODE"
           else
             echo "  no key"
           fi
@@ -97,6 +108,7 @@ jobs:
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
         run: |
           # Clean up any orphaned _articles/ from previous failed run
           git checkout -- _articles/ 2>/dev/null || true
@@ -121,25 +133,41 @@ jobs:
             --dangerously-skip-permissions \
             --model "$MODEL" 2>&1
 
-      - name: Fallback to DeepSeek on failure
-        if: failure()
-        timeout-minutes: 8
+      - name: Fallback chain (MiniMax M3 -> DeepSeek)
+        if: ${{ !cancelled() }}
+        timeout-minutes: 12
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
           RUN_MODE: ${{ inputs.mode }}
         run: |
-          if [ -z "$DEEPSEEK_API_KEY" ]; then
-            echo "no DEEPSEEK_API_KEY, cannot fallback"
-            exit 1
+          # 主模型失败或静默 no-op (无新文章) 时，依次回退；已有产出则跳过
+          if [ -n "$(git status --porcelain -- _articles/)" ]; then
+            echo "主模型已产出文章，跳过回退"
+            exit 0
           fi
-          # Reset partial writes from the failed gemini attempt
-          git checkout -- _articles/ 2>/dev/null || true
-          git clean -fd _articles/ 2>/dev/null || true
-          if [ "$RUN_MODE" = "url" ]; then echo "url fallback 不支持"; exit 1; fi
-          opencode run "/hn --auto" --dir . \
-            --dangerously-skip-permissions \
-            --model "deepseek/deepseek-v4-flash" 2>&1
+          echo "主模型无产出，开始回退链..."
+          force_flag=""
+          [ '${{ inputs.force_fetch }}' = "true" ] && force_flag="--force"
+          for MODEL in "minimax-cn-coding-plan/MiniMax-M3" "deepseek/deepseek-v4-flash"; do
+            PROV=${MODEL%%/*}
+            if [ "$PROV" = "deepseek" ] && [ -z "$DEEPSEEK_API_KEY" ]; then echo "no DEEPSEEK_API_KEY, skip $MODEL"; continue; fi
+            if [ "$PROV" = "minimax-cn-coding-plan" ] && [ -z "$MINIMAX_API_KEY" ]; then echo "no MINIMAX_API_KEY, skip $MODEL"; continue; fi
+            if [ "${RUN_MODE:-auto}" = "url" ]; then echo "url fallback 不支持"; exit 1; fi
+            # Reset partial writes from previous attempt
+            git checkout -- _articles/ 2>/dev/null || true
+            git clean -fd _articles/ 2>/dev/null || true
+            echo "=== Fallback: $MODEL ==="
+            if opencode run "/hn --auto $force_flag" --dir . \
+              --dangerously-skip-permissions \
+              --model "$MODEL" 2>&1 && [ -n "$(git status --porcelain -- _articles/)" ]; then
+              echo "Fallback 成功: $MODEL"
+              exit 0
+            fi
+          done
+          echo "所有回退模型均无产出"
+          exit 1
 
       - name: Validate & auto-repair article front matter (one-shot)
         env:
