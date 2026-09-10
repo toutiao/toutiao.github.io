@@ -104,7 +104,7 @@ exit 0 → use stdout. exit 1 → use cached.
 ### Single post mode
 1. Read article → note concrete details for 原文概要 (names, numbers, features, absurdities)
 2. Read `comments.yaml` (top 100 by score) → extract 4-8 themes with quotes
-3. Record `comment:id` for each quote (Phase 2.5 verify)
+3. Record `comment:id` for each quote — **append to quote line as `[c:id]`** (Phase 2 verify + hn-repair.rb CI 校验)
 4. Identify: key opposition, personal-experience threads, overall sentiment
 
 ### Cluster mode
@@ -172,12 +172,13 @@ Must anchor to facts. Never fabricate. Not displayed — indexed via `<a title="
 1. **原文概要** — 2-5 paragraphs. Source: "HN 首页 (/news)" or "HN 热门榜 (/best)". Use concrete details (names, numbers, features).
 2. **讨论焦点** — `###` sections. Each:
    ```
-   > "text" — user
+   > "text" — user [c:44123457]
    > （译文）
    ```
    - Translation no attribution
    - No blank between quote and translation
-   - Cluster: `[thread #N]`
+   - `[c:id]` 是该引文对应 HN comment ID（必有，用于事实校验）
+   - Cluster: `> "text" — user [c:44123457] [thread 2]`
 3. **典型观点一览** — table: 立场 / 用户 / 一句话
 4. **总体情绪** — 1-2 paragraphs. End with strong closing line.
 5. **引用帖子** — table: # / 标题 / URL
@@ -187,12 +188,12 @@ Must anchor to facts. Never fabricate. Not displayed — indexed via `<a title="
 
 | Rule | Example |
 |------|---------|
-| Quote + user same line | `> "text" — user` |
+| Quote + user same line + comment id | `> "text" — user [c:44123457]` |
 | CN trans separate line | `> （译文）` |
 | Tech terms `` ` `` | `` `R1` ``, `` `BPEL` `` |
 | Product names plain | LangChain, OpenAI, Claude |
 | General plain | agent, framework, API |
-| Cluster thread | `> "text" — user [thread 2]` |
+| Cluster thread | `> "text" — user [c:44123457] [thread 2]` |
 
 ### Naming
 `_articles/YYYY/YYYY-MM-DD-hn-keywords.md`
@@ -229,6 +230,7 @@ Read full draft. Checklist:
 | 3 | Concrete not vague? | No "很多人表示". Each sentence anchored. |
 | 4 | 观点表 covers split? | >= 4 rows, includes opposing views |
 | 5 | 总体情绪 closing? | Last line not repeat. Synthesize or punch. |
+| 6 | 引文带 comment id? | Each quote line ends with `[c:<id>]` |
 
 Fail any → revise section → re-check.
 

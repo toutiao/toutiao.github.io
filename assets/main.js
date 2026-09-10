@@ -12,3 +12,10 @@ document.onscroll = function(e){
 
   target.style.backgroundColor = 'rgba(255, 255, 255, ' + percent + ')';
 };
+
+document.querySelectorAll(".post-content").forEach(function(el){
+  el.innerHTML = el.innerHTML.replace(/\[c:(\d+)\]/g, function(_, id){
+    return '<sup><a class="c-ref" href="https://news.ycombinator.com/item?id=' + id +
+      '" title="HN comment ' + id + '">⌘</a></sup>';
+  });
+});

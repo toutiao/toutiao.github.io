@@ -6,7 +6,12 @@ require 'yaml'
 REQUIRED_KEYS = %w[layout title date categories]
 
 def changed_articles
-  `git status --porcelain -- _articles/`.lines.map { |l| l.strip.split(/\s+/, 2).last }.compact.uniq
+  `git status --porcelain -- _articles/`.lines.filter_map do |l|
+    parts = l.strip.split(/\s+/, 2)
+    next if parts.size < 2
+    next if l.start_with?('R') # renames have no meaningful single path
+    parts.last
+  end.compact.uniq
 end
 
 def front_matter_yaml(content)
@@ -63,6 +68,38 @@ def call_deepseek(prompt)
   JSON.parse(res.body).dig('choices', 0, 'message', 'content').to_s
 end
 
+QUOTE_ID_RE = /\[c:(\d+)\]/
+
+def extract_comment_ids(content)
+  content.scan(QUOTE_ID_RE).flatten
+end
+
+def verify_comment_ids(ids)
+  ids.filter_map do |id|
+    uri = URI("https://hn.algolia.com/api/v1/items/#{id}")
+    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, read_timeout: 15) do |h|
+      h.get(uri.request_uri, { 'Accept' => 'application/json' })
+    end
+    next "not found on HN (HTTP #{res.code})" unless res.code == '200'
+    item = JSON.parse(res.body)
+    'ok'
+  rescue => e
+    "verify error: #{e.message.lines.first.strip}"
+  end
+end
+
+def verify_new_articles
+  bad = {}
+  changed_articles.each do |file|
+    next unless File.file?(file)
+    ids = extract_comment_ids(File.read(file))
+    next if ids.empty?
+    errs = verify_comment_ids(ids)
+    bad[file] = errs unless errs.empty?
+  end
+  bad
+end
+
 def strip_fence(text)
   text.sub(/\A\s*```(?:markdown|md)?\s*\n?/, '').sub(/\n?```\s*\z/, '')
 end
@@ -97,10 +134,14 @@ end
 check_only = ARGV.delete('--check-only')
 
 failed = {}
+quote_errors = verify_new_articles
+quote_errors.each do |file, errs|
+  (failed[file] ||= []) << "quote verify: #{errs.join('; ')}"
+end
 changed_articles.each do |file|
   if check_only
     errs = validate_front_matter(File.read(file))
-    failed[file] = errs unless errs.empty?
+    (failed[file] ||= []).concat(errs) unless errs.empty?
     next
   end
   result = generate_content_or_retry_once(file) do |f, feedback|
@@ -118,7 +159,7 @@ changed_articles.each do |file|
       errs.empty? ? true : [errs, false]
     end
   end
-  failed[file] = result unless result == true
+  (failed[file] ||= []).concat(Array(result)) unless true == result
 end
 
 failed.each { |file, errs| warn "FAIL #{file}: #{errs.join('; ')}" }
