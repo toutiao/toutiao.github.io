@@ -170,12 +170,14 @@ jobs:
           exit 1
 
       - name: Validate & auto-repair article front matter (one-shot)
+        if: ${{ !cancelled() }}
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: ruby scripts/hn-repair.rb
 
       - name: Show changes
+        if: ${{ !cancelled() }}
         run: |
           echo "=== Articles ==="
           ls -la _articles/ 2>/dev/null | tail -5 || echo "(empty)"
@@ -183,16 +185,19 @@ jobs:
           git status --short -- _articles/ 2>/dev/null || true
 
       - name: Validate Jekyll build
+        if: ${{ !cancelled() }}
         run: |
           # agent 可能已跑过 make build (Docker 容器 root 写出 _site)，必须清理后再验证
           sudo rm -rf _site .jekyll-cache .sass-cache
           bundle exec jekyll build
 
       - name: Commit date
+        if: ${{ !cancelled() }}
         id: commit-date
         run: echo "commit_date=$(TZ=Asia/Shanghai date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
       - name: Detect git state
+        if: ${{ !cancelled() }}
         id: git-state
         run: |
           if [ -n "$(git status --porcelain -- _articles/)" ]; then
@@ -208,7 +213,7 @@ jobs:
           fi
 
       - uses: stefanzweifel/git-auto-commit-action@v5
-        if: steps.git-state.outputs.state != 'clean'
+        if: ${{ !cancelled() && steps.git-state.outputs.state != 'clean' }}
         with:
           commit_message: "feat: HN 自动摘要 ${{ steps.commit-date.outputs.commit_date }}"
           commit_user_name: "HN Auto-Summarizer"
