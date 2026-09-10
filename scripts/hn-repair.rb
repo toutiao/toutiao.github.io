@@ -81,8 +81,7 @@ def verify_comment_ids(ids)
       h.get(uri.request_uri, { 'Accept' => 'application/json' })
     end
     next "not found on HN (HTTP #{res.code})" unless res.code == '200'
-    item = JSON.parse(res.body)
-    'ok'
+    nil
   rescue => e
     "verify error: #{e.message.lines.first.strip}"
   end
