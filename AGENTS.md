@@ -83,6 +83,9 @@ Docker compose reads `.env` automatically.
 ## Commit Style
 Conventional commits in Chinese: `feat:`, `fix:`, `style:`, `docs:`, `refactor:` prefixes. Always build first. `make deploy msg='...'` does build → `git add -A` → commit → push in one step.
 
+## CI Runs
+- 等待 GitHub Actions run 结束用 `gh run watch <run_id> --exit-status`，不要 sleep 循环。
+
 ## Dev Environment Rules (Hard)
 
 **Never modify** git/SSh/GitHub CLI configuration when git operations fail. Report the error instead.

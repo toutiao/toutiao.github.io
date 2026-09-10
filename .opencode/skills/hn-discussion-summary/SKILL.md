@@ -255,14 +255,14 @@ Scan body (exclude disclaimer) for:
    - Mismatch → correct to today
    - Re-read front matter: `title`/`excerpt`/`tagline` are `>-` block scalars, no double-quoted scalar containing ASCII `"`. Bad → fix → re-check.
 3. Build:
-   - **Auto/CI**: Skip (CI runs front matter lint + one-shot auto-repair before commit).
-   - **Interactive**: `make build` — fail → fix → rebuild (max 1 retry).
+   - **Auto/CI**: 禁止执行 `make build` / `docker compose` / `bundle exec jekyll build`（CI workflow 已有 build 门禁；Docker 会以 root 写出 `_site/` 导致后续 build Permission denied）。只做 front matter grep 校验。
+   - **Interactive**: `make build` — fail → fix → rebuild (max 1 retry)。
 
 ### Auto mode
 
 | Tag | Action |
 |-----|--------|
-| Normal | `git add -A && git commit -m "feat: HN 自动摘要 <真实日期>"` — 日期用 `$(TZ=Asia/Shanghai date +%Y-%m-%d)` 展开后的字面值；CI 由 workflow 的 git-auto-commit-action 负责（message 优先用 action 的） |
+| Normal | **CI=true 时跳过 git add/commit**（workflow git-auto-commit-action 负责提交推送）；本地 auto 模式 `git add -A && git commit -m "feat: HN 自动摘要 <真实日期>"` — 日期是 `$(TZ=Asia/Shanghai date +%Y-%m-%d)` 展开后的字面值 |
 | ⚑ sensitive/political | Add extended disclaimer → commit same + warning: "⚠ Review recommended." |
 
 Exit 0. No prompts.

@@ -155,7 +155,10 @@ jobs:
           git status --short -- _articles/ 2>/dev/null || true
 
       - name: Validate Jekyll build
-        run: bundle exec jekyll build
+        run: |
+          # agent 可能已跑过 make build (Docker 容器 root 写出 _site)，必须清理后再验证
+          sudo rm -rf _site .jekyll-cache .sass-cache
+          bundle exec jekyll build
 
       - name: Commit date
         id: commit-date
