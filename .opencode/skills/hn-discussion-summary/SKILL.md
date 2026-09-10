@@ -260,7 +260,7 @@ Scan body (exclude disclaimer) for:
 
 | Tag | Action |
 |-----|--------|
-| Normal | `git add -A && git commit -m "feat: HN 自动摘要 $(TZ=Asia/Shanghai date +%Y-%m-%d)"` (CI pushes) |
+| Normal | `git add -A && git commit -m "feat: HN 自动摘要 <真实日期>"` — 日期用 `$(TZ=Asia/Shanghai date +%Y-%m-%d)` 展开后的字面值；CI 由 workflow 的 git-auto-commit-action 负责（message 优先用 action 的） |
 | ⚑ sensitive/political | Add extended disclaimer → commit same + warning: "⚠ Review recommended." |
 
 Exit 0. No prompts.

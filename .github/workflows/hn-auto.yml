@@ -59,9 +59,6 @@ jobs:
 
       - uses: ./.github/actions/hn-cache/restore
 
-      - name: Install article fetch deps
-        run: gem install nokogiri reverse_markdown 2>&1 | tail -3
-
       - name: Fresh fetch (force only)
         if: ${{ inputs.force_fetch == 'true' }}
         run: |
@@ -105,7 +102,7 @@ jobs:
           git checkout -- _articles/ 2>/dev/null || true
           git clean -fd _articles/ 2>/dev/null || true
           MODEL='${{ inputs.model }}'
-          if [ -z "$MODEL" ]; then MODEL='deepseek/deepseek-v4-flash'; fi
+          if [ -z "$MODEL" ]; then MODEL='google/gemini-3.5-flash'; fi
           MODE='${{ inputs.mode }}'
           HN_URL='${{ inputs.hn_url }}'
           FORCE='${{ inputs.force_fetch }}'
@@ -124,6 +121,26 @@ jobs:
             --dangerously-skip-permissions \
             --model "$MODEL" 2>&1
 
+      - name: Fallback to DeepSeek on failure
+        if: failure()
+        timeout-minutes: 8
+        env:
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          RUN_MODE: ${{ inputs.mode }}
+        run: |
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "no DEEPSEEK_API_KEY, cannot fallback"
+            exit 1
+          fi
+          # Reset partial writes from the failed gemini attempt
+          git checkout -- _articles/ 2>/dev/null || true
+          git clean -fd _articles/ 2>/dev/null || true
+          if [ "$RUN_MODE" = "url" ]; then echo "url fallback 不支持"; exit 1; fi
+          opencode run "/hn --auto" --dir . \
+            --dangerously-skip-permissions \
+            --model "deepseek/deepseek-v4-flash" 2>&1
+
       - name: Validate & auto-repair article front matter (one-shot)
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -138,8 +155,11 @@ jobs:
           git status --short -- _articles/ 2>/dev/null || true
 
       - name: Validate Jekyll build
-        if: ${{ inputs.force_fetch == 'true' }}
         run: bundle exec jekyll build
+
+      - name: Commit date
+        id: commit-date
+        run: echo "commit_date=$(TZ=Asia/Shanghai date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
       - name: Detect git state
         id: git-state
@@ -159,7 +179,7 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         if: steps.git-state.outputs.state != 'clean'
         with:
-          commit_message: "feat: HN 自动摘要 $(TZ=Asia/Shanghai date +%Y-%m-%d)"
+          commit_message: "feat: HN 自动摘要 ${{ steps.commit-date.outputs.commit_date }}"
           commit_user_name: "HN Auto-Summarizer"
           commit_user_email: "hn-auto@yuedulijie.com"
           file_pattern: "_articles/"
