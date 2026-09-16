@@ -28,14 +28,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # machine-readable stdout: only TRIGGER lines (summary goes to stderr,
+          # which shows in CI log directly since $(...) captures stdout only)
           OUTPUT=$(bundle exec ruby scripts/hn-fetch.rb --hot-check --daily-max 2) || true
           echo "$OUTPUT"
-          while read -r _ URL; do
-            if [ -n "$URL" ]; then
-              echo "Dispatching hot trigger: $URL"
-              gh workflow run hn-auto.yml -f mode=url -f hn_url="$URL" || echo "dispatch failed (non-fatal)"
-            fi
-          done <<< "$OUTPUT"
-          echo "$OUTPUT" | grep -q '^TRIGGER' || echo "No hot story today."
+          echo "$OUTPUT" | grep -E '^TRIGGER ' | while read -r _ HN_URL; do
+            [ -n "$HN_URL" ] || continue
+            echo "Dispatching hot trigger: $HN_URL"
+            gh workflow run hn-auto.yml -f mode=url -f hn_url="$HN_URL" || echo "dispatch failed (non-fatal)"
+          done
+          echo "$OUTPUT" | grep -qE '^TRIGGER ' || echo "No hot story today."
 
       - uses: ./.github/actions/hn-cache/save

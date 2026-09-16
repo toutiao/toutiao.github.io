@@ -948,14 +948,14 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
 
   budget = daily_max - today_count
   hot.first([budget, 0].max).each do |h|
-    puts "TRIGGER #{h['id']} #{h['hn_url']}"
+    puts "TRIGGER #{h['hn_url']}"
     triggered_ids << { 'id' => h['id'], 'date' => today, 'at' => Time.now.utc.iso8601 }
   end
 
   if hot.none?
-    puts "HOT: none"
+    warn "HOT: none"
   else
-    hot.each { |h| puts "  #{h['velocity']} pts/h (#{h['score']} pts, #{h['age_hours']}h) #{h['title'][0, 60]} [#{h['id']}]" }
+    hot.each { |h| warn "  #{h['velocity']} pts/h (#{h['score']} pts, #{h['age_hours']}h) #{h['title'][0, 60]} [#{h['id']}]" }
   end
 
   if triggered_ids != Array(state['triggered'])
