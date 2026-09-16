@@ -3,6 +3,23 @@
 > 创作流程大提升计划 第1阶段
 > 状态: 已实施完成 | 日期: 2026-07-01 | 以下为实际实现记录，后续改以此文档为起点
 
+## 2026-09-16 架构优化（第二批：利用率/突发/模型链）
+
+> 数据依据：fetcher 100/100 成功；summarizer 32/100 失败（13 次 8min 超时源于 skill Phase 2.5 webfetch HN 被 429；10 次 MiniMax 余额耗尽）；利用率 ≈7%（15 候选/天 ≈ 1 文章/天）
+
+| 变更 | 文件 | 说明 |
+|---|---|---|
+| 删 fill job | hn-fetch.yml | renderer 对 thin content 实测无改善（27 篇 +595 chars）；本地仍可用 `hn-fetch.rb --fill-missing` |
+| hot 突发触发 | hn-fetch.rb `--hot-check` + hn-fetch.yml | `score>=200 && age<=8h && velocity>=20` → `gh workflow run hn-auto.yml -f mode=url`；状态 `_data/hn/YYYY/WNN/.triggers.yaml`（随周 cache 持久化），去重 + 日上限 2 |
+| 日常 batch | hn-auto.yml + skill | 早班 cron `0 0 * * *`（北京 8:00）`/hn --auto --batch 2`；排序 = velocity (score/hours)，候选池 = 最新周 + 上周 W-1 |
+| 模型链 | hn-auto.yml | 主 MiniMax-M3（cn plan 成本≈0）→ gemini-3.5-flash → deepseek-v4-flash；MiniMax 曾两次余额耗尽（8 月、9 月初），由 gemini fallback 补位 |
+| timeout | hn-auto.yml | generate 8→20min，fallback 12→20min |
+| hn_id dedup | skill + hn-repair.rb | 文章 front matter 加 `hn_id:`，Phase 0 精确排除；hn-repair.rb 缺失时 WARN（老文兼容） |
+| 引文门禁加固 | hn-repair.rb | Algolia 200 → 附加 type==comment + 作者匹配校验（原实现只验 200，伪 id+假作者可穿透） |
+| Phase 2.5 本地化 | skill | 删除 webfetch HN 引文核验（429 超时主因），改读 comments.yaml 缓存 + 本地 grep；hn-repair.rb Algolia 终验不变 |
+| repair 模型降级 | hn-repair.rb | front matter 修复 → `REPAIR_MODEL = gemini-2.5-flash-lite` |
+
+
 ## 目标
 
 将 Hacker News 数据抓取与 AI 创作解耦，引入缓存层，降低重复网络请求，提高创作数据质量。

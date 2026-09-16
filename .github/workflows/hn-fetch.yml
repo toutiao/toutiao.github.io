@@ -1,8 +1,12 @@
-name: HN Data Fetcher + Article Filler
+name: HN Data Fetcher + Hot Trigger
 on:
   schedule:
     - cron: "0 0,8,16 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
 
 jobs:
   fetch:
@@ -20,33 +24,18 @@ jobs:
       - name: Fetch HN data (simple HTTP)
         run: bundle exec ruby scripts/hn-fetch.rb --best --max 15 --fetch-articles-simple --jobs 5
 
-      - uses: ./.github/actions/hn-cache/save
-
-  fill:
-    needs: fetch
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install Ruby deps
-        run: gem install nokogiri reverse_markdown 2>&1 | tail -3
-
-      - uses: ./.github/actions/hn-cache/restore
-
-      - name: Fill missing articles (renderer)
+      - name: Hot story trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if ! curl -sf http://localhost:3000/health >/dev/null 2>&1; then
-            docker compose build renderer 2>&1 | tail -1
-            docker compose up -d renderer 2>&1
-            for i in $(seq 1 10); do
-              curl -sf http://localhost:3000/health >/dev/null && break
-              sleep 2
-            done
-          fi
-          if curl -sf http://localhost:3000/health >/dev/null 2>&1; then
-            ruby scripts/hn-fetch.rb --fill-missing --jobs 3
-          else
-            echo "Renderer unavailable. Skipping fill."
-          fi
+          OUTPUT=$(bundle exec ruby scripts/hn-fetch.rb --hot-check --daily-max 2) || true
+          echo "$OUTPUT"
+          while read -r _ URL; do
+            if [ -n "$URL" ]; then
+              echo "Dispatching hot trigger: $URL"
+              gh workflow run hn-auto.yml -f mode=url -f hn_url="$URL" || echo "dispatch failed (non-fatal)"
+            fi
+          done <<< "$OUTPUT"
+          echo "$OUTPUT" | grep -q '^TRIGGER' || echo "No hot story today."
 
       - uses: ./.github/actions/hn-cache/save

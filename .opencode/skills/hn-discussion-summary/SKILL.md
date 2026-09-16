@@ -20,17 +20,17 @@ metadata:
 ### Filters (all modes)
 Story pass all:
 - score >= 80
-- ID not in `_articles/*.md`
+- HN id not in `_articles/*.md` front matter `hn_id:` (old articles lack hn_id → fallback: search `item?id=<id>` in body)
 - same topic not covered today (grep date + keyword in existing articles)
 
 > `hn-fetch.rb` already dedup at write time (filter IDs in `_articles/`). This is 2nd layer.
 
 ### Auto mode
-1. Read `_data/hn/*/W*/stories.yaml` → pick newest week
+1. Read `_data/hn/*/W*/stories.yaml` → load **newest week + previous week** (merge, candidates from both)
 2. Apply filters
-3. Sort by score desc
-4. Pick top candidate
-5. Report: `Auto-selected: [title] ([score] pts)`
+3. Sort by **velocity** = score / max(age_hours, 0.5) desc (age from stories.yaml `created_at_i` epoch → hours since post; fallback post.yaml `posted_at`)
+4. Report ranking table
+5. Batch: `--batch N` (default 1). Pick top N uncovered candidates → run Phase 0.5→1→2→2.5→3 per candidate **sequentially**; one failure does not block the next. Report after each: `Auto-selected [k/N]: [title] ([score] pts)`
 6. Go to Phase 0.5
 7. Fallback: `webfetch https://news.ycombinator.com/best?h=48`
 
@@ -129,6 +129,7 @@ layout: post
 title: >-
   Topic — HN discussion digest
 date: $(TZ=Asia/Shanghai date +%Y-%m-%d)
+hn_id: <story HN id>
 categories: [articles]
 excerpt: >-
   1-2句, ~80字
@@ -209,16 +210,20 @@ Use actual model (e.g. `google/gemini-2.5-flash`, `deepseek/deepseek-v4-flash`).
 
 ## Phase 2.5 — Fact Check + Revise (REQUIRED)
 
-### Step 1 — Quote verify
-1. `webfetch` HN comment page (html) — `https://news.ycombinator.com/item?id={comment_id}`
-2. Find: `<span class="commtext c00">`
+> CI 中**禁止 webfetch HN 页面** (news.ycombinator.com 会对 CI runner 限流 429 → 超时)。
+> 引文核验一律使用缓存 + hn-repair.rb (Algolia gate, CI 强制层)。
+
+### Step 1 — Quote verify (local)
+1. Source of truth = `_data/hn/.../{id}/comments.yaml` (raw HN text, already cached)
+2. For each quote: grep verbatim text in comments.yaml
 3. Check:
    - Verbatim match (no paraphrase)
-   - Username match
+   - Author match vs comments.yaml `author`
    - Ellipsis (...) preserved meaning
    - CN translation faithful
 4. Fix mismatch
 5. Report: ✓ / ⚠ / ✗
+6. Log entry: `verified against comments.yaml (local)` — 最后由 `hn-repair.rb` 对 Algolia 做存在性+作者终验
 
 ### Step 2 — Quality review
 Read full draft. Checklist:

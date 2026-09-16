@@ -83,6 +83,7 @@ def fetch_stories_algolia
       'score' => h['points'] || 0,
       'author' => h['author'] || '',
       'descendants' => h['num_comments'] || 0,
+      'created_at_i' => h['created_at_i'],
     }
   }
 end
@@ -102,6 +103,7 @@ def fetch_stories_firebase
       'score' => item['score'],
       'author' => item['by'] || '',
       'descendants' => item['descendants'] || 0,
+      'created_at_i' => item['time'],
     }
   end.compact.first(MAX_DEFAULT)
 end
@@ -891,6 +893,81 @@ def fill_one_article(dir, results, mutex)
   end
 end
 
+# ── Hot check (velocity burst trigger for CI) ──
+
+HOT_SCORE_MIN = 200
+HOT_AGE_MAX_HOURS = 8
+HOT_VELOCITY_MIN = 20.0
+
+def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
+              score_min: HOT_SCORE_MIN, velocity_min: HOT_VELOCITY_MIN)
+  state_path = File.join(CACHE_DIR, week_key[0], week_key[1], '.triggers.yaml')
+  state = if File.exist?(state_path)
+            (YAML.safe_load_file(state_path, permitted_classes: [Time]) rescue nil) || {}
+          else
+            {}
+          end
+  triggered_ids = Array(state['triggered'])
+  triggered_id_set = triggered_ids.map { |t| t.is_a?(Hash) ? t['id'] : t }.compact
+  today = Time.now.utc.strftime('%Y-%m-%d')
+  today_count = triggered_ids.count { |t| t.is_a?(Hash) && t['date'] == today }
+
+  known_article_ids = Dir.glob('_articles/**/*.md').flat_map { |f|
+    File.read(f).scan(/hn_id:\s*"?(\d+)"?|item\?id=(\d+)/).flatten.compact.uniq
+  }
+
+  hot = []
+  Dir.glob(File.join(CACHE_DIR, '*', 'W*', '*', 'post.yaml')).each do |f|
+    post = (YAML.safe_load_file(f, permitted_classes: [Time]) rescue nil) || {}
+    post_id = post['id'] || File.basename(File.dirname(f))
+    next if known_article_ids.include?(post_id)
+    next if triggered_id_set.include?(post_id)
+
+    hours = if post['posted_at']
+              ((Time.now.utc - Time.parse(post['posted_at'].to_s)) / 3600) rescue nil
+            end
+    next unless hours && hours >= 0 && hours <= max_age_hours
+
+    score = post['score'].to_i
+    next if score < score_min
+
+    velocity = score / [hours, 0.5].max
+    next if velocity < velocity_min
+
+    hot << {
+      'id' => post_id,
+      'title' => post['title'],
+      'score' => score,
+      'age_hours' => hours.round(2),
+      'velocity' => velocity.round(1),
+      'hn_url' => post['hn_url'],
+    }
+  end
+
+  hot.sort_by! { |h| -h['velocity'] }
+
+  budget = daily_max - today_count
+  hot.first([budget, 0].max).each do |h|
+    puts "TRIGGER #{h['id']} #{h['hn_url']}"
+    triggered_ids << { 'id' => h['id'], 'date' => today, 'at' => Time.now.utc.iso8601 }
+  end
+
+  if hot.none?
+    puts "HOT: none"
+  else
+    hot.each { |h| puts "  #{h['velocity']} pts/h (#{h['score']} pts, #{h['age_hours']}h) #{h['title'][0, 60]} [#{h['id']}]" }
+  end
+
+  if triggered_ids != Array(state['triggered'])
+    FileUtils.mkdir_p(File.dirname(state_path))
+    File.write(state_path, YAML.dump(
+      'triggered' => triggered_ids.last(50),
+      'updated_at' => Time.now.utc.iso8601
+    ))
+  end
+  0
+end
+
 # ── CLI ──
 
 def run
@@ -922,6 +999,12 @@ def run
     opts.on('--fill-missing', 'Scan cache and fill missing articles via renderer') {
       options[:mode] = :fill_missing
     }
+    opts.on('--hot-check', 'Scan cache for high-velocity stories, print TRIGGER lines, update state') {
+      options[:mode] = :hot_check
+    }
+    opts.on('--daily-max N', Integer, "Max new hot triggers per day (default: 2)") { |v|
+      options[:daily_max] = v
+    }
     opts.on('--output DIR', "Cache root (#{CACHE_DIR})") { |v| options[:output] = v }
     opts.on('-h', '--help') { puts opts; exit }
   end.parse!
@@ -945,8 +1028,14 @@ def run
     return
   end
 
+  # ─-- --hot-check mode ──
+  if options[:mode] == :hot_check
+    hot_check(daily_max: options[:daily_max] || 2)
+    return
+  end
+
   unless options[:mode]
-    warn "ERROR: use --best, --url, --fetch-article-url, or --fill-missing"
+    warn "ERROR: use --best, --url, --fetch-article-url, --fill-missing, or --hot-check"
     exit 1
   end
 

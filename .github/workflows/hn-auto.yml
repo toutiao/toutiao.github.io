@@ -2,20 +2,18 @@ name: HN Auto-Summarizer
 
 on:
   schedule:
-    - cron: "0 4 * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       model:
         description: "AI 模型"
         type: choice
         required: false
-        default: "google/gemini-3.5-flash"
+        default: "minimax-cn-coding-plan/MiniMax-M3"
         options:
-          - "google/gemini-2.5-flash"
-          - "google/gemini-2.5-flash-lite"
-          - "google/gemini-3.1-flash-lite"
-          - "google/gemini-3.5-flash"
           - "minimax-cn-coding-plan/MiniMax-M3"
+          - "google/gemini-3.5-flash"
+          - "google/gemini-2.5-flash"
           - "deepseek/deepseek-v4-flash"
       mode:
         description: "运行模式 — auto 自动选择 / url 手动指定"
@@ -104,7 +102,7 @@ jobs:
           fi
 
       - name: Generate articles (opencode auto)
-        timeout-minutes: 8
+        timeout-minutes: 20
         continue-on-error: true
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -115,7 +113,7 @@ jobs:
           git checkout -- _articles/ 2>/dev/null || true
           git clean -fd _articles/ 2>/dev/null || true
           MODEL='${{ inputs.model }}'
-          if [ -z "$MODEL" ]; then MODEL='google/gemini-3.5-flash'; fi
+          if [ -z "$MODEL" ]; then MODEL='minimax-cn-coding-plan/MiniMax-M3'; fi
           MODE='${{ inputs.mode }}'
           HN_URL='${{ inputs.hn_url }}'
           FORCE='${{ inputs.force_fetch }}'
@@ -128,15 +126,15 @@ jobs:
             fi
             HN_CMD="/hn $HN_URL $FLAGS"
           else
-            HN_CMD="/hn --auto $FLAGS"
+            HN_CMD="/hn --auto $FLAGS --batch 2"
           fi
           opencode run "$HN_CMD" --dir . \
             --dangerously-skip-permissions \
             --model "$MODEL" 2>&1
 
-      - name: Fallback chain (MiniMax M3 -> DeepSeek)
+      - name: Fallback chain (Gemini -> DeepSeek)
         if: ${{ !cancelled() }}
-        timeout-minutes: 12
+        timeout-minutes: 20
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -151,7 +149,7 @@ jobs:
           echo "主模型无产出，开始回退链..."
           force_flag=""
           [ '${{ inputs.force_fetch }}' = "true" ] && force_flag="--force"
-          for MODEL in "minimax-cn-coding-plan/MiniMax-M3" "deepseek/deepseek-v4-flash"; do
+          for MODEL in "google/gemini-3.5-flash" "deepseek/deepseek-v4-flash"; do
             PROV=${MODEL%%/*}
             if [ "$PROV" = "deepseek" ] && [ -z "$DEEPSEEK_API_KEY" ]; then echo "no DEEPSEEK_API_KEY, skip $MODEL"; continue; fi
             if [ "$PROV" = "minimax-cn-coding-plan" ] && [ -z "$MINIMAX_API_KEY" ]; then echo "no MINIMAX_API_KEY, skip $MODEL"; continue; fi

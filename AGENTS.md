@@ -9,7 +9,7 @@ All AI output in this project uses caveman mode: drop filler/articles/pleasantri
 - Jekyll + GitHub Pages (branch `master`, Pages native branch build — **no deploy workflow**, pushed master auto-builds)
 - Domain: `yuedulijie.com`
 - **Local dev**: Docker (ruby:3.2-slim, `docker compose`), **no** local Ruby/Jekyll needed
-- **CI**: `.github/workflows/hn-fetch.yml` (HN 数据抓取 3x daily) + `.github/workflows/hn-auto.yml` (每日 `/hn --auto` 生成文章，gemini-3.5-flash 失败回退 deepseek-v4-flash)
+- **CI**: `.github/workflows/hn-fetch.yml` (HN 数据抓取 3x daily + hot 突发触发) + `.github/workflows/hn-auto.yml` (每日北京早 8 点 `/hn --auto --batch 2` 生成文章，MiniMax-M3 主力，失败回退 gemini-3.5-flash → deepseek-v4-flash)
 - **Sub-site**: [UP-6 英语学习导航](https://up-6.yuedulijie.com) — `github.com/Lax/up-6.yuedulijie.com`
 
 ## Project Layout
