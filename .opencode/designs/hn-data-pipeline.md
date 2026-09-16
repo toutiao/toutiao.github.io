@@ -19,6 +19,22 @@
 | Phase 2.5 本地化 | skill | 删除 webfetch HN 引文核验（429 超时主因），改读 comments.yaml 缓存 + 本地 grep；hn-repair.rb Algolia 终验不变 |
 | repair 模型降级 | hn-repair.rb | front matter 修复 → `REPAIR_MODEL = gemini-2.5-flash-lite` |
 
+### hot 双触发修复 (2026-09-16 补丁)
+`--hot-check` 摘要行被 CI 逐行解析误当 TRIGGER → 同故事 dispatch ×2。修复：stdout 仅机读 `TRIGGER <url>` 单行（摘要移 stderr），CI 加 `grep -E '^TRIGGER '`；hn-auto.yml 加 `concurrency: group: hn-auto` 串行门（防 cron×dispatch 撞车 git race）。实战验证：run A MiniMax 主链产出 `68eab11`，垃圾 run B 干净失败。
+
+### 文章提取修复 (2026-09-16 第二轮)
+实际复现基线 30 帖 14 失败（连续两日同分布），根因定位：
+
+| 类别 | 站点 | 修复 |
+|---|---|---|
+| js_blocker 误伤 (6) | openjdk(`document.write` 版权), archive.org, github(`octocaptcha`), worksinprogress(`captcha_site_key`) | 门禁移到剥 script/style 后的**可见文本**判定 + 短页保护（纯文本 <3000 字才判）+ 裸 `/captcha/`、`document.write|location` 砍除，改强语义组合词 |
+| ReverseMarkdown 吞内容 | apple newsroom 内容藏在 hidden copy-text div，转换只出 19 字 | 转换 <2× MIN_ARTICLE_CHARS 字时启用结构化兜底（h1-h5/p/li/blockquote/pre 块级重markdown化） |
+| 语义选择器缺口 / Empty `<main>` | apple `<main>` 空容器命中早于正文 | 选取器与 p-启发式兜底**竞择**（p-文本量最大胜出） |
+| 不跟随重定向 | forbrukerradet 301 | Location 循环跟随 ≤5 跳 (`MAX_REDIRECTS`)，终 URL 回写 result |
+| 异常吞噬 | 全体 timeout/exception 路径 `result.merge` 死语句 → status=nil | 两处 rescue 改 `result['fetch_status']=...` 直接赋值 |
+
+复测 11 失败 URL：10/11 success（apple 8000 chars 等；xcancel 为真 HTTP 451 法律拦截，保持透明失败）。
+
 
 ## 目标
 

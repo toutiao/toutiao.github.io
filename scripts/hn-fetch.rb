@@ -39,6 +39,8 @@ ALGOLIA_API = 'https://hn.algolia.com/api/v1'
 
 # Per-domain concurrency limit for simple article fetch
 MAX_PER_DOMAIN = 2
+REDIRECT_CODES = %w[301 302 303 307 308].freeze
+MAX_REDIRECTS = 5
 $domain_mutex = Mutex.new
 $domain_conns = {}
 $domain_cv = ConditionVariable.new
@@ -333,10 +335,17 @@ JS_BLOCKER_PATTERNS = [
   /verifying your browser/i,
   /\bcloudflare\b.{0,50}(challenge|security|ray\s*id)/i,
   /attention required/i,
-  /captcha/i,
-  /document\.(write|cookie|location)/,
+  /verify.{0,20}(you are|you're) human/i,
+  /prove.{0,10}(''?you'?re?|human)/i,
+  /challenge[-_ ]?platform/i,
+  /captcha\.(com|net|challenge)/i,
   /<meta\s[^>]*http-equiv=["']refresh["']/i,
 ].freeze
+
+# js_blocker only applies to short pages — articles with substantial visible
+# text never legitimately present these phrases, and long pages containing
+# incidental challenge vocabulary are not challenge pages.
+JS_BLOCKER_MAX_TEXT = 3000
 
 SOFT_404_PATTERNS = [
   /page\s+not\s+found/i,
@@ -356,18 +365,30 @@ end
 def content_passes_gates(body, url)
   return :empty if body.nil? || body.empty?
 
-  # JS blocker / challenge detection (structural)
-  return :js_blocker if JS_BLOCKER_PATTERNS.any? { |p| body.match?(p) }
+  doc = Nokogiri::HTML(body)
+
+  # Strip non-visible payloads BEFORE challenge detection — script/style text
+  # (e.g. "captcha_site_key" config, document.write footers) is not content
+  # and must not trip the JS-wall gate.
+  doc.css('script, style, noscript, iframe, template').each(&:remove)
+  visible = doc.text.strip
+
+  return :empty if visible.empty?
+
+  # JS blocker / challenge detection (visible text only, short pages only)
+  if visible.length < JS_BLOCKER_MAX_TEXT &&
+     JS_BLOCKER_PATTERNS.any? { |p| visible.match?(p) }
+    return :js_blocker
+  end
 
   # Soft 404 via title + h1
-  doc = Nokogiri::HTML(body)
   title = doc.at_css('title')&.text || ''
   h1 = doc.at_css('h1')&.text || ''
   combined = title + ' ' + h1
   return :soft_404 if SOFT_404_PATTERNS.any? { |p| combined.match?(p) }
 
   # Strip HTML, check plain text length
-  text = doc.text.strip
+  text = visible
   return :too_short if text.length < MIN_ARTICLE_CHARS
 
   # Check printable character ratio
@@ -394,18 +415,29 @@ def extract_article_simple(url, open_timeout: 10, read_timeout: 20)
       return result.merge('fetch_status' => 'skipped', 'error' => "non-http scheme: #{uri.scheme}")
     end
 
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = uri.scheme == 'https'
-    http.open_timeout = open_timeout
-    http.read_timeout = read_timeout
-    http.max_retries = 0
+    resp = nil
+    MAX_REDIRECTS.succ.times do      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      http.open_timeout = open_timeout
+      http.read_timeout = read_timeout
+      http.max_retries = 0
 
-    request = Net::HTTP::Get.new(uri.request_uri)
-    request['User-Agent'] = 'Mozilla/5.0 (compatible; yuedulijie.com/1.0; HN article fetcher)'
-    request['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    request['Accept-Language'] = 'en-US,en;q=0.5'
+      request = Net::HTTP::Get.new(uri.request_uri)
+      request['User-Agent'] = 'Mozilla/5.0 (compatible; yuedulijie.com/1.0; HN article fetcher)'
+      request['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      request['Accept-Language'] = 'en-US,en;q=0.5'
 
-    resp = http.request(request)
+      resp = http.request(request)
+      break unless REDIRECT_CODES.include?(resp.code)
+
+      loc = resp['Location'].to_s
+      target = loc.start_with?('http://', 'https://') ? URI(loc) : URI.join(uri, loc)
+      unless target.is_a?(URI::HTTP)
+        return result.merge('fetch_status' => 'skipped', 'error' => "redirect to non-http scheme: #{target.scheme}")
+      end
+      uri = target
+      result['url'] = uri.to_s
+    end
 
     # Gate 1: HTTP status
     code = resp.code.to_i
@@ -445,14 +477,59 @@ def extract_article_simple(url, open_timeout: 10, read_timeout: 20)
       '.sidebar, .nav, .menu, .comments, .comment-list, .related-posts'
     ).each(&:remove)
 
-    article_el = doc.at_css(
-      'article, main, [role="main"], .article, .post-content, ' \
+    sem_el = doc.at_css(
+      'article, main, [role="main"], .article, .article-wrapper, ' \
+      '.article-body, .article-content, .post-content, .postBody, ' \
       '.entry-content, .content, .post, .blog-post, #content'
     )
-    content_source = article_el || doc.at_css('body') || doc
+
+    # Heuristic fallback: the block element containing the most paragraph
+    # text is most likely the article body. Semantic hit only wins when it
+    # actually holds paragraph text (e.g. apple newsroom <main> is empty).
+    para_len = lambda { |el| el.css('p').map(&:text).join.length }
+
+    heur_el = begin
+      candidates = doc.css('div, section').filter_map do |el|
+        next unless para_len.call(el) >= MIN_ARTICLE_CHARS
+        [el, para_len.call(el), el.ancestors.size]
+      end
+      best = candidates.max_by { |_el, p_len, depth| [p_len, -depth] }
+      best&.first
+    end
+
+    heur_len = heur_el ? para_len.call(heur_el) : 0
+    sem_len = sem_el ? para_len.call(sem_el) : 0
+    article_el = if heur_len > sem_len && heur_len >= MIN_ARTICLE_CHARS
+                   heur_el
+                 else
+                   sem_el || doc.at_css('body') || doc
+                 end
+
+    content_source = article_el
 
     markdown = ReverseMarkdown.convert(content_source.inner_html, unknown_tags: :drop)
     markdown = markdown.gsub(/\n{3,}/, "\n\n").strip
+
+    # ReverseMarkdown swallows heavily-nested/unusual markup on some sites
+    # (e.g. apple newsroom hidden copy-text). Fall back to structural block
+    # extraction when the conversion is thin but paragraph text is not.
+    if markdown.length < MIN_ARTICLE_CHARS * 2
+      blocks = content_source.css(
+        'h1, h2, h3, h4, h5, p, li, blockquote, pre, figcaption'
+      ).filter_map do |x|
+        t = x.text.gsub(/\s+/, ' ').strip
+        t.empty? ? nil : [x.name, t]
+      end
+      plain = blocks.map { |tag, t|
+        case tag
+        when /^h[1-5]$/ then "\n#{'#' * tag[1].to_i} #{t}"
+        when 'li' then "- #{t}"
+        when 'blockquote' then "> #{t}"
+        else t
+        end
+      }.join("\n\n").gsub(/\n{3,}/, "\n\n").strip
+      markdown = plain if plain.length > markdown.length
+    end
 
     result['content'] = markdown[0, ARTICLE_TRUNCATE]
     if result['content'] && result['content'].length >= MIN_ARTICLE_CHARS
@@ -462,9 +539,11 @@ def extract_article_simple(url, open_timeout: 10, read_timeout: 20)
       result['error'] = "insufficient content (#{(result['content'] || '').length} chars)"
     end
   rescue Net::OpenTimeout, Net::ReadTimeout => e
-    result.merge('fetch_status' => 'error', 'error' => "timeout: #{e.message[0, 100]}")
+    result['fetch_status'] = 'error'
+    result['error'] = "timeout: #{e.message[0, 100]}"
   rescue => e
-    result.merge('fetch_status' => 'error', 'error' => e.message[0, 500])
+    result['fetch_status'] = 'error'
+    result['error'] = e.message[0, 500]
   end
 
   result
