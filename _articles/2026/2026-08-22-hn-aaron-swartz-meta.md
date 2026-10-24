@@ -3,6 +3,7 @@ layout: post
 title: >-
   Aaron Swartz 被起诉，Meta 却没事 — HN 讨论摘要
 date: 2026-08-22
+hn_id: '49379550'
 categories: [articles]
 excerpt: >-
   RSS 联合创始人 Aaron Swartz 因从 JSTOR 下载 70GB 论文面临 35 年刑期，最终自杀；Meta 种子下载 80TB 图书训练 AI，几乎无事。HN 讨论的火力集中在选择性执法上。

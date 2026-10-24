@@ -2,6 +2,7 @@
 layout: post
 title: "手写对大脑好 — HN 讨论摘要"
 date: 2026-07-25
+hn_id: '49022152'
 categories: [articles]
 excerpt: >-
   Neal Stephenson 用钢笔手写完成了 Baroque Cycle——手稿堆了 42 英寸高。他说"从未有过 writer's cramp"。

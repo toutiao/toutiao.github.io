@@ -2,6 +2,7 @@
 layout: post
 title: "SQLite 十六年的 WAL-Reset 老 bug 被 Tailscale 揪出 — HN 讨论摘要"
 date: 2026-08-14
+hn_id: '49272832'
 categories: [articles]
 excerpt: >-
   六个月 19 次数据库损坏，真相是 SQLite 里一个藏了十六年的竞态 bug——而触发它，恰恰是"正确地"用 SQLite。HN 1176 分热帖，评论区从"该不该用 SQLite"吵到"单点故障"与 AI 测数据库。

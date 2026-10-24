@@ -2,6 +2,7 @@
 layout: post
 title: "Half-Baked Product — HN discussion digest"
 date: 2026-07-04
+hn_id: '48772388'
 categories: [articles]
 excerpt: >-
   一篇虚构的烤箱创业故事，精准描绘了 startup 从愿景到崩坏的经典路径——销售乱承诺、工程填坑、feature 越加越多、核心问题从未解决。HN 社区 1192 分讨论：这是每一个创业者的镜子。

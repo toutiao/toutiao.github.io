@@ -3,6 +3,7 @@ layout: post
 title: >-
   Claude Fable 5.1 与 Mythos 5.1：同模型，两种护栏 — HN 讨论摘要
 date: 2026-09-02
+hn_id: '49525378'
 categories: [articles]
 excerpt: >-
   同一个模型、两套护栏：Fable 5.1 号称便宜 25%，评论区却在吵另一件事——它一边写下 unsafe Rust 代码，一边拒绝审查同一份代码。

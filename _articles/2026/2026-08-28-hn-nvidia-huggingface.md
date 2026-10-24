@@ -3,6 +3,7 @@ layout: post
 title: >-
   Nvidia 收购 Hugging Face — HN 讨论摘要
 date: 2026-08-28
+hn_id: '49458161'
 categories: [articles]
 excerpt: >-
   英伟达洽购 Hugging Face，估值超 130 亿美元。评论区一半在算这家"开源模型集市"值不值这个价，一半在担心英伟达就此握住模型分发的咽喉。

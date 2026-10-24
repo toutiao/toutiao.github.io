@@ -2,6 +2,7 @@
 layout: post
 title: "Android 或限制设备端 ADB，Shizuku 生态面临终结 — HN 讨论摘要"
 date: 2026-07-27
+hn_id: '49045159'
 categories: [articles]
 excerpt: >-
   Google ADB 维护者提议将 ADBD 绑定到 wlan0，切断 loopback 连接。Shizuku、libadb-android 等开源工具生态面临灭绝。976 点 HN 讨论：这是安全加固还是控制扩张？

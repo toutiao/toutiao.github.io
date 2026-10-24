@@ -2,6 +2,7 @@
 layout: post
 title: "YouTube Ask Studio 提示注入漏洞可泄露创作者私密视频 — HN 讨论摘要"
 date: 2026-07-05
+hn_id: '48786781'
 categories: [articles]
 excerpt: >-
   安全研究员在 YouTube Studio 的 AI 助手中发现提示注入漏洞：一条评论即可让 AI 输出攻击者控制的内容，甚至窃取私密视频标题。Google 两次回应"不是安全漏洞"。

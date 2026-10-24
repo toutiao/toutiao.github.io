@@ -3,6 +3,7 @@ layout: post
 title: >-
   用 AI 逆向工程真正拥有你的硬件 — HN 讨论摘要
 date: 2026-08-25
+hn_id: '49413320'
 categories: [articles]
 excerpt: >-
   黑客用 Claude Opus 5 在两周内把桌上五台外设的固件全部逆向，一条 HTTP POST 就能关掉补光灯的签名校验；另一人花 266 美元让四个模型 root 了自己的亚马逊平板。评论区吵的不是技术，而是"你拥有的，究竟是不是你的"。

@@ -3,6 +3,7 @@ layout: post
 title: >-
   「节奏前沿」论战：AI 该全球放慢，还是让对手先慢
 date: 2026-09-14
+hn_id: '49672510'
 categories: [articles]
 excerpt: >-
   Anthropic 一边呼吁全球放慢 AI，一边被质疑「想让对手踩刹车、自己先冲线」；一篇 337 词的猫耳戏仿文，把这场争论顶上了 HN 榜首。

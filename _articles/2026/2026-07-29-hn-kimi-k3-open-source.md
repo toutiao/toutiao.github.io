@@ -2,6 +2,7 @@
 layout: post
 title: "Kimi K3 开源发布 — 3T 权重开放、架构详解与社区热议"
 date: 2026-07-29
+hn_id: '49065752'
 categories: [articles]
 excerpt: >-
   Moonshot AI 如期开放 Kimi K3 权重，2.8T 参数、104B 激活、MXFP4 原生量化。HN 热议托管成本、本地运行可行性，以及 NoPE 架构是否在悄悄改写注意力机制规则。

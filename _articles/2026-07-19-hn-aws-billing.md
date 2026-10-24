@@ -2,6 +2,7 @@
 layout: post
 title: "AWS 计费故障显示 1.7 万亿虚高账单 — HN 讨论"
 date: 2026-07-19
+hn_id: '48945241'
 categories: [articles]
 excerpt: >-
   AWS 计费系统单位混淆，用户看到万亿级账单。恐慌、黑色幽默之后，

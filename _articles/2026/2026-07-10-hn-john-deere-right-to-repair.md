@@ -2,6 +2,7 @@
 layout: post
 title: "John Deere 维修权和解 — HN 讨论摘要"
 date: 2026-07-10
+hn_id: '48838876'
 categories: [articles]
 excerpt: >-
   FTC 与五州检察长通过反垄断诉讼迫使 John Deere 开放维修权，罚款仅 $1M（占年利润 0.02%），十年合规监督下农民和独立维修店终于可以自行修理拖拉机了。

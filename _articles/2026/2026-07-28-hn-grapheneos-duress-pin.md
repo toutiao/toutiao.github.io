@@ -2,6 +2,7 @@
 layout: post
 title: "GrapheneOS 紧急 PIN 擦除手机，用户被起诉 — HN 讨论摘要"
 date: 2026-07-28
+hn_id: '49063022'
 categories: [articles]
 excerpt: >-
   Atlanta 居民 Sam Tunick 在机场边境检查时输入 GrapheneOS 胁迫 PIN，手机数据即刻擦除。DOJ 指控其"销毁财产以阻止没收"，1263 点 HN 热议隐私工具与边境权力的边界。

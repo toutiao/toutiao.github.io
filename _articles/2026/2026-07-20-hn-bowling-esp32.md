@@ -2,6 +2,7 @@
 layout: post
 title: "ESP32 替换 $120k 保龄球系统 — HN 讨论摘要"
 date: 2026-07-20
+hn_id: '48968606'
 categories: [articles]
 excerpt: >-
   花 $1,600 的 ESP32 替代 $120k 的保龄球中心系统。HN 热议行业困境、技术方案、与保龄球鞋到底有没有用。

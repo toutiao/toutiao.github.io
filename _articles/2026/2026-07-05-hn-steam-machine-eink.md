@@ -2,6 +2,7 @@
 layout: post
 title: "Valve 开源 Steam Machine 墨水屏——HN 讨论摘要"
 date: 2026-07-05
+hn_id: '48774518'
 categories: [articles]
 excerpt: >-
   Valve 开源 Inkterface 项目，5.83" e-ink 面板、ESP32、MIT 协议全公开，读者已开始讨论价格、刷新率和 Valve 的开放战略。

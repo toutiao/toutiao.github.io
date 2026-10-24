@@ -2,6 +2,7 @@
 layout: post
 title: "中国 AI 模型真的可怕吗？— HN 讨论摘要"
 date: 2026-07-22
+hn_id: '48977128'
 categories: [articles]
 excerpt: >-
   Stratechery 的 Ben Thompson 认为对中国 AI 模型的恐慌过度——智能正在商品化，成本结构决定胜负。HN 社区围绕蒸馏是抄袭还是竞争、掮客是否是护城河、以及地缘政治如何影响 AI 生态展开激辩。

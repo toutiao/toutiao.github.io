@@ -2,6 +2,7 @@
 layout: post
 title: "Organic Maps — HN discussion digest"
 date: 2026-07-06
+hn_id: '48794446'
 categories: [articles]
 excerpt: >-
   离线地图 app Organic Maps 登顶 HN 首页。790 分高赞背后，评论区却聚焦于治理争议：捐款被用于个人开销、地图生成器闭源、Fork 项目 CoMaps 应运而生。

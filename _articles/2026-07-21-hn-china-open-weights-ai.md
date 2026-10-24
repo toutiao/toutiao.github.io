@@ -2,6 +2,7 @@
 layout: post
 title: "中国开源 AI 策略正在获胜 — HN 讨论摘要"
 date: 2026-07-21
+hn_id: '48979269'
 categories: [articles]
 excerpt: >-
   US 封闭式 AI 正输给中国开源权重策略。Ben Werdmuller 认为模型本身没有护城河，开放才能赢。HN 社区围绕"倾销还是竞争"、"模型审查谁更糟"、"实际采用模式"激烈辩论。

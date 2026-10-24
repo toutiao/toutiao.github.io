@@ -3,6 +3,7 @@ layout: post
 title: >-
   Firefox 成为最后一个支持 uBlock Origin 的主流浏览器 — HN 讨论摘要
 date: 2026-08-16
+hn_id: '49303202'
 categories: [articles]
 excerpt: >-
   Chrome 的 Manifest V3 迁移后，完整版 uBlock Origin 只剩 Firefox 还能跑。HN 1654 分热帖：Brave 是出路还是 Chromium 皮、uBO Lite 只是藏广告不是挡广告、以及 Firefox "勉强能用"之争。

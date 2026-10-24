@@ -3,6 +3,7 @@ layout: post
 title: >-
   OpenLogi — HN 讨论摘要
 date: 2026-08-20
+hn_id: '49355606'
 categories: [articles]
 excerpt: >-
   一个用 Rust 写的 Logitech Options+ 开源替代品拿下 1506 分。但评论区吵翻的不是驱动本身，而是网站文案那股藏不住的 LLM 味。

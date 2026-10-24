@@ -2,6 +2,7 @@
 layout: post
 title: "HN 讨论：给 AI 生成文章加个标签"
 date: 2026-07-15
+hn_id: '48886741'
 categories: [articles]
 excerpt: >-
   用户提议为 AI 生成文章添加标记以便过滤。评论区围绕误判风险、AI 辅助与生成的界定、YC 利益冲突展开激烈争辩。

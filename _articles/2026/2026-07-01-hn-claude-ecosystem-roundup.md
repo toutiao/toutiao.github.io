@@ -2,6 +2,7 @@
 layout: post
 title: "Claude 生态三连击：隐形水印、Sonnet 5 发布、出口管制解禁 — HN 讨论摘要"
 date: 2026-07-01
+hn_id: '48734373'
 categories: [articles]
 excerpt: "2026 年 7 月 1 日，三条 Claude 相关的新闻同时登上 HN 首页：Claude Code 被发现使用隐写术在请求中嵌入指纹、Sonnet 5 正式发布、美国商务部解除了对 Claude Fable 5 和 Mythos 5 的出口管制。社区在三个话题上都爆发了激烈讨论。"
 tagline: "Anthropic 的一天：被扒皮、被评测、被松绑。Claude Code 的隐形水印让社区炸了锅，Sonnet 5 引发了技能退化的世纪辩论，Fable 5 的出口解禁则让全球用户重新思考依赖美国 AI 模型的风险。"

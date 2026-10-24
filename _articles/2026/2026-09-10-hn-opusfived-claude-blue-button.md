@@ -3,6 +3,7 @@ layout: post
 title: >-
   Opusfived：当 Claude 把"按钮变蓝"变成 17 个动作 — HN 讨论摘要
 date: 2026-09-10
+hn_id: '49623754'
 categories: [articles]
 excerpt: >-
   一个 89 字的讽刺站把 HN 顶到 1109 分、428 条评论；一半人说"这就是我每天的 Claude 体验"，另一半人说"这跟我的 Claude 完全不像"。讨论沿着三条真实裂缝展开：Opus 5 是不是退步了、prompt 该不该带情绪、以及 LLM 究竟该不该用来改一行代码。
@@ -118,7 +119,7 @@ cruffle_duffle 把这个现象拆成"slop accretes"——垃圾一点一点累�
 
 jaggederest 把这条线的成因点到了训练分布上——如果"大部分对话里更可能的回答是关于向后兼容性的"，模型就会默认采取这种姿态：
 
-> "In a conversation about code, the most likely answer is often some comment about backwards compatibility.<p>In a conversation about a legacy enterprise app, the most likely answer is often going completely insane" — jaggederest [c:49637548]
+> "In a conversation about code, the most likely answer is often some comment about backwards compatibility.<p>In a conversation about a legacy enterprise app, the most likely answer is often going completely insane" — kloop [c:49637548]
 
 > （"在关于代码的对话里，最常见的答案往往是关于向后兼容性的。<p>在关于遗留企业应用的对话里，最常见的答案往往是直接发疯。"）
 

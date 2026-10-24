@@ -2,6 +2,7 @@
 layout: post
 title: "Claude Code is steganographically marking requests — HN 讨论摘要"
 date: 2026-07-01
+hn_id: '48734373'
 categories: [articles]
 excerpt: "Anthropic 被指控在 `Claude` 请求中秘密嵌入隐写水印，引发了 Hacker News 社区关于公司透明度、用户信任、数据隐私以及大型 AI 公司行为伦理的激烈讨论。"
 tagline: "AI 公司偷偷给你的请求打水印？这不叫技术，这叫信任危机，还是“控制欲强的伴侣”的又一力证？"

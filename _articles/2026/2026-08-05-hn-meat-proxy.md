@@ -2,6 +2,7 @@
 layout: post
 title: "别当'肉代理' — HN 讨论摘要"
 date: 2026-08-05
+hn_id: '49151933'
 categories: [articles]
 excerpt: >-
   把 Claude 的输出原样转给同事，等于把自己变成"肉代理"。HN 1786 分热帖，评论区从"机器为懒惰而生"吵到人类智力退化与写作的意义。

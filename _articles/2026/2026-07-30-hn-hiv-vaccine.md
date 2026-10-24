@@ -2,6 +2,7 @@
 layout: post
 title: "HIV 疫苗获突破：44% 猕猴产生广泛中和抗体 — HN 讨论摘要"
 date: 2026-07-30
+hn_id: '49083314'
 categories: [articles]
 excerpt: >-
   14 年攻关，LJI/Scripps 团队用 germline targeting 让猕猴产生罕见 HIV 广泛中和抗体，人类试验已启动。

@@ -2,6 +2,7 @@
 layout: post
 title: "电梯调度算法：更智能反而更慢？ — HN 讨论摘要"
 date: 2026-08-02
+hn_id: '49124218'
 categories: [articles]
 excerpt: >-
   电梯的 Kiosk 目的地调度反而比传统上下按钮更慢——丢掉了每 5 秒一次的重调度灵活性，信息更多却更差。

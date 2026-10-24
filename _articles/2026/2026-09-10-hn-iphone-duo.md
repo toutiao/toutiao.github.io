@@ -3,6 +3,7 @@ layout: post
 title: >-
   iPhone Duo — 苹果首款折叠手机登场，HN 讨论跑偏了
 date: 2026-09-10
+hn_id: '49630931'
 categories: [articles]
 excerpt: >-
   首款折叠 iPhone 售价 1999 美元，外屏 5.4 寸、内屏 7.6 寸、A20 Pro 芯片。讨论焦点却在 eSIM、Touch ID、女性手掌是否拿得住。

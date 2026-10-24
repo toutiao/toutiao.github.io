@@ -2,6 +2,7 @@
 layout: post
 title: "LG 显示器通过 Windows Update 静默安装推广软件 — HN 讨论"
 date: 2026-07-19
+hn_id: '48956688'
 categories: [articles]
 excerpt: >-
   连接 LG 显示器后，Windows 自动下载 McAfee 推广软件，无需用户同意。

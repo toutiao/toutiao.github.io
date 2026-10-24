@@ -2,6 +2,7 @@
 layout: post
 title: "OpenPrinter — 开源打印机的理想与现实"
 date: 2026-07-07
+hn_id: '48797916'
 categories: [articles]
 excerpt: >-
   一款完全开源的可修复喷墨打印机在 HN 获得 1100+ 票。评论者深入讨论了喷墨打印的技术难度、专利陷阱，以及"开源"硬件到底能有多开放。

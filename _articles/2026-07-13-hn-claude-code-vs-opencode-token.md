@@ -2,6 +2,7 @@
 layout: post
 title: "Claude Code vs OpenCode — Token 开销对比"
 date: 2026-07-13
+hn_id: '48883275'
 categories: [articles]
 excerpt: >-
   Claude Code 首次请求发送约 33k tokens，OpenCode 仅 7k。但多步骤任务中，前者因批量工具调用反而总成本更低。

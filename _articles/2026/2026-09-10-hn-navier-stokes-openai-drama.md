@@ -3,6 +3,7 @@ layout: post
 title: >-
   Navier-Stokes 之争：AI 破题，还是偷看聊天记录？— HN 讨论摘要
 date: 2026-09-10
+hn_id: '49605915'
 categories: [articles]
 excerpt: >-
   OpenAI 宣布内部模型找到 Navier-Stokes 反例，两位数学家却指控它偷看了自己一年来的 Codex 草稿，还想把 Anthropic 员工从作者名单里剔除。
@@ -34,7 +35,7 @@ akersten 把声明 PDF 里比"发表时间表谈不拢"严重得多的指控挑�
 
 声明里对应的原话被 akersten 大段转引：
 
-> "I asked whether the model had been trained on, or had access to, our sessions in Codex, into which we had been putting all our drafts for the whole of this project. I was told the model did not look up user data. I asked again, about training, and I did not get an answer." — Buckmaster 声明（akersten 转引）[c:49606144]
+> "I asked whether the model had been trained on, or had access to, our sessions in Codex, into which we had been putting all our drafts for the whole of this project. I was told the model did not look up user data. I asked again, about training, and I did not get an answer." — akersten [c:49606144]
 
 > （"我问过，模型是否在我们的 Codex session 上训练过，或者能否访问这些 session——整个项目期间我们把所有草稿都放了进去。得到的回答是模型不会查阅用户数据。我又问了一次，关于训练，没有得到回答。"）
 
@@ -128,7 +129,7 @@ scurnus 试图给出更中立的版本，把冲突归因于利益结构本身：
 
 OpenAI 侧的 Sebastien Bubeck 随后公开回应，被 traes 转引：他否认要求把 Levent 从署名中剔除，但承认说过"Levent 不是 Anthropic 员工会简单些"，并为那句"职业生涯"道歉：
 
-> "One option we discussed was that Tristan could be the lead author on a rewrite of OpenAI's Navier-Stokes proof. It is in that context that I said "it would be simpler if Levent was not an Anthropic employee" ... I deeply apologize for this extremely poor choice of words, it is the opposite of what I was trying to convey." — Sebastien Bubeck（traes 转引）[c:49616366] [thread 2]
+> "One option we discussed was that Tristan could be the lead author on a rewrite of OpenAI's Navier-Stokes proof. It is in that context that I said "it would be simpler if Levent was not an Anthropic employee" ... I deeply apologize for this extremely poor choice of words, it is the opposite of what I was trying to convey." — traes [c:49616366] [thread 2]
 
 > （"我们讨论过的一个方案是，让 Tristan 担任 OpenAI 那份 Navier-Stokes 证明改写稿的第一作者。正是在这个语境下我说了'如果 Levent 不是 Anthropic 员工会简单些'……我为这个极其糟糕的用词深表歉意，它完全不是我本意。"）
 

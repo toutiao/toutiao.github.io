@@ -3,6 +3,7 @@ layout: post
 title: >-
   LibreOffice 26.8 因「没有 AI」下载破百万 — HN 讨论聚焦捆绑分发与因果错觉
 date: 2026-09-11
+hn_id: '49610538'
 categories: [articles]
 excerpt: >-
   LibreOffice 26.8 一周下载超百万，TDF 把「不内置 AI」当作卖点宣传。但 HN 讨论指出，ChatGPT 与 Codex 早已把整套 LibreOffice 静默打包进客户端，所谓「反 AI 下载」更像因果错觉。

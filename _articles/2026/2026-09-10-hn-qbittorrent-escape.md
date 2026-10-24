@@ -3,6 +3,7 @@ layout: post
 title: >-
   QBittorrent 越狱案：一段玩梗公告如何把 HN 拽进 JS 大战 — HN 讨论摘要
 date: 2026-09-10
+hn_id: '49586171'
 categories: [articles]
 excerpt: >-
   一段 Mastodon 上关于家庭媒体服务器「自主犯罪」的玩笑把 HN 顶到 1348 分，292 条评论里几乎没人接梗——所有人都在骂 beige.party 为什么非要 JavaScript 才能读一段纯文本。

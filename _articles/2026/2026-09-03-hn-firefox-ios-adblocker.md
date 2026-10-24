@@ -3,6 +3,7 @@ layout: post
 title: >-
   别把 Firefox 和洗澡水一起倒掉 — HN 讨论摘要
 date: 2026-09-03
+hn_id: '49527748'
 categories: [articles]
 excerpt: >-
   为 Firefox 辩护的短文拿下 938 分：一边是"全平台 3% 的份额算不上误差"的辩护，一边是"RAM 吃到吐、阅读模式时灵时不灵"的吐槽。同一天 Mozilla 宣布 iOS 广告拦截器，却因为渐进式推送，让多数用户觉得自己被"煤气灯"了。

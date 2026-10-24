@@ -2,6 +2,7 @@
 layout: post
 title: "Command & Conquer Generals 被移植到 iPhone/iPad，用 Claude Fable 实现"
 date: 2026-07-05
+hn_id: '48788283'
 categories: [articles]
 excerpt: >-
   2003 年的 RTS 经典已被完整移植到 iOS——真正的引擎（非模拟器），完整的触控操作，全部通过 Claude Fable 生成。

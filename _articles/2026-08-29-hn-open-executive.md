@@ -3,6 +3,7 @@ layout: post
 title: >-
   Open Executive — HN 讨论摘要
 date: 2026-08-29
+hn_id: '49458418'
 categories: [articles]
 excerpt: >-
   一群被裁的开发者造了个开源 AI CEO 报复管理层，拿下 1009 分。评论区为"CEO 到底能不能被 AI 替代"吵翻，焦点却落在法律与责任上。

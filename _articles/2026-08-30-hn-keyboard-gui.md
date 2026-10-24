@@ -3,6 +3,7 @@ layout: post
 title: >-
   GUIs should be fully keyboard-driven — HN 讨论摘要
 date: 2026-08-30
+hn_id: '49479837'
 categories: [articles]
 excerpt: >-
   "键盘是 TUI 的专利"这个说法被一篇文章正面反驳：GUI 也能全程键盘操作。HN 评论区由此吵翻，焦点从苹果默认关掉键盘导航，一路烧到 Steve Jobs 想删掉方向键的旧账。

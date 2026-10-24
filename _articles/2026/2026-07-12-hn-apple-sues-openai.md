@@ -2,6 +2,7 @@
 layout: post
 title: "Apple 起诉 OpenAI 窃取商业机密 — HN 讨论摘要"
 date: 2026-07-12
+hn_id: '48865019'
 categories: [articles]
 excerpt: >-
   Apple 起诉 OpenAI，指控两名前高管 Tang Tan 和 Chang Liu 窃取硬件设计机密，包括金属加工工艺、内部安全协议和工程文件。

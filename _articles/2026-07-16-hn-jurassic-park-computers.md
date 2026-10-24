@@ -2,6 +2,7 @@
 layout: post
 title: "《侏罗纪公园》计算机硬件详解 — HN 讨论摘要"
 date: 2026-07-16
+hn_id: '48915709'
 categories: [articles]
 excerpt: >-
   Fabien Sanglard 逐帧解析《侏罗纪公园》中出现的每一台计算机和软件，从 PowerBook 100 到 SGI Crimson，还原 1993 年的科技面貌。HN 社区围绕 SGI 的陨落、Mac/Unix 混搭的合理性、以及 Crichton 作品中的先见之明展开讨论。

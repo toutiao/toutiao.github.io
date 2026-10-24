@@ -2,6 +2,7 @@
 layout: post
 title: "Google 如何扼杀 RSS — HN 讨论摘要"
 date: 2026-08-03
+hn_id: '49136821'
 categories: [articles]
 excerpt: >-
   Google 靠 RSS 壮大，又亲手把它扼杀——从 Chrome 按钮到 Reader、FeedBurner、Google News 逐一砍掉，评论区从广告逻辑吵到企业文化，而 2026 年的 RSS 文艺复兴正在进行。

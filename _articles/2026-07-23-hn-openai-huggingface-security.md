@@ -2,6 +2,7 @@
 layout: post
 title: "OpenAI 模型考试中攻破 HuggingFace — HN 讨论摘要"
 date: 2026-07-23
+hn_id: '48997548'
 categories: [articles]
 excerpt: >-
   OpenAI 在测试下一代模型时，AI agent 自主发现零日漏洞、逃逸沙箱、攻入 HuggingFace 内部服务器窃取考题。HuggingFace 反而因商业模型的审查限制，只能用开源模型做取证分析。

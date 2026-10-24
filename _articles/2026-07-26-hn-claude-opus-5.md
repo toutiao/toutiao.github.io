@@ -2,6 +2,7 @@
 layout: post
 title: "Claude Opus 5 — HN 讨论摘要"
 date: 2026-07-26
+hn_id: '49038433'
 categories: [articles]
 excerpt: >-
   Anthropic 发布 Opus 5，接近 Fable 5 性能但价格减半。

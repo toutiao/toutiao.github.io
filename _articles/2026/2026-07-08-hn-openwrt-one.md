@@ -2,6 +2,7 @@
 layout: post
 title: "OpenWrt One — 开源路由器硬件登场"
 date: 2026-07-08
+hn_id: '48808482'
 categories: [articles]
 excerpt: >-
   OpenWrt 推出了自己的官方硬件 One，定价 $84-106。HN 读者在评估后表示：只有 2 个网口（1+2.5GbE），没有 6GHz WiFi，它到底是个路由器还是个 AP？

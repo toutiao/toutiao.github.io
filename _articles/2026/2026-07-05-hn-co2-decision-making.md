@@ -2,6 +2,7 @@
 layout: post
 title: "会议室里的 CO₂，正在悄悄降低你的决策质量 — HN 讨论摘要"
 date: 2026-07-05
+hn_id: '48783117'
 categories: [articles]
 excerpt: >-
   每天在封闭会议室里开几小时会，CO₂ 轻松突破 2000ppm，而 1000ppm 就足以让决策能力显著下降。

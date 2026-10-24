@@ -2,6 +2,7 @@
 layout: post
 title: "Inkling — Thinking Machines Lab 发布 975B 开源 MoE 模型"
 date: 2026-07-17
+hn_id: '48924912'
 categories: [articles]
 excerpt: >-
   975B 参数、41B 激活、多模态、1M 上下文——Thinking Machines Lab 发布首个开源大模型 Inkling。HN 讨论焦点：美国版 DeepSeek 来了吗？开源模型公司怎么赚钱？

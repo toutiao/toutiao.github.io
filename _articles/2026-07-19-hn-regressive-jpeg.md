@@ -2,6 +2,7 @@
 layout: post
 title: "Regressive JPEGs — 一张图片里藏一段视频 — HN 讨论"
 date: 2026-07-19
+hn_id: '48954851'
 categories: [articles]
 excerpt: >-
   利用 JPEG 渐进式扫描特性，把多张图片拼进同一个文件。浏览器加载时自动切换画面，播放速度完全取决于网络延迟。

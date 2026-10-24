@@ -2,6 +2,7 @@
 layout: post
 title: "Zig 作者开喷 Anthropic —— Bun 改 Rust 背后的 AI 营销闹剧"
 date: 2026-07-14
+hn_id: '48889637'
 categories: [articles]
 excerpt: >-
   Bun 从 Zig 重写为 Rust，Anthropic 说是技术需要，Zig 作者 Andrew Kelley 直指这是管理混乱加 AI 营销。1400 点 HN 热帖解剖一场语言战争的真相。

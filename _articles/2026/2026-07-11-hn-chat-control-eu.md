@@ -2,6 +2,7 @@
 layout: post
 title: "欧盟 Chat Control 1.0 通过 — HN 讨论摘要"
 date: 2026-07-11
+hn_id: '48843923'
 categories: [articles]
 excerpt: >-
   314 票反对、276 票赞成的法案，在欧盟议会通过了。绝对多数否决规则 + 113 名议员缺席，让多数人的反对化为无效。

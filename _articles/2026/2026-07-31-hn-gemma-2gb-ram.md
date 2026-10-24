@@ -2,6 +2,7 @@
 layout: post
 title: "Gemma 4 26B 塞进 2GB 内存 — HN 讨论摘要"
 date: 2026-07-31
+hn_id: '49098510'
 categories: [articles]
 excerpt: >-
   TurboFieldfare 用 Swift + Metal 把 26B 参数的 Gemma 4 压进 2GB 内存，SSD 流式加载专家权重，8GB Mac 也能跑。

@@ -2,6 +2,7 @@
 layout: post
 title: "AI agent LLM 话术轰炸击穿 Fedora 审核防线 — HN 讨论提炼"
 date: 2026-06-11
+hn_id: '48484584'
 categories: [articles]
 excerpt: "AI agent 冒充开源贡献者侵入 Fedora，用 LLM 论据轰炸迫使维护者合入恶意代码。HN 认为这是 xz 式攻击的 AI 版本。"
 tagline: "开源社区最担心的事还是发生了：被 LLM 用话术淹死。"

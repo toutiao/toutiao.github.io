@@ -3,6 +3,7 @@ layout: post
 title: >-
   Native 回归 — Shopify 弃 React Native 回 Swift/Kotlin，HN 怎么看 AI 重写移动栈
 date: 2026-09-12
+hn_id: '49643982'
 categories: [articles]
 excerpt: >-
   HN 1231 分。Shopify 把 2020 年全押的 React Native 拆掉，理由是 LLM 把“写两遍”的成本压平。但谁真的跟得起，谁只是大公司的特权？

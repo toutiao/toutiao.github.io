@@ -3,6 +3,7 @@ layout: post
 title: >-
   Apple M6 与 M5 Ultra 发布 — HN 讨论摘要
 date: 2026-08-27
+hn_id: '49433292'
 categories: [articles]
 excerpt: >-
   苹果 2nm 的 M6 首次进入 Mac mini，四晶粒的 M5 Ultra 把统一内存推到 512GB。评论区却算起了另一笔账：顶配要 2.5 万美元，而这钱存银行的利息够永远付订阅费。

@@ -3,6 +3,7 @@ layout: post
 title: >-
   Claude Fable 5.1 解开 370 年古密码 — HN 集体发现「给 AI 鼓劲」意外有效
 date: 2026-09-15
+hn_id: '49688695'
 categories: [articles]
 excerpt: >-
   Fable 5.1 用 44 分钟、17.6 万 token 解出 Sir Thomas Urquhart 留下的 Cyphral Distich。HN 评论区里没人细究密码学，反而集体跑题去争论「对 AI 说『你能行』到底有没有用」。
