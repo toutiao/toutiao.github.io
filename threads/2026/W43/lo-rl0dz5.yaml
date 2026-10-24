@@ -1,0 +1,134 @@
+---
+post:
+  id: lo-rl0dz5
+  source: lobsters
+  title: Be Aware of What's in Your Logs
+  url: https://fireborn.mataroa.blog/blog/be-aware-of-whats-in-your-logs/
+  hn_url: https://lobste.rs/s/rl0dz5
+  score: 21
+  author: robalex
+  posted_at: '2026-10-24T10:42:05Z'
+  fetched_at: '2026-10-24T18:35:34Z'
+  article_url: https://fireborn.mataroa.blog/blog/be-aware-of-whats-in-your-logs/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T18:35:39Z'
+  raw_comment_count: 1
+  tags:
+  - debugging
+comments:
+- id: lo-my9bat
+  parent_id: '0'
+  author: max-headroom
+  text: |-
+    [...] it would undoubtedly have made some debugging easier. But that convenience would have come straight out of the pockets of the people using the software, and I don't think that's a reasonable trade.
+
+    I hear the convenience argument (especially regarding fully automated bug reports) so often that it sometimes makes me wonder if I'm the only one who doesn't think like that. Glad to hear there is at least one more.
+  score: 5
+  posted_at: '2026-10-24T15:31:46Z'
+article:
+  url: https://fireborn.mataroa.blog/blog/be-aware-of-whats-in-your-logs/
+  title: Be Aware of What's in Your Logs — fireborn
+  fetch_status: success
+  content: "[fireborn](/)\n\n# Be Aware of What's in Your Logs\n\n Published on \n\nThere
+    is something I wish more people understood about bug reports, diagnostic information,
+    and the apparently innocent act of attaching a log file to a support request,
+    and it is this: your logs may contain things you really, really do not want anyone
+    else reading.\n\nI'm writing this because of a bug report I received recently,
+    which came with a log file containing information I did not need to see, did not
+    ask to see, and would have been perfectly happy going the rest of my life without
+    ever seeing. I'm not going to identify the person who sent it, describe what was
+    in it, or otherwise turn a perfectly understandable mistake into a public spectacle,
+    because doing that to someone who was trying to help me fix my own software would
+    be a spectacularly shitty thing to do. But the incident highlights something worth
+    talking about, because I suspect an awful lot of people have absolutely no idea
+    what they're handing over when they tick that little box labelled \"Send logs,\"
+    and the software they're using is rarely in any hurry to tell them.\n\n## A Log
+    File Is Not Necessarily Just a Log File\n\nWhen most people think of logs, they
+    imagine a wall of boring technical gibberish: timestamps, error messages, stack
+    traces, the occasional complaint about a missing file or something failing to
+    initialise. Logs do contain those things. They can also contain an astonishing
+    amount of information about what you were actually doing when the problem occurred,
+    and depending on the application, its logging configuration, and the nature of
+    the problem, that might include:\n\n- Text displayed on your screen.\n- Messages
+    you sent or received.\n- Usernames, email addresses, and account identifiers.\n-
+    File paths containing your real name or other identifying details.\n- URLs, including
+    query parameters and authentication tokens.\n- The names of documents you had
+    open.\n- Clipboard contents.\n- Information about other applications and services.\n-
+    Internal application state that was never meant for public consumption.\n\nSome
+    applications log very little. Others log absolutely fucking everything, particularly
+    once debugging is switched on, and you generally cannot tell which kind you're
+    dealing with from the size of the file or the name of the feature. A file called
+    `debug.log` sounds harmless enough, and that tells you precisely nothing about
+    whether it is.\n\nA log is a record of whatever an application considered relevant
+    at a particular moment, and what an application considers relevant and what you
+    consider private are two entirely different things. The computer has no idea that
+    the conversation you were having was personal, that the document you had open
+    was confidential, or that the text on your screen was something you'd rather not
+    share with a stranger on the internet. It knows that something happened and that
+    somebody told it to write that something down, so it did.\n\n## \"Logs Can Contain
+    Text Displayed on Screen\"\n\nI work on a screen reader, and like all software
+    it occasionally misbehaves, which means I depend on people telling me when it
+    does. The problem report form includes an option to send logs. That option is
+    off by default, and when you get to it, the form warns you that logs can contain
+    text displayed on screen. That warning is not decoration, and it's not there to
+    cover my arse; it's there because I want people to understand what they might
+    be about to send me.\n\nA screen reader is in a particularly awkward position
+    when it comes to privacy, because its entire job is to take whatever other applications
+    put in front of you and make it accessible, which means it can encounter practically
+    anything: your email, your private messages, your bank account, your medical records,
+    your work documents, whatever happens to be on the screen at the time. When something
+    goes wrong, diagnostic logging may well capture some of that, not because I'm
+    secretly interested in what you get up to on your phone, but because the text
+    a screen reader encountered is often directly relevant to why it behaved incorrectly.
+    If it read something it shouldn't have, skipped something it should have read,
+    or mangled a particular control, knowing what it was looking at can be the difference
+    between fixing the bug and staring blankly at a stack trace. Useful, though, is
+    not the same as harmless, and it certainly doesn't mean I need to know everything
+    else you happened to be doing that day.\n\nSo when a form tells you that logs
+    _can_ contain text on screen, I'd like you to adopt one very simple rule: can
+    means does. It doesn't matter if you know the application, if you've read the
+    source, or if you're fairly confident the particular logging mode you used doesn't
+    capture anything sensitive; treat it as though it does. This is exactly the principle
+    behind treating every firearm as loaded. You don't point a gun at someone because
+    you're pretty sure it's empty, and you don't assume it's safe because you remember
+    unloading it earlier; you follow the same precautions every single time, because
+    being wrong costs a great deal more than being careful. Obviously, accidentally
+    sharing a private conversation is not equivalent to accidentally shooting someone,
+    and I'm not pretending the stakes are the same. The point is that a safety habit
+    is only worth anything if it doesn't depend on your confidence that nothing can
+    go wrong. You shouldn't have to remember whether one version logs screen text
+    under one configuration but not another, or which debug options you happened to
+    leave on last Tuesday. Assume it captured everything it warned you it might, and
+    then decide whether you're comfortable sharing that.\n\n## Not Everyone Can Read
+    Through Thousands of Lines\n\nThe standard advice at this point is \"just read
+    the logs before you send them,\" which sounds eminently reasonable right up until
+    you think about it for more than a few seconds. Some log files run to tens of
+    thousands of lines. Some contain binary data, encoded blobs, or structures that
+    are meaningless without intimate knowledge of the software that produced them.
+    And not everyone can comfortably wade through that much text in the first place;
+    listening to a screen reader churn through thousands of lines of timestamps, function
+    names, and memory addresses is nobody's idea of a good afternoon, and even someone
+    scanning visually isn't necessarily going to spot one sensitive line buried in
+    a sea of technical noise.\n\nSo no, I'm not going to tell everyone to personally
+    inspect every line of every log before reporting a problem, because that isn't
+    always practical and pretending otherwise helps nobody. What I want instead is
+    for people to understand the decision they're making. If you can't reasonably
+    verify what's in a log, treat it as containing everything the application warned
+    you it might contain. You don't need to understand a single line of debug output
+    to understand that a screen reader may have logged something you were reading,
+    or that a browser log probably contains URLs; you just need to take the warning
+    at its word.\n\nAnd if that possibility makes you uncomfortable, don't send the
+    logs. You can still file the report, still explain what happened, still give reproduction
+    steps and tell the developer what you expected versus what actually occurred.
+    A report without logs is not automatically a useless report. Sometimes the developer
+    will need more, sometimes they won't, and sometimes they'll be able to suggest
+    a safer way to reproduce the problem or collect a much narrower slice of diagnostic
+    data, which is a conversation well worth having. What isn't worth doing is blindly
+    shipping off a file full of things you'd never otherwise share because you've
+    somehow got it into your head that a bug report is incomplete without one.\n\n##
+    Optional Means Optional\n\nThis is exactly why the logs option in my problem report
+    form defaults to off. I could have defaulted it to on. I could have made it mandatory,
+    or silently atta"
+  error:
+  fetched_at: '2026-10-24T18:35:39Z'
+archived_at: '2026-10-24T18:35:40Z'
