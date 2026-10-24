@@ -1,0 +1,845 @@
+---
+post:
+  id: '50192900'
+  title: 'CVE-2026-111943: Compromised Intermediate Certificate Authority'
+  url: https://nvd.nist.gov/vuln/detail/cve-2026-111943
+  hn_url: https://news.ycombinator.com/item?id=50192900
+  score: 336
+  author: keks24
+  posted_at: '2026-10-22T08:51:31Z'
+  fetched_at: '2026-10-24T01:11:06Z'
+  article_url: https://nvd.nist.gov/vuln/detail/cve-2026-111943
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 123
+comments:
+- id: '50193070'
+  parent_id: '50192900'
+  author: imeron
+  text: It&#x27;s down for me, are they on PHP? :D
+  score: 0
+  posted_at: '2026-10-22T09:13:59Z'
+- id: '50193079'
+  parent_id: '50193070'
+  author: tom1337
+  text: I&#x27;d assume hugged to death
+  score: 0
+  posted_at: '2026-10-22T09:15:36Z'
+- id: '50193086'
+  parent_id: '50193070'
+  author: ColinWright
+  text: Up for me, but slow to load.
+  score: 0
+  posted_at: '2026-10-22T09:16:40Z'
+- id: '50193926'
+  parent_id: '50193086'
+  author: asimovDev
+  text: it&#x27;s been slow for me since yesterday, i chalked it up to PHP CVEs +
+    throttling a VPN user
+  score: 0
+  posted_at: '2026-10-22T11:29:50Z'
+- id: '50193087'
+  parent_id: '50193070'
+  author: keks24
+  text: 'Try this: <a href="https:&#x2F;&#x2F;www.cve.org&#x2F;CVERecord?id=CVE-2026-111943"
+    rel="nofollow">https:&#x2F;&#x2F;www.cve.org&#x2F;CVERecord?id=CVE-2026-111943</a>'
+  score: 0
+  posted_at: '2026-10-22T09:16:48Z'
+- id: '50193082'
+  parent_id: '50192900'
+  author: keks24
+  text: |-
+    Gentoo Linux users are adviced to update the package &quot;app-misc&#x2F;ca-certificates&quot; to version &quot;20260816.3.125&quot; or higher!:<p><pre><code>    # emerge --sync
+        # emerge --ask --oneshot --verbose &quot;&gt;=app-misc&#x2F;ca-certificates-20260816.3.125&quot;
+    </code></pre>
+    To check via &quot;curl&quot;:<p><pre><code>    $ curl --url=&quot;https:&#x2F;&#x2F;dv-g3b-emudhra.we-have-a-problem.com&#x2F;&quot;
+        $ curl --url=&quot;https:&#x2F;&#x2F;dv-g3b-aaa-emudhra.we-have-a-problem.com&#x2F;&quot;
+    </code></pre>
+    They should return:<p><pre><code>    curl: (60) SSL certificate OpenSSL verify result: unable to get local issuer certificate (20)
+        More details here: https:&#x2F;&#x2F;curl.se&#x2F;docs&#x2F;sslcerts.html
+
+        curl failed to verify the legitimacy of the server and therefore could not
+        establish a secure connection to it. To learn more about this situation and
+        how to fix it, please visit the webpage mentioned above.
+    </code></pre>
+    ---<p>* GLSA 202610-01: <a href="https:&#x2F;&#x2F;security.gentoo.org&#x2F;glsa&#x2F;202610-01" rel="nofollow">https:&#x2F;&#x2F;security.gentoo.org&#x2F;glsa&#x2F;202610-01</a><p>* <a href="https:&#x2F;&#x2F;emudhra.we-have-a-problem.com&#x2F;" rel="nofollow">https:&#x2F;&#x2F;emudhra.we-have-a-problem.com&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-22T09:16:00Z'
+- id: '50195672'
+  parent_id: '50193082'
+  author: jrmg
+  text: I feel like you shouldn’t have to ask for a non-default version of the package
+    at this point.
+  score: 0
+  posted_at: '2026-10-22T14:16:23Z'
+- id: '50193105'
+  parent_id: '50192900'
+  author: asqueella
+  text: This seems to be about ‘go’ proactively blocking emudhra certs even though
+    the system trust store is out of date?   <a href="https:&#x2F;&#x2F;pkg.go.dev&#x2F;vuln&#x2F;GO-2026-6809"
+    rel="nofollow">https:&#x2F;&#x2F;pkg.go.dev&#x2F;vuln&#x2F;GO-2026-6809</a>
+  score: 0
+  posted_at: '2026-10-22T09:20:20Z'
+- id: '50193503'
+  parent_id: '50193105'
+  author: philipwhiuk
+  text: "&quot;proactively&quot; doing some work.<p>The problem is Golang has it&#x27;s
+    own trust store. So you don&#x27;t benefit from OS patching."
+  score: 0
+  posted_at: '2026-10-22T10:27:37Z'
+- id: '50193601'
+  parent_id: '50193503'
+  author: sspiff
+  text: That&#x27;s not the case, Go uses the system store with an additional revoke&#x2F;deny
+    list in crypto&#x2F;x509 because it allows updating a deployed application on
+    an out of date or slow moving platform or OS.<p>This CVE is literally just &quot;versions
+    of the Go deny list don&#x27;t contain the eMuhdra revokation yet&quot;. Older
+    versions of Go will still deny certs signed through the compromised certificate
+    if the system store already has the update.<p>It&#x27;s an or situation, not and.
+  score: 0
+  posted_at: '2026-10-22T10:43:13Z'
+- id: '50195167'
+  parent_id: '50193601'
+  author: thwarted
+  text: "&gt; <i>Go uses the system store with an additional revoke&#x2F;deny list
+    in crypto&#x2F;x509 because it allows updating a deployed application on an out
+    of date or slow moving platform or OS.</i><p>Reminder: Neither the CVE nor the
+    linked go alert seem to say that you have to recompile and redeploy your application
+    with the new go version in order to take advantage of this change. Just updating
+    the tool chain and go stdlib isn&#x27;t enough, because this stuff gets baked
+    into the resultant binary. This is unlike, say, python, Ruby, or java where updating
+    the runtime <i>may be</i> sufficient, depending on your development and deployment
+    model."
+  score: 0
+  posted_at: '2026-10-22T13:38:52Z'
+- id: '50193106'
+  parent_id: '50192900'
+  author: zkmon
+  text: Great. The technology has progressed enough to kill the existing technologies.
+    It&#x27;s like the fish in a pool creating a shark that eats away all the fish
+    while the fish proudly announce that their great creation (shark) as the frontier
+    progress for their fish race.
+  score: 0
+  posted_at: '2026-10-22T09:20:31Z'
+- id: '50193138'
+  parent_id: '50193106'
+  author: colinmarc
+  text: The eMudhra CA compromises had nothing to do with LLMs? But I love the vibes.
+  score: 0
+  posted_at: '2026-10-22T09:25:41Z'
+- id: '50193583'
+  parent_id: '50193138'
+  author: prodigycorp
+  text: Agents have dramatically increased the ability to poke at every single surface
+    out there. I would be surprised if the researcher who found this wasn&#x27;t assisted
+    by a llm.
+  score: 0
+  posted_at: '2026-10-22T10:40:53Z'
+- id: '50194146'
+  parent_id: '50193583'
+  author: renhanxue
+  text: 'The researcher in question has publicly stated[0] that he wanted to try Google&#x27;s
+    paranoid_crypto tool[1], so he ran it on some roots as a quick proof-of-concept,
+    and the first thing that happened was that it detected these intermediates. He
+    also states he&#x27;s been running a lot of certificate linters so this was just
+    the next logical step I guess.<p>[0]: <a href="https:&#x2F;&#x2F;groups.google.com&#x2F;a&#x2F;mozilla.org&#x2F;g&#x2F;dev-security-policy&#x2F;c&#x2F;0R3XLJL6FuE&#x2F;m&#x2F;JESKy8XoAgAJ"
+    rel="nofollow">https:&#x2F;&#x2F;groups.google.com&#x2F;a&#x2F;mozilla.org&#x2F;g&#x2F;dev-security-polic...</a><p>[1]:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;paranoid_crypto" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;paranoid_crypto</a>'
+  score: 0
+  posted_at: '2026-10-22T11:58:41Z'
+- id: '50194454'
+  parent_id: '50194146'
+  author: Sophira
+  text: That was an enlightening read. I find it incredible that apparently Google
+    themselves don&#x27;t use the existing corpus of certificates as a test for paranoid_crypto.
+  score: 0
+  posted_at: '2026-10-22T12:33:57Z'
+- id: '50204210'
+  parent_id: '50194146'
+  author: prodigycorp
+  text: I appreciate this.
+  score: 0
+  posted_at: '2026-10-23T03:35:50Z'
+- id: '50193341'
+  parent_id: '50193106'
+  author: cedilla
+  text: Here a CA derived a secret key from the number 4.<p>If you think &quot;that&#x27;s
+    weird to see such a small number in key generation&quot; than you&#x27;re one
+    step ahead of whoever generated that key.<p>Unfortunately, unlike with RSA, small
+    primes are not apparent in elliptic cryptography.
+  score: 0
+  posted_at: '2026-10-22T09:59:49Z'
+- id: '50193562'
+  parent_id: '50193341'
+  author: wiredfool
+  text: Nor small composites, apparently.
+  score: 0
+  posted_at: '2026-10-22T10:38:03Z'
+- id: '50193783'
+  parent_id: '50193341'
+  author: jkahrs595
+  text: '&gt; Here a CA derived a secret key from the number 4<p><a href="https:&#x2F;&#x2F;xkcd.com&#x2F;221&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;xkcd.com&#x2F;221&#x2F;</a>'
+  score: 0
+  posted_at: '2026-10-22T11:09:02Z'
+- id: '50194078'
+  parent_id: '50193341'
+  author: GreenWatermelon
+  text: Oh my God it&#x27;s literally this XKCD <a href="https:&#x2F;&#x2F;xkcd.com&#x2F;221&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;xkcd.com&#x2F;221&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-22T11:51:09Z'
+- id: '50194899'
+  parent_id: '50194078'
+  author: shagie
+  text: They should have upgraded to 5 (see today&#x27;s xkcd alt text <a href="https:&#x2F;&#x2F;xkcd.com&#x2F;3314&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;xkcd.com&#x2F;3314&#x2F;</a> )
+  score: 0
+  posted_at: '2026-10-22T13:16:38Z'
+- id: '50194490'
+  parent_id: '50193341'
+  author: cobychapple
+  text: RFC 1149.5 FTW
+  score: 0
+  posted_at: '2026-10-22T12:37:28Z'
+- id: '50193409'
+  parent_id: '50193106'
+  author: RazorX
+  text: This is basically the whole idea of the novel War with the Newts
+  score: 0
+  posted_at: '2026-10-22T10:10:43Z'
+- id: '50193542'
+  parent_id: '50193106'
+  author: palata
+  text: "&gt; It&#x27;s like the fish in a pool creating a shark<p>What a weird comparison..."
+  score: 0
+  posted_at: '2026-10-22T10:35:16Z'
+- id: '50194413'
+  parent_id: '50193106'
+  author: gilrain
+  text: What are you talking about?
+  score: 0
+  posted_at: '2026-10-22T12:30:02Z'
+- id: '50194930'
+  parent_id: '50193106'
+  author: valeg
+  text: Create the problem, sell the solution
+  score: 0
+  posted_at: '2026-10-22T13:19:09Z'
+- id: '50193118'
+  parent_id: '50192900'
+  author: galadran
+  text: <a href="https:&#x2F;&#x2F;emudhra.we-have-a-problem.com&#x2F;" rel="nofollow">https:&#x2F;&#x2F;emudhra.we-have-a-problem.com&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-22T09:23:10Z'
+- id: '50193164'
+  parent_id: '50192900'
+  author: colinmarc
+  text: 'TL;DR:<p>The very urgent uv&#x2F;certifi&#x2F;etc releases (and yet-to-be-done
+    bun release) are about removing the compromised CAs as described here:<p><a href="https:&#x2F;&#x2F;emudhra.we-have-a-problem.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;emudhra.we-have-a-problem.com&#x2F;</a><p>In
+    other words, that software bundled the compromised certs into the binary, so upgrading
+    it is the only way to remove them.<p>This is about Go proactively blocking intermediates.
+    Which shouldn&#x27;t strictly be necessary as long as your OS has removed or distrusted
+    the CAs (on my laptop, macOS has done that, although it seems like it did so in
+    a way not all tools have access to; for example, rustls-platform-verifier respects
+    it, but rustls-webpki still loads the bad CAs from the system trust store).<p>edit:
+    forgot I can&#x27;t use code blocks on HN'
+  score: 0
+  posted_at: '2026-10-22T09:30:01Z'
+- id: '50193208'
+  parent_id: '50193164'
+  author: t_mahmood
+  text: "&gt; edit: forgot I can&#x27;t use code blocks on HN<p><pre><code>  You can,
+    two space at the start of each line</code></pre>"
+  score: 0
+  posted_at: '2026-10-22T09:37:31Z'
+- id: '50193321'
+  parent_id: '50193164'
+  author: fabioborellini
+  text: I wonder if they made this change with an assumption that the root CAs wouldn&#x27;t
+    be distrusted later same day, too.
+  score: 0
+  posted_at: '2026-10-22T09:56:39Z'
+- id: '50193265'
+  parent_id: '50192900'
+  author: speedgoose
+  text: Cock-up or conspiracy?
+  score: 0
+  posted_at: '2026-10-22T09:48:17Z'
+- id: '50193788'
+  parent_id: '50193265'
+  author: dspillett
+  text: Any sufficiently advanced stupidity is indistinguishable from malice.
+  score: 0
+  posted_at: '2026-10-22T11:10:13Z'
+- id: '50194218'
+  parent_id: '50193788'
+  author: charlieyu1
+  text: I have seen way more malice pretending to be just stupid than the actual stupidity
+  score: 0
+  posted_at: '2026-10-22T12:08:34Z'
+- id: '50206385'
+  parent_id: '50194218'
+  author: dspillett
+  text: 'I think it is circular, though the glib rewording of Clarke&#x27;s phrase
+    that I used at best only hints at that: advanced stupidity is probably malicious.'
+  score: 0
+  posted_at: '2026-10-23T09:24:17Z'
+- id: '50193323'
+  parent_id: '50192900'
+  author: dathinab
+  text: It&#x27;s a bit surprising that this took ~1.5days to end up on HN.
+  score: 0
+  posted_at: '2026-10-22T09:56:46Z'
+- id: '50193335'
+  parent_id: '50193323'
+  author: EwanToo
+  text: It didn&#x27;t<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50166579">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50166579</a>
+  score: 0
+  posted_at: '2026-10-22T09:58:53Z'
+- id: '50193350'
+  parent_id: '50193323'
+  author: vultour
+  text: It was here yesterday, this is just another good opportunity to farm some
+    points.
+  score: 0
+  posted_at: '2026-10-22T10:00:48Z'
+- id: '50193329'
+  parent_id: '50192900'
+  author: darkwater
+  text: This is news for NIST but old news generally speaking, being the eMudhra debacle.
+    Or am I missing something?
+  score: 0
+  posted_at: '2026-10-22T09:57:54Z'
+- id: '50193384'
+  parent_id: '50193329'
+  author: ale42
+  text: It&#x27;s the Go version of it, I think.
+  score: 0
+  posted_at: '2026-10-22T10:07:10Z'
+- id: '50193453'
+  parent_id: '50193384'
+  author: colinmarc
+  text: Go is not vulnerable in the same way software using webpki is, because it
+    generally uses the system trust store. However, this change is about golang proactively
+    blocking the certs, so that even if your OS doesn&#x27;t update, it still won&#x27;t
+    trust them.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;golang&#x2F;go&#x2F;issues&#x2F;82345"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;golang&#x2F;go&#x2F;issues&#x2F;82345</a>
+  score: 0
+  posted_at: '2026-10-22T10:17:39Z'
+- id: '50193465'
+  parent_id: '50193384'
+  author: darkwater
+  text: But the Go version is as well old news, actually it was one of the first stories
+    about eMudhra appearing on the HN homepage yesterday.
+  score: 0
+  posted_at: '2026-10-22T10:19:55Z'
+- id: '50195901'
+  parent_id: '50193465'
+  author: cesarb
+  text: "&gt; But the Go version is as well old news,<p>&gt; actually it was one of
+    the first stories about eMudhra appearing on the HN homepage yesterday.<p>I feel
+    like I&#x27;m going crazy, something which happened (checks clock again to be
+    sure) <i>yesterday</i> (actually two days ago I think, so much has happened that
+    it all blurs together) is being considered <i>old news</i>!"
+  score: 0
+  posted_at: '2026-10-22T14:28:19Z'
+- id: '50196352'
+  parent_id: '50195901'
+  author: darkwater
+  text: |-
+    I think that&#x27;s the case since television went widespread? :)
+    On a more serious note, I was worried that SOMETHING ELSE happened, because what a day yesterday, captain.
+  score: 0
+  posted_at: '2026-10-22T15:00:27Z'
+- id: '50193379'
+  parent_id: '50192900'
+  author: alt227
+  text: Im guessing this only affects Go? But I am guessing that from the nist page
+    as none of the headlines mention it at all.
+  score: 0
+  posted_at: '2026-10-22T10:06:16Z'
+- id: '50193510'
+  parent_id: '50193379'
+  author: grey-area
+  text: "No it affects everybody, but most browsers&#x2F;OSs etc have updated already.
+    This is just a workaround Go put in case the underlying OS has not been updated.
+    Not sure why this link is on the front page as it duplicates previous posts and
+    confuses people, I think it should be merged.<p>Here is the original story: \n<a
+    href=\"https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50166579\">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50166579</a>"
+  score: 0
+  posted_at: '2026-10-22T10:29:14Z'
+- id: '50193657'
+  parent_id: '50193510'
+  author: alt227
+  text: Thanks for clarifying
+  score: 0
+  posted_at: '2026-10-22T10:53:02Z'
+- id: '50193953'
+  parent_id: '50193657'
+  author: blandflakes
+  text: As of last night the AWS Corretto JDK still ships a trust store that trusts
+    those compromised certs, too.
+  score: 0
+  posted_at: '2026-10-22T11:33:50Z'
+- id: '50193577'
+  parent_id: '50192900'
+  author: couldbe
+  text: |-
+    Literally xkcd random number.
+    <a href="https:&#x2F;&#x2F;xkcd.com&#x2F;221" rel="nofollow">https:&#x2F;&#x2F;xkcd.com&#x2F;221</a>
+  score: 0
+  posted_at: '2026-10-22T10:40:00Z'
+- id: '50193626'
+  parent_id: '50192900'
+  author: contingencies
+  text: |-
+    Fix for OSX - put this in ~&#x2F;.zshrc:<p><pre><code>  export CURL_CA_BUNDLE=&quot;$(brew --prefix)&#x2F;etc&#x2F;ca-certificates&#x2F;cert.pem&quot;
+    </code></pre>
+    To verify, log in to a new shell and run<p><pre><code>  curl https:&#x2F;&#x2F;dv-g3b-emudhra.we-have-a-problem.com&#x2F;</code></pre>
+  score: 0
+  posted_at: '2026-10-22T10:47:50Z'
+- id: '50195277'
+  parent_id: '50193626'
+  author: mesrik
+  text: "I&#x27;ve had since Debian 8 (2015) few helper scripts to make me remember
+    better how to manage approved CA&#x27;s. There are three of those, which have
+    been working all Debian versions since 8 to current 13.<p># cat &#x2F;usr&#x2F;local&#x2F;sbin&#x2F;ca-certificates-list-active<p><pre><code>
+    \ #!&#x2F;usr&#x2F;bin&#x2F;env bash\n  #\n  # BFMI tool to list Debian CA certificates
+    active  - mesrik, 2015\n  #\n  \n  CA_CONFIG=&#x2F;etc&#x2F;ca-certificates.conf\n
+    \ CA_REPO_DEBIAN=&#x2F;usr&#x2F;share&#x2F;ca-certificates\n  \n  if [ -f $CA_CONFIG
+    ]; then\n      # study any ca-certificates which have been configured active\n
+    \     for i in $(egrep -v &#x27;^[#!]&#x27; &#x2F;etc&#x2F;ca-certificates.conf)
+    ; do\n         cert_source=$(dirname $i)\n         cert_file=$(basename $i)\n
+    \        openssl x509 -in $CA_REPO_DEBIAN&#x2F;$cert_source&#x2F;$cert_file -noout
+    -subject |\\\n           sed &#x27;s&#x2F;^subject=&#x2F;&#x2F;&#x27;\n      done\n
+    \ \n  else\n      echo &quot;$(basename $0): Ooops, was not able to access $CA_CONFIG&quot;\n
+    \ fi\n  \n  # eof\n  </code></pre>\n# cat &#x2F;usr&#x2F;local&#x2F;sbin&#x2F;ca-certificates-reconfigure<p><pre><code>
+    \ #!&#x2F;usr&#x2F;bin&#x2F;env bash\n  LANG=C dpkg-reconfigure ca-certificates\n</code></pre>\n#
+    cat &#x2F;usr&#x2F;local&#x2F;sbin&#x2F;ca-certificates-invalidate-all<p><pre><code>
+    \ #!&#x2F;usr&#x2F;bin&#x2F;env bash\n  #\n  # BFMI tool to invalidate all CA
+    certificates in Debian Jessie - mesrik, 2015\n  #\n  \n  CA_CONFIG=&#x2F;etc&#x2F;ca-certificates.conf\n
+    \ prog=$(basename $0)\n  usage=&quot;Usage: $prog  { -commit }&quot;\n  \n  if
+    [ $# -lt 1 ]; then\n      echo $usage\n      exit 1\n  fi\n  \n  if [ &quot;$1&quot;
+    = &quot;-commit&quot; ]; then\n      if [ -f $CA_CONFIG ]; then\n         backup_ext=$(date
+    -r $CA_CONFIG +&quot;.%FT%T%z&quot;)\n         perl -wpi$backup_ext -e &#x27;s&#x2F;^([^!#].*)$&#x2F;!$1&#x2F;;&#x27;
+    $CA_CONFIG\n         if [ $? -eq 0 ]; then\n            echo &quot;$prog: backup
+    $CA_CONFIG$backup_ext was made.&quot;\n            &#x2F;usr&#x2F;sbin&#x2F;update-ca-certificates\n
+    \        fi\n      else\n         echo &quot;$prog: Ooops, was not able to access
+    $CA_CONFIG&quot;\n      fi\n  else\n      echo &quot;$prog: Need -commit to actually
+    invalidate all CA&#x27;s&quot;\n  fi\n  \n  # eof\n\n</code></pre>\nps.  I did
+    bit of editing, I didn&#x27;t expect Tab to be ignored when pasting here."
+  score: 0
+  posted_at: '2026-10-22T13:47:12Z'
+- id: '50193822'
+  parent_id: '50192900'
+  author: charlieyu1
+  text: We are in the era of 6 digit CVE now
+  score: 0
+  posted_at: '2026-10-22T11:15:04Z'
+- id: '50193894'
+  parent_id: '50193822'
+  author: xacky
+  text: A lot of software is going to be forced to update or retire soon, all unpatched
+    software should be retired off the internet immediately because AI agents are
+    in waiting.
+  score: 0
+  posted_at: '2026-10-22T11:25:14Z'
+- id: '50194253'
+  parent_id: '50193894'
+  author: chrisco255
+  text: The death of security by obscurity
+  score: 0
+  posted_at: '2026-10-22T12:12:38Z'
+- id: '50195686'
+  parent_id: '50194253'
+  author: Woansdei
+  text: Actually, all these problems are all in well known systems, your obscure full
+    of holes system is fine for now.
+  score: 0
+  posted_at: '2026-10-22T14:17:11Z'
+- id: '50194647'
+  parent_id: '50193894'
+  author: edot
+  text: Yeah, the entire internet is a dark forest now.
+  score: 0
+  posted_at: '2026-10-22T12:50:43Z'
+- id: '50196002'
+  parent_id: '50193894'
+  author: RSHEPP
+  text: We just update PHP from 5.6 to 8.5 lolol it&#x27;s been delayed for years,
+    done in a day with QA...
+  score: 0
+  posted_at: '2026-10-22T14:35:55Z'
+- id: '50193979'
+  parent_id: '50192900'
+  author: vanschelven
+  text: 'Yesterday&#x27;s discussion: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50166579">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50166579</a>'
+  score: 0
+  posted_at: '2026-10-22T11:38:22Z'
+- id: '50194004'
+  parent_id: '50192900'
+  author: accountrequired
+  text: 'Related (2 days ago): <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50160877">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50160877</a>'
+  score: 0
+  posted_at: '2026-10-22T11:41:36Z'
+- id: '50194041'
+  parent_id: '50192900'
+  author: vanschelven
+  text: Python users may need to take their own separate steps, see this discussion:<p><a
+    href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident&#x2F;109576"
+    rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-re...</a>
+  score: 0
+  posted_at: '2026-10-22T11:46:33Z'
+- id: '50194178'
+  parent_id: '50194041'
+  author: rolosa
+  text: This is such a clusterfuck. I use so many containers in my home lab and various
+    local installations and stuff. Honestly, I have no idea what I&#x27;m even supposed
+    to do at this point because I&#x27;m not a full time developer.
+  score: 0
+  posted_at: '2026-10-22T12:03:46Z'
+- id: '50194225'
+  parent_id: '50194178'
+  author: 1gargoyle
+  text: Welcome to corporate
+  score: 0
+  posted_at: '2026-10-22T12:09:37Z'
+- id: '50194260'
+  parent_id: '50194178'
+  author: tesnorindian
+  text: uv should be your friend.
+  score: 0
+  posted_at: '2026-10-22T12:13:32Z'
+- id: '50194545'
+  parent_id: '50194260'
+  author: insanitybit
+  text: uv defaults to its own trust store afaik lol
+  score: 0
+  posted_at: '2026-10-22T12:41:48Z'
+- id: '50194586'
+  parent_id: '50194545'
+  author: vanschelven
+  text: maybe they meant it &quot;should&quot; be your friend but actually isn&#x27;t
+    in this case :-)
+  score: 0
+  posted_at: '2026-10-22T12:45:25Z'
+- id: '50194302'
+  parent_id: '50194178'
+  author: ransom1538
+  text: "&quot;Hey claude this is the cve I need you to fix [link]&quot;<p>Takes about
+    20 seconds. Depending if you need to hit enter."
+  score: 0
+  posted_at: '2026-10-22T12:18:56Z'
+- id: '50194609'
+  parent_id: '50194302'
+  author: bigfishrunning
+  text: cool cool cool. Don&#x27;t understand what you&#x27;re doing, and keep not
+    understanding what you&#x27;re doing. the agents are infallible after all, and
+    who cares about properly verifying certs anyway? that&#x27;s nerd shit.
+  score: 0
+  posted_at: '2026-10-22T12:47:20Z'
+- id: '50195647'
+  parent_id: '50194609'
+  author: pwython
+  text: |-
+    We&#x27;re in October 2026. Updating packages is the easiest thing Claude can do. For me, I asked and received:<p>Node 26.3 → 26.12.1
+    Homebrew’s CA bundle, certifi and OpenSSL are updated, and so are Python 3.13 and 3.14 (3.13.17 and 3.14.9).
+    uv 0.10.9 → 0.13.5.
+    python.org Python 3.13: pip 26.2.2, installed from PyPI’s wheel with its checksum checked, then certifi 2026.10.19.<p>It also checked some of the other recent vulnerabilities like LiteLLM (already updated).
+  score: 0
+  posted_at: '2026-10-22T14:15:15Z'
+- id: '50198196'
+  parent_id: '50195647'
+  author: bigfishrunning
+  text: Sure, and by outsourcing this simple thing, you&#x27;re just a little more
+    complacent. Someday, when it does something silly, you won&#x27;t notice.<p>It
+    went OK this time. There&#x27;s no guarantee that it&#x27;ll go OK every time,
+    for every thing.<p>All I&#x27;m saying is that understanding how to maintain the
+    systems that you are responsible for maintaining is an important thing, and outsourcing
+    that understanding is very dangerous.
+  score: 0
+  posted_at: '2026-10-22T17:08:39Z'
+- id: '50215127'
+  parent_id: '50198196'
+  author: ransom1538
+  text: "&quot;All I&#x27;m saying is that understanding how to maintain the systems&quot;<p>Awwww.
+    It is like talking to a dev in 2010.  Ok. So, there are machines now smarter than
+    you.  You are the problem. You are the thing that adds errors.  &quot;understanding
+    how to maintain&quot; No, that is over. sorry.  As a human, you are too slow,
+    too dumb to compete.<p>When a CVE comes out, the patch needs to be applied across
+    the company in minutes.  YOU cannot do this 2010 dev dude.  Put down the Puppet
+    files.  Let go of the python PR."
+  score: 0
+  posted_at: '2026-10-23T20:48:53Z'
+- id: '50194990'
+  parent_id: '50194302'
+  author: jacekm
+  text: Yeah, at some point I gave up and asked AI to do patching for me. It was a
+    good call because it found affected certificates in places where I wouldn&#x27;t
+    look (e.g. aws-cli or Libre Office).
+  score: 0
+  posted_at: '2026-10-22T13:24:39Z'
+- id: '50194472'
+  parent_id: '50194178'
+  author: iririririr
+  text: don&#x27;t worry. if you&#x27;re in this situation with this attitude, you&#x27;re
+    likely running out of date container base images and whatnot.<p>i highly suggest
+    you forget about containers, learn about systemd unit file hardening, and then
+    you only have to play sysadmin to your base os and the binary for the program
+    you want to run.
+  score: 0
+  posted_at: '2026-10-22T12:35:30Z'
+- id: '50194662'
+  parent_id: '50194178'
+  author: ahartmetz
+  text: Well, that is what people who have been around the block a few times have
+    been saying about containers since just about forever. &quot;I don&#x27;t want
+    to be an admin for my n software packages, I&#x27;ll use containers!&quot; - now
+    you are the admin of n containers, except with worse tools than your distro and
+    no upstream support.
+  score: 0
+  posted_at: '2026-10-22T12:52:14Z'
+- id: '50194711'
+  parent_id: '50194662'
+  author: le-mark
+  text: One could say comeuppance is a dish best served cold. So cold people don’t
+    even know it’s been served. All the old sys admins remember!
+  score: 0
+  posted_at: '2026-10-22T12:58:06Z'
+- id: '50194883'
+  parent_id: '50194662'
+  author: jrmg
+  text: 'And since before that, when we started turning to additional packages managers
+    installed with package managers. Pip etc. mean that an “apt upgrade” isn’t enough,
+    when it really “should” be (used to be) in a well managed system.<p>Then we layered
+    _another_ level of package management on top with Flatpak etc.<p>I don’t think
+    anyone has _really_ been - in practice - able to understand how many versions
+    of Python (or shells or ruby or Perl etc…) are installed on any system for a decade
+    or two now.<p>[Edit to add: and I forgot entirely about venvs (and other language’s
+    equivalents). We put package managers into packages! Now there can be a different
+    version of every package for every script on your system. In every container.
+    And Python even has more than one venv system to choose from!]<p>[Yes, I use all
+    these things - it’s so hard _not_ to and still use modern software or participate
+    in modern software development…]'
+  score: 0
+  posted_at: '2026-10-22T13:15:36Z'
+- id: '50194968'
+  parent_id: '50194883'
+  author: ahartmetz
+  text: It&#x27;s funny that no one seems to even <i>consider</i> using the distro
+    package manager when it&#x27;s time to complain about Python package management
+    again. The deployment environment is usually well-known thus scriptable, and developers
+    can be expected to know how to install packages on their own distros. And, of
+    course, if the package is deployed as part of a distro, everything is taken care
+    of by the distro people.<p>Flatpak is somewhere in the middle because it can and
+    does centrally update dependencies, though they are packaged in larger boxes and
+    it&#x27;s tempting to include more exotic stuff in the app package instead of
+    creating and maintaining a separate Flatpak shared with other dependees.
+  score: 0
+  posted_at: '2026-10-22T13:23:08Z'
+- id: '50195089'
+  parent_id: '50194968'
+  author: '27183'
+  text: Only one company I&#x27;ve worked at maintained their own distro packages
+    for deploying services. That was 13+ years ago. Every company since then had a
+    containerized deployment strategy, some better than others. My most recent employer
+    went through a massive effort to implement &quot;golden base images&quot; and
+    tooling to ensure when the base image is updated all the dependents are rebuilt
+    and redeployed. Most don&#x27;t do that.
+  score: 0
+  posted_at: '2026-10-22T13:32:37Z'
+- id: '50195367'
+  parent_id: '50194968'
+  author: sofixa
+  text: Nobody seriously considers it because usually, especially in enterprise distros,
+    the major versions are years out of date and missing many features. And many smaller
+    packages just won&#x27;t be available. Even for something as major as Django it
+    just wasn&#x27;t viable to use the OS package manager when I tried it in the Debian
+    8 and then 9 days.
+  score: 0
+  posted_at: '2026-10-22T13:53:31Z'
+- id: '50206401'
+  parent_id: '50195367'
+  author: ahartmetz
+  text: I&#x27;ve had Python software that just expected certain packages several
+    times at different $work and it&#x27;s also how I use KDE&#x27;s kde-builder,
+    which can helpfully suggest package names for a few popular distros and maybe
+    also for pip. I guess these people just don&#x27;t know that they are doing it
+    wrong &#x2F;s.
+  score: 0
+  posted_at: '2026-10-23T09:27:24Z'
+- id: '50203665'
+  parent_id: '50194968'
+  author: lmz
+  text: Imagine the problem that required virtualenvs (or containers). Distro packages
+    don&#x27;t work well with that. Plus the packages are already outdated most of
+    the time. Unless by &quot;distro package&quot; you mean packaging an entire environment
+    as a distro package, but you&#x27;d run into the same problems of multiple installs
+    there.
+  score: 0
+  posted_at: '2026-10-23T02:02:04Z'
+- id: '50194951'
+  parent_id: '50194662'
+  author: Winfred-zz
+  text: I use some rules and a few generated scripts and have a LLM handle the management
+    of the containers. Security through a ssh gateway, allows them to deploy&#x2F;remove
+    containers and then the rule is to stay at least two weeks behind on releases,
+    unless the latest release is security related, which it figures out by reading
+    the release notes.<p>I ran watchtowerr before, but I think this is a smarter way
+    to do it.
+  score: 0
+  posted_at: '2026-10-22T13:21:09Z'
+- id: '50195005'
+  parent_id: '50194178'
+  author: jwr
+  text: 'Python environment was so brittle, that a solution was found: pack dependencies
+    into &quot;envs&quot; of various kinds. Disk space is cheap, after all (ahem).
+    Now it&#x27;s time to pay the bill for that approach...'
+  score: 0
+  posted_at: '2026-10-22T13:25:27Z'
+- id: '50195146'
+  parent_id: '50194178'
+  author: l00sed
+  text: For me, this comment actually bolsters the argument for containers imo. It&#x27;s
+    a lot easier to rebuild a system image and redeploy it out across a bunch of apps
+    than it is to update a bunch of VMs (maybe ansible&#x2F;puppet makes it moot).
+    Idk
+  score: 0
+  posted_at: '2026-10-22T13:36:38Z'
+- id: '50197360'
+  parent_id: '50194178'
+  author: bulbar
+  text: Examples of what you can do:<p>* Take the containers offline for the time
+    being until you know what to do<p>* If it&#x27;s important for your that they
+    keep running, still take them offline and put them in a VPN this weekend<p>* Use
+    renovate in the future to automatically update your containers
+  score: 0
+  posted_at: '2026-10-22T16:11:06Z'
+- id: '50194639'
+  parent_id: '50194041'
+  author: albert_e
+  text: "&gt; Failure to do so could result in monster-in-the-middle (MITM) attacks
+    against TLS clients, including python.org and pypi.org .<p>Monster?"
+  score: 0
+  posted_at: '2026-10-22T12:50:06Z'
+- id: '50194745'
+  parent_id: '50194639'
+  author: jl6
+  text: Gender-neutral variant of man-in-the-middle. They should have just used something
+    less controversial like master-in-the-middle.
+  score: 0
+  posted_at: '2026-10-22T13:01:20Z'
+- id: '50194813'
+  parent_id: '50194745'
+  author: riffraff
+  text: To be fair, a monster is scary so it fits. Malice in the middle perhaps would
+    have been less confusing.
+  score: 0
+  posted_at: '2026-10-22T13:08:40Z'
+- id: '50194949'
+  parent_id: '50194745'
+  author: morkalork
+  text: Monkey-in-the-middle would&#x27;ve worked since someone could monkey with
+    your packets and it&#x27;s already an established name for a children&#x27;s game
+  score: 0
+  posted_at: '2026-10-22T13:21:03Z'
+- id: '50195041'
+  parent_id: '50194745'
+  author: thwarted
+  text: "&quot;master&quot; is <i>less</i> controversial?"
+  score: 0
+  posted_at: '2026-10-22T13:28:54Z'
+- id: '50195434'
+  parent_id: '50195041'
+  author: Winfred-zz
+  text: No, it&#x27;s a reference&#x2F;joke to the old controversy regarding master&#x2F;slave
+    naming in computer circles. I don&#x27;t know how far back that controversy goes,
+    I probably heard about it about a decade ago.<p><a href="https:&#x2F;&#x2F;www.linuxfoundation.org&#x2F;blog&#x2F;blog&#x2F;master-slave-and-the-fight-over-offensive-terms-in-computing-kate-conger-new-york-times-april-13-2021"
+    rel="nofollow">https:&#x2F;&#x2F;www.linuxfoundation.org&#x2F;blog&#x2F;blog&#x2F;master-slave-and-t...</a>
+  score: 0
+  posted_at: '2026-10-22T14:00:15Z'
+- id: '50195463'
+  parent_id: '50195041'
+  author: btheconqueror
+  text: I think that was sarcasm
+  score: 0
+  posted_at: '2026-10-22T14:02:34Z'
+- id: '50195066'
+  parent_id: '50194745'
+  author: frumplestlatz
+  text: Or, you know, man-in-the-middle because that was already a correct, perfectly
+    clear use of English.
+  score: 0
+  posted_at: '2026-10-22T13:30:27Z'
+- id: '50195068'
+  parent_id: '50194745'
+  author: phyzome
+  text: I prefer the chaotic option of MITM-in-the-middle.<p>(Mallory-in-the-middle
+    is OK too.)
+  score: 0
+  posted_at: '2026-10-22T13:30:31Z'
+- id: '50195102'
+  parent_id: '50194745'
+  author: woodpanel
+  text: "&gt; Gender-neutral variant of man-in-the-middle<p>Countless and countless,
+    no, millions of male developers felt discriminated against whenever someone called
+    it Man-in-the-middle. This went on unaccounted for for decades! Finally we’re
+    being seen!<p>Not to mention all the women who were misogynisticly attacked by
+    assuming women can’t be hackers.<p>Finally justice. It’s very important that we’re
+    getting our priorities right when talking about security vulnerabilities!"
+  score: 0
+  posted_at: '2026-10-22T13:33:21Z'
+- id: '50195260'
+  parent_id: '50195102'
+  author: shagie
+  text: '&gt; who were misogynisticly attacked by assuming women can’t be hackers<p>Eve
+    would like to have a word with you.  I haven&#x27;t heard of Heidi before... but
+    she&#x27;s apparently one of the cast.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Alice_and_Bob#Cast_of_characters"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Alice_and_Bob#Cast_of_characte...</a>'
+  score: 0
+  posted_at: '2026-10-22T13:46:01Z'
+- id: '50195386'
+  parent_id: '50195102'
+  author: failbuffer
+  text: As a sentient cephalopod who has enjoyed hacking staff computers when I slip
+    out of my tank at the National Aquarium every night, I can only say it feels good
+    to be seen. We&#x27;re finally making progress on de-centering hominid perspectives
+    in favor of a more diverse range of natural intelligences!
+  score: 0
+  posted_at: '2026-10-22T13:55:42Z'
+- id: '50198528'
+  parent_id: '50195102'
+  author: albert_e
+  text: Madame-in-the-middle
+  score: 0
+  posted_at: '2026-10-22T17:34:30Z'
+- id: '50195603'
+  parent_id: '50194745'
+  author: madamelic
+  text: The women developers would like to cede this gender-neutral replacement back
+    to the men, we don&#x27;t want to be included.<p>&#x2F;s<p>I absolutely love monster-in-the-middle.
+    Big round of applause to whoever thought of that.
+  score: 0
+  posted_at: '2026-10-22T14:12:53Z'
+- id: '50194429'
+  parent_id: '50192900'
+  author: pelzatessa
+  text: Worth noting that people on RedHat still haven&#x27;t received proper updates,
+    only a workaround that disables two Comodo root certificates that were used to
+    sign the emudhra certificates.<p><a href="https:&#x2F;&#x2F;access.redhat.com&#x2F;security&#x2F;vulnerabilities&#x2F;RHSB-2026-012"
+    rel="nofollow">https:&#x2F;&#x2F;access.redhat.com&#x2F;security&#x2F;vulnerabilities&#x2F;RHSB-2026...</a>
+    - &quot;Ongoing&quot;
+  score: 0
+  posted_at: '2026-10-22T12:31:17Z'
+- id: '50194504'
+  parent_id: '50194429'
+  author: gilrain
+  text: RHEL also got the PHP patches hours <i>after</i> Debian.<p>I chose AlmaLinux
+    last time I needed to, and it&#x27;s been a great way to access the ecosystem
+    — I heartily recommend it as a free RHEL! — but these past few days have me looking
+    in envy at Debian. Corporate stability hasn&#x27;t been what I expected.
+  score: 0
+  posted_at: '2026-10-22T12:38:25Z'
+archived_at: '2026-10-24T01:14:42Z'
