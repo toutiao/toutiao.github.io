@@ -1,0 +1,140 @@
+---
+post:
+  id: lo-zug8xv
+  source: lobsters
+  title: Indian government sites are serving revoked eMudhra certificates
+  url: https://captnemo.in/blog/2026/10/23/emsign-revoked-gov-in/
+  hn_url: https://lobste.rs/s/zug8xv
+  score: 24
+  author: adityaathalye
+  posted_at: '2026-10-24T04:06:06Z'
+  fetched_at: '2026-10-24T12:27:30Z'
+  article_url: https://captnemo.in/blog/2026/10/23/emsign-revoked-gov-in/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T12:27:33Z'
+  raw_comment_count: 2
+  tags:
+  - security
+comments:
+- id: lo-jwavzv
+  parent_id: '0'
+  author: adityaathalye
+  text: |-
+    This company's criminal levels of incompetence single-handedly caused an instant international disaster, and continues to fail us all.
+    Speaking as a citizen, ignoring "all those bloody foreigners amplifying this on social media" for a (very very brief) moment to dwell on (suppresses gag reflex) ideological "national security" rhetoric which these people kowtow to... How have they not proactively taken out all stops to fix this already? On a national-disaster-scale emergency footing, which this is!
+  score: 20
+  posted_at: '2026-10-24T06:10:14Z'
+- id: lo-tmoiox
+  parent_id: '0'
+  author: chrismorgan
+  text: |-
+    The impact of this incident on Indian websites and applications have been very limited and for a very short interval.
+
+    That last claim is wrong on both counts. The interval wasn’t short: the flawed keys were generated in April 2025, so anyone could have recovered them for 18 months before the report.
+
+    I’m actually okay with describing the impact as a very short interval. Sure, the window was wide, but the impact was narrow. It seems likely that no one detected it during that time. Certainly from Certificate Transparency logs we know that no one targeted it for mainstream browsers, which is the most obvious and juiciest target. Maybe someone did detect and exploit it in other ways, but there’s no evidence to suggest it.
+
+
+    Separately, on 19th October eMudhra revoked 9,356 certificates on its unaffected RSA hierarchy (emSign Root CA - G1) with the reason “Superseded”.
+
+    Are these are the certificates listed later on the page? I’ve looked at the one that’s affecting me now (ociservices.gov.in) and it’s G1 rather than G3 which https://emudhra.we-have-a-problem.com/ indicates was the stupid one. Or are some in the list G1 and some G3?
+    Why did eMudhra do this G1 thing, abruptly revoking ones that were fine and making the impact of the incident worse?
+    However it is, it’s pretty wild that so many government sites, some major, have just been broken for most of the week. Surely eMudhra would have contacted every affected customer and they could sort it out in under a day?
+
+    Unrelated to the content: this page is a good demonstration of why not to put html, body { overflow-x: hidden } in your styles. (It’s more common than it should be because it fixes an unimportant overflow issue in one of the traditional full-bleed decoration techniques.) Some time later you’ll put something like a wide table in, and whoops, its right columns are inaccessible.
+  score: 4
+  posted_at: '2026-10-24T10:32:49Z'
+article:
+  url: https://captnemo.in/blog/2026/10/23/emsign-revoked-gov-in/
+  title: Indian government sites are serving revoked eMudhra certificates · Nemo's
+    Home
+  fetch_status: success
+  content: "# Indian government sites are serving revoked eMudhra certificates ⚓\n23
+    Oct 2026\n\nOn 17th October, eight eMudhra intermediate CAs chaining to emSign
+    ECC Root CA - G3 were found to have [trivially recoverable private keys](https://emudhra.we-have-a-problem.com/).
+    They were revoked the next day, and Mozilla and Chrome are now distrusting the
+    G3 root. Separately, on 19th October eMudhra revoked 9,356 certificates on its
+    unaffected RSA hierarchy (emSign Root CA - G1) with the reason “Superseded”. That
+    batch matches every unexpired certificate missing a certificate-type policy OID
+    required by emSign’s own CP/CPS ([Bug 2082782](https://bugzilla.mozilla.org/show_bug.cgi?id=2082782)).\n\nOn
+    21st October, MeitY [posted this thread](https://x.com/GoI_MeitY/status/2112914722656076060):\n\n>
+    A security incident concerning eMudhra’s Public Key Infrastructure (PKI) was reported
+    in the public domain. […]\n> \n> However, some social media accounts are indulging
+    in fear mongering about the impact of this incident. […]\n> \n> **The impact of
+    this incident on Indian websites and applications have been very limited and for
+    a very short interval.**\n> \n> — [@GoI\\_MeitY](https://x.com/GoI_MeitY/status/2112914722656076060),
+    21st October 2026, 16:31 CEST\n\nThat last claim is wrong on both counts. The
+    interval wasn’t short: the flawed keys were generated in April 2025, so anyone
+    could have recovered them for 18 months before the report. The impact isn’t limited
+    either: the compromised intermediates barely issued anything, but Mozilla and
+    Chrome are now distrusting the entire G3 root, so eMudhra [estimates 30,000 certificates](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c19)
+    from its unaffected G3 intermediates must be migrated. From what I could see,
+    most of those seem to belong to US universities using eMudhra through InCommon
+    rather than Indian sites.\n\nMeanwhile, the 19th October revocations have left
+    **Indian government sites serving revoked certificates days later** , including
+    four bodies under MeitY itself: [STPI](https://www.stpi.in/), [Bhashini](https://bhashini.gov.in/),
+    [UIDAI](https://lea.uidai.gov.in/), and the Controller of Certifying Authorities,
+    whose [India PKI site](https://indiapki.cca.gov.in/) is serving a revoked eMudhra
+    certificate. Notably, Controller of Certifying Authorities regulates eMudhra’s
+    CA business in India.\n\nI checked the 8,947 hosts in the [IGOD directory](https://github.com/rishirishhh/IGOD-Dataset)
+    of Indian government websites. As of 23rd October, 156 of them are still serving
+    one of these revoked certificates. All of them were revoked between 15:34 and
+    15:49 CEST on 19th October, and are listed in eMudhra’s CRLs for [DV/G2A-1](http://crl.emsign.com?EMDVTLSCAG2A1.crl),
+    [OV/G2A-1](http://crl.emsign.com?EMOVTLSCAG2A1.crl), [EV/G2A-1](http://crl.emsign.com?EMEVTLSCAG2A1.crl)
+    and [G1](http://crl.emsign.com?emSignSSLCAG1.crl).\n\nWhether these sites open
+    depends on your browser. Firefox ships [CRLite](https://blog.mozilla.org/security/2020/01/09/crlite-part-1-all-web-pki-revocations-compressed/),
+    which covers every revocation, and refuses to load them. Chrome’s [CRLSet](https://www.chromium.org/Home/chromium-security/crlsets/)
+    (version 10856, 24th October) has none of these certificates, nor any of the 6,235
+    entries on the DV/G2A-1 CRL, so Chrome, Edge and Android load them fine. So does
+    Safari on iOS, which only checks OCSP for EV certificates. Two sites on the list
+    have one: [www.isea.gov.in](https://www.isea.gov.in/) and [nfscnagpur.nic.in](https://nfscnagpur.nic.in/),
+    and emSign’s OCSP responder reports the isea.gov.in certificate as revoked, so
+    Safari on iOS refuses to load it. [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=aaib.gov.in&latest)
+    checks the CRL itself and marks all of these as Grade F / revoked.\n\nRevocations
+    happen (GoDaddy just revoked 4 lakh certificates), but they are usually accompanied
+    by notifications to subscribers to get them to new valid certificates. I’m not
+    sure if eMudhra is doing any of the sort, now that they don’t care about their
+    TLS business.\n\nThe table will be updated with timestamps as cert rotations happen.\n\n|
+    Domain | Title | Serial | crt.sh | SSL Labs | CRL | Revoked (CEST) | Cert Rotated
+    | Fixed |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| [aaib.gov.in](https://aaib.gov.in/)
+    | Aircraft Accident Investigation Bureau | `BE71D53F0F28A74B393572EA6C0C84` |
+    [crt.sh](https://crt.sh/?sha256=2953d0c729ce384cfa4cd90044e09c60997265a542c3a26c1cf82471e166ebf0)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=aaib.gov.in&latest) [PDF](/data/emsign-ssllabs/aaib.gov.in/164.100.112.2.pdf
+    \"164.100.112.2\") | [CRL](http://crl.emsign.com?EMDVTLSCAG2A1.crl) | 2026-10-19
+    15:46:53 | Yes | No |\n| [accr.ayush.gov.in](https://accr.ayush.gov.in/) | Ayush
+    Clinical Case Repository Portal | `B1BBCA8C44E3FB7B046E25B07190A4` | [crt.sh](https://crt.sh/?sha256=ecdeddba33d998dd12cbcd7d09fa4007288cbccbc322608012050ddcd8fe93f5)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=accr.ayush.gov.in&latest)
+    [PDF1](/data/emsign-ssllabs/accr.ayush.gov.in/65.8.20.112.pdf \"65.8.20.112\")
+    [PDF2](/data/emsign-ssllabs/accr.ayush.gov.in/65.8.20.23.pdf \"65.8.20.23\") [PDF3](/data/emsign-ssllabs/accr.ayush.gov.in/65.8.20.24.pdf
+    \"65.8.20.24\") [PDF4](/data/emsign-ssllabs/accr.ayush.gov.in/65.8.20.30.pdf \"65.8.20.30\")
+    | [CRL](http://crl.emsign.com?EMDVTLSCAG2A1.crl) | 2026-10-19 15:39:12 | Yes |
+    No |\n| [aeoindia.gov.in](https://aeoindia.gov.in/) | Indian AEO Portal — Home
+    | `B642938DF18453FE7E7BA715831140` | [crt.sh](https://crt.sh/?sha256=16c4ab90aea7d37d656149255f29398432956e05b01ac5ec18be1638cb9f0666)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=aeoindia.gov.in&latest)
+    [PDF](/data/emsign-ssllabs/aeoindia.gov.in/164.100.68.102.pdf \"164.100.68.102\")
+    | [CRL](http://crl.emsign.com?EMDVTLSCAG2A1.crl) | 2026-10-19 15:40:53 | Yes |
+    No |\n| [afmc.nic.in](https://afmc.nic.in/) | Armed Forces Medical College | `FC7C794C34237225FC3BA9DD133A22`
+    | [crt.sh](https://crt.sh/?sha256=acd714e4e980d0aa8495a7ef967fce43335d887ad944fec84a3fc218c4ff6133)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=afmc.nic.in&latest) [PDF](/data/emsign-ssllabs/afmc.nic.in/164.100.211.198.pdf
+    \"164.100.211.198\") | [CRL](http://crl.emsign.com?EMDVTLSCAG2A1.crl) | 2026-10-19
+    15:42:07 | Yes | No |\n| [afri.icfre.gov.in](https://afri.icfre.gov.in/) | शुष्क
+    वन अनुसंधान संस्थान, भारतीय वानिकी अनुसंधान एवं शिक्षा परिष, पर्यावरण, वन और जलवायु
+    परिवर्तन मंत्रालय, भारत सरकार | `2322014B49FF5673E67753965E5F43` | [crt.sh](https://crt.sh/?sha256=34fa2063d7df9f7be9f3c00694344c9718ac37cf26a5c5a303c7cdee6f6c96f3)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=afri.icfre.gov.in&latest)
+    [PDF](/data/emsign-ssllabs/afri.icfre.gov.in/14.139.56.249.pdf \"14.139.56.249\")
+    | [CRL](http://crl.emsign.com?EMDVTLSCAG2A1.crl) | 2026-10-19 15:35:00 | Yes |
+    No |\n| [amssdelhi.gov.in](https://amssdelhi.gov.in/) | Home | IMD New Delhi |
+    `2BC7F0601E60EB76C026F65A30FE54` | [crt.sh](https://crt.sh/?sha256=c7eea2fe664ea6545d10960d1fe62b1f74f785a0ba431c4885b8873605848181)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=amssdelhi.gov.in&latest)
+    [PDF](/data/emsign-ssllabs/amssdelhi.gov.in/59.179.31.233.pdf \"59.179.31.233\")
+    | [CRL](http://crl.emsign.com?emSignSSLCAG1.crl) | 2026-10-19 15:48:30 | Yes |
+    No |\n| [aqcsindia.gov.in](https://aqcsindia.gov.in/) | Animal Quarantine and
+    Certification Service | `41E1C73D66F7CF4E3FDC8284B3529F` | [crt.sh](https://crt.sh/?sha256=8b2127c73134e83d77b19b9b1c9cd60a8ef8d3f852439161f16b337115eda143)
+    | [scan](https://www.ssllabs.com/ssltest/analyze.html?d=aqcsindia.gov.in&latest)
+    [PDF](/data/emsign-ssllabs/aqcsindia.gov.in/164.100.186.28.pdf \"164.100.186.28\")
+    | [CRL](http://crl.emsign.com?EMDVTLSCAG2A1.crl) | 2026-10-19 15:46:31 | Yes |
+    No |\n| [awbi.gov.in](https://awbi.gov.in/) | Animal Welfare Board of India |
+    `2D705A7361282ED5B121C5AC5FD505` | [crt.sh](https://crt.sh/?sha256=539439e3b32edd30c701e7c7cff77e698d8cf0b545d356e1ed326e067c94"
+  error:
+  fetched_at: '2026-10-24T12:27:33Z'
+archived_at: '2026-10-24T12:27:34Z'

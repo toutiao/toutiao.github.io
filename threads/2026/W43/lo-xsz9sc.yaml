@@ -5,14 +5,14 @@ post:
   title: Docker is weird
   url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
   hn_url: https://lobste.rs/s/xsz9sc
-  score: 95
+  score: 98
   author: nick4
   posted_at: '2026-10-22T20:09:22Z'
-  fetched_at: '2026-10-24T02:41:13Z'
+  fetched_at: '2026-10-24T12:27:30Z'
   article_url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
-  article_fetch_status: skipped
-  article_fetched_at:
-  raw_comment_count: 43
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T12:27:36Z'
+  raw_comment_count: 46
   tags:
   - programming
 comments:
@@ -22,7 +22,7 @@ comments:
   text: |-
     They are proposing to make containers "a real" thing bwt.
     https://lore.kernel.org/linux-fsdevel/atkV5pSBmZbLH_i-@toolbx/T/#t
-  score: 43
+  score: 45
   posted_at: '2026-10-22T20:21:13Z'
 - id: lo-2m9jay
   parent_id: '0'
@@ -95,7 +95,7 @@ comments:
   author: atk
   text: I find this direction so weird, but I guess this is maybe expected given that
     proper namespacing support isn't possible in the patchwork world of Linux.
-  score: 6
+  score: 7
   posted_at: '2026-10-23T00:27:43Z'
 - id: lo-c5lrwx
   parent_id: '0'
@@ -103,7 +103,7 @@ comments:
   text: |-
     It's not super weird I think. If you've ever interacted directly with Linux namespaces I think it may even seem natural. The way that the 8 or so different types of namespaces interact with each other is quite restricted in some senses, to the point where there's not that many things you can build with them that aren't a container runtime.
     This proposed change is also similar to the cgroup v1 -> v2 change, where cgroups were changed from a big loose pile of related restrictions into one "thing". That simplified their usage greatly in my opinion.
-  score: 18
+  score: 19
   posted_at: '2026-10-23T00:39:20Z'
 - id: lo-mzfibb
   parent_id: '0'
@@ -148,7 +148,7 @@ comments:
     Docker takes all that and simplifies it: you get a dockerfile (and usually a compose file for multiple services), an environment file you configure and then a port/series of ports you can tell nginx to reverse proxy towards. That's also why Podman falls short of it so often; everything you gain in terms of better security (containers aren't root by default) and tighter integration (read: systemd services instead of the opaque docker daemon), you lose in terms of bringing back that complexity that docker simplifies away. I don't need to think about the fact that it's a 20 microservice architecture with incredibly powerful failover; docker handles everything to configure and set it up.
     The problem is then also that docker itself has been riddled with abstractions that only really make sense if you're looking at "docker" as not a daemon running on a VPS you own, but as a sort of generic container orchestrator that runs on a hyperscaler. That's where a lot of it's stranger decisions come in, and something that the documentation habitually points you to using. Volumes are probably the biggest sin: your average selfhosting/learning to use docker will not want to use volumes. They're a concept that completely abstracts away the concept of "where do my files go" into the docker daemons internal structure (with it being rather easy to accidentally destroy the contents of a volume when freeing up space). For a selfhoster, "where do my files go" is a question whose answer needs to be "right here, go run Borg/restic on it every once in a while"; they basically are the target audience for bind mounts... which the documentation discourages you from using because "what if it goes cross filesystem", a concern that only matters when your server stack is actually that complicated.
     Another reason it's weird is because these sorts of "we own the server" tools are becoming increasingly rare (since while they're what docker works with, they're also something that docker gradually discourages by preferring leaner images and expressing all configuration into environment variables). The only notable examples I can think of in recent memory are Discourse and Sourcehut, both of which pretty much expect that you dedicate a full server's worth of resources to them. In the case of Discourse, because it's a Ruby dinosaur mess of a forum software that I'd argue is also really bad at its job, since it's lead developer can't envision anyone with a tech stack smaller than a silicon valley startup wanting to run a forum (and I despise that so many FOSS communities opt to use it). In the case of Sourcehut, it's because from what I can tell, Drew just hosts it on raw alpine and his deployment mechanism is literally just using alpine's package manager, which meshes with docker in a pretty awkward way.
-  score: 9
+  score: 10
   posted_at: '2026-10-23T10:31:23Z'
 - id: lo-swuyy1
   parent_id: '0'
@@ -275,7 +275,7 @@ comments:
     Well, kind of.  Linux has a system call called clone, which creates a new schedulable unit of concurrent execution.  This can share some the state with the parent, including the virtual memory mappings, the file descriptor table, the view of the filesystem, IPC namespaces, and so on.
     If you call clone and ask to have the virtual-memory mappings and file descriptor table shared, you get a thing that can be used to implement the thing that POSIX calls a thread.  If you call it with a new virtual-memory mapping and file-descriptor table, then you have a thing that looks like what POSIX calls a process.
     This is quite similar to how Linux defines containers.  The clone system call creates a new child that has different namespaces / cgroups.  The extra fun thing is that, because the notions of container, thread, and process are entirely ad-hoc in Linux, you can have one process that has multiple threads that are in different containers and each of those containers can hold multiple processes (please do not do this).
-  score: 7
+  score: 8
   posted_at: '2026-10-23T14:24:05Z'
 - id: lo-8srjql
   parent_id: '0'
@@ -354,7 +354,7 @@ comments:
     Go also doesn’t have fork! Fork only forks the main thread, so it’s kind of a footgun in a runtime like Go’s. But a container runtime really wants to fork, set up a bunch of restrictions, and then exec the process you actually put in docker run. To get around this, runc execs /proc/self/exe with a special command line arguement that identifies it as a child process to approximate a fork.
 
     FWIW nextest does the same thing (because fork is slow and messy, not because Rust doesn't have fork) and it works fine. I don't think this is necessarily a demerit.
-  score: 1
+  score: 2
   posted_at: '2026-10-23T17:59:43Z'
 - id: lo-ubets9
   parent_id: '0'
@@ -411,8 +411,85 @@ comments:
     Proxies and VPNs work by putting a new network (/net filesystem) into a program's namespace.
     And I've also done fun tricks with different shared memory threads running in different file namespaces to do tab completion tricks.
     (Of course, these are all file namespaces. Everything is a file, except process attributes like shared memory)
-  score: 2
+  score: 3
   posted_at: '2026-10-23T23:52:12Z'
+- id: lo-xdvnid
+  parent_id: '0'
+  author: david_chisnall
+  text: If you read my entire post, you’ll see that I said that for big clustered
+    systems persistence is handled elsewhere but for single-machine installations
+    volumes provide a useful model.
+  score: 1
+  posted_at: '2026-10-24T07:16:30Z'
+- id: lo-eenq71
+  parent_id: '0'
+  author: k749gtnc9l3w
+  text: |-
+    It's pretty natural that it was perceived as worse-VM, given that it was developed by a hosting-related company selling its use as worse-but-cheaper VMs!
+    I don't remember the exact limitations, and I guess they were partially protected (OpenVZ was a security boundary) by their limited reach: the most expensive to find bugs were less likely to be looked at when it's just a few non-oligopoly-scale hosters.
+    As far as I remember, PIDs and UIDs might have been shared but sharded. But I don't even remember when and why was I using an OpenVZ container…
+  score: 1
+  posted_at: '2026-10-24T07:59:12Z'
+- id: lo-hyarax
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    I saw OpenVZ as an attempt to bring FreeBSD Jails to Linux. Jails were originally created as a ‘better chroot’, but the comparison to VMs didn’t really apply because VMs weren’t much of a thing. Jails first shipped in 2000 (OpenVZ in 2005). Xen first appeared in 2003.
+    Prior to 2003, VMWare existed but it did dynamic binary translation. It had to scan the instruction stream for specific instructions and patch them, which meant it wasn’t great for server-side things.
+    With Xen, VM hosting started to take off. In 2005, Intel shipped virtualisation extensions, but they took a couple of years to be widely deployed.
+    But early Xen was not that efficient. It had around a 5-10% perf hit and it required a load of disk and memory duplication that wouldn’t happen with a shared-kernel system. Jails and similar techniques were faster and lower-cost to provide. They allowed much more dynamic resource provisioning.
+    The big shift since then has been identifying and addressing sources of VM overhead. Sharing the kernel isn’t actually as a big a win as you might guess. It introduces contention in kernel data structures (FreeBSD now lets each jail have its own copy of the network stack to address this in some places).
+    But sharing the buffer cache is a big win. Imagine you have ten VMs or ten jails, all running the same userland. With jails on ZFS and dedup or clones from the same origin, you’ll have one copy of libc on disk. This will result in one copy in the buffer cache. Each process in each jail will mmap it and there will be one copy in RAM and one copy in cache.
+    In contrast, in traditional VMs, each VM will have its own block device with its own copy of libc. Each VM will have its own copy in the buffer cache. Each process will then have the VM-private version in the CPU cache. VirtIO-FS addresses this. The host can provide each VM with a read-only filesystem and expose pages from its buffer cache directly. This lets container-like workloads run with similar memory overhead between jail-like and VM isolation.
+    Similarly, modern SmartNICs allow direct pass through so Ethernet frames destined for a VM go straight to the VM, rather than being bounced via a privileged VM and exposed as paravirtualised interfaces. The big cloud providers implement something that looks like a block device interface in their SmartNICs and do the same direct assignment (the backing store is blob storage). For smaller deployments, NVMe emulation is very fast, so most of the overheads of VMs have gone away.
+  score: 3
+  posted_at: '2026-10-24T08:26:33Z'
 article:
-  fetch_status: skipped
-archived_at: '2026-10-24T02:41:20Z'
+  url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
+  title: Code and Cake - Docker is weird
+  fetch_status: success
+  content: |-
+    # Docker is weird
+    Oct 22, 2026
+    * * *
+
+    I decided to make my own container runtime for fun, and even though I’m still early on, I’ve learned that Docker is _weird_. Here’s some weird things I learned about Docker.
+
+    ## Containers aren’t real
+
+    Unlike VMs, containers are just processes with special restrictions on them. Your kernel is still running that process! And if you know where to look, you can even find that process in /proc.
+
+    ## Containers really aren’t real
+
+    There’s not really a linux feature that’s just “containers” either. Instead, containers are really 5 different linux kernel features in trenchcoat.
+
+    Namespaces hide what the host and container can see, cgroups limit container resource usage, and there’s a whole bunch of networking magic I don’t understand that lets you isolate a container’s network.
+
+    ## Images are just folders
+
+    Images are just folders that Docker puts somewhere and then calls `chroot` (or `pivot_root`) to make that folder your container process’s new root directory. So if you run `docker run -it --rm ubuntu /bin/bash`, Docker is going to:
+
+    - Download the ubuntu image from Dockerhub.
+    - Put that image somewhere.
+    - Run `/some/weird/docker/path/bin/bash`
+
+    ## Go is kind of a terrible language for a container runtime
+
+    Docker’s container runtime, `runc`, is written in Go, and Go has some design choices that make it less suited for a container runtime. Go’s runtime is natively multi-threaded. That’s a really cool feature, but it leads to some challenges in `runc`.
+
+    Many of the Linux syscalls a container runtime needs to make have to be done in a single-threaded environment, so `runc` has [a crazy C module](https://github.com/opencontainers/runc/tree/main/libcontainer/nsenter) that runs before Go’s runtime initializes so it can run those syscalls.
+
+    Go also doesn’t have fork! Fork only forks the main thread, so it’s kind of a footgun in a runtime like Go’s. But a container runtime really wants to fork, set up a bunch of restrictions, and then exec the process you actually put in `docker run`. To get around this, `runc` execs `/proc/self/exe` with a special command line arguement that identifies it as a child process to approximate a fork.
+
+    ## Docker requires root!
+
+    This is pretty easy to miss if you, like me, run Docker in MacOS. Many of the Linux kernel APIs that container runtimes use require, or at least used to, to be run as root, so the Docker daemon usually runs as root. I can only imagine that container security is a very tough job.
+
+    This seems better these days. The big exception seems to be networking. If you’re running a rootless container runtime, it looks like it has to reimplement the whole networking stack in userspace to actually give you the same features!
+
+    ## Learning is fun!
+
+    I’ve only just started my own container runtime, and I already feel like I’ve learned so much about Docker. Writing your own version of a tool you use is a great way to learn about it!
+  error:
+  fetched_at: '2026-10-24T12:27:36Z'
+archived_at: '2026-10-24T12:27:36Z'
