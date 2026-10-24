@@ -23,7 +23,7 @@ _essays/ (0)      # Essays (empty)
 _articles/YYYY/  # HN discussion summary articles, year subdirs (2026/ = ~80 篇)；旧 root 级 15 篇并存
 _data/hn/         # HN 抓取缓存（gitignored，只存 GH Actions cache；本地/CI 可见，线上不含）
 .hn-archive/      # hn-data 孤儿分支 worktree（唯一存储（二期 P2 起 cache 层退役）：snapshots/threads(含article)/topics/heat/cohort/triggers；gitignored，必须在 _data/ 外防 Jekyll 载入）
-scripts/          # hn-fetch.rb (抓取+快照+分层状态机), hn-heat.rb (热度/聚簇/行业/投影), hn-repair.rb (front matter 修复门禁), category_map.json (行业分类表, versioned)
+scripts/          # hn-fetch.rb (抓取+快照+分层状态机), hn-heat.rb (热度/聚簇/行业/投影), hn-repair.rb (门禁), lobsters-fetch.rb (Lobsters 副源), hn-backfill-ids.rb (hn_id 回填), hn-archive-prune.rb (年度 prune), hn-category-eval.rb (分类评测), category_map.json (行业分类表, versioned)
 playwright-renderer/  # Playwright 文章渲染服务 (renderer mode, self-hosted)
 .opencode/        # agents, skills, designs/hn-signal-architecture.md + phase2.md (事实来源)
 assets/           # main.scss (entry, has front matter), main.js, favicon
@@ -50,7 +50,7 @@ Nav pages (`movies.html`, `books.html`, `articles.html`, `trends.html`) use `nav
 
 ## HN 自动管道（事实来源: `.opencode/designs/hn-signal-architecture.md` + `phase2.md`）
 两 workflow + skill + 热度引擎，单层存储（hn-data 分支唯一存储，cache 层二期已退役）：
-1. `hn-fetch.yml` 3x daily: 抓 HN best → 归档（threads 含 post+comments+article、snapshots 时间序列、registry 分层状态机 active(14d)→watching(周探活)→cold(月)→deep(季)→settled，评论增长可复活）→ hn-data 分支 push；hot 触发双通道（点值阈值 OR 快照差分），触发历史永久化 triggers.json
+1. `hn-fetch.yml` 3x daily: 抓 HN best + Lobsters hottest（副源 continue-on-error）→ 归档（threads 含 post+comments+article、snapshots 时间序列、registry 分层状态机 active(14d)→watching(周探活)→cold(月)→deep(季)→settled，评论增长可复活）→ hn-data 分支 push；hot 触发双通道（点值阈值 OR 快照差分），触发历史永久化 triggers.json
 2. `hn-auto.yml` 每日: hn-data attach → `opencode run /hn --auto`（候选池 registry 驱动，Phase 0 按 heat 特征排序：resurrected 直通/up+expert 加权/spike 降权；MiniMax-M3 主力，回退 gemini-3.5-flash → deepseek-v4-flash）→ `hn-repair.rb` 门禁 → `hn-heat.rb --all`（日榜/聚簇+复波/专家群体/行业分类/published/trends 投影）→ jekyll build 门禁 → git-auto-commit 提交 `_articles/` + `_data/hn_trends.json` → hn-data push
 3. 本地: `make fetch url='<hn_url>'` / `make fetch-best` / `make hn-archive-init`；`/hn` 命令（skill Phase 0-3，数据读 `.hn-archive/threads/`）
 
