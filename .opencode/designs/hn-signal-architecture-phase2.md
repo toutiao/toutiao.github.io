@@ -1,7 +1,20 @@
 # HN 信号架构二期 — 时间维度与话题延续优化方案
 
-> 状态: 方案（待批准实施）| 日期: 2026-10-24 | 前置: [hn-signal-architecture.md](hn-signal-architecture.md)（一期已实施）
+> 状态: **已实施 (P1-P3, 2026-10-24)** | P4 未实施 | 前置: [hn-signal-architecture.md](hn-signal-architecture.md)（一期已实施）
+> 实施提交: P1 `dfc8e8f` / P2 `0c6230f` / P3 `313fe6f`
 > 议题: 原「2 周保存窗口」为拍脑门的存储/热度折中。冷档分支落地后约束已变，本方案评估实际限制并给出时间轴/关联延续/行业维度设计，消除 2 周数据跳跃。
+
+## 实施核验（2026-10-24 本地实测）
+
+- G2 消除: 触发历史从 cache 周目录迁 `.hn-archive/triggers.json`（保留 200 条），旧 YAML 一次性桥接，重复 dispatch 风险消除
+- G4 消除: 分层探活 watching(周)/cold(月)/deep(季) + FIFO 降级实测通过（60d 静默帖自动 watching→cold，探活无增量保持 cold；有增量复活回 active）
+- G1/G3 消除: cache 层整体退役（P2），hn-data 分支为唯一存储；freshness = 评论数不变 + article 已决；缺 article 的旧归档首轮自动重抓自愈（实测 8000 chars article 入档）
+- D1: topic 实体增量持久化 + waves 复波检测（≥7d gap 分段，每段 ≥5 条）
+- D3: related 相关图（🧭 专家重叠强边 ≥max(3,cohort×1%) / #️⃣ 关键词弱边），实测 17 条
+- D4: category_map c1（9 行业）coverage 65%，industries 投影 8 行业带周环比
+- D2: `--window N` 参数化（默认 30）
+- 成本核对: LLM 0、探活最坏 ~9 请求/日、投影 39KB、`make build` 全绿
+
 
 ## 一、量化评估（结论先行）
 

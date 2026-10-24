@@ -22,13 +22,13 @@ _books/ (0)       # Book reviews (empty)
 _essays/ (0)      # Essays (empty)
 _articles/YYYY/  # HN discussion summary articles, year subdirs (2026/ = ~80 篇)；旧 root 级 15 篇并存
 _data/hn/         # HN 抓取缓存（gitignored，只存 GH Actions cache；本地/CI 可见，线上不含）
-.hn-archive/      # hn-data 孤儿分支 worktree（冷档主存储：snapshots/threads/topics/heat/cohort；gitignored，必须在 _data/ 外防 Jekyll 载入）
-scripts/          # hn-fetch.rb (抓取+快照+状态机), hn-heat.rb (热度/聚簇/投影), hn-repair.rb (front matter 修复门禁)
+.hn-archive/      # hn-data 孤儿分支 worktree（唯一存储（二期 P2 起 cache 层退役）：snapshots/threads(含article)/topics/heat/cohort/triggers；gitignored，必须在 _data/ 外防 Jekyll 载入）
+scripts/          # hn-fetch.rb (抓取+快照+分层状态机), hn-heat.rb (热度/聚簇/行业/投影), hn-repair.rb (front matter 修复门禁), category_map.json (行业分类表, versioned)
 playwright-renderer/  # Playwright 文章渲染服务 (renderer mode, self-hosted)
-.opencode/        # agents, skills, designs/hn-signal-architecture.md (HN 信号架构, 事实来源) + hn-data-pipeline.md (缓存层前身)
+.opencode/        # agents, skills, designs/hn-signal-architecture.md + phase2.md (事实来源)
 assets/           # main.scss (entry, has front matter), main.js, favicon
 ```
-Nav pages (`movies.html`, `books.html`, `articles.html`, `trends.html`) use `nav: true` in front matter. `archives.html` is hardcoded in header, not nav. `hn.html` = 本地 HN 讨论存档（线上为空，数据不入库 — 设计如此）；`trends.html` = 公开话题热度页（读 `_data/hn_trends.json` 投影，由 hn-heat.rb 每日生成并提交 master）。
+Nav pages (`movies.html`, `books.html`, `articles.html`, `trends.html`) use `nav: true` in front matter. `archives.html` is hardcoded in header, not nav. `trends.html` = 公开话题热度页（行业趋势/话题榜（复波+相关标注）/单讨论 Top，读 `_data/hn_trends.json` 投影，由 hn-heat.rb 每日生成并提交 master）。`hn.html` 已退役（二期 P2）。
 
 ## Collections & Permalinks
 | Collection | Path | Permalink | Notes |
@@ -48,11 +48,11 @@ Nav pages (`movies.html`, `books.html`, `articles.html`, `trends.html`) use `nav
 - `YYYY-MM-DD-title-with-hyphens.md`; movies 加点 `YYYY-MM-DD-title.YEAR.md`
 - **Articles**: `_articles/YYYY/YYYY-MM-DD-hn-keywords.md`（年子目录；`scripts/hn-fetch.rb` dedup 用 `_articles/**/*.md` 递归匹配）
 
-## HN 自动管道（事实来源: `.opencode/designs/hn-signal-architecture.md`）
-两 workflow + skill + 热度引擎，三层存储（cache 热层 / hn-data 分支冷层 / `_data/hn_trends.json` 公开投影）：
-1. `hn-fetch.yml` 3x daily: 抓 HN best → `_data/hn/` 周缓存 + **快照追加 + registry 状态机（active 14d→watching 周探活→settled，可复活）+ threads 归档** → hn-data 分支 push；hot 触发**双通道**（点值阈值 OR 快照差分）
-2. `hn-auto.yml` 每日: restore cache + hn-data attach → `opencode run /hn --auto` (MiniMax-M3 主力；失败或无产出时回退 gemini-3.5-flash → deepseek-v4-flash) → `hn-repair.rb` 门禁 → `hn-heat.rb --all`（日榜/聚簇/cohort/trends 投影）→ jekyll build 门禁 → git-auto-commit 提交 `_articles/` + `_data/hn_trends.json` → hn-data push
-3. 本地: `make fetch url='<hn_url>'` / `make fetch-best` / `make hn-archive-init`；`/hn` 命令（skill Phase 0-3，Phase 0 排序读 `.hn-archive/heat/`）
+## HN 自动管道（事实来源: `.opencode/designs/hn-signal-architecture.md` + `phase2.md`）
+两 workflow + skill + 热度引擎，单层存储（hn-data 分支唯一存储，cache 层二期已退役）：
+1. `hn-fetch.yml` 3x daily: 抓 HN best → 归档（threads 含 post+comments+article、snapshots 时间序列、registry 分层状态机 active(14d)→watching(周探活)→cold(月)→deep(季)→settled，评论增长可复活）→ hn-data 分支 push；hot 触发双通道（点值阈值 OR 快照差分），触发历史永久化 triggers.json
+2. `hn-auto.yml` 每日: hn-data attach → `opencode run /hn --auto`（候选池 registry 驱动，Phase 0 按 heat 特征排序：resurrected 直通/up+expert 加权/spike 降权；MiniMax-M3 主力，回退 gemini-3.5-flash → deepseek-v4-flash）→ `hn-repair.rb` 门禁 → `hn-heat.rb --all`（日榜/聚簇+复波/专家群体/行业分类/published/trends 投影）→ jekyll build 门禁 → git-auto-commit 提交 `_articles/` + `_data/hn_trends.json` → hn-data push
+3. 本地: `make fetch url='<hn_url>'` / `make fetch-best` / `make hn-archive-init`；`/hn` 命令（skill Phase 0-3，数据读 `.hn-archive/threads/`）
 
 ## Commands
 | Command | Action | Agent |
