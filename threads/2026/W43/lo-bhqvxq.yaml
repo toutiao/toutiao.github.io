@@ -5,14 +5,14 @@ post:
   title: a neat trick i found for reusing physical memory
   url: https://sebsite.pw/w/20260728-cow.html
   hn_url: https://lobste.rs/s/bhqvxq
-  score: 16
+  score: 22
   author: signal-11
   posted_at: '2026-10-23T13:40:30Z'
-  fetched_at: '2026-10-24T02:41:13Z'
+  fetched_at: '2026-10-24T12:27:30Z'
   article_url: https://sebsite.pw/w/20260728-cow.html
-  article_fetch_status: skipped
-  article_fetched_at:
-  raw_comment_count: 3
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T12:27:37Z'
+  raw_comment_count: 6
   tags:
   - c
   - programming
@@ -31,7 +31,7 @@ comments:
   text: |-
     I'm wondering about use cases for lazily duplicating large non-zero-initialized memory areas (preferably some where this complexity is worth the performance gains).
     For multi-threaded programs where performance is important, CoW pages should carefully be not read before being written, otherwise there will be expensive TLB shootdowns due to the change of the physical address. CoW can be nice for small things but unfortunately doesn't scale well.
-  score: 1
+  score: 2
   posted_at: '2026-10-23T20:02:43Z'
 - id: lo-2o4g2b
   parent_id: '0'
@@ -41,6 +41,65 @@ comments:
     well as CoW, etc
   score: 2
   posted_at: '2026-10-23T22:24:44Z'
+- id: lo-g4dgqt
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    It has another benefit (or, at least, did.  I presume it still does). The region is fairly large and contains a bunch of pages in different places. This means it will often miss in the TLB. It turns out TLB misses on modern systems are not that bad if the page tables are all in cache, especially if they’re all in L1. XNU maps all of the read-only (including execute) shared region using the same page-table pages. The root of the page table in every macOS / iOS app has one entry that points to the same page. The page table walkers keep those pages in L1 so accessing them is faster.
+    This alone, I’m told, gave a 1-10% performance improvement on app performance when they rolled it out.
+    It’s a really neat trick. It’s a shame F/OSS ecosystems are so fragmented that there isn’t a common set of libraries that everyone would want. And things like Flatpack are making this worse by making it easier to ship different versions of the same libraries.
+  score: 2
+  posted_at: '2026-10-24T09:15:28Z'
+- id: lo-cluzbb
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    Yes, but you have to use file-backed mappings. Windows has a temp-file attribute that you can set that gives you swap-like behaviour (writes to memory are not required to be written back to disk ever, though they may be).
+    Be a little careful on Windows though because this is the one place NT makes an exception to its ‘don’t make promises you can’t keep’ rule in the memory manager. Private (CoW) mappings of a file don’t count against your commit charge until you take the CoW fault. If there is no available commit, you get an exceptions (SEH or VEH).
+  score: 1
+  posted_at: '2026-10-24T09:18:55Z'
+- id: lo-bx3qb2
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    this is cool because regardless of the size of the initial allocation, the copy isn't taking up any physical memory
+
+    The PTEs for the demand-mapped pages of the copy allocation take up physical memory at a rate of only 1/512 ~= 0.2% assuming all pages of the 2 MB range are mapped. But 0.2% is not 0%. And this overhead becomes 100% if there's only one mapped page in the 2 MB range. The same pattern repeats at the coarser scales of the page table, but the PTE level is usually what's worth thinking about if at all. The VmPTE metric for Linux processes counts the overhead at several levels.
+    (The concrete numbers assume x86-64 and small pages.)
+  score: 1
+  posted_at: '2026-10-24T10:41:24Z'
 article:
-  fetch_status: skipped
-archived_at: '2026-10-24T02:41:26Z'
+  url: https://sebsite.pw/w/20260728-cow.html
+  title: a neat trick i found for reusing physical memory
+  fetch_status: success
+  content: |-
+    # a neat trick i found for reusing physical memory
+
+    i found a neat trick which lets you take advantage of to duplicate memory without allocating anything upfront. maybe some people already know about this, but i just discovered it and i think it's cool (and i kinda wish it was easier to take advantage of this with higher-level stdlib functions)
+
+    start by creating a memory-backed file descriptor and mmaping it (error handling omitted):
+
+        int fd = memfd_create("foo", MFD_CLOEXEC);
+        ftruncate(fd, SIZE);
+        char *template = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    write some "template" to it (this is what will be dup'd later):
+
+        memset(template, 67, SIZE);
+
+    now, to allocate a chunk of memory with this template, use `mmap` with `MAP_PRIVATE`:
+
+        char *copy = mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+
+    this is cool because regardless of the size of the initial allocation, the copy isn't taking up any physical memory. and say you mutate the copy now:
+
+        copy[i] = 69;
+
+    this will only allocate a single page of memory (4 KiB); the rest of the pages are still shared with the original template!
+
+    i did a test here where i allocated 32 MiB, and then "copied" it with what would be another 32 MiB allocation, but the total physical memory usage was 32.004 MiB.
+
+    i wonder if it would be possible to do this with a continuous memory region. like, 32 MiB of virtual memory, but because it's all filled with the same (non-zero) stuff, only 1 page of physical memory is allocated upfront. this feels like it could be useful maybe
+  error:
+  fetched_at: '2026-10-24T12:27:37Z'
+archived_at: '2026-10-24T12:27:37Z'

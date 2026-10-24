@@ -1,0 +1,131 @@
+---
+post:
+  id: lo-6utrvz
+  source: lobsters
+  title: Incremental Computation Graphs
+  url: https://dziban.net/posts/incremental-computation-graph/
+  hn_url: https://lobste.rs/s/6utrvz
+  score: 10
+  author: marcecoll
+  posted_at: '2026-10-23T21:35:45Z'
+  fetched_at: '2026-10-24T12:27:30Z'
+  article_url: https://dziban.net/posts/incremental-computation-graph/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T12:27:35Z'
+  raw_comment_count: 3
+  tags:
+  - programming
+comments:
+- id: lo-f6m0kl
+  parent_id: '0'
+  author: polywolf
+  text: |-
+    See also https://thunderseethe.dev/posts/lsp-base/ which, while longer, i think flows a bit better as an introduction to the algorithm
+    (Also see also https://git.sr.ht/~polywolf/driver/tree/8b6396478fbba0fdf2b495d1bb0b90600db2c2ae/item/packages/driver-engine/src/context.rs#L183 where I implemented this algorithm myself!)
+    I always find it interesting the slightly different takes on the core red-green concept:
+
+    For each dependency we track also what was the changed-at revision of the dependency when we depended on it.
+
+    My implementation doesn't need this? And I can't find where in the rest of the algorithm we'd depend on that.
+    Also missing from most discussions is a twist I added to make the changed-at checking return false more often, by eagerly re-querying dependencies that may have changed in order to not re-run a potentially expensive function with no actually-changed deps.
+    (I should probably figure out what Salsa does someday, because that seems to be the "canonical" version of red-green. Maybe I'll write more on this but meh I don't have that much to add)
+  score: 2
+  posted_at: '2026-10-23T22:14:15Z'
+- id: lo-lxaroo
+  parent_id: '0'
+  author: kchanqvq
+  text: |-
+    Would this be useful? https://github.com/kchanqvq/lwcells
+    It also handles some problems like glitch-free propagation, but I guess that's more relevant for GUI than compilers.
+  score: 2
+  posted_at: '2026-10-23T22:23:39Z'
+- id: lo-ndzbzc
+  parent_id: '0'
+  author: marcecoll
+  text: |-
+    Thanks for the extra references! I wrote this a few months ago when I was understanding the algorithm for the first time and it was written in a very rough way haha. I've been revisiting it as I am using it again for a VCS+CI system I'm building.
+    I found the algorithm very nice at the start of the year and very elegant. I think more people should know about it. One thing that I don't think I express very well is how nice it is that once you describe your computation in terms of these cacheable computation graphs a lot of the manual orchestrating I used to do before to keep things up-to-date goes away. The whole data model is very very nice to work with.
+
+    And I can't find where in the rest of the algorithm we'd depend on that.
+
+    changed_at basically tells you when this was computed the last time. Let's say you do a query at time T, you check and the last time that query value was verified was at T - 1, so it could be out of date. You then check its dependencies and to each of the dependencies you check if dep.changed_at < q.verified_at, if that's the case then the value is up to date since none of its dependencies has changed since you last verified it. That's how in my version of the algorithm at least you stay lazy and avoid recomputation.
+  score: 2
+  posted_at: '2026-10-23T22:27:04Z'
+article:
+  url: https://dziban.net/posts/incremental-computation-graph/
+  title: Incremental Computation Graphs — dziban.net
+  fetch_status: success
+  content: "Abstract\n\nOverview of computation graphs\n\n## Background\n\nI learned
+    this as part of my work on [Yabu](/posts/yabu/). There I need to work recompile,
+    regenerate code and type-check at interactive speeds.\n\nThe implementation is
+    based on [Salsa](https://salsa-rs.netlify.app/)\n\n### Main Ideas\n\nYou have
+    two main things in the algorithm:\n\n- **Inputs** , mutable, the only source of
+    external change. The system sets these and then consumes from:\n- **Computations**
+    , pure functions of inputs or other computations, these are memoized and invalidated
+    by the _red-green walk._\n\nFor example, in the case of Yabu an input would be
+    the function definition. Let’s say you already have an image and you redefine
+    a function.\n\n    (defun some-func ((a int) (b int)) int \n      (+ a b))\n\nThe
+    source string of this function would become an input and then from there you have
+    defined several pure computations.\n\nFor example we can have a parse function,
+    it depends on the source input and returns the AST of the source. Because this
+    is a pure function, if the input hasn’t changed we can just return the memoized
+    AST without having to re-parse it.\n\n    (define-computation parse (source)\n
+    \     (yabu:parse source))\n\nNow this gets interesting once you start composing
+    computations, this looks very similar to regular functions calls except these
+    internally keep track of which computations you are calling. Creating a runtime-graph
+    of dependent computations. We’ll use this graph later to invalidate computations
+    once inputs change.\n\n    (define-computation compile (source)\n      (let* ((typecheck-result
+    (typecheck source)))\n        (if (errorp typecheck-result)\n            typecheck-result\n
+    \           (yabu:compile ast))))\n\n> _NOTE:_ This is not a correct compile function
+    for Yabu, because you are only checking if this function typechecks against the
+    rest of the functions not if the rest of the functions typecheck against this
+    function. We are also skipping around some complications around the staging system.\n>
+    \n> You can check the real algorithm at [Yabu Incremental Typesystem](/posts/yabu-incremental-type-system/)\n\nHere
+    `parse`, `typecheck` and `compile` are all computations. These create a runtime
+    graph where we see that compile `<source>` depends on `typecheck`, which will
+    in turn probably depend on `parse` and it will probably depend on another computation
+    `type-signature` for all of the functions the AST calls.\n\n    compile(source)
+    ----.\n                                           |\n                                           v\n
+    \              parse(source) <------ typecheck(ast)\n                                           |\n
+    \                 .------------------------+------------------------.\n                  v
+    v v\n          type-signature(f_1) type-signature(f_2) ... type-signature(f_N)\n\nNow
+    if `f_1` changes type signature, automatically the typecheck of this function
+    will get invalidated! This invalidation is key to make the Yabu typechecker very
+    fast for interactive use even in large programs.\n\n### Red-green walk\n\nEach
+    memoization entry stores several things:\n\n- The return value (the memoized value)\n-
+    The `verified-at` revision, when was this memoization last-confirmed valid\n-
+    The `changed-at` revision, when was this memoization value last changed\n- The
+    _dependency list_, basically the dependency graph. In the case of compile above
+    it would be `typecheck(source)`. In the case of `typecheck(source)` it would be
+    `parse(source)`, and `type-signature(f_1)..type-signature(f_N)` for example.\n\nFor
+    each dependency we track also what was the `changed-at` revision of the_dependency_
+    when we depended on it.\n\nSo let’s see an example, we just redefined `some-func`
+    as above and we call`(compile \"<source>\")`, this is a new source so there is
+    no memoization for this, we execute the computation function. We call `typecheck`,
+    since this is a new `source` this doesn’t exist either, that depends on `parse`
+    which also doesn’t exist, that creates one memoization entry:\n\n    (:key '(parse
+    source) \n     :return <ast> \n     :verified-at :R7 \n     :changed-at :R7 \n
+    \    :dependency-list '((:input source)))\n\nWe then check `type-signature` for
+    `+` with is `(-> (int int) int)` with a`:verified-at` and `:changed-at` of `R1`
+    (this is stdlib, so it was populated at the start of the session). Since `R1`
+    is less than `R7`, it may be outdated and we need to check the dependencies of
+    `(type-signature +)`. That depends on the source of `+` which also has a revision
+    of `R1`. Since the revision of the memoization and the revision of its dependency
+    are equal we consider it fresh and we update the `:verified-at` for `(type-signature
+    +)` to the current revision of `R7`.\n\nThe typecheck passes so we memoize that
+    as well and create an entry like\n\n    (:key '(typecheck source)\n     :return
+    <pass|fail>\n     :verified-at :R7\n     :changed-at :R7\n     :dependency-list
+    '((parse source) (type-signature +))')\n\nIt’s important here to note when we
+    consider something fresh:\n\n- It’s either when `:verified-at == current-revision`\n-
+    Or, when the dependencies are inputs where `:changed-at < current-revision`\n\nYou
+    always need to walk the dependency chain until you bottom out at the inputs or
+    you have already validated the subtree this revision.\n\nDuring the walk as you
+    come up the recursion you update all `:verified-at` to`current-revision` so any
+    other computation in this revision short-circuits.\n\nNext time, if we reevaluate
+    `typecheck` over the same source we’ll recurse through the graph, arrive at the
+    same input, check that it hasn’t changed, go upwards the computation tree, updated
+    `:validated-at` and skip typechecking and compiling altogether.\n\n— marce coll,
+    2026-04-23"
+  error:
+  fetched_at: '2026-10-24T12:27:35Z'
+archived_at: '2026-10-24T12:27:36Z'
