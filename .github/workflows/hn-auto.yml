@@ -250,16 +250,29 @@ jobs:
           skip_dirty_check: true
 
       # git-auto-commit's push has no retry: if master advanced during the ~20min
-      # generation window (local pushes / other runs), the push is rejected and the
-      # committed articles die with the runner (runs 40055583472 / 40056343806).
-      # The commit already passed the build gate — rebase onto the new remote and
-      # push again. --deepen: shallow clones graft fetched tips, which would make
-      # rebase replay the whole visible history.
+      # generation window (local pushes / other runs / hot-dispatch queueing), the
+      # push is rejected and the committed articles die with the runner (runs
+      # 40055583472 / 40056343806). The commit already passed the build gate —
+      # rebase onto the new remote and push again. --deepen: shallow clones graft
+      # fetched tips, which would make rebase replay the whole visible history.
+      # NOTE the !cancelled() prefix: an `if` without a status function is
+      # implicitly `success() && ...`, which can never run after a failed step
+      # (40094015438 — the recover step was skipped exactly this way).
       - name: Recover master push (concurrent push race)
-        if: ${{ steps.auto-commit.outcome == 'failure' }}
+        if: ${{ !cancelled() && steps.auto-commit.outcome == 'failure' }}
         run: |
           git fetch --deepen=100 origin +refs/heads/master:refs/remotes/origin/master
-          git rebase origin/master
+          if ! git rebase origin/master; then
+            # Only the two trend projections can conflict here (whole-file rewrites
+            # by hn-heat on both sides; article filenames never collide). Rebase
+            # swaps ours/theirs: --theirs = this run's replayed side. Take it — the
+            # projection computed with this run's articles; the next hn-heat --all
+            # recomputes it wholesale anyway.
+            git diff --name-only --diff-filter=U | while read -r f; do
+              git checkout --theirs -- "$f" && git add -- "$f" || git rm -f -- "$f"
+            done
+            GIT_EDITOR=true git rebase --continue
+          fi
           git push origin HEAD:master
 
       # Persist generation-time archive writes (url-mode fetches, force fetch)
