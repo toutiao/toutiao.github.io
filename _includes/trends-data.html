@@ -1,0 +1,113 @@
+{%- assign t = site.data.hn_trends -%}
+{%- if t -%}
+
+<p style="color:#888;font-size:0.92em;margin:0 0 2em;">
+  通过 Hacker News 专业社区的讨论参与度（评论增速、深度、跨话题活跃评论者占比）推测各技术话题的热度走向。
+  追踪 {{ t.stats.threads_tracked }} 个讨论（活跃 {{ t.stats.active }} · 观察 {{ t.stats.watching }} · 归档 {{ t.stats.settled }}），
+  热度模型 {{ t.rule_version }}，更新于 {{ t.generated_at | date: "%Y-%m-%d %H:%M" }} UTC。
+</p>
+
+<h3 style="margin:2em 0 0.8em;">话题热度榜</h3>
+
+{%- for topic in t.topics -%}
+{%- assign trend = topic.trend -%}
+<div style="padding:0.9em 0;border-bottom:1px solid #f0f0f0;">
+  <div style="display:flex;align-items:baseline;gap:0.6em;flex-wrap:wrap;">
+    <span style="color:#bbb;font-size:0.85em;min-width:1.6em;">{{ forloop.index }}</span>
+
+    {%- if topic.article -%}
+    <a href="{{ topic.article.url | relative_url }}" style="font-weight:600;">{{ topic.title | escape }}</a>
+    <small style="color:#999;">[<a href="{{ topic.article.url | relative_url }}">本站解读</a>]</small>
+    {%- else -%}
+    {%- assign rep = topic.threads | first -%}
+    <a href="{{ rep.hn_url }}" style="font-weight:600;">{{ topic.title | escape }}</a>
+    {%- endif -%}
+
+    {%- case trend -%}
+    {%- when 'up' -%}<span style="color:#e0752d;font-size:0.85em;">↑ 升</span>
+    {%- when 'down' -%}<span style="color:#6a9a6a;font-size:0.85em;">↓ 降</span>
+    {%- when 'new' -%}<span style="color:#4a7ab5;font-size:0.85em;">新</span>
+    {%- when 'resurrected' -%}<span style="color:#8a5ab5;font-size:0.85em;">回热</span>
+    {%- else -%}<span style="color:#ccc;font-size:0.85em;">·</span>
+    {%- endcase -%}
+
+    {%- if topic.thread_count > 1 -%}
+    <span style="color:#999;font-size:0.85em;">{{ topic.thread_count }} 条讨论</span>
+    {%- endif -%}
+
+    <span style="margin-left:auto;display:flex;align-items:center;gap:0.6em;">
+      {%- if topic.delta_24h -%}
+      <span style="color:#999;font-size:0.8em;">24h {{ topic.delta_24h | round: 2 }}</span>
+      {%- endif -%}
+      {%- if topic.sparkline != '' -%}
+      <svg width="90" height="26" viewBox="0 0 100 28" role="img" aria-label="30 天热度曲线">
+        <polyline points="{{ topic.sparkline }}" fill="none" stroke="#e0752d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      {%- endif -%}
+      <span style="font-size:0.9em;color:#c60;">{{ topic.heat | round: 1 }}</span>
+    </span>
+  </div>
+
+  {%- if topic.keywords and topic.keywords != empty -%}
+  <p style="margin:0.3em 0 0 1.6em;font-size:0.8em;color:#aaa;">关键词：{{ topic.keywords | join: " · " }}</p>
+  {%- endif -%}
+
+  {%- if topic.thread_count > 1 -%}
+  <ul style="margin:0.4em 0 0 1.6em;padding:0;list-style:none;font-size:0.85em;color:#777;">
+    {%- for th in topic.threads -%}
+    <li style="margin:0.15em 0;">
+      <a href="{{ th.hn_url }}">{{ th.title | escape }}</a>
+      <span style="color:#aaa;">（热度 {{ th.heat | round: 1 }}）</span>
+    </li>
+    {%- endfor -%}
+  </ul>
+  {%- endif -%}
+</div>
+{%- endfor -%}
+
+<h3 style="margin:2.5em 0 0.8em;">单讨论热度 Top {{ t.top_threads | size }}</h3>
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+  <thead>
+    <tr style="text-align:left;color:#999;border-bottom:1px solid #e0e0e0;">
+      <th style="padding:0.4em 0.6em 0.4em 0;font-weight:400;">讨论</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">热度</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">24h 评论</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">专家占比</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">走向</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for th in t.top_threads -%}
+    <tr style="border-bottom:1px solid #f5f5f5;">
+      <td style="padding:0.5em 0.6em 0.5em 0;">
+        <a href="{{ th.hn_url }}">{{ th.title | escape | truncate: 64 }}</a>
+        {%- if th.article %} <small style="color:#999;">[<a href="{{ th.article.url | relative_url }}">本站解读</a>]</small>{% endif -%}
+      </td>
+      <td style="padding:0.5em 0.6em;color:#c60;white-space:nowrap;">{{ th.heat | round: 1 }}</td>
+      <td style="padding:0.5em 0.6em;color:#777;white-space:nowrap;">{{ th.comment_vel_24h }}</td>
+      <td style="padding:0.5em 0.6em;color:#777;white-space:nowrap;">{{ th.expert_ratio | times: 100 | round: 0 }}%</td>
+      <td style="padding:0.5em 0.6em;white-space:nowrap;">
+        {%- case th.trend -%}
+        {%- when 'up' -%}<span style="color:#e0752d;">↑ 升</span>
+        {%- when 'down' -%}<span style="color:#6a9a6a;">↓ 降</span>
+        {%- when 'new' -%}<span style="color:#4a7ab5;">新</span>
+        {%- when 'resurrected' -%}<span style="color:#8a5ab5;">回热</span>
+        {%- else -%}<span style="color:#ccc;">·</span>
+        {%- endcase -%}
+      </td>
+    </tr>
+    {%- endfor -%}
+  </tbody>
+</table>
+</div>
+
+<hr style="margin:3em 0 1em;border:none;border-top:1px solid #eee;">
+<p style="text-align:center;font-size:0.8em;color:#bbb;">
+  热度 = 评论增速 · 分数增速 · 专家参与 · 讨论深度 加权（确定性计算，非模型评分）。
+  「专家」指 14 天内在 ≥2 个高热度讨论中发言的评论者。
+</p>
+
+{%- else -%}
+<p style="color:#999;">暂无热度数据。</p>
+{%- endif -%}

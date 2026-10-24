@@ -1,0 +1,588 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# HN Heat Engine — deterministic topic-heat derivation from the hn-data archive.
+#
+# Data flow (all reads/writes against the archive working copy, env HN_ARCHIVE_DIR):
+#   threads/YYYY/WNN/<id>.yaml  →  comment arrival histogram (posted_at rebuild)
+#   snapshots/YYYY/MM.jsonl     →  score velocity (only source of score history)
+#   topics.json                 →  thread registry + topic clusters
+#   cohort/WNN.json             →  expert commenter cohort (rolling 14d)
+#   heat/YYYY-MM-DD.json        →  daily per-thread heat snapshot (rule_version'd)
+#   _data/hn_trends.json        →  public projection (whitelisted fields only)
+#   published.json              →  hn_id → article map (replaces _articles scans)
+#
+# Usage:
+#   ruby scripts/hn-heat.rb --all                # cohort + day heat + clusters + projection
+#   ruby scripts/hn-heat.rb --recompute          # rebuild every heat day from raw signals
+#   ruby scripts/hn-heat.rb --refresh-published  # rebuild published.json only
+
+require 'json'
+require 'yaml'
+require 'time'
+require 'date'
+require 'fileutils'
+require 'optparse'
+require 'set'
+
+$stdout.sync = true
+
+ARCHIVE_DIR = ENV.fetch('HN_ARCHIVE_DIR', '.hn-archive')
+REGISTRY_PATH = File.join(ARCHIVE_DIR, 'topics.json')
+PUBLISHED_PATH = File.join(ARCHIVE_DIR, 'published.json')
+SNAPSHOTS_DIR = File.join(ARCHIVE_DIR, 'snapshots')
+THREADS_DIR = File.join(ARCHIVE_DIR, 'threads')
+HEAT_DIR = File.join(ARCHIVE_DIR, 'heat')
+COHORT_DIR = File.join(ARCHIVE_DIR, 'cohort')
+TRENDS_PATH = ENV.fetch('HN_TRENDS_PATH', '_data/hn_trends.json')
+
+RULE_VERSION = 'v1'
+WEIGHTS = { 'comment_vel' => 0.35, 'score_vel' => 0.25, 'expert' => 0.25, 'depth' => 0.15 }.freeze
+
+COHORT_WINDOW_DAYS = 14   # rolling window for expert cohort membership
+COHORT_MIN_THREADS = 2    # authors on >= 2 tracked threads within window = cohort
+TOP_COMMENTS_FOR_EXPERT = 30
+CLUSTER_MAX_AGE_DAYS = 60 # only threads posted within this window participate in clustering
+CLUSTER_PAIR_MAX_GAP_DAYS = 30
+TRENDS_WINDOW_DAYS = 30
+TRENDS_TOP_TOPICS = 50
+TRENDS_TOP_THREADS = 20
+TREND_DELTA_EPS = 0.15    # |delta| below this = flat
+MIN_HEAT_FOR_ENTRY = 0.05
+
+STOPWORDS = %w[
+  show ask hn tell the a an and or of to in for on with is are was were be been
+  at by from as that this it its new how why what when where your you my our
+  their about into over after before more most other some such no not only own
+  same so than too very can will just dont should now using use used vs via
+  get got make made all any because been being between during each few he her
+  here him his i me she them then there these they we which while who whom
+  why would could up down out off again further once
+].freeze
+
+# ── Loaders ──
+
+def load_registry
+  if File.exist?(REGISTRY_PATH)
+    data = (JSON.parse(File.read(REGISTRY_PATH)) rescue nil)
+    return data if data.is_a?(Hash) && data['threads'].is_a?(Hash)
+  end
+  { 'version' => 1, 'updated_at' => nil, 'threads' => {}, 'topics' => [] }
+end
+
+def save_registry(reg)
+  reg['version'] ||= 1
+  reg['updated_at'] = Time.now.utc.iso8601
+  FileUtils.mkdir_p(ARCHIVE_DIR)
+  tmp = REGISTRY_PATH + '.tmp'
+  File.write(tmp, JSON.pretty_generate(reg) + "\n")
+  File.rename(tmp, REGISTRY_PATH)
+end
+
+def load_threads
+  threads = {}
+  Dir.glob(File.join(THREADS_DIR, '*', 'W*', '*.yaml')).each do |f|
+    data = (YAML.safe_load_file(f, permitted_classes: [Time]) rescue nil)
+    next unless data.is_a?(Hash)
+    id = (data['post'] && data['post']['id'] || File.basename(f, '.yaml')).to_s
+    threads[id] = { 'post' => data['post'] || {}, 'comments' => Array(data['comments']) }
+  end
+  threads
+end
+
+def snapshot_map(months: 3)
+  now = Time.now.utc
+  map = Hash.new { |h, k| h[k] = [] }
+  months.times do |back|
+    m = Date.new(now.year, now.month, 1) >> -back
+    path = File.join(SNAPSHOTS_DIR, m.strftime('%Y'), "#{m.strftime('%m')}.jsonl")
+    next unless File.exist?(path)
+    File.readlines(path).each do |line|
+      obj = (JSON.parse(line) rescue nil)
+      next unless obj
+      map[obj['id'].to_s] << { 't' => Time.parse(obj['t']), 's' => obj['s'].to_i, 'c' => obj['c'].to_i }
+    end
+  end
+  map.each_value { |rows| rows.sort_by! { |r| r['t'] } }
+  map
+end
+
+# ── Expert cohort (professional participation proxy) ──
+
+def build_cohort(threads, reg, now = Time.now.utc)
+  window_start = now - COHORT_WINDOW_DAYS * 86400
+  authors = Hash.new { |h, k| h[k] = { 'threads' => Set.new, 'comments' => 0 } }
+
+  reg['threads'].each do |id, e|
+    next unless e['last_activity'] && Time.parse(e['last_activity']) >= window_start
+    t = threads[id]
+    next unless t
+    t['comments'].each do |c|
+      next unless c['posted_at']
+      next unless Time.parse(c['posted_at']) >= window_start
+      a = c['author'].to_s
+      next if a.empty? || a == 'anonymous'
+      authors[a]['threads'] << id
+      authors[a]['comments'] += 1
+    end
+  end
+
+  cohort = authors.select { |_a, st| st['threads'].size >= COHORT_MIN_THREADS }
+  yr, wk = nil, nil
+  now_str = now.strftime('%G-W%V')
+  payload = {
+    'week' => now_str,
+    'window_days' => COHORT_WINDOW_DAYS,
+    'min_threads' => COHORT_MIN_THREADS,
+    'generated_at' => now.iso8601,
+    'cohort' => cohort.keys.sort,
+    'members' => cohort.transform_values { |st| { 'threads' => st['threads'].size, 'comments' => st['comments'] } },
+  }
+  FileUtils.mkdir_p(COHORT_DIR)
+  File.write(File.join(COHORT_DIR, "#{now_str}.json"), JSON.pretty_generate(payload) + "\n")
+  Set.new(cohort.keys)
+end
+
+def load_cohort(now = Time.now.utc)
+  # Latest cohort file within the current or previous ISO week
+  now_str = now.strftime('%G-W%V')
+  prev_str = (now - 7 * 86400).strftime('%G-W%V')
+  [now_str, prev_str].each do |wk|
+    path = File.join(COHORT_DIR, "#{wk}.json")
+    next unless File.exist?(path)
+    data = (JSON.parse(File.read(path)) rescue nil)
+    return Set.new(data['cohort']) if data && data['cohort']
+  end
+  nil
+end
+
+# ── Per-thread signals ──
+
+def compute_depths(comments)
+  by_id = comments.to_h { |c| [c['id'], c] }
+  depth = {}
+  calc = lambda do |c|
+    return depth[c['id']] if depth.key?(c['id'])
+    parent = by_id[c['parent_id']]
+    depth[c['id']] = parent ? calc.call(parent) + 1 : 1
+  end
+  comments.each { |c| calc.call(c) }
+  depth
+end
+
+def percentile(values, p)
+  return 0 if values.empty?
+  sorted = values.sort
+  idx = ((sorted.size - 1) * p).floor
+  sorted[idx]
+end
+
+# Resurrection: post older than 14d with a >= 7d quiet gap followed by a
+# (relatively recent) arrival — the "month-old thread is hot again" case.
+def resurrected?(comment_times, posted_at, anchor)
+  return false unless posted_at && comment_times.size >= 2
+  post_time = Time.parse(posted_at)
+  return false if anchor - post_time <= 14 * 86400
+  sorted = comment_times.sort
+  (1...sorted.size).each do |i|
+    next unless sorted[i] - sorted[i - 1] >= 7 * 86400
+    return true if anchor - sorted[i] <= 30 * 86400
+  end
+  false
+end
+
+def thread_signals(id, thread, reg_entry, cohort, snapshots, anchor = Time.now.utc)
+  comments = thread ? thread['comments'] : []
+  post = thread ? thread['post'] : {}
+  times = comments.filter_map { |c| c['posted_at'] ? Time.parse(c['posted_at']) : nil }
+
+  comment_vel = times.count { |t| t >= anchor - 86400 }
+
+  # Score velocity from snapshot series (24h tail); nil when history too thin
+  rows = (snapshots[id] || []).select { |r| r['t'] <= anchor }
+  score_vel = nil
+  if rows.size >= 2
+    win = rows.last(2)
+    gap_h = (win[-1]['t'] - win[-2]['t']) / 3600.0
+    score_vel = ((win[-1]['s'] - win[-2]['s']) / gap_h).round(2) if gap_h > 0.5
+  end
+
+  # Expert ratio: authors of the top-N comments (by score) that are cohort members
+  top = comments.sort_by { |c| -(c['score'] || 0) }.first(TOP_COMMENTS_FOR_EXPERT)
+  top_authors = top.map { |c| c['author'].to_s }.reject { |a| a.empty? || a == 'anonymous' }.uniq
+  expert_ratio = if cohort && !top_authors.empty?
+                   (top_authors & cohort.to_a).size.to_f / top_authors.size
+                 else
+                   0.0
+                 end
+
+  depths = compute_depths(comments).values
+  depth_p95 = percentile(depths, 0.95)
+
+  posted_at = post['posted_at'] || reg_entry && reg_entry['posted_at']
+  {
+    'comment_vel_24h' => comment_vel,
+    'total_comments' => comments.size,
+    'score_vel' => score_vel,
+    'score_confidence' => score_vel ? 'ok' : 'low',
+    'expert_ratio' => expert_ratio.round(3),
+    'depth_p95' => depth_p95,
+    'avg_depth' => (depths.empty? ? 0 : (depths.sum.to_f / depths.size).round(2)),
+    'long_tail' => posted_at ? times.count { |t| t - Time.parse(posted_at) >= 7 * 86400 } : 0,
+    'resurrected' => resurrected?(times, posted_at, anchor),
+  }
+end
+
+def heat_value(signals)
+  s = {
+    'comment_vel' => Math.log(1 + signals['comment_vel_24h']),
+    'score_vel' => Math.log(1 + (signals['score_vel'] || 0)),
+    'expert' => signals['expert_ratio'] * 3.0,
+    'depth' => Math.log(1 + signals['depth_p95']) / 1.5,
+  }
+  WEIGHTS.sum { |k, w| w * s[k] }.round(3)
+end
+
+# ── Daily heat file ──
+
+def heat_path(day)
+  File.join(HEAT_DIR, day.strftime('%Y-%m-%d.json'))
+end
+
+def compute_day(now, threads, reg, cohort, snapshots, day: nil)
+  anchor = now
+  entries = []
+  reg['threads'].each do |id, e|
+    next if e['status'] == 'settled' && day.nil? # daily run: settled threads still get
+    # recomputed on --recompute (historical), but skipped for fresh days to save IO
+
+    sig = thread_signals(id, threads[id], e, cohort, snapshots, anchor)
+    heat = heat_value(sig)
+    next if heat < MIN_HEAT_FOR_ENTRY
+
+    post = threads[id] ? threads[id]['post'] : {}
+    entries << {
+      'id' => id,
+      'title' => e['title'] || post['title'],
+      'hn_url' => e['hn_url'] || post['hn_url'],
+      'status' => e['status'],
+      'posted_at' => e['posted_at'] || post['posted_at'],
+      'heat' => heat,
+      'signals' => sig,
+    }
+  end
+  entries.sort_by! { |e| -e['heat'] }
+  {
+    'rule_version' => RULE_VERSION,
+    'computed_at' => now.utc.iso8601,
+    'entries' => entries,
+  }
+end
+
+def write_day_heat(payload, day)
+  FileUtils.mkdir_p(HEAT_DIR)
+  tmp = heat_path(day) + '.tmp'
+  File.write(tmp, JSON.pretty_generate(payload) + "\n")
+  File.rename(tmp, heat_path(day))
+end
+
+def load_day_heat(day)
+  path = heat_path(day)
+  return nil unless File.exist?(path)
+  JSON.parse(File.read(path))
+rescue JSON::ParserError
+  nil
+end
+
+def annotate_trends(entries, prev_entries)
+  prev_heat = prev_entries ? prev_entries.each_with_object({}) { |e, h| h[e['id']] = e['heat'] } : {}
+  now = Time.now.utc
+  entries.each do |e|
+    delta = prev_heat.key?(e['id']) ? (e['heat'] - prev_heat[e['id']]).round(3) : nil
+    e['delta_24h'] = delta
+    e['trend'] =
+      if e['signals']['resurrected']
+        'resurrected'
+      elsif delta.nil?
+        posted = e['posted_at'] ? (Time.parse(e['posted_at']) rescue nil) : nil
+        posted && (now - posted) <= 3 * 86400 ? 'new' : 'flat'
+      elsif delta > TREND_DELTA_EPS
+        'up'
+      elsif delta < -TREND_DELTA_EPS
+        'down'
+      else
+        'flat'
+      end
+  end
+  entries
+end
+
+# ── Deterministic topic clustering ──
+
+def topic_tokens(title)
+  title.to_s.downcase.gsub(/[^a-z0-9\s]/, ' ').split.reject { |t|
+    t.length < 3 || STOPWORDS.include?(t) || t =~ /^\d+$/
+  }
+end
+
+def same_topic?(a, b)
+  shared = (a[:tokens] & b[:tokens]).size
+  return false if shared.zero?
+  union = (a[:tokens] | b[:tokens]).size
+  gap = (a[:posted] && b[:posted]) ? (a[:posted] - b[:posted]).abs : 0
+  return false if gap > CLUSTER_PAIR_MAX_GAP_DAYS * 86400
+  shared >= 2 || (shared == 1 && shared.to_f / union >= 0.5)
+end
+
+def cluster_topics(threads, reg, now = Time.now.utc)
+  candidates = reg['threads'].map { |id, e|
+    posted = e['posted_at'] ? (Time.parse(e['posted_at']) rescue nil) : nil
+    next nil unless posted && (now - posted) <= CLUSTER_MAX_AGE_DAYS * 86400
+    { id: id, title: (e['title'] || threads.dig(id, 'post', 'title') || '').to_s,
+      tokens: nil, posted: posted, first_seen: e['first_seen'] }
+  }.compact
+
+  candidates.each { |c| c[:tokens] = topic_tokens(c[:title]) }
+  candidates.reject! { |c| c[:tokens].empty? }
+
+  parent = candidates.each_with_object({}) { |c, h| h[c[:id]] = c[:id] }
+  find = lambda do |x|
+    parent[x] = x if parent[x].nil?
+    parent[x] == x ? x : (parent[x] = find.call(parent[x]))
+  end
+
+  candidates.each_with_index do |a, i|
+    ((i + 1)...candidates.size).each do |j|
+      b = candidates[j]
+      ra, rb = find.call(a[:id]), find.call(b[:id])
+      next if ra == rb
+      parent[ra] = rb if same_topic?(a, b)
+    end
+  end
+
+  groups = Hash.new { |h, k| h[k] = [] }
+  candidates.each { |c| groups[find.call(c[:id])] << c }
+
+  topics = groups.map do |_root, members|
+    members.sort_by! { |m| m[:posted] }
+    shared = members.map { |m| m[:tokens] }.reduce { |acc, t| acc & t }
+    {
+      'topic_id' => "t-#{members.first[:id]}",
+      'hn_ids' => members.map { |m| m[:id] },
+      'keywords' => shared.first(5),
+      'first_seen' => members.first[:first_seen],
+      'last_seen' => members.last[:first_seen],
+    }
+  end
+  topics.sort_by { |t| -t['hn_ids'].size }
+  topics.select! { |t| t['hn_ids'].size >= 2 } || []
+  topics
+end
+
+# ── Public projection (whitelist only — never raw comment text) ──
+
+def refresh_published
+  require 'time'
+  map = {}
+  Dir.glob('_articles/**/*.md').each do |f|
+    content = File.read(f)
+    fm = content[%r{\A---\s*\n(.*?)\n---}m, 1] || ''
+    date = fm[/^date:\s*['"]?(\d{4}-\d{2}-\d{2})/, 1] || File.basename(f)[/\d{4}-\d{2}-\d{2}/]
+    slug = File.basename(f, '.md')
+    ids = content.scan(/hn_id:\s*"?(\d+)"?|item\?id=(\d+)/).flatten.compact.uniq
+    ids.each do |id|
+      map[id] = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}/" }
+    end
+  end
+  FileUtils.mkdir_p(ARCHIVE_DIR)
+  File.write(PUBLISHED_PATH, JSON.pretty_generate({
+    'updated_at' => Time.now.utc.iso8601,
+    'hn_ids' => map,
+  }) + "\n")
+  puts "Published map: #{map.size} articles indexed -> #{PUBLISHED_PATH}"
+  map
+end
+
+def load_published
+  return {} unless File.exist?(PUBLISHED_PATH)
+  data = (JSON.parse(File.read(PUBLISHED_PATH)) rescue nil)
+  data && data['hn_ids'] || {}
+end
+
+def sparkline_points(curve, width: 100, height: 28, pad: 2)
+  return '' if curve.empty?
+  hs = curve.map { |p| p['h'] }
+  max_h = [hs.max, 0.001].max
+  n = curve.size
+  curve.each_with_index.map { |p, i|
+    x = n == 1 ? width / 2.0 : pad + (width - 2 * pad) * i / (n - 1.0)
+    y = height - pad - (height - 2 * pad) * (p['h'] / max_h)
+    "#{x.round(1)},#{y.round(1)}"
+  }.join(' ')
+end
+
+def build_trends(threads, reg, today_payload, now = Time.now.utc)
+  published = load_published
+  today = now.to_date
+  entries = today_payload['entries']
+
+  # Daily curves from historical heat files
+  day_files = {}
+  (TRENDS_WINDOW_DAYS - 1).downto(0) do |back|
+    d = today - back
+    day_files[d] = (d == today) ? today_payload : load_day_heat(d)
+  end
+  per_day_thread_heat = Hash.new { |h, d| h[d] = {} }
+  day_files.each do |d, payload|
+    next unless payload
+    payload['entries'].each { |e| per_day_thread_heat[d][e['id']] = e['heat'] }
+  end
+
+  # Topic aggregation: cluster topics + singleton topics for uncovered threads
+  topics = reg['topics'] || []
+  topic_of = {}
+  topics.each { |t| t['hn_ids'].each { |id| topic_of[id] = t['topic_id'] } }
+
+  heat_by_id = entries.each_with_object({}) { |e, h| h[e['id']] = e }
+  topic_members = Hash.new { |h, k| h[k] = [] }
+  heat_by_id.each_key do |id|
+    topic_members[topic_of[id] || "t-#{id}"] << id
+  end
+
+  topic_entries = topic_members.map do |tid, ids|
+    members = ids.map { |id| heat_by_id[id] }.compact
+    next nil if members.empty?
+    heat = members.sum { |m| m['heat'] }.round(3)
+    deltas = members.filter_map { |m| m['delta_24h'] }
+    delta = deltas.empty? ? nil : deltas.sum.round(3)
+    trend = members.any? { |m| m['trend'] == 'resurrected' } ? 'resurrected'
+            : members.any? { |m| m['trend'] == 'new' } ? 'new'
+            : delta && delta > TREND_DELTA_EPS ? 'up'
+            : delta && delta < -TREND_DELTA_EPS ? 'down' : 'flat'
+    curve = (TRENDS_WINDOW_DAYS - 1).downto(0).filter_map do |back|
+      d = today - back
+      v = ids.sum { |id| per_day_thread_heat[d][id] || 0 }.round(3)
+      v > 0 ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
+    end
+    article = ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s }
+    rep = members.max_by { |m| m['heat'] }
+    {
+      'topic_id' => tid,
+      'title' => rep['title'],
+      'keywords' => (topics.find { |t| t['topic_id'] == tid } || {})['keywords'] || [],
+      'thread_count' => ids.size,
+      'heat' => heat,
+      'delta_24h' => delta,
+      'trend' => trend,
+      'curve' => curve,
+      'sparkline' => sparkline_points(curve),
+      'threads' => members.map { |m|
+        { 'id' => m['id'], 'title' => m['title'], 'hn_url' => m['hn_url'],
+          'status' => m['status'], 'heat' => m['heat'], 'trend' => m['trend'] }
+      },
+      'article' => article,
+    }
+  end.compact.sort_by { |t| -t['heat'] }
+
+  counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
+  projection = {
+    'generated_at' => now.utc.iso8601,
+    'rule_version' => RULE_VERSION,
+    'window_days' => TRENDS_WINDOW_DAYS,
+    'stats' => {
+      'threads_tracked' => reg['threads'].size,
+      'active' => counts['active'] || 0,
+      'watching' => counts['watching'] || 0,
+      'settled' => counts['settled'] || 0,
+      'topics' => topics.size,
+    },
+    'topics' => topic_entries.first(TRENDS_TOP_TOPICS),
+    'top_threads' => annotate_public(entries.first(TRENDS_TOP_THREADS), published),
+  }
+  FileUtils.mkdir_p(File.dirname(TRENDS_PATH))
+  tmp = TRENDS_PATH + '.tmp'
+  File.write(tmp, JSON.pretty_generate(projection) + "\n")
+  File.rename(tmp, TRENDS_PATH)
+  puts "Trends projection: #{topic_entries.size} topics, top #{[topic_entries.size, TRENDS_TOP_TOPICS].min} kept -> #{TRENDS_PATH}"
+  projection
+end
+
+def annotate_public(entries, published)
+  entries.map { |e|
+    {
+      'id' => e['id'], 'title' => e['title'], 'hn_url' => e['hn_url'],
+      'status' => e['status'], 'heat' => e['heat'], 'trend' => e['trend'],
+      'delta_24h' => e['delta_24h'],
+      'comment_vel_24h' => e['signals']['comment_vel_24h'],
+      'expert_ratio' => e['signals']['expert_ratio'],
+      'total_comments' => e['signals']['total_comments'],
+      'article' => published[e['id']],
+    }
+  }
+end
+
+# ── CLI ──
+
+def run
+  options = { mode: nil }
+  OptionParser.new do |opts|
+    opts.banner = 'Usage: ruby scripts/hn-heat.rb --all | --recompute | --refresh-published'
+    opts.on('--all', 'Cohort + daily heat + topic clusters + trends projection + published map') { options[:mode] = :all }
+    opts.on('--recompute', 'Rebuild every heat day from raw signals (after rule change)') { options[:mode] = :recompute }
+    opts.on('--refresh-published', 'Rebuild published.json only') { options[:mode] = :refresh_published }
+    opts.on('-h', '--help') { puts opts; exit }
+  end.parse!
+
+  unless options[:mode]
+    warn 'ERROR: use --all, --recompute, or --refresh-published'
+    exit 1
+  end
+
+  if options[:mode] == :refresh_published
+    refresh_published
+    return
+  end
+
+  now = Time.now.utc
+  reg = load_registry
+  threads = load_threads
+  snapshots = snapshot_map
+
+  puts "HN Heat Engine — #{RULE_VERSION} | #{threads.size} threads archived, #{reg['threads'].size} registered"
+
+  if options[:mode] == :recompute
+    # Re-derive every historical day from raw signals (comment posted_at history
+    # + snapshot series), honoring each day's own time anchor.
+    earliest = reg['threads'].values.filter_map { |e| e['posted_at'] ? Time.parse(e['posted_at']) : nil }.min
+    if earliest
+      day = earliest.to_date + 1
+      while day <= now.to_date
+        anchor = day.to_time + 86399 # end of that day
+        payload = compute_day(anchor, threads, reg, nil, snapshots, day: anchor)
+        payload['computed_at'] = anchor.utc.iso8601
+        write_day_heat(payload, day)
+        day += 1
+      end
+      puts "Recompute: rebuilt heat files from #{earliest.to_date} to #{now.to_date}"
+    end
+    # fall through to today's fresh pass + trends
+  end
+
+  cohort = build_cohort(threads, reg, now)
+  puts "Cohort: #{cohort.size} expert commenters (>= #{COHORT_MIN_THREADS} threads in #{COHORT_WINDOW_DAYS}d)"
+
+  today_payload = compute_day(now, threads, reg, cohort, snapshots)
+  prev_payload = load_day_heat(now.to_date - 1)
+  annotate_trends(today_payload['entries'], prev_payload && prev_payload['entries'])
+  write_day_heat(today_payload, now.to_date)
+  puts "Day heat: #{today_payload['entries'].size} entries -> #{heat_path(now.to_date)}"
+
+  reg['topics'] = cluster_topics(threads, reg, now)
+  save_registry(reg)
+  puts "Clusters: #{reg['topics'].size} multi-thread topics"
+
+  refresh_published if options[:mode] == :all
+  build_trends(threads, reg, today_payload, now)
+end
+
+run

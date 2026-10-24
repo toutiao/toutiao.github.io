@@ -9,7 +9,15 @@
 #   ruby scripts/hn-fetch.rb --url <hn_url> [--force]
 #   ruby scripts/hn-fetch.rb --fetch-article-url <url> [--timeout N]
 #   ruby scripts/hn-fetch.rb --fill-missing [--jobs N]
+#   ruby scripts/hn-fetch.rb --poll-watching   # weekly liveness poll for watching threads
+#   ruby scripts/hn-fetch.rb --hot-check [--daily-max N]   # dual-channel burst trigger
 #   ruby scripts/hn-fetch.rb --output <dir>
+#
+# Archive layer (hn-data branch working copy, env HN_ARCHIVE_DIR):
+#   snapshots/YYYY/MM.jsonl     score/comment time series (append-only)
+#   threads/YYYY/WNN/<id>.yaml  post + merged comments (permanent)
+#   topics.json                 thread registry with status machine
+#                               active (14d delta) / watching (weekly poll) / settled
 
 require 'net/http'
 require 'uri'
@@ -36,6 +44,28 @@ COMMENT_CAP = 100
 ARTICLE_TRUNCATE = 8000
 HN_API_BASE = 'https://hacker-news.firebaseio.com/v0'
 ALGOLIA_API = 'https://hn.algolia.com/api/v1'
+
+# ── Archive layer (cold storage working copy, synced to hn-data branch) ──
+# Lives OUTSIDE _data/ on purpose: Jekyll loads _data/**/*.yaml into site.data
+# for every build — archived threads would bloat it unboundedly.
+ARCHIVE_DIR = ENV.fetch('HN_ARCHIVE_DIR', '.hn-archive')
+REGISTRY_PATH = File.join(ARCHIVE_DIR, 'topics.json')
+PUBLISHED_PATH = File.join(ARCHIVE_DIR, 'published.json')
+SNAPSHOTS_DIR = File.join(ARCHIVE_DIR, 'snapshots')
+THREADS_DIR = File.join(ARCHIVE_DIR, 'threads')
+
+# Observation-set state machine: a thread with any delta (score/comments)
+# within this window stays active; after that it degrades to weekly polling.
+ACTIVE_WINDOW = 14 * 24 * 3600
+WATCHING_POLL_INTERVAL = 7 * 24 * 3600
+WATCHING_MAX = 500          # cap on polled threads; overflow settles oldest first
+WATCHING_SETTLE_STREAK = 2  # consecutive zero-delta polls before settled
+POLL_BATCH_MAX = 40         # max polls per --poll-watching run (load spread)
+
+# Dual-channel hot trigger: point-value channel (legacy) + snapshot-delta channel
+HOT_DELTA_SCORE = 80        # score gained since previous snapshot (typically 8h)
+HOT_DELTA_AGE_MAX_HOURS = 72
+HOT_DELTA_SCORE_MIN = 100
 
 # Per-domain concurrency limit for simple article fetch
 MAX_PER_DOMAIN = 2
@@ -146,6 +176,12 @@ def scrape_best_page
     score = score_el ? score_el.text[/\d+/].to_i : 0
     next if score < SCORE_THRESHOLD
 
+    # Comment count + author from the subtext row ("87 comments" / "discuss").
+    # descendants=0 previously forced full refetch of every best-listed thread.
+    comments_link = subrow&.at_css('a[href^="item?"]')
+    descendants = comments_link ? (comments_link.text[/\d+/] || 0).to_i : 0
+    author = subrow&.at_css('.hnuser')&.text || ''
+
     a = title_el
     stories << {
       'id' => id,
@@ -153,8 +189,8 @@ def scrape_best_page
       'url' => a['href'].start_with?('item?') ? nil : a['href'],
       'hn_url' => "https://news.ycombinator.com/item?id=#{id}",
       'score' => score,
-      'author' => '',
-      'descendants' => 0,
+      'author' => author,
+      'descendants' => descendants,
     }
     break if stories.length >= MAX_DEFAULT
   end
@@ -775,9 +811,7 @@ def write_stories_index(stories)
     return
   end
 
-  existing_ids = Dir.glob('_articles/**/*.md').flat_map { |f|
-    File.read(f).scan(/item\?id=(\d+)/).flatten
-  }.uniq
+  existing_ids = known_published_ids
 
   if existing_ids.any?
     before = stories.length
@@ -821,7 +855,7 @@ def process_stories_parallel(stories, force: false, article_mode: :renderer,
 
   workers.each(&:join)
 
-  stats = { fetched: 0, cached: 0, articles_ok: 0, errors: 0, error_details: [] }
+  stats = { fetched: 0, cached: 0, articles_ok: 0, errors: 0, error_details: [], fetched_results: [] }
 
   until results_queue.empty?
     entry = results_queue.pop(true) rescue nil
@@ -834,6 +868,7 @@ def process_stories_parallel(stories, force: false, article_mode: :renderer,
     when :fetched
       stats[:fetched] += 1
       print_result_line(entry[:result])
+      stats[:fetched_results] << entry[:result] if entry[:result]
       stats[:articles_ok] += 1 if entry[:result]&.dig('article', 'fetch_status') == 'success'
     when :error
       stats[:errors] += 1
@@ -991,9 +1026,7 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
   today = Time.now.utc.strftime('%Y-%m-%d')
   today_count = triggered_ids.count { |t| t.is_a?(Hash) && t['date'] == today }
 
-  known_article_ids = Dir.glob('_articles/**/*.md').flat_map { |f|
-    File.read(f).scan(/hn_id:\s*"?(\d+)"?|item\?id=(\d+)/).flatten.compact.uniq
-  }
+  known_article_ids = known_published_ids
 
   hot = []
   Dir.glob(File.join(CACHE_DIR, '*', 'W*', '*', 'post.yaml')).each do |f|
@@ -1023,6 +1056,38 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
     }
   end
 
+  # Channel 2 — snapshot delta: score burst since previous sample (typically 8h),
+  # catches risers that never satisfied the point-value channel (e.g. day-2 posts
+  # outside the 8h age window)
+  reg = load_registry
+  hot_ids = hot.map { |h| h['id'] }
+  reg['threads'].each do |id, e|
+    next if known_article_ids.include?(id) || triggered_id_set.include?(id)
+    next if hot_ids.include?(id)
+    next unless e['posted_at']
+    hours = ((Time.now.utc - (Time.parse(e['posted_at'].to_s) rescue nil)) / 3600.0) rescue nil
+    next unless hours && hours >= 0 && hours <= HOT_DELTA_AGE_MAX_HOURS
+    next if e['last_score'].to_i < HOT_DELTA_SCORE_MIN
+
+    hist = snapshot_history(id)
+    next unless hist.length >= 2
+    prev, last = hist[-2], hist[-1]
+    gap_h = ((Time.parse(last['t']) - Time.parse(prev['t'])) / 3600.0) rescue next
+    next unless gap_h > 0.5
+    delta = last['s'] - prev['s']
+    next unless delta >= HOT_DELTA_SCORE
+
+    hot << {
+      'id' => id,
+      'title' => e['title'],
+      'score' => e['last_score'].to_i,
+      'age_hours' => hours.round(2),
+      'velocity' => (delta / gap_h).round(1),
+      'hn_url' => e['hn_url'],
+      'reason' => "delta +#{delta} pts/#{gap_h.round(1)}h",
+    }
+  end
+
   hot.sort_by! { |h| -h['velocity'] }
 
   budget = daily_max - today_count
@@ -1032,9 +1097,12 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
   end
 
   if hot.none?
-    warn "HOT: none"
+    warn 'HOT: none'
   else
-    hot.each { |h| warn "  #{h['velocity']} pts/h (#{h['score']} pts, #{h['age_hours']}h) #{h['title'][0, 60]} [#{h['id']}]" }
+    hot.each { |h|
+      reason = h['reason'] ? " #{h['reason']}" : ''
+      warn "  #{h['velocity']} pts/h (#{h['score']} pts, #{h['age_hours']}h)#{reason} #{h['title'].to_s[0, 60]} [#{h['id']}]"
+    }
   end
 
   if triggered_ids != Array(state['triggered'])
@@ -1045,6 +1113,256 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
     ))
   end
   0
+end
+
+# ── Archive layer: registry (topics.json), snapshots, thread files ──
+
+def load_registry
+  if File.exist?(REGISTRY_PATH)
+    data = (JSON.parse(File.read(REGISTRY_PATH)) rescue nil)
+    return data if data.is_a?(Hash) && data['threads'].is_a?(Hash)
+  end
+  { 'version' => 1, 'updated_at' => nil, 'threads' => {} }
+end
+
+def save_registry(reg)
+  reg['version'] ||= 1
+  reg['updated_at'] = Time.now.utc.iso8601
+  FileUtils.mkdir_p(ARCHIVE_DIR)
+  tmp = REGISTRY_PATH + '.tmp'
+  File.write(tmp, JSON.pretty_generate(reg) + "\n")
+  File.rename(tmp, REGISTRY_PATH)
+end
+
+def registry_entry_for(reg, item)
+  id = item['id'].to_s
+  e = reg['threads'][id]
+  unless e
+    yr, wk = week_key
+    e = {
+      'title' => nil, 'url' => nil, 'hn_url' => nil, 'posted_at' => nil,
+      'week' => "#{yr}/#{wk}",
+      'first_seen' => Time.now.utc.iso8601,
+      'last_activity' => Time.now.utc.iso8601,
+      'last_score' => 0, 'last_comment_count' => 0,
+      'status' => 'active', 'last_polled' => nil, 'poll_streak' => 0,
+    }
+    reg['threads'][id] = e
+  end
+  e
+end
+
+def registry_update_from_stories(reg, stories, fetched_posts)
+  now_s = Time.now.utc.iso8601
+
+  stories.each do |s|
+    e = registry_entry_for(reg, s)
+    e['title'] ||= s['title']
+    e['url'] = s['url'] if s['url']
+    e['hn_url'] ||= s['hn_url']
+    delta = s['score'].to_i != e['last_score'].to_i ||
+            (s['descendants'].to_i > 0 && s['descendants'].to_i != e['last_comment_count'].to_i)
+    e['last_score'] = s['score'].to_i if s['score'].to_i > 0
+    e['last_comment_count'] = s['descendants'].to_i if s['descendants'].to_i > 0
+    next unless delta
+    e['last_activity'] = now_s
+    e['status'] = 'active'
+    e['poll_streak'] = 0
+  end
+
+  fetched_posts.each do |p|
+    next unless p
+    e = registry_entry_for(reg, p)
+    e['title'] ||= p['title']
+    e['url'] ||= p['url']
+    e['hn_url'] ||= p['hn_url']
+    e['posted_at'] ||= p['posted_at']
+    e['last_score'] = p['score'].to_i if p['score'].to_i > 0
+    e['last_activity'] = now_s
+    e['status'] = 'active'
+    e['poll_streak'] = 0
+  end
+
+  # active -> watching once no delta for ACTIVE_WINDOW (14d observation window,
+  # NOT a data TTL: watching threads are polled weekly and can resurrect)
+  reg['threads'].each_value do |e|
+    next unless e['status'] == 'active'
+    la = (Time.parse(e['last_activity'].to_s) rescue nil)
+    e['status'] = 'watching' if la && (Time.now.utc - la) > ACTIVE_WINDOW
+  end
+
+  watching = reg['threads'].select { |_id, e| e['status'] == 'watching' }
+  overflow = watching.length - WATCHING_MAX
+  if overflow > 0
+    watching.sort_by { |_id, e| e['last_activity'].to_s }.first(overflow).each do |id, e|
+      e['status'] = 'settled'
+      warn "REGISTRY: watching overflow (#{WATCHING_MAX}), settled #{id}"
+    end
+  end
+
+  reg
+end
+
+def append_snapshots(stories)
+  return if stories.nil? || stories.empty?
+  now = Time.now.utc
+  path = File.join(SNAPSHOTS_DIR, now.strftime('%Y'), "#{now.strftime('%m')}.jsonl")
+  FileUtils.mkdir_p(File.dirname(path))
+
+  existing = {}
+  if File.exist?(path)
+    File.readlines(path).each do |line|
+      obj = (JSON.parse(line) rescue nil)
+      next unless obj
+      (existing[obj['id'].to_s] ||= {})[obj['t'].to_s] = true
+    end
+  end
+
+  t = now.iso8601
+  new_rows = 0
+  File.open(path, 'a') do |f|
+    stories.each do |s|
+      id = s['id'].to_s
+      next if existing.dig(id, t)
+      f.puts({ 'id' => id, 't' => t, 's' => s['score'].to_i, 'c' => s['descendants'].to_i }.to_json)
+      new_rows += 1
+    end
+  end
+  puts "  Snapshots: +#{new_rows} rows -> #{path}" if new_rows > 0
+end
+
+def snapshot_history(id, months: 2)
+  now = Time.now.utc
+  rows = []
+  months.times do |back|
+    m = Date.new(now.year, now.month, 1) >> -back
+    path = File.join(SNAPSHOTS_DIR, m.strftime('%Y'), "#{m.strftime('%m')}.jsonl")
+    next unless File.exist?(path)
+    File.readlines(path).each do |line|
+      obj = (JSON.parse(line) rescue nil)
+      next unless obj && obj['id'].to_s == id.to_s
+      rows << { 't' => obj['t'], 's' => obj['s'].to_i, 'c' => obj['c'].to_i }
+    end
+  end
+  rows.sort_by { |r| r['t'] }
+end
+
+# Merge post + comments into the permanent thread archive; comments merge by id
+# so resurrected refetches append new arrivals without losing old ones.
+def archive_thread(reg, post_data, comments_data)
+  return nil unless post_data && post_data['id']
+  id = post_data['id'].to_s
+  e = registry_entry_for(reg, post_data)
+  e['title'] ||= post_data['title']
+  e['url'] ||= post_data['url']
+  e['hn_url'] ||= post_data['hn_url']
+  e['posted_at'] ||= post_data['posted_at']
+  e['last_score'] = post_data['score'].to_i if post_data['score'].to_i > 0
+  e['last_comment_count'] = post_data['raw_comment_count'].to_i if post_data['raw_comment_count']
+
+  path = File.join(THREADS_DIR, e['week'].to_s, "#{id}.yaml")
+  FileUtils.mkdir_p(File.dirname(path))
+
+  merged = {}
+  if File.exist?(path)
+    prev = (YAML.safe_load_file(path, permitted_classes: [Time]) rescue nil)
+    Array(prev && prev['comments']).each { |c| merged[c['id'].to_s] = c }
+  end
+  Array(comments_data && comments_data['comments']).each { |c| merged[c['id'].to_s] = c }
+  comments = merged.values.sort_by { |c| c['posted_at'].to_s }
+
+  tmp = path + '.tmp'
+  File.write(tmp, YAML.dump({
+    'post' => post_data,
+    'comments' => comments,
+    'archived_at' => Time.now.utc.iso8601,
+  }))
+  File.rename(tmp, path)
+  path
+end
+
+# Weekly liveness poll for watching threads: one light Firebase item fetch per
+# thread. Comment growth => full refetch, merge archive, resurrect to active.
+def poll_watching
+  reg = load_registry
+  now = Time.now.utc
+  due = reg['threads'].select { |_id, e|
+    e['status'] == 'watching' &&
+      (e['last_polled'].nil? ||
+       (now - (Time.parse(e['last_polled'].to_s) rescue now)) >= WATCHING_POLL_INTERVAL)
+  }.sort_by { |_id, e| e['last_polled'].to_s }
+
+  if due.empty?
+    puts 'Poll: no watching threads due.'
+    return
+  end
+
+  polled = 0
+  resurrected = 0
+  settled = 0
+  due.first(POLL_BATCH_MAX).each do |id, e|
+    item = (firebase_get("item/#{id}.json") rescue nil)
+    unless item
+      warn "Poll: fetch failed for #{id}, will retry next run"
+      next
+    end
+    polled += 1
+    e['last_polled'] = now.iso8601
+    e['last_score'] = item['score'].to_i if item['score']
+
+    descendants = item['descendants'].to_i
+    if descendants > e['last_comment_count'].to_i
+      disc = fetch_discussion(id)
+      if disc
+        gained = descendants - e['last_comment_count'].to_i
+        post_data = {
+          'id' => id,
+          'title' => item['title'] || e['title'],
+          'url' => item['url'],
+          'hn_url' => e['hn_url'] || "https://news.ycombinator.com/item?id=#{id}",
+          'score' => item['score'].to_i,
+          'author' => item['by'] || '',
+          'posted_at' => e['posted_at'] || (item['time'] ? Time.at(item['time']).utc.iso8601 : nil),
+          'fetched_at' => now.iso8601,
+          'raw_comment_count' => disc.raw_comment_count,
+        }
+        archive_thread(reg, post_data, { 'comments' => disc.comments })
+        e['status'] = 'active'
+        e['last_activity'] = now.iso8601
+        e['poll_streak'] = 0
+        e['last_comment_count'] = disc.raw_comment_count
+        resurrected += 1
+        warn "RESURRECTED #{id} \"#{post_data['title'].to_s[0, 50]}\" +#{gained} comments"
+      end
+    else
+      e['poll_streak'] = e['poll_streak'].to_i + 1
+      if e['poll_streak'] >= WATCHING_SETTLE_STREAK
+        e['status'] = 'settled'
+        settled += 1
+      end
+    end
+  end
+
+  save_registry(reg)
+  counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
+  warn "Poll: #{polled} polled, #{resurrected} resurrected, #{settled} settled, " \
+       "#{due.length - polled} deferred. Registry: #{counts.map { |k, v| "#{k}=#{v}" }.sort.join(' ')}"
+end
+
+# ── Published dedup map (published.json fast path, _articles scan fallback) ──
+
+def scan_published_ids_from_articles
+  Dir.glob('_articles/**/*.md').flat_map { |f|
+    File.read(f).scan(/hn_id:\s*"?(\d+)"?|item\?id=(\d+)/).flatten.compact
+  }.uniq
+end
+
+def known_published_ids
+  if File.exist?(PUBLISHED_PATH)
+    data = (JSON.parse(File.read(PUBLISHED_PATH)) rescue nil)
+    return Set.new(data['hn_ids'].keys.map(&:to_s)) if data.is_a?(Hash) && data['hn_ids']
+  end
+  Set.new(scan_published_ids_from_articles)
 end
 
 # ── CLI ──
@@ -1078,6 +1396,9 @@ def run
     opts.on('--fill-missing', 'Scan cache and fill missing articles via renderer') {
       options[:mode] = :fill_missing
     }
+    opts.on('--poll-watching', 'Liveness poll for watching threads (resurrect on comment growth)') {
+      options[:mode] = :poll_watching
+    }
     opts.on('--hot-check', 'Scan cache for high-velocity stories, print TRIGGER lines, update state') {
       options[:mode] = :hot_check
     }
@@ -1104,6 +1425,12 @@ def run
   # ── --fill-missing mode ──
   if options[:mode] == :fill_missing
     fill_missing_articles(jobs: options[:jobs])
+    return
+  end
+
+  # ── --poll-watching mode ──
+  if options[:mode] == :poll_watching
+    poll_watching
     return
   end
 
@@ -1146,6 +1473,17 @@ def run
       exit 1
     end
     print_result_line(result)
+
+    reg = load_registry
+    archive_thread(reg, result['post'], result['comments'])
+    e = reg['threads'][result['post']['id'].to_s]
+    if e
+      e['last_activity'] = Time.now.utc.iso8601
+      e['status'] = 'active'
+      e['poll_streak'] = 0
+    end
+    save_registry(reg)
+
     puts "\nDone!"
     return
   end
@@ -1181,6 +1519,16 @@ def run
   unless stats[:error_details].empty?
     stats[:error_details].each { |line| warn line }
   end
+
+  # ── Archive layer: snapshots + registry state machine + thread files ──
+  fetched_results = stats.delete(:fetched_results) || []
+  append_snapshots(stories)
+  reg = registry_update_from_stories(load_registry, stories, fetched_results.map { |r| r['post'] })
+  archived = fetched_results.map { |r| archive_thread(reg, r['post'], r['comments']) }.compact
+  save_registry(reg)
+  counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
+  puts "  Archive: #{archived.length} threads updated, snapshots #{stories.length} sampled"
+  puts "  Registry: #{counts.map { |k, v| "#{k}=#{v}" }.sort.join(' ')}"
 
   puts "\n---"
   puts "Summary: #{stats[:fetched]} fetched, #{stats[:cached]} cached, #{stats[:articles_ok]} articles, #{stats[:errors]} errors"

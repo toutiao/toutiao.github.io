@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
@@ -21,8 +21,17 @@ jobs:
 
       - uses: ./.github/actions/hn-cache/restore
 
+      # Cold archive worktree (hn-data branch) must exist before fetch:
+      # snapshots/registry/threads are written there during the run.
+      - uses: ./.github/actions/hn-archive
+        with:
+          mode: attach
+
       - name: Fetch HN data (simple HTTP)
         run: bundle exec ruby scripts/hn-fetch.rb --best --max 15 --fetch-articles-simple --jobs 5
+
+      - name: Poll watching threads (weekly liveness, resurrect on growth)
+        run: bundle exec ruby scripts/hn-fetch.rb --poll-watching
 
       - name: Hot story trigger
         env:
@@ -38,5 +47,9 @@ jobs:
             gh workflow run hn-auto.yml -f mode=url -f hn_url="$HN_URL" || echo "dispatch failed (non-fatal)"
           done
           echo "$OUTPUT" | grep -qE '^TRIGGER ' || echo "No hot story today."
+
+      - uses: ./.github/actions/hn-archive
+        with:
+          mode: push
 
       - uses: ./.github/actions/hn-cache/save

@@ -23,13 +23,18 @@ Story pass all:
 - HN id not in `_articles/*.md` front matter `hn_id:` (old articles lack hn_id → fallback: search `item?id=<id>` in body)
 - same topic not covered today (grep date + keyword in existing articles)
 
-> `hn-fetch.rb` already dedup at write time (filter IDs in `_articles/`). This is 2nd layer.
+> `hn-fetch.rb` already dedup at write time (via `.hn-archive/published.json`, fallback `_articles/` scan). This is 2nd layer.
 
 ### Auto mode
 1. Read `_data/hn/*/W*/stories.yaml` → load **newest week + previous week** (merge, candidates from both)
 2. Apply filters
-3. Sort by **velocity** = score / max(age_hours, 0.5) desc (age from stories.yaml `created_at_i` epoch → hours since post; fallback post.yaml `posted_at`)
-4. Report ranking table
+3. Sort by **heat features** (preferred) or velocity fallback:
+   - Preferred: read `.hn-archive/heat/<today>.json` (CI 中由 hn-data worktree 提供，当日文件由 hn-heat.rb 生成)。Per-candidate adjust a base ranking (velocity = score / max(age_hours, 0.5) desc):
+     - `trend == "resurrected"` → move to very top (回热话题直通候选)
+     - `trend == "up"` 且 `expert_ratio >= 0.3` → rank bonus (专业社区持续升温)
+     - signals 中 `comment_vel_24h == 0 && score_vel < 5` 且非 resurrected → demote (spike-only, 已过峰)
+   - Fallback (`.hn-archive/heat/` 不存在，如本地交互模式): pure velocity sort
+4. Report ranking table (include heat/trend/expert_ratio when available)
 5. Batch: `--batch N` (default 1). Pick top N uncovered candidates → run Phase 0.5→1→2→2.5→3 per candidate **sequentially**; one failure does not block the next. Report after each: `Auto-selected [k/N]: [title] ([score] pts)`
 6. Go to Phase 0.5
 7. Fallback: `webfetch https://news.ycombinator.com/best?h=48`

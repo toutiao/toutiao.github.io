@@ -62,6 +62,12 @@ jobs:
 
       - uses: ./.github/actions/hn-cache/restore
 
+      # Cold archive (hn-data branch): skill reads heat features from it and
+      # generation-time fetches (--url mode, force fetch) write into it.
+      - uses: ./.github/actions/hn-archive
+        with:
+          mode: attach
+
       - name: Fresh fetch (force only)
         if: ${{ inputs.force_fetch == 'true' }}
         run: |
@@ -187,6 +193,10 @@ jobs:
           echo "=== Git status ==="
           git status --short -- _articles/ 2>/dev/null || true
 
+      - name: Compute heat + trends projection
+        if: ${{ !cancelled() }}
+        run: ruby scripts/hn-heat.rb --all
+
       - name: Validate Jekyll build
         if: ${{ !cancelled() }}
         run: |
@@ -203,7 +213,7 @@ jobs:
         if: ${{ !cancelled() }}
         id: git-state
         run: |
-          if [ -n "$(git status --porcelain -- _articles/)" ]; then
+          if [ -n "$(git status --porcelain -- _articles/ _data/hn_trends.json)" ]; then
             echo "state=dirty" >> $GITHUB_OUTPUT
             echo "commit_opts=" >> $GITHUB_OUTPUT
             echo "push_opts=" >> $GITHUB_OUTPUT
@@ -221,7 +231,14 @@ jobs:
           commit_message: "feat: HN 自动摘要 ${{ steps.commit-date.outputs.commit_date }}"
           commit_user_name: "HN Auto-Summarizer"
           commit_user_email: "hn-auto@yuedulijie.com"
-          file_pattern: "_articles/"
+          file_pattern: "_articles/ _data/hn_trends.json"
           commit_options: ${{ steps.git-state.outputs.commit_opts }}
           push_options: ${{ steps.git-state.outputs.push_opts }}
           skip_dirty_check: true
+
+      # Persist generation-time archive writes (url-mode fetches, force fetch)
+      # to the hn-data branch — previously these were lost with the runner.
+      - uses: ./.github/actions/hn-archive
+        if: ${{ !cancelled() }}
+        with:
+          mode: push

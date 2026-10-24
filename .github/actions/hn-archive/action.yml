@@ -1,0 +1,59 @@
+name: 'HN Archive Sync (hn-data branch)'
+description: 'Attach .hn-archive as a worktree of the hn-data orphan branch, or commit+push changes'
+inputs:
+  mode:
+    description: 'attach | push'
+    required: true
+    default: 'push'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+      run: |
+        set -euo pipefail
+        ARCHIVE=.hn-archive
+
+        if [ "$MODE" = "attach" ]; then
+          if git worktree list --porcelain | grep -q "refs/heads/hn-data$"; then
+            echo "archive: hn-data worktree already attached"
+          elif git ls-remote --exit-code --heads origin hn-data >/dev/null 2>&1; then
+            echo "archive: attaching worktree to existing hn-data branch"
+            git fetch origin hn-data
+            git worktree add "$ARCHIVE" hn-data
+          else
+            echo "archive: creating orphan hn-data branch worktree"
+            git worktree add --orphan -b hn-data "$ARCHIVE"
+            printf 'snapshots/**/*.jsonl merge=union\n' > "$ARCHIVE/.gitattributes"
+          fi
+          # Another workflow may have pushed since our checkout — fast-forward.
+          git -C "$ARCHIVE" pull --ff-only origin hn-data 2>/dev/null || true
+
+        elif [ "$MODE" = "push" ]; then
+          cd "$ARCHIVE"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "archive: no changes to push"
+            exit 0
+          fi
+          git commit -m "archive: ${GITHUB_JOB:-local} $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Push race (hn-fetch 3x/day vs hn-auto) resolved by rebase + retry;
+          # append-only snapshots/*.jsonl auto-merge via union driver (.gitattributes).
+          for i in 1 2 3; do
+            if git push origin HEAD:hn-data; then
+              echo "archive: pushed"
+              exit 0
+            fi
+            echo "archive: push attempt $i failed, rebasing on remote..."
+            git fetch origin hn-data
+            git rebase origin/hn-data || { git rebase --abort; sleep $((i * 10)); }
+          done
+          echo "::error::archive push failed after 3 attempts (next run re-adds)"
+          exit 1
+
+        else
+          echo "::error::unknown mode '$MODE'"
+          exit 1
+        fi
