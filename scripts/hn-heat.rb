@@ -510,7 +510,10 @@ def refresh_published
                  .map { |m| m[:hn] || m[:hn2] || (m[:lo] ? "lo-#{m[:lo]}" : nil) }
                  .compact.uniq
     ids.each do |id|
-      map[id] = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}/" }
+      # permalink /articles/:year/:name has NO trailing slash (site-wide:
+      # post.url is slash-less too); the directory-style "/.../" form 404s on
+      # Pages — keep in sync with _config.yml
+      map[id] = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}" }
     end
   end
   FileUtils.mkdir_p(ARCHIVE_DIR)
