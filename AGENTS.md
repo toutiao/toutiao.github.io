@@ -147,6 +147,7 @@ The gate passes only if:
 - **Test first**: Any change to scripts/*.rb or the skill must be tested with a real HN URL locally before CI deployment.
 - **Build gate**: Every change must pass `make build` (Docker Jekyll compile).
 - **Adversarial gate**: Per sections above — run adversarial review before committing.
+- **对外页面内容约束**: 对外页面（trends/文章）禁止展示内部运维信息 — 管道状态、冷启动/数据积累说明、规则与分类表版本号、覆盖率等内部指标、状态机分层计数。发布层遵循**字段白名单**原则（`annotate_public`）：新增对外字段前先问「读者需要知道吗」；空数据区块直接隐藏而非解释为何为空。
 
 ## Plugin
 Only `jekyll-seo-tag`. HTML compression via `compress_html` in `_config.yml` (production only).
