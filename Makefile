@@ -1,10 +1,7 @@
-.PHONY: build build-fast serve test deploy clean fetch fetch-best lobsters hn-archive-init hn-archive-sync check-cli
+.PHONY: build build-fast serve test deploy clean fetch fetch-best lobsters hn-archive-init hn-archive-sync
 
 build:
 	docker compose run --rm build
-
-check-cli:
-	ruby scripts/check-cli.rb
 
 serve:
 	docker compose up jekyll
