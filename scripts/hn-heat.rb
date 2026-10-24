@@ -16,6 +16,7 @@
 #   ruby scripts/hn-heat.rb --all                # cohort + day heat + clusters + projection
 #   ruby scripts/hn-heat.rb --recompute          # rebuild every heat day from raw signals
 #   ruby scripts/hn-heat.rb --refresh-published  # rebuild published.json only
+#   ruby scripts/hn-heat.rb --all [--window N]   # N-day trends window (default 30)
 
 require 'json'
 require 'yaml'
@@ -35,6 +36,7 @@ THREADS_DIR = File.join(ARCHIVE_DIR, 'threads')
 HEAT_DIR = File.join(ARCHIVE_DIR, 'heat')
 COHORT_DIR = File.join(ARCHIVE_DIR, 'cohort')
 TRENDS_PATH = ENV.fetch('HN_TRENDS_PATH', '_data/hn_trends.json')
+CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
 RULE_VERSION = 'v1'
 WEIGHTS = { 'comment_vel' => 0.35, 'score_vel' => 0.25, 'expert' => 0.25, 'depth' => 0.15 }.freeze
@@ -44,11 +46,21 @@ COHORT_MIN_THREADS = 2    # authors on >= 2 tracked threads within window = coho
 TOP_COMMENTS_FOR_EXPERT = 30
 CLUSTER_MAX_AGE_DAYS = 60 # only threads posted within this window participate in clustering
 CLUSTER_PAIR_MAX_GAP_DAYS = 30
-TRENDS_WINDOW_DAYS = 30
+TRENDS_WINDOW_DAYS_DEFAULT = 30
 TRENDS_TOP_TOPICS = 50
 TRENDS_TOP_THREADS = 20
 TREND_DELTA_EPS = 0.15    # |delta| below this = flat
 MIN_HEAT_FOR_ENTRY = 0.05
+
+# Topic waves: >= 7d quiet gap splits the aggregated comment timeline; each
+# segment with >= MIN_WAVE_COMMENTS arrivals counts as a wave (recurrence).
+WAVE_GAP_DAYS = 7
+MIN_WAVE_COMMENTS = 5
+
+# Related topics: expert overlap >= max(3, 1% of cohort) = strong (cohort);
+# single shared keyword = weak (keyword). Display-only, never merged.
+RELATED_EXPERT_MIN = 3
+RELATED_MAX = 3
 
 STOPWORDS = %w[
   show ask hn tell the a an and or of to in for on with is are was were be been
@@ -266,6 +278,7 @@ def compute_day(now, threads, reg, cohort, snapshots, day: nil)
       'title' => e['title'] || post['title'],
       'hn_url' => e['hn_url'] || post['hn_url'],
       'status' => e['status'],
+      'category' => e['category'] || 'other',
       'posted_at' => e['posted_at'] || post['posted_at'],
       'heat' => heat,
       'signals' => sig,
@@ -317,7 +330,36 @@ def annotate_trends(entries, prev_entries)
   entries
 end
 
-# ── Deterministic topic clustering ──
+# ── Deterministic industry categories (versioned keyword map, recomputable) ──
+
+def load_category_map
+  data = (JSON.parse(File.read(CATEGORY_MAP_PATH)) rescue nil)
+  return { 'version' => 'none', 'categories' => [] } unless data.is_a?(Hash)
+  data
+end
+
+def category_of(title, url, cmap)
+  tokens = Set.new(topic_tokens(title))
+  host = begin
+    URI.parse(url.to_s).host.to_s.downcase
+  rescue StandardError
+    ''
+  end
+  cmap['categories'].each do |cat|
+    return cat['name'] if Array(cat['domains']).any? { |d| host.include?(d) }
+    return cat['name'] if Array(cat['keywords']).any? { |k| tokens.include?(k) }
+  end
+  'other'
+end
+
+def assign_categories!(reg, threads, cmap)
+  reg['category_version'] = cmap['version']
+  reg['threads'].each do |id, e|
+    e['category'] = category_of(e['title'] || threads.dig(id, 'post', 'title'), e['url'], cmap)
+  end
+end
+
+# ── Topic clustering: incremental merge into persistent topic entities ──
 
 def topic_tokens(title)
   title.to_s.downcase.gsub(/[^a-z0-9\s]/, ' ').split.reject { |t|
@@ -325,58 +367,124 @@ def topic_tokens(title)
   }
 end
 
-def same_topic?(a, b)
-  shared = (a[:tokens] & b[:tokens]).size
+def pair_same_topic?(tokens_a, tokens_b, posted_a, posted_b)
+  shared = (tokens_a & tokens_b).size
   return false if shared.zero?
-  union = (a[:tokens] | b[:tokens]).size
-  gap = (a[:posted] && b[:posted]) ? (a[:posted] - b[:posted]).abs : 0
+  union = (tokens_a | tokens_b).size
+  gap = (posted_a && posted_b) ? (posted_a - posted_b).abs : 0
   return false if gap > CLUSTER_PAIR_MAX_GAP_DAYS * 86400
   shared >= 2 || (shared == 1 && shared.to_f / union >= 0.5)
 end
 
-def cluster_topics(threads, reg, now = Time.now.utc)
+def same_topic?(a, b)
+  pair_same_topic?(a[:tokens], b[:tokens], a[:posted], b[:posted])
+end
+
+# Wave detection on a topic's aggregated comment timeline: segments separated
+# by >= WAVE_GAP_DAYS quiet gaps, each with >= MIN_WAVE_COMMENTS arrivals.
+def topic_wave_segments(thread_ids, threads)
+  times = thread_ids.filter_map { |id|
+    th = threads[id]
+    th && th['comments']
+  }.flatten
+   .filter_map { |c| c['posted_at'] ? Time.parse(c['posted_at']) : nil }
+   .sort
+  return [] if times.size < MIN_WAVE_COMMENTS * 2
+  segments = []
+  seg = [times.first]
+  times.each_cons(2) do |a, b|
+    if b - a >= WAVE_GAP_DAYS * 86400
+      segments << seg if seg.size >= MIN_WAVE_COMMENTS
+      seg = []
+    end
+    seg << b
+  end
+  segments << seg if seg.size >= MIN_WAVE_COMMENTS
+  segments.map { |s| { 's' => s.first.iso8601[0, 10], 'e' => s.last.iso8601[0, 10], 'n' => s.size } }
+end
+
+# Incremental: existing topics persist (stable topic_id, membership only grows);
+# unclaimed recent threads match existing topics first, then cluster among
+# themselves. Waves/keywords recomputed from full member set each run.
+def merge_topics(threads, reg, now = Time.now.utc)
+  topics = Array(reg['topics']).map { |t| t.dup }
+
+  member_index = {}
+  topics.each { |t| Array(t['hn_ids']).each { |id| member_index[id] = t } }
+
   candidates = reg['threads'].map { |id, e|
     posted = e['posted_at'] ? (Time.parse(e['posted_at']) rescue nil) : nil
     next nil unless posted && (now - posted) <= CLUSTER_MAX_AGE_DAYS * 86400
-    { id: id, title: (e['title'] || threads.dig(id, 'post', 'title') || '').to_s,
-      tokens: nil, posted: posted, first_seen: e['first_seen'] }
+    next nil if member_index.key?(id)
+    toks = topic_tokens(e['title'] || threads.dig(id, 'post', 'title') || '')
+    next nil if toks.empty?
+    { id: id, tokens: toks, posted: posted, first_seen: e['first_seen'] }
   }.compact
 
-  candidates.each { |c| c[:tokens] = topic_tokens(c[:title]) }
-  candidates.reject! { |c| c[:tokens].empty? }
+  # Pass 1: join existing topics (member-token match, pairwise rule)
+  member_posted = lambda { |id|
+    p = reg['threads'][id] && reg['threads'][id]['posted_at']
+    p ? (Time.parse(p) rescue nil) : nil
+  }
+  topics.each do |t|
+    t['_tokens'] = Array(t['hn_ids']).map { |id|
+      topic_tokens(reg['threads'][id] && reg['threads'][id]['title'] || '')
+    }
+  end
+  joined = Set.new
+  candidates.each do |c|
+    topics.each do |t|
+      next if joined.include?(c[:id])
+      hit = t['_tokens'].any? { |toks| pair_same_topic?(c[:tokens], toks, c[:posted], member_posted.call(t['hn_ids'].last)) }
+      next unless hit
+      t['hn_ids'] << c[:id]
+      t['_tokens'] << c[:tokens]
+      t['last_seen'] = now.iso8601
+      joined << c[:id]
+      break
+    end
+  end
 
-  parent = candidates.each_with_object({}) { |c, h| h[c[:id]] = c[:id] }
+  # Pass 2: union-find among remaining candidates -> new topic entities
+  rest = candidates.reject { |c| joined.include?(c[:id]) }
+  parent = rest.each_with_object({}) { |c, h| h[c[:id]] = c[:id] }
   find = lambda do |x|
     parent[x] = x if parent[x].nil?
     parent[x] == x ? x : (parent[x] = find.call(parent[x]))
   end
-
-  candidates.each_with_index do |a, i|
-    ((i + 1)...candidates.size).each do |j|
-      b = candidates[j]
+  rest.each_with_index do |a, i|
+    ((i + 1)...rest.size).each do |j|
+      b = rest[j]
       ra, rb = find.call(a[:id]), find.call(b[:id])
       next if ra == rb
       parent[ra] = rb if same_topic?(a, b)
     end
   end
-
   groups = Hash.new { |h, k| h[k] = [] }
-  candidates.each { |c| groups[find.call(c[:id])] << c }
-
-  topics = groups.map do |_root, members|
+  rest.each { |c| groups[find.call(c[:id])] << c }
+  groups.each_value do |members|
+    next unless members.size >= 2
     members.sort_by! { |m| m[:posted] }
-    shared = members.map { |m| m[:tokens] }.reduce { |acc, t| acc & t }
-    {
+    topics << {
       'topic_id' => "t-#{members.first[:id]}",
       'hn_ids' => members.map { |m| m[:id] },
-      'keywords' => shared.first(5),
       'first_seen' => members.first[:first_seen],
-      'last_seen' => members.last[:first_seen],
+      'last_seen' => now.iso8601,
     }
   end
+
+  # Refresh derived fields; drop underscore scratch keys; keep only >= 2 members
+  topics.map! do |t|
+    t['hn_ids'].uniq!
+    next nil if t['hn_ids'].size < 2
+    all_tokens = t['hn_ids'].map { |id| topic_tokens(reg['threads'][id] && reg['threads'][id]['title'] || '') }
+    shared = all_tokens.reduce { |acc, toks| acc & toks }
+    t['keywords'] = (shared.empty? ? (all_tokens.first || []) : shared).first(5)
+    t['waves'] = topic_wave_segments(t['hn_ids'], threads)
+    t.delete_if { |k, _| k.start_with?('_') }
+    t
+  end.compact!
   topics.sort_by { |t| -t['hn_ids'].size }
-  topics.select! { |t| t['hn_ids'].size >= 2 } || []
-  topics
 end
 
 # ── Public projection (whitelist only — never raw comment text) ──
@@ -421,14 +529,14 @@ def sparkline_points(curve, width: 100, height: 28, pad: 2)
   }.join(' ')
 end
 
-def build_trends(threads, reg, today_payload, now = Time.now.utc)
+def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS_WINDOW_DAYS_DEFAULT, cohort: nil)
   published = load_published
   today = now.to_date
   entries = today_payload['entries']
 
   # Daily curves from historical heat files
   day_files = {}
-  (TRENDS_WINDOW_DAYS - 1).downto(0) do |back|
+  (window - 1).downto(0) do |back|
     d = today - back
     day_files[d] = (d == today) ? today_payload : load_day_heat(d)
   end
@@ -438,8 +546,9 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc)
     payload['entries'].each { |e| per_day_thread_heat[d][e['id']] = e['heat'] }
   end
 
-  # Topic aggregation: cluster topics + singleton topics for uncovered threads
+  # Topic aggregation: persistent cluster topics + singleton topics for uncovered threads
   topics = reg['topics'] || []
+  topic_meta = topics.each_with_object({}) { |t, h| h[t['topic_id']] = t }
   topic_of = {}
   topics.each { |t| t['hn_ids'].each { |id| topic_of[id] = t['topic_id'] } }
 
@@ -459,52 +568,139 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc)
             : members.any? { |m| m['trend'] == 'new' } ? 'new'
             : delta && delta > TREND_DELTA_EPS ? 'up'
             : delta && delta < -TREND_DELTA_EPS ? 'down' : 'flat'
-    curve = (TRENDS_WINDOW_DAYS - 1).downto(0).filter_map do |back|
+    curve = (window - 1).downto(0).filter_map do |back|
       d = today - back
       v = ids.sum { |id| per_day_thread_heat[d][id] || 0 }.round(3)
       v > 0 ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
     end
     article = ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s }
     rep = members.max_by { |m| m['heat'] }
+    meta = topic_meta[tid] || {}
+    peak = curve.max_by { |p| p['h'] }
     {
       'topic_id' => tid,
       'title' => rep['title'],
-      'keywords' => (topics.find { |t| t['topic_id'] == tid } || {})['keywords'] || [],
+      'keywords' => meta['keywords'] || [],
       'thread_count' => ids.size,
       'heat' => heat,
       'delta_24h' => delta,
       'trend' => trend,
+      'waves' => Array(meta['waves']).size,
+      'peak_at' => peak && peak['d'],
       'curve' => curve,
       'sparkline' => sparkline_points(curve),
       'threads' => members.map { |m|
         { 'id' => m['id'], 'title' => m['title'], 'hn_url' => m['hn_url'],
-          'status' => m['status'], 'heat' => m['heat'], 'trend' => m['trend'] }
+          'status' => m['status'], 'heat' => m['heat'], 'trend' => m['trend'],
+          'posted_at' => m['posted_at'] }
       },
       'article' => article,
     }
   end.compact.sort_by { |t| -t['heat'] }
+  kept = topic_entries.first(TRENDS_TOP_TOPICS)
+  kept.each { |t| t['related'] = related_for(t, kept, threads, cohort) }
+
+  # Industry aggregates (deterministic category map, see category_map.json)
+  industries = industry_curves(reg, per_day_thread_heat, kept, today, window)
 
   counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
+  assigned = reg['threads'].count { |_id, e| e['category'] && e['category'] != 'other' }
   projection = {
     'generated_at' => now.utc.iso8601,
     'rule_version' => RULE_VERSION,
-    'window_days' => TRENDS_WINDOW_DAYS,
+    'category_version' => reg['category_version'],
+    'window_days' => window,
     'stats' => {
       'threads_tracked' => reg['threads'].size,
       'active' => counts['active'] || 0,
       'watching' => counts['watching'] || 0,
+      'cold' => counts['cold'] || 0,
+      'deep' => counts['deep'] || 0,
       'settled' => counts['settled'] || 0,
       'topics' => topics.size,
+      'cohort_size' => cohort ? cohort.size : nil,
+      'category_coverage' => reg['threads'].empty? ? 0 : (assigned * 100 / reg['threads'].size),
     },
-    'topics' => topic_entries.first(TRENDS_TOP_TOPICS),
+    'industries' => industries,
+    'topics' => kept,
     'top_threads' => annotate_public(entries.first(TRENDS_TOP_THREADS), published),
   }
   FileUtils.mkdir_p(File.dirname(TRENDS_PATH))
   tmp = TRENDS_PATH + '.tmp'
   File.write(tmp, JSON.pretty_generate(projection) + "\n")
   File.rename(tmp, TRENDS_PATH)
-  puts "Trends projection: #{topic_entries.size} topics, top #{[topic_entries.size, TRENDS_TOP_TOPICS].min} kept -> #{TRENDS_PATH}"
+  puts "Trends projection: #{topic_entries.size} topics (#{industries.size} industries), " \
+       "top #{kept.size} kept -> #{TRENDS_PATH}"
   projection
+end
+
+# Related topics: display-only graph. Strong edge = expert-cohort overlap
+# (same professionals commenting across both topics); weak edge = shared keyword.
+def related_for(topic, topic_entries, threads, cohort)
+  return [] unless cohort && !cohort.empty?
+  expert_authors = lambda do |ids|
+    ids.filter_map { |id| t = threads[id] }
+       .map { |t| t['comments'].sort_by { |c| -(c['score'] || 0) }.first(TOP_COMMENTS_FOR_EXPERT) }
+       .flatten
+       .map { |c| c['author'].to_s }
+       .reject { |a| a.empty? || a == 'anonymous' }
+       .select { |a| cohort.include?(a) }
+       .uniq
+  end
+  threshold = [RELATED_EXPERT_MIN, (cohort.size * 0.01).ceil].max
+  my_experts = expert_authors.call(topic['threads'].map { |t| t['id'] })
+  return [] if my_experts.empty?
+  my_tokens = Set.new(topic_tokens(topic['title']) + Array(topic['keywords']))
+
+  scored = topic_entries.reject { |t| t['topic_id'] == topic['topic_id'] }.filter_map do |t|
+    overlap = (my_experts & expert_authors.call(t['threads'].map { |x| x['id'] })).size
+    if overlap >= threshold
+      { 'topic_id' => t['topic_id'], 'title' => t['title'], 'via' => 'cohort', 'strength' => overlap }
+    elsif !(my_tokens & Set.new(topic_tokens(t['title']) + Array(t['keywords']))).empty?
+      { 'topic_id' => t['topic_id'], 'title' => t['title'], 'via' => 'keyword', 'strength' => 1 }
+    end
+  end
+  scored.sort_by! { |r| [-r['strength'], r['via'] == 'cohort' ? 0 : 1] }
+  scored.first(RELATED_MAX).map { |r| { 'topic_id' => r['topic_id'], 'title' => r['title'], 'via' => r['via'] } }
+end
+
+def industry_curves(reg, per_day_thread_heat, topic_entries, today, window)
+  cat_of_thread = {}
+  reg['threads'].each { |id, e| cat_of_thread[id] = e['category'] || 'other' }
+  topic_of_thread = {}
+  Array(reg['topics']).each { |t| t['hn_ids'].each { |id| topic_of_thread[id] = t['topic_id'] } }
+  topic_heat = topic_entries.each_with_object({}) { |t, h| h[t['topic_id']] = t }
+
+  by_cat = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = 0.0 } }
+  per_day_thread_heat.each do |d, heats|
+    heats.each do |id, heat|
+      by_cat[cat_of_thread[id] || 'other'][d] += heat
+    end
+  end
+
+  by_cat.map do |cat, daily|
+    today_heat = (daily[today] || 0.0).round(3)
+    delta7 = (today_heat - (daily[today - 7] || 0.0)).round(3)
+    curve = (window - 1).downto(0).filter_map do |back|
+      d = today - back
+      v = daily[d].to_f.round(3)
+      v > 0 ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
+    end
+    driver_ids = (per_day_thread_heat[today] || {}).keys.select { |id| (cat_of_thread[id] || 'other') == cat }
+    drivers = driver_ids.filter_map { |id|
+      t = topic_heat[topic_of_thread[id]]
+      t ? { 'topic_id' => t['topic_id'], 'title' => t['title'], 'heat' => t['heat'] } : nil
+    }.sort_by { |t| -t['heat'] }.uniq { |t| t['topic_id'] }.first(3)
+    {
+      'category' => cat,
+      'heat' => today_heat,
+      'delta_7d' => delta7,
+      'trend' => delta7 > 0.3 ? 'up' : delta7 < -0.3 ? 'down' : 'flat',
+      'curve' => curve,
+      'sparkline' => sparkline_points(curve),
+      'top_topics' => drivers,
+    }
+  end.sort_by { |c| -c['heat'] }
 end
 
 def annotate_public(entries, published)
@@ -524,12 +720,13 @@ end
 # ── CLI ──
 
 def run
-  options = { mode: nil }
+  options = { mode: nil, window: Integer(ENV.fetch('HN_TRENDS_WINDOW', TRENDS_WINDOW_DAYS_DEFAULT)) }
   OptionParser.new do |opts|
-    opts.banner = 'Usage: ruby scripts/hn-heat.rb --all | --recompute | --refresh-published'
-    opts.on('--all', 'Cohort + daily heat + topic clusters + trends projection + published map') { options[:mode] = :all }
+    opts.banner = 'Usage: ruby scripts/hn-heat.rb --all [--window N] | --recompute | --refresh-published'
+    opts.on('--all', 'Cohort + daily heat + topic merge + trends projection + published map') { options[:mode] = :all }
     opts.on('--recompute', 'Rebuild every heat day from raw signals (after rule change)') { options[:mode] = :recompute }
     opts.on('--refresh-published', 'Rebuild published.json only') { options[:mode] = :refresh_published }
+    opts.on('--window N', Integer, "Trends window in days (default: #{TRENDS_WINDOW_DAYS_DEFAULT})") { |v| options[:window] = v }
     opts.on('-h', '--help') { puts opts; exit }
   end.parse!
 
@@ -568,6 +765,10 @@ def run
     # fall through to today's fresh pass + trends
   end
 
+  cmap = load_category_map
+  assign_categories!(reg, threads, cmap)
+  puts "Categories: #{cmap['version']}, coverage #{reg['threads'].count { |_id, e| e['category'] != 'other' }}/#{reg['threads'].size}"
+
   cohort = build_cohort(threads, reg, now)
   puts "Cohort: #{cohort.size} expert commenters (>= #{COHORT_MIN_THREADS} threads in #{COHORT_WINDOW_DAYS}d)"
 
@@ -577,12 +778,13 @@ def run
   write_day_heat(today_payload, now.to_date)
   puts "Day heat: #{today_payload['entries'].size} entries -> #{heat_path(now.to_date)}"
 
-  reg['topics'] = cluster_topics(threads, reg, now)
+  reg['topics'] = merge_topics(threads, reg, now)
   save_registry(reg)
-  puts "Clusters: #{reg['topics'].size} multi-thread topics"
+  waves = reg['topics'].count { |t| Array(t['waves']).size > 1 }
+  puts "Topics: #{reg['topics'].size} multi-thread (#{waves} recurring waves)"
 
   refresh_published if options[:mode] == :all
-  build_trends(threads, reg, today_payload, now)
+  build_trends(threads, reg, today_payload, now, window: options[:window], cohort: cohort)
 end
 
 run

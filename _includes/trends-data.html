@@ -3,11 +3,55 @@
 
 <p style="color:#888;font-size:0.92em;margin:0 0 2em;">
   通过 Hacker News 专业社区的讨论参与度（评论增速、深度、跨话题活跃评论者占比）推测各技术话题的热度走向。
-  追踪 {{ t.stats.threads_tracked }} 个讨论（活跃 {{ t.stats.active }} · 观察 {{ t.stats.watching }} · 归档 {{ t.stats.settled }}），
-  热度模型 {{ t.rule_version }}，更新于 {{ t.generated_at | date: "%Y-%m-%d %H:%M" }} UTC。
+  追踪 {{ t.stats.threads_tracked }} 个讨论（活跃 {{ t.stats.active }} · 观察 {{ t.stats.watching }} · 休眠 {{ t.stats.cold }} · 归档 {{ t.stats.settled }}），
+  专家群体 {{ t.stats.cohort_size }} 人，行业分类覆盖 {{ t.stats.category_coverage }}%，
+  热度模型 {{ t.rule_version }} / 分类表 {{ t.category_version }}，更新于 {{ t.generated_at | date: "%Y-%m-%d %H:%M" }} UTC。
 </p>
 
-<h3 style="margin:2em 0 0.8em;">话题热度榜</h3>
+{%- if t.industries and t.industries != empty -%}
+<h3 style="margin:2em 0 0.8em;">行业趋势 <small style="color:#aaa;font-weight:400;">（近 {{ t.window_days }} 天热度聚合）</small></h3>
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:0.9em;">
+  <thead>
+    <tr style="text-align:left;color:#999;border-bottom:1px solid #e0e0e0;">
+      <th style="padding:0.4em 0.6em 0.4em 0;font-weight:400;">行业</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">热度</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">周环比</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">曲线</th>
+      <th style="padding:0.4em 0.6em;font-weight:400;">驱动话题</th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for ind in t.industries -%}
+    {%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
+    <tr style="border-bottom:1px solid #f5f5f5;">
+      <td style="padding:0.5em 0.6em 0.5em 0;font-weight:600;">{{ ind.category }}</td>
+      <td style="padding:0.5em 0.6em;color:#c60;white-space:nowrap;">{{ ind.heat | round: 1 }}</td>
+      <td style="padding:0.5em 0.6em;white-space:nowrap;">
+        {%- case ind.trend -%}
+        {%- when 'up' -%}<span style="color:#e0752d;">↑ {{ ind.delta_7d | round: 1 }}</span>
+        {%- when 'down' -%}<span style="color:#6a9a6a;">↓ {{ ind.delta_7d | round: 1 }}</span>
+        {%- else -%}<span style="color:#ccc;">·</span>
+        {%- endcase -%}
+      </td>
+      <td style="padding:0.5em 0.6em;">
+        {%- if ind.sparkline != '' -%}
+        <svg width="80" height="22" viewBox="0 0 100 28" role="img" aria-label="行业热度曲线">
+          <polyline points="{{ ind.sparkline }}" fill="none" stroke="#4a7ab5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        {%- endif -%}
+      </td>
+      <td style="padding:0.5em 0.6em;color:#777;font-size:0.88em;">
+        {%- for drv in ind.top_topics -%}{{ drv.title | escape | truncate: 36 }}{% unless forloop.last %} · {% endunless %}{%- endfor -%}
+      </td>
+    </tr>
+    {%- endfor -%}
+  </tbody>
+</table>
+</div>
+{%- endif -%}
+
+<h3 style="margin:2.5em 0 0.8em;">话题热度榜</h3>
 
 {%- for topic in t.topics -%}
 {%- assign trend = topic.trend -%}
@@ -31,6 +75,10 @@
     {%- else -%}<span style="color:#ccc;font-size:0.85em;">·</span>
     {%- endcase -%}
 
+    {%- if topic.waves > 1 -%}
+    <span style="color:#8a5ab5;font-size:0.8em;border:1px solid #8a5ab5;border-radius:3px;padding:0 0.35em;">第 {{ topic.waves }} 波</span>
+    {%- endif -%}
+
     {%- if topic.thread_count > 1 -%}
     <span style="color:#999;font-size:0.85em;">{{ topic.thread_count }} 条讨论</span>
     {%- endif -%}
@@ -40,7 +88,7 @@
       <span style="color:#999;font-size:0.8em;">24h {{ topic.delta_24h | round: 2 }}</span>
       {%- endif -%}
       {%- if topic.sparkline != '' -%}
-      <svg width="90" height="26" viewBox="0 0 100 28" role="img" aria-label="30 天热度曲线">
+      <svg width="90" height="26" viewBox="0 0 100 28" role="img" aria-label="{{ t.window_days }} 天热度曲线">
         <polyline points="{{ topic.sparkline }}" fill="none" stroke="#e0752d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       {%- endif -%}
@@ -57,10 +105,19 @@
     {%- for th in topic.threads -%}
     <li style="margin:0.15em 0;">
       <a href="{{ th.hn_url }}">{{ th.title | escape }}</a>
-      <span style="color:#aaa;">（热度 {{ th.heat | round: 1 }}）</span>
+      <span style="color:#aaa;">（{{ th.posted_at | date: "%m-%d" }} · 热度 {{ th.heat | round: 1 }}）</span>
     </li>
     {%- endfor -%}
   </ul>
+  {%- endif -%}
+
+  {%- if topic.related and topic.related != empty -%}
+  <p style="margin:0.35em 0 0 1.6em;font-size:0.8em;color:#aaa;">
+    相关：
+    {%- for r in topic.related -%}
+    <span>{% if r.via == 'cohort' %}🧭{% else %}#️⃣{% endif %} {{ r.title | escape | truncate: 30 }}</span>{% unless forloop.last %} · {% endunless %}
+    {%- endfor -%}
+  </p>
   {%- endif -%}
 </div>
 {%- endfor -%}
@@ -106,6 +163,7 @@
 <p style="text-align:center;font-size:0.8em;color:#bbb;">
   热度 = 评论增速 · 分数增速 · 专家参与 · 讨论深度 加权（确定性计算，非模型评分）。
   「专家」指 14 天内在 ≥2 个高热度讨论中发言的评论者。
+  相关话题 🧭 = 专家群体重叠（强信号），#️⃣ = 关键词交集（弱信号）。
 </p>
 
 {%- else -%}
