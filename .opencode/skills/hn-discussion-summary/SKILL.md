@@ -11,6 +11,7 @@ metadata:
 | Condition | Mode |
 |-----------|------|
 | `--auto` / `CI=true` / `GITHUB_ACTIONS=true` | **auto** — no prompts, auto-decide, auto-build, auto-deploy |
+| `--weekly` | **weekly** — 聚合本周热度数据生成周报文章（Phase W0-W3，见文末） |
 | else | **interactive** — user prompts, confirm deploy |
 
 ---
@@ -280,3 +281,38 @@ Exit 0. No prompts.
 |-----|--------|
 | Normal | Ask deploy? yes → invoke auto-deploy skill |
 | ⚑ sensitive/political | Show matched terms. Add extended disclaimer. Ask "Confirm deploy? [y/N]" (default N). y → deploy. N → stay local. |
+
+---
+
+## Mode: --weekly（周报 — AIHOT reports 对应物）
+
+聚合本周热度数据成一篇周报文章。数据全部来自 `.hn-archive/`（确定性热度引擎产出），写作风格/引文纪律同 Phase 2。
+
+### Phase W0 — Week dataset（确定性，无 LLM 判断）
+
+1. 读最近 7 天 `.hn-archive/heat/YYYY-MM-DD.json`（今天往前 6 天；缺文件 = 管道冷启动间隙，如实记录覆盖天数）
+2. 读 `.hn-archive/topics.json`（topics + registry）+ `_data/hn_trends.json`（industries/related）
+3. 构造本周榜单（纯计算）:
+   - **Top 5 话题**: 按窗口内单日峰值 heat 排序（title / 峰值日 / 峰值 / 成员帖 / 已成文链接）
+   - **本周上升**: 首末两日 heat 差最大者
+   - **回热话题**: 窗口内 trend=resurrected 的帖/话题
+   - **行业动向**: 按 industries 周累计 heat 排序 top 3 + delta 最大升降者
+4. 窗口内 heat 文件 <2 天 → 照常生成，文首标注「热度数据自 <首个文件日期> 起」
+
+### Phase W1 — Evidence
+
+- Top 话题各取 1-2 条成员帖 top 评论（按 score）作引文: verbatim EN + `> "text" — user [c:id]` 格式（同 Phase 2 纪律）
+- 引文来源: `.hn-archive/threads/YYYY/WNN/<id>.yaml` `comments`（Phase 2.5 本地 grep 校验同样适用）
+- 归档缺该帖 → 跳过引文，只用聚合数据叙述，**禁止编造**
+
+### Phase W2 — Write
+
+- 文件: `_articles/YYYY/YYYY-MM-DD-hn-weekly-W<NN>.md`（NN = 本周一的 ISO 周号，`date -d 'last monday' +%V` 或当日 `%V` 周一执行）
+- Front matter: `layout: post` / `title: >-`（含 WNN 与本周主线词）/ `date: 今日` / `categories: [articles]` / `excerpt: >-` / `tagline: >-`
+- **不加 `hn_id`**（周报覆盖多帖，防 published dedup 屏蔽成员帖的日常成文）
+- 结构: 本周话题榜（每条: 一句锐评 + 峰值数据 + 引文）→ 行业动向 → 回热话题 → 数据说明（rule_version / 覆盖天数 / cohort 规模）
+- 结尾 `<div class="disclaimer">` + AI 模型披露，同 Phase 2
+
+### Phase W3 — Output
+
+同 Phase 3（CI 禁 build/commit，由 workflow 门禁提交）。Interactive 模式 `make build` 后确认。

@@ -9,7 +9,7 @@ All AI output in this project uses caveman mode: drop filler/articles/pleasantri
 - Jekyll + GitHub Pages (branch `master`, Pages native branch build — **no deploy workflow**, pushed master auto-builds)
 - Domain: `yuedulijie.com`
 - **Local dev**: Docker (ruby:3.2-slim, `docker compose`), **no** local Ruby/Jekyll needed
-- **CI**: `.github/workflows/hn-fetch.yml` (HN 数据抓取 3x daily + hot 突发触发) + `.github/workflows/hn-auto.yml` (每日北京早 8 点 `/hn --auto --batch 2` 生成文章，MiniMax-M3 主力，失败回退 gemini-3.5-flash → deepseek-v4-flash)
+- **CI**: `.github/workflows/hn-fetch.yml` (HN 数据抓取 3x daily + hot 突发触发) + `.github/workflows/hn-auto.yml` (每日北京早 8 点 `/hn --auto --batch 2` 生成文章，MiniMax-M3 主力，失败回退 gemini-3.5-flash → deepseek-v4-flash) + `.github/workflows/hn-weekly.yml` (周一北京 10:30 `/hn --weekly` 热度周报，单发无回退链)
 - **Sub-site**: [UP-6 英语学习导航](https://up-6.yuedulijie.com) — `github.com/Lax/up-6.yuedulijie.com`
 
 ## Project Layout
@@ -62,7 +62,7 @@ Nav pages (`movies.html`, `books.html`, `articles.html`, `trends.html`) use `nav
 | `/plan` | Analyze project, suggest next work | project-manager |
 | `/content` | Audit collections and front matter | content-manager |
 | `/evolve` | Self-review agent configs, skills, infrastructure | self-evolve |
-| `/hn [url]` | Create HN discussion summary → `_articles/YYYY/` | hn-summarizer |
+| `/hn [url]` | Create HN discussion summary → `_articles/YYYY/`（`--weekly` 周报模式） | hn-summarizer |
 
 ## Dev Workflow
 1. Edit content/config/layout

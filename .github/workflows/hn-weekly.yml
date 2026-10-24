@@ -1,0 +1,95 @@
+name: HN Weekly Digest
+
+on:
+  schedule:
+    # Monday 02:30 UTC = 北京周一 10:30（避开 00:00 的每日 hn-auto 运行窗口）
+    - cron: "30 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "AI 模型"
+        type: choice
+        required: false
+        default: "minimax-cn-coding-plan/MiniMax-M3"
+        options:
+          - "minimax-cn-coding-plan/MiniMax-M3"
+          - "google/gemini-3.5-flash"
+          - "deepseek/deepseek-v4-flash"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hn-weekly
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Configure Git
+        run: |
+          git config user.name "HN Auto-Summarizer"
+          git config user.email "hn-auto@yuedulijie.com"
+
+      - uses: ./.github/actions/setup-opencode
+
+      # Weekly digest reads the week's heat/topic/thread data from the archive
+      - uses: ./.github/actions/hn-archive
+        with:
+          mode: attach
+
+      - name: Generate weekly digest (single-shot, no fallback chain)
+        timeout-minutes: 20
+        env:
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          git checkout -- _articles/ 2>/dev/null || true
+          git clean -fd _articles/ 2>/dev/null || true
+          MODEL='${{ inputs.model }}'
+          [ -z "$MODEL" ] && MODEL='minimax-cn-coding-plan/MiniMax-M3'
+          opencode run "/hn --weekly" --dir . \
+            --dangerously-skip-permissions \
+            --model "$MODEL" 2>&1
+          if [ -z "$(git status --porcelain -- _articles/)" ]; then
+            echo "ERROR: 周报无产出"
+            exit 1
+          fi
+
+      - name: Validate & auto-repair article front matter (one-shot)
+        env:
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: ruby scripts/hn-repair.rb
+
+      - name: Validate Jekyll build
+        run: |
+          sudo rm -rf _site .jekyll-cache .sass-cache
+          bundle exec jekyll build
+
+      - name: Commit date
+        id: commit-date
+        run: echo "commit_date=$(TZ=Asia/Shanghai date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "feat: HN 周报 ${{ steps.commit-date.outputs.commit_date }}"
+          commit_user_name: "HN Auto-Summarizer"
+          commit_user_email: "hn-auto@yuedulijie.com"
+          file_pattern: "_articles/"
+          skip_dirty_check: true
+
+      - uses: ./.github/actions/hn-archive
+        with:
+          mode: push
