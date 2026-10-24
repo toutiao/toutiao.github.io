@@ -141,12 +141,29 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - 无 MISSED 高危攻击残留
 - 全部残留风险有明确接受理由记录
 
-## 约束
-- **API 预算**：GEMINI/DEEPSEEK key 有用量限制。最多 3 次重试；回退只 1 次（gemini → deepseek）。
-- **先测试**：任何 scripts/*.rb 或 skill 改动，上 CI 前必须本地真实 HN URL 测试。
-- **Build 门禁**：每次改动必须过 `make build`（Docker Jekyll 编译）。
-- **对抗门禁**：见上文 — 提交前执行对抗审查。
-- **对外页面内容约束**： 对外页面（trends/文章）禁止展示内部运维信息 — 管道状态、冷启动/数据积累说明、规则与分类表版本号、覆盖率等内部指标、状态机分层计数。发布层遵循**字段白名单**原则（`annotate_public`）：新增对外字段前先问「读者需要知道吗」；空数据区块直接隐藏而非解释为何为空。
+## 要守住的规则
+
+- **存储** `.hn-archive/` 是唯一存储，必须放在 `_data/` 之外 — Jekyll 会把 `_data/**/*.yaml` 全量载入 `site.data`，归档放进去会拖垮构建
+- **存储** 归档数据不进 master；进 master 的只有 `_data/hn_trends.json` 与 `_data/hn_trends_90.json` 两个投影，且只允许 `annotate_public` 白名单字段
+- **存储** 评论、快照、热度历史永不删除；唯一可清理项是 threads 里的 `article` 正文（>365 天，`scripts/hn-archive-prune.rb --apply`）
+- **存储** threads 写入必须幂等：评论按 `id` 合并、快照按 `(t,id)` 去重 — 重跑不得产生重复数据
+- **存储** `published.json` 只增不减：文章发布过一次，对应 id 永久占用
+- **管道** 副源（Lobsters）永远 `continue-on-error` — 副源故障不得阻塞 HN 主链
+- **管道** 探活只对 HN id（Firebase item API）；`lo-` 前缀帖一律跳过
+- **管道** cohort 作者必须按源命名空间（`hn:alice` ≠ `lobsters:alice`）— 跨站同名不得伪造「专家重叠」
+- **管道** hot-check 的 stdout 只允许机读 `TRIGGER <url>` 单行，摘要一律走 stderr — CI 逐行解析 stdout
+- **管道** CI 中 skill 禁止 `make build`/`docker compose`/`git commit` — build 与提交由 workflow 门禁负责
+- **管道** opencode flag 本地与 CI 不得混用：本地 `--auto`（无 `--dir`），CI 用 `--dir` + `--dangerously-skip-permissions`
+- **管道** hn-auto 每次提交只含 `_articles/` 与两个投影文件，不得夹带其他变更
+- **热度** 热度、聚簇、行业分类全部确定性 Ruby — 0 LLM 调用；改公式只动权重常量并 bump `rule_version`，全部历史日榜必须可 `hn-heat.rb --recompute` 重建
+- **内容** 单帖摘要必须带 `hn_id`；跨多帖的周报**不加** `hn_id` — 防止成员帖被 published dedup 屏蔽
+- **内容** 引文必须逐字（verbatim）+ 真实作者 + `[c:id]`；非 HN 引文 id 不走 Algolia 门禁，本地归档核验兜底
+- **内容** `title:`/`excerpt:`/`tagline:` 必须 `>-` block scalar — ASCII `"` 会破坏 YAML
+- **内容** 每篇生成文章结尾必须带免责声明 + AI 模型披露
+- **发布** 对外页面禁止内部运维信息（状态机计数/版本号/覆盖率/冷启动说明）；空数据区块直接隐藏，不解释为何为空
+- **成本** LLM 只用于成文（每日摘要 + 周报）；重试上限 3 次，回退链只 gemini → deepseek 一跳
+- **流程** 改 `scripts/*.rb` 或 skill，先本地真实 HN URL 测试，再上 CI；每次改动必须过 `make build`
+- **流程** 管道/自动化改动提交前必须过对抗审查门（见上文）；git/SSH/gh 配置错误只报告不修复（见上文铁律）
 
 ## 插件
 仅 `jekyll-seo-tag`。HTML 压缩用 `_config.yml` 的 `compress_html`（仅 production）。
