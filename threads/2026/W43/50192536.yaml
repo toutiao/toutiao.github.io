@@ -4,13 +4,13 @@ post:
   title: Jailbreaking the Switch 2
   url: https://pepsipu.com/blog/2026-10-switch2-jailbreak-ns2jb/
   hn_url: https://news.ycombinator.com/item?id=50192536
-  score: 815
+  score: 816
   author: ledoge
   posted_at: '2026-10-22T08:01:52Z'
-  fetched_at: '2026-10-24T01:55:59Z'
+  fetched_at: '2026-10-24T02:08:27Z'
   article_url: https://pepsipu.com/blog/2026-10-switch2-jailbreak-ns2jb/
-  article_fetch_status: skipped
-  article_fetched_at:
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T02:08:27Z'
   raw_comment_count: 299
 comments:
 - id: '50193712'
@@ -898,5 +898,109 @@ comments:
   score: 0
   posted_at: '2026-10-23T11:26:08Z'
 article:
-  fetch_status: skipped
-archived_at: '2026-10-24T01:56:06Z'
+  url: https://pepsipu.com/blog/2026-10-switch2-jailbreak-ns2jb/
+  title:
+  fetch_status: success
+  content: "# Introduction\n\nYou can get a copy of the exploit from the ns2jb repository.\n\nns2jb
+    is a software-only, tethered jailbreak for the Switch 2. It allows running arbitrary
+    native code as any ordinary sysmodule, and as the built-in fs sysmodule. This
+    lets us run homebrew, reverse engineer and mod Switch 2 games, back up save files
+    off the Switch, and access most of the Switch 2’s peripherals through MMIO. To
+    my knowledge, it’s the first such exploit for the Switch 2.\n\nTo demonstrate
+    the capabilities of this jailbreak, Codex modded a Switch 2 exclusive, Mario Kart
+    World. Thanks to my friends in Dabney House who helped me choose characters to
+    add and playtest the game.\n\ncinnamoroll, red, and tole tole racing\n\n# Setup\n\nThe
+    very first thing I did was set up a harness around the Switch 1 and 2 so Codex
+    could, ideally, jailbreak the Switch 2 without me:\n\n“set a goal to jailbreak
+    the switch 2. make no mistakes”\n\nEdit: Many people have been asking me if I
+    actually used this prompt. No, it’s just a silly caption. I set a /goal for userland
+    code execution, but that didn’t succeed. The jailbreak itself took substantial
+    effort for ~2 weeks. The Mario Kart World, however, was entirely vibecoded in
+    a day, and was just for fun.\n\nThe JetKVMs allow Codex to send controller inputs
+    to the Switches over USB and receive video output over HDMI. We also need a way
+    to press the power button—when the Switch 2 crashes, it needs a button press to
+    restart.\n\nThat’s what the Bluetooth light switch flicker from Amazon is for.
+    When the lever comes down, it presses the power button. Once the power button
+    is fully pressed, the rest of the lever’s torque lifts the mechanism.\n\n# Getting
+    code execution\n\nWebKit is a popular target for console jailbreaks, so it’s unsurprising
+    that Codex has picked it for initial code execution.\n\n## Code execution through
+    the browser\n\nIt claims to have “native control-flow hijack” by taking advantage
+    of a WebKit n-day loaded via a custom Wi-Fi captive portal.\n\nWe’d like to get
+    code execution in microkernel services (or “sysmodules” on the Switch), so we
+    can run homebrew, mod games, download saves, etc. Unfortunately, this approach
+    of replacing one JavaScript function object with another doesn’t generalize beyond
+    existing functions—we’d need a new way to make arbitrary IPC calls. That looks
+    difficult.\n\nWhy?\n\n- WebKit has execute-only memory, or XOM, so even with arbitrary
+    memory RW, we don’t know where a gadget that could perform arbitrary IPC calls
+    is.\n\n- Even if we did, perhaps by parsing relocation data, it’s not clear how
+    we’d construct a signed pointer for it because of PAC.\n\n- And even if we could,
+    with some signing gadget, it’s not clear how we’d call this pointer, since CFI
+    type-checks most call sites.\n\nCodex has reset the goal to complete these steps.
+    It’s a side bet; it may succeed1, but let’s be real: the accessibility of WebKit
+    and the Nintendo BBP reward have probably incentivized many before me to look
+    here2.\n\nWhile that runs, let’s explore other options.\n\n## Code execution through
+    smilehax2\n\nMy idea was to target Switch 1 games, for two reasons:\n\n- They’re
+    built by developers. It’s less likely we’ll need to deal with PAC and CFI, especially
+    because the Switch 1 does not support PAC.\n\n- Since the Switch 1 root of trust
+    is owned, we can decrypt the code and read it.\n\nMaybe we can still get the upsides
+    of the browser attack surface—orchestrating from JavaScript, using existing n-days,
+    etc—while avoiding the downsides of WebKit mitigations by finding a Switch 1 game
+    that embeds a browser? Something analogous to Electron, but for games, so we could
+    pull off an exploit like this Discord RCE. I can’t disclose this approach’s findings
+    publicly at the moment, but luckily, there are other Switch 1 games.\n\nIn particular,
+    I’m interested in SmileBASIC. This is because it’s been pwned before, in smilehax,
+    giving userspace code execution on the 3DS. It’s a giant C++ codebase; surely,
+    if there was an exploitable memory corruption in the BASIC interpreter, there
+    can be another.\n\nCodex found a useful 32-bit integer overflow in the interpreter.
+    When removing items from an array, the interpreter checked position + count <=
+    array.length, but the sum could wrap and become negative. To fill the gap created
+    by removing elements, it’s supposed to shift the remaining elements left, like
+    so:\n\nmemmove( backing + position * 8, // start of the gap backing + (position
+    + count) * 8, // elements after the gap (length - position) * 8 // bytes to copy
+    );\n\nSay we have a string array R of length 4, and we run REMOVE R,&H60000000,&H3FFFFFFF.
+    position + count wraps to 0x9fffffff. As a negative signed 32-bit integer, it’s
+    less than array.length. The multiplications by 8 also wrap, so we end up performing
+    memmove(backing, backing - 8, 32), pulling the previous 8 bytes into the array.
+    The command does report an Out of memory error, but it doesn’t matter, since the
+    copy has happened already.\n\nThis is useful because the 8 bytes preceding any
+    array in SmileBASIC contain a pointer to the array itself! After the REMOVE, operations
+    on R[0] will treat the array backing as if it were a string.\n\nSince a pointer
+    occupies what would be the length field of R[0], the string length is enormous,
+    and we can perform reads and writes out of bounds. We read and write to memory
+    by copying to and from substrings of R[0].\n\nThis was a Switch 1 game, so the
+    SmileBASIC agent could work on the exploit on my Switch 1, while the WebKit agent
+    worked on the Switch 2. After some time, it got ROP.\n\n# Getting sysmodule RW\n\nOkay,
+    now we need to compromise a more privileged process. We’re interested in ordinary
+    sysmodules and built-in sysmodules.\n\nWhich sysmodule should we pursue? We don’t
+    have their code, so it’s unclear which sysmodules have which privileges.\n\nI
+    gave a few Codex instances the goal of getting sysmodule code execution. Most
+    chose to focus on audio and ldn. I think that’s because audio and ldn have had
+    bugs on the Switch 2. Codex also looked at the NV service, probably because GPU
+    drivers are generally fruitful?\n\n## The fs sysmodule\n\nIn the meantime, I started
+    looking at the built-in fs sysmodule, because:\n\n- The Switch 1 code shows that
+    it’s able to serve decrypted code.\n\n- There’s a lot of code.\n\n- It’s probably
+    similar to the fs module in the Switch 1, since the filesystem API didn’t change
+    very much.\n\nThe first reason is the most attractive to me. Even if we can’t
+    get a useful jailbreak from fs, we can at least decrypt some of the other sysmodules
+    so Codex can find bugs in them. Other sysmodules like ldr and ro look enticing
+    because they have permission to map executable memory3, but they don’t have large
+    attack surfaces, especially from SmileBASIC. We’ll come back to them later.\n\n###
+    Buffer overflow with path normalization\n\nAn IFileSystem handle has an IPC command,
+    GetEntryType. This takes a path string, normalized with Path::Normalize.\n\nPaths
+    containing a parent-directory component with a backslash, like /..\\, call into
+    a helper that allocates a temporary heap buffer of 0x301 bytes. Our path is copied
+    in, but it can be larger than the buffer, causing a buffer overflow. lol\n\nWe’ll
+    need a good victim allocation to overflow into. Codex found that the BufferedStorage
+    object allocates a cache entry for its files. If that entry has its dirty bit
+    set, reads and writes to the file follow a pointer to cached data. We can hijack
+    that for arbitrary read/write4.\n\nFrom here, I scanned through memory to find
+    SmileBASIC’s connection object and set the saved PID to 1. Now, my process has
+    “FullPermission”, meaning I can perform privileged filesystem actions. I dumped
+    internal storage and all ordinary sysmodule code, so Codex could perform offline
+    analysis and I could understand where to go next.\n\n# Getting code execution
+    as any ordinary sysmodule\n\nHomebrew and modding typically rely on executing
+    our own native code. Looking at the dumps, the only ordinary sysmodule with permission
+    to map executable code is ro. All "
+  error:
+  fetched_at: '2026-10-24T02:08:27Z'
+archived_at: '2026-10-24T02:08:37Z'
