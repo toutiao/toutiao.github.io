@@ -110,6 +110,7 @@ jobs:
           fi
 
       - name: Generate articles (opencode auto)
+        id: generate
         timeout-minutes: 20
         continue-on-error: true
         env:
@@ -120,6 +121,11 @@ jobs:
           # Clean up any orphaned _articles/ from previous failed run
           git checkout -- _articles/ 2>/dev/null || true
           git clean -fd _articles/ 2>/dev/null || true
+          # Today's article count before generation — fallback judges output by
+          # comparing counts (a dirty-tree check breaks if the agent commits)
+          YEAR=$(TZ=Asia/Shanghai date +%Y)
+          TODAY=$(TZ=Asia/Shanghai date +%F)
+          echo "baseline=$(ls "_articles/$YEAR/" 2>/dev/null | grep -c "^${TODAY}-" || true)" >> $GITHUB_OUTPUT
           MODEL='${{ inputs.model }}'
           if [ -z "$MODEL" ]; then MODEL='minimax-cn-coding-plan/MiniMax-M3'; fi
           MODE='${{ inputs.mode }}'
@@ -149,9 +155,17 @@ jobs:
           MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
           RUN_MODE: ${{ inputs.mode }}
         run: |
-          # 主模型失败或静默 no-op (无新文章) 时，依次回退；已有产出则跳过
-          if [ -n "$(git status --porcelain -- _articles/)" ]; then
-            echo "主模型已产出文章，跳过回退"
+          # 主模型失败或静默 no-op (无新文章) 时，依次回退；已有产出则跳过。
+          # Judge by today's article count vs baseline — NOT git status: the agent
+          # occasionally commits its output in-run, which empties the dirty-tree
+          # check and made the fallback chain fire needlessly.
+          YEAR=$(TZ=Asia/Shanghai date +%Y)
+          TODAY=$(TZ=Asia/Shanghai date +%F)
+          NOW=$(ls "_articles/$YEAR/" 2>/dev/null | grep -c "^${TODAY}-" || true)
+          BASE='${{ steps.generate.outputs.baseline }}'
+          [ -z "$BASE" ] && BASE=0
+          if [ "$NOW" -gt "$BASE" ]; then
+            echo "主模型已产出文章（今日 $NOW 篇 > 基线 $BASE），跳过回退"
             exit 0
           fi
           echo "主模型无产出，开始回退链..."

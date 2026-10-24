@@ -152,7 +152,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **管道** 探活只对 HN id（Firebase item API）；`lo-` 前缀帖一律跳过
 - **管道** cohort 作者必须按源命名空间（`hn:alice` ≠ `lobsters:alice`）— 跨站同名不得伪造「专家重叠」
 - **管道** hot-check 的 stdout 只允许机读 `TRIGGER <url>` 单行，摘要一律走 stderr — CI 逐行解析 stdout
-- **管道** CI 中 skill 禁止 `make build`/`docker compose`/`git commit` — build 与提交由 workflow 门禁负责
+- **管道** 生成 skill（hn-discussion-summary）任何环境禁止 `make build`/`docker compose`/`git commit`/`git push` — CI 的 build 与提交由 workflow 门禁负责；本地提交走用户 `make deploy` 或确认后的 auto-deploy；生成期 push 会绕过门禁直接上线（dac2eba 事故）
 - **管道** opencode flag 本地与 CI 不得混用：本地 `--auto`（无 `--dir`），CI 用 `--dir` + `--dangerously-skip-permissions`
 - **管道** hn-auto 每次提交只含 `_articles/` 与两个投影文件，不得夹带其他变更
 - **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证

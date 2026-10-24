@@ -270,8 +270,8 @@ Scan body (exclude disclaimer) for:
 
 | Tag | Action |
 |-----|--------|
-| Normal | **CI=true 时跳过 git add/commit**（workflow git-auto-commit-action 负责提交推送）；本地 auto 模式 `git add -A && git commit -m "feat: HN 自动摘要 <真实日期>"` — 日期是 `$(TZ=Asia/Shanghai date +%Y-%m-%d)` 展开后的字面值 |
-| ⚑ sensitive/political | Add extended disclaimer → commit same + warning: "⚠ Review recommended." |
+| Normal | **任何环境一律不执行 `git add`/`git commit`/`git push`** — CI 由 workflow git-auto-commit-action 提交推送（repair/build 门禁之后）；本地由用户 `make deploy` 走门禁提交。产出以写文件完成为止。禁止理由：生成期 push 会绕过 repair/build 门禁直接上线（dac2eba 事故），并使 workflow 的产出判定失效 |
+| ⚑ sensitive/political | Add extended disclaimer + warning: "⚠ Review recommended." — 同样不 commit，留给用户/门禁 |
 
 Exit 0. No prompts.
 
@@ -315,4 +315,4 @@ Exit 0. No prompts.
 
 ### Phase W3 — Output
 
-同 Phase 3（CI 禁 build/commit，由 workflow 门禁提交）。Interactive 模式 `make build` 后确认。
+同 Phase 3（任何环境禁 build/git 操作，CI 由 workflow 门禁提交，本地由用户 `make deploy`）。Interactive 模式 `make build` 后确认。
