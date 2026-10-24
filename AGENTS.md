@@ -165,5 +165,12 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **流程** 改 `scripts/*.rb` 或 skill，先本地真实 HN URL 测试，再上 CI；每次改动必须过 `make build`
 - **流程** 管道/自动化改动提交前必须过对抗审查门（见上文）；git/SSH/gh 配置错误只报告不修复（见上文铁律）
 
+## 写代码
+
+- 匹配周边代码：Ruby 脚本沿用 `frozen_string_literal`、`──` 分节注释与现有命名习惯；Liquid 模板沿用现有内联样式约定；不为局部改动引入新风格。
+- 选简单方案：优先确定性 Ruby 而非 LLM 调用；复用 `hn-fetch.rb` 库模式（`HN_FETCH_AS_LIB=1` require），不复制代码；不为「将来可能的多源」提前抽象 — 新源照 `lobsters-fetch.rb` 模式单独成文件。
+- 数据格式只向后兼容演进：归档 JSON/YAML 新增字段必须可缺省（读侧 `||` 兜底），已写入字段不重命名、不删除 — 旧归档在任何版本代码下都必须照常可读。
+- 测试克制：数据层改动用真实 HN URL 本地跑通再上 CI；Jekyll 可见的改动过 `make build` 即可；不为纯文案、样式改动写测试。
+
 ## 插件
 仅 `jekyll-seo-tag`。HTML 压缩用 `_config.yml` 的 `compress_html`（仅 production）。
