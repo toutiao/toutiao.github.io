@@ -5,14 +5,14 @@ post:
   title: Attention people who think UB is fine
   url: https://blog.habets.se/2026/10/Attention-people-who-think-UB-is-fine.html
   hn_url: https://lobste.rs/s/5xzuff
-  score: 16
+  score: 20
   author: abareplace
   posted_at: '2026-10-23T20:47:58Z'
-  fetched_at: '2026-10-24T02:41:13Z'
+  fetched_at: '2026-10-24T03:35:44Z'
   article_url: https://blog.habets.se/2026/10/Attention-people-who-think-UB-is-fine.html
-  article_fetch_status: skipped
-  article_fetched_at:
-  raw_comment_count: 9
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T03:35:44Z'
+  raw_comment_count: 11
   tags:
   - c
   - c++
@@ -27,7 +27,7 @@ comments:
     UB places no constraints on the compiler. If the standard does not define the result of doing X in condition Y is undefined, or it just does not define the result (either explicitly, ID, unspecified, or erroneous), then there are no constraints on the compiler.
     It does not matter what your implementation, platform, or hardware do. If the behavior is UB according to the language, the compiler can do anything, or nothing, or different things in different places. If the language says it is UB, it is UB.
     If you want different implementations to be able to provide different behavior, you want implementation defined behavior. That is literally why ID exists separately from UB.
-  score: 10
+  score: 11
   posted_at: '2026-10-23T21:31:09Z'
 - id: lo-nmfkbo
   parent_id: '0'
@@ -95,7 +95,7 @@ comments:
     But, as a human being, I am allowed (if not expected) to have contradictory desires, and to want all benefit with no sacrifice. I want my programming language to be extremely simple, but also extremely fast, but also very safe, but also without undefined behaviour, but also without giving up optimisations that other languages (less safe or more rife with undefined behaviour) are allowed, and I might be convinced not to write any new codes in C or C++ (in fact, I have found myself running “toward” Zig more than “away” from C,) but I definitely want to make substantive changes to existing codes in C and C++ and refuse to replace or rewrite them. (Regarding this last desire, you know, I figure I already dug the hole… and I'm not going to lose sleep over digging it just a little bit deeper…)
     So, rather than simply being negative about undefined behaviour or being negative about C and C++ code (that I refuse to do much of anything about…,) perhaps what would be useful to know would be how I can actually go about triangulating myself. I know I'm in a hole, I know I am digging it deeper, I know I won't climb out, and I know I might hit a pipe… but before the water rises up to my neck, is there no agency I can have in my last moments?
     In other words, even if I won't rewrite my C codes, and even if I do want to make substantive changes to them, and even if I know I will suffer from the consequences of undefined behaviour, and even if these will be difficult to avoid through additional mechanism or additional diligence, I still have some obligation-to and corresponding freedom-of action. What do I do in the next (… maybe the last? … hopefully the last?) hundred thousand lines of C that I write? Just flail and drown?
-  score: 3
+  score: 4
   posted_at: '2026-10-24T00:49:17Z'
 - id: lo-ellqij
   parent_id: '0'
@@ -112,7 +112,7 @@ comments:
     What do I do in the next (… maybe the last? … hopefully the last?) hundred thousand lines of C that I write?
 
     Study Annex J, crank up the warnings, write thorough tests, use sanitizers, use static analysis.
-  score: 3
+  score: 4
   posted_at: '2026-10-24T01:20:06Z'
 - id: lo-fccdmm
   parent_id: '0'
@@ -147,7 +147,7 @@ comments:
     Study Annex J, crank up the warnings, write thorough tests, use sanitizers, use static analysis.
 
     I think this is why, as an alternative to just crying one's self to sleep every night, naïvely trapping on any undefined behaviour (e.g., via mechanisms like Fil-C) seem to be attracting attention, even in the absence of the C committee taking any action.
-  score: 1
+  score: 2
   posted_at: '2026-10-24T02:01:23Z'
 - id: lo-z5lvte
   parent_id: '0'
@@ -157,6 +157,100 @@ comments:
     To a point, yes, those violate the C standard, but if I'm targeting POSIX, I have less UB do worry about than pure C (not much, but some).
   score: 2
   posted_at: '2026-10-24T02:01:45Z'
+- id: lo-sqsmtn
+  parent_id: '0'
+  author: olliej
+  text: |-
+    So nobody should program for POSIX in C then?
+
+    What?
+
+    I can't use dlopen() because it mandates that a void * can store a function pointer?
+
+    You're right, much like signed integer overflow, it often works. It's also not correct C.
+
+    I can't use memset() on a structure with pointer fields and assume they're now NULL?
+
+    You can, that's what Implementation Defined behavior is for.
+
+    To a point, yes, those violate the C standard, but if I'm targeting POSIX, I have less UB do worry about than pure C (not much, but some).
+
+    This is literally my point. You can't say "I am targeting POSIX and therefore what the standard says is not relevant". If C says X is UB, it is UB. Being able to get away with it does not make it non-UB, and it does not make your code correct.
+    For many many years people relied on null dereferences as having safe termination semantics, and then compilers said "well that's UB" and suddenly all that incorrect code became insecure incorrect code.
+    If your code relies on UB, your code is wrong according to the standard. If a compiler chooses to, that incorrect code can become a symptomatic bug in future.
+    Getting away with UB today does not change anything.
+    Let's look at your first point: void* cannot hold a function pointer, that's UB. Code that stores a function pointer in a void* is wrong. What it should be is implementation defined behavior, but like so many examples of implementation defined behavior in C and C++, it is labeled as UB.
+    If you want to store function pointers in a void*, and have your code be correct, you need the C committee to make it implementation defined behavior. Or you can join the linux kernel and acknowledge that standard C cannot be used for systems programming due to it incorrectly labeling implementation defined behavior as UB.
+    Anyway, my point is simple: UB does not enable different platform behaviors, it mean any code relying on that implementation defined behavior is wrong, even when a platform does define the behavior.
+  score: 1
+  posted_at: '2026-10-24T03:19:11Z'
+- id: lo-vydjwi
+  parent_id: '0'
+  author: olliej
+  text: |-
+    I don't get this response?
+    My entire point is that UB is not about supporting different platforms, that "implementation defined behavior" is a term that exists in both the C and C++ standards specifically to say "this operation has defined behavior, and the implementation (compiler, platform, etc) defines that behavior".
+    The big problem is when people apply "UB is for cross platform support", and then treat UB operations as being ok because they know the platform that they are targeting. Which it isn't.
+    If you want to make a difference, write proposals to WG16(C) and/or WG21(C++), to make platform defined operations be specified as having defined behavior (defined, implementation defined, unspecified, erroneous) rather than being UB.
+  score: 1
+  posted_at: '2026-10-24T03:33:44Z'
 article:
-  fetch_status: skipped
-archived_at: '2026-10-24T02:41:17Z'
+  url: https://blog.habets.se/2026/10/Attention-people-who-think-UB-is-fine.html
+  title: Attention people who think UB is fine
+  fetch_status: success
+  content: "After [my post on undefined behavior in C](https://blog.habets.se/2026/05/Everything-in-C-is-undefined-behavior.html)some
+    people insisted that it’s demonstrably fine, we know what the code will do, and
+    at worst we’ll get a segfault.\n\nThis is false.\n\nHere’s an example.\n\n## C
+    code\n\n    #include<utility>\n    \n    // Let's pretend this is a memory mapped
+    device controlling\n    // motors and gears and stuff.\n    volatile int device_command
+    = 0;\n    \n    void serve_hot_chocolate() {\n            device_command = 42;\n
+    \   \n            // Oh no, we spilled some hot chocolate, invoking UB.\n            //\n
+    \           // The definition of `std::unreachable()` is:\n            // Invokes
+    undefined behavior at a given point.\n            std::unreachable();\n    }\n
+    \   \n    void explode() {\n            device_command = 3;\n    }\n\n## Example
+    assembly output\n\nWith GCC 16.2 with `-O1`.\n\n    \"serve_hot_chocolate()\":\n
+    \           mov DWORD PTR \"device_command\"[rip], 42\n    \"explode()\":\n            mov
+    DWORD PTR \"device_command\"[rip], 3\n            ret\n    \"device_command\":\n
+    \           .zero 4\n\nRuh roh. Exploding chocolate! The function `explode()`
+    will be executed, even though it was never called!\n\n[godbolt link](https://godbolt.org/z/Y5844eTKe)\n\n##
+    Another example: dereferencing a null pointer\n\nSome people insisted that dereferencing
+    a null pointer is _fine_. It’ll just try to access address zero! And these people
+    supposedly know what happens when you try: if nothing is mapped there, you’ll
+    get a segfault.\n\nAgain, not true.\n\nLet’s say we change `std::unreachable()`
+    to `int* ptr = nullptr; *ptr = 99;` in the previous example. Now we [get this](https://godbolt.org/z/efqKrzefa):\n\n
+    \   \"serve_hot_chocolate()\":\n            mov DWORD PTR \"device_command\"[rip],
+    42\n            mov DWORD PTR ds:0, 0\n            ud2\n\nCurious, eh? First it
+    writes zero, **not** 99, to memory address zero. Then it crashes the program using
+    an invalid instruction. The number 99 never appears in the generated program.
+    But the null pointer write does. Presumably the null pointer write is done in
+    order to improve debugger error messages.\n\nNow let’s check [clang with godbolt](https://godbolt.org/z/86M7MWTT8):\n\n
+    \   \"serve_hot_chocolate()\":\n            mov dword ptr [rip + \"device_command\"],
+    42\n    \n    \"explode()\":\n            mov dword ptr [rip + \"device_command\"],
+    3\n            ret\n    \n    \"device_command\":\n            .long 0\n\nAgain
+    we get exploding chocolate.\n\n## Let’s do some pointer arithmetic on the null
+    pointer\n\nOk, so what happens if we add `ptr += 10`. That’s UB for three reasons:\n\n1.
+    using a null pointer for anything other than comparison against other pointers,\n2.
+    even if an object would be valid at the null pointer (which it’s not), creating
+    a pointer that points outside that object, or if an array, beyond one-past the
+    array, is UB,\n3. even if that were valid (which it’s not), we then dereference
+    the address.\n\nLet’s [try it](https://godbolt.org/z/8z6hPPsvG).\n\n    \"serve_hot_chocolate\":\n
+    \           mov DWORD PTR \"device_command\"[rip], 42\n            mov DWORD PTR
+    ds:40, 99\n            ret\n\nWow. _Now_ it did what someone naively would expect,
+    taking the code at face value. Lucky.\n\nWhy did GCC (and clang, by the way) not
+    detect that `*(ptr + 10) = 99` is equally UB as `*ptr = 99`, and do the same thing?\n\nWrong
+    question. No compiler is obligated to “detect” UB at all. Looks to me like GCC
+    and clang, if we want to anthropomorphize them, saw “oh, null pointer dereference?
+    Well that can’t happen, so I’ll stop emitting instructions for this function,
+    to save on the binary size”. Because of the [halting problem](https://en.wikipedia.org/wiki/Halting_problem),
+    it cannot in the general case know if the code will ever be executed.\n\n## So
+    what does UB do?\n\nAnything. I have now demonstrated three things UB can do,
+    when UB was triggered in the same place:\n\n1. Run whatever happens to be next
+    in memory (exploding chocolate).\n2. Store a (for all intents and purposes) _random_
+    value at address zero (wrote zero, not 99), and then deliberately crash.\n3. Do
+    what one would naively expect: write the value to the address seen in the code
+    at face value.\n\nAnd to think that some people don’t believe in [nasal demons](https://en.wikipedia.org/wiki/Undefined_behavior).\n\ndisqus
+    has started showing ads. :-(\n\nShowing (probably incomplete) comments in a static
+    read-only view. Click button to be able to leave comments."
+  error:
+  fetched_at: '2026-10-24T03:35:44Z'
+archived_at: '2026-10-24T03:35:45Z'
