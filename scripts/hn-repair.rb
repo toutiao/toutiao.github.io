@@ -83,6 +83,9 @@ end
 
 def verify_comment_ids(entries)
   entries.filter_map do |(id, author)|
+    # Non-HN ids (e.g. lobsters lo-xxx quotes) have no Algolia endpoint —
+    # verbatim local verification in the skill remains their gate
+    next nil unless id =~ /^\d+$/
     uri = URI("https://hn.algolia.com/api/v1/items/#{id}")
     res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, read_timeout: 15) do |h|
       h.get(uri.request_uri, { 'Accept' => 'application/json' })

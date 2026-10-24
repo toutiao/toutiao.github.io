@@ -104,6 +104,7 @@
   <ul style="margin:0.4em 0 0 1.6em;padding:0;list-style:none;font-size:0.85em;color:#777;">
     {%- for th in topic.threads -%}
     <li style="margin:0.15em 0;">
+      {%- if th.source == 'lobsters' -%}<span style="color:#b5701e;font-size:0.85em;">[Lobsters]</span> {%- endif -%}
       <a href="{{ th.hn_url }}">{{ th.title | escape }}</a>
       <span style="color:#aaa;">（{{ th.posted_at | date: "%m-%d" }} · 热度 {{ th.heat | round: 1 }}）</span>
     </li>
@@ -138,6 +139,7 @@
     {%- for th in t.top_threads -%}
     <tr style="border-bottom:1px solid #f5f5f5;">
       <td style="padding:0.5em 0.6em 0.5em 0;">
+        {%- if th.source == 'lobsters' -%}<span style="color:#b5701e;font-size:0.8em;">[Lobsters]</span> {%- endif -%}
         <a href="{{ th.hn_url }}">{{ th.title | escape | truncate: 64 }}</a>
         {%- if th.article %} <small style="color:#999;">[<a href="{{ th.article.url | relative_url }}">本站解读</a>]</small>{% endif -%}
       </td>
@@ -158,6 +160,38 @@
   </tbody>
 </table>
 </div>
+
+{%- assign t90 = site.data.hn_trends_90 -%}
+{%- if t90 -%}
+<h3 style="margin:2.5em 0 0.4em;">90 天视角 <small style="color:#aaa;font-weight:400;">（数据随管道运行逐日累积，早期为空属正常）</small></h3>
+
+{%- if t90.industries and t90.industries != empty -%}
+<p style="margin:0.4em 0;font-size:0.85em;color:#888;">行业（近 90 天热度聚合，周环比）：</p>
+{%- for ind in t90.industries -%}
+{%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
+<span style="display:inline-block;margin:0.2em 0.4em 0.2em 0;font-size:0.85em;">
+  <b>{{ ind.category }}</b> {{ ind.heat | round: 1 }}
+  {%- if ind.trend == 'up' -%}<span style="color:#e0752d;">↑</span>{%- elsif ind.trend == 'down' -%}<span style="color:#6a9a6a;">↓</span>{%- else -%}<span style="color:#ccc;">·</span>{%- endif -%}
+</span>
+{%- endfor -%}
+{%- endif -%}
+
+{%- if t90.topics and t90.topics != empty -%}
+<div style="margin-top:0.8em;">
+  {%- for topic in t90.topics limit: 12 -%}
+  {%- assign p90curve = topic.curve | last -%}
+  {%- if p90curve == nil -%}{% continue %}{%- endif -%}
+  <div style="display:flex;align-items:center;gap:0.6em;padding:0.25em 0;border-bottom:1px solid #f8f8f8;">
+    <span style="color:#999;font-size:0.8em;min-width:3em;">{{ topic.peak_at }}</span>
+    <a href="{{ topic.threads.first.hn_url }}" style="font-size:0.88em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ topic.title | escape }}</a>
+    {%- if topic.waves > 1 -%}<span style="color:#8a5ab5;font-size:0.75em;">W×{{ topic.waves }}</span>{%- endif -%}
+    <svg width="70" height="20" viewBox="0 0 100 28"><polyline points="{{ topic.sparkline }}" fill="none" stroke="#c9a15c" stroke-width="2"/></svg>
+    <span style="font-size:0.8em;color:#aa8a4a;">{{ topic.heat | round: 1 }}</span>
+  </div>
+  {%- endfor -%}
+</div>
+{%- endif -%}
+{%- endif -%}
 
 <hr style="margin:3em 0 1em;border:none;border-top:1px solid #eee;">
 <p style="text-align:center;font-size:0.8em;color:#bbb;">

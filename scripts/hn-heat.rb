@@ -36,6 +36,7 @@ THREADS_DIR = File.join(ARCHIVE_DIR, 'threads')
 HEAT_DIR = File.join(ARCHIVE_DIR, 'heat')
 COHORT_DIR = File.join(ARCHIVE_DIR, 'cohort')
 TRENDS_PATH = ENV.fetch('HN_TRENDS_PATH', '_data/hn_trends.json')
+TRENDS_PATH_90 = ENV.fetch('HN_TRENDS_PATH_90', '_data/hn_trends_90.json')
 CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
 RULE_VERSION = 'v1'
@@ -129,13 +130,16 @@ def build_cohort(threads, reg, now = Time.now.utc)
     next unless e['last_activity'] && Time.parse(e['last_activity']) >= window_start
     t = threads[id]
     next unless t
+    src = e['source'] || 'hn'
     t['comments'].each do |c|
       next unless c['posted_at']
       next unless Time.parse(c['posted_at']) >= window_start
       a = c['author'].to_s
       next if a.empty? || a == 'anonymous'
-      authors[a]['threads'] << id
-      authors[a]['comments'] += 1
+      key = "#{src}:#{a}"  # namespace per source: cross-site name collisions
+                        # must not fake "expert overlap"
+      authors[key]['threads'] << id
+      authors[key]['comments'] += 1
     end
   end
 
@@ -219,9 +223,12 @@ def thread_signals(id, thread, reg_entry, cohort, snapshots, anchor = Time.now.u
     score_vel = ((win[-1]['s'] - win[-2]['s']) / gap_h).round(2) if gap_h > 0.5
   end
 
-  # Expert ratio: authors of the top-N comments (by score) that are cohort members
+  # Expert ratio: authors of the top-N comments (by score) that are cohort
+  # members — author keys namespaced by source (hn:alice vs lobsters:alice)
+  src = (reg_entry && reg_entry['source']) || 'hn'
   top = comments.sort_by { |c| -(c['score'] || 0) }.first(TOP_COMMENTS_FOR_EXPERT)
-  top_authors = top.map { |c| c['author'].to_s }.reject { |a| a.empty? || a == 'anonymous' }.uniq
+  top_authors = top.map { |c| "#{src}:#{c['author'].to_s}" }
+                  .reject { |a| a.end_with?(':') || a.end_with?(':anonymous') }.uniq
   expert_ratio = if cohort && !top_authors.empty?
                    (top_authors & cohort.to_a).size.to_f / top_authors.size
                  else
@@ -278,6 +285,7 @@ def compute_day(now, threads, reg, cohort, snapshots, day: nil)
       'title' => e['title'] || post['title'],
       'hn_url' => e['hn_url'] || post['hn_url'],
       'status' => e['status'],
+      'source' => e['source'] || 'hn',
       'category' => e['category'] || 'other',
       'posted_at' => e['posted_at'] || post['posted_at'],
       'heat' => heat,
@@ -338,8 +346,8 @@ def load_category_map
   data
 end
 
-def category_of(title, url, cmap)
-  tokens = Set.new(topic_tokens(title))
+def category_of(title, url, cmap, tags = [])
+  tokens = Set.new(topic_tokens(title) + Array(tags).map(&:to_s))
   host = begin
     URI.parse(url.to_s).host.to_s.downcase
   rescue StandardError
@@ -355,7 +363,8 @@ end
 def assign_categories!(reg, threads, cmap)
   reg['category_version'] = cmap['version']
   reg['threads'].each do |id, e|
-    e['category'] = category_of(e['title'] || threads.dig(id, 'post', 'title'), e['url'], cmap)
+    tags = threads.dig(id, 'post', 'tags') || []
+    e['category'] = category_of(e['title'] || threads.dig(id, 'post', 'title'), e['url'], cmap, tags)
   end
 end
 
@@ -497,7 +506,9 @@ def refresh_published
     fm = content[%r{\A---\s*\n(.*?)\n---}m, 1] || ''
     date = fm[/^date:\s*['"]?(\d{4}-\d{2}-\d{2})/, 1] || File.basename(f)[/\d{4}-\d{2}-\d{2}/]
     slug = File.basename(f, '.md')
-    ids = content.scan(/hn_id:\s*"?(\d+)"?|item\?id=(\d+)/).flatten.compact.uniq
+    ids = content.to_enum(:scan, /hn_id:\s*"?(?<hn>\d+)"?|item\?id=(?<hn2>\d+)|lobste\.rs\/s\/(?<lo>[a-z0-9]+)/).map { Regexp.last_match }
+                 .map { |m| m[:hn] || m[:hn2] || (m[:lo] ? "lo-#{m[:lo]}" : nil) }
+                 .compact.uniq
     ids.each do |id|
       map[id] = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}/" }
     end
@@ -529,7 +540,8 @@ def sparkline_points(curve, width: 100, height: 28, pad: 2)
   }.join(' ')
 end
 
-def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS_WINDOW_DAYS_DEFAULT, cohort: nil)
+def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS_WINDOW_DAYS_DEFAULT, cohort: nil,
+                 path: TRENDS_PATH, slim: false)
   published = load_published
   today = now.to_date
   entries = today_payload['entries']
@@ -592,7 +604,7 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
       'threads' => members.map { |m|
         { 'id' => m['id'], 'title' => m['title'], 'hn_url' => m['hn_url'],
           'status' => m['status'], 'heat' => m['heat'], 'trend' => m['trend'],
-          'posted_at' => m['posted_at'] }
+          'source' => m['source'], 'posted_at' => m['posted_at'] }
       },
       'article' => article,
     }
@@ -623,14 +635,15 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
     },
     'industries' => industries,
     'topics' => kept,
-    'top_threads' => annotate_public(entries.first(TRENDS_TOP_THREADS), published),
+    'top_threads' => slim ? [] : annotate_public(entries.first(TRENDS_TOP_THREADS), published),
   }
-  FileUtils.mkdir_p(File.dirname(TRENDS_PATH))
-  tmp = TRENDS_PATH + '.tmp'
+  projection.delete('top_threads') if slim
+  FileUtils.mkdir_p(File.dirname(path))
+  tmp = path + '.tmp'
   File.write(tmp, JSON.pretty_generate(projection) + "\n")
-  File.rename(tmp, TRENDS_PATH)
-  puts "Trends projection: #{topic_entries.size} topics (#{industries.size} industries), " \
-       "top #{kept.size} kept -> #{TRENDS_PATH}"
+  File.rename(tmp, path)
+  puts "Trends projection#{slim ? ' (90d)' : ''}: #{topic_entries.size} topics (#{industries.size} industries), " \
+       "top #{kept.size} kept -> #{path}"
   projection
 end
 
@@ -707,7 +720,7 @@ def annotate_public(entries, published)
   entries.map { |e|
     {
       'id' => e['id'], 'title' => e['title'], 'hn_url' => e['hn_url'],
-      'status' => e['status'], 'heat' => e['heat'], 'trend' => e['trend'],
+      'status' => e['status'], 'source' => e['source'], 'heat' => e['heat'], 'trend' => e['trend'],
       'delta_24h' => e['delta_24h'],
       'comment_vel_24h' => e['signals']['comment_vel_24h'],
       'expert_ratio' => e['signals']['expert_ratio'],
@@ -785,6 +798,11 @@ def run
 
   refresh_published if options[:mode] == :all
   build_trends(threads, reg, today_payload, now, window: options[:window], cohort: cohort)
+  # 90-day companion projection: fills in as data accumulates, no top_threads
+  return if options[:window] >= 90
+
+  build_trends(threads, reg, today_payload, now, window: 90, cohort: cohort,
+               path: TRENDS_PATH_90, slim: true)
 end
 
 run

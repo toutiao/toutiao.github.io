@@ -1072,6 +1072,7 @@ def registry_entry_for(reg, item)
     yr, wk = week_key
     e = {
       'title' => nil, 'url' => nil, 'hn_url' => nil, 'posted_at' => nil,
+      'source' => item['source'] || 'hn',
       'week' => "#{yr}/#{wk}",
       'first_seen' => Time.now.utc.iso8601,
       'last_activity' => Time.now.utc.iso8601,
@@ -1247,8 +1248,11 @@ def poll_watching
 
   due = reg['threads'].select { |_id, e|
     interval = POLL_INTERVALS[e['status']]
-    interval && (e['last_polled'].nil? ||
-                 (now - (Time.parse(e['last_polled'].to_s) rescue now)) >= interval)
+    # liveness polling is HN-only for now (Firebase item API); lobsters threads
+    # refresh via their own hottest pass while active
+    interval && !_id.start_with?('lo-') &&
+      (e['last_polled'].nil? ||
+       (now - (Time.parse(e['last_polled'].to_s) rescue now)) >= interval)
   }.sort_by { |_id, e| e['last_polled'].to_s }
 
   if due.empty?
@@ -1309,7 +1313,9 @@ end
 
 def scan_published_ids_from_articles
   Dir.glob('_articles/**/*.md').flat_map { |f|
-    File.read(f).scan(/hn_id:\s*"?(\d+)"?|item\?id=(\d+)/).flatten.compact
+    File.read(f).to_enum(:scan, /hn_id:\s*"?(?<hn>\d+)"?|item\?id=(?<hn2>\d+)|lobste\.rs\/s\/(?<lo>[a-z0-9]+)/).map { Regexp.last_match }
+        .map { |m| m[:hn] || m[:hn2] || (m[:lo] ? "lo-#{m[:lo]}" : nil) }
+        .compact
   }.uniq
 end
 
@@ -1495,4 +1501,6 @@ def run
   puts "Summary: #{stats[:fetched]} fetched, #{stats[:cached]} cached, #{stats[:articles_ok]} articles, #{stats[:errors]} errors"
 end
 
-run
+# Entry point — skipped when required as a library (multi-source fetchers like
+# lobsters-fetch.rb reuse the archive/article/registry layers defined above).
+run unless ENV['HN_FETCH_AS_LIB'] == '1'

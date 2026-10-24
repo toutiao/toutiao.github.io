@@ -27,7 +27,7 @@ Story pass all:
 > `hn-fetch.rb` already dedup at write time (via `.hn-archive/published.json`, fallback `_articles/` scan). This is 2nd layer.
 
 ### Auto mode
-1. Candidate pool = **registry-driven**（无周界跳跃）: 读 `.hn-archive/topics.json` `threads`，取 `status == "active"` 且 `published != true` 的条目；resurrected 帖（`status == "active"` 且 heat 榜 `trend == "resurrected"`）优先含入
+1. Candidate pool = **registry-driven**（无周界跳跃）: 读 `.hn-archive/topics.json` `threads`，取 `status == "active"` 且 `published != true` 且 **`source != "lobsters"`**（多源数据先服务热度/趋势页，成文暂限 HN）的条目；resurrected 帖（`status == "active"` 且 heat 榜 `trend == "resurrected"`）优先含入
 2. Apply filters（score 用 registry `last_score`，age 用 `posted_at`）
 3. Sort by **heat features** (preferred) or velocity fallback:
    - Preferred: read `.hn-archive/heat/<today>.json` (CI 中由 hn-data worktree 提供，当日文件由 hn-heat.rb 生成)。Per-candidate adjust a base ranking (velocity = score / max(age_hours, 0.5) desc):

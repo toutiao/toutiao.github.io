@@ -28,6 +28,12 @@ jobs:
       - name: Fetch HN data (simple HTTP)
         run: bundle exec ruby scripts/hn-fetch.rb --best --max 15 --fetch-articles-simple --jobs 5
 
+      # Secondary professional-community source; best-effort — must not block
+      # the HN pipeline on lobste.rs hiccups.
+      - name: Fetch Lobsters (secondary source)
+        continue-on-error: true
+        run: bundle exec ruby scripts/lobsters-fetch.rb --hottest
+
       - name: Poll watching threads (weekly liveness, resurrect on growth)
         run: bundle exec ruby scripts/hn-fetch.rb --poll-watching
 
