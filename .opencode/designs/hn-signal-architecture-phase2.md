@@ -1,7 +1,9 @@
 # HN 信号架构二期 — 时间维度与话题延续优化方案
 
-> 状态: **已实施 (P1-P3, 2026-10-24)** | P4 未实施 | 前置: [hn-signal-architecture.md](hn-signal-architecture.md)（一期已实施）
-> 实施提交: P1 `dfc8e8f` / P2 `0c6230f` / P3 `313fe6f`
+> 状态: **已实施 (P1-P3, 2026-10-24; P4 快项同日)** | 前置: [hn-signal-architecture.md](hn-signal-architecture.md)（一期已实施）
+> 实施提交: P1 `dfc8e8f` / P2 `0c6230f` / P3 `313fe6f` / P4 `debfdaf`+`7e01952`
+> P4 已做: category c2（coverage 65%→91%）、老文 hn_id 回填 81 篇（`scripts/hn-backfill-ids.rb`）、周报自动化（`hn-weekly.yml` 周一 02:30 UTC + skill weekly 模式，本地实测 W43 周报 8/8 引文核验）
+> P4 未做: 90d 曲线上线（`--window N` 已支持，待数据积累）、LLM 分类对比实验、多源接入、年度 prune
 > 议题: 原「2 周保存窗口」为拍脑门的存储/热度折中。冷档分支落地后约束已变，本方案评估实际限制并给出时间轴/关联延续/行业维度设计，消除 2 周数据跳跃。
 
 ## 实施核验（2026-10-24 本地实测）
