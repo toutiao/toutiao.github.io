@@ -16,8 +16,10 @@
 # Archive layer (hn-data branch working copy, env HN_ARCHIVE_DIR):
 #   snapshots/YYYY/MM.jsonl     score/comment time series (append-only)
 #   threads/YYYY/WNN/<id>.yaml  post + merged comments (permanent)
-#   topics.json                 thread registry with status machine
-#                               active (14d delta) / watching (weekly poll) / settled
+#   topics.json                 thread registry with tiered status machine
+#                               active (14d) / watching (weekly poll) /
+#                               cold (monthly) / deep (quarterly) / settled
+#   triggers.json               hot-dispatch history (permanent)
 
 require 'net/http'
 require 'uri'
@@ -55,12 +57,16 @@ SNAPSHOTS_DIR = File.join(ARCHIVE_DIR, 'snapshots')
 THREADS_DIR = File.join(ARCHIVE_DIR, 'threads')
 
 # Observation-set state machine: a thread with any delta (score/comments)
-# within this window stays active; after that it degrades to weekly polling.
+# within this window stays active; after that it degrades through liveness
+# tiers — watching (14-45d, weekly poll) -> cold (45-180d, monthly poll) ->
+# deep (>180d, quarterly poll) -> settled (terminal, data kept forever).
 ACTIVE_WINDOW = 14 * 24 * 3600
-WATCHING_POLL_INTERVAL = 7 * 24 * 3600
-WATCHING_MAX = 500          # cap on polled threads; overflow settles oldest first
-WATCHING_SETTLE_STREAK = 2  # consecutive zero-delta polls before settled
-POLL_BATCH_MAX = 40         # max polls per --poll-watching run (load spread)
+POLL_INTERVALS = { 'watching' => 7 * 24 * 3600, 'cold' => 30 * 24 * 3600, 'deep' => 90 * 24 * 3600 }.freeze
+POLL_CAPS = { 'watching' => 500, 'cold' => 1000, 'deep' => 2000 }.freeze
+WATCHING_COLD_AGE = 45 * 24 * 3600   # no delta beyond this -> cold
+COLD_DEEP_AGE = 180 * 24 * 3600      # no delta beyond this -> deep
+POLL_BATCH_MAX = 40                  # max polls per --poll-watching run (load spread)
+TRIGGERS_PATH = File.join(ARCHIVE_DIR, 'triggers.json')
 
 # Dual-channel hot trigger: point-value channel (legacy) + snapshot-delta channel
 HOT_DELTA_SCORE = 80        # score gained since previous snapshot (typically 8h)
@@ -1013,53 +1019,51 @@ HOT_SCORE_MIN = 200
 HOT_AGE_MAX_HOURS = 8
 HOT_VELOCITY_MIN = 20.0
 
+def load_trigger_state
+  if File.exist?(TRIGGERS_PATH)
+    data = (JSON.parse(File.read(TRIGGERS_PATH)) rescue nil)
+    return data if data.is_a?(Hash) && data['triggered'].is_a?(Array)
+  end
+  # One-time bridge from the old cache-resident trigger state (2-week TTL hole:
+  # trigger history used to evaporate with the week cache entry)
+  legacy = Dir.glob(File.join(CACHE_DIR, '*', 'W*', '.triggers.yaml')).filter_map { |f|
+    YAML.safe_load_file(f, permitted_classes: [Time]) rescue nil
+  }.flat_map { |s| Array(s['triggered']) }
+  legacy.empty? ? { 'triggered' => [] } : { 'triggered' => legacy }
+end
+
 def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
               score_min: HOT_SCORE_MIN, velocity_min: HOT_VELOCITY_MIN)
-  state_path = File.join(CACHE_DIR, week_key[0], week_key[1], '.triggers.yaml')
-  state = if File.exist?(state_path)
-            (YAML.safe_load_file(state_path, permitted_classes: [Time]) rescue nil) || {}
-          else
-            {}
-          end
+  state = load_trigger_state
   triggered_ids = Array(state['triggered'])
   triggered_id_set = triggered_ids.map { |t| t.is_a?(Hash) ? t['id'] : t }.compact
   today = Time.now.utc.strftime('%Y-%m-%d')
   today_count = triggered_ids.count { |t| t.is_a?(Hash) && t['date'] == today }
 
   known_article_ids = known_published_ids
+  reg = load_registry
 
   hot = []
-  Dir.glob(File.join(CACHE_DIR, '*', 'W*', '*', 'post.yaml')).each do |f|
-    post = (YAML.safe_load_file(f, permitted_classes: [Time]) rescue nil) || {}
-    post_id = post['id'] || File.basename(File.dirname(f))
-    next if known_article_ids.include?(post_id)
-    next if triggered_id_set.include?(post_id)
-
-    hours = if post['posted_at']
-              ((Time.now.utc - Time.parse(post['posted_at'].to_s)) / 3600) rescue nil
-            end
+  # Channel 1 — point-value: registry-driven (no cache dependency)
+  reg['threads'].each do |id, e|
+    next if known_article_ids.include?(id) || triggered_id_set.include?(id)
+    next unless e['posted_at']
+    hours = ((Time.now.utc - (Time.parse(e['posted_at'].to_s) rescue nil)) / 3600.0) rescue nil
     next unless hours && hours >= 0 && hours <= max_age_hours
-
-    score = post['score'].to_i
+    score = e['last_score'].to_i
     next if score < score_min
-
     velocity = score / [hours, 0.5].max
     next if velocity < velocity_min
-
     hot << {
-      'id' => post_id,
-      'title' => post['title'],
-      'score' => score,
-      'age_hours' => hours.round(2),
-      'velocity' => velocity.round(1),
-      'hn_url' => post['hn_url'],
+      'id' => id, 'title' => e['title'], 'score' => score,
+      'age_hours' => hours.round(2), 'velocity' => velocity.round(1),
+      'hn_url' => e['hn_url'],
     }
   end
 
   # Channel 2 — snapshot delta: score burst since previous sample (typically 8h),
   # catches risers that never satisfied the point-value channel (e.g. day-2 posts
   # outside the 8h age window)
-  reg = load_registry
   hot_ids = hot.map { |h| h['id'] }
   reg['threads'].each do |id, e|
     next if known_article_ids.include?(id) || triggered_id_set.include?(id)
@@ -1105,12 +1109,14 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
     }
   end
 
-  if triggered_ids != Array(state['triggered'])
-    FileUtils.mkdir_p(File.dirname(state_path))
-    File.write(state_path, YAML.dump(
-      'triggered' => triggered_ids.last(50),
+  if !File.exist?(TRIGGERS_PATH) || triggered_ids != Array(state['triggered'])
+    FileUtils.mkdir_p(ARCHIVE_DIR)
+    tmp = TRIGGERS_PATH + '.tmp'
+    File.write(tmp, JSON.pretty_generate(
+      'triggered' => triggered_ids.last(200),
       'updated_at' => Time.now.utc.iso8601
-    ))
+    ) + "\n")
+    File.rename(tmp, TRIGGERS_PATH)
   end
   0
 end
@@ -1184,20 +1190,17 @@ def registry_update_from_stories(reg, stories, fetched_posts)
   end
 
   # active -> watching once no delta for ACTIVE_WINDOW (14d observation window,
-  # NOT a data TTL: watching threads are polled weekly and can resurrect)
+  # NOT a data TTL: watching/cold/deep tiers are polled and can resurrect)
   reg['threads'].each_value do |e|
     next unless e['status'] == 'active'
     la = (Time.parse(e['last_activity'].to_s) rescue nil)
     e['status'] = 'watching' if la && (Time.now.utc - la) > ACTIVE_WINDOW
   end
 
-  watching = reg['threads'].select { |_id, e| e['status'] == 'watching' }
-  overflow = watching.length - WATCHING_MAX
-  if overflow > 0
-    watching.sort_by { |_id, e| e['last_activity'].to_s }.first(overflow).each do |id, e|
-      e['status'] = 'settled'
-      warn "REGISTRY: watching overflow (#{WATCHING_MAX}), settled #{id}"
-    end
+  # Published threads are never candidates again — flag for registry-driven selection
+  published = known_published_ids
+  reg['threads'].each do |id, e|
+    e['published'] = published.include?(id) unless e['published'] == true
   end
 
   reg
@@ -1281,25 +1284,52 @@ def archive_thread(reg, post_data, comments_data)
   path
 end
 
-# Weekly liveness poll for watching threads: one light Firebase item fetch per
-# thread. Comment growth => full refetch, merge archive, resurrect to active.
+# Tiered liveness poll: watching (weekly) / cold (monthly) / deep (quarterly).
+# One light Firebase item fetch per due thread; comment growth => full refetch,
+# merge archive, resurrect to active. Tier aging + FIFO caps bound the budget.
 def poll_watching
   reg = load_registry
   now = Time.now.utc
+
+  # Tier aging (no delta): watching >45d -> cold, cold >180d -> deep
+  reg['threads'].each_value do |e|
+    la = (Time.parse(e['last_activity'].to_s) rescue nil)
+    next unless la
+    age = now - la
+    if e['status'] == 'watching' && age > WATCHING_COLD_AGE
+      e['status'] = 'cold'
+      e['poll_streak'] = 0
+    elsif e['status'] == 'cold' && age > COLD_DEEP_AGE
+      e['status'] = 'deep'
+      e['poll_streak'] = 0
+    end
+  end
+
+  # FIFO caps: overflow demotes oldest-activity threads one tier (deep -> settled)
+  POLL_CAPS.each do |tier, cap|
+    ids = reg['threads'].select { |_id, e| e['status'] == tier }
+    overflow = ids.length - cap
+    next unless overflow > 0
+    ids.sort_by { |_id, e| e['last_activity'].to_s }.first(overflow).each do |id, e|
+      e['status'] = tier == 'deep' ? 'settled' : (tier == 'watching' ? 'cold' : 'deep')
+      warn "REGISTRY: #{tier} overflow (#{cap}), demoted #{id} -> #{e['status']}"
+    end
+  end
+
   due = reg['threads'].select { |_id, e|
-    e['status'] == 'watching' &&
-      (e['last_polled'].nil? ||
-       (now - (Time.parse(e['last_polled'].to_s) rescue now)) >= WATCHING_POLL_INTERVAL)
+    interval = POLL_INTERVALS[e['status']]
+    interval && (e['last_polled'].nil? ||
+                 (now - (Time.parse(e['last_polled'].to_s) rescue now)) >= interval)
   }.sort_by { |_id, e| e['last_polled'].to_s }
 
   if due.empty?
-    puts 'Poll: no watching threads due.'
+    puts 'Poll: no threads due for liveness check.'
     return
   end
 
   polled = 0
   resurrected = 0
-  settled = 0
+  aged = 0
   due.first(POLL_BATCH_MAX).each do |id, e|
     item = (firebase_get("item/#{id}.json") rescue nil)
     unless item
@@ -1336,16 +1366,13 @@ def poll_watching
       end
     else
       e['poll_streak'] = e['poll_streak'].to_i + 1
-      if e['poll_streak'] >= WATCHING_SETTLE_STREAK
-        e['status'] = 'settled'
-        settled += 1
-      end
+      aged += 1
     end
   end
 
   save_registry(reg)
   counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
-  warn "Poll: #{polled} polled, #{resurrected} resurrected, #{settled} settled, " \
+  warn "Poll: #{polled} polled, #{resurrected} resurrected, #{aged} quiet, " \
        "#{due.length - polled} deferred. Registry: #{counts.map { |k, v| "#{k}=#{v}" }.sort.join(' ')}"
 end
 

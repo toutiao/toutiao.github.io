@@ -26,18 +26,18 @@ Story pass all:
 > `hn-fetch.rb` already dedup at write time (via `.hn-archive/published.json`, fallback `_articles/` scan). This is 2nd layer.
 
 ### Auto mode
-1. Read `_data/hn/*/W*/stories.yaml` → load **newest week + previous week** (merge, candidates from both)
-2. Apply filters
+1. Candidate pool = **registry-driven**（无周界跳跃）: 读 `.hn-archive/topics.json` `threads`，取 `status == "active"` 且 `published != true` 的条目；resurrected 帖（`status == "active"` 且 heat 榜 `trend == "resurrected"`）优先含入
+2. Apply filters（score 用 registry `last_score`，age 用 `posted_at`）
 3. Sort by **heat features** (preferred) or velocity fallback:
    - Preferred: read `.hn-archive/heat/<today>.json` (CI 中由 hn-data worktree 提供，当日文件由 hn-heat.rb 生成)。Per-candidate adjust a base ranking (velocity = score / max(age_hours, 0.5) desc):
      - `trend == "resurrected"` → move to very top (回热话题直通候选)
      - `trend == "up"` 且 `expert_ratio >= 0.3` → rank bonus (专业社区持续升温)
      - signals 中 `comment_vel_24h == 0 && score_vel < 5` 且非 resurrected → demote (spike-only, 已过峰)
    - Fallback (`.hn-archive/heat/` 不存在，如本地交互模式): pure velocity sort
+   - Registry 不可用时 fallback: `webfetch https://news.ycombinator.com/best?h=48`
 4. Report ranking table (include heat/trend/expert_ratio when available)
 5. Batch: `--batch N` (default 1). Pick top N uncovered candidates → run Phase 0.5→1→2→2.5→3 per candidate **sequentially**; one failure does not block the next. Report after each: `Auto-selected [k/N]: [title] ([score] pts)`
 6. Go to Phase 0.5
-7. Fallback: `webfetch https://news.ycombinator.com/best?h=48`
 
 ### Interactive mode
 1. `webfetch https://news.ycombinator.com/best?h=48` (text)
@@ -87,19 +87,16 @@ Drop leading common words (Claude, new, update, Introducing) → first meaningfu
 
 ## Phase 1 — Fetch + Analyze
 
-### Cache
-Prefer `_data/hn/`. Fallback `webfetch` only.
+### Data（归档优先，无 2 周窗口限制）
+Prefer `.hn-archive/threads/`（永久）; 候选无归档时先刷新 `bundle exec ruby scripts/hn-fetch.rb --url "<hn_url>" --fetch-articles-simple`; 最后才 `webfetch`。
 
 | Data | Path | Key fields |
 |------|------|-----------|
-| Post meta | `_data/hn/YYYY/WNN/{id}/post.yaml` | title, score, author, posted_at, raw_comment_count |
-| Comments | `_data/hn/YYYY/WNN/{id}/comments.yaml` | comments[].{id, author, text, score} |
-| Article | `_data/hn/YYYY/WNN/{id}/article.yaml` | title, fetch_status, content |
-
-Find week: `glob _data/hn/*/W*/`.
+| Thread（含全部） | `.hn-archive/threads/YYYY/WNN/<id>.yaml` | `post`{title, score, author, posted_at, raw_comment_count}, `comments`[]{id, author, text, score, posted_at}, `article`{title, fetch_status, content} |
+| Find week | `.hn-archive/topics.json` `threads[id].week` | 单帖 glob: `.hn-archive/threads/*/*/<id>.yaml` |
 
 ### Sufficiency check
-Read `article.yaml`. Check `content` length:
+Read thread `article` (older archives may lack it). Check `content` length:
 - `< 2000` → **MUST** run `bundle exec ruby scripts/hn-fetch.rb --fetch-article-url "<url>" --timeout 30`
 - `2000..4000` → **SHOULD** run
 - `> 4000` → **MAY** proceed
