@@ -1,0 +1,192 @@
+---
+post:
+  id: lo-gajtrm
+  source: lobsters
+  title: 'Debunking "Faster than Rust": Malicious Benchmarks in Tov'
+  url: https://blog.fyralabs.com/debunking-faster-than-rust-malicious-benchmarks-in-tov/
+  hn_url: https://lobste.rs/s/gajtrm
+  score: 36
+  author: ettolrach
+  posted_at: '2026-10-23T07:44:09Z'
+  fetched_at: '2026-10-24T02:41:13Z'
+  article_url: https://blog.fyralabs.com/debunking-faster-than-rust-malicious-benchmarks-in-tov/
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 16
+  tags:
+  - performance
+comments:
+- id: lo-ddyuo8
+  parent_id: '0'
+  author: xnacly
+  text: 'The second i saw the tov benchmarks i thought: no way these benchmarks are
+    well done if thats the result, just a single look at the used datatypes in the
+    benchmarks make this obvious. Nice to see someone actually took the time to put
+    some numbers for the compare'
+  score: 12
+  posted_at: '2026-10-23T08:23:01Z'
+- id: lo-4rrrdh
+  parent_id: '0'
+  author: wink
+  text: |-
+    You can call me a bad amateur Rust programmer, but I didn't know about ahash because std::collections::HashMap has been fine for me since I started writing Rust.
+    That's kinda the only part where I am not fully on board with the assessment. Quoting from the docs "While its performance is very competitive for medium sized keys, other hashing algorithms will outperform it for small keys such as integers as well as large keys such as long strings, though those algorithms will typically not protect against attacks such as HashDoS" - this does not read "omg it's slow" to me. But looking at the benchmark, it still seems ok.
+  score: 4
+  posted_at: '2026-10-23T12:39:26Z'
+- id: lo-xgxjqe
+  parent_id: '0'
+  author: nrposner
+  text: For most real-world use cases, the standard hashmap is plenty fast. But when
+    your application is meaningfully bottlenecked by hashing, or when you have a benchmark
+    solely testing map insertions, it quickly becomes a test of the hash algorithm,
+    rather than the surrounding language. Though the authors here don’t mention what
+    hashing algorithm tov/typescript uses and whether it is intended to be cryptographically
+    secure, which I think would be worth mentioning for completeness.
+  score: 11
+  posted_at: '2026-10-23T13:18:21Z'
+- id: lo-6ghpq0
+  parent_id: '0'
+  author: yokljo
+  text: |-
+    Yes. People often misunderstand the goals of Rust/C/C++/etc: They give you as many tools as possible to achieve bare metal performance, available to be used whenever they are needed. All that extra stuff kinda piles up and makes people confused.
+    Languages like Tov just try to make common use cases as fast as possible, but as soon as you leave that space, you soon run out of official tools to optimise things with and you end up working against the language. NGL it's super fun optimising things in spite of the tooling, but just not at work.
+  score: 1
+  posted_at: '2026-10-23T13:32:26Z'
+- id: lo-pbxnia
+  parent_id: '0'
+  author: mplant
+  text: |-
+    I'm kind of confused about the dispatch benchmark. I took a look at the tov code and it seems to be testing dynamic dispatch. Changing the Rust code seems to be changing what the benchmark is actually measuring.
+    Obviously, "faster than rust" is hyperbole, you can basically always produce faster code in a lower level language for any given task, we've gone through this sort of thing a million times, but it is entirely possible that tov produces faster code for dynamic dispatch in this particular case
+  score: 7
+  posted_at: '2026-10-23T14:08:30Z'
+- id: lo-xfcaty
+  parent_id: '0'
+  author: wink
+  text: Yeah exactly. It does different things but probably could have been chosen
+    better or documented better. I'm a bit confused why a 2nd (fast) one would only
+    be on crates, not in std, but I guess this being the default is ok.
+  score: 2
+  posted_at: '2026-10-23T14:15:16Z'
+- id: lo-dlnxm0
+  parent_id: '0'
+  author: nrposner
+  text: The standard library authors generally try to keep it small and lean on the
+    crate ecosystem for non-default options. In the case of hashes, they probably
+    wanted to keep a single, cryptographically secure default option, and anyone who
+    wants to opt into a less secure option does it explicitly and intentionally by
+    going to the crates ecosystem or writing their own, rather than choosing a less
+    secure option from std.
+  score: 3
+  posted_at: '2026-10-23T14:23:18Z'
+- id: lo-rtqnys
+  parent_id: '0'
+  author: snej
+  text: To be clear, it’s not HashMap that’s slow[ish], it’s the default hash function
+    (SipHash). IIRC HashMap uses a state of the art hash table algorithm (is it SwissTable?)
+  score: 4
+  posted_at: '2026-10-23T15:02:49Z'
+- id: lo-7vplsf
+  parent_id: '0'
+  author: snej
+  text: Tov's optimizer might be monomorphizing the dynamic dispatch into something
+    that works the way the fast Rust version does. Which is a point in its favor,
+    except that dynamic dispatch as in this example isn’t idiomatic Rust; most programmers
+    would reach for enums as in the rewritten test.
+  score: 2
+  posted_at: '2026-10-23T15:08:02Z'
+- id: lo-doo9qw
+  parent_id: '0'
+  author: rtfeldman
+  text: 'It is! Originally there was a crate called hashbrown - https://docs.rs/hashbrown/latest/hashbrown/
+    - that was a drop-in SwissTable replacement for std''s HashMap, and then in 2019,
+    Rust 1.36.0 adopted hashbrown''s implementation as the new std HashMap: https://blog.rust-lang.org/2019/07/04/Rust-1.36.0/#a-new-hashmap-k-v-implementation'
+  score: 3
+  posted_at: '2026-10-23T15:11:18Z'
+- id: lo-ko3vve
+  parent_id: '0'
+  author: natkr
+  text: In fact, AHashMap is just std's HashMap with a different default hasher.
+  score: 8
+  posted_at: '2026-10-23T15:14:19Z'
+- id: lo-zx9fwk
+  parent_id: '0'
+  author: wink
+  text: You are right, I guess, but that's picking on a maybe vague phrase I used.
+    If the user talks about "the HashMap (implementation)" then it would not work
+    without a hash table algorithm, so I was talking about the whole thing. I had
+    understood that, thanks for clarifying though.
+  score: 1
+  posted_at: '2026-10-23T15:23:52Z'
+- id: lo-jviji4
+  parent_id: '0'
+  author: Wilfred
+  text: |-
+    Agreed, it looks like the C code is allocating on the heap and has a vtable, so Box<dyn Shape> would be a fair comparison.
+    https://github.com/richiemcilroy/Tov/blob/c2048582de4e9468267f801313144d75c12e983f/bench/micro/dispatch/main.c#L23-L24
+    Maybe the C compiler is optimising this better somehow?
+  score: 1
+  posted_at: '2026-10-23T15:31:53Z'
+- id: lo-fbpqga
+  parent_id: '0'
+  author: david_chisnall
+  text: "It's also not always a clear-cut thing.  The hand-optimised version is not
+    semantically identical, because it's now supporting closed-world types whereas
+    the original was open-world.  This is fine if you're doing whole-program optimisation
+    and not loading plugins.  LLVM can do this for C++, so probably could do the same
+    for Rust.\nBut the real win comes from that conversion: it's a closed world, which
+    means the call site is statically provably polymorphic not megamorphic.  And that
+    composes with the fact that all of the implementations are 3-4 instructions, so
+    inlining is a clear win.  Especially once you realise that CSE will unify the
+    rectangle and triangle implementations, so you actually end up with something
+    like two branches in the final version, possibly even one branch and a conditional
+    move.  Something like (C-like pseudocode):\nif (tag_is_circle)\r\n{\r\n    result
+    = PI * field0 * field0;\r\n}\r\nelse\r\n{\r\n   tmp = field0 * field1;\r\n   tmp1
+    = tmp * 0.5;\r\n   // Conditional move\r\n   result = tag_is_triangle ? tmp1 :
+    tmp;\r\n}\r\n\nThe initial check is a branch because most architectures don't
+    have predicated loads (you could make this faster if you had a non-trapping load,
+    otherwise the load of the second field may trap so has to be hidden behind a branch).\nBut
+    the fact that this is slower for this specific example is misleading.  It's not
+    removing the dynamic dispatch at execution time that makes it fast, it's the subsequent
+    optimisation.  If you want to preserve the original semantics, then other implementations
+    may be faster.\nThere is a good argument to be made that a source language can
+    be faster if it doesn't mandate any of these implementation choices and, ideally,
+    conveys enough information to allow the compiler to choose the right one.  Implementations
+    of Smalltalk-family languages typically do this via profiling, but that may not
+    show up in such a small benchmark."
+  score: 6
+  posted_at: '2026-10-23T16:21:02Z'
+- id: lo-11arvq
+  parent_id: '0'
+  author: aw1621107
+  text: "At least based on a quick glance in Godbolt (C, Rust) the dispatch loops
+    look pretty similar.\nC:\n.LBB0_3:\r\n        xor     r14d, r14d\r\n.LBB0_4:\r\n
+    \       movsd   qword ptr [rsp + 8], xmm0\r\n        mov     rdi, qword ptr [rsp
+    + 8*r14 + 16]\r\n        mov     rax, qword ptr [rdi]\r\n        call    qword
+    ptr [rax]\r\n        movsd   xmm1, qword ptr [rsp + 8]\r\n        addsd   xmm1,
+    xmm0\r\n        movsd   qword ptr [rsp + 8], xmm1\r\n        movsd   xmm0, qword
+    ptr [rsp + 8]\r\n        inc     r14\r\n        cmp     r14, 1000\r\n        jne
+    \    .LBB0_4\r\n        inc     ebx\r\n        cmp     ebx, 50000\r\n        jne
+    \    .LBB0_3\r\n\nRust:\n.LBB8_10:\r\n        inc     ebp\r\n        mov     r14,
+    rbx\r\n.LBB8_11:\r\n        movsd   qword ptr [rsp + 32], xmm0\r\n        mov
+    \    rdi, qword ptr [r14]\r\n        mov     rax, qword ptr [r14 + 8]\r\n        call
+    \   qword ptr [rax + 24]\r\n        add     r14, 16\r\n        movsd   xmm1, qword
+    ptr [rsp + 32]\r\n        addsd   xmm1, xmm0\r\n        movapd  xmm0, xmm1\r\n
+    \       movsd   qword ptr [rsp + 48], xmm1\r\n        cmp     r13, r14\r\n        jne
+    \    .LBB8_11\r\n        cmp     ebp, 50000\r\n        jne     .LBB8_10\r\n\nFor
+    what it's worth the C and Rust variants in the folder you linked also perform
+    pretty similarly on my machine as well."
+  score: 2
+  posted_at: '2026-10-23T17:02:29Z'
+- id: lo-a3jsfn
+  parent_id: '0'
+  author: val
+  text: |-
+    I use HashSet<u64, rapidhash::RapidHasher> in a bunch of hot loops (eg. set of visited nodes in a Breadth-First Search). Even with the extra restriction to keys <= 50B it's really hard to beat with custom structures.
+    The best I came up, besides bit vectors, with is using Vec<HashSet<u32, rapidhash::RapidHasher>> by storing each value n as  n % (1<< 21) in the (n >> 21)th bucket (I have no idea why 21 gives the best perf). it saves half the memory (because we only store a u32 per value) but performance-wise it's only 5% faster.
+    Right now, 30% of the runtime of a multi-day script is spent in contains() :(
+  score: 4
+  posted_at: '2026-10-23T17:24:42Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-10-24T02:41:22Z'

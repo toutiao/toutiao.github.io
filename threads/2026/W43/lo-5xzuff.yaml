@@ -1,0 +1,162 @@
+---
+post:
+  id: lo-5xzuff
+  source: lobsters
+  title: Attention people who think UB is fine
+  url: https://blog.habets.se/2026/10/Attention-people-who-think-UB-is-fine.html
+  hn_url: https://lobste.rs/s/5xzuff
+  score: 16
+  author: abareplace
+  posted_at: '2026-10-23T20:47:58Z'
+  fetched_at: '2026-10-24T02:41:13Z'
+  article_url: https://blog.habets.se/2026/10/Attention-people-who-think-UB-is-fine.html
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 9
+  tags:
+  - c
+  - c++
+comments:
+- id: lo-ywqu6q
+  parent_id: '0'
+  author: olliej
+  text: |-
+    Seriously. People need to stop thinking UB is about allowing different behavior.
+    It is absolutely not. No amount of arguing changes this.
+    UB is not implementation defined behavior. That term already exists.
+    UB places no constraints on the compiler. If the standard does not define the result of doing X in condition Y is undefined, or it just does not define the result (either explicitly, ID, unspecified, or erroneous), then there are no constraints on the compiler.
+    It does not matter what your implementation, platform, or hardware do. If the behavior is UB according to the language, the compiler can do anything, or nothing, or different things in different places. If the language says it is UB, it is UB.
+    If you want different implementations to be able to provide different behavior, you want implementation defined behavior. That is literally why ID exists separately from UB.
+  score: 10
+  posted_at: '2026-10-23T21:31:09Z'
+- id: lo-nmfkbo
+  parent_id: '0'
+  author: atk
+  text: |-
+    An implementation is allowed to provide a definition for what the C standard leaves implicitly or explicitly undefined. There are also standards, such as POSIX, that themselves define some things which standard C leaves undefined.
+    This is not to say that all UB is like this, or that all people who write C and introduce UB into their code know what they're doing, but some people do know what they're doing.
+    If you are writing C and you are writing C against one of these other standards, or specifically against a specific implementation, there is nothing wrong with relying on the specific explicit definitions of behaviour which may otherwise be undefined, as long as you're doing it consciously.
+    (I maintain, however, that nobody that is looking for advice on whether they should write C should not be writing C. The people who are writing C and are not looking or advice on whether they should continue to write it should also seriously consider moving to something with fewer footguns if they can.)
+  score: 2
+  posted_at: '2026-10-23T23:33:34Z'
+- id: lo-xjbk7p
+  parent_id: '0'
+  author: chinmay
+  text: |-
+    An implementation is allowed to provide a definition for what the C standard leaves implicitly or explicitly undefined. There are also standards, such as POSIX, that themselves define some things which standard C leaves undefined.
+
+    "leaves undefined" is not what UB means at all
+  score: 3
+  posted_at: '2026-10-23T23:57:33Z'
+- id: lo-7uuuju
+  parent_id: '0'
+  author: olliej
+  text: |-
+    You cannot write code that depends on UB.
+    There are also standards, such as POSIX, that themselves define some things which standard C leaves undefined.
+    And that does not matter.
+    I C says an API is UB if used in a specific way, it does not matter what the API implementation does or says. If the C standard says that is UB, it puts no requirements on the compiler.
+    There is no difference between using an API that posix says is defined but C says is not vs dividing by zero, or overflowing an integer.
+    If you write C code that depends on implementation defined behavior (POSIX), but C says is UB, your C code is wrong.
+    The fact that you can get away with it today, doesn't magically make your code correct. It does not mean that it will work if you change header orders, or inlining changes, or anything else.
+    If your code invokes UB according to the language, you are not writing conforming C. Maybe your compiler allows it (for example -fwrapv, -ftrapv, -fno-delete-null-pointer-checks, etc) but that is no longer conforming C, and your program is wrong vs the standard: any other C compiler is free to assume your UB code does not occur, or is unreachable, etc.
+  score: 2
+  posted_at: '2026-10-24T00:06:15Z'
+- id: lo-de9jvk
+  parent_id: '0'
+  author: n3t
+  text: The first example reminds me of https://kristerw.blogspot.com/2017/09/why-undefined-behavior-may-call-never.html
+    (2017).
+  score: 2
+  posted_at: '2026-10-24T00:14:10Z'
+- id: lo-d3jovy
+  parent_id: '0'
+  author: dutc
+  text: |-
+    some people insisted that it’s demonstrably fine, we know what the code will do, and at worst we’ll get a segfault. This is false.
+
+
+    UB places no constraints on the compiler.
+
+    I think it comments like yours and posts like this contribute to an extremely negative sentiment around the state of undefined behaviour in languages like C and C++. I don't mean this to imply skepticism or suggest blame, but to state, as neutrally as I can, that examples like those shared in the article are genuinely alarming, and the consequence is negativity.
+    (The “falling through a function” example comes up a lot, probably because it is very simply yet very provocative, though I think -fsanitize=unreachable may handle this problem, judging from its effect on the Godbolt example the author provides. There appear to be other flags I can use to catch other, similar examples, and while these may be worth mentioning, I don't know that they materially change the conclusions of the article.)
+    I think this negativity results in some wondering whether the compiler folks have gone mad, but in previous discussions of undefined behaviour, comments from folks like ~david_chisnall or ~lonjil suggest that manifestations of undefined behaviour are not a result of some negligence or some malicious intent.
+    e.g.,
+
+    it is impossible to write an optimizing compiler that behaves sensibly in the presence of UB. The only real solution, which pretty much every programming language in the world other than C and C++ do, is to make it harder or even impossible to have UB in your code.
+
+    In fact, authors like Chris Lattner have even been quite explicit in pointing out “advantages of undefined behaviour in C”.
+    As an aside, when authors like ~matklad discuss memory safety, they consider undefined behaviour in their definitions, though this leads to conclusions that I'm not sure I agree with, such as:
+
+    This is useless! Here, I’ve just made a language called Lil-C, which exactly like C, except that every UB is formally defined to trap. It is safe! And it can run any C program! Have I just done anything useful? No!
+
+    This actually seems like it would be quite useful…?
+    Anyway, by this post and the above comment's reasoning, it is not possible to constrain the consequence of undefined behaviour; as a result, it is not possible to retroäctively detect that it has performed an undesirable transformation. However, since undefined behaviour arises as an emergent property across multiple (desirable, reasonably optimisations,) I also cannot simply read through a lists of undefined behaviours in C and expect to be able to avoid triggered it intentionally. Understandably frustrating!
+    But, as a human being, I am allowed (if not expected) to have contradictory desires, and to want all benefit with no sacrifice. I want my programming language to be extremely simple, but also extremely fast, but also very safe, but also without undefined behaviour, but also without giving up optimisations that other languages (less safe or more rife with undefined behaviour) are allowed, and I might be convinced not to write any new codes in C or C++ (in fact, I have found myself running “toward” Zig more than “away” from C,) but I definitely want to make substantive changes to existing codes in C and C++ and refuse to replace or rewrite them. (Regarding this last desire, you know, I figure I already dug the hole… and I'm not going to lose sleep over digging it just a little bit deeper…)
+    So, rather than simply being negative about undefined behaviour or being negative about C and C++ code (that I refuse to do much of anything about…,) perhaps what would be useful to know would be how I can actually go about triangulating myself. I know I'm in a hole, I know I am digging it deeper, I know I won't climb out, and I know I might hit a pipe… but before the water rises up to my neck, is there no agency I can have in my last moments?
+    In other words, even if I won't rewrite my C codes, and even if I do want to make substantive changes to them, and even if I know I will suffer from the consequences of undefined behaviour, and even if these will be difficult to avoid through additional mechanism or additional diligence, I still have some obligation-to and corresponding freedom-of action. What do I do in the next (… maybe the last? … hopefully the last?) hundred thousand lines of C that I write? Just flail and drown?
+  score: 3
+  posted_at: '2026-10-24T00:49:17Z'
+- id: lo-ellqij
+  parent_id: '0'
+  author: fanf
+  text: |-
+    I think it comments like yours and posts like this contribute to an extremely negative sentiment around the state of undefined behaviour in languages like C and C++.
+
+    And I think that’s a reasonable reaction. Even the C committee is at last working to eliminate as much undefined behaviour from the standard as possible, because everyone agrees the current situation is intolerable.
+
+    undefined behaviour arises as an emergent property across multiple (desirable, reasonably optimisations,)
+
+    No, that’s backwards. UB was introduced to cope with corners of the spec which were too difficult to pin down, because of divergent hardware behaviour, or because someone might want to enter a program on punched cards, or because it’s just too hard to determine what havoc a wild pointer might cause, etc. It wasn’t until years later that compilers started exploiting UB to make optimizations that would be unsound according to the original intended purpose of UB. UB is part of the language specification, not a result of compiler optimizations.
+
+    What do I do in the next (… maybe the last? … hopefully the last?) hundred thousand lines of C that I write?
+
+    Study Annex J, crank up the warnings, write thorough tests, use sanitizers, use static analysis.
+  score: 3
+  posted_at: '2026-10-24T01:20:06Z'
+- id: lo-fccdmm
+  parent_id: '0'
+  author: dutc
+  text: |-
+    extremely negative sentiment
+
+
+
+    And I think that’s a reasonable reaction.
+
+    I know I sure don't feel great about it…
+
+
+    the compiler folks have gone mad
+
+
+
+    It wasn’t until years later that compilers started exploiting UB to make optimizations that would be unsound according to the original intended purpose of UB.
+
+    If it's genuinely the case that the compiler folks have just gone mad, it makes some of this easier to stomach, but I'm not sure that it really changes much. Presumably, the compiler authors were under pressure to deliver ever-increasing units of performance, and this overrode any reluctance they may have felt toward exploiting undefined behaviour, but that suggests this could happen to anyone…
+
+    UB is part of the language specification, not a result of compiler optimizations.
+
+    What is considered undefined behaviour is part of the language specification, sure. There is, after all, the old joke about the SIMPLE programming language.
+    However, it is not the presence of undefined behaviour that is of concern but the byzantine behaviour that arises as its consequence.
+    I believe the argument made in the comments I cited is that the undesirable behaviour is an unavoidable result of desirable optimisations. Somewhat similarly, we might argue that “undefined behavior in programmer-visible abstractions represents an aggressive and dangerous tradeoff: it sacrifices program correctness in favor of performance and compiler simplicity. On the other hand, UB at lower levels of the system, such as machine code or a compiler IR, is an internal design choice that needn’t have any effect on the programmer-facing parts of the system”.
+
+    Even the C committee is at last working to eliminate as much undefined behaviour from the standard as possible, because everyone agrees the current situation is intolerable.
+
+
+    Study Annex J, crank up the warnings, write thorough tests, use sanitizers, use static analysis.
+
+    I think this is why, as an alternative to just crying one's self to sleep every night, naïvely trapping on any undefined behaviour (e.g., via mechanisms like Fil-C) seem to be attracting attention, even in the absence of the C committee taking any action.
+  score: 1
+  posted_at: '2026-10-24T02:01:23Z'
+- id: lo-z5lvte
+  parent_id: '0'
+  author: spc476
+  text: |-
+    So nobody should program for POSIX in C then?  I can't use dlopen() because it mandates that a void * can store a function pointer?  I can't use memset() on a structure with pointer fields and assume they're now NULL?
+    To a point, yes, those violate the C standard, but if I'm targeting POSIX, I have less UB do worry about than pure C (not much, but some).
+  score: 2
+  posted_at: '2026-10-24T02:01:45Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-10-24T02:41:17Z'

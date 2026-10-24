@@ -1,0 +1,418 @@
+---
+post:
+  id: lo-xsz9sc
+  source: lobsters
+  title: Docker is weird
+  url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
+  hn_url: https://lobste.rs/s/xsz9sc
+  score: 95
+  author: nick4
+  posted_at: '2026-10-22T20:09:22Z'
+  fetched_at: '2026-10-24T02:41:13Z'
+  article_url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 43
+  tags:
+  - programming
+comments:
+- id: lo-wshy2v
+  parent_id: '0'
+  author: fzakaria
+  text: |-
+    They are proposing to make containers "a real" thing bwt.
+    https://lore.kernel.org/linux-fsdevel/atkV5pSBmZbLH_i-@toolbx/T/#t
+  score: 43
+  posted_at: '2026-10-22T20:21:13Z'
+- id: lo-2m9jay
+  parent_id: '0'
+  author: drrobotic
+  text: |-
+    Yes dockers networking is weird, its easy to isolate containers from each other but by default every container is reachable from the outside.
+    My best practice for containers which should never get remote access: i bind the port mapping to localhost. Example for postgres:
+
+    127.0.0.1:5432:5432/tcp
+  score: 5
+  posted_at: '2026-10-22T21:33:23Z'
+- id: lo-vaqk4d
+  parent_id: '0'
+  author: altano
+  text: Are you sure? I thought Docker containers are only reachable on ports you
+    expose?
+  score: 2
+  posted_at: '2026-10-22T21:51:38Z'
+- id: lo-cxwlfc
+  parent_id: '0'
+  author: drrobotic
+  text: Thats true, but without exposing, you cant reach your container even from
+    the host their running on.
+  score: 1
+  posted_at: '2026-10-22T22:29:37Z'
+- id: lo-d0npcs
+  parent_id: '0'
+  author: samuelkarp
+  text: |-
+    So if you run docker run -it --rm ubuntu /bin/bash, Docker is going to:
+
+    Download the ubuntu image from Dockerhub.
+    Put that image somewhere.
+    Run /some/weird/docker/path/bin/bash
+
+
+    Slightly more complicated: there's a transformation that needs to happen during the extraction phase between the OCI whiteout (deletion) markers (roughly AUFS-shaped) and whatever is materialized on disk. By default this is overlay, so AUFS-style whiteouts -> overlay whiteouts, but the disk storage could also be materialized into a snapshotting filesystem like ZFS in which case each layer becomes a snapshot and the runtime has to actually run deletions.
+    I gave a talk on this back in 2020 and wrote a bit more about images in 2024.
+  score: 23
+  posted_at: '2026-10-22T22:52:06Z'
+- id: lo-aqslax
+  parent_id: '0'
+  author: ggpsv
+  text: "I suspect that what ~drrobotic is referring to is the fact that omitting
+    the IP address in -p, --expose binds the port on all available interfaces:\n$
+    docker run -d --rm --name nginx -p 80:80 nginx:alpine\r\n$ docker ps\r\nCONTAINER
+    ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS
+    \                                NAMES\r\ne6ebf682454d   nginx:alpine   \"/docker-entrypoint.…\"
+    \  2 seconds ago   Up 2 seconds   0.0.0.0:80->80/tcp, [::]:80->80/tcp   nginx\r\n$
+    netstat -tupan | grep 80\r\ntcp        0      0 0.0.0.0:80              0.0.0.0:*
+    \              LISTEN      -                   \r\ntcp6       0      0 :::80                   :::*
+    \                   LISTEN      - \r\n\nIndeed, if you omit -p, --expose altogether
+    then the container port is not reachable."
+  score: 4
+  posted_at: '2026-10-22T23:21:25Z'
+- id: lo-0jnw8k
+  parent_id: '0'
+  author: dutc
+  text: |-
+    I think it's possible that Docker's early success prevented these features from evolving in a better direction.
+    For some of the issues mentioned here (“Docker requires root”—not only that, but Docker typically access implies root permissions!) Podman has managed to significantly improve upon Docker. (Of course, there is rootless Docker, and it still seems that unprivileged user namespace are considered to have a high surface area for security issues.)
+    Hopefully, Podman can help untangle some of the consequences of these design choices, like how containers that rely on volume mounted external data require some Entrypoint contortions to avoid permission issues (for example) to work properly. Since some of Docker's surrounding mechanisms are YAML-configuration-based (e.g., compose,) some of these flaws end up creating extra work such that replacing a Dockerfile with a Containerfile that assumes non-root ends up dramatically simplifying the entire setup.
+    In fact, a lot of Docker design choices seem to play out like this: there's some design flaw or limitation, which then requires stacking more and more and more technology on top. In fact, I'm not even particularly impressed with the whole build definition system, which seems to work delightfully for small demos but then generate an enormous amount of (often Docker-specific) complexity when we want to do something moderately complex. (Look through the above example for Jellyfin and see how this tends to evolve…) Since an image is just a filesystem and some metadata, I've considered ditching the Containerfile/Dockerfile-style  build system entirely and constructing these with simple scripts.
+    It may be unfair to blame Docker for all of this complexity. Unfortunately, when it comes to just namespaces, I think some of the fault lies in the Linux kernel's implementation. Namespaces are frequently presented as though they are composable, but, in practice, this just doesn't work. (Peeking at code paths like for namespace dispatching in the Kernel, and how they actually check for things like UTS namespaces, I can hazard a guess at the very reasonable thinking that led to this design…)
+    There are a lot of very interesting things we could do if namespaces composed perfectly—we could use them in leaf-level entities to improve their isolation (for both correctness and security.) Unfortunately, though, if you have a shell script that uses bwrap that calls another shell script that uses unshare or pasta or  that calls another executable within podman… things break. (In fact, the last time I tried it, you can't even compose a single bwrap with a single podman!) Instead, it seems like we are better off superficialising our use of namespaces (i.e., in the case of composed processes, emitting namespace modalities on a side channel and constructing a single top-level namespace.)
+  score: 27
+  posted_at: '2026-10-22T23:23:23Z'
+- id: lo-odsnyo
+  parent_id: '0'
+  author: atk
+  text: I find this direction so weird, but I guess this is maybe expected given that
+    proper namespacing support isn't possible in the patchwork world of Linux.
+  score: 6
+  posted_at: '2026-10-23T00:27:43Z'
+- id: lo-c5lrwx
+  parent_id: '0'
+  author: muvlon
+  text: |-
+    It's not super weird I think. If you've ever interacted directly with Linux namespaces I think it may even seem natural. The way that the 8 or so different types of namespaces interact with each other is quite restricted in some senses, to the point where there's not that many things you can build with them that aren't a container runtime.
+    This proposed change is also similar to the cgroup v1 -> v2 change, where cgroups were changed from a big loose pile of related restrictions into one "thing". That simplified their usage greatly in my opinion.
+  score: 18
+  posted_at: '2026-10-23T00:39:20Z'
+- id: lo-mzfibb
+  parent_id: '0'
+  author: muvlon
+  text: Comment removed by author
+  score: 1
+  posted_at: '2026-10-23T00:39:20Z'
+- id: lo-0k6b3q
+  parent_id: '0'
+  author: vbernat
+  text: You can do that by using the IP address of the container. For rarely used
+    ports, this is an acceptable compromise.
+  score: 2
+  posted_at: '2026-10-23T04:55:11Z'
+- id: lo-j55rpb
+  parent_id: '0'
+  author: 11backslashes
+  text: I'm glad the children are finally learning the difference between containers
+    and virtualization.
+  score: 0
+  posted_at: '2026-10-23T04:57:54Z'
+- id: lo-pbcsbv
+  parent_id: '0'
+  author: diktomat
+  text: 'Not just weird: Docker considered harmful'
+  score: 4
+  posted_at: '2026-10-23T08:19:20Z'
+- id: lo-iee89x
+  parent_id: '0'
+  author: casperin
+  text: Thanks for the link! I started reading, but got distracted by the feeling
+    I was reading AI words. Am I seeing things?
+  score: 4
+  posted_at: '2026-10-23T08:32:39Z'
+- id: lo-vq3vih
+  parent_id: '0'
+  author: noirscape
+  text: |-
+    Tbh, Docker is weird because the solution it solves for just is weird and the entire thing got yarnballed with a bunch of (largely unnecessary, overcomplicated) enterprise tech.
+    A lot of it's bad/messy decisions stem from the fact that the software Docker is an answer for isn't the "just get a virtualenv/local dependency folder for the project dependencies, plug it into your postgres instance with an account and wire up nginx" projects. Those projects never needed (and arguably shouldn't use, at least in a selfhosted context) Docker.
+    Docker is made for That Application. You know the one. The one whose installation guide begins with a "we recommend you buy a completely separate server for our tools", as if your budget isn't a concern to them. It's for the Ruby hellscape that has hardcoded environment details littered throughout the codebase and requires hand fixing whenever you set up a deployment that doesn't exactly match it's original upstream. It's made for software that can't untangle it's own connection to Unix user accounts, even as they increasingly become a worse and worse way to protect data. Docker is for the software where deploying it fills you with a sense of dread because it requires like 10 adjacent daemons and services to be booted up alongside it to work and while you can trust it's secure-ish because your VPS provider firewall blocks everything, that's 10 more daemons to think about.
+    Docker takes all that and simplifies it: you get a dockerfile (and usually a compose file for multiple services), an environment file you configure and then a port/series of ports you can tell nginx to reverse proxy towards. That's also why Podman falls short of it so often; everything you gain in terms of better security (containers aren't root by default) and tighter integration (read: systemd services instead of the opaque docker daemon), you lose in terms of bringing back that complexity that docker simplifies away. I don't need to think about the fact that it's a 20 microservice architecture with incredibly powerful failover; docker handles everything to configure and set it up.
+    The problem is then also that docker itself has been riddled with abstractions that only really make sense if you're looking at "docker" as not a daemon running on a VPS you own, but as a sort of generic container orchestrator that runs on a hyperscaler. That's where a lot of it's stranger decisions come in, and something that the documentation habitually points you to using. Volumes are probably the biggest sin: your average selfhosting/learning to use docker will not want to use volumes. They're a concept that completely abstracts away the concept of "where do my files go" into the docker daemons internal structure (with it being rather easy to accidentally destroy the contents of a volume when freeing up space). For a selfhoster, "where do my files go" is a question whose answer needs to be "right here, go run Borg/restic on it every once in a while"; they basically are the target audience for bind mounts... which the documentation discourages you from using because "what if it goes cross filesystem", a concern that only matters when your server stack is actually that complicated.
+    Another reason it's weird is because these sorts of "we own the server" tools are becoming increasingly rare (since while they're what docker works with, they're also something that docker gradually discourages by preferring leaner images and expressing all configuration into environment variables). The only notable examples I can think of in recent memory are Discourse and Sourcehut, both of which pretty much expect that you dedicate a full server's worth of resources to them. In the case of Discourse, because it's a Ruby dinosaur mess of a forum software that I'd argue is also really bad at its job, since it's lead developer can't envision anyone with a tech stack smaller than a silicon valley startup wanting to run a forum (and I despise that so many FOSS communities opt to use it). In the case of Sourcehut, it's because from what I can tell, Drew just hosts it on raw alpine and his deployment mechanism is literally just using alpine's package manager, which meshes with docker in a pretty awkward way.
+  score: 9
+  posted_at: '2026-10-23T10:31:23Z'
+- id: lo-swuyy1
+  parent_id: '0'
+  author: marginalia
+  text: |-
+    Depends on which network mode you're using.
+    For some, e.g. ipvlan, all the container's ports are public and there is no way of not exposing them.  Not because it isn't doable with network namespaces, but because docker ipvlan support is incredibly half-assed.
+  score: 2
+  posted_at: '2026-10-23T11:10:19Z'
+- id: lo-mcnlhn
+  parent_id: '0'
+  author: atk
+  text: It's weird if you have interacted with Linux namespaces and also know how
+    plan9 namespaces work. As far as I am aware, plan9 namespaces are the direct inspiration
+    for the Linux ones. Except the Linux ones are a mess.
+  score: 3
+  posted_at: '2026-10-23T11:14:57Z'
+- id: lo-l8hfpi
+  parent_id: '0'
+  author: muvlon
+  text: |-
+    I do not know how plan9 namespaces work, so I'm interested. Are they closer to this new "cells" proposal, or very different?
+    Maybe, since plan9 sticks much more closely to "everything is a file", the only namespacing needed is for filesystem paths/objects? As in, you do what Linux calls "mount namespaces" and you're done?
+  score: 4
+  posted_at: '2026-10-23T11:29:55Z'
+- id: lo-spt4kh
+  parent_id: '0'
+  author: serce
+  text: Every sufficiently large technology is weird because there are no tradeoff-free
+    technologies. This is what makes it fun, and that's why we have our jobs.
+  score: 3
+  posted_at: '2026-10-23T11:36:47Z'
+- id: lo-fj9u62
+  parent_id: '0'
+  author: achilleas
+  text: Comment removed by author
+  score: 3
+  posted_at: '2026-10-23T11:38:39Z'
+- id: lo-meiire
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    I really don't like the conflation of a specific implementation of a container shim and containers.  Containers are not 'a thing' in the same way that processes are not 'a thing': they're an abstraction that is implemented in a few different ways in different places and is assembled from a variety of different components (e.g. some kernel state, MMU mappings, privilege modes, and so on).  The runc and crun container runtimes (formerly: shims, in older Docker terminology) implement containers as cgroups, namespaces, some seccomp-bpf, and so on.  But other Linux implementations use kvm (e.g. Kata Containers use KVM and Firecracker) to isolate things.  Apple's container tool isn't 'Docker', but it is an OCI implementation and implements the isolation with VMs as well, as do most cloud container systems.
+    Similarly, images are not just folders.  Images are an abstraction built from layers.  The implementation is defined by the snapshotter (Docker originally used a unionfs abstraction, containerd and later things moved to a snapshotter abstraction because it's trivial to implement snapshots with a union / overlay FS, it's much harder to implement unions with a CoW filesystem).  If your implementation uses an overlay / union FS, each layer is a folder and the final image is also a folder that's a special kind of mount.  If it's ZFS (for example) each layer is a ZFS dataset that is a clone of the layer above.
+  score: 9
+  posted_at: '2026-10-23T11:58:33Z'
+- id: lo-oogyz8
+  parent_id: '0'
+  author: hoistbypetard
+  text: It felt that way to me, too. Like, not 100%, but some. I suspect a writer
+    who's less than confident in their English used a chatbot for some "help," maybe?
+    I found it quite distracting.
+  score: 2
+  posted_at: '2026-10-23T12:56:36Z'
+- id: lo-jbivu4
+  parent_id: '0'
+  author: srtcd424
+  text: |-
+    Containers are not 'a thing' in the same way that processes are not 'a thing': they're an abstraction that is implemented in a few different ways in different places and is assembled from a variety of different components (e.g. some kernel state, MMU mappings, privilege modes, and so on).
+
+    Except the kernel presents an API to userspace defined around the concept of a 'process', which it does not (yet) with containers. I suppose under the hood the kernel abstracted out a 'task' concept, but that's not exposed (AFAIK) anywhere to userspace?
+  score: 3
+  posted_at: '2026-10-23T13:05:24Z'
+- id: lo-yyuybj
+  parent_id: '0'
+  author: atk
+  text: |-
+    Maybe, since plan9 sticks much more closely to "everything is a file", the only namespacing needed is for filesystem paths/objects? As in, you do what Linux calls "mount namespaces" and you're done?
+
+    That's basically it.
+    I guess one approach could always have been to just have a syscall namespace, and you can technically achieve this with seccomp_unotify, but it's incredibly painful to do anything with it (from experience, prior to AI).
+    By standardising on one abstraction (a file and basic operations on it) as the OS interface, plan9 managed to get a very powerful namespacing system, which doesn't require days of reading confusing seccomp documentation to get working.
+    Unfortunately Linux has a million syscalls, it has files, it also has IOCTLs. Linux namespaces could be simpler, but they'd still never be as simple as what plan9 has. I guess given the circumstances, maybe it's inevitable that they'd go in the direction of a "container" as a first class kernel object. It's just going to be less powerful than the current clunky namespaces, and thus less powerful than what plan9 has. The only thing plan9 doesn't have a good equivalent for is a user namespace concept, although the way user namespaces work in Linux is really surprising and weird and you can do something like that with plan9 with some effort.
+    The situation is unfortunate, but Linux didn't have the benefit of hindsight and being a research OS. And even if such a big deviation from how Linux works was possible, it's still not obvious how performant you could make such an approach...
+  score: 6
+  posted_at: '2026-10-23T13:16:55Z'
+- id: lo-qrqsky
+  parent_id: '0'
+  author: amw-zero
+  text: |-
+    If it were a bad technology, then it wouldn't be used in practice. Is it ideologically perfect? Surely not. But, we live in an imperfect world, and the reason it's popular is because it solved real problems that real people were having. Lots of real people.
+    I would say that's the defining characteristic of a "good" technology.
+  score: 1
+  posted_at: '2026-10-23T13:21:35Z'
+- id: lo-di42ut
+  parent_id: '0'
+  author: muvlon
+  text: |-
+    I suppose under the hood the kernel abstracted out a 'task' concept, but that's not exposed (AFAIK) anywhere to userspace?
+
+    Yes it is exposed to userspace. The documentation is confusing though. What man 2 clone et al. call a "process" is actually a task. As far as those docs go, anything with a PID is a task. However, in common parlance, threads within a thread group are not considered processes (even though they have their own PIDs). And fun fact: The concept of threads arrived in Linux way later than tasks, in version 2.4.
+    Essentially, a Linux thread is a task that shares a bunch of properties (virtual memory mappings, file descriptor table, namespaces, working directory, parent PID, signal handlers etc.) with its thread group (~="a process"). But using the clone syscall, which creates a new task, you can decide almost arbitrarily what it should or shouldn't share with the calling task, really blurring the boundary between process and thread. For example, you can pass CLONE_VM without passing CLONE_THREAD nor CLONE_FILES, giving you a task that shares its entire virtual memory with you but gets its own thread group and file descriptor table.
+  score: 3
+  posted_at: '2026-10-23T13:40:32Z'
+- id: lo-jzonlf
+  parent_id: '0'
+  author: gcupc
+  text: This was an okay flame, but the following article on systemd-nspawn was outstanding.
+  score: 2
+  posted_at: '2026-10-23T13:48:20Z'
+- id: lo-eszfd9
+  parent_id: '0'
+  author: rkaw92
+  text: Docker containers sure are weird, but I remember the times before that. Before
+    LXC, there was OpenVZ and before that, Linux-Vserver (not to be mistaken with
+    LVS). Those were super weird.
+  score: 1
+  posted_at: '2026-10-23T13:54:00Z'
+- id: lo-xnj3zo
+  parent_id: '0'
+  author: dvogel
+  text: I'm not qualified to say whether this is a good direction or not. However
+    it does seem like this proposed new API is much narrower and more amenable to
+    cross-platform API compatibility. Who knows if Microsoft and Apple would actually
+    implement the API but this at least makes it more possible.
+  score: 1
+  posted_at: '2026-10-23T14:21:28Z'
+- id: lo-hqsem0
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    Except the kernel presents an API to userspace defined around the concept of a 'process'
+
+    Well, kind of.  Linux has a system call called clone, which creates a new schedulable unit of concurrent execution.  This can share some the state with the parent, including the virtual memory mappings, the file descriptor table, the view of the filesystem, IPC namespaces, and so on.
+    If you call clone and ask to have the virtual-memory mappings and file descriptor table shared, you get a thing that can be used to implement the thing that POSIX calls a thread.  If you call it with a new virtual-memory mapping and file-descriptor table, then you have a thing that looks like what POSIX calls a process.
+    This is quite similar to how Linux defines containers.  The clone system call creates a new child that has different namespaces / cgroups.  The extra fun thing is that, because the notions of container, thread, and process are entirely ad-hoc in Linux, you can have one process that has multiple threads that are in different containers and each of those containers can hold multiple processes (please do not do this).
+  score: 7
+  posted_at: '2026-10-23T14:24:05Z'
+- id: lo-8srjql
+  parent_id: '0'
+  author: srtcd424
+  text: I "learned" containers via messing with nspawn, rather than (I assume) the
+    usual approach of learning by messing with docker. It does give one a different
+    perspective on everything, and makes it much clear how much baggage docker brings
+    with it.
+  score: 3
+  posted_at: '2026-10-23T14:28:08Z'
+- id: lo-1zfli3
+  parent_id: '0'
+  author: wink
+  text: |-
+    I think it's possible that Docker's early success prevented these features from evolving in a better direction.
+
+    Mhm, you might be giving Docker a bit too much oomph here. Of course this was only my small bubble of the internet, but before Docker really took off, plenty (or only dozens of us) of people were using namespaces, one awesome example was using Vagrant on Linux with that background instead of using Virtualbox. That was 2013/2014ish iirc. Docker really only cemented its hold on "container" later, then held it for close to 10y as a quasi synonum before the other runtimes got more traction.
+  score: 6
+  posted_at: '2026-10-23T14:31:22Z'
+- id: lo-o20uwi
+  parent_id: '0'
+  author: janus
+  text: Thank you for actually providing some interesting technical details, with
+    links. The OP article is disappointing because it is so basic and simplistic.
+  score: 3
+  posted_at: '2026-10-23T14:32:34Z'
+- id: lo-qqphps
+  parent_id: '0'
+  author: dutc
+  text: |-
+    you might be giving Docker a bit too much oomph here
+
+    It's entirely possible.
+    I may also have been too negative or too critical about Docker's design. In another discussion of this post, the creator of Docker shares some history and thoughts on its design.
+    It turns out that it's easy to be negative when not in the company of those whose work you are criticising…!
+    But there do seem to have been a lot of poor design choices made, that were immediately locked-in, forcing us to stack more and more and more layers of complexity on top. Once we start talking about programatically-templated YAML… has it all gone too far?
+  score: 2
+  posted_at: '2026-10-23T14:46:59Z'
+- id: lo-fl0jqu
+  parent_id: '0'
+  author: wink
+  text: |-
+    very topical., just saw this as well: https://news.ycombinator.com/item?id=50203555
+    So apparently they did use lxc at the start (TIL) and I'm not disputing anything else you said, I just think this was kinda set on the path of not being redone in the Kernel by that point already.
+  score: 1
+  posted_at: '2026-10-23T15:21:15Z'
+- id: lo-r7qzmc
+  parent_id: '0'
+  author: untitaker
+  text: |-
+    Volumes are probably the biggest sin: your average selfhosting/learning to use docker will not want to use volumes.
+
+    It's still useful for temp/cache folders that applications need. You could bind-mount those as well though I suppose.
+  score: 1
+  posted_at: '2026-10-23T15:41:05Z'
+- id: lo-lmfpun
+  parent_id: '0'
+  author: dvogel
+  text: |-
+    you can have one process that has multiple threads that are in different containers
+
+    What does /proc/PID/cgroup contain for such a process?
+  score: 1
+  posted_at: '2026-10-23T16:35:17Z'
+- id: lo-mvr2hl
+  parent_id: '0'
+  author: janus
+  text: I submitted it as a separate post. I think it's a large enough topic to warrant
+    that.
+  score: 2
+  posted_at: '2026-10-23T17:13:47Z'
+- id: lo-xcbrfb
+  parent_id: '0'
+  author: sunshowers
+  text: |-
+    Go also doesn’t have fork! Fork only forks the main thread, so it’s kind of a footgun in a runtime like Go’s. But a container runtime really wants to fork, set up a bunch of restrictions, and then exec the process you actually put in docker run. To get around this, runc execs /proc/self/exe with a special command line arguement that identifies it as a child process to approximate a fork.
+
+    FWIW nextest does the same thing (because fork is slow and messy, not because Rust doesn't have fork) and it works fine. I don't think this is necessarily a demerit.
+  score: 1
+  posted_at: '2026-10-23T17:59:43Z'
+- id: lo-ubets9
+  parent_id: '0'
+  author: jmc
+  text: For those like me who skipped OpenVZ and friends altogether, do you have some
+    highlights to share?
+  score: 1
+  posted_at: '2026-10-23T19:13:30Z'
+- id: lo-8jwsi8
+  parent_id: '0'
+  author: david_chisnall
+  text: 'It’s also useful for the data. If you’re deploying in a big cluster system,
+    containers are often ephemeral and talk to some cloud service for persistence.
+    On a single machine, containers make it easy to separate code and data in the
+    same way. Images contain all of the data that you can recreate (fresh install
+    plus configuration) volumes contain the data that needs to survive upgrades. When
+    you need to upgrade, build a new version of the image, stop and destroy the old
+    container and start up a new one with the same volume. This also simplifies backups:
+    the Containerfile goes in git, the volume gets backed up, everything in the container
+    that isn’t part of the image is expendable and trivial to recreate if needed.'
+  score: 1
+  posted_at: '2026-10-23T20:19:01Z'
+- id: lo-x80ser
+  parent_id: '0'
+  author: untitaker
+  text: |-
+    If you’re deploying in a big cluster system
+
+    noirscape's post was only talking about selfhosted/single-VPS cases iiuc, i.e. the claim was that volumes are not that useful for the average, say, mastodon admin. that feels mutually exclusive with big cluster systems.
+  score: 1
+  posted_at: '2026-10-23T20:24:51Z'
+- id: lo-x3jis3
+  parent_id: '0'
+  author: kwas
+  text: I only remember the folk perception back then that OpenVZ was percieved as
+    worse-VM not a better-chroot, and that it required an out of tree  kernel patch.
+    Never used either myself, I didn't have means or reason to.
+  score: 1
+  posted_at: '2026-10-23T21:00:54Z'
+- id: lo-exd5l9
+  parent_id: '0'
+  author: kupson
+  text: The same as /proc/PID/task/PID/cgroup I guess, but /proc/PID/task/NPID/cgroup
+    could be different for NPID != PID.
+  score: 2
+  posted_at: '2026-10-23T21:38:50Z'
+- id: lo-jzyu3l
+  parent_id: '0'
+  author: orib
+  text: |-
+    The way that the 8 or so different types of namespaces interact with each other is quite restricted in some senses, to the point where there's not that many things you can build with them that aren't a container runtime.
+
+    They're used much more heavily in plan 9. For example, $PATH is replaced with a few namespace operations on union all your binaries into /bin.
+    Proxies and VPNs work by putting a new network (/net filesystem) into a program's namespace.
+    And I've also done fun tricks with different shared memory threads running in different file namespaces to do tab completion tricks.
+    (Of course, these are all file namespaces. Everything is a file, except process attributes like shared memory)
+  score: 2
+  posted_at: '2026-10-23T23:52:12Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-10-24T02:41:20Z'

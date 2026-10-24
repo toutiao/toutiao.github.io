@@ -1,0 +1,271 @@
+---
+post:
+  id: lo-jgull9
+  source: lobsters
+  title: a hacky fucked up way to portably access errno from outside of c
+  url: https://sebsite.pw/w/20260925-errno.html
+  hn_url: https://lobste.rs/s/jgull9
+  score: 29
+  author: seb
+  posted_at: '2026-10-22T21:42:04Z'
+  fetched_at: '2026-10-24T02:41:13Z'
+  article_url: https://sebsite.pw/w/20260925-errno.html
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 24
+  tags:
+  - c
+comments:
+- id: lo-ijverf
+  parent_id: '0'
+  author: notgull
+  text: Comment removed by author
+  score: 1
+  posted_at: '2026-10-22T22:46:10Z'
+- id: lo-6cr6y3
+  parent_id: '0'
+  author: aaronm04
+  text: |-
+    Is this Hare? EDIT: yes.
+    Mods, how do we get a hare tag?
+  score: 1
+  posted_at: '2026-10-22T22:55:36Z'
+- id: lo-sp04cw
+  parent_id: '0'
+  author: seb
+  text: i'm not sure such a tag would actually be appropriate for this post (i say
+    this as one of the maintainers of hare). the code samples are written in hare,
+    but the actual content of the post would be pretty much exactly the same if you
+    swapped it out for some other similar language like zig. there's minor differences,
+    like zig doesn't have initialization functions so those would need to be called
+    explicitly by the user, and zig's error types can't be backed by str/int, but
+    the interesting stuff is pretty much the same. i just find hare enjoyable to write
+    in :)
+  score: 7
+  posted_at: '2026-10-22T23:14:15Z'
+- id: lo-xsnsrk
+  parent_id: '0'
+  author: Gaelan
+  text: |-
+    Hm - I would guess that this isn’t actually “portable”, in the sense that it’ll work on any system compliant with POSIX, because (as demonstrated by glibc’s __xpg_strerror_r), POSIX doesn’t seem to require that the symbols exported by libc have any particular names.
+    I guess this means that the only truly portable way to interact with libc at all is by compiling a C program?
+  score: 1
+  posted_at: '2026-10-22T23:41:50Z'
+- id: lo-6jm80p
+  parent_id: '0'
+  author: davmac
+  text: 'Whenever I see something like this, it brings back memories of having to
+    debug weird application behaviour or build problems because someone did a similar
+    janky hack to solve some problem "more efficiently" and/or more easily than a
+    correct solution. A general plea: don''t do this kind of thing. Yeah it''s interesting
+    that it works now, there''s no guarantee that it will work tomorrow.'
+  score: 4
+  posted_at: '2026-10-22T23:58:22Z'
+- id: lo-b4umu4
+  parent_id: '0'
+  author: Ada_Weird
+  text: Why not just wrap a little getter for errno? It's only cleared on calls into
+    libraries that interact with errno right? You can guarantee that get_errno() doesn't
+    destroy the value
+  score: 1
+  posted_at: '2026-10-23T01:37:49Z'
+- id: lo-bkaukj
+  parent_id: '0'
+  author: seb
+  text: linking in an errno wrapper written in c is the Correct option, it's just
+    not nearly as fun. i wanted to see if it was possible to avoid writing anything
+    in c, just for fun. i think maybe i didn't make clear enough in the post that
+    i don't actually think anyone should do this in real code (i thought repeatedly
+    calling it a "fucked up hack" would do that, but i probably should've been more
+    clear anyway)
+  score: 8
+  posted_at: '2026-10-23T01:49:24Z'
+- id: lo-qt4avx
+  parent_id: '0'
+  author: seb
+  text: i mostly agree with you. i think i didn't make it clear enough in the post
+    that i don't actually think anyone should do this in Real code (hence why i call
+    it "hacky" and "fucked up"). it was just fun and entertaining, and i think it's
+    cool that it's possible at all, seemingly despite c's best efforts to make it
+    impossible. for some reason i gravitate towards cursed things i guess
+  score: 5
+  posted_at: '2026-10-23T01:49:26Z'
+- id: lo-prvm0w
+  parent_id: '0'
+  author: seb
+  text: by an extremely strict definition of "portable", yeah. posix only specifies
+    the c interface to functions; symbols are sorta an implementation-detail which
+    posix doesn't acknowledge at all (to my knowledge). but in practice i don't know
+    of any libcs other than glibc which do fucked up things with symbol names or provide
+    alternate non-standard versions of functions with the same name or whatever.
+  score: 4
+  posted_at: '2026-10-23T01:55:21Z'
+- id: lo-glnfd3
+  parent_id: '0'
+  author: jklowden
+  text: |-
+    If you have a current version of the GCC source code, in libgcobol/posix you will find the beginnings of COBOL bindings for POSIX functions. Let’s just say I got there ahead of you.
+    We created a posix-errno function to return the value and, optionally, the string.  There’s some debate about how to write to errno, which as you know is seldom necessary but unavoidable when it is.  So that’s not currently available.
+    Yes, every integer value and struct needs a shim.  SEEK_SET, say, and the struct for stat(2) are defined by the C header files.  They have no standard binary representation.  Two C compilers could and do use different definitions. Any language that, um, seeks to use the POSIX API is therefore obliged to create an interface-to-the-interface: to define every macro and struct in terms of the source language, and map them onto the values defined by the local friendly C compiler.
+  score: 9
+  posted_at: '2026-10-23T04:34:46Z'
+- id: lo-s301wk
+  parent_id: '0'
+  author: robn
+  text: |-
+    Nice. Apart from it being utterly deranged, the only thing I could maybe point to being a problem is if the strings change during the program run. That got me thinking about locales, since perror() draws its message from LC_MESSAGES in the current locale, so presumably a program calling setlocale() between you setting up the string table and when you call perror() is going to break this. Though maybe not, maybe you can set the locale back to C before calling perror(): POSIX says uselocale() (the per-thread version) can fail and set errno, but setlocale() (global) returns NULL on failure, and doesn't set errno. So does that means it runs into the normal rule that errno is undefined after a successful return, or not? Hrm.
+    Unfortunately, although I do appear to have all the glibc message catalogs installed, none of them actually appear to translate the error strings, and I wasn't so curious that I wanted to go (re-)learn how to translate things. So alas, if we ever know it won't be from me :)
+  score: 2
+  posted_at: '2026-10-23T05:08:30Z'
+- id: lo-flktar
+  parent_id: '0'
+  author: spc476
+  text: 'Don''t assume that setlocale() doesn''t set errno.  As the C-standard (all
+    the way back to the original C89) states: "The value of errno may be set to nonzero
+    by a library function call whether or not there is an error, provided the use
+    of errno is not documented in the description of the function ..."  The standard
+    for setlocale() does not state it sets errno so ... there be dragons!'
+  score: 3
+  posted_at: '2026-10-23T05:57:46Z'
+- id: lo-h9katv
+  parent_id: '0'
+  author: spc476
+  text: No standard function in the C library will ever set errno to 0.  The C standard
+    (since C89) states, "The value of errno is zero at program startup, but is never
+    set to zero by any library function."  The other issue with errno is that the
+    standard doesn't say if errno is a macro or a variable with external visibility
+    (even in C89).  This allows an implementation to define errno as macro that calls
+    a function to return a pointer (or "modifiable L-value").
+  score: 1
+  posted_at: '2026-10-23T06:03:38Z'
+- id: lo-jzahba
+  parent_id: '0'
+  author: gerikson
+  text: |-
+    If you want to propose a new tag, the process is outlined here:
+    https://lobste.rs/about#tagging
+    (last paragraph in section)
+  score: 2
+  posted_at: '2026-10-23T07:07:24Z'
+- id: lo-yz2jbq
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    Last time I built an FFI layer for a language, it embedded clang for this kind of thing. Macros were treated in three ways:
+
+    A macro that expands to a constant expression would have its result available as a constant.
+    A macro that expanded to an expression would be wrapped in a function that invoked it and returned the result, which was then exposed via the FFI layer.
+    A macro that referenced identifiers that were neither arguments nor globals was initially ignored, I had some plans to wrap it in a function that took the macro arguments as value but these were generally better reimplemented in the other language (especially ones where the ambient things are identifiers, not typed values).
+
+    Redirecting stderr is problematic because the file descriptor table is global, so it will affect other threads in exciting ways.
+  score: 3
+  posted_at: '2026-10-23T07:36:47Z'
+- id: lo-gmua4n
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    In CHERIoT RTOS there are a bunch of standard functions that we provide as static inline (with the always-inline) wrappers around our own APIs. The most notable of these is malloc, where the underlying API takes a the allocation capability that authorises your allocation and a timeout and the wrapper provides some defaults to ease porting.
+    A bunch of POSIX symbols have different signatures to their BSD or SysV predecessors and so the headers on platforms that expose the old ones will expose the mapping. I don’t recommend trying to do C interop without a C parser.
+  score: 1
+  posted_at: '2026-10-23T07:40:09Z'
+- id: lo-fi96c3
+  parent_id: '0'
+  author: david_chisnall
+  text: "That’s not the point. @Ada_Weird is suggesting doing this:\nint hare_get_errno()\r\n{\r\n
+    \   return errno;\r\n}\r\n\nAnd then exposing that via your FFI."
+  score: 2
+  posted_at: '2026-10-23T07:41:48Z'
+- id: lo-smm4rg
+  parent_id: '0'
+  author: robn
+  text: Ahh yeah, that's the question I was trying to ask, though I didn't go back
+    that far! Thanks :)
+  score: 1
+  posted_at: '2026-10-23T08:03:16Z'
+- id: lo-pcnony
+  parent_id: '0'
+  author: muvlon
+  text: |-
+    Redirecting stderr is problematic because the file descriptor table is global, so it will affect other threads in exciting ways.
+
+    Not to worry, you can get your own private copy of the file descriptor table via fork, do the redirections there and then report to the parent what you saw.
+    For legal reasons this is a joke. I'm just trying to stick with the super cursed theme of the post. Also, this completely falls apart if fork itself sets errno.
+  score: 3
+  posted_at: '2026-10-23T09:30:42Z'
+- id: lo-jnthkm
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    Also, this completely falls apart if fork itself sets errno.
+
+    That's okay, you can use rfork or clone to avoid this.
+  score: 3
+  posted_at: '2026-10-23T11:48:27Z'
+- id: lo-dreini
+  parent_id: '0'
+  author: fanf
+  text: |-
+    The other issue with errno is that the standard doesn't say if errno is a macro or a variable with external visibility (even in C89). This allows an implementation to define errno as macro that calls a function to return a pointer (or "modifiable L-value").
+
+    The C standards are more specific than that.
+    C89 and C99 say errno is a macro, but they also contradict themselves by saying “It is unspecified whether errno is a macro or an identifier declared with external linkage.” That sentence was removed in C11, so now errno is unambiguously a macro.
+    There is a footnote which describes the usual implementation of errno (though the name of the underlying function varies):
+
+    The macro errno need not be the identifier of an object. It might expand to a modifiable lvalue resulting from a function call (for example, *errno())
+
+    C23 beefed up the footnote to say more strongly that, “The macro errno is not expected to be the identifier of an object.”
+  score: 1
+  posted_at: '2026-10-23T11:50:24Z'
+- id: lo-vndbca
+  parent_id: '0'
+  author: andyferris
+  text: |-
+    As a naive child… why is a C compiler subordinate to what POSIX wants? Like C the programming language defines structs and unions and ABIs and… I assume…  posix is 100% downstream of that since it’s an “application” written in C?
+    Or maybe I misunderstood what you are saying?
+  score: 1
+  posted_at: '2026-10-23T13:20:23Z'
+- id: lo-yy3zh7
+  parent_id: '0'
+  author: hmry
+  text: |-
+    Sorry, I don't understand what you mean by
+
+    why is a C compiler subordinate to what POSIX wants
+
+    So I don't know if this answers your question, but maybe this can help:
+    POSIX is not like other standards that define C APIs, like for example OpenGL or Vulkan.
+    Other standards explicitly tell you the definitions of structs and enums, and what functions are available, e.g.
+
+    "Pos is defined as struct Pos { int x; int y; float z; }"
+    "Color is defined as enum Color { COLOR_RED = 0xFF }"
+    "the library exports a function void setColor(Pos pos, Color color);"
+
+    You can use that information to create "portable header files". As long as your language knows how to map from a C definition to the correct ABI, you can use that to create structs and call functions. For example, Python's ctypes library, Rust or Zig's extern "c" declarations, etc.
+    POSIX doesn't do that. Instead it would say something like:
+
+    "the system has a file called <position.h> which contains a definition for a struct X, which has at least a field called y"
+    "<color.h> contains the definition of COLOR_RED which is an expression that evaluates to an integer"
+    "<color.h> contains a definition for setColor which may be a function or a preprocessor macro, and which can be called with the signature setColor(Pos pos, Color color)
+
+
+    That's not enough information to actually use the API. The only way to compile to POSIX is by writing a C program and compiling it against the header files that are found on that specific POSIX implementation. You can't safely call a general POSIX function from any other language, and your build process needs access to the OS & CPU architecture specific header files.
+    That's why the parent comment says you need to write a C wrapper around the POSIX APIs and call the wrapper instead.
+  score: 3
+  posted_at: '2026-10-23T14:58:20Z'
+- id: lo-rtcfiz
+  parent_id: '0'
+  author: aaronm04
+  text: |-
+    Yeah, I guess you're right.
+    I'm glad you find Hare to be enjoyable! I was thinking about diving deeper into Hare, since I like the flow state I got in with Go development and this looks very similar. Maybe I'll give it a whirl...
+  score: 2
+  posted_at: '2026-10-23T20:27:50Z'
+- id: lo-qyewvf
+  parent_id: '0'
+  author: aaronm04
+  text: Thank you.
+  score: 2
+  posted_at: '2026-10-23T20:32:37Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-10-24T02:41:27Z'

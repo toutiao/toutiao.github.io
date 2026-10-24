@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-7me8wm
+  source: lobsters
+  title: How close can pure FP get to C?
+  url: https://rtfeldman.com/fp-vs-c
+  hn_url: https://lobste.rs/s/7me8wm
+  score: 36
+  author: pyfisch
+  posted_at: '2026-10-23T11:37:22Z'
+  fetched_at: '2026-10-24T02:41:13Z'
+  article_url: https://rtfeldman.com/fp-vs-c
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 9
+  tags:
+  - performance
+  - programming
+comments:
+- id: lo-w0cggn
+  parent_id: '0'
+  author: sjamaan
+  text: |-
+    That notion of "opportunistic mutation" is pretty damn cool!
+    I am, however, curious how close this code would be to "naively written" code, and whether the code can be considered idiomatic.
+  score: 6
+  posted_at: '2026-10-23T13:44:56Z'
+- id: lo-4yyn0k
+  parent_id: '0'
+  author: rtfeldman
+  text: |-
+    Idiomatic as in ordinary Roc code that you'd write normally when not trying to squeeze every last drop of performance out of the code?
+    Assuming that's the question, I'd say you can definitely tell it has been performance-optimized. The easiest tell is that it uses List.prefetched in some places; that function is a no-op aside from performance characteristics, and you'd only want to use it after measuring because prefetching can both improve and degrade performance depending on where it's used.
+    Another easy thing to spot is the optimization technique I mentioned in the last section of the post: adding an explicit (and redundant-looking) bounds check outside a loop so the optimizer can tell it's safe to skip the automatic bounds checks inside the loop. It's the type of thing I'd only add after measuring, never in a first-pass implementation. Same with things like clearing and recycling collections instead of just making fresh ones.
+    That said, I'd say roc-deflate's code looks unusual but not ridiculous. The way I see it, it's important to be able to write Roc code that has good performance without needing to do weird tricks, but in the cases where the goal is maximum performance (like it was here), it's fine if you need to go out of your way to write unusual code as long as the code is still understandable.
+  score: 10
+  posted_at: '2026-10-23T14:05:40Z'
+- id: lo-s9cl32
+  parent_id: '0'
+  author: sjamaan
+  text: Excellent, exactly what I would hope to hear!
+  score: 2
+  posted_at: '2026-10-23T14:50:14Z'
+- id: lo-so1dph
+  parent_id: '0'
+  author: rtfeldman
+  text: |-
+    On a meta-level, I'm amused that this post and https://lobste.rs/s/gajtrm/debunking_faster_than_rust_malicious are currently right next to each other on the front page, with the same amount of upvotes. Both posts are about compilers for languages with automatic memory management competing on performance with languages that are generally in a higher tier of performance, but the tone of the comments is very different!
+    I'm glad I included an explicit paragraph on why it wouldn't be reasonable to conclude that "Roc is faster than C" even in the minority of inputs where roc-deflate happened to outperform libdeflate. I have the same instinctual reaction as the author of that post did when people say "X is faster than [Rust/C/C++/Zig]" because all of those languages give you ways to access everything the hardware is capable of. They vary by ergonomics and guarantees, not by performance ceiling!
+  score: 17
+  posted_at: '2026-10-23T15:36:36Z'
+- id: lo-zrd4ih
+  parent_id: '0'
+  author: andrewrk
+  text: Neither Rust, C, or C++ gives you no-unsigned-wrap integer arithmetic tho.
+  score: 3
+  posted_at: '2026-10-23T19:03:48Z'
+- id: lo-d7kv7m
+  parent_id: '0'
+  author: fanf
+  text: |-
+    Rust has a bunch of ways to do non-wrapping unsigned arithmetic, with methods like checked_add() or strict_add() or saturating_add() or overflowing_add() (which returns a carry bit) https://doc.rust-lang.org/std/primitive.u64.html#method.checked_add
+    C has <stdckdint.h> which allows programmers to mix and match types in a way that Rust doesn’t, but it doesn’t provide saturating arithmetic. C++ relies on <stdckdint.h> for checked arithmetic and has saturating arithmetic in its <numeric> header.
+  score: 11
+  posted_at: '2026-10-23T19:23:27Z'
+- id: lo-ouhcjs
+  parent_id: '0'
+  author: andrewrk
+  text: 'I stand corrected: unsafe unchecked_add is what I was referring to.'
+  score: 5
+  posted_at: '2026-10-23T20:11:33Z'
+- id: lo-to72zm
+  parent_id: '0'
+  author: dutc
+  text: |-
+    This is a very interesting post. Thank you for sharing.
+    If I am reading the shell script the author provided correctly, here is the commit with their work and the parent commit they branched from and the pull request with all of their (accepted) work:
+
+    pull request
+    ancestor/original
+    improved
+
+    overall comparison
+
+
+    I know very little about Roc, but I would be interested to see these compared against a previous version in roc-deflate with a more “naïve” implementation.
+    The author mentions:
+
+    Most of the optimizations that improved roc-deflate's numbers came from general optimization techniques that are widely beneficial across languages…
+
+
+    Some of the optimization techniques were Roc-specific, though, and I wanted to mention them here as a reference for others.
+
+    I don't think I can read Roc well-enough to pick out the latter from the code diffs, but what would be interesting to me is:
+
+    to what degree does the improved version deviate from the naïve approach?
+    how obvious are these improvements (and why might they not have been made previously)?
+    in cases where these improvements required reformulations, what early warning guidance could we derive that our initial design inclination may run contrary to latter desire for performance?
+
+    In other words, if I am not a very good Roc programmer—this is almost certainly a trivially true statement about me!—how achievable and unachievable are these impressive results?
+    It is probably the case that I will not become a Roc programmer—much less a better Roc programmer—but I am, of course, open-minded. However, I am currently a Zig programmer (in that I have written Zig programmes that I have then subsequently used,) and I've been trying to think more deeply about optimisation in the context of the dynamic evolution of a project.
+    It seems to be the case that some small Zig utilities I can write are faster than the Go utilities they have replaced, and I could follow very naïve, very obvious approaches to achieve said performance. In many cases, I could more or less take the same approach as the Zig standard library, which I have found to be very readable. It has been argued that the readability of the Zig standard library (at least in contrast to the standard library's of other languages) is a transient artefact of the language's overall age and maturity, which suggests that there may be an untapped “well” of significant additional performance somewhere out there, and that exploiting this may come at the cost of legibility. Well, I sure hope not.
+    In truth, as a practical matter, while it's very interesting and very impressive to see what is possible, if I am likely to always only ever be a mediocre programmer (or, through the circumstances of my work, the creator of mediocre products,) it's much more useful for me to know what is possible within my capabilities and resources (or, with no increase to my capabilities or resources, I can be aware of consequential initial design choices that I might otherwise mistakenly believe to be equivalent…) Also, like, if I screw up and write something really terrible (or, as has been the case, I inherit responsibility for a large code-base that did not make the right choices,) how much work will it be to dig myself out?
+  score: 2
+  posted_at: '2026-10-23T22:35:55Z'
+- id: lo-ipxygo
+  parent_id: '0'
+  author: rtfeldman
+  text: |-
+    Very good questions!
+    An important difference between Roc and Zig in this area is that I'd say ergonomic high-performance code is a main area of focus for Zig, whereas Roc's focus is elsewhere. We want it to be achievable to get results like this, but I don't anticipate optimizing code to this degree being something that typical Roc programmers would do, or need to do - in the same way that (for example) most Go, TypeScript, Python, Java, etc. programmers don't need to know how to make maximally-performant compression algorithms (and similar) in those languages.
+    This part is important to me though:
+
+    if I screw up and write something really terrible (or, as has been the case, I inherit responsibility for a large code-base that did not make the right choices,) how much work will it be to dig myself out?
+
+    For large code bases, I don't expect people to need to know any of the performance optimization techniques under the "Roc-Specific Optimizations" section except for the first one: Avoid Unnecessary Sharing. There's almost a rite of passage for Roc beginners where they share some code on Roc Zulip that's running way slower than they expect it to, and a veteran points out that they're sharing something that doesn't need to be shared, and then immediately after addressing that, the code becomes fast.
+    Fortunately, so far it seems to be the case that Roc code with that problem exhibits very obvious symptoms very early, so I haven't seen it be a problem yet that someone builds on a bad foundation that will need rewriting later. That said, there aren't many sizable Roc code bases out there yet, and even the biggest ones aren't as big as in other languages (e.g. I've heard of hundreds-of-thousands-of-lines code bases, but no million-plus ones yet), but I'm optimistic that what we've seen so far will continue to hold!
+  score: 4
+  posted_at: '2026-10-23T23:05:02Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-10-24T02:41:18Z'

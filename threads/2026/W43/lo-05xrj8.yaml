@@ -1,0 +1,124 @@
+---
+post:
+  id: lo-05xrj8
+  source: lobsters
+  title: We have Traits at Home
+  url: https://www.axelmagn.com/blog/202610-zig-traits/
+  hn_url: https://lobste.rs/s/05xrj8
+  score: 52
+  author: Defelo
+  posted_at: '2026-10-22T21:52:10Z'
+  fetched_at: '2026-10-24T02:41:13Z'
+  article_url: https://www.axelmagn.com/blog/202610-zig-traits/
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 13
+  tags:
+  - zig
+comments:
+- id: lo-dltxm0
+  parent_id: '0'
+  author: hjvt
+  text: |-
+    Delightful.
+    One thing this highlights for me, is how god-awful the reflection story in Rust is currently. For all the smugness about how much better than C(++)? we are, with our traits and hygienic macros, the derive story is straight up abysmal. What do you mean I need to manually (or using a third-party crate) re-parse struct definition from tokens? What do you mean each proc-macro needs to separately do the same?
+    80% of the time you just want to iterate the fields!
+  score: 15
+  posted_at: '2026-10-22T22:55:30Z'
+- id: lo-x8df3t
+  parent_id: '0'
+  author: gavinmorrow
+  text: This is really neat! (And well written!) It almost reminds me of a way to
+    do “traits” in Gleam, where you do the same struct-of-functions trick.
+  score: 3
+  posted_at: '2026-10-23T01:06:28Z'
+- id: lo-xnsuws
+  parent_id: '0'
+  author: Shorden
+  text: |-
+    Wonderful writeup!
+    I'll have to be careful with this new knowledge as I probably use more metaprogramming than is considered idiomatic in Zig.
+    When all you have is fmap, everything looks like Functor...
+  score: 3
+  posted_at: '2026-10-23T03:24:29Z'
+- id: lo-hhwtat
+  parent_id: '0'
+  author: polywolf
+  text: |-
+    Yes!! I love languages cross-pollinating!!!
+    This approach solves my main complaint with Zig comptime, which was that they work akin to C++ templates, where you only got notified about missing fields/functions at substitution time. I think having everything specified up front like this is a good idea. Connection to OCaml modules is neat too. Very good post I greatly enjoyed reading.
+  score: 5
+  posted_at: '2026-10-23T03:51:58Z'
+- id: lo-ih8sjt
+  parent_id: '0'
+  author: gignico
+  text: I don’t know Zig well, but isn’t it telling when people go out of the way
+    to implement a feature in a language that does not have that feature? C++ is full
+    of this kind of situations where a feature would be needed and users retrofit
+    other features (usually templates) to do exactly that, but in an ad-hoc, less
+    expressive and less idiomatic way.
+  score: 2
+  posted_at: '2026-10-23T05:24:31Z'
+- id: lo-v2ozyc
+  parent_id: '0'
+  author: hibachrach
+  text: Do you have a link to more info on this? Very curious
+  score: 2
+  posted_at: '2026-10-23T06:28:51Z'
+- id: lo-njbcyq
+  parent_id: '0'
+  author: jcspencer
+  text: Looks like there’s some interesting work happening in the reflection and comptime
+    project goal!
+  score: 9
+  posted_at: '2026-10-23T06:37:41Z'
+- id: lo-wpgzy4
+  parent_id: '0'
+  author: gavinmorrow
+  text: |-
+    Please note that especially in Gleam this is highly unidiomatic, and there are very very few cases when it should actually be used. Normally, it’s better to just work with the concrete type(s) that you need.
+    All that said, here’s the most commonly linked article on it: https://mckayla.blog/posts/all-you-need-is-data-and-functions.html.
+  score: 2
+  posted_at: '2026-10-23T11:36:18Z'
+- id: lo-fvifem
+  parent_id: '0'
+  author: gcupc
+  text: |-
+    isn’t it telling when people go out of the way to implement a feature in a language that does not have that feature
+
+    I don't know, depends on how well the language lends itself to implementing language features? There are all kinds of features that Common Lisp has copied from other languages that live in portable libraries rather than in language implementations. How expressive and idiomatic they are depends a lot on the library, but the community tends to settle on good ones over time.
+  score: 2
+  posted_at: '2026-10-23T13:01:11Z'
+- id: lo-r5gi25
+  parent_id: '0'
+  author: wofo
+  text: This is cool! How good are error messages when you mess up?
+  score: 4
+  posted_at: '2026-10-23T14:47:28Z'
+- id: lo-r0zpm3
+  parent_id: '0'
+  author: hibachrach
+  text: Ah that article! Yes, I've read it a few times :)
+  score: 1
+  posted_at: '2026-10-23T15:50:57Z'
+- id: lo-wv2rqf
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    They behave a lot like vtables, except that they are evaluated at comptime rather than runtime.
+
+    That is the standard type class desugaring. The remaining difference is indeed binding time (comptime vs runtime) in the partial evaluation sense, which has a bearing on admissible and practical compilation strategies, especially for systems languages. You can see a first-class approach to type class dictionaries as structures in Lean;  here is an explained example.
+    Most functional language implementations use a uniform value representation as a baseline to support parametric polymorphism, and bounded polymorphism via type classes then builds on that. But especially for a systems language you don't want to be forced into a uniform value representation and you want to perform monomorphization at least some of the time. Languages like Haskell don't have Rust's dyn-safe distinction, and runtime dictionary passing can easily support higher-rank polymorphism, polymorphic recursion and other things that are not compatible with Rust's compilation strategy; Rust does support rank-2 polymorphism but only for lifetimes, e.g. std::thread::scope, and that's because the representation of references is the same (as pointers) regardless of lifetime.
+    Swift is to my knowledge unique among systems languages in its specific set of choices in this area. It uses runtime dictionary passing as its strategy (motivated by its commitment to ABI resilience) and treats monomorphization as a compiler optimization (specialization on a comptime-known dictionary argument). But unlike the standard functional language approach to runtime dictionary passing, it does not rely on a uniform value representation, which complicates things greatly but seems to me a necessary choice for a systems language if you're going to use runtime dictionary passing. This part about Swift's strategy is from my years-old reconstructed memories of watching a tech talk by Slava Pestov and John McCall, so it's likely I got some of the details wrong.
+    As an aside, I have to imagine the fact that Rust and Swift have their own names for type classes (traits, protocols) makes it harder for people without a functional programming background to make the connection to prior art when searching the Internet. That's a bit of a shame.
+  score: 2
+  posted_at: '2026-10-23T18:04:19Z'
+- id: lo-j3mbox
+  parent_id: '0'
+  author: gignico
+  text: Yes, Lisp is a language where these things work well.
+  score: 1
+  posted_at: '2026-10-23T19:26:07Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-10-24T02:41:28Z'
