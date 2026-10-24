@@ -25,6 +25,7 @@ permission:
 | `/hn --auto` | Auto scan → auto cluster → write + deploy |
 | `/hn https://...` | Skip scan → write (interactive) |
 | `/hn --auto https://...` | Skip scan → write + deploy |
+| `/hn --weekly` | Weekly digest: Phase W0-W3 (heat 数据聚合周报) |
 | `/hn n` | Skip |
 
 ## Output

@@ -20,7 +20,7 @@ Audit these artifacts for inconsistencies, gaps, and stale content:
 - `.opencode/agents/*.md` — prompts, permissions, capability gaps
 - `.opencode/skills/*/SKILL.md` — descriptions vs actual behavior
 - `opencode.jsonc` — commands, agent routing, templates
-- `AGENTS.md`, `Makefile`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/deploy.yml`
+- `AGENTS.md`, `Makefile`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/hn-*.yml`, `.github/actions/*`, `scripts/*.rb`
 
 ## Process
 1. Read each artifact and compare against actual project needs

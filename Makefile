@@ -1,4 +1,4 @@
-.PHONY: build build-fast serve test deploy clean fetch fetch-best hn-archive-init
+.PHONY: build build-fast serve test deploy clean fetch fetch-best lobsters hn-archive-init hn-archive-sync
 
 build:
 	docker compose run --rm build
@@ -36,6 +36,33 @@ fetch:
 
 fetch-best:
 	docker compose run --rm build ruby scripts/hn-fetch.rb --best --fetch-articles-simple --jobs 5
+
+lobsters:
+	docker compose run --rm build ruby scripts/lobsters-fetch.rb --hottest
+
+# Push local .hn-archive/ working copy to the hn-data branch (the same worktree
+# dance CI uses, packaged for local runs). File-level: local copy wins.
+hn-archive-sync:
+	@set -e; \
+	TMP=$$(mktemp -d); \
+	git fetch origin hn-data; \
+	if git ls-remote --exit-code --heads origin hn-data >/dev/null 2>&1; then \
+	  git worktree add "$$TMP" hn-data >/dev/null 2>&1 || git worktree add "$$TMP" -b hn-data >/dev/null 2>&1; \
+	  git -C "$$TMP" reset --hard origin/hn-data -q; \
+	else \
+	  git worktree add --orphan -b hn-data "$$TMP" >/dev/null 2>&1; \
+	  printf 'snapshots/**/*.jsonl merge=union\n' > "$$TMP/.gitattributes"; \
+	fi; \
+	cp -r .hn-archive/. "$$TMP/"; \
+	git -C "$$TMP" add -A; \
+	if git -C "$$TMP" diff --cached --quiet; then \
+	  echo "archive: no changes"; \
+	else \
+	  git -C "$$TMP" commit -q -m "archive: local-sync $(shell date -u +%FT%TZ)"; \
+	  git -C "$$TMP" push origin hn-data; \
+	fi; \
+	git worktree remove --force "$$TMP"; \
+	echo "hn-data synced"
 
 # Seed the hn-data orphan branch from the local .hn-archive working copy.
 # Idempotent: skips if the branch already exists on origin.

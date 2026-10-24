@@ -1331,7 +1331,7 @@ end
 
 def run
   options = {
-    mode: nil, url: nil, force: false, max: MAX_DEFAULT, output: nil,
+    mode: nil, url: nil, force: false,
     jobs: 5, fetch_articles_simple: false, skip_articles: false,
     timeout: 20
   }
@@ -1343,7 +1343,6 @@ def run
     opts.on('--fetch-article-url URL', 'Fetch single article URL, print content to stdout, exit') { |v|
       options[:mode] = :fetch_article_url; options[:url] = v
     }
-    opts.on('--max N', Integer, "Max posts to fetch (default: #{MAX_DEFAULT})") { |v| options[:max] = v }
     opts.on('--force', 'Force re-fetch, ignore cache') { options[:force] = true }
     opts.on('--jobs N', Integer, "Parallel workers (default: 5)") { |v| options[:jobs] = v }
     opts.on('--fetch-articles-simple', 'Use simple HTTP fetch (no renderer) for articles') {

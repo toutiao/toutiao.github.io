@@ -1,5 +1,11 @@
 # HN Data Pipeline — 数据源优化设计
 
+> ⚠️ **历史文档（superseded）**: 本篇描述的 GH Actions cache 缓存层已于二期 P2（2026-10-24）整体退役，
+> 存储统一到 hn-data 孤儿分支。现行架构与事实来源：
+> [hn-signal-architecture.md](hn-signal-architecture.md)（一期：信号架构）
+> + [hn-signal-architecture-phase2.md](hn-signal-architecture-phase2.md)（二期：时间维度/多源/周报）。
+> 本篇仅存档 2026-07~10 缓存层时代的决策记录（文章提取 6 道门禁、质量修复案例仍有效）。
+
 > 创作流程大提升计划 第1阶段
 > 状态: 已实施完成 | 日期: 2026-07-01 | 以下为实际实现记录，后续改以此文档为起点
 

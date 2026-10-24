@@ -217,16 +217,16 @@ Use actual model (e.g. `google/gemini-2.5-flash`, `deepseek/deepseek-v4-flash`).
 > 引文核验一律使用缓存 + hn-repair.rb (Algolia gate, CI 强制层)。
 
 ### Step 1 — Quote verify (local)
-1. Source of truth = `_data/hn/.../{id}/comments.yaml` (raw HN text, already cached)
-2. For each quote: grep verbatim text in comments.yaml
+1. Source of truth = `.hn-archive/threads/YYYY/WNN/<id>.yaml` `comments`（raw 原文，永久归档；find week 用 registry `threads[id].week` 或 glob `.hn-archive/threads/*/*/<id>.yaml`）
+2. For each quote: grep verbatim text in the thread's comments
 3. Check:
    - Verbatim match (no paraphrase)
-   - Author match vs comments.yaml `author`
+   - Author match vs comment `author`
    - Ellipsis (...) preserved meaning
    - CN translation faithful
 4. Fix mismatch
 5. Report: ✓ / ⚠ / ✗
-6. Log entry: `verified against comments.yaml (local)` — 最后由 `hn-repair.rb` 对 Algolia 做存在性+作者终验
+6. Log entry: `verified against archived comments (local)` — 最后由 `hn-repair.rb` 对 Algolia 做存在性+作者终验（非 HN 引文 id 由本地核验兜底）
 
 ### Step 2 — Quality review
 Read full draft. Checklist:
