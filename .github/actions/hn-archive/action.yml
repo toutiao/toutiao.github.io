@@ -33,6 +33,9 @@ runs:
 
         elif [ "$MODE" = "push" ]; then
           cd "$ARCHIVE"
+          # Jobs that never commit before (hn-fetch) lack a git identity
+          git config user.name >/dev/null 2>&1 || git config user.name "HN Archive Bot"
+          git config user.email >/dev/null 2>&1 || git config user.email "hn-auto@yuedulijie.com"
           git add -A
           if git diff --cached --quiet; then
             echo "archive: no changes to push"
