@@ -224,6 +224,7 @@ jobs:
           fi
 
       - uses: stefanzweifel/git-auto-commit-action@v5
+        id: auto-commit
         if: ${{ !cancelled() && steps.git-state.outputs.state != 'clean' }}
         with:
           commit_message: "feat: HN 自动摘要 ${{ steps.commit-date.outputs.commit_date }}"
@@ -233,6 +234,19 @@ jobs:
           commit_options: ${{ steps.git-state.outputs.commit_opts }}
           push_options: ${{ steps.git-state.outputs.push_opts }}
           skip_dirty_check: true
+
+      # git-auto-commit's push has no retry: if master advanced during the ~20min
+      # generation window (local pushes / other runs), the push is rejected and the
+      # committed articles die with the runner (runs 40055583472 / 40056343806).
+      # The commit already passed the build gate — rebase onto the new remote and
+      # push again. --deepen: shallow clones graft fetched tips, which would make
+      # rebase replay the whole visible history.
+      - name: Recover master push (concurrent push race)
+        if: ${{ steps.auto-commit.outcome == 'failure' }}
+        run: |
+          git fetch --deepen=100 origin +refs/heads/master:refs/remotes/origin/master
+          git rebase origin/master
+          git push origin HEAD:master
 
       # Persist generation-time archive writes (url-mode fetches, force fetch)
       # to the hn-data branch — previously these were lost with the runner.

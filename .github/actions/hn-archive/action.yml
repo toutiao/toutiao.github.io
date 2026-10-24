@@ -42,16 +42,31 @@ runs:
             exit 0
           fi
           git commit -m "archive: ${GITHUB_JOB:-local} $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          # Push race (hn-fetch 3x/day vs hn-auto) resolved by rebase + retry;
-          # append-only snapshots/*.jsonl auto-merge via union driver (.gitattributes).
+          # Push race (hn-fetch 3x/day vs hn-auto vs local sync) resolved by merge + retry.
+          # fetch must use an explicit refspec: `git fetch origin hn-data` does NOT
+          # update the remote-tracking ref in the actions/checkout environment, so a
+          # bare branch fetch leaves the merge target stale (empty-retry loop).
+          # --deepen: shallow clones graft newly fetched tips (no visible merge-base),
+          # which made rebase replay the whole orphan chain into add/add conflicts
+          # (run 40056343806 incident).
           for i in 1 2 3; do
             if git push origin HEAD:hn-data; then
               echo "archive: pushed"
               exit 0
             fi
-            echo "archive: push attempt $i failed, rebasing on remote..."
-            git fetch origin hn-data
-            git rebase origin/hn-data || { git rebase --abort; sleep $((i * 10)); }
+            echo "archive: push attempt $i failed, merging remote..."
+            git fetch --deepen=100 origin +refs/heads/hn-data:refs/remotes/origin/hn-data
+            if ! git merge --no-edit origin/hn-data; then
+              # threads/topics are whole-file rewrites by the archive scripts; hunk-level
+              # auto-merge can produce syntactically broken hybrids. Resolve conflicts by
+              # taking ours (CI copy — runner data dies with the VM); the remote side's
+              # newer data is re-added by the registry state machine on later runs
+              # (comments merge by id, re-runs never duplicate).
+              git diff --name-only --diff-filter=U | while read -r f; do
+                git checkout --ours -- "$f" && git add -- "$f" || git rm -f -- "$f"
+              done
+              git commit --no-edit
+            fi
           done
           echo "::error::archive push failed after 3 attempts (next run re-adds)"
           exit 1

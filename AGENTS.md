@@ -155,6 +155,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **管道** CI 中 skill 禁止 `make build`/`docker compose`/`git commit` — build 与提交由 workflow 门禁负责
 - **管道** opencode flag 本地与 CI 不得混用：本地 `--auto`（无 `--dir`），CI 用 `--dir` + `--dangerously-skip-permissions`
 - **管道** hn-auto 每次提交只含 `_articles/` 与两个投影文件，不得夹带其他变更
+- **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证
 - **热度** 热度、聚簇、行业分类全部确定性 Ruby — 0 LLM 调用；改公式只动权重常量并 bump `rule_version`，全部历史日榜必须可 `hn-heat.rb --recompute` 重建
 - **内容** 单帖摘要必须带 `hn_id`；跨多帖的周报**不加** `hn_id` — 防止成员帖被 published dedup 屏蔽
 - **内容** 引文必须逐字（verbatim）+ 真实作者 + `[c:id]`；非 HN 引文 id 不走 Algolia 门禁，本地归档核验兜底
