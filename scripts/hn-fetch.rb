@@ -1,17 +1,17 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# HN Data Fetcher — cache HN discussions + target articles for AI consumption
+# HN Data Fetcher — fetch HN discussions + target articles into the hn-data
+# archive (sole storage since phase 2; the GH Actions cache layer is retired).
 #
 # Usage:
-#   ruby scripts/hn-fetch.rb --best [--max N] [--force] [--jobs N]
+#   ruby scripts/hn-fetch.rb --best [--force] [--jobs N]
 #                            [--fetch-articles-simple] [--skip-articles] [--timeout N]
-#   ruby scripts/hn-fetch.rb --url <hn_url> [--force]
+#   ruby scripts/hn-fetch.rb --url <hn_url> [--force] [--fetch-articles-simple]
 #   ruby scripts/hn-fetch.rb --fetch-article-url <url> [--timeout N]
 #   ruby scripts/hn-fetch.rb --fill-missing [--jobs N]
-#   ruby scripts/hn-fetch.rb --poll-watching   # weekly liveness poll for watching threads
+#   ruby scripts/hn-fetch.rb --poll-watching   # tiered liveness poll (watch/cold/deep)
 #   ruby scripts/hn-fetch.rb --hot-check [--daily-max N]   # dual-channel burst trigger
-#   ruby scripts/hn-fetch.rb --output <dir>
 #
 # Archive layer (hn-data branch working copy, env HN_ARCHIVE_DIR):
 #   snapshots/YYYY/MM.jsonl     score/comment time series (append-only)
@@ -611,7 +611,7 @@ ensure
   end
 end
 
-# ── Cache path helpers ──
+# ── Archive path helpers ──
 
 def week_key(date = Date.today)
   year = date.cwyear.to_s
@@ -619,92 +619,69 @@ def week_key(date = Date.today)
   [year, "W#{week}"]
 end
 
-def post_cache_dir(post_id, date: nil)
-  date ||= Date.today
-  yr, wk = week_key(date)
-  File.join(CACHE_DIR, yr, wk, post_id)
-end
-
-def stories_index_path
-  yr, wk = week_key
-  File.join(CACHE_DIR, yr, wk, 'stories.yaml')
-end
-
-def find_post_dir(post_id)
-  Dir.glob(File.join(CACHE_DIR, '*', 'W*', post_id, 'post.yaml')).each do |f|
-    dir = File.dirname(f)
-    return dir if File.directory?(dir)
+def archived_thread_path(id, reg = nil)
+  e = reg && reg['threads'][id.to_s]
+  if e && e['week']
+    p = File.join(THREADS_DIR, e['week'], "#{id}.yaml")
+    return p if File.exist?(p)
   end
-  nil
+  Dir.glob(File.join(THREADS_DIR, '*', 'W*', "#{id}.yaml")).first
 end
 
-def cache_fresh?(post_id)
-  dir = find_post_dir(post_id)
-  return false unless dir
-  post_file = File.join(dir, 'post.yaml')
-  return false unless File.exist?(post_file)
-  YAML.safe_load_file(post_file, permitted_classes: [Time])
-rescue
-  false
+def load_archived_thread(id, reg = nil)
+  path = archived_thread_path(id, reg)
+  return nil unless path
+  YAML.safe_load_file(path, permitted_classes: [Time]) rescue nil
 end
 
-def load_cached_post(post_id)
-  dir = find_post_dir(post_id)
-  return nil unless dir
-  f = File.join(dir, 'post.yaml')
-  File.exist?(f) ? YAML.safe_load_file(f, permitted_classes: [Time]) : nil
-rescue
-  nil
+# Keep the richer of old/new article extraction results
+def merge_article(old, new)
+  return old if new.nil?
+  return new if old.nil?
+  old_ok = old['fetch_status'] == 'success'
+  new_ok = new['fetch_status'] == 'success'
+  return old if old_ok && (!new_ok || (new['content'] || '').length <= (old['content'] || '').length)
+  new
 end
 
-def load_cached_comments(post_id)
-  dir = find_post_dir(post_id)
-  return nil unless dir
-  f = File.join(dir, 'comments.yaml')
-  File.exist?(f) ? YAML.safe_load_file(f, permitted_classes: [Time]) : nil
-rescue
-  nil
+# One-time bridge: adopt article.yaml from the retired cache layer (P1 archives
+# lacked article content). CI self-heals without this — freshness requires an
+# article, so missing ones get refetched on the first P2 run.
+def legacy_cache_article(id)
+  f = Dir.glob(File.join(CACHE_DIR, '*', 'W*', id, 'article.yaml')).first
+  return nil unless f
+  YAML.safe_load_file(f, permitted_classes: [Time]) rescue nil
 end
 
-def load_cached_article(post_id)
-  dir = find_post_dir(post_id)
-  return nil unless dir
-  f = File.join(dir, 'article.yaml')
-  File.exist?(f) ? YAML.safe_load_file(f, permitted_classes: [Time]) : nil
-rescue
-  nil
-end
+# ── Core fetch (archive-based, no writes — caller archives) ──
 
-def write_cache(post_id, post_data, comments_data, article_data)
-  dir = post_cache_dir(post_id)
-  FileUtils.mkdir_p(dir)
-  File.write(File.join(dir, 'post.yaml'), YAML.dump(post_data))
-  File.write(File.join(dir, 'comments.yaml'), YAML.dump(comments_data))
-  File.write(File.join(dir, 'article.yaml'), YAML.dump(article_data))
-  dir
-end
+ARTICLE_FRESH_STATES = %w[success skipped blocked not_found].freeze
 
-# ── Core fetch + cache ──
-
-def fetch_and_cache(hn_url, known_meta: nil, force: false, article_mode: :renderer,
+def fetch_and_cache(reg, hn_url, known_meta: nil, force: false, article_mode: :renderer,
                     simple_timeout: 20)
   post_id = known_meta ? known_meta['id'] : hn_url[/\d+/]
   return [:error, nil, "no post_id extracted from #{hn_url}"] unless post_id
 
-  if !force && cache_fresh?(post_id)
-    cached_post = load_cached_post(post_id)
-    comments = load_cached_comments(post_id)
-    article = load_cached_article(post_id)
-    if cached_post && known_meta && known_meta['descendants'] == cached_post['raw_comment_count']
-      return [:cached, { 'post' => cached_post, 'comments' => comments, 'article' => article }, nil]
+  archived = load_archived_thread(post_id, reg)
+
+  # Freshness: comment count unchanged since last fetch AND article resolved.
+  # Threads lacking an article (pre-P2 archives) refetch once and self-heal.
+  if !force && known_meta && archived
+    a_status = archived['article'] && archived['article']['fetch_status']
+    if known_meta['descendants'] == archived['post']['raw_comment_count'].to_i &&
+       ARTICLE_FRESH_STATES.include?(a_status)
+      return [:cached, { 'post' => archived['post'],
+                         'comments' => { 'comments' => archived['comments'] },
+                         'article' => archived['article'] }, nil]
     end
   end
 
   disc = fetch_discussion(post_id)
   unless disc
-    cached_comments = load_cached_comments(post_id)
-    if cached_comments && cached_comments['comments']&.any?
-      return [:cached, { 'post' => load_cached_post(post_id), 'comments' => cached_comments, 'article' => load_cached_article(post_id) }, nil]
+    if archived && Array(archived['comments']).any?
+      return [:cached, { 'post' => archived['post'],
+                         'comments' => { 'comments' => archived['comments'] },
+                         'article' => archived['article'] }, nil]
     end
     return [:error, nil, "failed to fetch discussion for #{post_id}"]
   end
@@ -726,38 +703,37 @@ def fetch_and_cache(hn_url, known_meta: nil, force: false, article_mode: :render
     'raw_comment_count' => disc.raw_comment_count,
   }
 
-  cached_article = load_cached_article(post_id)
+  old_article = archived && archived['article']
 
   article_data = case article_mode
                  when :skip
-                   cached_article || { 'fetch_status' => 'skipped' }
+                   old_article || { 'fetch_status' => 'skipped' }
 
                   when :simple
                     domain = URI.parse(article_url.to_s).host rescue nil
-                    if domain
-                      with_domain(domain) do
-                        attempt = extract_article_simple(article_url, read_timeout: simple_timeout)
-                        if attempt['fetch_status'] == 'success'
-                          attempt_len = (attempt['content'] || '').length
-                          cached_len = (cached_article && cached_article['fetch_status'] == 'success' && cached_article['content']) ? cached_article['content'].length : 0
-                          if attempt_len < 1000 && cached_len > attempt_len
-                            cached_article
-                          else
-                            attempt
-                          end
-                        elsif cached_article && cached_article['fetch_status'] == 'success' && cached_article['content']
-                          cached_article
-                        else
-                          attempt
-                        end
-                      end
+                    attempt = if domain
+                                with_domain(domain) do
+                                  extract_article_simple(article_url, read_timeout: simple_timeout)
+                                end
+                              else
+                                extract_article_simple(article_url, read_timeout: simple_timeout)
+                              end
+                    merged = merge_article(old_article, attempt)
+                    # Same guard as before: a thin simple-mode extraction that is
+                    # much shorter than what we had is likely a degraded page.
+                    if attempt['fetch_status'] == 'success' && old_article &&
+                       old_article['fetch_status'] == 'success' &&
+                       (attempt['content'] || '').length < 1000 &&
+                       (old_article['content'] || '').length > (attempt['content'] || '').length
+                      old_article
                     else
-                      cached_article || extract_article_simple(article_url, read_timeout: simple_timeout)
+                      merged
                     end
 
                  else # :renderer
-                   if cached_article && cached_article['fetch_status'] == 'success' && cached_article['url'] == article_url && !force
-                     cached_article
+                   if !force && old_article && old_article['fetch_status'] == 'success' &&
+                      old_article['url'] == article_url
+                     old_article
                    else
                      extract_article(article_url)
                    end
@@ -766,11 +742,8 @@ def fetch_and_cache(hn_url, known_meta: nil, force: false, article_mode: :render
   post_data['article_fetch_status'] = article_data['fetch_status']
   post_data['article_fetched_at'] = article_data['fetched_at'] if article_data['fetched_at']
 
-  comments_data = { 'comments' => disc.comments }
-
-  dir = write_cache(post_id, post_data, comments_data, article_data)
-
-  [:fetched, { 'post' => post_data, 'comments' => comments_data, 'article' => article_data, 'dir' => dir }, nil]
+  [:fetched, { 'post' => post_data, 'comments' => { 'comments' => disc.comments },
+               'article' => article_data }, nil]
 end
 
 # ── stdout summary ──
@@ -809,34 +782,9 @@ def print_result_line(result)
   end
 end
 
-# ── stories index writer ──
-
-def write_stories_index(stories)
-  if stories.nil? || stories.empty?
-    puts "  No stories to write. Preserving existing stories.yaml."
-    return
-  end
-
-  existing_ids = known_published_ids
-
-  if existing_ids.any?
-    before = stories.length
-    stories = stories.reject { |s| existing_ids.include?(s['id']) }
-    after = stories.length
-    puts "  Dedup: #{before - after} stories already in _articles/, #{after} remaining"
-  end
-
-  path = stories_index_path
-  FileUtils.mkdir_p(File.dirname(path))
-  File.write(path, YAML.dump({
-    'fetched_at' => Time.now.utc.iso8601,
-    'stories' => stories
-  }))
-end
-
 # ── Parallel processing ──
 
-def process_stories_parallel(stories, force: false, article_mode: :renderer,
+def process_stories_parallel(reg, stories, force: false, article_mode: :renderer,
                              jobs: 5, simple_timeout: 20)
   queue = Queue.new
   stories.each { |s| queue << s }
@@ -848,6 +796,7 @@ def process_stories_parallel(stories, force: false, article_mode: :renderer,
         story = queue.pop(true) rescue nil
         break unless story
         status, result, err = fetch_and_cache(
+          reg,
           story['hn_url'],
           known_meta: story,
           force: force,
@@ -885,46 +834,25 @@ def process_stories_parallel(stories, force: false, article_mode: :renderer,
   stats
 end
 
-# ── Fill missing articles (renderer) ──
+# ── Fill missing articles (renderer, archive-based) ──
 
 def fill_missing_articles(jobs: 3)
-  yr, wk = week_key
-  week_dir = File.join(CACHE_DIR, yr, wk)
+  paths = Dir.glob(File.join(THREADS_DIR, '*', 'W*', '*.yaml'))
+  puts "Scanning #{paths.length} archived threads..."
 
-  unless Dir.exist?(week_dir)
-    puts "No cache found at #{week_dir}"
-    return
-  end
-
-  Dir.glob(File.join(week_dir, '*', '*.tmp')).each { |f| File.delete(f) rescue nil }
-
-  post_dirs = Dir.glob(File.join(week_dir, '*', 'post.yaml')).map { |f| File.dirname(f) }
-  puts "Scanning #{post_dirs.length} posts..."
-
-  to_fill = []
-  post_dirs.each do |dir|
-    post_id = File.basename(dir)
-    article_path = File.join(dir, 'article.yaml')
-
-    article = File.exist?(article_path) ? (YAML.safe_load_file(article_path, permitted_classes: [Time]) rescue nil) : nil
-    status = article ? article['fetch_status'] : 'missing'
-
-    case status
-    when 'success'
-      puts "  #{post_id}: success (#{article['content'] ? article['content'].length : 0} chars), skip"
-    when 'skipped'
-      puts "  #{post_id}: skipped (no URL), skip"
-    when 'missing'
-      puts "  #{post_id}: missing article.yaml, needs fill"
-      to_fill << dir
-    else
-      puts "  #{post_id}: #{status}, needs fill"
-      to_fill << dir
-    end
+  to_fill = paths.filter_map do |path|
+    t = (YAML.safe_load_file(path, permitted_classes: [Time]) rescue nil)
+    next unless t && t['post']
+    status = t['article'] ? t['article']['fetch_status'] : 'missing'
+    next if %w[success skipped].include?(status)
+    url = t['post']['article_url'] || t['post']['url']
+    next unless url
+    puts "  #{t['post']['id']}: #{status}, needs fill"
+    path
   end
 
   if to_fill.empty?
-    puts "All articles have content. Nothing to fill."
+    puts 'All archived articles have content. Nothing to fill.'
     return
   end
 
@@ -941,7 +869,7 @@ def fill_missing_articles(jobs: 3)
     puts "Renderer unreachable: #{e.message}. Skip fill."
     return
   end
-  puts "Renderer healthy."
+  puts 'Renderer healthy.'
 
   queue = Queue.new
   to_fill.each { |entry| queue << entry }
@@ -963,11 +891,11 @@ def fill_missing_articles(jobs: 3)
   puts "\nFill summary: #{results[:filled]} filled, #{results[:skipped]} skipped, #{results[:errors]} errors"
 end
 
-def fill_one_article(dir, results, mutex)
-  post_path = File.join(dir, 'post.yaml')
-  post = YAML.safe_load_file(post_path, permitted_classes: [Time])
-  post_id = post['id']
-  article_url = post['article_url'] || post['url']
+def fill_one_article(path, results, mutex)
+  t = (YAML.safe_load_file(path, permitted_classes: [Time]) rescue nil)
+  return unless t && t['post']
+  post_id = t['post']['id']
+  article_url = t['post']['article_url'] || t['post']['url']
 
   unless article_url
     mutex.synchronize { results[:skipped] += 1 }
@@ -975,8 +903,7 @@ def fill_one_article(dir, results, mutex)
     return
   end
 
-  article_path = File.join(dir, 'article.yaml')
-  old = File.exist?(article_path) ? (YAML.safe_load_file(article_path, permitted_classes: [Time]) rescue nil) : nil
+  old = t['article']
   old_chars = (old && old['content']) ? old['content'].length : 0
 
   puts "  #{post_id}: fetching #{article_url[0, 80]}..."
@@ -993,21 +920,19 @@ def fill_one_article(dir, results, mutex)
       return
     end
 
-    tmp_path = article_path + '.tmp'
-    File.write(tmp_path, YAML.dump(article))
-    File.rename(tmp_path, article_path)
-
-    post['article_fetch_status'] = 'success'
-    post['article_fetched_at'] = article['fetched_at']
-    File.write(post_path, YAML.dump(post))
+    t['article'] = article
+    t['post']['article_fetch_status'] = 'success'
+    t['post']['article_fetched_at'] = article['fetched_at']
+    tmp = path + '.tmp'
+    File.write(tmp, YAML.dump(t))
+    File.rename(tmp, path)
 
     gained = new_chars - old_chars
-    suffix = gained > 0 ? " (+#{gained})" : ""
+    suffix = gained > 0 ? " (+#{gained})" : ''
     puts "  #{post_id}: filled (#{new_chars} chars#{suffix})"
     mutex.synchronize { results[:filled] += 1 }
   else
     reason = article['fetch_status'] || 'unknown'
-    reason = 'empty content' if article['fetch_status'] == 'success' && (!article['content'] || article['content'].strip.empty?)
     puts "  #{post_id}: renderer failed (#{reason})"
     mutex.synchronize { results[:errors] += 1 }
   end
@@ -1250,9 +1175,10 @@ def snapshot_history(id, months: 2)
   rows.sort_by { |r| r['t'] }
 end
 
-# Merge post + comments into the permanent thread archive; comments merge by id
-# so resurrected refetches append new arrivals without losing old ones.
-def archive_thread(reg, post_data, comments_data)
+# Merge post + comments + article into the permanent thread archive; comments
+# merge by id so resurrected refetches append new arrivals without losing old
+# ones; article keeps the richer of old/new.
+def archive_thread(reg, post_data, comments_data, article_data = nil)
   return nil unless post_data && post_data['id']
   id = post_data['id'].to_s
   e = registry_entry_for(reg, post_data)
@@ -1266,18 +1192,21 @@ def archive_thread(reg, post_data, comments_data)
   path = File.join(THREADS_DIR, e['week'].to_s, "#{id}.yaml")
   FileUtils.mkdir_p(File.dirname(path))
 
+  prev = File.exist?(path) ? (YAML.safe_load_file(path, permitted_classes: [Time]) rescue nil) : nil
+
   merged = {}
-  if File.exist?(path)
-    prev = (YAML.safe_load_file(path, permitted_classes: [Time]) rescue nil)
-    Array(prev && prev['comments']).each { |c| merged[c['id'].to_s] = c }
-  end
+  Array(prev && prev['comments']).each { |c| merged[c['id'].to_s] = c }
   Array(comments_data && comments_data['comments']).each { |c| merged[c['id'].to_s] = c }
   comments = merged.values.sort_by { |c| c['posted_at'].to_s }
+
+  article = merge_article(prev && prev['article'], article_data)
+  article ||= legacy_cache_article(id) if prev && !prev.key?('article')
 
   tmp = path + '.tmp'
   File.write(tmp, YAML.dump({
     'post' => post_data,
     'comments' => comments,
+    'article' => article,
     'archived_at' => Time.now.utc.iso8601,
   }))
   File.rename(tmp, path)
@@ -1432,7 +1361,6 @@ def run
     opts.on('--daily-max N', Integer, "Max new hot triggers per day (default: 2)") { |v|
       options[:daily_max] = v
     }
-    opts.on('--output DIR', "Cache root (#{CACHE_DIR})") { |v| options[:output] = v }
     opts.on('-h', '--help') { puts opts; exit }
   end.parse!
 
@@ -1489,7 +1417,9 @@ def run
     article_mode = options[:skip_articles] ? :skip :
                    options[:fetch_articles_simple] ? :simple : :renderer
     puts "\nFetching..."
+    reg = load_registry
     status, result, err = fetch_and_cache(
+      reg,
       options[:url],
       force: options[:force],
       article_mode: article_mode,
@@ -1501,8 +1431,7 @@ def run
     end
     print_result_line(result)
 
-    reg = load_registry
-    archive_thread(reg, result['post'], result['comments'])
+    archive_thread(reg, result['post'], result['comments'], result['article'])
     e = reg['threads'][result['post']['id'].to_s]
     if e
       e['last_activity'] = Time.now.utc.iso8601
@@ -1519,7 +1448,10 @@ def run
   puts "\n[1/3] Fetching HN best page (scrape /best, fallback API)..."
   stories = fetch_stories_scrape_first
   puts "  #{stories.length} stories"
-  write_stories_index(stories)
+
+  published = known_published_ids
+  fresh = stories.reject { |s| published.include?(s['id']) }
+  puts "  Dedup: #{stories.length - fresh.length} already in _articles/, #{fresh.length} remaining"
 
   stories.first(10).each do |s|
     url_tag = s['url'] ? ' [link]' : ' [text]'
@@ -1535,7 +1467,9 @@ def run
 
   puts "\n[2/3] Fetching discussions... (parallel: #{options[:jobs]} workers, article mode: #{article_mode})"
 
+  reg = load_registry
   stats = process_stories_parallel(
+    reg,
     stories,
     force: options[:force],
     article_mode: article_mode,
@@ -1550,8 +1484,8 @@ def run
   # ── Archive layer: snapshots + registry state machine + thread files ──
   fetched_results = stats.delete(:fetched_results) || []
   append_snapshots(stories)
-  reg = registry_update_from_stories(load_registry, stories, fetched_results.map { |r| r['post'] })
-  archived = fetched_results.map { |r| archive_thread(reg, r['post'], r['comments']) }.compact
+  registry_update_from_stories(reg, stories, fetched_results.map { |r| r['post'] })
+  archived = fetched_results.map { |r| archive_thread(reg, r['post'], r['comments'], r['article']) }.compact
   save_registry(reg)
   counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
   puts "  Archive: #{archived.length} threads updated, snapshots #{stories.length} sampled"
