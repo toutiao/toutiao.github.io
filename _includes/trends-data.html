@@ -1,208 +1,196 @@
 {%- assign t = site.data.hn_trends -%}
 {%- if t -%}
+<div class="trends">
 
-<p style="color:#888;font-size:0.92em;margin:0 0 2em;">
-  通过 Hacker News 等专业社区的讨论参与度（评论增速、深度、跨话题活跃评论者占比）推测各技术话题的热度走向。
-  当前追踪 {{ t.stats.threads_tracked }} 个讨论，活跃专家评论者 {{ t.stats.cohort_size }} 人，
-  更新于 {{ t.generated_at | date: "%Y-%m-%d %H:%M" }} UTC。
-</p>
+  <p class="lede">
+    追踪 {{ t.stats.threads_tracked }} 个讨论 · 活跃专家评论者 {{ t.stats.cohort_size }} 人 · 更新于 {{ t.generated_at | date: "%Y-%m-%d %H:%M" }} UTC
+  </p>
 
-{%- if t.industries and t.industries != empty -%}
-<h3 style="margin:2em 0 0.8em;">行业趋势 <small style="color:#aaa;font-weight:400;">（近 {{ t.window_days }} 天热度聚合）</small></h3>
-<div style="overflow-x:auto;">
-<table style="width:100%;border-collapse:collapse;font-size:0.9em;">
-  <thead>
-    <tr style="text-align:left;color:#999;border-bottom:1px solid #e0e0e0;">
-      <th style="padding:0.4em 0.6em 0.4em 0;font-weight:400;">行业</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">热度</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">周环比</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">曲线</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">驱动话题</th>
-    </tr>
-  </thead>
-  <tbody>
+  {%- comment -%} 行业趋势：热度条行，条长按窗口内最大热度归一 {%- endcomment -%}
+  {%- if t.industries and t.industries != empty -%}
+  {%- assign max_heat = 0.0 -%}
+  {%- for ind in t.industries -%}
+    {%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
+    {%- if ind.heat > max_heat -%}{%- assign max_heat = ind.heat -%}{%- endif -%}
+  {%- endfor -%}
+  {%- if max_heat > 0 -%}
+  <section>
+    <div class="sec-head">
+      <h2>行业趋势</h2>
+      <span class="sec-note">近 {{ t.window_days }} 天聚合</span>
+    </div>
     {%- for ind in t.industries -%}
     {%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
-    <tr style="border-bottom:1px solid #f5f5f5;">
-      <td style="padding:0.5em 0.6em 0.5em 0;font-weight:600;">{{ ind.category }}</td>
-      <td style="padding:0.5em 0.6em;color:#c60;white-space:nowrap;">{{ ind.heat | round: 1 }}</td>
-      <td style="padding:0.5em 0.6em;white-space:nowrap;">
-        {%- case ind.trend -%}
-        {%- when 'up' -%}<span style="color:#e0752d;">↑ {{ ind.delta_7d | round: 1 }}</span>
-        {%- when 'down' -%}<span style="color:#6a9a6a;">↓ {{ ind.delta_7d | round: 1 }}</span>
-        {%- else -%}<span style="color:#ccc;">·</span>
-        {%- endcase -%}
-      </td>
-      <td style="padding:0.5em 0.6em;">
-        {%- if ind.sparkline != '' -%}
-        <svg width="80" height="22" viewBox="0 0 100 28" role="img" aria-label="行业热度曲线">
-          <polyline points="{{ ind.sparkline }}" fill="none" stroke="#4a7ab5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        </svg>
-        {%- endif -%}
-      </td>
-      <td style="padding:0.5em 0.6em;color:#777;font-size:0.88em;">
-        {%- for drv in ind.top_topics -%}{{ drv.title | escape | truncate: 36 }}{% unless forloop.last %} · {% endunless %}{%- endfor -%}
-      </td>
-    </tr>
+    {%- assign w = ind.heat | divided_by: max_heat | times: 100 | round -%}
+    <div class="ind-row">
+      <span class="ind-name">{{ ind.category }}</span>
+      <span class="ind-track"><span class="ind-fill" style="width: {{ w }}%"></span></span>
+      <span class="ind-num">
+        {{ ind.heat | round: 1 }}{%- if ind.trend == 'up' -%}<span class="delta up">↑</span>{%- elsif ind.trend == 'down' -%}<span class="delta down">↓</span>{%- endif -%}
+      </span>
+      {%- if ind.top_topics and ind.top_topics != empty -%}
+      {%- assign drv = ind.top_topics | first -%}
+      <span class="ind-meta" title="{{ drv.title | escape }}">驱动：{{ drv.title | escape }}</span>
+      {%- endif -%}
+    </div>
     {%- endfor -%}
-  </tbody>
-</table>
-</div>
-{%- endif -%}
+  </section>
+  {%- endif -%}
+  {%- endif -%}
 
-<h3 style="margin:2.5em 0 0.8em;">话题热度榜</h3>
-
-{%- for topic in t.topics -%}
-{%- assign trend = topic.trend -%}
-<div style="padding:0.9em 0;border-bottom:1px solid #f0f0f0;">
-  <div style="display:flex;align-items:baseline;gap:0.6em;flex-wrap:wrap;">
-    <span style="color:#bbb;font-size:0.85em;min-width:1.6em;">{{ forloop.index }}</span>
-
-    {%- if topic.article -%}
-    <a href="{{ topic.article.url | relative_url }}" style="font-weight:600;">{{ topic.title | escape }}</a>
-    <small style="color:#999;">[<a href="{{ topic.article.url | relative_url }}">本站解读</a>]</small>
-    {%- else -%}
+  {%- comment -%} 话题热度榜：固定 grid 主行 + 统一元数据副行 {%- endcomment -%}
+  {%- if t.topics and t.topics != empty -%}
+  <section>
+    <div class="sec-head">
+      <h2>话题热度榜</h2>
+      <span class="sec-note">近 {{ t.window_days }} 天</span>
+    </div>
+    {%- for topic in t.topics -%}
     {%- assign rep = topic.threads | first -%}
-    <a href="{{ rep.hn_url }}" style="font-weight:600;">{{ topic.title | escape }}</a>
-    {%- endif -%}
+    {%- if rep == nil -%}{% continue %}{%- endif -%}
+    <div class="topic">
+      <div class="topic-main">
+        <span class="topic-rank">{{ forloop.index }}</span>
+        <span class="topic-title">
+          {%- if topic.article -%}
+          <a href="{{ topic.article.url | relative_url }}">{{ topic.title | escape }}</a>
+          {%- else -%}
+          <a href="{{ rep.hn_url }}">{{ topic.title | escape }}</a>
+          {%- endif -%}
+          {%- case topic.trend -%}
+          {%- when 'up' -%}<span class="bd up">↑ 升</span>
+          {%- when 'down' -%}<span class="bd down">↓ 降</span>
+          {%- when 'new' -%}<span class="bd new">新</span>
+          {%- when 'resurrected' -%}<span class="bd res">回热</span>
+          {%- endcase -%}
+          {%- if topic.waves > 1 -%}<span class="bd bd-wave">第 {{ topic.waves }} 波</span>{%- endif -%}
+          {%- if topic.article -%}<a class="bd bd-art" href="{{ topic.article.url | relative_url }}">本站解读</a>{%- endif -%}
+        </span>
+        <span class="topic-side">
+          {%- if topic.curve and topic.curve.size >= 3 and topic.sparkline != '' -%}
+          <svg class="spark" width="80" height="22" viewBox="0 0 100 28" role="img" aria-label="{{ t.window_days }} 天热度曲线"><polyline points="{{ topic.sparkline }}" fill="none" stroke="#d9b98c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          {%- endif -%}
+          <span class="heat">{{ topic.heat | round: 1 }}</span>
+        </span>
+      </div>
 
-    {%- case trend -%}
-    {%- when 'up' -%}<span style="color:#e0752d;font-size:0.85em;">↑ 升</span>
-    {%- when 'down' -%}<span style="color:#6a9a6a;font-size:0.85em;">↓ 降</span>
-    {%- when 'new' -%}<span style="color:#4a7ab5;font-size:0.85em;">新</span>
-    {%- when 'resurrected' -%}<span style="color:#8a5ab5;font-size:0.85em;">回热</span>
-    {%- else -%}<span style="color:#ccc;font-size:0.85em;">·</span>
-    {%- endcase -%}
-
-    {%- if topic.waves > 1 -%}
-    <span style="color:#8a5ab5;font-size:0.8em;border:1px solid #8a5ab5;border-radius:3px;padding:0 0.35em;">第 {{ topic.waves }} 波</span>
-    {%- endif -%}
-
-    {%- if topic.thread_count > 1 -%}
-    <span style="color:#999;font-size:0.85em;">{{ topic.thread_count }} 条讨论</span>
-    {%- endif -%}
-
-    <span style="margin-left:auto;display:flex;align-items:center;gap:0.6em;">
-      {%- if topic.delta_24h -%}
-      <span style="color:#999;font-size:0.8em;">24h {{ topic.delta_24h | round: 2 }}</span>
+      {%- assign has_meta = false -%}
+      {%- if topic.thread_count > 1 -%}{%- assign has_meta = true -%}{%- endif -%}
+      {%- if topic.delta_24h != nil -%}{%- assign has_meta = true -%}{%- endif -%}
+      {%- if topic.keywords and topic.keywords != empty -%}{%- assign has_meta = true -%}{%- endif -%}
+      {%- if topic.related and topic.related != empty -%}{%- assign has_meta = true -%}{%- endif -%}
+      {%- if has_meta -%}
+      <div class="topic-meta">
+        {%- if topic.thread_count > 1 -%}<span>{{ topic.thread_count }} 条讨论</span>{%- endif -%}
+        {%- if topic.delta_24h != nil -%}<span>24h {% if topic.delta_24h > 0 %}+{% endif %}{{ topic.delta_24h | round: 2 }}</span>{%- endif -%}
+        {%- if topic.keywords and topic.keywords != empty -%}<span>{{ topic.keywords | join: " · " }}</span>{%- endif -%}
+        {%- if topic.related and topic.related != empty -%}
+        <span>相关：{%- for r in topic.related -%}{{ r.title | escape | truncate: 24 }}{% if r.via == 'cohort' %} 🧭{% else %} #️⃣{% endif %}{% unless forloop.last %}、{% endunless %}{%- endfor -%}</span>
+        {%- endif -%}
+      </div>
       {%- endif -%}
-      {%- if topic.sparkline != '' -%}
-      <svg width="90" height="26" viewBox="0 0 100 28" role="img" aria-label="{{ t.window_days }} 天热度曲线">
-        <polyline points="{{ topic.sparkline }}" fill="none" stroke="#e0752d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      </svg>
+
+      {%- if topic.thread_count > 1 -%}
+      <ul class="topic-threads">
+        {%- for th in topic.threads -%}
+        <li>
+          <span class="th-date">{{ th.posted_at | date: "%m-%d" }}</span>
+          {%- if th.source == 'lobsters' -%}<span class="bd-lo">Lobsters</span>{%- endif -%}
+          <a href="{{ th.hn_url }}">{{ th.title | escape }}</a>
+          <span class="th-note">{{ th.heat | round: 1 }}</span>
+        </li>
+        {%- endfor -%}
+      </ul>
       {%- endif -%}
-      <span style="font-size:0.9em;color:#c60;">{{ topic.heat | round: 1 }}</span>
-    </span>
-  </div>
-
-  {%- if topic.keywords and topic.keywords != empty -%}
-  <p style="margin:0.3em 0 0 1.6em;font-size:0.8em;color:#aaa;">关键词：{{ topic.keywords | join: " · " }}</p>
-  {%- endif -%}
-
-  {%- if topic.thread_count > 1 -%}
-  <ul style="margin:0.4em 0 0 1.6em;padding:0;list-style:none;font-size:0.85em;color:#777;">
-    {%- for th in topic.threads -%}
-    <li style="margin:0.15em 0;">
-      {%- if th.source == 'lobsters' -%}<span style="color:#b5701e;font-size:0.85em;">[Lobsters]</span> {%- endif -%}
-      <a href="{{ th.hn_url }}">{{ th.title | escape }}</a>
-      <span style="color:#aaa;">（{{ th.posted_at | date: "%m-%d" }} · 热度 {{ th.heat | round: 1 }}）</span>
-    </li>
+    </div>
     {%- endfor -%}
-  </ul>
+  </section>
   {%- endif -%}
 
-  {%- if topic.related and topic.related != empty -%}
-  <p style="margin:0.35em 0 0 1.6em;font-size:0.8em;color:#aaa;">
-    相关：
-    {%- for r in topic.related -%}
-    <span>{% if r.via == 'cohort' %}🧭{% else %}#️⃣{% endif %} {{ r.title | escape | truncate: 30 }}</span>{% unless forloop.last %} · {% endunless %}
-    {%- endfor -%}
-  </p>
-  {%- endif -%}
-</div>
-{%- endfor -%}
-
-<h3 style="margin:2.5em 0 0.8em;">单讨论热度 Top {{ t.top_threads | size }}</h3>
-<div style="overflow-x:auto;">
-<table style="width:100%;border-collapse:collapse;font-size:0.9em;">
-  <thead>
-    <tr style="text-align:left;color:#999;border-bottom:1px solid #e0e0e0;">
-      <th style="padding:0.4em 0.6em 0.4em 0;font-weight:400;">讨论</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">热度</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">24h 评论</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">专家占比</th>
-      <th style="padding:0.4em 0.6em;font-weight:400;">走向</th>
-    </tr>
-  </thead>
-  <tbody>
+  {%- comment -%} 单讨论热度：紧凑列表行 {%- endcomment -%}
+  {%- if t.top_threads and t.top_threads != empty -%}
+  <section>
+    <div class="sec-head">
+      <h2>单讨论热度 Top {{ t.top_threads | size }}</h2>
+    </div>
     {%- for th in t.top_threads -%}
-    <tr style="border-bottom:1px solid #f5f5f5;">
-      <td style="padding:0.5em 0.6em 0.5em 0;">
-        {%- if th.source == 'lobsters' -%}<span style="color:#b5701e;font-size:0.8em;">[Lobsters]</span> {%- endif -%}
-        <a href="{{ th.hn_url }}">{{ th.title | escape | truncate: 64 }}</a>
-        {%- if th.article %} <small style="color:#999;">[<a href="{{ th.article.url | relative_url }}">本站解读</a>]</small>{% endif -%}
-      </td>
-      <td style="padding:0.5em 0.6em;color:#c60;white-space:nowrap;">{{ th.heat | round: 1 }}</td>
-      <td style="padding:0.5em 0.6em;color:#777;white-space:nowrap;">{{ th.comment_vel_24h }}</td>
-      <td style="padding:0.5em 0.6em;color:#777;white-space:nowrap;">{{ th.expert_ratio | times: 100 | round: 0 }}%</td>
-      <td style="padding:0.5em 0.6em;white-space:nowrap;">
+    {%- assign th_has_meta = false -%}
+    {%- if th.comment_vel_24h != nil -%}{%- assign th_has_meta = true -%}{%- endif -%}
+    {%- if th.expert_ratio != nil -%}{%- assign th_has_meta = true -%}{%- endif -%}
+    {%- if th.trend == 'up' or th.trend == 'down' or th.trend == 'new' or th.trend == 'resurrected' -%}{%- assign th_has_meta = true -%}{%- endif -%}
+    <div class="th-row">
+      <div class="th-line">
+        {%- if th.source == 'lobsters' -%}<span class="bd-lo">Lobsters</span>{%- endif -%}
+        <span class="th-title">
+          <a href="{{ th.hn_url }}">{{ th.title | escape }}</a>
+          {%- if th.article -%}<a class="bd bd-art" href="{{ th.article.url | relative_url }}">本站解读</a>{%- endif -%}
+        </span>
+        <span class="heat">{{ th.heat | round: 1 }}</span>
+      </div>
+      {%- if th_has_meta -%}
+      <div class="th-meta">
+        {%- if th.comment_vel_24h != nil -%}<span>{{ th.comment_vel_24h }} 评论/24h</span>{%- endif -%}
+        {%- if th.expert_ratio != nil -%}<span>专家 {{ th.expert_ratio | times: 100 | round: 0 }}%</span>{%- endif -%}
         {%- case th.trend -%}
-        {%- when 'up' -%}<span style="color:#e0752d;">↑ 升</span>
-        {%- when 'down' -%}<span style="color:#6a9a6a;">↓ 降</span>
-        {%- when 'new' -%}<span style="color:#4a7ab5;">新</span>
-        {%- when 'resurrected' -%}<span style="color:#8a5ab5;">回热</span>
-        {%- else -%}<span style="color:#ccc;">·</span>
+        {%- when 'up' -%}<span class="up">↑ 升</span>
+        {%- when 'down' -%}<span class="down">↓ 降</span>
+        {%- when 'new' -%}<span class="new">新</span>
+        {%- when 'resurrected' -%}<span class="res">回热</span>
         {%- endcase -%}
-      </td>
-    </tr>
+      </div>
+      {%- endif -%}
+    </div>
     {%- endfor -%}
-  </tbody>
-</table>
-</div>
+  </section>
+  {%- endif -%}
 
-{%- assign t90 = site.data.hn_trends_90 -%}
-{%- assign has90 = false -%}
-{%- for tp in t90.topics limit: 24 -%}
-{%- if tp.curve.size >= 3 -%}{%- assign has90 = true -%}{%- endif -%}
-{%- endfor -%}
-{%- if t90 and has90 -%}
-<h3 style="margin:2.5em 0 0.4em;">90 天热度走势</h3>
-
-{%- if t90.industries and t90.industries != empty -%}
-<p style="margin:0.4em 0;font-size:0.85em;color:#888;">行业（近 90 天热度聚合，周环比）：</p>
-{%- for ind in t90.industries -%}
-{%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
-<span style="display:inline-block;margin:0.2em 0.4em 0.2em 0;font-size:0.85em;">
-  <b>{{ ind.category }}</b> {{ ind.heat | round: 1 }}
-  {%- if ind.trend == 'up' -%}<span style="color:#e0752d;">↑</span>{%- elsif ind.trend == 'down' -%}<span style="color:#6a9a6a;">↓</span>{%- else -%}<span style="color:#ccc;">·</span>{%- endif -%}
-</span>
-{%- endfor -%}
-{%- endif -%}
-
-{%- if t90.topics and t90.topics != empty -%}
-<div style="margin-top:0.8em;">
-  {%- for topic in t90.topics limit: 12 -%}
-  {%- assign p90curve = topic.curve | last -%}
-  {%- if p90curve == nil -%}{% continue %}{%- endif -%}
-  <div style="display:flex;align-items:center;gap:0.6em;padding:0.25em 0;border-bottom:1px solid #f8f8f8;">
-    <span style="color:#999;font-size:0.8em;min-width:3em;">{{ topic.peak_at }}</span>
-    <a href="{{ topic.threads.first.hn_url }}" style="font-size:0.88em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ topic.title | escape }}</a>
-    {%- if topic.waves > 1 -%}<span style="color:#8a5ab5;font-size:0.75em;">W×{{ topic.waves }}</span>{%- endif -%}
-    <svg width="70" height="20" viewBox="0 0 100 28"><polyline points="{{ topic.sparkline }}" fill="none" stroke="#c9a15c" stroke-width="2"/></svg>
-    <span style="font-size:0.8em;color:#aa8a4a;">{{ topic.heat | round: 1 }}</span>
-  </div>
+  {%- comment -%} 90 天走势：峰值日对齐，曲线不足 3 点不渲染 {%- endcomment -%}
+  {%- assign t90 = site.data.hn_trends_90 -%}
+  {%- assign has90 = false -%}
+  {%- for tp in t90.topics limit: 24 -%}
+  {%- if tp.curve.size >= 3 -%}{%- assign has90 = true -%}{%- endif -%}
   {%- endfor -%}
+  {%- if t90 and has90 -%}
+  <section>
+    <div class="sec-head">
+      <h2>90 天热度走势</h2>
+    </div>
+    {%- if t90.industries and t90.industries != empty -%}
+    <div class="chips">
+      {%- for ind in t90.industries -%}
+      {%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
+      <span class="chip">{{ ind.category }}<b>{{ ind.heat | round: 1 }}</b>{% if ind.trend == 'up' %}<span class="up">↑</span>{% elsif ind.trend == 'down' %}<span class="down">↓</span>{% endif %}</span>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+    {%- if t90.topics and t90.topics != empty -%}
+    {%- for topic in t90.topics limit: 12 -%}
+    {%- assign p90curve = topic.curve | last -%}
+    {%- if p90curve == nil -%}{% continue %}{%- endif -%}
+    <div class="t90-row">
+      <span class="t90-date">{{ topic.peak_at }}</span>
+      <span class="t90-title">
+        <a href="{{ topic.threads.first.hn_url }}">{{ topic.title | escape }}</a>
+        {%- if topic.waves > 1 -%} <span class="t90-wave">W×{{ topic.waves }}</span>{%- endif -%}
+      </span>
+      {%- if topic.curve.size >= 3 and topic.sparkline != '' -%}
+      <svg class="spark" width="64" height="18" viewBox="0 0 100 28" role="img" aria-label="90 天热度曲线"><polyline points="{{ topic.sparkline }}" fill="none" stroke="#c9a15c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      {%- else -%}
+      <span></span>
+      {%- endif -%}
+      <span class="heat90">{{ topic.heat | round: 1 }}</span>
+    </div>
+    {%- endfor -%}
+    {%- endif -%}
+  </section>
+  {%- endif -%}
+
+  <footer class="trends-foot">
+    <p>热度 = 评论增速 · 分数增速 · 专家参与 · 讨论深度 加权（确定性计算，非模型评分）。</p>
+    <p>「专家」指 14 天内在 ≥2 个高热度讨论中发言的评论者；相关话题 🧭 = 专家群体重叠（强信号），#️⃣ = 关键词交集（弱信号）。</p>
+  </footer>
+
 </div>
-{%- endif -%}
-{%- endif -%}
-
-<hr style="margin:3em 0 1em;border:none;border-top:1px solid #eee;">
-<p style="text-align:center;font-size:0.8em;color:#bbb;">
-  热度 = 评论增速 · 分数增速 · 专家参与 · 讨论深度 加权（确定性计算，非模型评分）。
-  「专家」指 14 天内在 ≥2 个高热度讨论中发言的评论者。
-  相关话题 🧭 = 专家群体重叠（强信号），#️⃣ = 关键词交集（弱信号）。
-</p>
-
 {%- else -%}
 <p style="color:#999;">暂无热度数据。</p>
 {%- endif -%}
