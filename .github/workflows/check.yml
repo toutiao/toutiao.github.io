@@ -1,0 +1,36 @@
+name: Change Guards
+
+# 变更时守卫 — 只在可能引入漂移的提交上运行（path 过滤），
+# 不挂在定时数据 run 上（树静止时重验同一棵树没有意义）。
+on:
+  push:
+    branches: [master]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "Makefile"
+      - "AGENTS.md"
+      - ".opencode/**"
+  pull_request:
+    paths:
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "Makefile"
+      - "AGENTS.md"
+      - ".opencode/**"
+
+permissions:
+  contents: read
+
+jobs:
+  check-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: CLI consistency (script flags vs call sites)
+        run: ruby scripts/check-cli.rb

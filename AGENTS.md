@@ -170,6 +170,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - 匹配周边代码：Ruby 脚本沿用 `frozen_string_literal`、`──` 分节注释与现有命名习惯；Liquid 模板沿用现有内联样式约定；不为局部改动引入新风格。
 - 选简单方案：优先确定性 Ruby 而非 LLM 调用；复用 `hn-fetch.rb` 库模式（`HN_FETCH_AS_LIB=1` require），不复制代码；不为「将来可能的多源」提前抽象 — 新源照 `lobsters-fetch.rb` 模式单独成文件。
 - 数据格式只向后兼容演进：归档 JSON/YAML 新增字段必须可缺省（读侧 `||` 兜底），已写入字段不重命名、不删除 — 旧归档在任何版本代码下都必须照常可读。
+- 改 CLI 选项（增删改名）必须同步所有调用处（workflows / Makefile / skills / AGENTS.md）。守卫在**变更时**触发（check.yml push/PR + path 过滤，跑 make check-cli），不挂定时数据 run — 树静止时重验无意义，还会给数据管道加单点。
 - 测试克制：数据层改动用真实 HN URL 本地跑通再上 CI；Jekyll 可见的改动过 `make build` 即可；不为纯文案、样式改动写测试。
 
 ## 插件
