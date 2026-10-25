@@ -16,7 +16,7 @@
 #
 # Usage:
 #   ruby scripts/hn-heat.rb --all                # cohort + day heat + clusters + projections
-#   ruby scripts/hn-heat.rb --recompute          # rebuild every heat day from raw signals
+#   ruby scripts/hn-heat.rb --recompute          # rebuild every heat day AND topic clusters from raw signals
 #   ruby scripts/hn-heat.rb --refresh-published  # rebuild published.json only
 #   ruby scripts/hn-heat.rb --all [--window N]   # main window override (default 30)
 
@@ -27,6 +27,7 @@ require 'date'
 require 'fileutils'
 require 'optparse'
 require 'set'
+require 'uri'
 
 $stdout.sync = true
 
@@ -47,7 +48,7 @@ TRENDS_AUX_WINDOWS = { 7 => TRENDS_PATH_7, 90 => TRENDS_PATH_90 }.freeze
 TRENDS_WINDOW_MAX = TRENDS_AUX_WINDOWS.keys.max
 CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
-RULE_VERSION = 'v1'
+RULE_VERSION = 'v2'
 WEIGHTS = { 'comment_vel' => 0.35, 'score_vel' => 0.25, 'expert' => 0.25, 'depth' => 0.15 }.freeze
 
 COHORT_WINDOW_DAYS = 14   # rolling window for expert cohort membership
@@ -79,6 +80,27 @@ STOPWORDS = %w[
   get got make made all any because been being between during each few he her
   here him his i me she them then there these they we which while who whom
   why would could up down out off again further once
+].freeze
+
+# Tokens that recur across many UNRELATED stories: mega-brands, ubiquitous
+# tech nouns, news-title filler. Two threads whose shared tokens are ALL from
+# this set are different stories ("Google does X" vs "Google does Y") and
+# never merge; a merge needs >= 1 distinctive shared token (or same story URL).
+GENERIC_TOPIC_TOKENS = %w[
+  google apple microsoft amazon meta facebook instagram whatsapp twitter
+  youtube reddit linkedin netflix spotify tesla nvidia intel amd samsung ibm
+  oracle adobe mozilla cloudflare
+  openai anthropic gemini claude chatgpt gpt deepseek llama mistral qwen kimi
+  ai llm llms model models agent agents
+  data app apps api apis web internet online software hardware computer
+  computers code coding programmer programming language languages framework
+  open source free tech technology digital mobile cloud server servers
+  browser phone android ios iphone windows mac linux docker python
+  javascript typescript rust golang java
+  says said report reports reporting reveal reveals revealed just like think
+  people time world year years big small good bad best worst giant huge
+  million billion millions billions video guide thing things together
+  bringing inside story
 ].freeze
 
 # ── Loaders ──
@@ -355,7 +377,9 @@ def load_category_map
 end
 
 def category_of(title, url, cmap, tags = [])
-  tokens = Set.new(topic_tokens(title) + Array(tags).map(&:to_s))
+  # collapse spaced compounds so "data center" hits the "datacenter" keyword
+  normalized = title.to_s.downcase.gsub(/\bdata\s*cent(?:er|re)s?\b/, 'datacenter')
+  tokens = Set.new(topic_tokens(normalized) + Array(tags).map(&:to_s))
   host = begin
     URI.parse(url.to_s).host.to_s.downcase
   rescue StandardError
@@ -385,15 +409,30 @@ def topic_tokens(title)
 end
 
 def pair_same_topic?(tokens_a, tokens_b, posted_a, posted_b)
-  shared = (tokens_a & tokens_b).size
-  return false if shared.zero?
+  shared = tokens_a & tokens_b
+  return false if shared.empty?
+  # Brand/common-noun overlap alone never implies one story: require >= 1
+  # distinctive shared token (generic set: mega-brands + ubiquitous tech words)
+  return false if shared.all? { |t| GENERIC_TOPIC_TOKENS.include?(t) }
   union = (tokens_a | tokens_b).size
   gap = (posted_a && posted_b) ? (posted_a - posted_b).abs : 0
   return false if gap > CLUSTER_PAIR_MAX_GAP_DAYS * 86400
-  shared >= 2 || (shared == 1 && shared.to_f / union >= 0.5)
+  shared.size >= 2 || (shared.size == 1 && shared.size.to_f / union >= 0.5)
+end
+
+# Same story URL (host+path, query/trailing slash stripped) = strongest
+# same-topic signal: covers cross-source reposts whose titles get reworded.
+def canonical_url(u)
+  return '' if u.to_s.empty?
+  uri = (URI.parse(u.to_s) rescue nil)
+  return '' unless uri && uri.host
+  host = uri.host.downcase.sub(/\Awww\./, '')
+  path = uri.path.to_s.sub(/\/+\z/, '')
+  "#{host}#{path}"
 end
 
 def same_topic?(a, b)
+  return true if !a[:url_key].empty? && a[:url_key] == b[:url_key]
   pair_same_topic?(a[:tokens], b[:tokens], a[:posted], b[:posted])
 end
 
@@ -435,7 +474,8 @@ def merge_topics(threads, reg, now = Time.now.utc)
     next nil if member_index.key?(id)
     toks = topic_tokens(e['title'] || threads.dig(id, 'post', 'title') || '')
     next nil if toks.empty?
-    { id: id, tokens: toks, posted: posted, first_seen: e['first_seen'] }
+    { id: id, tokens: toks, posted: posted, first_seen: e['first_seen'],
+      url_key: canonical_url(e['url']) }
   }.compact
 
   # Pass 1: join existing topics (member-token match, pairwise rule)
@@ -447,15 +487,21 @@ def merge_topics(threads, reg, now = Time.now.utc)
     t['_tokens'] = Array(t['hn_ids']).map { |id|
       topic_tokens(reg['threads'][id] && reg['threads'][id]['title'] || '')
     }
+    t['_urls'] = Set.new(Array(t['hn_ids']).filter_map { |id|
+      k = canonical_url(reg['threads'][id] && reg['threads'][id]['url'])
+      k.empty? ? nil : k
+    })
   end
   joined = Set.new
   candidates.each do |c|
     topics.each do |t|
       next if joined.include?(c[:id])
-      hit = t['_tokens'].any? { |toks| pair_same_topic?(c[:tokens], toks, c[:posted], member_posted.call(t['hn_ids'].last)) }
-      next unless hit
+      url_hit = !c[:url_key].empty? && t['_urls'].include?(c[:url_key])
+      tok_hit = t['_tokens'].any? { |toks| pair_same_topic?(c[:tokens], toks, c[:posted], member_posted.call(t['hn_ids'].last)) }
+      next unless url_hit || tok_hit
       t['hn_ids'] << c[:id]
       t['_tokens'] << c[:tokens]
+      t['_urls'] << c[:url_key] unless c[:url_key].empty?
       t['last_seen'] = now.iso8601
       joined << c[:id]
       break
@@ -600,8 +646,11 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
       v = ids.sum { |id| per_day_thread_heat[d][id] || 0 }.round(3)
       v > 0 ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
     end
-    article = ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s }
     rep = members.max_by { |m| m['heat'] }
+    # 解读 must match the headline: prefer the representative thread's own
+    # article; only fall back to any member article (same-story cluster) —
+    # never cross-link a different story's article under this title.
+    article = published[rep['id']] || ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s }
     meta = topic_meta[tid] || {}
     peak = curve.max_by { |p| p['h'] }
     {
@@ -817,6 +866,8 @@ def build_window_projection(threads, reg, per_day, window:, now: Time.now.utc, p
             end
     peak = curve.max_by { |p| p['h'] }
     meta = topic_meta[tid] || {}
+    # 解读 must match the headline: prefer the representative thread's own article
+    article = published[rep] || ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s }
     {
       'topic_id' => tid,
       'title' => rep_entry['title'] || meta['keywords'].to_a.first,
@@ -835,7 +886,7 @@ def build_window_projection(threads, reg, per_day, window:, now: Time.now.utc, p
         { 'id' => id, 'title' => e['title'], 'hn_url' => e['hn_url'], 'status' => e['status'],
           'source' => e['source'] || 'hn', 'posted_at' => e['posted_at'], 'heat' => window_heat_of.call(id) }
       },
-      'article' => ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s },
+      'article' => article,
     }
   end.compact.sort_by { |t| -t['heat'] }
   kept = topic_entries.first(top)
@@ -890,7 +941,7 @@ def run
   OptionParser.new do |opts|
     opts.banner = 'Usage: ruby scripts/hn-heat.rb --all [--window N] | --recompute | --refresh-published'
     opts.on('--all', 'Cohort + daily heat + topic merge + trends projection + published map') { options[:mode] = :all }
-    opts.on('--recompute', 'Rebuild every heat day from raw signals (after rule change)') { options[:mode] = :recompute }
+    opts.on('--recompute', 'Rebuild every heat day and topic clusters from raw signals (after rule change)') { options[:mode] = :recompute }
     opts.on('--refresh-published', 'Rebuild published.json only') { options[:mode] = :refresh_published }
     opts.on('--window N', Integer, "Trends window in days (default: #{TRENDS_WINDOW_DAYS_DEFAULT})") { |v| options[:window] = v }
     opts.on('-h', '--help') { puts opts; exit }
@@ -914,6 +965,10 @@ def run
   puts "HN Heat Engine — #{RULE_VERSION} | #{threads.size} threads archived, #{reg['threads'].size} registered"
 
   if options[:mode] == :recompute
+    # Topic clusters are derived signals too: rebuild them from scratch so a
+    # clustering-rule change (RULE_VERSION bump) re-derives membership — the
+    # incremental merge below never splits a stale cluster.
+    reg['topics'] = []
     # Re-derive every historical day from raw signals (comment posted_at history
     # + snapshot series), honoring each day's own time anchor.
     earliest = reg['threads'].values.filter_map { |e| e['posted_at'] ? Time.parse(e['posted_at']) : nil }.min
