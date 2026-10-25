@@ -594,13 +594,36 @@ def load_published
   data && data['hn_ids'] || {}
 end
 
+# Resolve "%m-%d" curve labels to day offsets from the first point. Labels are
+# year-agnostic; a label that jumps backwards (12-31 -> 01-01) rolls one year
+# forward, so windows crossing New Year stay monotonic.
+def curve_day_offsets(curve)
+  offsets = []
+  prev = nil
+  curve.each do |p|
+    m, d = p['d'].to_s.split('-').map(&:to_i)
+    cur = (m.between?(1, 12) && d.between?(1, 31)) ? Date.new(2000, m, d) : nil
+    if cur.nil?
+      offsets << (offsets[-1] || 0)
+      next
+    end
+    cur = cur.next_year if prev && cur < prev
+    offsets << (prev ? (cur - prev).to_i + offsets[-1] : 0)
+    prev = cur
+  end
+  offsets
+end
+
 def sparkline_points(curve, width: 100, height: 28, pad: 2)
   return '' if curve.empty?
   hs = curve.map { |p| p['h'] }
   max_h = [hs.max, 0.001].max
-  n = curve.size
+  # x follows real elapsed days, not point index — quiet gaps stay gaps, so a
+  # recurring topic (wave N days later) renders with its true spacing
+  offsets = curve_day_offsets(curve)
+  span = [offsets.last.to_i, 1].max
   curve.each_with_index.map { |p, i|
-    x = n == 1 ? width / 2.0 : pad + (width - 2 * pad) * i / (n - 1.0)
+    x = curve.size == 1 ? width / 2.0 : pad + (width - 2 * pad) * offsets[i] / span.to_f
     y = height - pad - (height - 2 * pad) * (p['h'] / max_h)
     "#{x.round(1)},#{y.round(1)}"
   }.join(' ')
