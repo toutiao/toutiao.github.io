@@ -5,14 +5,14 @@ post:
   title: Docker is weird
   url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
   hn_url: https://lobste.rs/s/xsz9sc
-  score: 98
+  score: 100
   author: nick4
   posted_at: '2026-10-22T20:09:22Z'
-  fetched_at: '2026-10-24T12:27:30Z'
+  fetched_at: '2026-10-25T03:16:49Z'
   article_url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
   article_fetch_status: success
-  article_fetched_at: '2026-10-24T12:27:36Z'
-  raw_comment_count: 46
+  article_fetched_at: '2026-10-25T03:16:59Z'
+  raw_comment_count: 48
   tags:
   - programming
 comments:
@@ -88,7 +88,7 @@ comments:
     In fact, a lot of Docker design choices seem to play out like this: there's some design flaw or limitation, which then requires stacking more and more and more technology on top. In fact, I'm not even particularly impressed with the whole build definition system, which seems to work delightfully for small demos but then generate an enormous amount of (often Docker-specific) complexity when we want to do something moderately complex. (Look through the above example for Jellyfin and see how this tends to evolve…) Since an image is just a filesystem and some metadata, I've considered ditching the Containerfile/Dockerfile-style  build system entirely and constructing these with simple scripts.
     It may be unfair to blame Docker for all of this complexity. Unfortunately, when it comes to just namespaces, I think some of the fault lies in the Linux kernel's implementation. Namespaces are frequently presented as though they are composable, but, in practice, this just doesn't work. (Peeking at code paths like for namespace dispatching in the Kernel, and how they actually check for things like UTS namespaces, I can hazard a guess at the very reasonable thinking that led to this design…)
     There are a lot of very interesting things we could do if namespaces composed perfectly—we could use them in leaf-level entities to improve their isolation (for both correctness and security.) Unfortunately, though, if you have a shell script that uses bwrap that calls another shell script that uses unshare or pasta or  that calls another executable within podman… things break. (In fact, the last time I tried it, you can't even compose a single bwrap with a single podman!) Instead, it seems like we are better off superficialising our use of namespaces (i.e., in the case of composed processes, emitting namespace modalities on a side channel and constructing a single top-level namespace.)
-  score: 27
+  score: 28
   posted_at: '2026-10-22T23:23:23Z'
 - id: lo-odsnyo
   parent_id: '0'
@@ -136,7 +136,7 @@ comments:
   author: casperin
   text: Thanks for the link! I started reading, but got distracted by the feeling
     I was reading AI words. Am I seeing things?
-  score: 4
+  score: 5
   posted_at: '2026-10-23T08:32:39Z'
 - id: lo-vq3vih
   parent_id: '0'
@@ -442,8 +442,27 @@ comments:
     But sharing the buffer cache is a big win. Imagine you have ten VMs or ten jails, all running the same userland. With jails on ZFS and dedup or clones from the same origin, you’ll have one copy of libc on disk. This will result in one copy in the buffer cache. Each process in each jail will mmap it and there will be one copy in RAM and one copy in cache.
     In contrast, in traditional VMs, each VM will have its own block device with its own copy of libc. Each VM will have its own copy in the buffer cache. Each process will then have the VM-private version in the CPU cache. VirtIO-FS addresses this. The host can provide each VM with a read-only filesystem and expose pages from its buffer cache directly. This lets container-like workloads run with similar memory overhead between jail-like and VM isolation.
     Similarly, modern SmartNICs allow direct pass through so Ethernet frames destined for a VM go straight to the VM, rather than being bounced via a privileged VM and exposed as paravirtualised interfaces. The big cloud providers implement something that looks like a block device interface in their SmartNICs and do the same direct assignment (the backing store is blob storage). For smaller deployments, NVMe emulation is very fast, so most of the overheads of VMs have gone away.
-  score: 3
+  score: 5
   posted_at: '2026-10-24T08:26:33Z'
+- id: lo-3dctkb
+  parent_id: '0'
+  author: k749gtnc9l3w
+  text: |-
+    I think comparing OpenVZ release date with Jails release date is slightly misleading, because OpenVZ was built out of their not-fully-open earlier version (Wikipedia claims that version was first offered in 2000).
+    If we are talking about early server VM setups, I think RAM ballooning (oversubscribing) took some time to get reliable, too (for containers it is automatic) — which is a different issue from duplicating the base system cache.
+  score: 1
+  posted_at: '2026-10-24T15:03:56Z'
+- id: lo-3bg7hg
+  parent_id: '0'
+  author: david_chisnall
+  text: Yup, memory ballooning still doesn’t work perfectly. It’s typically implemented
+    as a driver that allocates a load of memory that it hands to the hypervisor, and
+    then grabs it back and frees it when memory is tight. Unfortunately, the back
+    pressure in Linux doesn’t work well, so you can often have a process spike in
+    RAM requirements, then the balloon driver starts to run, then the process is killed
+    due to memory exhaustion. Running it again works, but it!s weird.
+  score: 2
+  posted_at: '2026-10-24T18:29:18Z'
 article:
   url: https://codeandcake.dev/posts/2026-10-22-docker-is-weird
   title: Code and Cake - Docker is weird
@@ -492,4 +511,4 @@ article:
     I’ve only just started my own container runtime, and I already feel like I’ve learned so much about Docker. Writing your own version of a tool you use is a great way to learn about it!
   error:
   fetched_at: '2026-10-24T12:27:36Z'
-archived_at: '2026-10-24T12:27:36Z'
+archived_at: '2026-10-25T03:16:59Z'

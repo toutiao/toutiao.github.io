@@ -5,14 +5,14 @@ post:
     apps
   url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
   hn_url: https://news.ycombinator.com/item?id=50219177
-  score: 223
+  score: 284
   author: theanonymousone
   posted_at: '2026-10-24T08:06:39Z'
-  fetched_at: '2026-10-24T19:18:55Z'
+  fetched_at: '2026-10-25T03:16:29Z'
   article_url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
   article_fetch_status: success
   article_fetched_at: '2026-10-24T19:18:02Z'
-  raw_comment_count: 104
+  raw_comment_count: 140
 comments:
 - id: '50219946'
   parent_id: '50219177'
@@ -863,6 +863,212 @@ comments:
     proxy.
   score: 0
   posted_at: '2026-10-24T19:14:21Z'
+- id: '50224193'
+  parent_id: '50223023'
+  author: tetha
+  text: Good to know. Does the first invocation recompute and check the hash of the
+    wheel locally afterwards to ensure integrity?
+  score: 0
+  posted_at: '2026-10-24T19:17:22Z'
+- id: '50224277'
+  parent_id: '50220286'
+  author: anthk
+  text: Check Librsvg, or php-rust. Or tons of gtk4-rs software doing it just fine.
+  score: 0
+  posted_at: '2026-10-24T19:25:46Z'
+- id: '50224346'
+  parent_id: '50224135'
+  author: mynameisvlad
+  text: How, exactly, are they making &quot;things look worse than they are&quot;?
+    By.... showing what the issue is?
+  score: 0
+  posted_at: '2026-10-24T19:34:08Z'
+- id: '50224397'
+  parent_id: '50222929'
+  author: graemep
+  text: I agree about getting libs (binaries especially) from my distro, and it generally
+    seems to be regarded as the &quot;wrong thing to do&quot;. Freezing anything that
+    might mean you get security updates slower seems to be a mistake to me.
+  score: 0
+  posted_at: '2026-10-24T19:41:25Z'
+- id: '50224467'
+  parent_id: '50224193'
+  author: aftbit
+  text: |-
+    Yep! I tested it with my own vibe-coded MITM proxy that hijacks pypi installations, which I created for ~$0.30 spend on DeepSeek API.<p><pre><code>    $ python -m pip --no-cache install &quot;pip @ https:&#x2F;&#x2F;files.pythonhosted.org&#x2F;packages&#x2F;3f&#x2F;06&#x2F;3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f&#x2F;pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70&quot;
+        Collecting pip @ https:&#x2F;&#x2F;files.pythonhosted.org&#x2F;packages&#x2F;3f&#x2F;06&#x2F;3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f&#x2F;pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70
+          Downloading pip-26.2.2-py3-none-any.whl (1.8 MB)
+             ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8&#x2F;1.8 MB 570.0 MB&#x2F;s  0:00:00
+        ERROR: THESE PACKAGES DO NOT MATCH THE HASHES FROM THE REQUIREMENTS FILE. If you have updated the package versions, please update the hashes. Otherwise, examine the package contents carefully; someone may have tampered with them.
+            pip @ https:&#x2F;&#x2F;files.pythonhosted.org&#x2F;packages&#x2F;3f&#x2F;06&#x2F;3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f&#x2F;pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70 from https:&#x2F;&#x2F;files.pythonhosted.org&#x2F;packages&#x2F;3f&#x2F;06&#x2F;3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f&#x2F;pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70:
+                Expected sha256 fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70
+                     Got        8c448177668e735cdde7d6178694b90c084ba18559348cc394c4b1546eeec89c
+
+
+    </code></pre>
+    The second one works too:<p><pre><code>    $ PIP_USE_DEPRECATED=legacy-certs PIP_CERT=&#x2F;etc&#x2F;ssl&#x2F;certs&#x2F;ca-certificates.crt python -m pip install --no-cache --upgrade &quot;pip&gt;=26.2.2&quot;
+        WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;SSLError(SSLCertVerificationError(1, &#x27;[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)&#x27;))&#x27;: &#x2F;simple&#x2F;pip&#x2F;
+        WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;SSLError(SSLCertVerificationError(1, &#x27;[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)&#x27;))&#x27;: &#x2F;simple&#x2F;pip&#x2F;
+        WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;SSLError(SSLCertVerificationError(1, &#x27;[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)&#x27;))&#x27;: &#x2F;simple&#x2F;pip&#x2F;
+        WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;SSLError(SSLCertVerificationError(1, &#x27;[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)&#x27;))&#x27;: &#x2F;simple&#x2F;pip&#x2F;
+        WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;SSLError(SSLCertVerificationError(1, &#x27;[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082)&#x27;))&#x27;: &#x2F;simple&#x2F;pip&#x2F;
+        Could not fetch URL https:&#x2F;&#x2F;pypi.org&#x2F;simple&#x2F;pip&#x2F;: There was a problem confirming the ssl certificate: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1082) - skipping
+        ERROR: Could not find a version that satisfies the requirement pip&gt;=26.2.2 (from versions: none)
+        ERROR: No matching distribution found for pip&gt;=26.2.2
+
+
+    </code></pre>
+    As compared with a naive installation through the proxy:<p><pre><code>    $ python -m pip --no-cache install &#x27;pip&gt;=26.2.2&#x27;
+        Collecting pip&gt;=26.2.2
+          Downloading pip-26.2.2-py3-none-any.whl.metadata (4.6 kB)
+        Downloading pip-26.2.2-py3-none-any.whl (1.8 MB)
+           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8&#x2F;1.8 MB 775.3 MB&#x2F;s  0:00:00
+        Installing collected packages: pip
+          Attempting uninstall: pip
+            Found existing installation: pip 26.2.1
+            Uninstalling pip-26.2.1:
+              Successfully uninstalled pip-26.2.1
+        Successfully installed pip-26.2.2
+
+        $ cat venv&#x2F;lib&#x2F;python3.14&#x2F;site-packages&#x2F;sni_proxy_sentinel.txt
+        SNI proxy lab sentinel. This file is inert.</code></pre>
+  score: 0
+  posted_at: '2026-10-24T19:47:29Z'
+- id: '50224532'
+  parent_id: '50220629'
+  author: therein
+  text: My experience with Brotli is from back when all the hype was mobile first
+    and India etc was super mobile first so all these social networks lost their mind
+    optimizing for request success and speed. So they were going crazy over micro-wins
+    like that.
+  score: 0
+  posted_at: '2026-10-24T19:54:51Z'
+- id: '50224592'
+  parent_id: '50221690'
+  author: lifeisloving
+  text: Descriptive type names are a good thing. Id argue that one isnt that bad,
+    but llms do take it to another level sometimes.
+  score: 0
+  posted_at: '2026-10-24T20:01:58Z'
+- id: '50224794'
+  parent_id: '50224467'
+  author: tetha
+  text: Oh nice. Then I have to thank you for a possible non-horrible upgrade path.
+    If you were close by, I&#x27;d invite you for some icecream or a round of pool
+    :)
+  score: 0
+  posted_at: '2026-10-24T20:21:07Z'
+- id: '50224931'
+  parent_id: '50224346'
+  author: nicce
+  text: Not particularly referencing to this link, but usually severity is made more
+    severe than it actually is. One kind of sensationalism is usually used.
+  score: 0
+  posted_at: '2026-10-24T20:31:21Z'
+- id: '50225027'
+  parent_id: '50221690'
+  author: rafram
+  text: That means that it supports other services with OpenAI-compatible embeddings
+    APIs (not just OpenAI&#x27;s own API). Seems reasonable!
+  score: 0
+  posted_at: '2026-10-24T20:41:23Z'
+- id: '50225095'
+  parent_id: '50224135'
+  author: cubefox
+  text: No, they aren&#x27;t. The website doesn&#x27;t list an author, so fame is
+    out of the question, and they say exactly how severe the bug is rated (&quot;Rated
+    9.2 Critical (CVSS 4.0) by GitHub, High by Node.js.&quot;) right at the top.
+  score: 0
+  posted_at: '2026-10-24T20:48:46Z'
+- id: '50225597'
+  parent_id: '50225095'
+  author: nicce
+  text: There is named entity in the end, and &quot;we&quot; statement. But yeah,
+    I was speaking in general, not so specifically about this page. It is better than
+    most who do this.
+  score: 0
+  posted_at: '2026-10-24T21:36:27Z'
+- id: '50226057'
+  parent_id: '50223492'
+  author: jgalt212
+  text: apache does not accept brotli by default.  so while the first part is true,
+    the second part is only true for some X% of websites.
+  score: 0
+  posted_at: '2026-10-24T22:27:26Z'
+- id: '50226069'
+  parent_id: '50221354'
+  author: jgalt212
+  text: "&gt; how contrived the example is<p>That&#x27;s basically one of the core
+    ingredients of security.  Build a threat model."
+  score: 0
+  posted_at: '2026-10-24T22:28:50Z'
+- id: '50226227'
+  parent_id: '50221764'
+  author: kevincox
+  text: I can maybe remember CVE-2026. But there is no way I can remember 6 random
+    digits.
+  score: 0
+  posted_at: '2026-10-24T22:50:07Z'
+- id: '50226460'
+  parent_id: '50220197'
+  author: cromka
+  text: Something that OpenAI would coin. Just like Anthropic did with Mythos.
+  score: 0
+  posted_at: '2026-10-24T23:17:06Z'
+- id: '50226747'
+  parent_id: '50223587'
+  author: PalmPilotProMax
+  text: But does it bring synergy with our current paradigm?
+  score: 0
+  posted_at: '2026-10-24T23:58:09Z'
+- id: '50226748'
+  parent_id: '50226227'
+  author: ygjb
+  text: Yeah, because the six number chunk is near the limit of recall.  Don&#x27;t
+    remember CVE-2026 since the year and CVE can be reconstructed from time memory.  You
+    know it came up this year.  Remember that vuln 111-497 (as two chunks) came out
+    this year, and remembering two short chunks is easier.
+  score: 0
+  posted_at: '2026-10-24T23:58:11Z'
+- id: '50226776'
+  parent_id: '50220378'
+  author: acdha
+  text: That&#x27;s why it&#x27;s important to practice your processes for both shipping
+    quickly and overriding cooldowns. There&#x27;s a baseline of things which are
+    not easy to exploit where you want to patch on a regular cadence and the risk
+    posed by a supply chain attack is greater than the risk of an attacker having
+    enough of a footprint inside your systems to escalate. The fact that sometimes
+    you have a specific situation like this where that&#x27;s not true doesn&#x27;t
+    mean that 9 times out of 10 the cooldown was the better risk-reduction strategy.
+  score: 0
+  posted_at: '2026-10-25T00:02:25Z'
+- id: '50227023'
+  parent_id: '50220165'
+  author: super256
+  text: A better name is Konduktsemmel, which is a bread roll (Semmel) which you eat
+    on a funeral (Kondukt) in Austria. Fits to Brotli, doesn&#x27;t it?<p>(Actually
+    you eat cake and drink coffee on a funeral, but it&#x27;s still called like that
+    in some parts of Austria.)
+  score: 0
+  posted_at: '2026-10-25T00:40:34Z'
+- id: '50227334'
+  parent_id: '50220405'
+  author: Stitch4223
+  text: You and I, my friend, are the only ones in this thread not being sent to work
+    in the glitter mines of south Arkansas as enemies of God&#x27;s Country. SI has
+    the best names, other intelligence is vastly inferior, using it is worse than
+    many schisms of -isms combined.
+  score: 0
+  posted_at: '2026-10-25T01:30:33Z'
+- id: '50227502'
+  parent_id: '50225027'
+  author: Rapzid
+  text: Fortunately I didn&#x27;t ask it for excuses and so it didn&#x27;t give them
+    like a pedantic junior on the spectrum.<p>Which they <i>will</i> happily do if
+    you ask them &quot;why&quot; they did something. 100% they will give their best
+    &quot;well actually&quot; impression.
+  score: 0
+  posted_at: '2026-10-25T01:56:11Z'
 article:
   url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
   title: Node2Shell Brotli vuln (CVE-2026-111497) evolves to HTTP2Shell, as libraries
@@ -876,4 +1082,4 @@ article:
     Now\n](https://app.aikido.dev/login)"
   error:
   fetched_at: '2026-10-24T19:18:02Z'
-archived_at: '2026-10-24T19:19:09Z'
+archived_at: '2026-10-25T03:16:48Z'

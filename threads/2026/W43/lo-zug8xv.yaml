@@ -5,14 +5,14 @@ post:
   title: Indian government sites are serving revoked eMudhra certificates
   url: https://captnemo.in/blog/2026/10/23/emsign-revoked-gov-in/
   hn_url: https://lobste.rs/s/zug8xv
-  score: 24
+  score: 59
   author: adityaathalye
   posted_at: '2026-10-24T04:06:06Z'
-  fetched_at: '2026-10-24T12:27:30Z'
+  fetched_at: '2026-10-25T03:16:49Z'
   article_url: https://captnemo.in/blog/2026/10/23/emsign-revoked-gov-in/
   article_fetch_status: success
-  article_fetched_at: '2026-10-24T12:27:33Z'
-  raw_comment_count: 2
+  article_fetched_at: '2026-10-25T03:16:52Z'
+  raw_comment_count: 13
   tags:
   - security
 comments:
@@ -22,7 +22,7 @@ comments:
   text: |-
     This company's criminal levels of incompetence single-handedly caused an instant international disaster, and continues to fail us all.
     Speaking as a citizen, ignoring "all those bloody foreigners amplifying this on social media" for a (very very brief) moment to dwell on (suppresses gag reflex) ideological "national security" rhetoric which these people kowtow to... How have they not proactively taken out all stops to fix this already? On a national-disaster-scale emergency footing, which this is!
-  score: 20
+  score: 40
   posted_at: '2026-10-24T06:10:14Z'
 - id: lo-tmoiox
   parent_id: '0'
@@ -42,8 +42,114 @@ comments:
     However it is, it’s pretty wild that so many government sites, some major, have just been broken for most of the week. Surely eMudhra would have contacted every affected customer and they could sort it out in under a day?
 
     Unrelated to the content: this page is a good demonstration of why not to put html, body { overflow-x: hidden } in your styles. (It’s more common than it should be because it fixes an unimportant overflow issue in one of the traditional full-bleed decoration techniques.) Some time later you’ll put something like a wide table in, and whoops, its right columns are inaccessible.
-  score: 4
+  score: 7
   posted_at: '2026-10-24T10:32:49Z'
+- id: lo-wceuyo
+  parent_id: '0'
+  author: dzwdz
+  text: |-
+    So... is there anything actually indicating "criminal levels of incompetence" on eMudhra's side yet?
+    As I understand the story so far, this is the main bit of information we've got:
+
+    As for these ECC keys, our review of the KGC, assessment of the code and view of HSM keys so far indicate that a) a set of original ECC keys were created onboard as expected b) an approved deviation to our usual KGC to test a wrap/unwrap was introduced as these keys were meant for export for this instance c) a flaw in the code resulted in the second pair of keys being created onboard which were weaker d) these second pair of weaker keys were used by mistake to create the csr (because the key labels were similar) and signed by our root e) the CSR from these weaker keys were also sent over to Sectigo for cross signing (we verified the files sent over to Sectigo)
+
+    My interpretation of this is that they created an additional keypair on the HSM ("second pair of keys being created onboard"), and then mixed up the two pairs due to human error. They shouldn't have mixed up these keys, but this, in of itself, isn't something that should have had such catastrophic consequences. The second keypair should've been just as secure; a HSM should never let you generate such weak keys. That's the entire point of a HSM.
+    Something else went wrong, and we don't yet know the whole story. eMudhra's response so far hasn't been... entirely satisfactory either, but I feel like a lot of people are interpreting everything they say in absolutely the worst way possible.
+    FWIW, I'm not a cryptographer, I've never worked with an HSM, etc. Maybe I'm missing some piece of damning evidence? I'm hoping someone with more relevant experience can speak out here.
+  score: 3
+  posted_at: '2026-10-24T13:33:13Z'
+- id: lo-f361ih
+  parent_id: '0'
+  author: berserk
+  text: |-
+    I don't know about 'criminal', but the event itself and the fact it was due to a 'deviation' in their process and a flaw in their code is proof that eMudhra is incompetent to hold their extremely privileged position. If some change to the process was needed, it should have been rigorously reviewed and tested by experts. Like you say, why was the creation of a weak key ever possible?
+    In my opinion Sectigo should also have reviewed eMudhra's code and processes (perhaps they attempted to but were misled?) and probed the CSRs for obvious weaknesses given they cross-signed them.
+    It sounds like everyone involved was treating this process without the seriousness it deserves. This kind of thing keeps happening and the consequences are enormous which points to the system being insufficient.
+  score: 13
+  posted_at: '2026-10-24T14:12:45Z'
+- id: lo-envjmy
+  parent_id: '0'
+  author: gerikson
+  text: |-
+    1990s: you're a criminal if you use strong encryption.
+    2020s: you're a criminal if you use weak encryption.
+  score: 7
+  posted_at: '2026-10-24T14:15:54Z'
+- id: lo-bemtgn
+  parent_id: '0'
+  author: dulaku
+  text: I might be missing something, but why would CT logs be relevant if people
+    can forge their own cert chains offline?
+  score: 4
+  posted_at: '2026-10-24T14:32:56Z'
+- id: lo-ye8cqh
+  parent_id: '0'
+  author: chrismorgan
+  text: All mainstream browsers require proof that the certificate has been logged.
+    It doesn’t avoid illegitimate issuance, but it does mean you can see it’s happened
+    (and it didn’t).
+  score: 10
+  posted_at: '2026-10-24T14:45:19Z'
+- id: lo-vb0oqi
+  parent_id: '0'
+  author: krn
+  text: |-
+    From the bug:
+
+    I do not believe that an HSM bearing the various certifications the Utimaco units bear should be able to internally generate a series of private keys that have the unfortunate property these have.
+  score: 3
+  posted_at: '2026-10-24T15:53:59Z'
+- id: lo-psrklc
+  parent_id: '0'
+  author: adityaathalye
+  text: |-
+    Flippant at best. Misdirection as read literally.
+    One single bad-actor entity foisted weak practically no encryption onto everybody in the world.
+
+    Only by sheer luck did it not poison everything or get visibly exploited---yet. We don't know the risk exposure from activity that is dark / unreported (certs not being publicly logged). It could be nothing, but that's not how security is done. If you leak a secret, you drop everything and immediately rotate the secret and everything derived from that secret, no matter what. You do not hide behind a fig leaf of weak sauce lying PR to the tenor of "well, nothing to see here move along... 'coz, like, it's only in our house and there has been no impact here (according to us), and like, besides, it wasn't for thaaat long anyhow".
+    Emergency fixes arrived post-disclosure only due to the "all-hands-on-deck" hard work of a very small number of competent security people.
+
+    None of the work was initiated or driven by the entity. The concerned security community had to hand-hold them and egg them on at every step.
+    And then, tadaaa! The entity proceeds to literally leave the chat... Ghosts the bugzilla thread, announces shuttering of the PKI business, releases incomplete, misleading, and responsibility-abdicating PR.
+
+    For everyone splitting hairs in this thread, I will simply defer to Chrome team's latest remark on the bugzilla: https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c41
+    Emphasis theirs.
+
+    [In response to Comment 39.]
+    While we understand that many things are happening in parallel right now, "social media scrutiny" and "analysis by investors/customers" are not acceptable explanations for delayed responses here.
+    That scrutiny is the predictable result of eMudhra's own failure (i.e., intermediate CA keys that anyone could recover -- resulting in anyone being able to issue certificates for any domain), not an external circumstance that befell it. Offering it as an excuse conveys that reputation management is being prioritized over the obligations that eMudhra still owes to the billions of relying parties its mistake exposed. Those obligations do not relax because the consequences are uncomfortable.
+    We expect eMudhra to prioritize its review of this issue and its security response.
+  score: 20
+  posted_at: '2026-10-24T16:04:15Z'
+- id: lo-gd7uiq
+  parent_id: '0'
+  author: schuelermine
+  text: If the claim is intended to mean that Indian websites weren’t impersonated,
+    the claim is overly certain. If the claim is intended to mean that Indian websites
+    could only be impersonated for a very short time, the claim is wrong.
+  score: 2
+  posted_at: '2026-10-24T18:03:32Z'
+- id: lo-hsu0oi
+  parent_id: '0'
+  author: riking
+  text: If websites were impersonated, it was only to non-browser software.
+  score: 2
+  posted_at: '2026-10-24T20:34:31Z'
+- id: lo-jsktc0
+  parent_id: '0'
+  author: altano
+  text: Wow how does that work? How do browsers check the logs? (Most curious about
+    Firefox)
+  score: 1
+  posted_at: '2026-10-24T21:07:06Z'
+- id: lo-wn7ofs
+  parent_id: '0'
+  author: quasi_qua_quasi
+  text: |-
+    Not an expert, but if I'm reading correctly, when the cert is submitted to the CT log operator, they get back a "signed certificate timestamp (SCT)" which is basically "we promise to publish this in our log within N hours". The browser has a list of trusted CT log operator keys and checks it via whatever public-key mechanism.
+    It doesn't check the log itself so in theory a log operator could collude with whoever's issuing the malicious cert to return an SCT but not publish it, but then they'd also get in trouble when the cert is discovered to have an SCT but no log entry.
+  score: 2
+  posted_at: '2026-10-25T02:03:41Z'
 article:
   url: https://captnemo.in/blog/2026/10/23/emsign-revoked-gov-in/
   title: Indian government sites are serving revoked eMudhra certificates · Nemo's
@@ -137,4 +243,4 @@ article:
     `2D705A7361282ED5B121C5AC5FD505` | [crt.sh](https://crt.sh/?sha256=539439e3b32edd30c701e7c7cff77e698d8cf0b545d356e1ed326e067c94"
   error:
   fetched_at: '2026-10-24T12:27:33Z'
-archived_at: '2026-10-24T12:27:34Z'
+archived_at: '2026-10-25T03:16:55Z'

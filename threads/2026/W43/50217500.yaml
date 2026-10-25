@@ -4,14 +4,14 @@ post:
   title: Twelve years of distributed SQLite
   url: https://philipotoole.com/twelve-years-of-distributed-sqlite/
   hn_url: https://news.ycombinator.com/item?id=50217500
-  score: 336
+  score: 369
   author: otoolep
   posted_at: '2026-10-24T01:16:58Z'
-  fetched_at: '2026-10-24T19:17:58Z'
+  fetched_at: '2026-10-25T03:16:29Z'
   article_url: https://philipotoole.com/twelve-years-of-distributed-sqlite/
   article_fetch_status: success
   article_fetched_at: '2026-10-24T19:17:58Z'
-  raw_comment_count: 51
+  raw_comment_count: 62
 comments:
 - id: '50218080'
   parent_id: '50217500'
@@ -419,6 +419,105 @@ comments:
   text: It’ll be a fine day when phones can use an embedded Postgres
   score: 0
   posted_at: '2026-10-24T18:52:07Z'
+- id: '50224813'
+  parent_id: '50219987'
+  author: bob1029
+  text: I am the same way with MSSQL. I used to avoid it like the plague because of
+    how the permissions&#x2F;logins&#x2F;everything worked. Now I can throw a T-SQL
+    script at it in a few seconds to make it behave.
+  score: 0
+  posted_at: '2026-10-24T20:22:01Z'
+- id: '50224909'
+  parent_id: '50218314'
+  author: gregsadetsky
+  text: Have you tried <a href="https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;pull&#x2F;909"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;pull&#x2F;909</a>
+    ?
+  score: 0
+  posted_at: '2026-10-24T20:29:53Z'
+- id: '50225066'
+  parent_id: '50217500'
+  author: gregsadetsky
+  text: I feel like there should be a comparison table listing all of these engines
+    and how they compare on their external dependencies, whether a single leader&#x2F;any
+    node can write, their shape (embeddable library vs server), etc.<p>IMHO support
+    for transactions is a pretty important dividing line. Some engines support full
+    SQLite transactions while others - like rqlite - don&#x27;t officially support
+    BEGIN&#x2F;COMMIT [0], which matters if you rely on multi-statement transactions.<p>A
+    friend&#x2F;colleague has been building a pure-Python client for dqlite [1] (DB-API
+    and SQLAlchemy), which may interest folks here. dqlite has full support for transactions,
+    and like rqlite doesn&#x27;t have external dependencies (ie no S3&#x2F;Consul).<p>No
+    knock on rqlite or any other engine - dqlite has warts too [2].<p>[0] <a href="https:&#x2F;&#x2F;rqlite.io&#x2F;docs&#x2F;faq&#x2F;#does-rqlite-support-transactions"
+    rel="nofollow">https:&#x2F;&#x2F;rqlite.io&#x2F;docs&#x2F;faq&#x2F;#does-rqlite-support-transactions</a><p>[1]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;letsdiscodev&#x2F;python-dqlite-dbapi"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;letsdiscodev&#x2F;python-dqlite-dbapi</a><p>[2]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;issues&#x2F;882"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;issues&#x2F;882</a>
+    opened by my friend, <a href="https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;issues&#x2F;908"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;issues&#x2F;908</a>
+    , <a href="https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;issues&#x2F;912"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;canonical&#x2F;dqlite&#x2F;issues&#x2F;912</a>
+    opened by me
+  score: 0
+  posted_at: '2026-10-24T20:46:19Z'
+- id: '50225312'
+  parent_id: '50219987'
+  author: rapind
+  text: |-
+    The problem is &quot;remote&quot; SQLite. Just run a &quot;single&quot; beefier box with in-process SQLite and Litestream backups to object storage and never have to think about RDBMS again. I&#x27;d wager there are 90%+ applications that would be better served, more performant, and cheaper with this design.<p>I&#x27;m able to handle around 200k&#x2F;s on a sub $100 box.
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;pairshaped&#x2F;gleam_sqlite_benchmarks&#x2F;blob&#x2F;master&#x2F;REPORT.md" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;pairshaped&#x2F;gleam_sqlite_benchmarks&#x2F;blob&#x2F;m...</a>
+  score: 0
+  posted_at: '2026-10-24T21:08:52Z'
+- id: '50225401'
+  parent_id: '50218382'
+  author: rapind
+  text: I&#x27;m using it w&#x2F; a Rust server and I can get up to 80k writes per
+    second, 200k reads per second. You won&#x27;t get that with other databases without
+    paying a lot and doing a lot of special architecture.
+  score: 0
+  posted_at: '2026-10-24T21:16:49Z'
+- id: '50225648'
+  parent_id: '50225401'
+  author: tra3
+  text: That sounds like a lot. Is the rust process serving parallel requests?
+  score: 0
+  posted_at: '2026-10-24T21:41:14Z'
+- id: '50225808'
+  parent_id: '50225648'
+  author: rapind
+  text: |-
+    Rechecked my benchmarks. 193,000 writes per second (rust), each write holds the lock for about 5 µs.<p>Full report here:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;pairshaped&#x2F;gleam_sqlite_benchmarks&#x2F;blob&#x2F;master&#x2F;REPORT.md" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;pairshaped&#x2F;gleam_sqlite_benchmarks&#x2F;blob&#x2F;m...</a><p>Obviously real world queries will vary, but I tried to be representative of the type of queries &#x2F; updates I am sending.
+  score: 0
+  posted_at: '2026-10-24T22:01:11Z'
+- id: '50225998'
+  parent_id: '50218626'
+  author: oblio
+  text: Aren&#x27;t Durable Objects like... proprietary? Tied to a specific cloud
+    platform?
+  score: 0
+  posted_at: '2026-10-24T22:22:08Z'
+- id: '50226042'
+  parent_id: '50222511'
+  author: oblio
+  text: My guess is that coding agents expose deep documentation and advanced patterns
+    better or least faster that wading through everything.
+  score: 0
+  posted_at: '2026-10-24T22:25:56Z'
+- id: '50226231'
+  parent_id: '50219795'
+  author: qaq
+  text: It&#x27;s basically holding tenant and operator master registry that app nodes
+    pull down resulting in very light load on rqlite. The architecture is resilient
+    to control layer being down (just can&#x27;t provision new tenants).
+  score: 0
+  posted_at: '2026-10-24T22:50:36Z'
+- id: '50226305'
+  parent_id: '50225998'
+  author: ruther4d
+  text: Not anymore, see celld <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50020200">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50020200</a>
+  score: 0
+  posted_at: '2026-10-24T22:59:47Z'
 article:
   url: https://philipotoole.com/twelve-years-of-distributed-sqlite/
   title: Twelve years of distributed SQLite – Philip O'Toole
@@ -517,4 +616,4 @@ article:
     that raised the capital or got acquired are the ones that turned replicated "
   error:
   fetched_at: '2026-10-24T19:17:58Z'
-archived_at: '2026-10-24T19:18:33Z'
+archived_at: '2026-10-25T03:16:48Z'
