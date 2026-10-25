@@ -1,0 +1,137 @@
+---
+post:
+  id: lo-al3yyf
+  source: lobsters
+  title: This week's "node2shell" Brotli vulnerability (CVE-2026-111497) is exploitable
+    in Python, other consumers of Brotli
+  url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
+  hn_url: https://lobste.rs/s/al3yyf
+  score: 12
+  author: hoistbypetard
+  posted_at: '2026-10-24T11:01:27Z'
+  fetched_at: '2026-10-25T12:58:12Z'
+  article_url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T12:58:16Z'
+  raw_comment_count: 11
+  tags:
+  - security
+  - web
+comments:
+- id: lo-s7eyah
+  parent_id: '0'
+  author: mariell
+  text: This week has been hell. Absolute hell. One security incident every 1-2 weeks
+    was normal enough, but this has been something else.
+  score: 5
+  posted_at: '2026-10-24T12:33:54Z'
+- id: lo-qgjxhy
+  parent_id: '0'
+  author: kevinc
+  text: At least this Python case is a package dependency, not built into the runtime
+    like with node, so your usual dependency scans and updates should do the trick.
+    …Right? I'm second-guessing things after this string of vulnerabilities.
+  score: 3
+  posted_at: '2026-10-24T17:25:59Z'
+- id: lo-bgdmqv
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    It was funny to see that gag that @cadey does on their blog:
+
+    "No way to prevent this" say users of only language where this regularly happens
+
+    …be repeated five times on the same day, and more after that. (It's more painfully funny than funny funny, but I mean, enjoy what precious amusement you can.)
+  score: 10
+  posted_at: '2026-10-24T19:36:56Z'
+- id: lo-tkdsvp
+  parent_id: '0'
+  author: cadey
+  text: Some of the later ones cover multiple CVEs with the article body embedded
+    multiple times
+  score: 8
+  posted_at: '2026-10-24T19:45:31Z'
+- id: lo-ids723
+  parent_id: '0'
+  author: BenjaminRi
+  text: 'I really don''t want to sound like a smug Rust evangelist but the reality
+    is that Rust would have prevented all of these issues in the PHP and Brotli code.
+    These exploits show what was obvious to diligent programmers at least decade ago:
+    That memory safety is non-negotiable.'
+  score: 3
+  posted_at: '2026-10-24T20:14:05Z'
+- id: lo-6kchvv
+  parent_id: '0'
+  author: fanf
+  text: |-
+    Rust would have prevented all of these issues in the PHP
+
+    Be careful not to overstate your case! The PHP issue was a combination of three things:
+
+    lack of panic-safety in code that called allocators which unwind to the top level instead of aborting the process
+    re-use of the main data structure across multiple requests without reliably reinitializing it
+    the combination of 1 and 2 leading to use-after-free bugs and attacker control over callback function pointers
+
+    Rust protects you against 3. It avoids 2 because that style isn’t idiomatic, not because the language prevents it. And per-request panic recovery like 1 is common in Rust server frameworks.
+    Whether 1 and 2 can lead to interesting state corruption (even when memory safety is guaranteed) depends a lot on how badly the invariants are broken when the panic happens, and how buggy the state reset is. Neither of them are likely to give an attacker much of a hole to exploit, which is also why actual PHP RCE is difficult.
+    previously
+  score: 10
+  posted_at: '2026-10-24T21:31:55Z'
+- id: lo-bbeovx
+  parent_id: '0'
+  author: sunshowers
+  text: |-
+    And per-request panic recovery like 1 is common in Rust server frameworks.
+
+    Lock poisoning does help guard against this, though it's not foolproof. I talked about related things more on my blog (discussion on Lobsters).
+  score: 2
+  posted_at: '2026-10-25T01:01:15Z'
+- id: lo-w7eyyw
+  parent_id: '0'
+  author: olliej
+  text: oh god, are we going to have 6 months of *2shell for every remote shell vulnerability?
+  score: 1
+  posted_at: '2026-10-25T02:44:54Z'
+- id: lo-rhz28z
+  parent_id: '0'
+  author: hoistbypetard
+  text: More than that, by my math. Today is March 2429th, 2020. That tracks.
+  score: 2
+  posted_at: '2026-10-25T02:47:11Z'
+- id: lo-txtfib
+  parent_id: '0'
+  author: olliej
+  text: |-
+    Then don't? The problem is not "project X is not using rust" it is "project X is using C/C++". Swift, C#, Java, JavaScript, (even possibly C/C++->wasm depending on the system interface) would have avoided this.
+    There is a real problem in the safe language community in that the response is so smug about their own language, that any response from them comes across as a specific language evangelism argument rather than being useful feedback.
+    It's also a shitty response to say "this would not have happened if you used <language X>" when the project has existed longer than <language X>. It's essentially "you should have known not to write your project back then because the options were bad".
+  score: 5
+  posted_at: '2026-10-25T02:52:27Z'
+- id: lo-tj8rbg
+  parent_id: '0'
+  author: toastal
+  text: Comment removed by author
+  score: 1
+  posted_at: '2026-10-25T10:56:38Z'
+- id: lo-mmhyzo
+  parent_id: '0'
+  author: toastal
+  text: Those other options aren’t systems-oriented languages, but even then Rust
+    isn’t alone. Even old research language ATS could have “solved” this with its
+    linearity features over a decade ago.
+  score: 1
+  posted_at: '2026-10-25T11:00:23Z'
+article:
+  url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
+  title: Node2Shell Brotli vuln (CVE-2026-111497) evolves to HTTP2Shell, as libraries
+    and apps using HTTP are affected.
+  fetch_status: success
+  content: "4.7/ **5**\n\nTired of false positives?\L  \nTry Aikido like 100k others.\n\n[\nStart
+    Now\n](https://app.aikido.dev/login)\n\nGet a personalized walkthrough\n\nTrusted
+    by 100k+ teams\n\n[\nBook Now\n](https://www.aikido.dev/book/demo)\n\nScan your
+    app for IDORs and real attack paths\n\nTrusted by 100k+ teams\n\n[\nStart&nbsp;Scanning\n](https://app.aikido.dev/login)\n\nSee
+    how AI pentests your app\n\nTrusted by 100k+ teams\n\n[\nStart Testing\n](https://app.aikido.dev/login)\n\n[\nStart
+    Now\n](https://app.aikido.dev/login)"
+  error:
+  fetched_at: '2026-10-25T12:58:16Z'
+archived_at: '2026-10-25T12:58:16Z'

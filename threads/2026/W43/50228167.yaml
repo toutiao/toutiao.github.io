@@ -1,0 +1,670 @@
+---
+post:
+  id: '50228167'
+  title: Five Qwen3.8-27B models match Fable 5 Using GVS5H Harness
+  url: https://github.com/slee-persis/GVS5H
+  hn_url: https://news.ycombinator.com/item?id=50228167
+  score: 168
+  author: rzk
+  posted_at: '2026-10-25T03:56:01Z'
+  fetched_at: '2026-10-25T12:57:59Z'
+  article_url: https://github.com/slee-persis/GVS5H
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T12:57:59Z'
+  raw_comment_count: 57
+comments:
+- id: '50228323'
+  parent_id: '50228167'
+  author: sail0rm00n
+  text: Very impressive given the cost, especially since running locally you just
+    have one time acquisition of hardware and then electricity.
+  score: 0
+  posted_at: '2026-10-25T04:27:19Z'
+- id: '50228365'
+  parent_id: '50228167'
+  author: esafak
+  text: But in 10x the time?
+  score: 0
+  posted_at: '2026-10-25T04:36:03Z'
+- id: '50228389'
+  parent_id: '50228167'
+  author: vikramkr
+  text: So using this harness five qwen3.8-27b models roughly matched Fable 5 on a
+    saturated coding benchmark from early 2025. No comparison to astra&#x2F;6.1 sol&#x2F;fable
+    5.1&#x2F;opus 5.5. No comparison on a benchmark that reflects actual agentic work
+    (and agentic behavior is what modern models optimize for anyway - probably makes
+    qwen look worse than it is?). And also obviously using a very old benchmark like
+    this:<p>&gt; The updated release of the dataset with problems released between
+    May 2023 and Apr 2025 containing 1055 problems<p>means essentially guarenteed
+    contamination.<p>I have no idea if this harness is any good. Agressive orchestration
+    could be interesting given how hard models are RLed on orchestration? But the
+    methods used to evaluate this harness are not informative
+  score: 0
+  posted_at: '2026-10-25T04:40:52Z'
+- id: '50228399'
+  parent_id: '50228167'
+  author: '112233'
+  text: the qwen flash next result is the actual interesting part. The 27b dense model
+    has more active parameters than, e.g. latest deepseek flash.
+  score: 0
+  posted_at: '2026-10-25T04:44:01Z'
+- id: '50228412'
+  parent_id: '50228167'
+  author: Datagenerator
+  text: Great progress the open world is making, thanks for sharing! Soon Qwen 4 will
+    proof to be another step in the right direction.
+  score: 0
+  posted_at: '2026-10-25T04:46:19Z'
+- id: '50228420'
+  parent_id: '50228167'
+  author: sams99
+  text: "… on one benchmark, that has 2 modes of running. 1 shot and 1 shot with repair.
+    Zero tools.<p>Then ignore the rules of the bench (which is a pretty obsolete one
+    anyway), give it an agentic loop of sorts via delegation and python eyes and then
+    win.<p>Sorry but this is not how benchmarking works"
+  score: 0
+  posted_at: '2026-10-25T04:47:19Z'
+- id: '50228425'
+  parent_id: '50228365'
+  author: verdverm
+  text: that&#x27;s a matter of hardware, Cerebras reports 1500 tok&#x2F;s<p><a href="https:&#x2F;&#x2F;inference-docs.cerebras.ai&#x2F;models&#x2F;qwen-3.8-27b"
+    rel="nofollow">https:&#x2F;&#x2F;inference-docs.cerebras.ai&#x2F;models&#x2F;qwen-3.8-27b</a>
+  score: 0
+  posted_at: '2026-10-25T04:48:22Z'
+- id: '50228427'
+  parent_id: '50228167'
+  author: badsectoracula
+  text: "Interesting but (from the PDF):<p><pre><code>    Every role but the verifier
+    is the same\n    underlying model, called in a fresh context\n    and coordinating
+    through a shared workspace on disk:\n    \n    &lt;ws&gt;&#x2F;task.md - the problem
+    statement\n    \n    &lt;ws&gt;&#x2F;plan.md - the manager’s overarching plan\n
+    \   \n    &lt;ws&gt;&#x2F;tasks.json - a debug mirror of the task list\n    \n
+    \   &lt;ws&gt;&#x2F;notes.md - curated ideas &#x2F; findings &#x2F; partial proofs\n
+    \   \n    &lt;ws&gt;&#x2F;solution.py - the current solution\n</code></pre>\nThen
+    they describe how there is a ping-pong between manager and worker with fresh context
+    for the worker, but i wonder, is that part or even the worker really necessary?<p>My
+    use of Qwen 3.8 27B (which is the only model i use almost since it came out) is
+    really doing something very similar to the above where first a task is described,
+    a `PLAN.md` file is made with the (current) plan and tasks are either in the plan
+    file or in a separate issue tracker the LLM has access to via a CLI tool, a `STATUS.md`
+    that tracks the current status and a `GOTCHAS.md` file for writing down various
+    notes&#x2F;tidbits&#x2F;gotchas (TBH this is largely because Qwen 3.8 27B does
+    want to note down stuff anyway so it mainly acts as an attractor for not writing
+    its notes down in the other two places :-P).<p>There isn&#x27;t any real harness
+    driving this, i just give it a task, tell it how it&#x27;ll be handled and off
+    it goes. I guess i&#x27;m playing the &quot;role&quot; of the harness there as
+    i tell it to not go and do everything in one go :-P but i never bother with fresh
+    contexts, Pi&#x27;s &quot;rolling&quot; approach to compaction (i.e. summarizing
+    the older messages to make space while keeping the recent messages as-is) make
+    it almost a non-issue.<p>I have considered making it a planning tool, though as
+    some tool it can use via the CLI (it is running in a container), not a harness
+    - but at the same time it feels like it can do the same thing with the `PLAN.md`&#x2F;`STATUS.md`&#x2F;`GOTCHAS.md`
+    triplet. The only thing the tool would help with is to provide a UI for me to
+    check what it&#x27;s currently doing, but even then i usually just stop it and
+    ask it directly :-P then tell it to continue.<p>Perhaps at some point i&#x27;ll
+    make some custom benchmark with stuff that are vaguely similar to what i work
+    on and try a bunch of different approaches. It is something i want to do anyway
+    to see how and if Qwen4 27B (whenever that comes it) is an improvement over 3.8."
+  score: 0
+  posted_at: '2026-10-25T04:48:43Z'
+- id: '50228431'
+  parent_id: '50228167'
+  author: hartator
+  text: Seems like it just overfitting the problems?
+  score: 0
+  posted_at: '2026-10-25T04:50:05Z'
+- id: '50228445'
+  parent_id: '50228427'
+  author: verdverm
+  text: This is pretty close to a process I use (regardless of model size) and I would
+    agree getting it into a workflow I can run with a one-liner is a good idea. There
+    are a few ways of doing this and I have tended to fallback to markdown engineering.
+    (custom agents and subs in opencode)<p>It&#x27;s really interesting to see the
+    progress in the 27-30B range, they have gotten quite good but still make noticeably
+    more hallucinations or bad assumptions (ime).
+  score: 0
+  posted_at: '2026-10-25T04:53:52Z'
+- id: '50228451'
+  parent_id: '50228167'
+  author: ianm218
+  text: it definitely feels like sooner than later there will be “Mythos level” cyber
+    threats available on open source &#x2F; uncensorable models. I think the only
+    thing that can be done is continued work on hardening anything that is remotely
+    close to “critical infrastructure” and software supply chain.<p>On one hand, self
+    hosting will always be niche so you could pass a law like “if your serving inference
+    at scale you need to have safeguards&#x2F; classifiers in place” since &gt; 95%
+    of inference will go through hosted services in the long run … but that could
+    turn into thought policing dystopia real quick.
+  score: 0
+  posted_at: '2026-10-25T04:55:08Z'
+- id: '50228456'
+  parent_id: '50228167'
+  author: forgingahead
+  text: What are people using for a local offline harness? I&#x27;ve heard that OpenCode
+    has lax approach to security and has some default dial home settings. Aider? Want
+    to use Qwen3.8-27b locally for coding on 24gb VRAM. Best option?
+  score: 0
+  posted_at: '2026-10-25T04:56:54Z'
+- id: '50228461'
+  parent_id: '50228425'
+  author: msikora
+  text: |-
+    Input $0.99
+    Output $1.49<p>That times 5 is steep!
+  score: 0
+  posted_at: '2026-10-25T04:57:56Z'
+- id: '50228469'
+  parent_id: '50228461'
+  author: verdverm
+  text: Getting close to 80 tok&#x2F;s on the dgx spark with NVFP4<p><a href="https:&#x2F;&#x2F;spark-arena.com&#x2F;leaderboard"
+    rel="nofollow">https:&#x2F;&#x2F;spark-arena.com&#x2F;leaderboard</a><p>(you&#x27;ll
+    have to filter model yourself, no query params)
+  score: 0
+  posted_at: '2026-10-25T05:01:03Z'
+- id: '50228475'
+  parent_id: '50228451'
+  author: NegativeLatency
+  text: 'Opens trench-coat: so you want to buy some compute'
+  score: 0
+  posted_at: '2026-10-25T05:01:49Z'
+- id: '50228505'
+  parent_id: '50228451'
+  author: whatshisface
+  text: It&#x27;s poignant how available these open doors were to resourced intelligence
+    agencies - and still are today.
+  score: 0
+  posted_at: '2026-10-25T05:08:49Z'
+- id: '50228539'
+  parent_id: '50228427'
+  author: Vaushite
+  text: "&gt; There isn&#x27;t any real harness driving this, i just give it a task,
+    tell it how it&#x27;ll be handled and off it goes.<p>The tool that implements
+    this is the harness. An LLM by itself cannot &quot;go off&quot; and &quot;do things&quot;
+    - it can only complete text blocks. A harness bridges this to real world actions
+    or just a chat box interface."
+  score: 0
+  posted_at: '2026-10-25T05:15:02Z'
+- id: '50228542'
+  parent_id: '50228167'
+  author: yipinwong
+  text: Harness changes dynamically depending on your LLM intelligence.<p>The smarter
+    LLMs get, you apply less, as LLM takes care of pre-existing harnesses.<p>This
+    is a shitty, unreliable, and unmaintainable way of using harness because the harness
+    is built around for the sake of getting good benchmark scores (someone mentioned
+    overfitting in comments, so that)
+  score: 0
+  posted_at: '2026-10-25T05:15:43Z'
+- id: '50228575'
+  parent_id: '50228456'
+  author: badsectoracula
+  text: I&#x27;m using Qwen 3.8 27B with Unsloth&#x27;s UD-Q4_K_XL quantization[0]
+    via llama.cpp with 131k context - full command line:<p>llama-server --model Qwen3.8-27B-UD-Q4_K_XL.gguf
+    --ctx-size 131072 --parallel 1 --cache-type-k q8_0 --cache-type-v q8_0 --host
+    0.0.0.0 --port 8080 --spec-type draft-dflash --spec-draft-model dflash-Qwen3.8-27B-Q4_0.gguf
+    --spec-draft-n-max 3 --spec-draft-type-k q8_0 --spec-draft-type-v q8_0 --mmproj
+    mmproj-BF16.gguf --no-mmproj-offload --image-min-tokens 2048 --reasoning-preserve<p>It
+    <i>just</i> barely fits in my RX 7900 XTX&#x27;s 24GB of VRAM (TBH i&#x27;m not
+    sure if dflash is much better than MTP - which is included as part of the GGUF
+    - and MTP saves ~1GB of VRAM). I&#x27;m using Linux with Xorg&#x2F;Window Maker
+    as my DE so it uses no VRAM at all (Qt-based stuff - and i guess modern Gtk too
+    - tend to use some VRAM for themselves, even opening Kate shows up in amdgpu_top
+    :-P). The above gives me on average ~50 tokens&#x2F;sec generation (drops to about
+    35 when the context is close to full) and ~700 tokens&#x2F;sec prompt processing,
+    which while not particularly speedy is fine for agentic stuff as i just give the
+    AI a task and leave it in the background doing things. To save some VRAM i run
+    the multimodal projector for vision on the CPU (the --no-mmproj-offload) and only
+    one task is ever executed at the same time (--parallel 1). Also the kvcache is
+    quantized to q8_0 - supposedly this makes the model a bit dumber, though the extra
+    VRAM needed for the full f16 kvcache makes it more than ten times slower :-P (and
+    AFAIK dense models like the 27B aren&#x27;t as affected by it as MoE models are).<p>I&#x27;m
+    using Pi[1] (a slightly older version that i&#x27;ve had remain offline and disabled
+    the telemetry) for now (will replace it at some point since i&#x27;m not a fan
+    of the ~500MB dependency tree, the almost-dark patterns for online access&#x2F;telemetry
+    and the increasingly worrying push for the devs&#x27; services, but i do like
+    how it approaches compaction and that for the most part it doesn&#x27;t need any
+    handholding when some error happens - which is ideal for &quot;let the AI do something
+    and check it some time later&quot;).<p>It is running inside a container so it
+    doesn&#x27;t get any access to my real stuff (mainly to avoid the LLM making any
+    mess - of which it sometimes does in the container, but well, it is contained
+    :-P). In the container Pi gives the LLM some basic tools - read, write, edit and
+    bash - and the last one is basically used to do most of the work (i&#x27;ve also
+    made a bunch of tools the LLM can use via the CLI).<p>[0] <a href="https:&#x2F;&#x2F;huggingface.co&#x2F;unsloth&#x2F;Qwen3.8-27B-GGUF&#x2F;blob&#x2F;main&#x2F;Qwen3.8-27B-UD-Q4_K_XL.gguf"
+    rel="nofollow">https:&#x2F;&#x2F;huggingface.co&#x2F;unsloth&#x2F;Qwen3.8-27B-GGUF&#x2F;blob&#x2F;main&#x2F;Qw...</a><p>[1]
+    <a href="https:&#x2F;&#x2F;pi.dev&#x2F;" rel="nofollow">https:&#x2F;&#x2F;pi.dev&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-25T05:22:47Z'
+- id: '50228614'
+  parent_id: '50228167'
+  author: mabunday
+  text: I&#x27;m not surprised. I used Claude Code for the first time again since
+    April because I had been hearing good things about Opus 5.5 and Fable 5.1, but
+    I was shocked by how bad the harness is and how its only gotten worse since spring?
+    I may be doing something wrong, but getting Opus&#x2F;Fable to properly spin up
+    non-blocking sub-agents takes like four or five attempts and it <i>still</i> cannot
+    reliably poll tasks like test suites that take more than 30 seconds for proper
+    completion.<p>I think even if you have the world&#x27;s best model (not my opinion,
+    but seems to be the popular consensus these days with Anthropic), if the harness
+    around it sucks none of that intelligence is going to matter.
+  score: 0
+  posted_at: '2026-10-25T05:31:17Z'
+- id: '50228639'
+  parent_id: '50228614'
+  author: bcherny
+  text: Hey, Boris from the team here. This is pretty surprising, given background
+    subagents are the default. Could you confirm you’re running the latest, and run
+    &#x2F;bug and paste the id here? Happy to debug what’s happening
+  score: 0
+  posted_at: '2026-10-25T05:35:16Z'
+- id: '50228657'
+  parent_id: '50228614'
+  author: fastball
+  text: You are definitely doing something wrong. <i>All</i> of my sessions constantly
+    use subagents and are able to poll with background tasks.
+  score: 0
+  posted_at: '2026-10-25T05:38:27Z'
+- id: '50228674'
+  parent_id: '50228614'
+  author: aschla
+  text: Not fanboying or playing favorite, but I&#x27;ve never come across what you
+    mentioned while using Claude Code. You may indeed be doing something wrong or
+    some part of your config isn&#x27;t right.<p>I use Copilot CLI at work, and Claude
+    Code at home, and all harnesses are pretty good these days.
+  score: 0
+  posted_at: '2026-10-25T05:40:37Z'
+- id: '50228679'
+  parent_id: '50228323'
+  author: jacquesm
+  text: 10KW+ of solar could help ;)
+  score: 0
+  posted_at: '2026-10-25T05:41:40Z'
+- id: '50228680'
+  parent_id: '50228639'
+  author: fractorial
+  text: Seriously hope you get that trace because as much as I like to dunk on Claude
+    Code as a harness, it’s definitely not as bad as OP stated, ha.
+  score: 0
+  posted_at: '2026-10-25T05:41:51Z'
+- id: '50228690'
+  parent_id: '50228399'
+  author: SwellJoe
+  text: For folks with 128GB inference machines that&#x27;s definitely the more interesting
+    model. 27B is dog slow on a Strix Halo. And, while Qwen 3.8 Flash is quite snug
+    in 128GB at four bits (a bit more comfortably at three bits, but intelligence
+    is really dropping by then) but is notably faster than the dense model. It thinks
+    a little less and thinks a little faster, adding up to a real improvement. At
+    four bits, it feels a little bit smarter than 27B even at eight.<p>If someone
+    has one or two 32GB GPUs with decent bandwidth (faster than the Strix Halo or
+    DGX Spark), the dense model is the obviously better choice, and I think that case
+    is more common for the average developer.
+  score: 0
+  posted_at: '2026-10-25T05:43:23Z'
+- id: '50228731'
+  parent_id: '50228690'
+  author: sureglymop
+  text: I&#x27;ve been running Qwen 3.8 Flash Next on Strix Halo with halogen-flash-server
+    which is a pretty good experience (although unfortunately halogen is closed source).<p>But
+    for coding and cybersec tasks I think GLM 5.3 might be the best one to use still.
+  score: 0
+  posted_at: '2026-10-25T05:53:12Z'
+- id: '50228740'
+  parent_id: '50228389'
+  author: hirako2000
+  text: Also why not comparing harnessed Qwen to harnessed other LLMs.
+  score: 0
+  posted_at: '2026-10-25T05:57:16Z'
+- id: '50228745'
+  parent_id: '50228445'
+  author: octoberfranklin
+  text: Yeah unfortunately the confabulations are the real problem with models of
+    this size.<p>IMHO you need at least 500B weights before the confabulation problem
+    is really under control.  i.e. DeepSeek 4.1 or GLM.<p>I admit some days I&#x27;m
+    just lazy and throw a whole Kimi or QwenMax at it.
+  score: 0
+  posted_at: '2026-10-25T05:58:01Z'
+- id: '50228749'
+  parent_id: '50228456'
+  author: verdverm
+  text: 'I&#x27;m in the same boat. I was the primary advocate for fixing the config
+    security regressions in the OpenCode tool (separate from the console hack days
+    after the fix). My impression is that they are improving quality across the board.
+    I will not being updating to v2 because I do not jive with the new UX. I would
+    recommend checking it out, it&#x27;s the best open harness I&#x27;ve used so far,
+    though I&#x27;m only interesed in TUIs.<p>I&#x27;m currently using the Pi harness
+    as well, it&#x27;s closer to OpenCode v1 with a few plugins. However, I have zero
+    faith in their security or maturity after several communications with the CEO.
+    Pi is also developed by an Israeli team, if that is something that matters to
+    you, re: Mossad concerns or Palestinians rights.<p>I&#x27;m going to go back to
+    my own custom harness and do a full rewrite, now that I have seen what 6+ other
+    harnesses offer.'
+  score: 0
+  posted_at: '2026-10-25T05:59:25Z'
+- id: '50228753'
+  parent_id: '50228679'
+  author: chr15m
+  text: You only need about 1kW to run a local inference machine. Even a 5kW array
+    is overkill if you are using it during sunlight hours.
+  score: 0
+  posted_at: '2026-10-25T06:00:40Z'
+- id: '50228773'
+  parent_id: '50228731'
+  author: SwellJoe
+  text: Nobody&#x27;s running GLM 5.3 on a Strix Halo. But, yes, I&#x27;m using cloud
+    models for everything hard, including coding. I use local models for smaller API
+    tasks or sub-agent tasks and experiments with fine-tuning and benchmarking.
+  score: 0
+  posted_at: '2026-10-25T06:05:22Z'
+- id: '50228775'
+  parent_id: '50228745'
+  author: verdverm
+  text: "&gt; before the confabulation problem is really under control<p>It&#x27;s
+    definitely much better at bigger sizes, but I&#x27;ve still seen it at the frontier
+    when coworkers ask me about changes their Ai made to code I originally wrote.
+    (a good habit that organically emerged on the dev team)"
+  score: 0
+  posted_at: '2026-10-25T06:05:38Z'
+- id: '50228788'
+  parent_id: '50228389'
+  author: binsquare
+  text: I do not think we should trust this harnesses claims.
+  score: 0
+  posted_at: '2026-10-25T06:09:20Z'
+- id: '50228837'
+  parent_id: '50228614'
+  author: octoberfranklin
+  text: First off you need to pick a harness that you can use with <i>every</i> model.  This
+    way you isolate model problems from harness problems.  If you had to switch harnesses
+    (Claude Code) in order to try out Fable, you&#x27;re doing something wrong.<p>Secondly
+    yeah, all models have issues with foreground vs background subagents.  So I just
+    modified my harness to delete foreground subagents.  No more confusion.  If they
+    need the subagent&#x27;s output tokens they can read it from the session transcript.<p>&quot;Take
+    away tools&quot; is often the best solution for model-gets-confused problems.  Narrow
+    down your toolset until there&#x27;s only one way to do things, and then make
+    it the maximally-powerful way.
+  score: 0
+  posted_at: '2026-10-25T06:21:17Z'
+- id: '50228842'
+  parent_id: '50228456'
+  author: pianopatrick
+  text: I wrote my own harness designed to feel like a unix util. If you&#x27;re worried
+    about security, mine is a single file shell script less than 1,000 loc. It only
+    depends on llama-cli and a few posix shell tools. So it has no way to dial anywhere
+    and no security problems hiding in some dependency.<p>But it&#x27;s not optimized
+    for coding specifically. It can edit files fine using Aider style edits. I&#x27;ve
+    used it to write to do lists as a test. But I more designed it with the idea to
+    be my personal debugging tool if I ran into any weird things while using Linux
+    on a laptop.<p>github.com&#x2F;patrickjh&#x2F;ssa
+  score: 0
+  posted_at: '2026-10-25T06:21:59Z'
+- id: '50228855'
+  parent_id: '50228431'
+  author: zrg
+  text: allot of the models are just constantly eval maxxing
+  score: 0
+  posted_at: '2026-10-25T06:25:05Z'
+- id: '50228864'
+  parent_id: '50228575'
+  author: orsorna
+  text: "+1 to the RX 7900 XTX and also the RX 7900 XT model (20gb), much more affordable
+    if you&#x27;re trying to dip your toes into localgen"
+  score: 0
+  posted_at: '2026-10-25T06:26:53Z'
+- id: '50228863'
+  parent_id: '50228749'
+  author: octoberfranklin
+  text: Security is not the harness&#x27; job, it&#x27;s the sandbox&#x27;s job.  These
+    are two different tools, you need both of them.
+  score: 0
+  posted_at: '2026-10-25T06:26:53Z'
+- id: '50228872'
+  parent_id: '50228749'
+  author: cvanelteren
+  text: Last time I checked Pi is developed by Austrians?
+  score: 0
+  posted_at: '2026-10-25T06:27:58Z'
+- id: '50228882'
+  parent_id: '50228167'
+  author: ReDress
+  text: Just bumping this conversation because it has something to do with AI. Albeit
+    to ask a question.<p>My desktop computer is at 57tuu56.intercom.rapidseedbox.com.
+    Is it possible for me to employ AI in my process?
+  score: 0
+  posted_at: '2026-10-25T06:30:19Z'
+- id: '50228893'
+  parent_id: '50228427'
+  author: BubbleRings
+  text: This is close to how I do it also. Except I have never interrupted it in a
+    task, I always worried it would destabilize it and it would leave some function
+    half finished or whatever. I just have standing instructions for it to pause places
+    and ask “ready for the next phase?”  Do you find it responds well and correctly
+    to being interrupted in the middle of things?
+  score: 0
+  posted_at: '2026-10-25T06:33:44Z'
+- id: '50228917'
+  parent_id: '50228864'
+  author: badsectoracula
+  text: Yeah though AFAIK it is discontinued now (or at least i can&#x27;t find it
+    in the local price aggregator). I think R9700 is a decent alternative, a bit slower
+    (256bit bus vs 384bit bus) but has 32GB of RAM, still isn&#x27;t <i>too</i> overpriced
+    (at least compared to Nvidia alternatives) and has an opensource stack too (which
+    is why i went with AMD in recent years).
+  score: 0
+  posted_at: '2026-10-25T06:39:24Z'
+- id: '50228925'
+  parent_id: '50228167'
+  author: Olscore
+  text: Everybody is converging on similar ideas, but the execution isn&#x27;t super
+    clean in a lot of &quot;software factories&quot; popping up. Coordinating through
+    shared written state becomes obvious once you build something complex enough.
+    Anyways, I have been building Pullboard (open source). The original concept came
+    from needing agent coherency on a very complicated project.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;pullboard-dev&#x2F;pullboard"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;pullboard-dev&#x2F;pullboard</a>
+  score: 0
+  posted_at: '2026-10-25T06:40:13Z'
+- id: '50228928'
+  parent_id: '50228614'
+  author: aenis
+  text: You are doing something wrong.<p>I am routinely using swarms of agents, with
+    complex sequencing between them and agents watching other agents, and then triggering
+    forks and&#x2F;or new design cycles. My normal flow is to have a few design tasks
+    open per codebase during the day, with each design agent aware of the other sessions,
+    and having an unattended nightly build which sometimes takes 8hrs and also requires
+    coordination for tests, merges, and so on.
+  score: 0
+  posted_at: '2026-10-25T06:40:58Z'
+- id: '50228969'
+  parent_id: '50228863'
+  author: verdverm
+  text: 'harness have a say in security too, sandboxes are one part of posture, but
+    not the only one<p>You can decide for yourself: <a href="https:&#x2F;&#x2F;github.com&#x2F;earendil-works&#x2F;pi&#x2F;issues&#x2F;10895"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;earendil-works&#x2F;pi&#x2F;issues&#x2F;10895</a><p>Anthropic,
+    OpenAi, and OpenCode all support this feature, we have non-developers to support
+    and MDM is widely used.<p>For comparison, this excellent reply from Aiden on the
+    OpenCode team: <a href="https:&#x2F;&#x2F;github.com&#x2F;anomalyco&#x2F;opencode&#x2F;pull&#x2F;54921#issuecomment-6156929366"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;anomalyco&#x2F;opencode&#x2F;pull&#x2F;54921#issuecommen...</a>'
+  score: 0
+  posted_at: '2026-10-25T06:50:10Z'
+- id: '50228991'
+  parent_id: '50228872'
+  author: verdverm
+  text: We may both be partially right, the main dev I interacted with has Tel Aviv
+    on his GitHub (also &#x27;Hanna&#x27; being around the project, but apparently
+    that is a surname not a first name, and a mistaken extrapolation on my part)<p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;davidbrai" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;davidbrai</a><p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;earendil-works&#x2F;pi&#x2F;issues&#x2F;10895"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;earendil-works&#x2F;pi&#x2F;issues&#x2F;10895</a><p>The
+    lack of professionalism or seriousness was mainly in a private email chain with
+    Armin. He added a single comment to this issue after that chain which was the
+    gist of a couple of his replies, less snarky. Either way, the interaction left
+    me disappointed, not a founder who seems interested in listening or learning imo.
+  score: 0
+  posted_at: '2026-10-25T06:56:24Z'
+- id: '50229045'
+  parent_id: '50228753'
+  author: jacquesm
+  text: "&gt; Even a 5kW array is overkill if you are using it during sunlight hours.<p>Angle
+    of incidence, time of the year, daylight hours, battery charging."
+  score: 0
+  posted_at: '2026-10-25T07:07:42Z'
+- id: '50229285'
+  parent_id: '50228427'
+  author: '3836293648'
+  text: No, pi is the harness. You may have chosen the most minimal harness available,
+    but it&#x27;s still a harness.
+  score: 0
+  posted_at: '2026-10-25T07:58:13Z'
+- id: '50229404'
+  parent_id: '50228788'
+  author: R1ck404
+  text: I don&#x27;t think we should trust &#x27;small model beats giant frontier
+    model&#x27; either... Don&#x27;t get me wrong I think small models are and could
+    be great, but matching something like fable 5?
+  score: 0
+  posted_at: '2026-10-25T08:25:24Z'
+- id: '50229438'
+  parent_id: '50228740'
+  author: chvid
+  text: I guess one point is you can run Qwen on a local machine.<p>It is not public
+    knowledge how Fable 5 works - it is all hidden away behind a web service - for
+    what it is worth it might a hybrid architecture with harness, loops, tools etc.
+    combined with a traditional llm like what is done here.
+  score: 0
+  posted_at: '2026-10-25T08:31:51Z'
+- id: '50229465'
+  parent_id: '50228539'
+  author: badsectoracula
+  text: I can&#x27;t edit it to clarify, but what i meant is that the process i use
+    isn&#x27;t driven by a harness but done &quot;by hand&quot;, not that there isn&#x27;t
+    any harness at all. The PDF describes a harness that is actually used to drive
+    the manager&#x2F;worker role.
+  score: 0
+  posted_at: '2026-10-25T08:36:57Z'
+- id: '50229473'
+  parent_id: '50229285'
+  author: badsectoracula
+  text: As i wrote in the other comment, i know, i just meant is that the process
+    i use isn&#x27;t driven by a harness but done manually. The PDF i quoted mentions
+    a harness does that driving so i wrote &quot;There isn&#x27;t any real harness
+    driving this&quot; to mean that i do that by hand instead of being done automatically.
+  score: 0
+  posted_at: '2026-10-25T08:38:44Z'
+- id: '50229518'
+  parent_id: '50228893'
+  author: badsectoracula
+  text: The model itself (Qwen 3.8 27B specifically) can handle being interrupted
+    just fine and i often interrupt it to clarify things when i see it finding my
+    instructions vague or to add some extra info.<p>However there is a bug somewhere
+    between my instructions and the model - i <i>think</i> it is the jinja template,
+    though i&#x27;m not sure as i haven&#x27;t actually looked too deep into it -
+    that in some cases make my last message be sent repeatedly to the model after
+    each tool call, making the model think that i&#x27;m getting impatient or something
+    :-P. When i notice it, i tell the model that this is some harness bug and it can
+    ignore the repeated messages, which it does.<p>It seems to happen when i stop
+    it while it is thinking after a tool call but i&#x27;m not certain. I try to stop
+    it while some tool call is in process so it cancels the call as that seems to
+    avoid the issue. Restarting llama-server also seems to make the issue go away
+    so it might be a llama.cpp bug, but TBH i haven&#x27;t found a clear repro case
+    aside from it happening when i interrupt it while it is thinking. I <i>think</i>
+    it is more common when the context is close to full, or at least i mainly remember
+    it happening when i&#x27;ve been using a session for some time (i.e. not in fresh
+    sessions, which does make reproducing it a bit harder).<p>In any case, the model
+    itself seems to deal with all the above fine (and accepts the bug explanation
+    for repeated messages), it is the rest of the stack that can show an issue with
+    interrupting it (but even that is relatively rare).
+  score: 0
+  posted_at: '2026-10-25T08:47:22Z'
+- id: '50229555'
+  parent_id: '50229518'
+  author: BubbleRings
+  text: Thank you! Yeah I think I would have experimented more with interrupting it
+    by now, but my jobs only recently got longer and multi step. Plus I could never
+    figure out, if I do want to interrupt this, what’s the best time to do it?
+  score: 0
+  posted_at: '2026-10-25T08:53:31Z'
+- id: '50229610'
+  parent_id: '50228745'
+  author: electroglyph
+  text: size doesn&#x27;t really have a correlation if u look at the hallucination
+    benchmarks. this is mostly mitigated thru post training imo. also, deepseek 4.1
+    is <i>notorious</i> for hallucinations, so kinda ironic to mention it as an example
+    here =)
+  score: 0
+  posted_at: '2026-10-25T09:05:41Z'
+- id: '50229747'
+  parent_id: '50228614'
+  author: magicalhippo
+  text: Did you try once on a bad day?<p>I experienced a regression some days ago,
+    where Claude Code with Opus 5.5 wouldn&#x27;t progress as expected, getting stuck
+    on steps. So I had to repeatedly ask it what the status was and to proceed with
+    X, and so on.<p>But that was just one day, the days before and after it has done
+    lots of fairly autonomous work, including spinning off multiple subagents to run
+    conformance tests which take 30-50 mins and work on other stuff in the meantime,
+    then acting on the results autonomously.
+  score: 0
+  posted_at: '2026-10-25T09:36:26Z'
+article:
+  url: https://github.com/slee-persis/GVS5H
+  title: 'GitHub - slee-persis/GVS5H: GVS5H: Five Qwen3.8-27B Models Match Claude
+    Fable 5 on LiveCodeBench Hard  |  Fable 5 Level Coding for a Fifth the Price -
+    or on a Single GPU · GitHub'
+  fetch_status: success
+  content: |-
+    ## Latest commit
+
+    ## History
+
+    ## Folders and files
+
+    ## Repository files navigation
+
+    # GVS5H: Five Qwen3.8-27B Models Match Claude Fable 5 on LiveCodeBench Hard
+
+    ### GVS5H: Gorilla vs. 5 Humans
+
+    ## Results
+
+    Opus 5 ran on an earlier version of the scaffold, in a single pass served through OpenRouter rather than five on a pinned backend.
+
+    > Abstract. Frontier coding performance is typically bought with larger proprietary models at high cost. We introduce ledger-based zero-shot self-orchestration, a training-free method in which fresh instances of one model decompose problems and coordinate through a shared filesystem holding a plan, notes and current solution. Across eleven open and closed-weight models on the 100 latest hard LiveCodeBench problems, the method yields gains of up to 25.6 percentage points on pinned backends and offers two routes to frontier-level accuracy. Orchestrated Qwen3.8 Flash Next reaches 93.0% pass@1 against Fable 5's 90.4% at 9% of the cost, and locally served, open-weight Qwen3.8-27B rises from 66.8% to 92.4%. Gains are not universal: some models are unchanged or worse. Transcript analysis attributes the gain to decomposition and persistent context. Inference-time organization can approach frontier coding accuracy at a fraction of the cost, or slightly exceed it on self-hostable weights. — the paper
+
+    Abstract. Frontier coding performance is typically bought with larger proprietary models at high cost. We introduce ledger-based zero-shot self-orchestration, a training-free method in which fresh instances of one model decompose problems and coordinate through a shared filesystem holding a plan, notes and current solution. Across eleven open and closed-weight models on the 100 latest hard LiveCodeBench problems, the method yields gains of up to 25.6 percentage points on pinned backends and offers two routes to frontier-level accuracy. Orchestrated Qwen3.8 Flash Next reaches 93.0% pass@1 against Fable 5's 90.4% at 9% of the cost, and locally served, open-weight Qwen3.8-27B rises from 66.8% to 92.4%. Gains are not universal: some models are unchanged or worse. Transcript analysis attributes the gain to decomposition and persistent context. Inference-time organization can approach frontier coding accuracy at a fraction of the cost, or slightly exceed it on self-hostable weights.
+
+    — the paper
+
+    ## Running the code
+
+    Needs uv and an API key for the model you want to test.
+
+    cd codebase/v2-current export OPENAI_API_KEY=... LCB_RELEASE=release_v6 \ ESCALATION_CLOUD_MAX_TOKENS=128000 \ ESCALATION_CLOUD_TIMEOUT=7200 \ MULTIAGENT_MODEL=openai:gpt-5.6-terra \ uv run --no-project --python 3.12 --with 'datasets<4' --with numpy --with anthropic \ python escalation/run_bench.py --engine multiagent --only lcb --lcb 100 --parallel 8
+
+    - --engine multiagent runs the manager; --engine single is the one-call baseline.
+
+    - Other models: anthropic:<model>, dashscope:<model>, openrouter:<model>, each with its own *_API_KEY.
+
+    - The pass@1 score prints at the end. Results are written to runs/results.json, workspaces to runs/ws/.
+
+    ## License
+
+    Code is under the MIT License. The paper, figures and run data are under CC BY 4.0. The LiveCodeBench fork, the benchmark problem statements and the LaTeX template files keep their own licenses. See NOTICE.md for which license covers which path.
+
+    ## About
+
+    GVS5H: Five Qwen3.8-27B Models Match Claude Fable 5 on LiveCodeBench Hard | Fable 5 Level Coding for a Fifth the Price - or on a Single GPU
+
+    ### Resources
+
+    ### Stars
+
+    ### Watchers
+
+    ### Forks
+
+    ## Releases
+
+    ## Packages
+
+    ## Contributors
+
+    ## Languages
+  error:
+  fetched_at: '2026-10-25T12:57:59Z'
+archived_at: '2026-10-25T12:58:12Z'

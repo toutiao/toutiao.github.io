@@ -1,0 +1,231 @@
+---
+post:
+  id: lo-qzfohf
+  source: lobsters
+  title: How to run a city builder on 16 MHz
+  url: https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/
+  hn_url: https://lobste.rs/s/qzfohf
+  score: 16
+  author: Yogthos
+  posted_at: '2026-10-24T14:18:48Z'
+  fetched_at: '2026-10-25T12:58:12Z'
+  article_url: https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T12:58:14Z'
+  raw_comment_count: 15
+  tags:
+  - programming
+comments:
+- id: lo-yra7c9
+  parent_id: '0'
+  author: kred
+  text: 'Sim City was available for ZX Spectrum with 3.5MHz Z80 microprocessor: https://worldofspectrum.net/item/0004509/
+    - I had a chance to play this game around 30 years ago on real hardware (Timex
+    2048 + FDD3000 floppy).'
+  score: 3
+  posted_at: '2026-10-24T14:29:33Z'
+- id: lo-oset7p
+  parent_id: '0'
+  author: icefox
+  text: As it says, smearing out expensive computation over multiple frames is common
+    in games even now~  One example I stumbled across recently is Minecraft's random-tick
+    system.
+  score: 7
+  posted_at: '2026-10-24T15:55:03Z'
+- id: lo-jprrd7
+  parent_id: '0'
+  author: asem
+  text: Civilization I (1991) is arguably even more impressive to me. An entire world
+    with competing AIs, economies, diplomacy, warfare and tech trees, running on a
+    4.77 MHz 8088 with just 640 KB of RAM.
+  score: 3
+  posted_at: '2026-10-24T15:59:25Z'
+- id: lo-qpiyla
+  parent_id: '0'
+  author: icefox
+  text: As someone who played Civ 1 on a 25 MHz desktop, you could spend a noticeable
+    amount of time waiting on unit move animations, let alone the next turn generating.
+  score: 3
+  posted_at: '2026-10-24T17:08:29Z'
+- id: lo-qwcxnv
+  parent_id: '0'
+  author: classichasclass
+  text: Ran on the Commodore 64 (0.986/1.022MHz) also.
+  score: 2
+  posted_at: '2026-10-24T18:33:42Z'
+- id: lo-f6xdq6
+  parent_id: '0'
+  author: greg_kennedy
+  text: |-
+    I recall seeing this trick in the Wargus (Stratagus?) source code, 20+ years ago.  In fact it's still here today!
+    https://github.com/Wargus/stratagus/blob/b29126a22dc109a03eecbeeaae1b8df6de46b91e/src/stratagus/mainloop.cpp#L274
+    You can think of it as a crude form of task scheduling, I guess.  The same work could be all bunched up in one frame (and sleep the other 15), but this would lead to visible stutter in the (single-threaded) SimCity game UI.
+  score: 2
+  posted_at: '2026-10-24T18:39:45Z'
+- id: lo-3251up
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    I'm curious to what extent this was done specifically to smear out expensive computation. It definitely has that effect, but I can also imagine it being functional in other ways: for example, slowing down wheat's growth rate while keeping its age counter compact (wheat only has 8 grow states).
+    But maybe tick updates are just expensive in general, and so randomizing them saves CPU? I don't actually know where most of the CPU is consumed.
+  score: 1
+  posted_at: '2026-10-24T19:20:51Z'
+- id: lo-zegwcz
+  parent_id: '0'
+  author: mort
+  text: |-
+    Random world ticks aren't expensive, but there's a ton of blocks.
+    We could imagine a system where every single block in the world has a random tick function which runs every game tick (i.e 20 times per second). For most blocks, this would do nothing, for slow-growing things like wheat you could just have a low probability to increase the growth counter, and the occasional tile which actually wants to do things every game tick could do that. The gameplay could be identical to today's (though there would be more developer freedom), storage would be identical to today. But every chunk, that's 16x16x384 blocks, would be roughly 100 000 updates per game tick. An absolutely tiny 128x128 block world (so 8x8 chunks) would have ~6.3 million block updates per game tick. 126 million per second.
+    This would give you a time budget of roughly 8 nanoseconds per block update function, in total. At 4GHz, that's 4 clock cycles per block.
+    The difficult thing about block games is never that any single thing you want to do with a block is expensive, it's that there are so damn many blocks.
+  score: 3
+  posted_at: '2026-10-24T20:15:34Z'
+- id: lo-vmyzmx
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    This would give you a time budget of roughly 8 nanoseconds per block update function, in total. At 4GHz, that's 4 clock cycles per block.
+
+    I imagine even the overhead of calling a handler function would be substantial at that scale. Thank you for the explanation, this makes a lot of sense!
+  score: 1
+  posted_at: '2026-10-24T21:27:01Z'
+- id: lo-dyievw
+  parent_id: '0'
+  author: dzwdz
+  text: |-
+    This assumes you'd literally tick every block every frame, even though most blocks in the game don't do anything. Receiving ticks could be opt-in instead, which would massively cut down on the computation needed.
+    In fact, Minecraft does just that. I don't remember the details (it's been ages since I've last played the game, let alone looked at the code), but IIRC only Block entities receive ticks. There's also a scheduled tick system, so you don't have to receive them every frame.
+  score: 1
+  posted_at: '2026-10-24T21:36:20Z'
+- id: lo-mjqjkw
+  parent_id: '0'
+  author: mort
+  text: |-
+    Tile entities and scheduled ticks are a different system from this.
+    Tile entities are Minecraft's solution for things which want to tick more frequently. But we're talking about random world ticks (https://minecraft.wiki/w/Random_Tick). Every game tick, 3 random blocks are chosen in each 16x16x16 sub-chunk. Blocks which don't "do anything" are still selected for these random ticks, so the game still has to look up what block is at the given coordinates and check whether it's a block which should be ticked.
+    Saplings, wheat, cactus, ice, leaves, etc. don't all have associated tile entities to handle their growth/melting/decay/whatever, they handle that behavior in the random tick.
+    The question was about why these random ticks which apply to every block are smeared out over many game ticks.
+  score: 1
+  posted_at: '2026-10-24T21:47:57Z'
+- id: lo-pkgbjy
+  parent_id: '0'
+  author: gecko
+  text: And the SNES, actually (and I verified that the SA-1 and similar enhancers
+    weren't used, so that was done purely with the 65816)
+  score: 2
+  posted_at: '2026-10-25T00:28:48Z'
+- id: lo-1drrpf
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    Anything to do with old-fashioned game AI tends to be a good fit for this because there are several natural time scales. For each unit in an RTS you might have orders -> pathing -> steering/physics -> rendering. Rendering interpolates based on the latest physics poses. Steering uses the latest navmesh path. Pathing calculates the navmesh path (usually only the first few triangles are actually emitted) toward the latest order's goal point.
+    With a system like this you can keep a simulation deterministic while performing load-sensitive scheduling/smearing of work. The scheduling can't be directly reactive to wall-clock time (that breaks determinism), but you can schedule based on any deterministic game state. E.g. if more units are currently moving they might re-plan their paths less frequently because the deterministic simulation plans at most 64 paths every simulation tick.
+  score: 1
+  posted_at: '2026-10-25T02:24:05Z'
+- id: lo-soeqo4
+  parent_id: '0'
+  author: dzwdz
+  text: I was responding to the second paragraph in your reply - my point is that
+    your numbers are much higher than they would really be.
+  score: 1
+  posted_at: '2026-10-25T03:57:40Z'
+- id: lo-b3sdr0
+  parent_id: '0'
+  author: mort
+  text: |-
+    My numbers are exactly as high as they would really be if you took the existing random tick mechanism and didn't "smear it out" across ticks.
+    But we could imagine a different implementation where we maintain a list per chunk of all blocks which need to be ticked, and then you'd only have to tick all ice, snow, leaves, saplings, growable produce, grass, etc. An implementation like that would for sure be a lot faster. Maybe that would be the most reasonable interpretation of "random ticks but not smeared across game ticks".
+  score: 2
+  posted_at: '2026-10-25T08:49:21Z'
+article:
+  url: https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/
+  title: How to run a city builder on 16 MHz – Larst Of Us
+  fetch_status: success
+  content: "## How to run a city builder on 16&nbsp;MHz\n\nDo you feel spoiled by
+    modern hardware? I know I do. Even the cheapest CPUs have at least 4 cores nowadays,
+    running billions of operations per second. The idea that you could run any software
+    on less than a GHz almost seems like fiction. Yet, there was a time when whole
+    games ran at hardware a thousand times less powerful than that.\n\n![](https://larstofus.com/wp-content/uploads/2025/11/simcitycover.png?w=347)\n\nWhen
+    thinking about impressive technical achievements in retro games, most people will
+    first point to graphical milestones set by action games like Doom or Quake. Rightfully
+    so, but at least I am personally far more impressed by the early examples of the
+    city builder genre. Simulating whole economies on a large scale with a fraction
+    of today’s power seems impossible if modern builder games even struggle on modern
+    machines.\n\nOf course this didn’t stop developers in the past to develop and
+    run city builder games on significantly weaker hardware. The original SimCity
+    for example lists Intel’s 386SX as the CPU in it’s system requirements. A CPU
+    which at the time of it’s launch ran at magnificent 16 MHz.\n\n(Note: an earlier
+    version of this text mistakenly assumed that it ran on 12.5 MHz, which was the
+    clock rate of base version of CPU, not the SX version. Whoops.)  \nThe idea of
+    running a full game, especially one in the traditionally CPU-heavy genre of city
+    builders? Pure magic from a modern point point of view.\n\nSo, why could Maxis
+    run a full city simulation on this ancient hardware, when nowadays even simple
+    idle games require multiple gigahertz of CPU power?\n\nOf course there are a lot
+    of reason for this, most of them external (OS ecosystem etc.) but this doesn’t
+    mean that there are no clever optimizations done in the game code itself. Luckily,
+    this source code was made public and released under the GPL license in 2008, under
+    the name [Micropolis](https://www.donhopkins.com/home/micropolis/). Don’t be confused
+    by the name, this is still the code of the original name, but since only the code
+    was made open source, not the trademark, it has to be called differently. But
+    even under a different name, this is a precious resource, since we can exactly
+    see how the game managed to run so well.\n\nAs is often the case when analyzing
+    software performance, we can ignore 90 percent of the code. Our focus is on the
+    core of the city simulation, the components that update systems such as traffic,
+    fire, power, and crime.\n\nAnd there is indeed one single function responsible
+    for doing all of this: The Simulate() function in s\\_sim.c\n\n![](https://larstofus.com/wp-content/uploads/2025/06/image.png?w=422)\n\nAs
+    the comment implies, this function is called every frame and the function itself
+    then calls the update functions of the various game systems, like CrimeScan(),
+    FireAnalysis(), CollectTax etc.\n\nThe catch is that calling all those functions
+    every frame would overwhelm our poor 1989 CPU. The solution: Not calling every
+    function every frame.\n\nYep, SimCity just skips most of the simulation. Did you
+    see the mod16 parameter of the Simulate function? Where you would normally expect
+    a deltaTime? This number loops through the numbers 0 to 15 (you probably knew
+    this already because of the name, didn’t you?), and is then used to decided which
+    part of the simulation is run in this specific frame. The code for this looks
+    something like this:\n\n![](https://larstofus.com/wp-content/uploads/2025/09/image-3.png?w=316)\n\n(Note:
+    This is not the exact source, I removed some stuff to make it clearer for the
+    explanation, but it’s veery close) .\n\nSo, obviously this makes the Simulation
+    much faster to calculate, but how does this affect the gameplay? Well in case
+    of SimCity, I would say barely. On average the simulation of an aspect takes 8
+    frames to react to the player’s action, 15 frames in the worst case. As an input
+    lag for a shooter this would be obviously a disaster, but for the simulation of
+    a city? I’d argue it might actually feel better than an instant reaction.\n\nSo
+    far this optimization seems very specific for one kind of type of game, but actually
+    it is the starting point for a lot of optimizations.  \nLet’s look at another
+    example, this time from [Assetto Corsa](https://en.wikipedia.org/wiki/Assetto_Corsa)
+    (2014).\n\n![](https://larstofus.com/wp-content/uploads/2025/09/image-4.png?w=1024)\n\nAs
+    a racing games one of it’s visual requirements is to render cars in a shiny way.
+    To render those reflections the game uses the very common technique of regularity
+    updated cubemaps. For a more detailed explanation what those are you can see my
+    article on [reflection rendering](https://larstofus.com/2024/04/21/how-most-reflections-in-games-work/).\n\nSince
+    updating a whole cubemap every single frame would be a way to expensive task,
+    the game uses a very similar trick as SimCity: It doesn’t update all 6 faces of
+    the cubemap at once, but only a few, depending on the reflection quality setting.
+    \ \nThe settings UI doesn’t say so explicitly, but looking in the .ini file, we
+    see the effect on the variable named FACES\\_PER\\_FRAME:\n\n![](https://larstofus.com/wp-content/uploads/2025/09/assettocorsareflectionssettings.png?w=744)\n\nSo
+    far, we have stuck to the concept of distributing work across multiple frames
+    by cutting longer tasks into fixed-size portions. For other tasks, it might be
+    smarter to also determine the size and contents of those portions at runtime.
+    For rendering tasks, this could be determined by factors such as screen size or
+    the time since the last update. This explains why Unreal’s Lumen looks so good:
+    It doesn’t need to recalculate all the lighting every frame. This is arguably
+    also the reason why its results can look weird sometimes, for example, when reflections
+    are not fully updated, like here:\n\n![](https://larstofus.com/wp-content/uploads/2025/11/image.png?w=1024)\n\nAlthough
+    such frame-distribution optimizations are most common in rendering code, I hope
+    the SimCity example shows that they can work in other areas as well. The next
+    time you work on gameplay code, ask yourself: “Do I really need to run all this
+    code every frame?”\n\nIf you enjoyed this article consider following me at&nbsp;[Mastodon](https://mastodon.gamedev.place/@LarsThiessen),&nbsp;[Bluesky](https://bsky.app/profile/larstofus.bsky.social)&nbsp;or&nbsp;[LinkedIn](https://www.linkedin.com/in/lars-thie%C3%9Fen-a640ba141/)&nbsp;or
+    subscribe to this blog directly below this article. I publish new articles about
+    game programming, Unreal and game development roughly every month.\n\n### Share
+    this:\n\n- [Share on X (Opens in new window)X](https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/?share=twitter)\n-
+    [Share on Facebook (Opens in new window)Facebook](https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/?share=facebook)\n-
+    [Share on LinkedIn (Opens in new window)LinkedIn](https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/?share=linkedin)\n-
+    [Share on Mastodon (Opens in new window)Mastodon](https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/?share=mastodon)\n-
+    [Share on Bluesky (Opens in new window)Bluesky](https://larstofus.com/2025/11/16/how-to-run-a-city-builder-on-12-5-mhz/?share=bluesky)\n-
+    \n\nLike Loading…\n\n## More posts to read\n\n- \n\n[![Speeding up the Unreal
+    editor by… not using unnecessarily secure hash methods](https://larstofus.com/wp-content/uploads/2026/10/fasterhashthumbnail.png)](https://larstofus.com/2026/10/11/speeding-up-the-unreal-editor-by-not-using-unnecessarily-secure-hash-methods/)\n\n###
+    [Speeding up the Unreal editor by… not using unnecessarily secure hash&nbsp;methods](https://larstofus.com/2026/10/11/speeding-up-the-unreal-editor-by-not-using-unnecessarily-secure-hash-methods/)\n\n-
+    \n\n[![Speeding up the Unreal Editor launch (again) by not loading 1585 files](https://larstofus.com/wp-content/uploads/2026/08/locafilesarticle-1.png)](https://larstofus.com/2026/08/16/speeding-up-the-unreal-editor-"
+  error:
+  fetched_at: '2026-10-25T12:58:14Z'
+archived_at: '2026-10-25T12:58:14Z'

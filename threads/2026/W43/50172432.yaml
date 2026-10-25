@@ -1,0 +1,275 @@
+---
+post:
+  id: '50172432'
+  title: I Built a Stereo Vision Board for Hardware Hackers
+  url: https://rootkitlabs.com/2026/10/06/i-built-a-stereo-vision-board-for-hardware-hackers/
+  hn_url: https://news.ycombinator.com/item?id=50172432
+  score: 91
+  author: machinehum
+  posted_at: '2026-10-20T20:45:52Z'
+  fetched_at: '2026-10-25T12:58:05Z'
+  article_url: https://rootkitlabs.com/2026/10/06/i-built-a-stereo-vision-board-for-hardware-hackers/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T12:58:05Z'
+  raw_comment_count: 17
+comments:
+- id: '50227714'
+  parent_id: '50172432'
+  author: ThrowawayTestr
+  text: Neat! What&#x27;s the BOM cost?
+  score: 0
+  posted_at: '2026-10-25T02:31:46Z'
+- id: '50228143'
+  parent_id: '50172432'
+  author: BobbyTables2
+  text: The SAD algorithm looks neat!<p>How long does it take?  Wouldn’t there be
+    a large range of offsets? Or does limiting the minimum distance help mitigate
+    such?<p>I suppose there could be corner cases in which an object with regular
+    pattern could be misinterpreted as being far away ?
+  score: 0
+  posted_at: '2026-10-25T03:51:03Z'
+- id: '50228336'
+  parent_id: '50228143'
+  author: throwaway219450
+  text: SAD runs in better than real time on a typical desktop CPU, even on a Pi.
+    The author glossed over basically all of the calibration involved with stereo.
+    It’s not quite as simple as taking two cameras and running a matcher.<p>Because
+    stereo disparity (parallax) scales inversely with distance, conveniently you don’t
+    need to search huge ranges. A point at infinity should have zero disparity in
+    a calibrated stereo system. So normally you pick a depth range and search the
+    corresponding pixels. Also if the cameras are calibrated, you only need to search
+    horizontally so it works out to say 64 operations per pixel, which can be vectorized
+    if the CPU supports it. Other approaches use more stable comparisons like census
+    (is each pixel in the match window brighter than the central one) and hamming
+    distance which is also very efficient.<p>And yes, stereo is sensitive to repeating
+    texture but absence of texture like a blank wall is usually worse.
+  score: 0
+  posted_at: '2026-10-25T04:31:03Z'
+- id: '50228468'
+  parent_id: '50228336'
+  author: a_t48
+  text: Can also help if you can remove IR filter + add an IR noise projector
+  score: 0
+  posted_at: '2026-10-25T05:00:45Z'
+- id: '50228558'
+  parent_id: '50172432'
+  author: XZeuwsXJ
+  text: This is cool. Very well done. I wish I needed it for something, I&#x27;d take
+    one for sure.
+  score: 0
+  posted_at: '2026-10-25T05:18:55Z'
+- id: '50228606'
+  parent_id: '50228336'
+  author: hex4def6
+  text: I&#x27;m not convinced he&#x27;s done the calibration, at least in his demo
+    video. It&#x27;s pretty bad, imo.<p>I think he&#x27;s just running it on the raw
+    unrectified images.<p>For anyone wanting to play with this, OpenCV has a number
+    of tutorials on this using stuff like stereoBM (which also uses SAD if I&#x27;m
+    remembering my algos).<p>The first step is calibration -- intrinsics (basically
+    figuring out the equations that can cancel out the lens distortion) and extrinsics
+    (how far apart are the two cameras in XYZ, tilt, etc).
+  score: 0
+  posted_at: '2026-10-25T05:29:47Z'
+- id: '50228702'
+  parent_id: '50172432'
+  author: numpad0
+  text: "... why aren&#x27;t there mentions of stereo baseline distance and clock
+    signal distribution challenges?<p>Also can&#x27;t you just buy the PS5 camera?
+    IIRC they switched to regular USB plugs for PS5 with adapters available for PS4
+    cameras."
+  score: 0
+  posted_at: '2026-10-25T05:47:32Z'
+- id: '50228827'
+  parent_id: '50228606'
+  author: globalnode
+  text: can this be done manually by setting constants till the images look rectified?
+    last time i played with opencv for this it didnt do a very good job at automatically
+    calculating the k&#x27;s. im hoping an algo comes out that lets me do disparity
+    without calibration one day :)
+  score: 0
+  posted_at: '2026-10-25T06:18:15Z'
+- id: '50228877'
+  parent_id: '50228827'
+  author: throwaway219450
+  text: You can use structure from motion for this. Walk around and capture some video.
+    It’s the same way that drone photogrammetry works, ie bundle adjustment. It’ll
+    give you the intrinsics at least.<p>But with a high res sensor, even flex in the
+    PCB will invalidate the calibration. Only takes a few microns for a pixel to be
+    in the wrong place.
+  score: 0
+  posted_at: '2026-10-25T06:29:12Z'
+- id: '50229250'
+  parent_id: '50228827'
+  author: choppaface
+  text: lots of “world models” are pretty good at “stereo with zero calibration”<p>but
+    if you want to calibrate, try printing out a board <a href="https:&#x2F;&#x2F;calib.io&#x2F;pages&#x2F;camera-calibration-pattern-generator"
+    rel="nofollow">https:&#x2F;&#x2F;calib.io&#x2F;pages&#x2F;camera-calibration-pattern-generator</a>
+  score: 0
+  posted_at: '2026-10-25T07:49:43Z'
+- id: '50229327'
+  parent_id: '50172432'
+  author: solarSail34
+  text: It would be useful to see Built on a second platform before drawing a general
+    conclusion.
+  score: 0
+  posted_at: '2026-10-25T08:06:29Z'
+- id: '50229359'
+  parent_id: '50228702'
+  author: lagrange77
+  text: "&gt; Also can&#x27;t you just buy<p>Do you ask that question on every Open
+    Source &#x2F; Open Hardware project you encounter?"
+  score: 0
+  posted_at: '2026-10-25T08:15:20Z'
+- id: '50229898'
+  parent_id: '50228827'
+  author: michaelt
+  text: While I wouldn&#x27;t say opencv makes it <i>simple</i> they do provide functions
+    like findChessboardCorners, CharucoDetector, stereoCalibrate - even code to generate
+    printable calibration patterns.<p>And these days, you can get an LLM to stitch
+    those functions together
+  score: 0
+  posted_at: '2026-10-25T10:00:49Z'
+- id: '50230003'
+  parent_id: '50172432'
+  author: lysace
+  text: <a href="https:&#x2F;&#x2F;rootkitlabs.com&#x2F;2023&#x2F;07&#x2F;08&#x2F;5-Strategies-to-Sink-your-Hardware-Startup&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;rootkitlabs.com&#x2F;2023&#x2F;07&#x2F;08&#x2F;5-Strategies-to-Sink-your...</a>
+    from that blog was a fun&#x2F;interesting read.<p><i>This isn’t a dropshipping
+    success story, a lucrative exit, or a guide. This is a silly story documenting
+    our failed hardware startup. It’s embarrassing to fail, so we seldom hear these
+    stories, but I’m going to tell you one, here goes.</i>
+  score: 0
+  posted_at: '2026-10-25T10:18:54Z'
+- id: '50230175'
+  parent_id: '50229359'
+  author: numpad0
+  text: There&#x27;s usually a clear use case and a motivation, like you were building
+    an AR passthrough goggles and existing cameras were too big or you didn&#x27;t
+    want a USB3 camera for it. It&#x27;s not clear what those were for the author,
+    and the article is rather information sparse relative to the complexity of the
+    project.
+  score: 0
+  posted_at: '2026-10-25T10:41:04Z'
+- id: '50230576'
+  parent_id: '50228143'
+  author: rasz
+  text: Tons of problems to take care of, especially if you only want to do horizontal
+    passes.<p>- sensors have to be mounted solid<p>- sensors have to be mechanically
+    calibrated in two axes<p>- coefficients of thermal expansion of all the materials
+    between sensors<p>Afaik most good stereo systems have camera affixed to a heavy
+    lump of alloy
+  score: 0
+  posted_at: '2026-10-25T11:43:17Z'
+- id: '50230921'
+  parent_id: '50228827'
+  author: numpad0
+  text: I&#x27;ve fed like 1s interval mp4 screenshots from Vive Flow into a Gemini
+    vibecoded Python cv2 script for one of my failed project and that part seemed
+    to work fine, though it was a stereo camera specifically designed and validated
+    for SLAM and also there was a catch that the entirety of the board is clearly
+    visible for a single image to be usable. Maybe try reducing square counts and
+    adjusting illumination if it&#x27;s not working out.<p>btw K is scale factor right?
+    If other parameters were good, maybe you can calculate that from sensor dimensions
+    and focal length if scale was only the problem.
+  score: 0
+  posted_at: '2026-10-25T12:38:27Z'
+article:
+  url: https://rootkitlabs.com/2026/10/06/i-built-a-stereo-vision-board-for-hardware-hackers/
+  title: I Built a Stereo Vision Board for Hardware Hackers - Rootkit Labs Blog
+  fetch_status: success
+  content: "_This article was written entirely by a human, for humans._\n\n* * *\n\nI
+    tend to get excited about certain chips. This time, it was a microprocessor: The
+    Rockchip RV1103 is a single-core 1.1 GHz ARM Cortex-A7 SoC (system on chip) with
+    64 MB of DDR2 RAM and a MIPI CSI-2 bus shoved into a QFN-88 package. With this
+    chip, I built a cheap, simple stereo vision board with built-in compute and Linux
+    support.\n\n![Design Files](/img/4reel/4reel-front.jpg)\n_Design Files_\n\nI en
+    **vision** integrating this board into robotics projects, like an Arduino needing
+    obstacle avoidance or navigation. Once powered up, the board transmits data over
+    serial. Or you can use it on its own, with everything you’d expect from a Linux
+    board.\n\nThe video below shows image capture and depth processing on the hardware:\n\nThis
+    blog post outlines the hardware, firmware, and software details!\n\n# System Overview\n\n![](/img/4reel/4reel-system-overview.svg)\n\n#
+    The PCB\n\nA cheap four-layer board worked for this project.\n\n![Top Layer: Controlled-impedance
+    traces: USB, MIPI, and Ethernet. With some Signal/Power.](/img/4reel/4reel_ee-B_Cu.svg)\n_Top
+    Layer: Controlled-impedance traces: USB, MIPI, and Ethernet. With some Signal/Power._\n\n![Inner
+    L1: Solid ground.](/img/4reel/4reel_ee-In2_Cu.svg)\n_Inner L1: Solid ground._\n\n![Inner
+    L2: Signal/Power](/img/4reel/4reel_ee-In1_Cu.svg)\n_Inner L2: Signal/Power_\n\n![Bottom
+    Layer: Signal/Power](/img/4reel/4reel_ee-F_Cu.svg)\n_Bottom Layer: Signal/Power_\n\nI
+    got the board mostly correct on the first shot, but there were a few issues:\n\n-
+    I requested the wrong SoC. That was a fun replacement.\n- The holes for the lens
+    mounts were drilled at 1.8 mm instead of 2.2 mm.\n- 1k resistors were too small
+    to make the LEDs light up nicely.\n- The 0.9 V trace was too thin, although it
+    seemed to work fine.\n\n# The Kernel, Bootloader, and OS\n\nI needed a bootable
+    OS, with drivers, a bootloader and a kernel. For this I used my favorite Linux
+    build system: _Buildroot_. Buildroot combines these elements into `sdcard.img`,
+    which you flash to an SD card, pop into the board, and boot.\n\nSadly, not everything
+    needed for this project is available upstream. The Rockchip MIPI drivers, hardware
+    accelerators, and some other key components all came from the vendor BSP. Buildroot
+    has support for out-of-tree kernels.\n\nFor this chip, there are a few different
+    boot stages. Most ARM MPUs look _something_ like this:\n\n1. (Bootloader) **BootROM**
+    : Gets TPL and runs it. This is in ROM and uses SRAM (smaller, non-main RAM).\n2.
+    (Bootloader) **TPL** (“Tertiary Program Loader”): Sets up the DRAM controller.
+    This is a binary from Rockchip.\n3. (Bootloader) **SPL** (“Secondary Program Loader”):
+    Loads U-Boot, bundled with the U-Boot project.\n4. (Bootloader) **U-Boot** : This
+    is our main bootloader; it loads the kernel. It has other fancy features.\n5.
+    (Kernel): **Linux**\n6. (OS) **Init System** : Starts services.\n\nAfter some
+    [simple config](https://github.com/o7-machinehum/4reel/blob/master/os/configs/rv1103g_defconfig)
+    in Buildroot, I had access to a shell over serial. I eventually moved to SSH,
+    with the USB-C port as an Ethernet adapter.\n\n# The Software Stack\n\n![The SW
+    architecture](/img/4reel/4reel-software-overview.svg)\n\nThe software MVP needed
+    to communicate with the kernel to get image data, control the camera, and use
+    the hardware accelerators. Luckily, everything in the kernel space marked above
+    was assembled for us with Buildroot. We just needed to make the blue part, but
+    I’ll explain the rest briefly.\n\n## Kernel Space\n\nYou may notice drivers get
+    more abstract at the top of the diagram, while lower down they’re hardware specific.
+    This means a user application can talk to a node created by V4L2 and doesn’t need
+    to care about specific camera commands.\n\nThere are SoC-specific drivers for
+    the SoC peripherals (like I2C, CSI, etc.). This is so the camera driver (OV9281
+    in our case) doesn’t need to know which SoC it’s running on.\n\nThis is all pretty
+    standard Linux device driver stuff, so I won’t go into any more details beyond
+    this.\n\n## User Space\n\nThe data eventually flows up to Video4Linux2, which
+    exposes our cameras in various nodes `/dev/videoX`. Each camera shows 11 video
+    nodes:\n\n- video0: Normal video capture\n- video1-3: Other stream IDs\n- video4-7:
+    Scalers\n- video8-10: Auxiliary tools\n\nCamera control is exposed through `/dev/v4l-subdevX`.
+    We can use these nodes to set exposure and control various camera features.\n\nThe
+    “Rockchip Video Engine” is exposed through `/dev/rve`. We use the proprietary
+    `librve.a` to talk with the engine and schedule various hardware video acceleration
+    tasks. I’ll get more into this later.\n\nThe userspace app&mldr;\n\n1. Configures
+    the cameras from `/dev/v4l-subdevX`\n2. Takes the image data from `/dev/videoX`\n3.
+    Feeds it into the `/dev/rve` node\n\nThe Rockchip Video Engine contains a SAD
+    engine (sum of absolute differences). This is a hardware accelerator block that
+    runs on the Rockchip SoC itself.\n\nSAD is the core of how we do stereoscopic
+    vision. A grayscale image can be represented as a matrix, with each element being
+    a number from 0 to 255. Let’s say we have 2x images that are 2 × 2 px each. We
+    can calculate the SAD:\n\n    Image 1 Image 2 Absolute differences\n    [10 20]
+    [10 20] [0 0]\n    [30 40] [30 40] [0 0]\n    \n    SAD = 0 + 0 + 0 + 0 = 0\n\nWe
+    can say the two images are the same.\n\nNow instead of comparing these tiny images,
+    we have two big images and break them up into a bunch of smaller images, called
+    patches, and do this everywhere.\n\n![With apple](/img/4reel/4reel-sad-with-apple-patches.svg)
+    ![Without apple](/img/4reel/4reel-sad-without-apple-patches.svg)\n\n_Normalized
+    SAD per patch (0 = identical)._\n\nWe now have an algorithm to determine how similar
+    patches of the image are, so with this information we can certainly say that this
+    section of this image is different.\n\nSAD-based stereo block matching uses the
+    same principle, but compares a vertical column of patches after a horizontal shift.
+    Our two images come from two separate cameras, separated horizontally by a distance
+    we call the baseline. We keep one image fixed, shift the other, and try to find
+    matching blocks; when the blocks match, this is a depth value. If they match at
+    a very early shift, this is a far-away value, while a later shift is a closer
+    image.\n\n![Two stereo cameras](/img/4reel/4reel-stereo-disparity.svg)\n\n![Stereo
+    images: Middlebury Cones.](/img/4reel/4reel-stereo-matching.gif)\n_Stereo images:
+    Middlebury Cones._\n\nYou can see that images farther away require less shifting
+    to get a match, and once you get a match, the shifting required is your depth!
+    The boxes show your patch size, and the green box is showing a SAD match. This
+    is illustrated in this GIF above with three separate depths.\n\n# What’s Next?\n\nI
+    would like to sell a few of these devices and get some feedback.\n\nIf you’re
+    interested in this device, please sign up for the [email notification here](https://shop.rootkitlabs.com/products/4reel-stereo-camera).
+    If I get more than 20 signups, I’ll order another 10 boards with all the fixes
+    and list these for sale. Please note this isn’t a pre-order, but only sign up
+    if you are serious about supporting the project :)\n\nIf I get enough interest,
+    the next stage of the project will be software cleanups, image optimisations,
+    implementing SLAM, and YOLO.\n\nThanks for reading!\n\n* * *\n\n### Author\n\n
+    ![Ryan Walker](/img/me.png)\n\n#### Ryan Walker\n\nBuilding open source stuff
+    with open source stuff.\n\n[![](/img/shop.png)Our Shop](https://shop.rootkitlabs.com)[![](/img/email.png)Email](mailto:info@rootkitlabs.com)[![](/img/youtube.png)Youtube](https://www.youtube.com/@rootkitlabs)[![](/img/github.png)GitHub](https://github.com/o7-machinehum)\n\n[![](/img/ig.jpg)Instagram](https://www.instagram.com/rootkitlabs/)[![](/img/discord.png)Discord](https://discord.gg/EtZT7mjNuM)[![](/img/twitter.png)Twitter](https://twitter.com/machinehum)[![](/img/rss.png)RSS
+    Feed](https://rootkitlabs.com/atom.xml)"
+  error:
+  fetched_at: '2026-10-25T12:58:05Z'
+archived_at: '2026-10-25T12:58:12Z'

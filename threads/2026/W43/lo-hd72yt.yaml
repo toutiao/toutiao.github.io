@@ -5,14 +5,14 @@ post:
   title: Software is slow because of bad design, not slow languages
   url: https://www.seangoedecke.com/software-is-slow-because-of-bad-design-not-slow-languages/
   hn_url: https://lobste.rs/s/hd72yt
-  score: 51
+  score: 54
   author: nrposner
   posted_at: '2026-10-23T12:58:10Z'
-  fetched_at: '2026-10-25T03:16:49Z'
+  fetched_at: '2026-10-25T12:58:12Z'
   article_url: https://www.seangoedecke.com/software-is-slow-because-of-bad-design-not-slow-languages/
   article_fetch_status: success
-  article_fetched_at: '2026-10-25T03:16:58Z'
-  raw_comment_count: 68
+  article_fetched_at: '2026-10-25T12:58:16Z'
+  raw_comment_count: 72
   tags:
   - performance
 comments:
@@ -35,7 +35,7 @@ comments:
 
     Sigh. Another server-side developer who thinks all “real programs” are servers.
     Outside of servers there are definitely some IO-bound programs (or parts of programs) but a lot that aren’t. A web browser's layout engine, a 3d renderer, a word processor, a neural network…
-  score: 96
+  score: 97
   posted_at: '2026-10-23T14:53:58Z'
 - id: lo-2jjgbb
   parent_id: '0'
@@ -80,7 +80,7 @@ comments:
     is strong in backend development unfortunately. Fetching data from DBs takes ~5ms
     but somehow average responses take ~500ms. There is a lot of CPU bound mini workloads
     and overhead people take for granted.
-  score: 77
+  score: 78
   posted_at: '2026-10-23T15:53:43Z'
 - id: lo-oiyyyo
   parent_id: '0'
@@ -131,7 +131,7 @@ comments:
     applications we may expect an optimized Rust program to use an order of magnitude
     less memory than the Go program. In server-side contexts this reduces the demand
     for horizontal scaling.
-  score: 33
+  score: 34
   posted_at: '2026-10-23T18:03:43Z'
 - id: lo-s5dkdu
   parent_id: '0'
@@ -501,7 +501,7 @@ comments:
     Yes, because curl is already written in C and uses TLS implementations written in C and assembler. If you wrote curl including OpenSSL in Python, I am certain you’d notice it.
     Hell, I’ve switched OpenSSH back to AES-GCM because with AES-NI that was twice as fast as whatever DJB cipher they use by default. My file transfer was in fact NOT able to saturate a 10 Gbit link before this.
     Also if you have CPU to spare, you can reduce your IO by compressing things.
-  score: 5
+  score: 6
   posted_at: '2026-10-24T09:28:38Z'
 - id: lo-yujpwa
   parent_id: '0'
@@ -695,6 +695,44 @@ comments:
   text: I mean I dunno luajit is pretty dang fast.
   score: 1
   posted_at: '2026-10-24T18:26:07Z'
+- id: lo-voypxf
+  parent_id: '0'
+  author: calvin
+  text: |-
+    Yeah, it's interesting to me how we still largely design systems today to fit the design constraints of the late 90s.
+
+    Shades of utah2k, just shifting the timescale?
+  score: 1
+  posted_at: '2026-10-25T04:13:29Z'
+- id: lo-6we70e
+  parent_id: '0'
+  author: wareya
+  text: until you have to do certain kinds of native interop, then the tracing system
+    dies and so does the GC
+  score: 1
+  posted_at: '2026-10-25T07:34:02Z'
+- id: lo-wv2l9p
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    To try to put some concrete numbers on this:
+    Around 25 years ago, the server I deployed the little web apps I worked on to had a 1GHz CPU and a spinning-rust disk. The disk had a seek time of around 10ms and random disk reads topped out at about 150 KB/s. Linear reads were around 30 MB/s. Doing random disk accesses, I got a bit under 7M cycles per byte read from disk.
+    A modern server might have 32 3 GHz cores with NVMe storage. NVMe disks are ludicrously fast. Even a cheap one can manage over 100 MB/s in random reads, often closer to 300 MB/s and high-end ones are much faster. Assuming 300 MB/s, on a single core I get about ten cycles per byte for random reads. If I have a nicely multithreaded workload I get around 300 cycles per byte.
+    If my code 25 years ago had been I/O bound and sat with a CPU utilisation of 5%, the same code on a modern machine would peg a CPU core at 100% and I/O at 0.0003%. If I make it perfectly multithreaded, I/O usage becomes a massive 0.009%.
+    But I think this is focus on the specific case is hiding the real reason why software is slow: software where performance matters is heavily optimised but optimisation is a multi-dimensional constraint space and those constraints change over time. To give another example:
+    During my PhD, I was working with a codebase that had a load of globals for working state because repeatedly copying stack values was slow on the system it was originally written for. I refactored it to pass the state down as function arguments. On a more modern architecture, they were passed in registers and occasionally spilled. Globals required GOT-relative access and so were much slower. On top of that, making them local enabled the compiler to be less conservative about optimisation. The end result was that the code, now written in a more naïve style, was around 10-20% faster, with no algorithmic changes. This wasn’t because the original author was an idiot, it was because they were a clever person optimising based on constraints that no longer existed. The bottlenecks had moved.
+    The harder it is to refactor code or change underlying data structures, the more likely you are to be stuck with optimisation that was 100% necessary for performance goals 10-20 years ago but is now the cause of bottlenecks.
+  score: 1
+  posted_at: '2026-10-25T09:26:27Z'
+- id: lo-qdklml
+  parent_id: '0'
+  author: mira
+  text: |-
+    extraördinary
+
+    If you allow me the diversion, what accent of English do you speak? My understanding is that the diaeresis mark indicates that two consecutive vowels belong to different syllables, yet so far I have only heard extraordinary be pronounced with a single vowel sound in that position.
+  score: 1
+  posted_at: '2026-10-25T12:28:42Z'
 article:
   url: https://www.seangoedecke.com/software-is-slow-because-of-bad-design-not-slow-languages/
   title: Software is slow because of bad design, not slow languages
@@ -713,4 +751,4 @@ article:
     \ \n> [Continue reading...](/what-requirements-dont-you-have/)\n\n* * *"
   error:
   fetched_at: '2026-10-24T03:35:45Z'
-archived_at: '2026-10-25T03:16:58Z'
+archived_at: '2026-10-25T12:58:16Z'

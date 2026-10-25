@@ -4,14 +4,14 @@ post:
   title: The Goose Programming Language
   url: https://aardappel.github.io/goose/
   hn_url: https://news.ycombinator.com/item?id=50224100
-  score: 273
+  score: 452
   author: bobbydigitales
   posted_at: '2026-10-24T19:06:55Z'
-  fetched_at: '2026-10-25T03:16:30Z'
+  fetched_at: '2026-10-25T12:57:53Z'
   article_url: https://aardappel.github.io/goose/
   article_fetch_status: success
   article_fetched_at: '2026-10-25T03:16:30Z'
-  raw_comment_count: 179
+  raw_comment_count: 276
 comments:
 - id: '50224336'
   parent_id: '50224100'
@@ -954,6 +954,272 @@ comments:
     curious about your opinions of prior art.
   score: 0
   posted_at: '2026-10-25T02:46:14Z'
+- id: '50228279'
+  parent_id: '50226282'
+  author: nozzlegear
+  text: "&gt; <i>What action would you take differently if a given feature were implemented
+    by Claude, or a human?</i><p>This one is easy: I&#x27;d read the docs if it were
+    written by a human, but I won&#x27;t read them if they&#x27;re written by Claude."
+  score: 0
+  posted_at: '2026-10-25T04:17:44Z'
+- id: '50228496'
+  parent_id: '50227360'
+  author: jibalt
+  text: Your correspondent keeps moving the goalposts and never presents a coherent
+    argument. I would just leave them be.
+  score: 0
+  posted_at: '2026-10-25T05:07:00Z'
+- id: '50228550'
+  parent_id: '50226767'
+  author: jibalt
+  text: "&gt;  It evaluates 27 programming languages across 50 real-world-inspired
+    tasks using 5 metrics: runtime, runtime score, memory usage, compile time, and
+    expressiveness."
+  score: 0
+  posted_at: '2026-10-25T05:17:23Z'
+- id: '50228564'
+  parent_id: '50225038'
+  author: cardboardguru
+  text: All it&#x27;s doing is allocating address space. And 64 bits means you have
+    an astronomical amount of that. It only needs to become actual memory when you
+    use it. A page at a time.
+  score: 0
+  posted_at: '2026-10-25T05:19:51Z'
+- id: '50228590'
+  parent_id: '50227607'
+  author: cardboardguru
+  text: At the end of the day trees are still stored linearly in memory. Think of
+    it as an array, with each node an element of the array, and indexes used rather
+    than pointers.<p>Plenty of trees only ever grow. And that&#x27;s the normal type
+    of array in Goose. However you can also have arrays that can grow and shrink,
+    if you have a tree that is constantly in flux.<p>Either way it&#x27;ll be one
+    stack for an entire tree.
+  score: 0
+  posted_at: '2026-10-25T05:25:01Z'
+- id: '50228630'
+  parent_id: '50226713'
+  author: vanderZwan
+  text: 'Apologies, I wasn&#x27;t trying to be dismissive, it was meant to be a joke
+    that the sentence read like an (earned) humblebrag.<p>For context: I&#x27;m very
+    active on the Goose discord (and have been following WvO&#x27;s languages since
+    Lobster was announced on Google Groups eons ago). I goof around there too, and
+    forgot for a moment that outside of that chat it wouldn&#x27;t be obvious that
+    I&#x27;m being tongue-in-cheek.'
+  score: 0
+  posted_at: '2026-10-25T05:34:14Z'
+- id: '50228631'
+  parent_id: '50225002'
+  author: cardboardguru
+  text: Sounds like they are processes, as the docs say that all the global data is
+    duplicated for the workers to have a private copy.
+  score: 0
+  posted_at: '2026-10-25T05:34:18Z'
+- id: '50228709'
+  parent_id: '50228496'
+  author: adastra22
+  text: How have I been inconsistent?
+  score: 0
+  posted_at: '2026-10-25T05:48:24Z'
+- id: '50228911'
+  parent_id: '50227132'
+  author: brabel
+  text: |-
+    That’s just not true especially when the author designed the language with the LLM like he says in the end (the AI is very good at forcing you to be specific and make decisions on ambiguous terms): all decisions can be included in the repository in a way the computer can follow and understand, which is a pattern called specification graphs. You can just document things in the docs as well if you want a more basic method.
+    If you are claiming this language is worse in every way than others that were made by humans alone, could you be specific?? What are the bad things you’ve found? What part of the docs are incorrect? Or are you just commenting without having looked at any of that?
+  score: 0
+  posted_at: '2026-10-25T06:37:07Z'
+- id: '50229056'
+  parent_id: '50225091'
+  author: nextaccountic
+  text: "&gt; The &quot;faster than&quot; is on average, and both in my own benchmarks
+    and independent benchmarks you can find examples of algorithms where it is slower,
+    but they tend to be the exception. &quot;substantially&quot; slower I haven&#x27;t
+    found yet.<p>Well message passing with literal memcpys (rather than, say, just
+    a shared buffer, like is common in Rust) is very expensive when the messages are
+    huge. Of course as the message size increases, the Rust program will become faster
+    than the Goose one (and if it doesn&#x27;t, you should look into your benchmarks)<p>Being
+    more specific, it means that for each message, we are writing on memory twice
+    - one to build our own buffer with the message, and another to make a copy to
+    another worker. Message passing violates, in spirit, the Goose rule that things
+    are built on their end destination: we can&#x27;t write into a buffer owned by
+    another task, so we need to first write on our own buffer, and then do a copy,
+    which is a lot like first writing the value to the stack, then copying the heap.
+    Writing twice has an overhead, specially when messages don&#x27;t fit in the cache
+    - you just need benchmarks with sufficiently large messages to demonstrate it.<p>Beyond
+    that, there are some algorithms that can be made much faster when written with
+    atomics rather than message passing. (Also there are algorithms that will get
+    faster if you use locks! Locks aren&#x27;t always slower). It&#x27;s just a matter
+    of finding such examples, and writing a Rust code that will use atomics, compared
+    to a Goose program that uses messages between workers because Goose doesn&#x27;t
+    expose atomics to the user.<p>So if you didn&#x27;t find such examples, it&#x27;s
+    because you didn&#x27;t specifically write benchmarks with those scenarios in
+    mind (or, I mean, didn&#x27;t told your LLM to write this).<p>That is: if the
+    Rust program and the Goose program do the same thing in the same way, then it&#x27;s
+    reasonable that Goose is faster on average. But Goose is limited because it doesn&#x27;t
+    let you do some things, but Rust does, so to compare the languages you need to
+    find those cases where the Goose limitations end up making the software slower"
+  score: 0
+  posted_at: '2026-10-25T07:08:52Z'
+- id: '50229132'
+  parent_id: '50226664'
+  author: vikramkr
+  text: at that point i just ask an ai questions about how the system works and hope
+    the reasons for particular decisions can be reverse engineered from git history&#x2F;pr
+    comments etc.
+  score: 0
+  posted_at: '2026-10-25T07:22:49Z'
+- id: '50229151'
+  parent_id: '50226778'
+  author: vikramkr
+  text: pretty much that&#x27;s the default assumption yeah. Anything new is probably
+    a throwaway. If there&#x27;s anything cool in it - rebuild it to your own taste.
+    There will be exceptions that do become long lived projects of course. probably
+    even the same amount there were before. But there&#x27;s going to be a few orders
+    of magnitude more throwaways so on average any new piece of code is going to be
+    a throwaway
+  score: 0
+  posted_at: '2026-10-25T07:26:26Z'
+- id: '50229174'
+  parent_id: '50226351'
+  author: vikramkr
+  text: What&#x27;s left to determine? Obviously AI written docs are a deal breaker
+    for you. Seems very straightforward. If docs are ai written, move on. That&#x27;s
+    an immediate and obvious fundamental incompatibility you have with the project.
+    Why are you still complaining about the docs being ai written getting in the way
+    of making your decision when you&#x27;ve clearly already made it?
+  score: 0
+  posted_at: '2026-10-25T07:29:49Z'
+- id: '50229191'
+  parent_id: '50227132'
+  author: vikramkr
+  text: That is not necessarily true if the codebase is written by AI unless the human
+    chose to be involved. That was also not necessarily true before AI either. Human
+    skill level is wildly variable
+  score: 0
+  posted_at: '2026-10-25T07:33:38Z'
+- id: '50229256'
+  parent_id: '50226778'
+  author: baq
+  text: with programming languages which just rehash ideas (not saying it&#x27;s a
+    bad thing mind you! a good mix is better than a sum of its parts) you can nowadays
+    get literally <i>years</i> of work in a week. truly novel stuff like bend2 takes
+    longer (ask Victor), but I expect the next generation of models to compress those
+    timelines, too (if the next generation is allowed to be released, since the security
+    brouhaha going on now is seriously concerning)
+  score: 0
+  posted_at: '2026-10-25T07:51:01Z'
+- id: '50229406'
+  parent_id: '50226282'
+  author: hackrmn
+  text: Comprehensibility does not equal correctness or fitness. As if that wasn&#x27;t
+    enough, or perhaps in most related manner, an LLM&#x2F;AI cannot be held responsible
+    for what it produces, by nature, especially considering the fact that a _human_
+    claims all of it as their own work, or at least take responsibility. Meaning that
+    when a parable of documentation is discovered to be bogus, you can&#x27;t pin
+    it on AI, you go to the human and ask them why the documentation is wrong, and
+    it&#x27;s not a good look.
+  score: 0
+  posted_at: '2026-10-25T08:25:33Z'
+- id: '50229603'
+  parent_id: '50226282'
+  author: elxr
+  text: '&gt; The documentation is perfectly comprehensible<p>For a programming language?
+    It&#x27;s subpar and you know it.<p>See this for a language docs site by a small-ish
+    team, but a significant effort was put into making it nice to read: <a href="https:&#x2F;&#x2F;tour.gleam.run&#x2F;everything&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;tour.gleam.run&#x2F;everything&#x2F;</a>'
+  score: 0
+  posted_at: '2026-10-25T09:04:39Z'
+- id: '50229616'
+  parent_id: '50226795'
+  author: elxr
+  text: That&#x27;s a great idea. I wonder if any major library (or language) has
+    attempted a version their site in that style.<p>I&#x27;d love to experiment with
+    this myself.
+  score: 0
+  posted_at: '2026-10-25T09:07:39Z'
+- id: '50229734'
+  parent_id: '50228564'
+  author: adwn
+  text: "&gt; <i>All it&#x27;s doing is allocating address space. And 64 bits means
+    you have an astronomical amount of that.</i><p>No, you can typically only assume
+    48 bits of virtual address space; the kernel takes half of it, so really only
+    47 bits. Newer CPUs provide 57 bits (e.g., Zen 4) or 52 bits (certain ARM64 models).
+    And that&#x27;s provided that the kernel plays ball; apparently some Android configurations
+    only support 39 bits of user virtual address space."
+  score: 0
+  posted_at: '2026-10-25T09:33:24Z'
+- id: '50229904'
+  parent_id: '50228550'
+  author: Jtarii
+  text: I&#x27;m not sure how that is relevant to every test being vibe-coded?
+  score: 0
+  posted_at: '2026-10-25T10:01:58Z'
+- id: '50230298'
+  parent_id: '50224905'
+  author: mgaunard
+  text: You can also just do that in C++. I do that as part of my messaging usually,
+    so that the objects are trivially relocatable and reinterpret-castable. It only
+    works so long as you combine a set of canonical types, but that can be verified
+    or converted using C++26 reflection.<p>I have both what I call inline sequences,
+    and out-of-line ones (store an offset to the object itself rather than pointers).<p>I
+    made all my sizes and offset 32-bit, but I suppose they could have been 16-bit.
+  score: 0
+  posted_at: '2026-10-25T10:56:28Z'
+- id: '50230344'
+  parent_id: '50230298'
+  author: groundzeros2015
+  text: This is also the default C behavior.
+  score: 0
+  posted_at: '2026-10-25T11:03:24Z'
+- id: '50230590'
+  parent_id: '50224405'
+  author: mcdonje
+  text: He should&#x27;ve posted the website instead of twitter
+  score: 0
+  posted_at: '2026-10-25T11:44:51Z'
+- id: '50230705'
+  parent_id: '50229616'
+  author: WillAdams
+  text: I&#x27;ve been trying to collect Literate Programs collected as books at:<p><a
+    href="https:&#x2F;&#x2F;www.goodreads.com&#x2F;review&#x2F;list&#x2F;21394355-william-adams?ref=nav_mybooks&amp;tag=literateprograms"
+    rel="nofollow">https:&#x2F;&#x2F;www.goodreads.com&#x2F;review&#x2F;list&#x2F;21394355-william-adams...</a><p>Note
+    that ICC, a C compiler, is one:<p><a href="https:&#x2F;&#x2F;www.goodreads.com&#x2F;book&#x2F;show&#x2F;522102.Retargetable_C_Compiler_A"
+    rel="nofollow">https:&#x2F;&#x2F;www.goodreads.com&#x2F;book&#x2F;show&#x2F;522102.Retargetable_C_Co...</a><p>Note
+    that one can look through projects tagged as Literate Programming by using the
+    topics view:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;topics&#x2F;literate-programming"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;topics&#x2F;literate-programming</a><p>might
+    be there&#x27;s something useful there.
+  score: 0
+  posted_at: '2026-10-25T12:02:38Z'
+- id: '50230714'
+  parent_id: '50229151'
+  author: adastra22
+  text: Do you not see the problems that arise here? Are we losing our accumulated
+    engineering best practice knowledge? Standardized, common, highly reviewed subsystems
+    provide working engineering know-how and accumulated lessons learned. Not even
+    the best AI systems can keep that many considerations in mind when re-spinning
+    code.<p>If this is your default assumption, I hope I never have to rely on code
+    you generate.
+  score: 0
+  posted_at: '2026-10-25T12:04:39Z'
+- id: '50230761'
+  parent_id: '50227607'
+  author: dirkt
+  text: There are examples in the tutorial, including a circular linked list.<p>You
+    can just store all them items of the list&#x2F;tree&#x2F;whatever on the stack,
+    growing it as needed, or you can add an addition &quot;freelist&quot; for a particular
+    stack, so you can re-use items.
+  score: 0
+  posted_at: '2026-10-25T12:14:37Z'
+- id: '50230945'
+  parent_id: '50227729'
+  author: conartist6
+  text: Amen. Not to mention these people usually want others to laud them for creating
+    a world they can&#x27;t bring themselves to actually live in.<p>If you believe
+    you are making something worth other people&#x27;s time, you should ALSO believe
+    you are making something worthy of your own time.
+  score: 0
+  posted_at: '2026-10-25T12:41:34Z'
 article:
   url: https://aardappel.github.io/goose/
   title: The Goose Programming Language · Goose
@@ -1059,4 +1325,4 @@ article:
     \"alice\",\n           "
   error:
   fetched_at: '2026-10-25T03:16:30Z'
-archived_at: '2026-10-25T03:16:48Z'
+archived_at: '2026-10-25T12:58:11Z'

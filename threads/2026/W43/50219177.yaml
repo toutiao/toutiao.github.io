@@ -5,14 +5,14 @@ post:
     apps
   url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
   hn_url: https://news.ycombinator.com/item?id=50219177
-  score: 284
+  score: 340
   author: theanonymousone
   posted_at: '2026-10-24T08:06:39Z'
-  fetched_at: '2026-10-25T03:16:29Z'
+  fetched_at: '2026-10-25T12:57:54Z'
   article_url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
   article_fetch_status: success
   article_fetched_at: '2026-10-24T19:18:02Z'
-  raw_comment_count: 140
+  raw_comment_count: 164
 comments:
 - id: '50219946'
   parent_id: '50219177'
@@ -1069,6 +1069,174 @@ comments:
     &quot;well actually&quot; impression.
   score: 0
   posted_at: '2026-10-25T01:56:11Z'
+- id: '50228596'
+  parent_id: '50220666'
+  author: zahlman
+  text: ~~Recent versions of pip use `truststore` by default to access the system&#x27;s
+    certificates, only relying on the vendored `certifi` as a fallback or if explicitly
+    directed.~~<p>The above is incorrect per the Python forum discussion (<a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident&#x2F;109576&#x2F;2"
+    rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-re...</a>).
+    Pip will trust certificates from both sources.<p>Users of uv who have already
+    updated their system certificates can use:<p><pre><code>  UV_SYSTEM_CERTS=true
+    uv self update</code></pre>
+  score: 0
+  posted_at: '2026-10-25T05:25:45Z'
+- id: '50228622'
+  parent_id: '50221260'
+  author: zahlman
+  text: '&gt; All of these are at one out of two compromises from being MITM&#x27;d
+    during the upgrade.<p>This is not true; pip supports hash pinning, so an attacker
+    would have to be able to defeat SHA256 as well (or compromise <i>both</i> the
+    official Python discussion forum and PyPI itself, so as to forged the published
+    hash). Other hashes can also be used. Instructions are provided on the Python
+    discussion forum to self-upgrade pip with hash pinning: <a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident&#x2F;109576"
+    rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-re...</a>'
+  score: 0
+  posted_at: '2026-10-25T05:32:29Z'
+- id: '50228684'
+  parent_id: '50222929'
+  author: zahlman
+  text: "&gt; But python die-hards look at me like I&#x27;m insane when I suggest
+    this.<p>They have a point. The distro is only carrying a small fraction of what&#x27;s
+    available on PyPI, and will have out-of-date versions that may lack security patches
+    (and for projects like yt-dlp, are highly unlikely to <i>work at all</i>). Realistically
+    they aren&#x27;t applying security backports; there would rarely be a reason not
+    to just use the new version, and the resources just aren&#x27;t there for that
+    scale of patching anyway.<p>Further, pip will interfere with your system package
+    manager&#x27;s tracking of the system environment (PEP 668), and any attempt you
+    make to install from .deb&#x2F;.rpm&#x2F;etc. to a virtual environment is a hack
+    at best. Maybe you could symlink individual package folders to the system environment
+    while installing a superset, but ugh. Oh, and if you&#x27;re a <i>developer</i>
+    (like most &quot;Python die-hards&quot; are) then this isn&#x27;t very helpful,
+    as you aren&#x27;t testing the installation of <i>your</i> package the way that
+    <i>your users</i> will do it."
+  score: 0
+  posted_at: '2026-10-25T05:42:46Z'
+- id: '50228701'
+  parent_id: '50223023'
+  author: zahlman
+  text: I had a pretty fun time with it myself. Rather than a system package for pip,
+    or the `ensurepip`-provided one, I&#x27;ve been using the copy managed by pipx.
+    I had to:<p>* Update system certificates<p>* Locate that pip and directly invoke
+    it to self-update with hash pinning, rather than going through pipx<p>* Fix a
+    few stray venvs that contained their own pip<p>* Use the fixed pipx to update
+    uv (although I guess the uv self-update should work even for a pipx-installed
+    copy?)<p>The legacy-certs hint is neat. I did it the first way but would rather
+    not have since I&#x27;m on Mint.
+  score: 0
+  posted_at: '2026-10-25T05:47:13Z'
+- id: '50228710'
+  parent_id: '50222371'
+  author: zahlman
+  text: Commentary like this adds nothing to the discussion and is simply provocative.
+    Please don&#x27;t.
+  score: 0
+  posted_at: '2026-10-25T05:48:34Z'
+- id: '50229015'
+  parent_id: '50220319'
+  author: sli
+  text: 'There&#x27;s this other name for the same vuln: <a href="https:&#x2F;&#x2F;broccoli2shell.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;broccoli2shell.com&#x2F;</a>'
+  score: 0
+  posted_at: '2026-10-25T07:01:42Z'
+- id: '50229064'
+  parent_id: '50221743'
+  author: SkiFire13
+  text: And only those using Google&#x27;s Brotli implementation.
+  score: 0
+  posted_at: '2026-10-25T07:09:53Z'
+- id: '50229469'
+  parent_id: '50228710'
+  author: steve1977
+  text: Provocative of what? Thinking about the issues that Python has? Why would
+    that be a problem?<p>It IS a mess and it&#x27;s causing problems again and again
+    in real life. And it is particularly bad with Python. I don&#x27;t see why this
+    should not be pointed out.
+  score: 0
+  posted_at: '2026-10-25T08:38:30Z'
+- id: '50229721'
+  parent_id: '50225027'
+  author: ketzu
+  text: '`OpenAICompatible` is also a widely used phrasal description of a part&#x2F;version
+    of the OpenAI API that is supported by quite a lot of endpoints.<p>- <a href="https:&#x2F;&#x2F;lmstudio.ai&#x2F;docs&#x2F;developer&#x2F;openai-compat"
+    rel="nofollow">https:&#x2F;&#x2F;lmstudio.ai&#x2F;docs&#x2F;developer&#x2F;openai-compat</a><p>I&#x27;ve
+    seen that used as a description for 2years or so.'
+  score: 0
+  posted_at: '2026-10-25T09:31:12Z'
+- id: '50229752'
+  parent_id: '50229064'
+  author: jwilk
+  text: What are the other implementations?
+  score: 0
+  posted_at: '2026-10-25T09:37:46Z'
+- id: '50230329'
+  parent_id: '50222941'
+  author: hulitu
+  text: "&gt; while Brotli2Shell might not wake up people that know what it is.<p>And,
+    most of all, is damaging to Google, which are the master of software engineering.
+    &#x2F;s"
+  score: 0
+  posted_at: '2026-10-25T11:01:04Z'
+- id: '50230531'
+  parent_id: '50220165'
+  author: vanschelven
+  text: Should have definitely been Brotli2Shell, but Google ingeniously managed to
+    dodge that bullet by having NodeJS come out with a fix before they did (others
+    might call that accidental exposure), and then barely communicating about that
+    with the broader community once they finally did. Here&#x27;s a timeline of events[0]
+    and here&#x27;s me more broadly complaining about Google&#x27;s stance[1]<p>[0]
+    <a href="https:&#x2F;&#x2F;www.bugsink.com&#x2F;blog&#x2F;http2shell-timeline&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.bugsink.com&#x2F;blog&#x2F;http2shell-timeline&#x2F;</a><p>[1]
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50230362">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50230362</a>
+  score: 0
+  posted_at: '2026-10-25T11:34:48Z'
+- id: '50230807'
+  parent_id: '50223723'
+  author: soiax
+  text: Exatly, it was patched silently, OpenaAI just discovered that patch, and that
+    it has upstream effects in NodeJS etc.
+  score: 0
+  posted_at: '2026-10-25T12:23:25Z'
+- id: '50230867'
+  parent_id: '50221764'
+  author: vanschelven
+  text: 'Fun fact: not even Google can remember that number on the first try, apparently:<p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;brotli&#x2F;issues&#x2F;1597"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;brotli&#x2F;issues&#x2F;1597</a>'
+  score: 0
+  posted_at: '2026-10-25T12:31:33Z'
+- id: '50230904'
+  parent_id: '50223703'
+  author: da_chicken
+  text: Exactly.<p>Security fixes for actively exploited vulnerabilities demand an
+    emergency response. The risk of introducing new, unknown flaws is less than risk
+    of having an active known exploited vulnerability.<p>However, absent the risk
+    of a KEV, that changes the equation. Now the risks of code changes causing breaking
+    changes plus the risk of supply chain attacks is greater than the risk of having
+    to put some thought and time in to manage your software library versions.<p>It&#x27;s
+    not like AI created this distinction, either. Neither did CI&#x2F;CD. This is
+    standard systems administration -- literally ISO&#x2F;IEC 20000 ITSM. It&#x27;s
+    exactly why, traditionally, new features are often limited to major versions.
+    It&#x27;s why binary compatibility was a huge issue with RHES 20 years ago, and
+    why distros pin versions and backport security and selective bug fixes. A developer
+    that doesn&#x27;t know this is telling on themselves why they shouldn&#x27;t have
+    write access to production. Stability matters a lot because we like to get paychecks.
+  score: 0
+  posted_at: '2026-10-25T12:36:31Z'
+- id: '50230927'
+  parent_id: '50220165'
+  author: llm_nerd
+  text: I mean...who cares? It&#x27;s actually kind of strange that your comment got
+    others talking about AI naming things.<p>SQL Slammer didn&#x27;t actually slam
+    anything, and applied to a single vendor among many SQL providers. Heartbleed
+    didn&#x27;t make anyone&#x27;s heart bleed...I mean, at least directly. Shellshock
+    only impacted a single shell environment, again among many. Log4Shell impacted
+    a single logging implementation, among many. Spectre and Meltdown...I mean, who
+    would think that related to CPU cache side channels?<p>These are just dumb names
+    for people to share in referring to something. Seems silly and like a waste of
+    time to spend effort getting upset about them.
+  score: 0
+  posted_at: '2026-10-25T12:38:58Z'
 article:
   url: https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
   title: Node2Shell Brotli vuln (CVE-2026-111497) evolves to HTTP2Shell, as libraries
@@ -1082,4 +1250,4 @@ article:
     Now\n](https://app.aikido.dev/login)"
   error:
   fetched_at: '2026-10-24T19:18:02Z'
-archived_at: '2026-10-25T03:16:48Z'
+archived_at: '2026-10-25T12:58:11Z'

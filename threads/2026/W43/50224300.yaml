@@ -1,0 +1,127 @@
+---
+post:
+  id: '50224300'
+  title: The Goose Programming Language
+  url: https://aardappel.github.io/goose/
+  hn_url: https://news.ycombinator.com/item?id=50224300
+  score: 172
+  author: andsoitis
+  posted_at: '2026-10-24T19:27:41Z'
+  fetched_at: '2026-10-25T12:57:59Z'
+  article_url: https://aardappel.github.io/goose/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T12:57:59Z'
+  raw_comment_count: 1
+comments:
+- id: '50225930'
+  parent_id: '50224300'
+  author: dang
+  text: Comments moved to <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50224100">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50224100</a>.
+  score: 0
+  posted_at: '2026-10-24T22:15:17Z'
+article:
+  url: https://aardappel.github.io/goose/
+  title: The Goose Programming Language · Goose
+  fetch_status: success
+  content: "![The Goose programming language](docs/logo/logo_black_fg_white_bg_mini.png)\n\n#
+    The Goose Programming Language\n\nA memory-safe systems language with no heap
+    allocator, garbage collector, or lifetime annotations. In this repository's benchmarks,
+    Goose runs faster than C++ and Rust while using less memory.\n\n[Tutorial](docs/tutorial.html)
+    · [Reference](docs/reference.html) · [Specification](docs/goose_spec.html) · [Packages](docs/packages.html)
+    · [Samples](samples/index.html) · [Benchmarks](bench/results.html) · [Standard
+    library](docs/stdlib.html)\n\nGoose has syntax familiar to C and Rust programmers,
+    but **there is no heap**. Every dynamic value lives inline on a data stack managed
+    by the compiler. Growth advances a pointer, and memory is freed when its scope
+    ends. The language's type and lifetime rules make this memory model safe to use.\n\n[![Discord
+    Chat](https://img.shields.io/badge/chat-discord-blue)](https://discord.gg/397eZdbnsR)
+    [![Twitter Follow](https://img.shields.io/twitter/follow/wvo.svg?style=social)](https://twitter.com/wvo)\n\n##
+    Why Goose\n\n- **Faster than C++ and than safe Rust, while memory safe.** Over
+    sixteen benchmarks Goose runs at 3.3x the speed of idiomatic C++, 1.16x hand-optimized
+    C++ and 1.12x the best safe Rust, on 1.9x, 1.3x and 1.2x less memory ([results](bench/results.html)).
+    These gains come from Goose's data layouts and memory model.\n- **No allocator,
+    no GC, no reference counting, no destructors.** Memory is a handful of data stacks
+    that the compiler assigns statically. Freeing a million-element structure is one
+    store, however deeply it nests.\n- **Growth preserves references.** A reference
+    into a growing array stays valid for as long as the array does. You keep typed
+    references where C++ must `reserve` and safe Rust uses`u32` indices in the corresponding
+    benchmarks.\n- **Memory safe with zero annotations.** No lifetime syntax, no aliasing
+    or exclusivity rules, no `unsafe`. The compiler infers what every reference is
+    rooted in and rejects references that could outlive their owners.\n- **Nested
+    data stays inline.** A string, an array of strings, a record with variable-size
+    fields and an array of those records are each one contiguous block with no pointer
+    in it. A record that is 160 bytes and an allocation in C++ is 29 bytes and none
+    in Goose.\n- **Enums that cost what they hold.** Variable-mode ADTs give each
+    value its own variant's size rather than the largest one's: 4x less memory and
+    2x the speed of a Rust `enum` on the benchmark that exercises it.\n- **Links narrower
+    than pointers.** A relative reference stores a typed, checked link as a 1, 2 or
+    4-byte offset. Structures built from them are position independent, so your data
+    structure is already its file format: saving is a write, loading is a read plus
+    a verification pass that rejects hostile bytes.\n- **Everything is built in place,
+    guaranteed.** A value is constructed at its final destination through any depth
+    of calls.`items.push(parse(line))` writes the parsed record straight into the
+    array, and returning a growable array by value costs nothing.\n- **Returns across
+    multiple calls.** `return err from load` returns from a function any number of
+    frames up, statically checked, with no unwinder, no `Result`type and no `?` on
+    every call.\n- **Threads that share nothing.** A worker is compiled as a separate
+    program with its own memory, and flat values cross typed queues as a `memcpy`.
+    Data races, locks, atomics and memory orderings do not exist in the language.\n-
+    **Generics and higher-order functions with no overhead.** An untyped parameter
+    is generic. Function values are compile-time entities, so `xs.filter() { it >
+    0 }`compiles to the loop it looks like and builds its result straight into its
+    destination.\n- **Plain C in, plain C out.** Goose compiles to one C file, so
+    it runs wherever a C compiler does and calls C directly through`extern fn`. The
+    bundled TinyCC backend compiles and runs a program in-process, with no build step.\n\nThe
+    [tutorial](docs/tutorial.html) walks through all of this by example, the [reference](docs/reference.html)
+    covers the whole language topic by topic, the [specification](docs/goose_spec.html)
+    has the exact rules, and the [benchmarks](bench/results.html) have the numbers,
+    losses included.\n\n## Features\n\nThis section focuses on what distinguishes
+    Goose. The [tutorial](docs/tutorial.html) explains these features in more detail,
+    and the [samples](samples/index.html) show them in thirty-one complete programs.\n\n###
+    One memory model: stacks, and scope exit is the free\n\nA program has the native
+    call stack, static data and N data stacks, where the compiler works out N. A data
+    stack is a large address-space reservation with a bump pointer, and there is no
+    other memory. At most one resizable value is live per stack and it is always on
+    top, so growth never moves anything and never checks a capacity. All of this is
+    proved at compile time; the runtime tracks only the bump pointers.\n\n    for
+    round in 3 {\n        var scratch: u8[>..] = []; // grow-only: growth is a pointer
+    bump\n        for i in 100000 { scratch.push((i % 256) as! u8); }\n        print(\"round
+    \", round, \": \", scratch.len, \" bytes\");\n    } // the free: one store to
+    the stack top\n\n### Nothing moves, so references survive growth\n\n    struct
+    Item { id: i32, weight: f32 }\n    \n    var items: Item[>..] = [];\n    let first
+    .= items.push(Item { 1, 0.5 }); // a reference to element 0\n    for i: i32 in
+    2..1000001 { items.push(Item { i, 0.0 }); }\n    first.weight = 99.5; // still
+    valid, a million pushes later\n\n`push` returns a reference to the new element,
+    so a program can link elements while building the array. A`vector<T>` or `Vec<T>`
+    may reallocate and cannot provide this guarantee. Stable references account for
+    several benchmark gains.\n\n### Safe references, no annotations\n\nEvery reference
+    and slice has a static _root_: the variable that bounds its target's lifetime.
+    A reference must not outlive the variable that owns its target or access that
+    target through an incompatible type. The compiler infers roots and specializes
+    functions for them, so no annotations are needed. There are no aliasing or exclusivity
+    rules. When a lifetime check fails, the error names the reference's root and its
+    destination:\n\n    fn longest(a: u8[:], b: u8[:]) -> u8[:] { if a.len >= b.len
+    { a } else { b } }\n    \n    var outer: u8[>..] = [];\n    var w = outer[..];\n
+    \   {\n        var inner: u8[>..] = [];\n        format(inner, \"inner text\");\n
+    \       w = longest(outer, inner); // error: storing a reference rooted at inner,\n
+    \   } // which does not outlive the destination (§9.2)\n\nA slice `T[:]` lets
+    a function accept a range from any array kind without copying its elements. For
+    example, `split`returns slices into its input, and a dictionary keyed by`u8[:]`
+    stores views of strings rather than copies.\n\n### Nested data stays inline\n\nThere
+    is no single array type. There is a family that differs only in what happens to
+    the size, and every member is`[metadata][elements...]`, inline and packed, never
+    a pointer to an element block:\n\n| Spelling | What it is |\n| --- | --- |\n|
+    `T[k]` | fixed size, known at compile time |\n| `T[]`, `T[varint]` | sized at
+    construction, frozen after; a fixed or variable-width length |\n| `T[..k]`, `T[..]`
+    | capacity inline; grows and shrinks within it |\n| `T[>..]` | **grow-only** :
+    the workhorse; references into it stay valid |\n| `T[>..<]` | **grow-shrink**
+    : stacks, queues, heaps |\n\nStrings are just `u8` arrays: `u8[>..]` is a builder,
+    `u8[]` a finished string stored inline in whatever holds it, `u8[..16]` a small
+    string inside a struct,`u8[:]` a view. A struct may contain variable-size parts,
+    and they sit inline in declaration order, so a record is a run of bytes with nothing
+    indirect in it:\n\n    struct Item { sku: u8[varint], qty: varint, cents: varint
+    }\n    struct Order { id: varint, customer: u8[varint], items: Item[varint] }\n
+    \   \n    var book: Order[>..] = [];\n    book.push(Order { id: 1001, customer:
+    \"alice\",\n           "
+  error:
+  fetched_at: '2026-10-25T12:57:59Z'
+archived_at: '2026-10-25T12:58:12Z'
