@@ -155,7 +155,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **管道** 生成 skill（hn-discussion-summary）任何环境禁止 `make build`/`docker compose`/`git commit`/`git push` — CI 的 build 与提交由 workflow 门禁负责；本地提交走用户 `make deploy` 或确认后的 auto-deploy；生成期 push 会绕过门禁直接上线（dac2eba 事故）
 - **管道** opencode flag 本地与 CI 不得混用：本地 `--auto`（无 `--dir`），CI 用 `--dir` + `--dangerously-skip-permissions`
 - **管道** hn-auto 每次提交只含 `_articles/` 与三个投影文件，不得夹带其他变更
-- **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证。定时任务会延迟触发（2026-10-25 00:00 UTC 的 hn-auto 迟到 2h50m，02:50 起跑撞上本地推送 → run 红，rebase 救援步骤挽回产出）——推前必须 `gh run list` 查**在跑/延迟**的 run，不能只按 cron 时刻推算安全窗口
+- **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证。定时任务会延迟触发（2026-10-25 00:00 UTC 的 hn-auto 迟到 2h50m，02:50 起跑撞上本地推送 → run 红，rebase 救援步骤挽回产出）——推前必须 `gh run list` 查**在跑/延迟**的 run，不能只按 cron 时刻推算安全窗口。CI 间互撞已由三 workflow 共享 `concurrency: hn-pipeline` 组根治（2026-10-25 双 dispatch 同秒并发：40157635045 success / 40157637103 push non-FF 靠 recover 救回但 run 红）；本地推送是组外残留竞态，仍靠 fetch 对齐 + recover 兜底
 - **热度** 热度、聚簇、行业分类全部确定性 Ruby — 0 LLM 调用；改公式只动权重常量并 bump `rule_version`，全部历史日榜必须可 `hn-heat.rb --recompute` 重建
 - **热度** 历史重算必须以锚点为地平线过滤输入：评论 `posted_at ≤ anchor`、帖出生 `≤ anchor`，所有下游信号（vel/expert/depth/resurrected）从过滤后集合推导（v3 事故：`comment_vel` 窗口无上界 + expert/depth 不截断 → 未来评论以恒定假平底泄入历史每一天，未出生帖在出生前发光；每日增量跑天然正确，仅 `--recompute` 受污染）
 - **内容** 单帖摘要必须带 `hn_id`；跨多帖的周报**不加** `hn_id` — 防止成员帖被 published dedup 屏蔽
