@@ -48,7 +48,7 @@ TRENDS_AUX_WINDOWS = { 7 => TRENDS_PATH_7, 90 => TRENDS_PATH_90 }.freeze
 TRENDS_WINDOW_MAX = TRENDS_AUX_WINDOWS.keys.max
 CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
-RULE_VERSION = 'v2'
+RULE_VERSION = 'v3'
 WEIGHTS = { 'comment_vel' => 0.35, 'score_vel' => 0.25, 'expert' => 0.25, 'depth' => 0.15 }.freeze
 
 COHORT_WINDOW_DAYS = 14   # rolling window for expert cohort membership
@@ -238,8 +238,17 @@ def resurrected?(comment_times, posted_at, anchor)
 end
 
 def thread_signals(id, thread, reg_entry, cohort, snapshots, anchor = Time.now.utc)
+  # Anchor horizon: a historical-day recompute must only see what existed by
+  # that day — every downstream signal (vel/expert/depth/resurrected) derives
+  # from this filtered set, else past days inherit future activity as a
+  # constant fake floor (pre-birth threads glowed on every historical day).
+  posted_at = thread && thread['post'] && thread['post']['posted_at'] || reg_entry && reg_entry['posted_at']
+  return nil if posted_at && (Time.parse(posted_at) rescue nil).to_i > anchor.to_i
   comments = thread ? thread['comments'] : []
-  post = thread ? thread['post'] : {}
+  comments = comments.select { |c|
+    t = c['posted_at'] ? (Time.parse(c['posted_at']) rescue nil) : nil
+    t && t <= anchor
+  }
   times = comments.filter_map { |c| c['posted_at'] ? Time.parse(c['posted_at']) : nil }
 
   comment_vel = times.count { |t| t >= anchor - 86400 }
@@ -268,7 +277,6 @@ def thread_signals(id, thread, reg_entry, cohort, snapshots, anchor = Time.now.u
   depths = compute_depths(comments).values
   depth_p95 = percentile(depths, 0.95)
 
-  posted_at = post['posted_at'] || reg_entry && reg_entry['posted_at']
   {
     'comment_vel_24h' => comment_vel,
     'total_comments' => comments.size,
@@ -306,6 +314,7 @@ def compute_day(now, threads, reg, cohort, snapshots, day: nil)
     # recomputed on --recompute (historical), but skipped for fresh days to save IO
 
     sig = thread_signals(id, threads[id], e, cohort, snapshots, anchor)
+    next unless sig # thread not yet born at this day's anchor (recompute only)
     heat = heat_value(sig)
     next if heat < MIN_HEAT_FOR_ENTRY
 
