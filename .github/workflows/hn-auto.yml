@@ -1,13 +1,5 @@
 name: HN Auto-Summarizer
 
-# 三个 HN workflow 共写 master/hn-data，共享 concurrency 组串行化 — 消除并发
-# run 互撞 push 的整类竞态（2026-10-25 双 dispatch：40157635045 与 40157637103
-# 同秒起跑，后者 push non-FF 靠 recover 步骤救回但 run 红）。排队不取消：
-# 生成中途取消 = LLM 花费随 runner 销毁。
-concurrency:
-  group: hn-pipeline
-  cancel-in-progress: false
-
 on:
   schedule:
     - cron: "0 0 * * *"
@@ -45,7 +37,10 @@ permissions:
   contents: write
 
 concurrency:
-  group: hn-auto
+  # 三 HN workflow 共写 master/hn-data，共享组串行化（2026-10-25 双 dispatch
+  # 40157635045/40157637103 同秒并发，后者 push non-FF 靠 recover 救回但 run 红）。
+  # 排队不取消：生成中途取消 = LLM 花费随 runner 销毁。
+  group: hn-pipeline
   cancel-in-progress: false
 
 jobs:
