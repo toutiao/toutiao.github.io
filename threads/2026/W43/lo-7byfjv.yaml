@@ -1,0 +1,54 @@
+---
+post:
+  id: lo-7byfjv
+  source: lobsters
+  title: MacOS Extensions pack for the Apple Network Server v1.0
+  url: http://oldvcr.blogspot.com/2026/10/macos-extensions-pack-for-apple-network.html
+  hn_url: https://lobste.rs/s/7byfjv
+  score: 10
+  author: classichasclass
+  posted_at: '2026-10-25T01:22:45Z'
+  fetched_at: '2026-10-25T18:43:55Z'
+  article_url: http://oldvcr.blogspot.com/2026/10/macos-extensions-pack-for-apple-network.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T18:43:59Z'
+  raw_comment_count: 0
+  tags:
+  - retrocomputing
+  - reversing
+comments: []
+article:
+  url: http://oldvcr.blogspot.com/2026/10/macos-extensions-pack-for-apple-network.html
+  title: 'Old Vintage Computing Research: MacOS Extensions pack for the Apple Network
+    Server v1.0'
+  fetch_status: success
+  content: |-
+    ## Saturday, October 24, 2026
+
+    ### MacOS Extensions pack for the Apple Network Server v1.0
+
+    [![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3Z41XAQEyv90YDSNsUZoRLFphrYb6i6dcfu2ZGSv0bIYyLdZ1ubThIPquyvjUS2fDx-GdIqf4sIUl77bKZCgodMzYrW-6lt2fci3thoYOJscOyOr0mTDnbIif9J324iDTr0wNpXR0AYuXZhCx-7CuPRL7vFLrmZbISj9Z585sNjYK7sYb5oXg62Bh3iY/s320/PXL_20261013_011922071.jpg)](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3Z41XAQEyv90YDSNsUZoRLFphrYb6i6dcfu2ZGSv0bIYyLdZ1ubThIPquyvjUS2fDx-GdIqf4sIUl77bKZCgodMzYrW-6lt2fci3thoYOJscOyOr0mTDnbIif9J324iDTr0wNpXR0AYuXZhCx-7CuPRL7vFLrmZbISj9Z585sNjYK7sYb5oXg62Bh3iY/s4080/PXL_20261013_011922071.jpg)
+    By now regular readers of this blog are quite familiar with my affection for the 1996 [Apple Network Server](/search/label/ans), Apple's Unix-through-and-through $10,000+ server that only shipped with, and only officially ran, Harpoon, its unique superset of IBM AIX. An ANS 500, the lower tier of this dorm fridge-sized computer, was the first server I ever personally owned, a nearly-new hand-me-down after Steve Jobs convinced Gil Amelio to cancel the machine and the bookstore's vendor at the University I worked for wouldn't support it anymore. There are [several fascinating features](/2023/11/the-apple-network-servers-all-too.html) present in Harpoon that were never implemented in any other Apple product. Currently I have three, that original ANS 500, this ANS 700 here which I use for testing, and a battery-bombed EVT prototype (a so-called "Shiner ESB" that [used to be at Netscape](/2021/10/shiner-esb-apple-network-server.html)).
+
+    The ANS was strongly based on the Power Macintosh 9500 and Apple was known to have demonstrated the ANS with Mac OS during development, but this confused potential buyers, causing the ability to boot Mac OS to be stripped from production systems. While then-CTO Ellen Hancock claimed in 1997 a ROM swap would enable the ANS to boot Mac OS again _and_ Windows NT, these ROMs were believed to be vapourware until a former Apple employee presented a working dump of [both the preproduction ROM and the later ANS Mac OS ROM](/2025/10/the-apple-network-server-macos-roms.html). [A prototype Windows NT ROM also emerged](/2026/01/hands-on-with-two-apple-network-server.html) from another former employee, though there are pieces missing and booting Windows NT natively on the ANS is still a work in progress (hopefully to be the subject of [a future article](/search/label/ans)).
+
+    It turned out [I had one of the preproduction ROMs myself](/2026/01/hands-on-with-two-apple-network-server.html) and didn't realize what it was. Because the later Mac OS ROM was apparently unfinished, [it doesn't properly support the L2 cache](/2026/05/testing-macos-on-apple-network-server.html) and consequently runs substantially slower, and it can't boot AIX. The preproduction ROM does boot both operating systems and does support the cache. On the other hand, it doesn't support the on-board video or the front Fast Wide SCSI-2 controller, the on-board MACE Ethernet doesn't work, and after MacOS first boots, the next restart without zapping the PRAM will come up with a black screen.
+
+    The good news is, many of the issues with the preproduction ROM in Mac OS can be fixed or worked around in software. So I've fixed or worked around many of them in software: the MACE Ethernet is fixed, the on-board video is now supported, and the ANS can restart properly back into Mac OS. Plus, because it's the preproduction ROM, you can still boot AIX, thus preserving the entire historical reason for Shiner's existence. Here's the first cut of that software and how it was developed.
+
+    [![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg6CkO34PaOUnL6hPI7sYn9fCUL30ZE1hyphenhyphenTBmb4tzKgCmUALiUX-i063YdMnYOGdDG4xzh79Fik9fAYlCQmi_qDsIafrvMwykhSoXi5EtUOW13FPhAhJW_1dIqYsDRVloaoYDYktjKJypRzqapghHxHOecAA6NwpUGXpx0wIbrmRGp5Pc-0bbkF3X_ifuY/s320/PXL_20260118_202225393.jpg)](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg6CkO34PaOUnL6hPI7sYn9fCUL30ZE1hyphenhyphenTBmb4tzKgCmUALiUX-i063YdMnYOGdDG4xzh79Fik9fAYlCQmi_qDsIafrvMwykhSoXi5EtUOW13FPhAhJW_1dIqYsDRVloaoYDYktjKJypRzqapghHxHOecAA6NwpUGXpx0wIbrmRGp5Pc-0bbkF3X_ifuY/s4080/PXL_20260118_202225393.jpg)
+    Naturally, the first order of business is to get an Apple Network Server and the 1.1.20.1 preproduction ROM (the production ROM is version 1.1.22). I can't help you with the first part, but replica ROMs now exist to cover the second part, and as of this writing [Joe's Computer Museum](https://jcm-1.com/product/apple-network-server-rom-v1-1-20-0/) has a few in stock (not affiliated, just a satisfied occasional customer). I [tested the original design](/2026/05/testing-macos-on-apple-network-server.html) of these ROM DIMMs, kindly provided by Jeff Walther. Jeff assembled and donated this particular batch to Joe Strosnider, who is selling them and donating the proceeds in turn to the maintenance of the Tinker Different forum, where [this whole thing started](https://tinkerdifferent.com/threads/apple-network-server-macos-based-roms-found.4756/).
+
+    Now that you have the basic hardware, you'll then need to install Mac OS to an external bootable SCSI volume. For this project I use a 25-pin BlueSCSI which connects directly to the ANS' rear SCSI port and runs on termination power. Set up a blank disk image of the desired size to the device's (micro)SD card and rename it to the desired SCSI ID, which for the ANS is typically SCSI ID 2.
+
+    If you have another Mac with a SCSI port handy, it's easiest to do the MacOS installation to the external volume with that system. Make sure it installs Mac OS for any supported Mac, especially if you are using a model-specific installer CD; up to Mac OS 9.1 inclusive will boot directly on the ANS, and 9.1 is what I'm using here. 7.6 will work and late versions of System 7.5 _might_ work, but I recommend at least 8.1 or later. If you only have the ANS and/or have no other suitable vintage Mac that can perform the installation, you can do it on the ANS itself with a bit more difficulty. For that you'll need to not only create the blank disk image but additionally include an ISO of a bootable MacOS CD (use ID 0), plus install a Power Mac-compatible PCI video card — I use a Twin Turbo 128MA but any ATI Mac-specific card of the era should also work, such as the Rage Orion.
+
+    Finally, unplug the server, unlock and pull open the mainboard drawer, remove the PRAM battery, install the preproduction ROM DIMM, and leave the drawer open and the system completely depowered for at least several minutes while you enjoy the droll prose of this blog post.
+
+    [![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjR9cnTwCl-BaWHIcjTrftEX3WDjaebx7Sfu16mubRK7QoaG18OuXDeKtCOe9QjAWHLb7sgLKB66tcitW3Wkuigr8EuOa4zkiiliZ5w-A9sIT3zlmKT0eWDhbpzsayr9WF6IFetGRy_X7fW9Quhk-csQ3teM9GbDWjWxTBH4ehiasicG1BQwyBuLwMurV4/s320/PXL_20261013_013311169.jpg)](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjR9cnTwCl-BaWHIcjTrftEX3WDjaebx7Sfu16mubRK7QoaG18OuXDeKtCOe9QjAWHLb7sgLKB66tcitW3Wkuigr8EuOa4zkiiliZ5w-A9sIT3zlmKT0eWDhbpzsayr9WF6IFetGRy_X7fW9Quhk-csQ3teM9GbDWjWxTBH4ehiasicG1BQwyBuLwMurV4/s4080/PXL_20261013_013311169.jpg)
+    Here's the back of my testing ANS 700. The monitor is connected to the 700's video port, the BlueSCSI is plugged into the SCSI connector, and a Farallon standard AAUI-to-twisted pair dongle is attached to the on-board MACE Ethernet AAUI port (Apple's perverse little rework of AUI to avoid confusion with the Mac DA-15 video port).
+
+    Technically that should be all you need to run Mac OS or AIX. However, I also have the Twin Turbo video card in slot 1 (where it would usually be in a 9500, the closest hardware relative to the ANS), and as an alternative for the MACE Ethernet I have one of the unobtainium 10Mbit ANS Ethernet PCI cards in slot 6 that I ordered from Apple Austin when they were blowing out leftover Shiner hardware. This card works in AIX and later v
+  error:
+  fetched_at: '2026-10-25T18:43:59Z'
+archived_at: '2026-10-25T18:43:59Z'

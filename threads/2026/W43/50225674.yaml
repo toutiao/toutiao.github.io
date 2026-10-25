@@ -4,14 +4,14 @@ post:
   title: Small Programs and Languages
   url: https://ratfactor.com/cards/pl-small
   hn_url: https://news.ycombinator.com/item?id=50225674
-  score: 132
+  score: 170
   author: andsoitis
   posted_at: '2026-10-24T21:44:23Z'
-  fetched_at: '2026-10-25T12:58:02Z'
+  fetched_at: '2026-10-25T18:43:46Z'
   article_url: https://ratfactor.com/cards/pl-small
   article_fetch_status: success
   article_fetched_at: '2026-10-25T12:58:02Z'
-  raw_comment_count: 19
+  raw_comment_count: 27
 comments:
 - id: '50226926'
   parent_id: '50225674'
@@ -220,6 +220,133 @@ comments:
     into my brain).
   score: 0
   posted_at: '2026-10-25T12:41:11Z'
+- id: '50232016'
+  parent_id: '50227735'
+  author: Skwid
+  text: "uxntal and varvara bring me such joy, it&#x27;s that perfect complexity where
+    everything feels like a fun puzzle you can approach one step at a time.<p>The
+    first time I saw it years back I was skeptical. As foremost a hardware guy I saw
+    instructions in transistor count and gate delay, all that spaffed away on 16x16
+    multiply and you couldn&#x27;t spare one flip flop for an overflow flag? Preposterous!<p>But
+    the software already written was cool enough to convince me it was worth emulating,
+    and once you&#x27;ve got an emulator you may as well write some software. A few
+    short programs and I was in love. \nIt&#x27;s not about running code efficiently,
+    it&#x27;s about making it fun to write efficient code.<p>No sharp edges, no corner
+    cases, generally minimal machine state. The cognitive load is so much smaller
+    than any real world assembly I&#x27;ve used.<p>I didn&#x27;t mean to write such
+    a lot of meandering offtopic fluff, but damn, I just love that little guy \n(
+    ⊖-w-⊖)"
+  score: 0
+  posted_at: '2026-10-25T14:35:41Z'
+- id: '50232533'
+  parent_id: '50230426'
+  author: norir
+  text: It is straightforward to pick an isa and then design an ir that closely mirrors
+    it. Codegen from the ir the original isa is dead simple. Other isas are also straightforward
+    except that it may be necessary to introduce virtual registers and implement certain
+    instructions as multiple instructions if there isn&#x27;t a 1:1 correspondence.<p>I
+    think the op is far too pessimistic about code size and performance. TCC for example
+    produces terrible machine code but I rarely see 3x size or performance diffs compared
+    to clang (at least for the kinds of programs I tend to write). It is also very
+    easy to find edge cases where the clang optimizer makes heinously bad decisions.
+    In one trivial example, I&#x27;ve written a program that has a helper function
+    with no arguments that simply prints &quot;Hello, world!&quot; and a main function
+    that calls the helper 1 million times. With optimizations, the version of clang
+    on my computer inlined the helper call 1 million times, which made the binary
+    I believe 4-6x bigger than -O0. With -O0, I believe compilation took 6 seconds
+    compared to something like 15 minutes with -O2 (tcc took maybe 250ms and produced
+    a binary that I think was about 2x the size of gcc -O0). All that is to say, I
+    have less faith in the quality of optimizing compilers than most.
+  score: 0
+  posted_at: '2026-10-25T15:21:56Z'
+- id: '50232755'
+  parent_id: '50229866'
+  author: mrkeen
+  text: |-
+    I think the viewpoint that your&#x27;re missing is: how do I make sure the machine code means the same thing as the source code?<p>Trying to one-shot &#x27;print &quot;hello world&quot;;&#x27; into<p><pre><code>  .LC0:
+            .string &quot;hello&quot;
+      &quot;square&quot;:
+            push    rbp
+            mov     rbp, rsp
+      ...
+    </code></pre>
+    is probably a non-starter, so compiler writers tend to attack the problem by breaking it down into lots of passes.<p>Parsing into an AST is obviously the first, then you might opt into other passes, like type-checking, handling closures, simplifying into some kind of IR, and finally generating code.  Each of those stages can be effectively unit-tested (except maybe the last).  If you make a mistake in parsing (e.g. mistaking a statement for an expression), you don&#x27;t want to have to catch that error by inspecting machine code.  It&#x27;s nice if each pass can be easily tested.  And one simple way to test these things is to write an interpreter for each pass (mostly because you get to enjoy the facilities of whatever host language you&#x27;re writing in).  Then you can start saying things like &quot;for all inputs, interpreting the AST gives the same result as interpreting the type-checked-AST, gives the same results as interpreting the closured-AST, gives the same results as interpreting the list of IR instructions.&quot;<p>You mention &quot;It ought to be easy because it is possible to only target the common subset of features these architectures support.&quot;  &lt;- That&#x27;s your IR right there!<p>Once you have an IR that looks close enough to the target machine language, it shouldn&#x27;t be too hard to translate the final step.  Or just use LLVM.<p>I noticed in your code that you&#x27;re using C, and really there&#x27;s no need.  Languages don&#x27;t need to be stacked in a hierarchy (e.g. Clojure on top of the JVM which is C++ which compiles to asm).  The compiler can be any language, because it only needs to be able to take in source code and spit out bytes.
+  score: 0
+  posted_at: '2026-10-25T15:41:17Z'
+- id: '50232917'
+  parent_id: '50229866'
+  author: rramadass
+  text: 'You may find the following useful for some necessary background and then
+    leading to implementation;<p><i>Implementing Programming Languages: An Introduction
+    to Compilers and Interpreters by Aarne Ranta</i> (&lt;150 pages!) - <a href="https:&#x2F;&#x2F;www.grammaticalframework.org&#x2F;ipl-book&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.grammaticalframework.org&#x2F;ipl-book&#x2F;</a><p>The
+    above book uses the BNF Converter Tool - <a href="https:&#x2F;&#x2F;bnfc.digitalgrammars.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;bnfc.digitalgrammars.com&#x2F;</a><p>BNF Converter
+    Tutorial - <a href="https:&#x2F;&#x2F;bnfc.digitalgrammars.com&#x2F;tutorial&#x2F;bnfc-tutorial.html"
+    rel="nofollow">https:&#x2F;&#x2F;bnfc.digitalgrammars.com&#x2F;tutorial&#x2F;bnfc-tutorial.html</a><p>For
+    code generation, you can just walk the AST and either;<p>1) Emit the text of the
+    assembly code for x86_64&#x2F;ARM64&#x2F;RISC-V and then leave the rest to the
+    system assembler.<p>Or,<p>2) If you want to be even more professional, emit text
+    of LLVM IR and then leverage its complete toolchain.<p>From your github i see
+    you mention the &quot;MicroC&quot; subset of C language. Maybe follow the above
+    but with the syntax&#x2F;grammar of MicroC for your implementation.'
+  score: 0
+  posted_at: '2026-10-25T15:53:59Z'
+- id: '50233282'
+  parent_id: '50229866'
+  author: longor1996
+  text: When it comes to writing small languages&#x2F;interpreters, it is obligatory
+    to mention &quot;Crafting Interpreters&quot; by Robert Nystrom, so here we go!<p><a
+    href="https:&#x2F;&#x2F;craftinginterpreters.com&#x2F;" rel="nofollow">https:&#x2F;&#x2F;craftinginterpreters.com&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-25T16:25:54Z'
+- id: '50233920'
+  parent_id: '50232755'
+  author: abainbridge
+  text: "&gt; I think the viewpoint that your&#x27;re missing is: how do I make sure
+    the machine code means the same thing as the source code?<p>Ooo, no. I already
+    have an AST. When writing the code gen for a node type in the AST, I normally
+    start by typing a few lines of C into godbolt that exercises the same kind of
+    thing represented by the node type. I try a few different compilers and optimization
+    settings and look at what gets generated. I pick an approach that looks simple
+    and good enough. Then I ask an AI to assemble the instructions I see the compilers
+    using. I like to ask an AI to do this because it will explain what all the bits
+    do in the instruction encoding and it is less error prone at reading the ISA docs
+    than I am. The description from the AI might prompt me to ask things like, &quot;what
+    if the jump target doesn&#x27;t fit in the 32-bit immediate&quot; etc.<p>All I
+    was claiming was that this is easier than generating code for a byte code of my
+    invention, partly because I don&#x27;t have to invent a byte code and partly because
+    I can use existing tools to help, eg disassemblers&#x2F;debuggers to check my
+    output or compilers to give me ideas on how to convert C-like statements into
+    machine code.<p>I don&#x27;t have any IR at the moment. I&#x27;ll have a think
+    about what benefits that might bring.<p>The reason I posted my project under this
+    top level thread is because I&#x27;m interested in Small Programs and Languages.
+    My experiment is in what I can remove from a language implementation to make it
+    simpler. Adding a dependency on LLVM is the opposite of what I had in mind :-)<p>There
+    are many reasons I&#x27;m writing it in C but mainly because I like C."
+  score: 0
+  posted_at: '2026-10-25T17:30:11Z'
+- id: '50233979'
+  parent_id: '50232533'
+  author: abainbridge
+  text: "&gt; I think the op is far too pessimistic about code size and performance<p>My
+    code gen is definitely worse than TCC! But I think modern CPUs see all my redundant
+    register-register moves and just treat them as a no-ops. Probably performance
+    isn&#x27;t much worse than TCC. But currently I can hardly compile a program complex
+    enough for a meaningful comparison to be made."
+  score: 0
+  posted_at: '2026-10-25T17:36:06Z'
+- id: '50234653'
+  parent_id: '50229866'
+  author: thelisu
+  text: 'Some high level features of the language might be more complicated to implement
+    in assembly than in bytecode. The latter can have instructions more closely matching
+    the language&#x27;s features.<p>Similarly, it is quite rare to compile programs
+    directly to assembly. In general, you have some intermediate representations...
+    which can closely resemble some bytecode. The reason is the same: compiling to
+    a higher-level IR is simpler than going directly to assembly.'
+  score: 0
+  posted_at: '2026-10-25T18:38:41Z'
 article:
   url: https://ratfactor.com/cards/pl-small
   title: Small Programs and Languages - ratfactor
@@ -343,4 +470,4 @@ article:
     Assembly languages are _very_ syntactically and conceptually simple. There’s not much language at all: it’s mostly a rigid sequence of opcode mnemonics. Even with macros, writing in assembly is mostly about unders
   error:
   fetched_at: '2026-10-25T12:58:02Z'
-archived_at: '2026-10-25T12:58:12Z'
+archived_at: '2026-10-25T18:43:54Z'

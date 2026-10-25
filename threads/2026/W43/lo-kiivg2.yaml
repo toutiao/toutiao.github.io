@@ -1,0 +1,170 @@
+---
+post:
+  id: lo-kiivg2
+  source: lobsters
+  title: Partial Order Precedence
+  url: https://ziglang.org/devlog/2026/#2026-10-24
+  hn_url: https://lobste.rs/s/kiivg2
+  score: 11
+  author: liberty
+  posted_at: '2026-10-25T14:18:21Z'
+  fetched_at: '2026-10-25T18:43:55Z'
+  article_url: https://ziglang.org/devlog/2026/#2026-10-24
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T18:43:57Z'
+  raw_comment_count: 2
+  tags:
+  - zig
+comments:
+- id: lo-pp3sr2
+  parent_id: '0'
+  author: liberty
+  text: Zig uses Zine which handles devlogs on the same page.
+  score: 1
+  posted_at: '2026-10-25T14:18:21Z'
+- id: lo-c6zqel
+  parent_id: '0'
+  author: ruuda
+  text: Nice. The first time I encountered this idea was in Pony, and it felt so obvious
+    in hindsight, especially after seeing a SQL query do a lot of damage in production
+    due to or/and precedence not matching what the author expected. I adopted it for
+    RCL as well. Great to see that Zig is adopting it too now!
+  score: 2
+  posted_at: '2026-10-25T15:52:44Z'
+article:
+  url: https://ziglang.org/devlog/2026/#2026-10-24
+  title: |-
+    Devlog
+          ⚡
+          Zig Programming Language
+  fetch_status: success
+  content: |-
+    # Devlog
+
+    This page contains a curated list of recent changes to main branch Zig.
+
+    Also available as an [RSS feed](/devlog/index.xml).
+
+    This page contains entries for the year 2026. Other years are available in [the Devlog archive page](/devlog/).
+
+    October 24, 2026
+    # [Partial Operator Precedence](#2026-10-24)
+
+    Author: Ryan Liptak
+
+    As of yesterday, the second oldest open proposal for the Zig language was [issue #114: require parentheses sometimes to disambiguate confusing operator precedence](https://github.com/ziglang/zig/issues/114), opened February 8, 2016. Ten years later, that proposal [has been implemented](https://codeberg.org/ziglang/zig/pulls/30160) in the master branch version of Zig thanks to contributor [CMDRZero](https://cmdrzero.github.io/).
+
+    This means that some combinations of operators no longer have a defined precedence, and for those that don’t, the compiler will now require parentheses:
+
+        const a = x orelse y == z;
+
+        test.zig:1:22: error: ambiguous operator precedence with operators ... orelse ... == ...; use parentheses to disambiguate
+        const a = x orelse y == z;
+                             ^~
+        test.zig:1:13: note: previous ambiguous operator here
+        const a = x orelse y == z;
+                    ^ ~~~~~
+        test.zig:1:22: note: in zig 0.17.x, this was evaluated as (... orelse ...) == ...
+
+    However, common cases can remain parenthesis-free:
+
+        const a = x + y * z;
+
+    The idea behind this is to reduce the number of rules a programmer needs to know when reading and writing Zig code. For example, no matter how experienced you are with Zig, it’s unlikely that you’d be able to explain the evaluation order of the following expression without looking up the precedence rules:
+
+        a & b + c * d >> e | f orelse g() catch h + i == j or k and l
+
+    With the now-required parentheses added (while maintaining the same evaluation order as the Zig 0.17.x precedence rules), that expression would look like this:
+
+        ((((a & ((b + c * d) >> e)) | f) orelse g()) catch (h + i)) == j or (k and l);
+
+    Still quite hairy, and not something I’d like to see in the wild, but nonetheless it’s understandable without knowing any precedence rules beyond arithmetic and comparison. Outside of this contrived example, though, the expressions that will now require parentheses are relatively rare (353 lines needed changes out of the million+ lines of code in the Zig codebase).
+
+    ## What you need to know
+
+    In practice, going forward, you will only need to remember the rules around operator combinations that _still have_ a defined/unambiguous precedence. For example, when reading or writing code involving arithmetic operators, you’ll only need to remember the following precedence table:
+
+        * / *% *| %
+        + - +% -% +| -|
+        == != < > <= >=
+        and or
+
+    You might notice that there isn’t anything too surprising there, and that lack of surprise was a (subjective) guiding principle for what should and should not require parentheses. As an example, while `%` has unambiguous precedence with regards to addition/subtraction operators, parentheses must be used when mixing `%` with multiplication/division operators, and with itself. However, this, and other ambiguous operator combinations, aren’t something you’ll need to commit to memory. Any (future) code you read will already have parentheses to disambiguate, and for any code you write, the compiler will let you know when you need parentheses.
+
+    For the full explanation, and to see the relevant precedence tables pertaining to other operators, see [the updated Precedence section of the language reference](https://ziglang.org/documentation/master/#Precedence).
+
+    ## Upgrading existing code
+
+    There are two possible approaches here:
+
+    1. Manually fix each “ambiguous operator precedence” error as they are surfaced by the compiler (this might be a good opportunity to try out [incremental compilation](https://ziglang.org/download/0.17.0/release-notes.html#Incremental-Compilation) if it’s supported on your platform)
+    2. Use `zig fmt --upgrade` (the `--upgrade` flag was added for this purpose). This will cause `zig fmt` to add parentheses automatically, maintaining the evaluation order from the previous precedence rules (note: the `--upgrade` flag will be removed after one release cycle)
+
+    My personal recommendation would be option 1, as the process of redetermining the intended evaluation order for these uncommon precedence scenarios can occasionally serve to uncover bugs ([here’s an example of that](https://github.com/Vexu/arocc/pull/1117)).
+
+    If you go with option 2, I’d still recommend perusing the diff afterwards to ensure that nothing looks unusual, or is different than you expected/intended. A potentially common example of that is something like `a orelse b() catch c` which previously evaluated to `(a orelse b()) catch c`, but changing that to `a orelse (b() catch c)` likely makes more sense, even if the end result is unaffected. Also worth noting that in some scenarios, redundant parentheses will be added by `zig fmt --upgrade` (e.g. you might see something like `a orelse ((b + c) - d)` where the parentheses around `b + c` are unnecessary), so avoiding that will take a bit of manual cleanup.
+
+    That’s about it. I’m hopeful that this change will make bugs stemming from misremembered precedence rules much less likely, and that it will put some attention onto any of those bugs that may currently exist.
+
+    Thanks again to CMDRZero for the implementation, and to Isaac Freund for help with the corresponding grammar changes.
+
+    October 20, 2026
+    # [Naked Package Metadata](#2026-10-20)
+
+    Naked packages are ones that do not include a build manifest (build.zig.zon file). This is typically due to them being maintained by third parties outside the Zig ecosystem.
+
+    Until now, those package hashes looked like: `N-V-__8AAA7lSAA6p7eRmPGVeA9uHmeiJ2DX-ISiPliRJ8Y7`
+
+    This is because, without a build.zig.zon file, there was no `name` and `version` to use in the package hash. Furthermore, those packages have brittle hashes because they included all fetched files without any filter, which may accidentally have included unwanted hidden files that nonetheless cause the package hash to change. Or, the package might have contained symlinks that cannot be created on a particular OS. Without a filter, such files, even if they were unneeded, caused fetching to fail.
+
+    Now, Zig supports specifying `version` and `paths` for naked packages next to the URL. The dependency name will also be factored into the package hash, but **only when `version` is provided.** This allows users to opt in, as opposed to having the package hash change suddenly when updating Zig.
+
+    Here’s an updated zlib for example:
+
+        .dependencies = .{
+                .zlib = .{
+                    .url = "https://github.com/madler/zlib/archive/refs/tags/v1.3.2.tar.gz",
+                    .hash = "zlib-1.3.2-__8AANXpEADvBXGMSfhczMTZVAA-TkkE4ecoohAR7s3p",
+                    .version = "1.3.2",
+                    .paths = .{
+                        "LICENSE",
+                        "adler32.c",
+                        "compress.c",
+                        "crc32.c",
+                        "crc32.h",
+                        "deflate.c",
+                        "deflate.h",
+                        "gzclose.c",
+                        "gzguts.h",
+                        "gzlib.c",
+                        "gzread.c",
+                        "gzwrite.c",
+                        "infback.c",
+                        "inffast.c",
+                        "inffast.h",
+                        "inffixed.h",
+                        "inflate.c",
+                        "inflate.h",
+                        "inftrees.c",
+                        "inftrees.h",
+                        "trees.c",
+                        "trees.h",
+                        "uncompr.c",
+                        "zconf.h",
+                        "zlib.h",
+                        "zutil.c",
+                        "zutil.h",
+                    },
+                },
+            },
+
+    Before:
+
+        4.3M zig-pkg/N-V-__8AAI4ANwDM8MWhHTUFLKfvLE_n2NQk6mh0sFDzhTqO
+
+    After:
+
+        1.2M zig-pkg/zl
+  error:
+  fetched_at: '2026-10-25T18:43:57Z'
+archived_at: '2026-10-25T18:43:58Z'

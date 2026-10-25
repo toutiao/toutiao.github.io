@@ -1,0 +1,142 @@
+---
+post:
+  id: lo-tbbiqb
+  source: lobsters
+  title: POSIX wordexp(3) is dangerous
+  url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
+  hn_url: https://lobste.rs/s/tbbiqb
+  score: 24
+  author: yossarian
+  posted_at: '2026-10-25T15:09:29Z'
+  fetched_at: '2026-10-25T18:43:55Z'
+  article_url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-25T18:43:55Z'
+  raw_comment_count: 7
+  tags:
+  - c
+  - security
+comments:
+- id: lo-sxzkh8
+  parent_id: '0'
+  author: andyc
+  text: "I have seen this in libc, and I wonder why it is there at all.  No shells
+    use it to implement anything.  Tilde expansion can be implemented with a much
+    more straightforward algorithm.\nAnd if it just forks a shell, yes that is incredibly
+    dangerous !!    (Not to mention making it impossible for shells to use it :-)
+    )\nI think the problem is that the specification of such a function involves the
+    entire shell, because the entire shell language can appear inside command subs:\n$
+    echo $( f() { echo 'defined function'; }; f; f && f; f | f )\r\ndefined function
+    defined function defined function defined function\n\nNobody is going to implement
+    an entire shell inside libc ... that would be crazy.\nIt seems like it should
+    be removed from libc.  Not sure who put it there, and why."
+  score: 11
+  posted_at: '2026-10-25T15:30:41Z'
+- id: lo-puuull
+  parent_id: '0'
+  author: yossarian
+  text: |-
+    Yeah, there are quite a few POSIX APIs that directly or indirectly assume the presence of a full sh lexer, a full C lexer, etc. But very few (approachably) POSIX systems are built such that the sh or C lexer is reusable from libc, so we end up with these crazy hacks instead.
+
+    Not sure who put it there, and why.
+
+    The post I linked to has an interesting explanation (quoting):
+
+    It seems the problem was that people kept demanding more and more features for glob, so it seems like the committee threw up their hands and added the far-too-broad wordexp in attempt to cover all possible bases.
+
+    From: https://www.cipht.net/2023/11/21/worried-by-wordexp.html
+  score: 7
+  posted_at: '2026-10-25T15:57:52Z'
+- id: lo-tnd4fh
+  parent_id: '0'
+  author: seb
+  text: |-
+    A while back I came to the same conclusion when researching wordexp, because we were having discussions about adding a wordexp:: module to the Hare standard library. I was extremely against it, both because it's impossible to use safely on untrusted input (as you noted), and also because pretty much no one fully implements it correctly: implementations like musl's are hacks where it's trivial to find stuff like shell bypasses, and implementations like glibc which don't use the system shell (except for command substitution) can't handle edge cases like $(case 0 in *) echo hi; esac)
+    The compromise we ended up on was to ignore POSIX altogether. This means that Hare's wordexp always uses the system shell (even if it isn't a POSIX shell), and, more importantly, we don't implement WRDE_NOCMD at all; we instead document that the interface is only suitable for trusted inputs:
+
+    Note that, by design, this module runs arbitrary shell commands from user-supplied inputs. It must only be used in a trusted environment.
+
+    IMO providing a flag like WRDE_NOCMD which doesn't actually make the interface safe to use is worse than providing nothing at all, since it gives a false illusion of security.
+    The main motivator for us to implement wordexp was for the upcoming hare.ini configuration format, to declare dependencies and linker flags and stuff (that way the user can use pkg-config, for example). Although wordexp wouldn't have been my first choice, I'm happy with the compromise we ended up with.
+  score: 4
+  posted_at: '2026-10-25T16:03:51Z'
+- id: lo-ysqg6f
+  parent_id: '0'
+  author: seb
+  text: |-
+    I think the problem is that the specification of such a function involves the entire shell, because the entire shell language can appear inside command subs
+
+    FWIW, glibc uses the system shell for command substitution, but implements all of the other word expansion logic itself.
+  score: 2
+  posted_at: '2026-10-25T16:07:27Z'
+- id: lo-abcl2u
+  parent_id: '0'
+  author: fanf
+  text: |-
+    A few other things that make wordexp(3) dangerous:
+    You can’t use it in a multithreaded program, because it usually forks a shell.
+    On glibc wordexp is built in, but shell expansions that set variables call setenv() which is not thread safe, and which also modifies the caller’s environment which traditional forky wordexp() does not. (libc basically never calls setenv which is why this is a notable oddity.)
+    It really is a lunatic function that should be documented with a big “do not use this” health warning.
+  score: 2
+  posted_at: '2026-10-25T16:41:49Z'
+- id: lo-ewq2s9
+  parent_id: '0'
+  author: andyc
+  text: |-
+    implementations like musl's are hacks where it's trivial to find stuff like shell bypasses
+
+    Yes I am going to start using the term "parser differential" for this.  It is often used in the context of say web firewalls trying to parse HTML incorrectly and block stuff, but I see it extremely often in relation to shell -- simply because shell is hard to parse, and people write a second, crappy, and incomplete shell parser.
+    https://nhimg.org/glossary/parser-differential/
+    And even bash can't parse shell correctly in many cases, after 30 years of trying :-)   That is one reason I started https://oils.pub/
+    I don't have the bugs handy, but simply parsing nested () {} $() ${} in shell is extremely difficult, and the unbalanced case 0 in *) is one reason, but not the only one.
+  score: 2
+  posted_at: '2026-10-25T16:43:23Z'
+- id: lo-coklno
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Oh and now I remember the reason I was looking into parser differentials.  I noticed that there were two cases of longstanding design bugs in the Go stdlib that can be thought of as parser differentials:
+    (1) One them was a motivation for JSON v2 - https://go.dev/blog/jsonv2-exp (Sept 2025)
+    e.g. two parsers handling {"admin": false, "admin": true} differently
+    An example (not involving Go) is https://nvd.nist.gov/vuln/detail/cve-2017-12635 - Due to differences in the Erlang-based JSON parser and JavaScript-based JSON parser
+    (2) The other parser differential is in contextual auto-escaping in Go's template packages
+    https://nvd.nist.gov/vuln/detail/cve-2023-24538 - Templates do not properly consider backticks (`) as Javascript string delimiters, and do not escape them as expected. Backticks are used, since ES6, for JS template literals
+    Basically Go has a crazy HTML/CSS/JS incomplete parser / state machine, in order to do automatic escaping.  But the difference between that parser and the real one can lead to  missed escaping of untrusted variables, and thus a vulnerability.
+
+    If shell and HTML and other "crappy languages" weren't already entrenched enough, then LLMs really put the nail in the coffin.  We will be using shell and HTML "forever".
+    But maybe we can do better with LLMs ... i.e. nobody wants to do all this work to migrate toward stricter languages (e.g. OSH vs bash, which is easy in 99.9% of cases), but we really should.
+  score: 1
+  posted_at: '2026-10-25T17:28:19Z'
+article:
+  url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
+  title: 'TIL: POSIX wordexp(3) is dangerous'
+  fetch_status: success
+  content: "[`wordexp(3)`](https://pubs.opengroup.org/onlinepubs/9799919799/functions/wordexp.html)
+    is a POSIX API for performing shell-style expansions from C.\n\nIt's often cited/recommended
+    as a way to do tilde expansion (e.g. `~/foo` to `/home/me/foo`):\n\n    #include
+    <stdio.h>\n    #include <stdlib.h>\n    #include <string.h>\n    #include <wordexp.h>\n
+    \   \n    int expand_tilde(const char *input, char **output) {\n        wordexp_t
+    p;\n        int ret = wordexp(input, &p, 0);\n        if (ret == 0) {\n            *output
+    = strdup(p.we_wordv[0]);\n            wordfree(&p);\n        }\n        return
+    ret;\n    }\n    \n    int main(void) {\n        char *expanded = NULL;\n        expand_tilde(\"~/foo\",
+    &expanded);\n        printf(\"expanded: %s\\n\", expanded);\n        return 0;\n
+    \   }\n\nHowever, `wordexp(3)` is also dangerous! That last `0` argument is for
+    the _flags_ parameter. By default, all expansion features are enabled, **including
+    command expansion** :\n\n    expand_tilde(\"$(whoami)/foo\", &expanded);\n\nor:\n\n
+    \   expand_tilde(\"$(cat /etc/passwd)/foo\", &expanded);\n\nDisabling this requires
+    passing [`WRDE_NOCMD`](https://pubs.opengroup.org/onlinepubs/9799919799/functions/wordexp.html#:~:text=WRDE_NOCMD,Substitution%2C%20is%20requested.)
+    as a flag. Unfortunately, this palliative at best in some libc implementations:\n\n-
+    [musl implements `wordexp(3)`](https://git.musl-libc.org/cgit/musl/tree/src/misc/wordexp.c)
+    by delegating to the system shell. It adds some perfunctory scanning for command
+    substitutions before delegating, but fails to match some patterns that the underlying
+    shell (like GNU Bash) can treat as valid command substitutions.\n\n- [macOS's
+    libc implements `wordexp(3)`](https://github.com/apple-oss-distributions/Libc/blob/71bbe350ab79eef58113991d817ccc6165061a64/gen/FreeBSD/wordexp.c#L201)
+    in a similar manner, delegating to`/usr/lib/system/wordexp-helper`. According
+    to [Julian Squires](https://www.cipht.net)this had the same bypass as musl [as
+    recently as 2023](https://www.cipht.net/2023/11/21/worried-by-wordexp.html), although
+    I didn't bother testing whether it's still effective now that the default macOS
+    shell is `zsh`instead of `bash`.\n\nBottom line: don't use `wordexp(3)` on untrusted
+    inputs, even with `WRDE_NOCMD`."
+  error:
+  fetched_at: '2026-10-25T18:43:55Z'
+archived_at: '2026-10-25T18:43:55Z'
