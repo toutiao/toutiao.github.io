@@ -175,6 +175,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - 数据格式只向后兼容演进：归档 JSON/YAML 新增字段必须可缺省（读侧 `||` 兜底），已写入字段不重命名、不删除 — 旧归档在任何版本代码下都必须照常可读。
 - 改 CLI 选项（增删改名）必须同步所有调用处（workflows / Makefile / skills / AGENTS.md）。守卫在**变更时**触发（check.yml push/PR + path 过滤，跑 make check-cli），不挂定时数据 run — 树静止时重验无意义，还会给数据管道加单点。
 - 测试克制：数据层改动用真实 HN URL 本地跑通再上 CI；Jekyll 可见的改动过 `make build` 即可；不为纯文案、样式改动写测试。
+- 已验证正向模式（保留勿回退）：列表行内热度趋势用零依赖 sparkline — `hn-heat.rb sparkline_points` 服务端确定性算好 `"x,y"` 点串，模板内联 `<svg class="spark"><polyline points="...">`（curve ≥3 点才渲染，移动端隐藏）。不用 JS 图表库，不改成 canvas/图片。
 
 ## 插件
 仅 `jekyll-seo-tag`。HTML 压缩用 `_config.yml` 的 `compress_html`（仅 production）。
