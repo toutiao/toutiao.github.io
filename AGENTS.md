@@ -155,8 +155,9 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **管道** 生成 skill（hn-discussion-summary）任何环境禁止 `make build`/`docker compose`/`git commit`/`git push` — CI 的 build 与提交由 workflow 门禁负责；本地提交走用户 `make deploy` 或确认后的 auto-deploy；生成期 push 会绕过门禁直接上线（dac2eba 事故）
 - **管道** opencode flag 本地与 CI 不得混用：本地 `--auto`（无 `--dir`），CI 用 `--dir` + `--dangerously-skip-permissions`
 - **管道** hn-auto 每次提交只含 `_articles/` 与三个投影文件，不得夹带其他变更
-- **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证
+- **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证。定时任务会延迟触发（2026-10-25 00:00 UTC 的 hn-auto 迟到 2h50m，02:50 起跑撞上本地推送 → run 红，rebase 救援步骤挽回产出）——推前必须 `gh run list` 查**在跑/延迟**的 run，不能只按 cron 时刻推算安全窗口
 - **热度** 热度、聚簇、行业分类全部确定性 Ruby — 0 LLM 调用；改公式只动权重常量并 bump `rule_version`，全部历史日榜必须可 `hn-heat.rb --recompute` 重建
+- **热度** 历史重算必须以锚点为地平线过滤输入：评论 `posted_at ≤ anchor`、帖出生 `≤ anchor`，所有下游信号（vel/expert/depth/resurrected）从过滤后集合推导（v3 事故：`comment_vel` 窗口无上界 + expert/depth 不截断 → 未来评论以恒定假平底泄入历史每一天，未出生帖在出生前发光；每日增量跑天然正确，仅 `--recompute` 受污染）
 - **内容** 单帖摘要必须带 `hn_id`；跨多帖的周报**不加** `hn_id` — 防止成员帖被 published dedup 屏蔽
 - **内容** 引文必须逐字（verbatim）+ 真实作者 + `[c:id]`；非 HN 引文 id 不走 Algolia 门禁，本地归档核验兜底
 - **内容** `title:`/`excerpt:`/`tagline:` 必须 `>-` block scalar — ASCII `"` 会破坏 YAML
@@ -169,6 +170,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 ## 写代码
 
 - 匹配周边代码：Ruby 脚本沿用 `frozen_string_literal`、`──` 分节注释与现有命名习惯；Liquid 模板沿用现有内联样式约定；不为局部改动引入新风格。
+- 显式 require 所有用到的 stdlib，宽 rescue 只包数据解析不包库调用：`URI.parse` 缺 `require 'uri'` 抛的 NameError 会被 `rescue StandardError` 静默吞掉（category_of 域名规则因此整体失效数日，host 恒空串无人察觉）。
 - 选简单方案：优先确定性 Ruby 而非 LLM 调用；复用 `hn-fetch.rb` 库模式（`HN_FETCH_AS_LIB=1` require），不复制代码；不为「将来可能的多源」提前抽象 — 新源照 `lobsters-fetch.rb` 模式单独成文件。
 - 从源头解决，不在末端打补丁：问题定位到哪层就修哪层 — 脚本缺陷修脚本、坏数据修生产者写入端，禁止靠调用处/消费端的兜底逻辑掩盖症状；末端守卫（check-cli 这类）是防线，不是修复本身。
 - 接口要么生效要么删除：不留「解析了但没人用」的死选项/死参数（--max 死了数月，删除时才在调用处爆雷）；删除接口时同步调用处只是收尾，源头清洁才是修复。
