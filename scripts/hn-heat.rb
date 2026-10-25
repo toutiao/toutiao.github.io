@@ -10,13 +10,15 @@
 #   cohort/WNN.json             →  expert commenter cohort (rolling 14d)
 #   heat/YYYY-MM-DD.json        →  daily per-thread heat snapshot (rule_version'd)
 #   _data/hn_trends.json        →  public projection (whitelisted fields only)
+#   _data/hn_trends_7.json      →  7d companion (window-summed heat ranking)
+#   _data/hn_trends_90.json     →  90d companion (window-summed heat ranking)
 #   published.json              →  hn_id → article map (replaces _articles scans)
 #
 # Usage:
-#   ruby scripts/hn-heat.rb --all                # cohort + day heat + clusters + projection
+#   ruby scripts/hn-heat.rb --all                # cohort + day heat + clusters + projections
 #   ruby scripts/hn-heat.rb --recompute          # rebuild every heat day from raw signals
 #   ruby scripts/hn-heat.rb --refresh-published  # rebuild published.json only
-#   ruby scripts/hn-heat.rb --all [--window N]   # N-day trends window (default 30)
+#   ruby scripts/hn-heat.rb --all [--window N]   # main window override (default 30)
 
 require 'json'
 require 'yaml'
@@ -36,7 +38,13 @@ THREADS_DIR = File.join(ARCHIVE_DIR, 'threads')
 HEAT_DIR = File.join(ARCHIVE_DIR, 'heat')
 COHORT_DIR = File.join(ARCHIVE_DIR, 'cohort')
 TRENDS_PATH = ENV.fetch('HN_TRENDS_PATH', '_data/hn_trends.json')
+TRENDS_PATH_7 = ENV.fetch('HN_TRENDS_PATH_7', '_data/hn_trends_7.json')
 TRENDS_PATH_90 = ENV.fetch('HN_TRENDS_PATH_90', '_data/hn_trends_90.json')
+# Companion windows written alongside the main projection every run; ranked by
+# window-summed heat (the main file ranks by today's heat — the "now" view,
+# companions answer "what was big this week / this quarter")
+TRENDS_AUX_WINDOWS = { 7 => TRENDS_PATH_7, 90 => TRENDS_PATH_90 }.freeze
+TRENDS_WINDOW_MAX = TRENDS_AUX_WINDOWS.keys.max
 CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
 RULE_VERSION = 'v1'
@@ -543,23 +551,27 @@ def sparkline_points(curve, width: 100, height: 28, pad: 2)
   }.join(' ')
 end
 
+# Per-day thread heat map shared by every projection window (loading 90 day
+# files once instead of once per window)
+def load_per_day_thread_heat(today_payload, today, max_window)
+  map = Hash.new { |h, d| h[d] = {} }
+  (max_window - 1).downto(0) do |back|
+    d = today - back
+    payload = (d == today) ? today_payload : load_day_heat(d)
+    next unless payload
+    payload['entries'].each { |e| map[d][e['id']] = e['heat'] }
+  end
+  map
+end
+
 def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS_WINDOW_DAYS_DEFAULT, cohort: nil,
-                 path: TRENDS_PATH, slim: false)
+                 path: TRENDS_PATH, per_day: nil)
   published = load_published
   today = now.to_date
   entries = today_payload['entries']
 
-  # Daily curves from historical heat files
-  day_files = {}
-  (window - 1).downto(0) do |back|
-    d = today - back
-    day_files[d] = (d == today) ? today_payload : load_day_heat(d)
-  end
-  per_day_thread_heat = Hash.new { |h, d| h[d] = {} }
-  day_files.each do |d, payload|
-    next unless payload
-    payload['entries'].each { |e| per_day_thread_heat[d][e['id']] = e['heat'] }
-  end
+  # Daily curves from historical heat files (shared across windows)
+  per_day_thread_heat = per_day || load_per_day_thread_heat(today_payload, today, window)
 
   # Topic aggregation: persistent cluster topics + singleton topics for uncovered threads
   topics = reg['topics'] || []
@@ -638,14 +650,13 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
     },
     'industries' => industries,
     'topics' => kept,
-    'top_threads' => slim ? [] : annotate_public(entries.first(TRENDS_TOP_THREADS), published),
+    'top_threads' => annotate_public(entries.first(TRENDS_TOP_THREADS), published),
   }
-  projection.delete('top_threads') if slim
   FileUtils.mkdir_p(File.dirname(path))
   tmp = path + '.tmp'
   File.write(tmp, JSON.pretty_generate(projection) + "\n")
   File.rename(tmp, path)
-  puts "Trends projection#{slim ? ' (90d)' : ''}: #{topic_entries.size} topics (#{industries.size} industries), " \
+  puts "Trends projection: #{topic_entries.size} topics (#{industries.size} industries), " \
        "top #{kept.size} kept -> #{path}"
   projection
 end
@@ -717,6 +728,145 @@ def industry_curves(reg, per_day_thread_heat, topic_entries, today, window)
       'top_topics' => drivers,
     }
   end.sort_by { |c| -c['heat'] }
+end
+
+# ── Companion window projections (7d / 90d): ranked by window-SUMMED heat ──
+# Unlike the main projection (built from today's entries — the "now" view),
+# companions aggregate the per-day heat series, so a topic that peaked mid-week
+# and went quiet today still shows up with its full window weight.
+
+def window_industry_curves(reg, per_day, topic_entries, today, window)
+  days = (window - 1).downto(0).map { |back| today - back }
+  cat_of_thread = {}
+  reg['threads'].each { |id, e| cat_of_thread[id] = e['category'] || 'other' }
+  topic_of_thread = {}
+  Array(reg['topics']).each { |t| Array(t['hn_ids']).each { |id| topic_of_thread[id] = t['topic_id'] } }
+  topic_heat = topic_entries.each_with_object({}) { |t, h| h[t['topic_id']] = t }
+
+  by_cat = Hash.new { |h, k| h[k] = Hash.new(0.0) }
+  days.each do |d|
+    per_day[d].each do |id, heat|
+      by_cat[cat_of_thread[id] || 'other'][d] += heat
+    end
+  end
+
+  by_cat.map do |cat, daily|
+    curve = days.filter_map do |d|
+      v = daily[d].to_f.round(3)
+      v.positive? ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
+    end
+    heat = curve.sum { |p| p['h'] }.round(3)
+    delta7 = ((daily[today] || 0.0) - (daily[today - 7] || 0.0)).round(3)
+    drivers = topic_entries.select { |t|
+      t['threads'].any? { |th| (cat_of_thread[th['id']] || 'other') == cat }
+    }.first(3).map { |t| { 'topic_id' => t['topic_id'], 'title' => t['title'], 'heat' => t['heat'] } }
+    {
+      'category' => cat,
+      'heat' => heat,
+      'delta_7d' => delta7,
+      'trend' => delta7 > 0.3 ? 'up' : delta7 < -0.3 ? 'down' : 'flat',
+      'curve' => curve,
+      'sparkline' => sparkline_points(curve),
+      'top_topics' => drivers,
+    }
+  end.sort_by { |c| -c['heat'] }
+end
+
+def build_window_projection(threads, reg, per_day, window:, now: Time.now.utc, path:,
+                            top: TRENDS_TOP_TOPICS)
+  published = load_published
+  today = now.to_date
+  days = (window - 1).downto(0).map { |back| today - back }
+
+  topics = Array(reg['topics'])
+  topic_meta = topics.each_with_object({}) { |t, h| h[t['topic_id']] = t }
+  topic_of = {}
+  topics.each { |t| Array(t['hn_ids']).each { |id| topic_of[id] = t['topic_id'] } }
+
+  buckets = Hash.new { |h, k| h[k] = [] }
+  seen = {}
+  days.each do |d|
+    per_day[d].each_key do |id|
+      next if seen[id]
+      seen[id] = true
+      buckets[topic_of[id] || "t-#{id}"] << id
+    end
+  end
+
+  window_heat_of = lambda { |id|
+    days.sum { |d| per_day[d][id] || 0 }.round(3)
+  }
+
+  topic_entries = buckets.map do |tid, ids|
+    curve = days.filter_map do |d|
+      v = ids.sum { |id| per_day[d][id] || 0 }.round(3)
+      v.positive? ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
+    end
+    next nil if curve.empty?
+
+    today_heat = ids.sum { |id| per_day[today][id] || 0 }.round(3)
+    yday_heat = ids.sum { |id| per_day[today - 1][id] || 0 }.round(3)
+    delta_24h = (today_heat - yday_heat).round(3)
+    rep = ids.max_by { |id| window_heat_of.call(id) }
+    rep_entry = reg['threads'][rep] || {}
+    posted = rep_entry['posted_at'] ? (Time.parse(rep_entry['posted_at']) rescue nil) : nil
+    trend = if posted && (now - posted) <= 3 * 86400 then 'new'
+            elsif delta_24h > TREND_DELTA_EPS then 'up'
+            elsif delta_24h < -TREND_DELTA_EPS then 'down'
+            else 'flat'
+            end
+    peak = curve.max_by { |p| p['h'] }
+    meta = topic_meta[tid] || {}
+    {
+      'topic_id' => tid,
+      'title' => rep_entry['title'] || meta['keywords'].to_a.first,
+      'keywords' => meta['keywords'] || [],
+      'thread_count' => ids.size,
+      'heat' => curve.sum { |p| p['h'] }.round(3),
+      'delta_24h' => delta_24h,
+      'trend' => trend,
+      'waves' => Array(meta['waves']).size,
+      'peak_at' => peak && peak['d'],
+      'curve' => curve,
+      'sparkline' => sparkline_points(curve),
+      'threads' => ids.sort_by { |id| -window_heat_of.call(id) }.filter_map { |id|
+        e = reg['threads'][id]
+        next nil unless e
+        { 'id' => id, 'title' => e['title'], 'hn_url' => e['hn_url'], 'status' => e['status'],
+          'source' => e['source'] || 'hn', 'posted_at' => e['posted_at'], 'heat' => window_heat_of.call(id) }
+      },
+      'article' => ids.filter_map { |id| published[id] }.max_by { |a| a['date'].to_s },
+    }
+  end.compact.sort_by { |t| -t['heat'] }
+  kept = topic_entries.first(top)
+
+  industries = window_industry_curves(reg, per_day, kept, today, window)
+
+  counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
+  projection = {
+    'generated_at' => now.utc.iso8601,
+    'rule_version' => RULE_VERSION,
+    'category_version' => reg['category_version'],
+    'window_days' => window,
+    'stats' => {
+      'threads_tracked' => reg['threads'].size,
+      'active' => counts['active'] || 0,
+      'watching' => counts['watching'] || 0,
+      'cold' => counts['cold'] || 0,
+      'deep' => counts['deep'] || 0,
+      'settled' => counts['settled'] || 0,
+      'topics' => topics.size,
+    },
+    'industries' => industries,
+    'topics' => kept,
+  }
+  FileUtils.mkdir_p(File.dirname(path))
+  tmp = path + '.tmp'
+  File.write(tmp, JSON.pretty_generate(projection) + "\n")
+  File.rename(tmp, path)
+  puts "Window projection (#{window}d): #{topic_entries.size} topics (#{industries.size} industries), " \
+       "top #{kept.size} kept -> #{path}"
+  projection
 end
 
 def annotate_public(entries, published)
@@ -800,12 +950,14 @@ def run
   puts "Topics: #{reg['topics'].size} multi-thread (#{waves} recurring waves)"
 
   refresh_published if options[:mode] == :all
-  build_trends(threads, reg, today_payload, now, window: options[:window], cohort: cohort)
-  # 90-day companion projection: fills in as data accumulates, no top_threads
-  return if options[:window] >= 90
-
-  build_trends(threads, reg, today_payload, now, window: 90, cohort: cohort,
-               path: TRENDS_PATH_90, slim: true)
+  per_day = load_per_day_thread_heat(today_payload, now.to_date, [options[:window], TRENDS_WINDOW_MAX].max)
+  build_trends(threads, reg, today_payload, now, window: options[:window], cohort: cohort, per_day: per_day)
+  # Companion windows (7d weekly / 90d quarterly), window-summed ranking;
+  # skipped when the main window already covers that granularity
+  TRENDS_AUX_WINDOWS.each do |days, path|
+    next if days == options[:window]
+    build_window_projection(threads, reg, per_day, window: days, now: now, path: path)
+  end
 end
 
 run

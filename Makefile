@@ -1,4 +1,4 @@
-.PHONY: build build-fast serve test deploy clean fetch fetch-best lobsters hn-archive-init hn-archive-sync check-cli
+.PHONY: build build-fast serve test deploy clean fetch fetch-hn lobsters hn-archive-init hn-archive-sync check-cli
 
 build:
 	docker compose run --rm build
@@ -37,8 +37,8 @@ fetch:
 	@[ -n "$(url)" ] || (echo "Usage: make fetch url='<hn_url>'" && exit 1)
 	docker compose run --rm build ruby scripts/hn-fetch.rb --url "$(url)" --fetch-articles-simple
 
-fetch-best:
-	docker compose run --rm build ruby scripts/hn-fetch.rb --best --fetch-articles-simple --jobs 5
+fetch-hn:
+	docker compose run --rm build ruby scripts/hn-fetch.rb --lists --fetch-articles-simple --jobs 5
 
 lobsters:
 	docker compose run --rm build ruby scripts/lobsters-fetch.rb --hottest

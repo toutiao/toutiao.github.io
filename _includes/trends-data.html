@@ -144,6 +144,50 @@
   </section>
   {%- endif -%}
 
+  {%- comment -%} 本周热度：7 天窗口累计热度排名（谁在这周最大，与上方“现在最热”互补） {%- endcomment -%}
+  {%- assign t7 = site.data.hn_trends_7 -%}
+  {%- assign has7 = false -%}
+  {%- for tp in t7.topics limit: 20 -%}
+  {%- if tp.curve.size >= 3 -%}{%- assign has7 = true -%}{%- endif -%}
+  {%- endfor -%}
+  {%- if t7 and has7 -%}
+  <section>
+    <div class="sec-head">
+      <h2>本周热度</h2>
+      <span class="sec-note">近 7 天累计</span>
+    </div>
+    {%- if t7.industries and t7.industries != empty -%}
+    <div class="chips">
+      {%- for ind in t7.industries -%}
+      {%- if ind.heat == 0 and ind.category == 'other' -%}{% continue %}{%- endif -%}
+      <span class="chip">{{ ind.category }}<b>{{ ind.heat | round: 1 }}</b>{% if ind.trend == 'up' %}<span class="up">↑</span>{% elsif ind.trend == 'down' %}<span class="down">↓</span>{% endif %}</span>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+    {%- for topic in t7.topics limit: 12 -%}
+    {%- assign p7curve = topic.curve | last -%}
+    {%- if p7curve == nil -%}{% continue %}{%- endif -%}
+    <div class="t90-row">
+      <span class="t90-date">{{ forloop.index }}</span>
+      <span class="t90-title">
+        {%- if topic.article -%}
+        <a href="{{ topic.article.url | relative_url }}">{{ topic.title | escape }}</a>
+        {%- else -%}
+        <a href="{{ topic.threads.first.hn_url }}">{{ topic.title | escape }}</a>
+        {%- endif -%}
+        {%- if topic.waves > 1 -%} <span class="t90-wave">W×{{ topic.waves }}</span>{%- endif -%}
+      </span>
+      {%- if topic.curve.size >= 3 and topic.sparkline != '' -%}
+      <svg class="spark" width="64" height="18" viewBox="0 0 100 28" role="img" aria-label="7 天热度曲线"><polyline points="{{ topic.sparkline }}" fill="none" stroke="#c9a15c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      {%- else -%}
+      <span></span>
+      {%- endif -%}
+      <span class="heat90">{{ topic.heat | round: 1 }}</span>
+    </div>
+    {%- endfor -%}
+  </section>
+  {%- endif -%}
+
   {%- comment -%} 90 天走势：峰值日对齐，曲线不足 3 点不渲染 {%- endcomment -%}
   {%- assign t90 = site.data.hn_trends_90 -%}
   {%- assign has90 = false -%}

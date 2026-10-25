@@ -5,7 +5,7 @@
 # archive (sole storage since phase 2; the GH Actions cache layer is retired).
 #
 # Usage:
-#   ruby scripts/hn-fetch.rb --best [--force] [--jobs N]
+#   ruby scripts/hn-fetch.rb --lists [--force] [--jobs N]
 #                            [--fetch-articles-simple] [--skip-articles] [--timeout N]
 #   ruby scripts/hn-fetch.rb --url <hn_url> [--force] [--fetch-articles-simple]
 #   ruby scripts/hn-fetch.rb --fetch-article-url <url> [--timeout N]
@@ -40,7 +40,12 @@ $print_mutex = Mutex.new
 
 CACHE_DIR = '_data/hn'
 SCORE_THRESHOLD = 80
-MAX_DEFAULT = 30
+MAX_DEFAULT = 30          # per HN list page (lists are 30 rows/page)
+BEST_PAGES = 2            # /best p1-p2: established high-score threads
+NEWS_PAGES = 2            # /news p1-p2: front-page risers incl. 50-79pt leads
+LEAD_SCORE_MIN = 50       # news-only threads below SCORE_THRESHOLD are tracked as
+                          # "leads" (registry + snapshot only, no per-thread fetch);
+                          # list rows under this floor are dropped entirely
 COMMENT_THRESHOLD = 0
 COMMENT_CAP = 100
 ARTICLE_TRUNCATE = 8000
@@ -90,7 +95,12 @@ def api_get_json(url, open_timeout: 10, read_timeout: 15)
   http.open_timeout = open_timeout
   http.read_timeout = read_timeout
   resp = http.request(Net::HTTP::Get.new(uri.request_uri))
-  JSON.parse(resp.body)
+  body = resp.body
+  # Pin the encoding explicitly: Net::HTTP tagging varies across ruby/nokogiri
+  # versions, and a mis-tagged body later decodes UTF-8 as Latin-1 (mojibake
+  # with C1 controls that even breaks Jekyll's _data YAML parse).
+  body = body.force_encoding('UTF-8') unless body.encoding == Encoding::UTF_8
+  JSON.parse(body)
 rescue => e
   raise "API fetch failed #{url}: #{e.message}"
 end
@@ -122,6 +132,7 @@ def fetch_stories_algolia
       'author' => h['author'] || '',
       'descendants' => h['num_comments'] || 0,
       'created_at_i' => h['created_at_i'],
+      'posted_at' => h['created_at_i'] ? Time.at(h['created_at_i']).utc.iso8601 : nil,
     }
   }
 end
@@ -142,21 +153,19 @@ def fetch_stories_firebase
       'author' => item['by'] || '',
       'descendants' => item['descendants'] || 0,
       'created_at_i' => item['time'],
+      'posted_at' => item['time'] ? Time.at(item['time']).utc.iso8601 : nil,
     }
   end.compact.first(MAX_DEFAULT)
 end
 
-def fetch_stories
-  fetch_stories_algolia || fetch_stories_firebase
-end
-
-# ── Scrape /best (primary source, no time limit, catches slow-burn) ──
+# ── Scrape list pages (primary source: /best no time limit catches slow-burn,
+#    /news catches front-page risers before they clear SCORE_THRESHOLD) ──
 
 SCRAPE_RETRIES = 3
 SCRAPE_RETRY_DELAY = 3
 
-def scrape_best_page
-  uri = URI('https://news.ycombinator.com/best')
+def scrape_list_page(path, min_score)
+  uri = URI("https://news.ycombinator.com#{path}")
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   http.open_timeout = 10
@@ -164,7 +173,12 @@ def scrape_best_page
   resp = http.request(Net::HTTP::Get.new(uri))
   return nil unless resp.code.to_i == 200
 
-  doc = Nokogiri::HTML(resp.body)
+  body = resp.body
+  # HN serves UTF-8; pin it before Nokogiri — its charset sniffing on
+  # untagged (ASCII-8BIT) input mis-decodes UTF-8 as Latin-1 on some
+  # nokogiri builds, corrupting titles into C1-control mojibake.
+  body = body.force_encoding('UTF-8') unless body.encoding == Encoding::UTF_8
+  doc = Nokogiri::HTML(body)
   stories = []
   dupes = Set.new
 
@@ -180,13 +194,22 @@ def scrape_best_page
     subrow = row.next_element
     score_el = subrow&.at_css('.score')
     score = score_el ? score_el.text[/\d+/].to_i : 0
-    next if score < SCORE_THRESHOLD
+    next if score < min_score
 
-    # Comment count + author from the subtext row ("87 comments" / "discuss").
-    # descendants=0 previously forced full refetch of every best-listed thread.
-    comments_link = subrow&.at_css('a[href^="item?"]')
+    # Comment count + author from the subtext row. The comments link is the
+    # item-link whose text says "N comments" / "discuss" — NOT the first item
+    # link, which is the age ("1 day ago" used to parse as descendants=1,
+    # breaking freshness so every listed thread refetched every run).
+    comments_link = subrow&.css('a[href^="item?"]').find { |a|
+      a.text.match?(/comment/i) || a.text.strip == 'discuss'
+    }
     descendants = comments_link ? (comments_link.text[/\d+/] || 0).to_i : 0
     author = subrow&.at_css('.hnuser')&.text || ''
+
+    # age title attr carries the exact UTC creation time (verified against the
+    # Firebase item API) — no relative-text parsing needed
+    age_el = subrow&.at_css('.age')
+    posted_at = age_el && age_el['title'] ? "#{age_el['title']}Z" : nil
 
     a = title_el
     stories << {
@@ -197,6 +220,7 @@ def scrape_best_page
       'score' => score,
       'author' => author,
       'descendants' => descendants,
+      'posted_at' => posted_at,
     }
     break if stories.length >= MAX_DEFAULT
   end
@@ -204,17 +228,37 @@ def scrape_best_page
   stories
 end
 
-def fetch_stories_scrape_first
-  SCRAPE_RETRIES.times do |i|
-    begin
-      stories = scrape_best_page
-      return stories if stories && stories.any?
-    rescue => e
-      warn "  Scrape attempt #{i + 1}/#{SCRAPE_RETRIES}: #{e.message}"
-      sleep SCRAPE_RETRY_DELAY * (i + 1)
+# Scrape several pages of one list, dedupe by id; nil when every page fails.
+def scrape_list_pages(list, pages, min_score)
+  stories = []
+  seen = Set.new
+  pages.times do |p|
+    path = p.zero? ? "/#{list}" : "/#{list}?p=#{p + 1}"
+    page = nil
+    SCRAPE_RETRIES.times do |i|
+      begin
+        page = scrape_list_page(path, min_score)
+        break if page && page.any?
+      rescue => e
+        warn "  Scrape attempt #{i + 1}/#{SCRAPE_RETRIES} #{path}: #{e.message}"
+        sleep SCRAPE_RETRY_DELAY * (i + 1)
+      end
     end
+    return nil if page.nil? && stories.empty?
+    Array(page).each { |s| next if seen.include?(s['id']); seen.add(s['id']); stories << s }
   end
-  fetch_stories_algolia || fetch_stories_firebase
+  stories.empty? ? nil : stories
+end
+
+def fetch_stories_best
+  scrape_list_pages('best', BEST_PAGES, SCORE_THRESHOLD) ||
+    Array(fetch_stories_algolia) || Array(fetch_stories_firebase)
+end
+
+# News tier is best-effort: on scrape failure it silently degrades (the best
+# chain above already carries its own Algolia/Firebase fallback for the same host).
+def fetch_stories_news
+  scrape_list_pages('news', NEWS_PAGES, LEAD_SCORE_MIN)
 end
 
 # ── Comments ──
@@ -1092,6 +1136,9 @@ def registry_update_from_stories(reg, stories, fetched_posts)
     e['title'] ||= s['title']
     e['url'] = s['url'] if s['url']
     e['hn_url'] ||= s['hn_url']
+    # leads never get a discussion fetch, so the list-scrape time (exact UTC,
+    # see scrape_list_page) is their only posted_at — hot channels require it
+    e['posted_at'] ||= s['posted_at']
     delta = s['score'].to_i != e['last_score'].to_i ||
             (s['descendants'].to_i > 0 && s['descendants'].to_i != e['last_comment_count'].to_i)
     e['last_score'] = s['score'].to_i if s['score'].to_i > 0
@@ -1338,7 +1385,9 @@ def run
 
   OptionParser.new do |opts|
     opts.banner = "Usage: ruby scripts/hn-fetch.rb [options]"
-    opts.on('--best', 'Fetch HN /best page') { options[:mode] = :best }
+    opts.on('--lists', "Fetch HN list pages (/best x#{BEST_PAGES} + /news x#{NEWS_PAGES}, tiered sampling)") {
+      options[:mode] = :lists
+    }
     opts.on('--url URL', 'Fetch single HN post') { |v| options[:mode] = :url; options[:url] = v }
     opts.on('--fetch-article-url URL', 'Fetch single article URL, print content to stdout, exit') { |v|
       options[:mode] = :fetch_article_url; options[:url] = v
@@ -1401,7 +1450,7 @@ def run
   end
 
   unless options[:mode]
-    warn "ERROR: use --best, --url, --fetch-article-url, --fill-missing, or --hot-check"
+    warn "ERROR: use --lists, --url, --fetch-article-url, --fill-missing, --poll-watching, or --hot-check"
     exit 1
   end
 
@@ -1449,22 +1498,38 @@ def run
     return
   end
 
-  # ── --best mode ──
-  puts "\n[1/3] Fetching HN best page (scrape /best, fallback API)..."
-  stories = fetch_stories_scrape_first
-  puts "  #{stories.length} stories"
+  # ── --lists mode: /best p1-p2 (full tier) + /news p1-p2 (risers; >=80 full,
+  #    50-79 lead = registry + snapshot only) ──
+  puts "\n[1/3] Fetching HN lists (/best x#{BEST_PAGES}, /news x#{NEWS_PAGES})..."
+  best_stories = fetch_stories_best
+  puts "  best: #{best_stories.length} stories (score >= #{SCORE_THRESHOLD})"
+  news_stories = fetch_stories_news
+  full_news = []
+  leads = []
+  if news_stories
+    best_ids = Set.new(best_stories.map { |s| s['id'] })
+    news_extra = news_stories.reject { |s| best_ids.include?(s['id']) }
+    full_news = news_extra.select { |s| s['score'] >= SCORE_THRESHOLD }
+    leads = news_extra.select { |s| s['score'] < SCORE_THRESHOLD }
+    puts "  news: #{news_stories.length} kept (score >= #{LEAD_SCORE_MIN}); " \
+         "+#{full_news.length} full-fetch, +#{leads.length} leads (#{LEAD_SCORE_MIN}-#{SCORE_THRESHOLD - 1})"
+  else
+    warn '  news: scrape failed — degraded to best-only this run'
+  end
+
+  stories = best_stories + full_news                     # full-fetch tier
+  sampled = (best_stories + Array(news_stories)).uniq { |s| s['id'] }  # snapshot/registry tier
 
   published = known_published_ids
   fresh = stories.reject { |s| published.include?(s['id']) }
   puts "  Dedup: #{stories.length - fresh.length} already in _articles/, #{fresh.length} remaining"
 
-  stories.first(10).each do |s|
+  stories.first(8).each do |s|
     url_tag = s['url'] ? ' [link]' : ' [text]'
     puts "    [#{s['score']}] #{s['title'][0, 70]}#{url_tag}"
   end
-
-  if stories.length > 10
-    puts "    ... and #{stories.length - 10} more"
+  leads.first(5).each do |s|
+    puts "    [lead #{s['score']}] #{s['title'][0, 70]}"
   end
 
   article_mode = options[:skip_articles] ? :skip :
@@ -1487,13 +1552,15 @@ def run
   end
 
   # ── Archive layer: snapshots + registry state machine + thread files ──
+  # sampled (not stories): leads get time-series + registry rows too — that is
+  # the whole point of the news tier (delta hot channel works off these)
   fetched_results = stats.delete(:fetched_results) || []
-  append_snapshots(stories)
-  registry_update_from_stories(reg, stories, fetched_results.map { |r| r['post'] })
+  append_snapshots(sampled)
+  registry_update_from_stories(reg, sampled, fetched_results.map { |r| r['post'] })
   archived = fetched_results.map { |r| archive_thread(reg, r['post'], r['comments'], r['article']) }.compact
   save_registry(reg)
   counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
-  puts "  Archive: #{archived.length} threads updated, snapshots #{stories.length} sampled"
+  puts "  Archive: #{archived.length} threads updated, snapshots #{sampled.length} sampled"
   puts "  Registry: #{counts.map { |k, v| "#{k}=#{v}" }.sort.join(' ')}"
 
   puts "\n---"

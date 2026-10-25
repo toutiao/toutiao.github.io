@@ -32,7 +32,9 @@ def lo_get(path)
   req = Net::HTTP::Get.new(uri.request_uri, { 'User-Agent' => LO_UA, 'Accept' => 'application/json' })
   resp = http.request(req)
   raise "HTTP #{resp.code}" unless resp.code.to_i == 200
-  JSON.parse(resp.body)
+  body = resp.body
+  body = body.force_encoding('UTF-8') unless body.encoding == Encoding::UTF_8
+  JSON.parse(body)
 end
 
 def lo_flatten_comments(children, parent = '0', out = [])
