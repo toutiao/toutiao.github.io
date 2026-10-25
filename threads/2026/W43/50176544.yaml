@@ -1,0 +1,561 @@
+---
+post:
+  id: '50176544'
+  title: 'C vs. C#: racing VLC''s Gaussian blur'
+  url: https://martinfinkel.com/blog/gaussian-blur-c-vs-csharp/
+  hn_url: https://news.ycombinator.com/item?id=50176544
+  score: 125
+  author: martz
+  posted_at: '2026-10-21T05:48:12Z'
+  fetched_at: '2026-10-24T19:18:29Z'
+  article_url: https://martinfinkel.com/blog/gaussian-blur-c-vs-csharp/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T19:18:29Z'
+  raw_comment_count: 46
+comments:
+- id: '50218226'
+  parent_id: '50176544'
+  author: maxlin
+  text: Very interesting readup! I have some C# projects I&#x27;ve had in mind to
+    try to compile to AOT. Quite different for complex programs of course, but the
+    perf being very close to C is a great motivator.
+  score: 0
+  posted_at: '2026-10-24T03:53:39Z'
+- id: '50218464'
+  parent_id: '50176544'
+  author: Brian_K_White
+  text: Most industries consider 8% a mountain. More than their entire profit margin.
+  score: 0
+  posted_at: '2026-10-24T05:00:25Z'
+- id: '50218590'
+  parent_id: '50218464'
+  author: Dylan16807
+  text: And 8% milk would taste bad and ruin most recipes.<p>I don&#x27;t know why
+    we&#x27;re comparing completely different categories of number though.  In a business
+    context getting a project done a few percent faster, or more accurately one <i>step</i>
+    done a few percent faster, barely affects revenue at all.  And saving CPU time
+    matters even less.
+  score: 0
+  posted_at: '2026-10-24T05:37:56Z'
+- id: '50218665'
+  parent_id: '50218226'
+  author: mihular
+  text: Why would you want them in AOT, though? It&#x27;s great for startup time and
+    native interoperability, but it might be slower in general due to machine specific
+    optimizations.
+  score: 0
+  posted_at: '2026-10-24T05:57:55Z'
+- id: '50218669'
+  parent_id: '50176544'
+  author: teo_zero
+  text: Nice article!<p>What surprises me is that the original VLC filter does not
+    use SIMD. Sometimes I wonder why I spent my money on a &quot;modern&quot; CPU
+    with a lot of new features that stay completely ignored by most software I run
+    every day.
+  score: 0
+  posted_at: '2026-10-24T05:59:19Z'
+- id: '50218750'
+  parent_id: '50218669'
+  author: fenwick67
+  text: It surprises me that it runs on the CPU at all, honestly.
+  score: 0
+  posted_at: '2026-10-24T06:21:50Z'
+- id: '50218758'
+  parent_id: '50218750'
+  author: ygra
+  text: Probably a reflection of the age of that code along with the usefulness of
+    the feature. If no one actually needs the video blurry, then it doesn&#x27;t matter
+    how efficient the filter is.
+  score: 0
+  posted_at: '2026-10-24T06:23:25Z'
+- id: '50218776'
+  parent_id: '50218665'
+  author: mcraiha
+  text: Because of Docker. You want the images to be as small as possible.
+  score: 0
+  posted_at: '2026-10-24T06:28:51Z'
+- id: '50218820'
+  parent_id: '50176544'
+  author: brookman64k
+  text: |-
+    I would have expected the filters to run as a shader on the GPU which would make them much more efficient.
+    I remember implementing two-pass gaussian blur in GLSL almost 20 years ago.
+  score: 0
+  posted_at: '2026-10-24T06:42:59Z'
+- id: '50218830'
+  parent_id: '50176544'
+  author: anderskaseorg
+  text: There are much faster algorithms available for Gaussian blur though, running
+    in O(n) rather than O(nσ) for an n pixel image and radius σ. See <a href="https:&#x2F;&#x2F;www.ipol.im&#x2F;pub&#x2F;art&#x2F;2013&#x2F;87&#x2F;article.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.ipol.im&#x2F;pub&#x2F;art&#x2F;2013&#x2F;87&#x2F;article.pdf</a>
+    for a survey.
+  score: 0
+  posted_at: '2026-10-24T06:47:02Z'
+- id: '50218840'
+  parent_id: '50218669'
+  author: martz
+  text: 'The blur is an outlier: a 2007 filter almost nobody uses, so it never got
+    optimized.<p>The hot paths in VLC (decoding via dav1d&#x2F;FFmpeg, chroma conversion,
+    surface copies, deinterlacing) are hand-tuned SIMD with runtime CPU dispatch,
+    and most playback runs on the GPU anyway.'
+  score: 0
+  posted_at: '2026-10-24T06:48:24Z'
+- id: '50218853'
+  parent_id: '50218820'
+  author: bschwindHN
+  text: Yep if you want it done quickly, the GPU is the way to go. Especially once
+    you get to 4K resolution and beyond.<p>See here:<p><a href="https:&#x2F;&#x2F;aras-p.info&#x2F;blog&#x2F;2026&#x2F;10&#x2F;01&#x2F;Fast-blur-with-animated-radius&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;aras-p.info&#x2F;blog&#x2F;2026&#x2F;10&#x2F;01&#x2F;Fast-blur-with-animated-...</a>
+  score: 0
+  posted_at: '2026-10-24T06:51:01Z'
+- id: '50218926'
+  parent_id: '50218830'
+  author: schobi
+  text: If we look at the example of the FFT blur filter, sure O(n) looks easier and
+    independent of the blur size, but you have an overhead in needing FFT and iFFT.
+    It can be faster for some sigmas, but not for all. So you need different variants
+    depending on sigma and a smooth transition between them.<p>Then you can start
+    approximating - for large sigmas just using every 10th pixel would work. Looks
+    like MS Teams background blur is doing this, you get a blurry background with
+    aliasing - yay!<p>Once you add SIMD variants and look at CPU caching behaviour,
+    you build versions for different CPUs. Instead of filtering the whole image for
+    one dimension you might finish blocks locally.<p>You&#x27;ve now got a dozen variants
+    that need testing and maintenance on different architectures.<p>I&#x27;m reminded
+    of my colleague preaching requirements engineering - what was the goal gain?
+  score: 0
+  posted_at: '2026-10-24T07:08:34Z'
+- id: '50219023'
+  parent_id: '50176544'
+  author: hn_submit
+  text: The C# version uses unsafe raw pointers which is practically the same as writing
+    it in C. No surprise then that the outcomes are similar.
+  score: 0
+  posted_at: '2026-10-24T07:32:52Z'
+- id: '50219231'
+  parent_id: '50176544'
+  author: theanonymousone
+  text: "&gt; Two small edits close most of it: compute the loop bounds into locals
+    before the loop,<p>I always assumed any decent runtime&#x2F;compiler takes care
+    of such optimisations, and usually leave such things to JDK in my Java code. Is
+    that really not the case?"
+  score: 0
+  posted_at: '2026-10-24T08:18:51Z'
+- id: '50219232'
+  parent_id: '50218926'
+  author: anderskaseorg
+  text: FFT is O(n log n), not O(n). The better O(n) algorithms are the likes of Deriche,
+    Vliet–Young–Verbeek, or Alvarez–Mazorra.
+  score: 0
+  posted_at: '2026-10-24T08:19:10Z'
+- id: '50219236'
+  parent_id: '50218776'
+  author: littlecranky67
+  text: I would object, I want my containers to be as fast as possible and the JIT
+    compiles for each CPU arch you run it on (supposedly optimally). Docker image
+    size, who cares?
+  score: 0
+  posted_at: '2026-10-24T08:20:17Z'
+- id: '50219312'
+  parent_id: '50219231'
+  author: RandomOnyx
+  text: Decent ones do. .NET&#x27;s JIT has historically (before ryujit especially
+    and tbh I haven&#x27;t looked at .NET much in the past decade) not been decent,
+    general statements about decent compilers never applied to it. It has been playing
+    catch-up lately but apparently it still has a ways to go.
+  score: 0
+  posted_at: '2026-10-24T08:37:49Z'
+- id: '50219416'
+  parent_id: '50219312'
+  author: zerr
+  text: It never was a priority I believe. As opposed to C, the main target audience
+    of C#&#x2F;.NET has always been LOB CRUD app shops.
+  score: 0
+  posted_at: '2026-10-24T09:02:14Z'
+- id: '50219435'
+  parent_id: '50219312'
+  author: pjmlp
+  text: They have been improving, this is one area however where those C# vs Java
+    flamewars kind of miss out.<p>While C# the language has much more goodies than
+    Java the language, Java the platform has had much better options than the CLR,
+    because it has been mostly Microsoft and Mono (nowadays almost gone after the
+    acquisition), whereas the Java ecosystem has a plethora of implementations, each
+    one wiht their JIT and GC implementations, even AOT caches since almost three
+    decades now.<p>Thankfully the outcome of Project Midori, and the whole Secure
+    Future Initiative , has had the side effect of Microsoft becoming more serious
+    about .NET performance, instead of always outsourcing performance workloads to
+    C++ and COM.
+  score: 0
+  posted_at: '2026-10-24T09:07:05Z'
+- id: '50219439'
+  parent_id: '50218750'
+  author: ack_complete
+  text: It&#x27;s also a basic implementation, doing a divide per sample to renormalize
+    and not taking advantage of the symmetry of the kernel.<p>Even on a GPU, you wouldn&#x27;t
+    use an algorithm this simple in production. For small radii, leveraging bilinear
+    filtering halves the number of samples. For larger radii, hierarchical pyramid
+    approximations are popular.
+  score: 0
+  posted_at: '2026-10-24T09:08:14Z'
+- id: '50219459'
+  parent_id: '50219416'
+  author: pjmlp
+  text: Kind of, us users of .NET would have liked a Delphi, VB 6 kind of attention
+    to performance, however for many years, Microsoft management had exactly that
+    attitude, expecting that anyone that cared about performance would be writting
+    COM in C++, or DLLs, and consuming those artifacts from .NET.<p>Finally they changed
+    their approach to .NET, besides Midori, SFI that I mention on a sibling comment,
+    certainly also due to Go and Rust competition.<p>Note how Azure nowadays does
+    most of their open source contributions in Go and Rust, the rewrites that completly
+    ignored .NET, while the team mentions lack of adoption on .NET related podcasts.
+  score: 0
+  posted_at: '2026-10-24T09:10:43Z'
+- id: '50219468'
+  parent_id: '50219023'
+  author: pjmlp
+  text: Yeah, the point being that you can write a much safer application, and in
+    a very small section reach out to unsafe code, instead of having 100% unsafe code
+    application, or having to do Python style, &quot;Python libraries&quot; that are
+    actually C libraries.
+  score: 0
+  posted_at: '2026-10-24T09:12:42Z'
+- id: '50220040'
+  parent_id: '50219231'
+  author: kvemkon
+  text: In C++ we have such troubles either. If something looking as constant cannot
+    be 100% proved to be a constant, it cannot be optimized.<p>&gt; Incrementing vectors
+    (26.08.2019)<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=20800076">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=20800076</a>
+  score: 0
+  posted_at: '2026-10-24T10:51:00Z'
+- id: '50220435'
+  parent_id: '50176544'
+  author: tinykerneldev
+  text: Interesting. Even more interesting would have been seeing if&#x2F;how C# SIMD
+    intrinsics would have improved performance.
+  score: 0
+  posted_at: '2026-10-24T11:56:02Z'
+- id: '50220473'
+  parent_id: '50219468'
+  author: Rapzid
+  text: You can also do Memory&lt;T&gt; and Span&lt;T&gt; over unmanaged memory to
+    make things.. Safer.
+  score: 0
+  posted_at: '2026-10-24T12:02:24Z'
+- id: '50220820'
+  parent_id: '50219312'
+  author: torginus
+  text: That is absolutely not true. Not historically, and not now. .NET&#x27;s JIT
+    has always been very good, bar a few qualifying statements.<p>It used to be based
+    on MSVC, with the most expensive optimizations trimmed, things like loop hoisting,
+    devirtualization, generally ones with long runtimes, or ones that required whole
+    program visibility.<p>But otherwise it was competent, if you wrote code aware
+    of these limitations, it could get very close to even C++, and even on naive code,
+    it was always very competitive (with strange wildcards, that if you used raw pointers,
+    which are an obscure C# feature, you could get code to be even faster, due to
+    the compiler&#x27;s heritage).<p>It also helped, that due to MS&#x27;s nature;
+    C# was meant to be used with MS frameworks, written by people who were aware of
+    the compiler&#x27;s quirks, which you could learn if you looked at these codebases.<p>Sure
+    if yo measure against LLVM-compiled static languages, it falls short in certain
+    scenarios, but it&#x27;s been soldily in the pack of other GC languages like Java
+    or Go, and always has been.
+  score: 0
+  posted_at: '2026-10-24T12:56:16Z'
+- id: '50220858'
+  parent_id: '50220473'
+  author: pjmlp
+  text: Sure, but the point still stands versus using 100% raw C.<p>I only wish that
+    the performance focus was there back in .NET 1.0, with the main architect coming
+    from Delphi, but Microsoft had other priorities.<p>Also can we please have proper
+    syntax for inline arrays instead of a special purpose attribute? Don&#x27;t really
+    get that one.
+  score: 0
+  posted_at: '2026-10-24T13:01:19Z'
+- id: '50220884'
+  parent_id: '50218758'
+  author: pwdisswordfishq
+  text: It surprises me it was even implemented.
+  score: 0
+  posted_at: '2026-10-24T13:05:29Z'
+- id: '50221041'
+  parent_id: '50220435'
+  author: moron4hire
+  text: They did do that.
+  score: 0
+  posted_at: '2026-10-24T13:26:45Z'
+- id: '50221235'
+  parent_id: '50219231'
+  author: Rapzid
+  text: Its possible the JIT would have optimized this but that optimization isn&#x27;t
+    making its way into the native AOT build.<p>Also possible if it were more idiomatic
+    C# it would have optimized it better. RyuJIT does in fact do BCE and other loop
+    optimizations. It&#x27;s improving a lot every year too.<p>The optimization paths
+    from C# though Roslyn and RyuJIT probably don&#x27;t start with C# written like
+    it were C. Maybe iterating over Spans and slices would have optimized to fewer
+    instructions than raw dogging nested for loops.
+  score: 0
+  posted_at: '2026-10-24T13:54:19Z'
+- id: '50221475'
+  parent_id: '50220858'
+  author: Rohansi
+  text: By inline arrays do you mean within a struct field? You can do that with the
+    `fixed` modifier.
+  score: 0
+  posted_at: '2026-10-24T14:19:32Z'
+- id: '50221705'
+  parent_id: '50176544'
+  author: sebazzz
+  text: This is all and nice, but I can debug a native C plugin. Is this possible
+    for an AOT compiled C# plugin? Or can perhaps the C# plugin be also run with the
+    normale JITting runtime being loaded?
+  score: 0
+  posted_at: '2026-10-24T14:40:43Z'
+- id: '50221776'
+  parent_id: '50221475'
+  author: pjmlp
+  text: No, I mean this &quot;cool&quot; hack.<p><a href="https:&#x2F;&#x2F;endjin.com&#x2F;blog&#x2F;csharp-12-inline-arrays"
+    rel="nofollow">https:&#x2F;&#x2F;endjin.com&#x2F;blog&#x2F;csharp-12-inline-arrays</a>
+  score: 0
+  posted_at: '2026-10-24T14:46:19Z'
+- id: '50222059'
+  parent_id: '50176544'
+  author: esafak
+  text: Lens blur is a lot more fun, since each lens is different, and there is an
+    art to it.
+  score: 0
+  posted_at: '2026-10-24T15:13:04Z'
+- id: '50222067'
+  parent_id: '50221475'
+  author: Rapzid
+  text: Inline array is the safe version of unsafe fixed.
+  score: 0
+  posted_at: '2026-10-24T15:13:44Z'
+- id: '50222151'
+  parent_id: '50221705'
+  author: platinum95
+  text: |-
+    Yes, the AOT compiler can emit debug symbols which point to the C# source files, so depending on your debugger you can get it to work.
+    I previously had to ship a C#&#x2F;dotnet library in a native C iOS&#x2F;Android app. It was a PITA but it worked in the end, and I was even able to debug the C# code in XCode (albeit in a limited fashion).
+  score: 0
+  posted_at: '2026-10-24T15:22:19Z'
+- id: '50222377'
+  parent_id: '50219231'
+  author: ozgrakkurt
+  text: You would be astounded how more efficient your program can be if you are doing
+    decent amount of computation or IO.<p>You can try to understand some of it by
+    doing some measurements and doing some napkin math using the hardware limits like
+    internet bandwidth or IO read&#x2F;write etc.
+  score: 0
+  posted_at: '2026-10-24T15:44:01Z'
+- id: '50222489'
+  parent_id: '50220820'
+  author: neerajsi
+  text: Only the ia64 version of the jit was based on msvc. And older versions of
+    aot mode. Not the more typical jit targets.<p>I believe the new enabling technology
+    for better codegen is tiered compilation, which has only been around for a couple
+    years.
+  score: 0
+  posted_at: '2026-10-24T15:53:43Z'
+- id: '50222607'
+  parent_id: '50222489'
+  author: torginus
+  text: The old JIT was a fork of a pared-back version of MSVC; this was for all platforms,
+    except the .NET Compact framework, which was for embedded stuff, and it was its
+    own fork.<p>There were other weird things like C++&#x2F;CLI which was a full-fat
+    MSVC fork used to compile C++ either into .NET IL or x86 code which could be embedded
+    into .NET assemblies, but could still call into .NET code.<p>But what most people
+    think of as .NET (Framework) was definitely using the old MSVC-based JIT
+  score: 0
+  posted_at: '2026-10-24T16:05:15Z'
+- id: '50223092'
+  parent_id: '50222489'
+  author: Rapzid
+  text: RyuJIT has had tiered compilation for about 10 years.
+  score: 0
+  posted_at: '2026-10-24T17:00:57Z'
+- id: '50223107'
+  parent_id: '50220820'
+  author: to11mtm
+  text: Ehhhhhhh I thought it was a bit of a mishmash, at least before ryujit?<p>i.e.
+    I think the x64 framework compiler was based on MSVC, but the x86 was a bit of
+    a different beast. That was part of why they did RyuJit in the first place, to
+    help unify the JITs between the large divergence in how they worked [0].<p>One
+    big thing being, AFAIK the old 32 bit JIT would never use SSE2 outside of some
+    block copy type stuff. They assumed a safe baseline for most other instructions
+    and stuck with that (although, there can be good reasons for this, e.x. consistency
+    with x87 behavior.)<p>Will also add that the old x64 compiler sometimes really
+    did do some questionable stuff, i.e. when we flipped things to use it we never
+    really saw a perf benefit even when dealing with larger datatypes&#x2F;etc that
+    should have seen a benefit from wider registers.<p>RyuJit definitely has fixed
+    that, but... again, the past is a bit hazy.<p>[0] - <a href="https:&#x2F;&#x2F;devblogs.microsoft.com&#x2F;dotnet&#x2F;ryujit-the-next-generation-jit-compiler-for-net&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;devblogs.microsoft.com&#x2F;dotnet&#x2F;ryujit-the-next-genera...</a>
+  score: 0
+  posted_at: '2026-10-24T17:02:32Z'
+- id: '50223153'
+  parent_id: '50219416'
+  author: to11mtm
+  text: They had a few &#x27;squirrel&#x27; moments.<p>Silverlight comes to mind,
+    Also the fever dream that was &#x27;.NET micro&#x27;. I might still have my NetDuino
+    somewhere...<p>&gt; the main target audience of C#&#x2F;.NET has always been LOB
+    CRUD app shops.<p>I do think this has changed over time. There&#x27;s definitely
+    been improvements to the overall ecosystem from game developers (Cysharp being
+    the most prolific) via both libraries and feedback around the BCL&#x2F;JIT&#x2F;etc.
+  score: 0
+  posted_at: '2026-10-24T17:06:44Z'
+- id: '50223298'
+  parent_id: '50220858'
+  author: to11mtm
+  text: "&gt; Also can we please have proper syntax for inline arrays instead of a
+    special purpose attribute? Don&#x27;t really get that one.<p>While I kinda agree
+    (And IMO ask whether having proper syntax would be a stepping stone to other things
+    in future like proper alignment for 16-byte fields so we could sanely do cmpxchg16b),
+    if I had to <i>guess</i>, it&#x27;s because there&#x27;s other existing code to
+    handle StructLayoutAttribute, so just doing another attribute versus having a
+    field probably was the &#x27;easiest&#x27; way to implement across the different
+    bits of the JIT and GC."
+  score: 0
+  posted_at: '2026-10-24T17:26:47Z'
+- id: '50223602'
+  parent_id: '50218840'
+  author: rerdavies
+  text: Are large gaussian blurs not used for modern glass effects? Worth pointing
+    out that doing so really requires use of FFT convolutions -- an optimization that
+    has not been implemented in the benchmarks.<p>Not really the question that this
+    study is addressing though.
+  score: 0
+  posted_at: '2026-10-24T18:00:08Z'
+- id: '50223685'
+  parent_id: '50220820'
+  author: rerdavies
+  text: Thanks for that. I had definitely noticed that the .NET JIT wasn&#x27;t doing
+    loop hoisting. And that you could get close to C&#x2F;C++ performance if you did
+    loop hoisting manually. It&#x27;s useful to get some insight on .NET&#x27;s actual
+    optimization philosophy.
+  score: 0
+  posted_at: '2026-10-24T18:10:28Z'
+article:
+  url: https://martinfinkel.com/blog/gaussian-blur-c-vs-csharp/
+  title: 'C vs C#: racing VLC''s Gaussian blur - Martin Finkel'
+  fetch_status: success
+  content: |-
+    October 12, 2026
+
+    _Update, October 12: two small source changes bring the line-by-line C# within 8% of the C. Details at the end of [Round 1](#round-1-line-by-line)._
+
+    In my [last post](/blog/vlc-plugin-csharp/), I showed that a native VLC 4 plugin can be written entirely in C#, thanks to .NET Native AOT. The obvious next question is not _how_, but _how fast_. VLC is written in C, video filters touch every pixel of every frame, and C# has a garbage collector. Surely that costs something?
+
+    Rather than guess, I picked a real VLC filter, ported it to C# line by line, and raced the two inside the same VLC, on the same frames, with byte-identical output. Then I optimized both and raced them again. Twice.
+
+    ## A blur with a history
+
+    A Gaussian blur replaces every pixel with a weighted average of its neighbours: the closest count the most, and the weight fades along the bell curve Carl Friedrich Gauss used in 1809 to describe measurement errors. That smooth fade is what makes it look like an out-of-focus lens rather than a boxy smear. One number controls it, **sigma** : VLC looks at neighbours up to 3 x sigma pixels away, so sigma 4 means a 25-pixel window.
+
+     ![The same frame, original and blurred with VLC's filter at sigma 2, 4 and 8](/assets/gaussian-blur-sigmas.webp)
+
+    It is one of the oldest effects in digital imaging: [Photoshop 1.0](https://guidebookgallery.org/apps/photoshop/gaussianblur) had it in 1990, and GIMP, FFmpeg and GStreamer all have one. VLC has had it since 2007, in _Tools \> Effects and Filters \> Video Effects \> Advanced_, as “Spatial blur”:
+
+     ![VLC's Adjustments and Effects dialog, Video Effects, Advanced tab, with Spatial blur enabled and its sigma slider](/assets/vlc-effects-spatial-blur.webp)
+    ## How VLC does it
+
+    A Gaussian blur is _separable_: blurring every row, then every column, gives exactly the same result as the full 2D window, so a 25 x 25 window (625 multiplications per pixel) becomes two passes of 25. VLC’s [gaussianblur.c](https://code.videolan.org/videolan/vlc/-/blob/master/modules/video_filter/gaussianblur.c) does exactly that, in integers: a horizontal pass into a buffer, a vertical pass over the buffer, then a division by the sum of the weights. Here is the horizontal pass:
+
+        for( int i_line = 0; i_line < i_visible_lines; i_line++ )
+        {
+            for( int i_col = 0; i_col < i_visible_pitch; i_col++ )
+            {
+                type_t t_value = 0;
+                const int c = i_line*i_in_pitch+i_col;
+                for( int x = __MAX( -i_dim, -i_col*(x_factor+1) );
+                     x <= __MIN( i_dim, (i_visible_pitch - i_col)*(x_factor+1) + 1 );
+                     x++ )
+                {
+                    t_value += pt_distribution[x+i_dim] *
+                               p_in[c+(x>>x_factor)];
+                }
+                pt_buffer[c] = t_value;
+            }
+        }
+
+    ## The same code, in C#
+
+    The C# version is a deliberate line-by-line port: same loops, same bounds, same integer math, raw pointers where the C uses raw pointers.
+
+        for (int line = 0; line < visibleLines; line++)
+        {
+            for (int col = 0; col < visiblePitch; col++)
+            {
+                int value = 0;
+                int c = line * inPitch + col;
+                for (int x = Math.Max(-dim, -col * (xFactor + 1));
+                     x <= Math.Min(dim, (visiblePitch - col) * (xFactor + 1) + 1);
+                     x++)
+                {
+                    value += distribution[x + dim] * input[c + (x >> xFactor)];
+                }
+                buffer[c] = value;
+            }
+        }
+
+    It runs as a VLC plugin through [VLCLR](https://github.com/mfkl/vlclr), compiled with Native AOT: a native DLL that VLC loads like any other plugin. The filter allocates nothing on the managed heap per frame, so the garbage collector has nothing to collect while it runs.
+
+    To keep things fair, every version below runs in the same VLC 4 release build, against that build’s own unmodified filter, and produces byte-identical frames to it. Each filter call is timed the same way, on a 1080p clip, on a laptop with an 11th-gen Intel Core i7 (Tiger Lake, 4 cores). Each round shows milliseconds per frame on .NET 10 at three blur strengths, next to frames per second at sigma 4. .NET 8 and 11 land within a few percent.
+
+    ## Round 1: line by line
+
+    Milliseconds per 1080p frame (C# on .NET 10), lower is better.
+
+    | | sigma 2 | sigma 4 | sigma 8 |
+    | --- | --- | --- | --- |
+    | Current VLC | 62.0 | 125.9 | 252.9 |
+    | C# port | 78.9 | 155.2 | 298.1 |
+
+     ![Frames per second at sigma 4: current VLC 7.9, C# port 6.4](/assets/gaussian-blur-round1.webp)
+
+    C wins, as expected: the C# port takes about 23% longer per frame. Not a disaster, but a clear gap.
+
+    The machine code shows why. For the inner loop above, clang keeps the running sum in a register and computes the loop bound once. .NET’s code generator, [RyuJIT](https://github.com/dotnet/runtime/blob/main/docs/design/coreclr/jit/ryujit-overview.md), emits about twice as many instructions: it recomputes `Math.Min(...)` on every step and keeps the sum in memory. Same arithmetic, more bookkeeping around it.
+
+    **Update, October 12.** After publishing, I checked how much of this gap is the code generator and how much is the way the C# is written. Two small edits close most of it: compute the loop bounds into locals before the loop, so RyuJIT stops re-evaluating `Math.Min(...)` on every step, and use `nint` for the indices, so they no longer need a 32 to 64-bit conversion before every memory access. Clang does both on its own. Same loops, same arithmetic, byte-identical output:
+
+        - int c = line * inPitch + col;
+        - for (int x = Math.Max(-dim, -col * (xFactor + 1));
+        - x <= Math.Min(dim, (visiblePitch - col) * (xFactor + 1) + 1);
+        - x++)
+        + nint c = (nint)line * inPitch + col;
+        + nint xStart = Math.Max(-dim, -col * (xFactor + 1));
+        + nint xEnd = Math.Min(dim, (visiblePitch - col) * (xFactor + 1) + 1);
+        + for (nint x = xStart; x <= xEnd; x++)
+
+    Milliseconds per 1080p frame (C# on .NET 10), lower is better. A new run, so the first two rows differ slightly from the table above.
+
+    | | sigma 2 | sigma 4 | sigma 8 |
+    | --- | --- | --- | --- |
+    | Current VLC | 62.6 | 137.9 | 256.7 |
+    | C# port | 78.9 | 169.0 | 303.6 |
+    | C# port, bounds hoisted | 67.9 | 126.4 | 263.5 |
+
+    With those two edits, the line-by-line C# lands within 8% of the C, and is ahead at sigma 4. Part of the gap was the compiler, and part was code the compiler needed a little help with.
+
+    ## Round 2: same algorithm, both optimized
+
+    Before reaching for SIMD, there is a lot to gain from the algorithm itself. I applied the same four changes to both, still plain scalar code with no SIMD and no threads:
+
+    1. **Replace the division by a multiplication.** Away from the borders the divisor never changes, so a precomputed “magic” reciprocal and a shift give exactly the same result, without the slowest instruction in the loop.
+    2. **Read memory in the order it is stored.** The vertical pass walked down columns, jumping a whole row ahead at every step. Accumulating whole rows instead reads memory sequentially.
+    3. **Use the symmetry of the bell curve.** `w*a + w*b` becomes `w*(a+b)`: half the multiplications.
+    4. **Handle the borders separately,** so the interior runs a simpler loop with no bounds to compute.
+
+    Milliseconds per 1080p frame (C# on .NET 10), lower is better.
+
+    | | sigma 2 | sigma 4 | sigma 8 |
+    | --- | --- | --- | --- |
+    | Current VLC | 62.0 | 125.9 | 252.9 |
+    | Optimized C | 23.3 | 40.7 | 75.4 |
+    | Optimized C# | 28.1 | 50.6 | 98.9 |
+
+     ![Frames per second at sigma 4: current VLC 7.9, optimized C 25, optimized C# 20](/assets/gaussian-blur-round2.webp)
+
+    **The C# version, still plain scalar code, is 2.5 times faster than the current VLC code.** C stays ahead, though: the C# takes about 24% longer, for the same reasons as in round 1. One more C advantage: clang turns these simpler loops into SIMD code by itself. I turned that off to compare the same code, but with it on, the C reaches 34 fps without a single line of SIMD in the source.
+
+    ## Round 3
+  error:
+  fetched_at: '2026-10-24T19:18:29Z'
+archived_at: '2026-10-24T19:18:33Z'

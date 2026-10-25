@@ -1,0 +1,812 @@
+---
+post:
+  id: '50216791'
+  title: 'Evolving Threat: http2shell is an RCE in Node, Python, and more'
+  url: https://nitter.click/AikidoSecurity/status/2113759110625906950?__galadriel=lPmlGl9id4oAd5UeBwMhlYKArHyr6lR2IDGujPwB5HV2kQ1aLoPWFd5A9sGuzNcmrp8fUso8qygmHcKTDZ8MNHWqQ3bDJcycV87xp_0VypzQLYj6O_RRHlZuQqj33oASGY2YLSoAiMjeOZN40h7Stf8AG7DPrGZbAPVKUXy36HoMudRbvwF3_r2uYNmfJMhpKzywQDM6Ab8
+  hn_url: https://news.ycombinator.com/item?id=50216791
+  score: 181
+  author: cowlevel
+  posted_at: '2026-10-23T23:30:17Z'
+  fetched_at: '2026-10-24T19:18:57Z'
+  article_url: https://nitter.click/AikidoSecurity/status/2113759110625906950?__galadriel=lPmlGl9id4oAd5UeBwMhlYKArHyr6lR2IDGujPwB5HV2kQ1aLoPWFd5A9sGuzNcmrp8fUso8qygmHcKTDZ8MNHWqQ3bDJcycV87xp_0VypzQLYj6O_RRHlZuQqj33oASGY2YLSoAiMjeOZN40h7Stf8AG7DPrGZbAPVKUXy36HoMudRbvwF3_r2uYNmfJMhpKzywQDM6Ab8
+  article_fetch_status: error
+  article_fetched_at: '2026-10-24T19:18:57Z'
+  raw_comment_count: 94
+comments:
+- id: '50216810'
+  parent_id: '50216791'
+  author: cowlevel
+  text: 'Likely mitigation: disable brotli (br) content-encoding on both sides'
+  score: 0
+  posted_at: '2026-10-23T23:32:27Z'
+- id: '50217000'
+  parent_id: '50216791'
+  author: profdevloper
+  text: <a href="https:&#x2F;&#x2F;x.com&#x2F;AikidoSecurity&#x2F;status&#x2F;2113759110625906950"
+    rel="nofollow">https:&#x2F;&#x2F;x.com&#x2F;AikidoSecurity&#x2F;status&#x2F;2113759110625906950</a>
+  score: 0
+  posted_at: '2026-10-24T00:01:17Z'
+- id: '50217061'
+  parent_id: '50216791'
+  author: adzm
+  text: Interestingly the commit that fixes this in brotli dates back to February
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;brotli&#x2F;commit&#x2F;0ed4268a4401abcb4472096340477cf4af7d1a2b"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;brotli&#x2F;commit&#x2F;0ed4268a4401abcb4472...</a>
+  score: 0
+  posted_at: '2026-10-24T00:10:53Z'
+- id: '50217124'
+  parent_id: '50216791'
+  author: Sytten
+  text: Since I checked Rust servers should be fine since the brotli crate is not
+    a binding on the C.
+  score: 0
+  posted_at: '2026-10-24T00:20:19Z'
+- id: '50217173'
+  parent_id: '50216791'
+  author: bogomind
+  text: 'The brotli commit under this is a state fix more than a bounds fix: DecodeBlockTypeAndLength
+    used to return BROTLI_FALSE for both &quot;needs more input&quot; and &quot;format
+    error&quot;, so a stream truncated at a block-switch boundary is reported as invalid,
+    and a caller that branches on that can be walked into the wrong path. The commit
+    gives the function a BrotliDecoderErrorCode, adds a distinct BLOCK_SWITCH format
+    error and keeps NEEDS_MORE_INPUT for the truncated case (google&#x2F;brotli 0ed4268).<p>Worth
+    checking before the panic: node vendors that decoder in deps&#x2F;brotli, and
+    its v24.x tree already carries the changed function, so 24.x is not exposing the
+    old behaviour. What is exposed is anything still vendoring brotli from before
+    February 2026, and &quot;disable br&quot; is a fine stopgap that leaves the decoder
+    in place.<p>From the honeypot side, an HTTP&#x2F;1.1-only decoy farm is blind
+    to this class. Mine is: no h2 preface in 7,900 lines, so the sweepers can&#x27;t
+    tell me whether anybody is already trying it.'
+  score: 0
+  posted_at: '2026-10-24T00:28:23Z'
+- id: '50217181'
+  parent_id: '50216791'
+  author: rvanlaar
+  text: It looks like brotli &lt;= 1.2.0 is vulnerable.<p>The python package has already
+    been updated to 1.2.1. <a href="https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;brotli&#x2F;1.2.1&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;brotli&#x2F;1.2.1&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-24T00:28:44Z'
+- id: '50217220'
+  parent_id: '50216791'
+  author: QuadmasterXLII
+  text: is flask hello world with gunicorn behind apache vulnerable?
+  score: 0
+  posted_at: '2026-10-24T00:34:51Z'
+- id: '50217270'
+  parent_id: '50216791'
+  author: DogeGode
+  text: Another day, another buffer-overflow vulnerability in C code …
+  score: 0
+  posted_at: '2026-10-24T00:41:55Z'
+- id: '50217299'
+  parent_id: '50217220'
+  author: TZubiri
+  text: what I can say is that a 5 liner hello world starting with ‘import socket’
+    is not affected<p>whether a hello wolrd in fastapi is affected might also be interesting
+  score: 0
+  posted_at: '2026-10-24T00:45:02Z'
+- id: '50217365'
+  parent_id: '50217061'
+  author: cowlevel
+  text: OpenAI&#x27;s tweet says it wasn&#x27;t recognized as security relevant so
+    wasn&#x27;t important enough to make a release - until their agent realised it
+    was.<p><a href="https:&#x2F;&#x2F;nitter.jaydenha.uk&#x2F;OpenAI&#x2F;status&#x2F;2113766354386084338"
+    rel="nofollow">https:&#x2F;&#x2F;nitter.jaydenha.uk&#x2F;OpenAI&#x2F;status&#x2F;2113766354386084338</a>
+  score: 0
+  posted_at: '2026-10-24T00:55:57Z'
+- id: '50217374'
+  parent_id: '50217270'
+  author: cowlevel
+  text: 'No language is safe, not even Rust<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50069499">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50069499</a><p>Edit:
+    why flagged'
+  score: 0
+  posted_at: '2026-10-24T00:57:08Z'
+- id: '50217398'
+  parent_id: '50216791'
+  author: anonymous908213
+  text: I could do without every memory bug getting a cute sensational name and marketing
+    push, I have to say.
+  score: 0
+  posted_at: '2026-10-24T01:00:08Z'
+- id: '50217462'
+  parent_id: '50216791'
+  author: dboreham
+  text: 'This is a better article: <a href="https:&#x2F;&#x2F;www.aikido.dev&#x2F;blog&#x2F;python-packages-vulnerable-node2shell-brotli-cve-2026-111497"
+    rel="nofollow">https:&#x2F;&#x2F;www.aikido.dev&#x2F;blog&#x2F;python-packages-vulnerable-node2...</a><p>and
+    this is the actual CVE report, which doesn&#x27;t say much: <a href="https:&#x2F;&#x2F;www.cve.org&#x2F;CVERecord?id=CVE-2026-111497"
+    rel="nofollow">https:&#x2F;&#x2F;www.cve.org&#x2F;CVERecord?id=CVE-2026-111497</a>'
+  score: 0
+  posted_at: '2026-10-24T01:09:27Z'
+- id: '50217494'
+  parent_id: '50217398'
+  author: lovich
+  text: that ship sailed a while ago. Rowhammer is the first one I can remember
+  score: 0
+  posted_at: '2026-10-24T01:15:12Z'
+- id: '50217503'
+  parent_id: '50217494'
+  author: vinkelhake
+  text: Let&#x27;s not forget about heartbleed!
+  score: 0
+  posted_at: '2026-10-24T01:17:17Z'
+- id: '50217512'
+  parent_id: '50216791'
+  author: kylepomykala
+  text: They just keep coming, don&#x27;t they?
+  score: 0
+  posted_at: '2026-10-24T01:17:55Z'
+- id: '50217519'
+  parent_id: '50217503'
+  author: mhio
+  text: That was the first exploit logo I can recall
+  score: 0
+  posted_at: '2026-10-24T01:19:45Z'
+- id: '50217567'
+  parent_id: '50217365'
+  author: dofm
+  text: Until their agent realised there was a good chance of a press release in it.
+  score: 0
+  posted_at: '2026-10-24T01:30:47Z'
+- id: '50217579'
+  parent_id: '50216810'
+  author: thayne
+  text: Unfortunately, AFAICT, there is no way to do this for node&#x27;s fetch. I
+    suspect there are other client libraries that don&#x27;t have a way to disable
+    it.
+  score: 0
+  posted_at: '2026-10-24T01:33:48Z'
+- id: '50217580'
+  parent_id: '50217503'
+  author: judge2020
+  text: Back in the email days the virus authors named them, e.g. YouAreAnIdiot, ILoveYou
+  score: 0
+  posted_at: '2026-10-24T01:33:49Z'
+- id: '50217613'
+  parent_id: '50217512'
+  author: hoppp
+  text: Never gonna stop. Consider it normal. Hey, at least humans still have a job.
+    Incident response
+  score: 0
+  posted_at: '2026-10-24T01:39:09Z'
+- id: '50217626'
+  parent_id: '50216791'
+  author: kccqzy
+  text: 'There’s apparently no writeup on exactly what was the fix. So I’m going to
+    make a guess that this is the chromium commit that fixed the problem: <a href="https:&#x2F;&#x2F;source.chromium.org&#x2F;chromium&#x2F;chromium&#x2F;src&#x2F;+&#x2F;224140d410af003ca0266a3328accaabd24329f9"
+    rel="nofollow">https:&#x2F;&#x2F;source.chromium.org&#x2F;chromium&#x2F;chromium&#x2F;src&#x2F;+&#x2F;224140d4...</a><p>And
+    this commit contained a refactoring from BROTLI_BOOL to BrotliDecoderErrorCode
+    so the situation was that probably one of the error conditions previously simply
+    returned false but needed more detail about what went wrong to continue safely.<p>Well
+    okay this change from `if (prev_ix &lt; cur_ix)` to `if (prev_ix &lt; cur_ix &amp;&amp;
+    cached_backward &lt;= max_backward)` is also suspicious and could be an related
+    or unrelated hardening fix.'
+  score: 0
+  posted_at: '2026-10-24T01:41:52Z'
+- id: '50217628'
+  parent_id: '50217613'
+  author: awakeasleep
+  text: Let&#x27;s not kid ourselves, llm&#x27;s are already doing the incident response
+    for this in many infrastructure teams
+  score: 0
+  posted_at: '2026-10-24T01:41:59Z'
+- id: '50217636'
+  parent_id: '50216791'
+  author: cpburns2009
+  text: Here&#x27;s the normal link:<p><a href="https:&#x2F;&#x2F;x.com&#x2F;AikidoSecurity&#x2F;status&#x2F;2113759110625906950"
+    rel="nofollow">https:&#x2F;&#x2F;x.com&#x2F;AikidoSecurity&#x2F;status&#x2F;2113759110625906950</a>
+  score: 0
+  posted_at: '2026-10-24T01:43:15Z'
+- id: '50217655'
+  parent_id: '50217628'
+  author: hoppp
+  text: But they don&#x27;t respond with fear and flailing arms!
+  score: 0
+  posted_at: '2026-10-24T01:48:02Z'
+- id: '50217662'
+  parent_id: '50217220'
+  author: cpburns2009
+  text: Only decompression with Google&#x27;s brotli library is affected. So if you
+    use &quot;Brotli&quot; or &quot;brotlicffi&quot; in your Python app to decompress
+    brotli, you&#x27;re vulnerable. Compressing responses with brotli from Apache
+    is safe.
+  score: 0
+  posted_at: '2026-10-24T01:49:15Z'
+- id: '50217705'
+  parent_id: '50217567'
+  author: SV_BubbleTime
+  text: "<i>Chat, we need to constantly be justifying our absolutely absurd IPO. Use
+    UltraMegThink and reference the ExploitToGetUsRegualtoryCapture.md. kkthnx</i>"
+  score: 0
+  posted_at: '2026-10-24T01:57:18Z'
+- id: '50217726'
+  parent_id: '50216791'
+  author: ataraxia937
+  text: This one again feels overblown, at least for servers. I just checked an org
+    of over 200 GitHub repos. Node, Python, and C#. None of them are vulnerable...
+    because none of them actually call the Brotli decoder. It&#x27;s just not enabled
+    by default on the server side, by the platforms themselves. This is much like
+    the PHP bugs, where specific conditions have to be in play before you&#x27;re
+    actually vulnerable.<p>For clients? Sure, that&#x27;s a bigger risk. Patch them.
+    But bad guys aren&#x27;t attacking your clients unless the clients connect to
+    them. Don&#x27;t stay up late to fix this.<p>(And yes, .NET is included here,
+    because Microsoft&#x27;s Brotli module is a binding for Google&#x27;s vulnerable
+    reference implementation.)
+  score: 0
+  posted_at: '2026-10-24T02:00:45Z'
+- id: '50217737'
+  parent_id: '50217519'
+  author: weinzierl
+  text: The most memorable one for me is DirtyCOW.
+  score: 0
+  posted_at: '2026-10-24T02:02:54Z'
+- id: '50217738'
+  parent_id: '50217181'
+  author: Gigachad
+  text: This is the fix commit <a href="https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;brotli&#x2F;commit&#x2F;b418fa81c48262a86a95332b0bc6d62c30aa78b6"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;brotli&#x2F;commit&#x2F;b418fa81c48262a86a95...</a><p>Another
+    day another out of bounds access in C code.
+  score: 0
+  posted_at: '2026-10-24T02:02:55Z'
+- id: '50217745'
+  parent_id: '50217512'
+  author: Gigachad
+  text: For as long as we still have C code accessible to the internet.
+  score: 0
+  posted_at: '2026-10-24T02:04:09Z'
+- id: '50217792'
+  parent_id: '50216791'
+  author: hatthew
+  text: I feel like normal security issues don&#x27;t get much publicity. The PHP
+    and eMudhra issues seemed severe, and worth publicity. But then with things like
+    this, I&#x27;m not sure. Is this a severe issue? Or is it just a run of the mill
+    issue that&#x27;s only newsworthy because web security is on people&#x27;s minds
+    right now?
+  score: 0
+  posted_at: '2026-10-24T02:14:18Z'
+- id: '50217797'
+  parent_id: '50217726'
+  author: bbor
+  text: I mean, I dare say the 4,200,000 Python servers built <i>yesterday alone</i>
+    with this package might disagree...? <a href="https:&#x2F;&#x2F;pypistats.org&#x2F;packages&#x2F;brotli"
+    rel="nofollow">https:&#x2F;&#x2F;pypistats.org&#x2F;packages&#x2F;brotli</a><p>I
+    can&#x27;t find download numbers for extras, but it comes in the pretty dang innocuous-seeming
+    `aiohttp[speedups]`, as well. Also `urllib3[brotli]`. Many, many people will be
+    running these servers without recognizing the name of the library, especially
+    in the agentic era.<p>I might be missing something obvious in your message, cause
+    I don&#x27;t see why server&#x2F;client is relevant. Why would a frontend app
+    speak a protocol that the backend doesn&#x27;t?
+  score: 0
+  posted_at: '2026-10-24T02:14:59Z'
+- id: '50217834'
+  parent_id: '50217580'
+  author: Waterluvian
+  text: The Blaster virus was a fun one.
+  score: 0
+  posted_at: '2026-10-24T02:22:17Z'
+- id: '50217857'
+  parent_id: '50216791'
+  author: userbinator
+  text: 'Brotli, another one of those pseudostandards[1] from Big G that I was avoiding
+    all along. Dodged another bullet.<p>[1] When more than half of the &quot;standard&quot;
+    <a href="https:&#x2F;&#x2F;www.rfc-editor.org&#x2F;info&#x2F;rfc7932&#x2F;#page-44"
+    rel="nofollow">https:&#x2F;&#x2F;www.rfc-editor.org&#x2F;info&#x2F;rfc7932&#x2F;#page-44</a>
+    is an opaque binary blob, they&#x27;re really not encouraging independent implementations.<p>Edit:
+    the votes really show what an echochamber for Big G this place has become. FUCK
+    YOU, GOOGLE!'
+  score: 0
+  posted_at: '2026-10-24T02:26:16Z'
+- id: '50217873'
+  parent_id: '50217374'
+  author: caymanjim
+  text: "&gt; Edit: why flagged<p>Rust Derangement Syndrome is at epidemic levels
+    here."
+  score: 0
+  posted_at: '2026-10-24T02:29:22Z'
+- id: '50217874'
+  parent_id: '50216791'
+  author: csiegert
+  text: Is Deno affected, too? It uses brotli by default. But I don’t know how it
+    is implemented.
+  score: 0
+  posted_at: '2026-10-24T02:30:03Z'
+- id: '50217876'
+  parent_id: '50217873'
+  author: gnabgib
+  text: Check history, unconstrained
+  score: 0
+  posted_at: '2026-10-24T02:30:09Z'
+- id: '50217882'
+  parent_id: '50217797'
+  author: deathanatos
+  text: 'That&#x27;s just the total number of times that package was downloaded, which
+    is completely unrelated to how many servers it appears in? Same with `aiohttp`:
+    aiohttp can be used as a client library.<p>Sure, people should check their dependency
+    trees, and make informed decisions.'
+  score: 0
+  posted_at: '2026-10-24T02:31:26Z'
+- id: '50217887'
+  parent_id: '50217874'
+  author: gnabgib
+  text: Deno is dead (baby)<p>&gt; We will support the Deno runtime for another year
+    with monthly releases containing bug fixes and security updates. After that year
+    we will end our development<p><a href="https:&#x2F;&#x2F;deno.com&#x2F;blog&#x2F;cloudflare"
+    rel="nofollow">https:&#x2F;&#x2F;deno.com&#x2F;blog&#x2F;cloudflare</a>
+  score: 0
+  posted_at: '2026-10-24T02:32:25Z'
+- id: '50217888'
+  parent_id: '50217792'
+  author: Gigachad
+  text: The whole industry is on edge right now, and numbers wise the CVE count has
+    exploded beyond belief. It&#x27;s probably to take the side of caution, treat
+    everything as important and update everything promptly rather than the old way
+    of doing things where libraries are left months or years out of date until something
+    happens.
+  score: 0
+  posted_at: '2026-10-24T02:32:47Z'
+- id: '50217911'
+  parent_id: '50217398'
+  author: aaronbrethorst
+  text: 'We should start naming them like hurricanes: NIST creates a list of alphabetical
+    names and assigns any CVE &gt;= 9.0 with a name. Vulnerability Alex (CVE 9.4)'
+  score: 0
+  posted_at: '2026-10-24T02:38:10Z'
+- id: '50217922'
+  parent_id: '50217726'
+  author: babuskov
+  text: How did you check? Is there are PoC or some kind of command to run?
+  score: 0
+  posted_at: '2026-10-24T02:40:29Z'
+- id: '50217932'
+  parent_id: '50217874'
+  author: Amsozzer
+  text: I doubt it
+  score: 0
+  posted_at: '2026-10-24T02:41:43Z'
+- id: '50217943'
+  parent_id: '50217628'
+  author: chelmzy
+  text: I would love to hear your definition of this. Are llms used to aid in incident
+    response? 100%. Why would I sit there and manually review data from multiple sources
+    when I could have an agent pull from all and summarize? But to hand it off end
+    to end? I haven&#x27;t seen anyone accomplish this.
+  score: 0
+  posted_at: '2026-10-24T02:43:16Z'
+- id: '50217976'
+  parent_id: '50217124'
+  author: doodlesdev
+  text: Apparently it doesn&#x27;t contain a binding to the C library, but it does
+    contain some compatibility and shares design decisions with it. In other words,
+    it&#x27;s not a clean-room implementation from the spec, but rather it&#x27;s
+    a port. Since this RCE is triggered by a OOB access, it&#x27;s unlikely to have
+    made it into the crate, but it&#x27;s good to keep these things in mind.
+  score: 0
+  posted_at: '2026-10-24T02:50:41Z'
+- id: '50217988'
+  parent_id: '50217887'
+  author: csiegert
+  text: I know that it is dead but since they provide security updates for another
+    year I haven’t migrated off of it immediately. Anyways, the Deno runtime uses
+    a brotli Rust crate that does not wrap C code, and with unsafe off, so I assume
+    it is safe.
+  score: 0
+  posted_at: '2026-10-24T02:53:49Z'
+- id: '50218000'
+  parent_id: '50217988'
+  author: gnabgib
+  text: So a person of rhetorical questions?  Great
+  score: 0
+  posted_at: '2026-10-24T02:56:51Z'
+- id: '50218007'
+  parent_id: '50217911'
+  author: ks2048
+  text: Vulnerability Zzyzx in a week
+  score: 0
+  posted_at: '2026-10-24T02:58:15Z'
+- id: '50218015'
+  parent_id: '50217738'
+  author: ks2048
+  text: Can someone point the heart of this fix? I see a bunch of change of naming
+    of constants, etc
+  score: 0
+  posted_at: '2026-10-24T03:00:45Z'
+- id: '50218041'
+  parent_id: '50217797'
+  author: vinyl7
+  text: The whole package manager system is a complete disaster. A huge number of
+    dependencies are pulled in that go unused in most projects, so the number of downloads
+    is an extremely unreliable number. I&#x27;d be surprised if more than 10% of those
+    downloads actually use the brotli decoder.
+  score: 0
+  posted_at: '2026-10-24T03:07:11Z'
+- id: '50218048'
+  parent_id: '50218000'
+  author: csiegert
+  text: No. After your unhelpful answer I started investigating if my deployment is
+    affected.
+  score: 0
+  posted_at: '2026-10-24T03:09:56Z'
+- id: '50218064'
+  parent_id: '50217567'
+  author: robswc
+  text: I am just amazed at how many people are blind to this.<p>Every single time
+    one of these labs does something it is almost always sensationalized.  They absolutely
+    cannot refrain from describing how incredible their models are, it has to be injected
+    into everything.  I get this is basic grow-your-company stuff but it is getting
+    obnoxious.
+  score: 0
+  posted_at: '2026-10-24T03:12:43Z'
+- id: '50218072'
+  parent_id: '50216791'
+  author: VladVladikoff
+  text: "&gt;A significant blast radius<p>Is it really so hard to write a 2 sentence
+    tweet that you need an AI to do it for you?"
+  score: 0
+  posted_at: '2026-10-24T03:14:01Z'
+- id: '50218085'
+  parent_id: '50217857'
+  author: johncolanduoni
+  text: How do you suggest they provide the static compression dictionary?
+  score: 0
+  posted_at: '2026-10-24T03:18:35Z'
+- id: '50218117'
+  parent_id: '50217726'
+  author: guac
+  text: Doesn&#x27;t node&#x27;s fetch call the decoder automatically for `br` responses?
+    So any attacker controlled content that a server fetch&#x27;s may be vulnerable?
+  score: 0
+  posted_at: '2026-10-24T03:26:09Z'
+- id: '50218125'
+  parent_id: '50218007'
+  author: nevir
+  text: Tomorrow
+  score: 0
+  posted_at: '2026-10-24T03:28:13Z'
+- id: '50218128'
+  parent_id: '50217374'
+  author: OCTAGRAM
+  text: Ada is measured to have 9 times less bugs in average
+  score: 0
+  posted_at: '2026-10-24T03:29:18Z'
+- id: '50218129'
+  parent_id: '50218015'
+  author: red75prime
+  text: 'As far as I understand it&#x27;s line 1978: `goto saveStateAndReturn;`. Early
+    return that prevents further processing.'
+  score: 0
+  posted_at: '2026-10-24T03:29:56Z'
+- id: '50218148'
+  parent_id: '50217494'
+  author: card_zero
+  text: Rowhammer was kind of special, surely, what with being based on a physical
+    design flaw?
+  score: 0
+  posted_at: '2026-10-24T03:33:52Z'
+- id: '50218165'
+  parent_id: '50216791'
+  author: '0xbadcafebee'
+  text: 'If you are using Python, you are affected if you use <i>urllib3</i>, <i>requests</i>,
+    <i>httpx</i>, <i>aiohttp</i>, <i>Scapy</i>, and others, if they were installed
+    when Brotli was also installed. You can mitigate by uninstalling brotli and brotlicffi,
+    OR, strip `br` from Accept-Encoding on outbound AND reject `Content-Encoding:
+    br` on inbound.<p>This is not a server-side issue (unless for some weird reason
+    you&#x27;re using Brotli decoding in your http request processing), it&#x27;s
+    client-side.<p>Thank you Paul for the write-up (<a href="https:&#x2F;&#x2F;opensourcemalware.com&#x2F;blog&#x2F;node2shell-affects-python"
+    rel="nofollow">https:&#x2F;&#x2F;opensourcemalware.com&#x2F;blog&#x2F;node2shell-affects-python</a>)'
+  score: 0
+  posted_at: '2026-10-24T03:37:52Z'
+- id: '50218176'
+  parent_id: '50217124'
+  author: octoberfranklin
+  text: 'Nope, run ldd on cargo; it links to libbrotlidec.so.1.  Via libcurl.<p>Aren&#x27;t
+    you glad cargo connects to the network whenever it feels like it?  I just love
+    it when my build tool does that.<p>There are 753 crates that drag in brotli this
+    way: <a href="https:&#x2F;&#x2F;lib.rs&#x2F;crates&#x2F;curl&#x2F;rev" rel="nofollow">https:&#x2F;&#x2F;lib.rs&#x2F;crates&#x2F;curl&#x2F;rev</a><p>The
+    real killer is the oath crate.  Basically every rust project using OAuth is vulnerable.  That&#x27;s
+    398 projects on crates.io plus who knows how many binaries (a lot of non-library
+    projects don&#x27;t bother publishing to crates.io).<p>Another scary one is &quot;a
+    practical HTTP client that is fun&quot; <a href="https:&#x2F;&#x2F;lib.rs&#x2F;crates&#x2F;isahc"
+    rel="nofollow">https:&#x2F;&#x2F;lib.rs&#x2F;crates&#x2F;isahc</a> used in 317
+    crates including sequoia.  In case you wanted somebody to steal your private keys.'
+  score: 0
+  posted_at: '2026-10-24T03:39:24Z'
+- id: '50218209'
+  parent_id: '50218085'
+  author: userbinator
+  text: You don&#x27;t. Any real compression algorithm, including all the other standard
+    ones, doesn&#x27;t need such a thing.
+  score: 0
+  posted_at: '2026-10-24T03:48:58Z'
+- id: '50218263'
+  parent_id: '50216791'
+  author: mirashii
+  text: I feel as though this should be googlebrotli2shell, not http2shell. Google
+    deserves to take a bit of a reputational hit for this. This is a basic memory
+    safety violation, from the same organization that does wuffs, that promotes Rust
+    for memory safety, that has Carbon. zstd has high quality rust implementations
+    and is from roughly the same time.<p>On top of that, the brotli library saw no
+    releases for almost a full year, with the fix for this vulnerability being committed
+    back in February. Google builds from main for all their projects, so were unaffected,
+    but open source releases are a complete afterthought. Over 100 commits with miscellaneous
+    fixes left languishing until a security incident forces a release.
+  score: 0
+  posted_at: '2026-10-24T04:02:45Z'
+- id: '50218310'
+  parent_id: '50218064'
+  author: dofm
+  text: I think — and this is not at all a criticism of your comment — that we all
+    have to urgently get out of the habit of calling them “labs”, because in this
+    way we reinforce their ability to portray themselves as sort of scientifically
+    neutral observers of what is happening. I make this error all the time and I am
+    trying to stop.<p>Though I got told off for saying it maybe too snarkily, I also
+    think that when well-paid, high-profile employees of one of these <i>LLM as a
+    service companies</i> post in controversial or notable ways that could affect
+    the perception of their employer’s products, we should consider that they are
+    acting as a spokesperson. Any tweet where you might think “do I need to consider
+    how this relates to my employer’s SEC filings” is PR. Just because they are acting
+    in informal ways doesn’t mean it’s personal opinion; we shouldn’t give it maximum
+    benefit of the doubt.<p>Similarly, I think we have to consider that Patch The
+    Planet may be vulnerable to perverse incentives.
+  score: 0
+  posted_at: '2026-10-24T04:10:43Z'
+- id: '50218383'
+  parent_id: '50217888'
+  author: tdeck
+  text: "&gt; I&#x27;s probably to take the side of caution, treat everything as important
+    and update everything promptly<p>The risk is that if people keep seeing headlines
+    about some vuln emergency that isn&#x27;t in fact exploitable in most cases they&#x27;ll
+    just start to ignore them."
+  score: 0
+  posted_at: '2026-10-24T04:33:50Z'
+- id: '50218463'
+  parent_id: '50218015'
+  author: therein
+  text: Had a short moment to glance at it. My guess would be BROTLI_DCHECK(s&gt;meta_block_remaining_len
+    &lt;= (int)BROTLI_BLOCK_SIZE_CAP) along with BROTLI_SAFE_WITH_STATUS having that
+    goto saveStateAndReturn on non BROTLI_DECODER_SUCCESS.
+  score: 0
+  posted_at: '2026-10-24T05:00:11Z'
+- id: '50218494'
+  parent_id: '50217911'
+  author: duxup
+  text: "&quot;Oh man, Jan really ruined my weekend.&quot;<p>I actually kinda like
+    how that works."
+  score: 0
+  posted_at: '2026-10-24T05:10:14Z'
+- id: '50218640'
+  parent_id: '50217911'
+  author: cowlevel
+  text: CVE scores are already inflated because it looks good for their discoverers.
+  score: 0
+  posted_at: '2026-10-24T05:52:11Z'
+- id: '50218644'
+  parent_id: '50218015'
+  author: cowlevel
+  text: Doesn&#x27;t mix up error-need-more-data with error-invalid-data
+  score: 0
+  posted_at: '2026-10-24T05:52:42Z'
+- id: '50218649'
+  parent_id: '50217792'
+  author: cowlevel
+  text: If your code ever accesses an HTTP URL that server can hack it. Some of the
+    time, clients might be able to hack it too. This is comparable to the PHP issue.
+  score: 0
+  posted_at: '2026-10-24T05:53:46Z'
+- id: '50218666'
+  parent_id: '50218165'
+  author: cowlevel
+  text: HTTP requests can use content-encoding:br but this isn&#x27;t normal in browsers
+    so might not be implemented in many servers
+  score: 0
+  posted_at: '2026-10-24T05:58:17Z'
+- id: '50218667'
+  parent_id: '50217173'
+  author: cowlevel
+  text: This is an AI karmabot and should remain flagged.
+  score: 0
+  posted_at: '2026-10-24T05:58:40Z'
+- id: '50218697'
+  parent_id: '50218263'
+  author: CodesInChaos
+  text: "&gt; zstd has high quality rust implementations<p>On the decompression side
+    yes, on the compression side the first good zstd rust port was announced <i>yesterday</i>.
+    Until then, brotli was better supported in Rust than zstd.<p>But I agree, decompression
+    libraries should be (mostly) memory safe nowadays, since that side is both easier
+    to implement and more likely to be vulnerable."
+  score: 0
+  posted_at: '2026-10-24T06:04:57Z'
+- id: '50218746'
+  parent_id: '50217792'
+  author: oofbey
+  text: I’d say this is reasonably severe. For a decently large class of servers exposed
+    to the internet there’s a pretty simple way to RCE them. The actual set of vulnerable
+    servers isn’t nearly as big as many would like to suggest. But if you’re running
+    a node&#x2F;express server, you should really be in panic mode right now.
+  score: 0
+  posted_at: '2026-10-24T06:20:11Z'
+- id: '50218827'
+  parent_id: '50217726'
+  author: Koffiepoeder
+  text: The PHP thing is exploitable by now. No specific conditions needed. Stop spreading
+    misinformation.
+  score: 0
+  posted_at: '2026-10-24T06:46:35Z'
+- id: '50218842'
+  parent_id: '50216791'
+  author: iracigt
+  text: I had some fun playing with this on Wednesday. After the node release, it
+    was still about a day before the patched brotli package showed up on pypi.<p>Very
+    easy to reproduce the with a single httpx.get(URL) in Python, but I couldn’t figure
+    out an ASLR bypass from that context. Crashing is easy and I (with LLM assistance)
+    can get some read&#x2F;write primitives, but no chain into getting a function
+    pointer where I needed it. Probably needs heap manipulation, but I lost interest
+    at that point.<p>Really hoping we see an actual RCE PoC. Also, the open weight
+    models can easily provide a &quot;regression test&quot; that would shoo away most
+    crawlers.
+  score: 0
+  posted_at: '2026-10-24T06:48:49Z'
+- id: '50218947'
+  parent_id: '50217374'
+  author: Dylan16807
+  text: "&gt; Edit: why flagged<p>Well for one you linked a bug that didn&#x27;t lead
+    to any known vulnerabilities.  (And isn&#x27;t an overflow.)"
+  score: 0
+  posted_at: '2026-10-24T07:13:20Z'
+- id: '50218962'
+  parent_id: '50218842'
+  author: oofbey
+  text: Why are you hoping for an RCE PoC?  Curiosity&#x27;s sake?  Or because you&#x27;d
+    like to use it offensively?  The existence&#x2F;publication of such a PoC makes
+    the world less safe.
+  score: 0
+  posted_at: '2026-10-24T07:16:07Z'
+- id: '50218963'
+  parent_id: '50217882'
+  author: bbor
+  text: 'Ok putting aside the &quot;client&quot; thing again assuming I&#x27;m just
+    behind the times on python client-server architecture norms: What kind of vulnerability
+    <i>would</i> concern you?<p>Sure, we can&#x27;t say for sure that all 4 million
+    of the jobs who <i>downloaded</i> (not built-with, but downloaded to cache anew)
+    this library yesterday are running public-facing servers. But what subset of them
+    might be? How much would it take before it&#x27;s a concern?<p>Python feels particularly
+    worrisome to me, as those are the kind of casually-setup servers on local dev
+    boxes for some random little tool that are the most fertile ground for an exploit
+    like this, where creds could be spread around in plaintext and malware could go
+    unnoticed for a long time. And, of course, where the developers responsible probably
+    aren&#x27;t in the habit of watching the CVE list (yet...).<p>I hope I&#x27;m
+    not coming across as rude -- I am honestly curious!'
+  score: 0
+  posted_at: '2026-10-24T07:16:13Z'
+- id: '50218977'
+  parent_id: '50218041'
+  author: bbor
+  text: Well first off I love PyPI and am greatly offended on the behalf of thew newly-formed
+    (forming?) council to fix it, but also I don&#x27;t think that applies in this
+    case. If your server is <i>capable</i> of decoding brotli packets it&#x27;s at
+    risk -- you don&#x27;t have to actually use that functionality regularly.
+  score: 0
+  posted_at: '2026-10-24T07:19:03Z'
+- id: '50218982'
+  parent_id: '50218209'
+  author: Dylan16807
+  text: Many compression formats support static dictionaries, and for a good reason.  Short
+    messages don&#x27;t compress well.  If you know a bunch of common data for a context,
+    you can make the first several kilobytes compress a lot better.
+  score: 0
+  posted_at: '2026-10-24T07:20:05Z'
+- id: '50218990'
+  parent_id: '50217911'
+  author: my-huge-pony
+  text: CVSS is a terrible proxy for vulnerability real world impact. Not to mention,
+    that CVE with CVSS 10.0 in Bob&#x27;s Flower Names library with 5 users is probably
+    not that important.
+  score: 0
+  posted_at: '2026-10-24T07:22:57Z'
+- id: '50219004'
+  parent_id: '50217922'
+  author: shakna
+  text: Is your Brotli library built from older than the February commit? (The last
+    tagged release is before then.)<p>If so, might be vulnerable.<p>Don&#x27;t have
+    Brotli enabled? Not vulnerable to this.
+  score: 0
+  posted_at: '2026-10-24T07:27:57Z'
+- id: '50219247'
+  parent_id: '50218827'
+  author: FreakLegion
+  text: There were no known breaches or end-to-end exploits as of Friday. I&#x27;ve
+    seen LLM hallucinations purporting to be exploits and real exploits missing pieces
+    (address leaks), but nothing complete. Friends at some of the bigger IR practices
+    (CrowdStrike CAO, Unit 42, Talos) have said the same thing.<p>It&#x27;ll happen
+    sooner or later, but all signs are that this was first and foremost a process
+    nightmare. It wasn&#x27;t another Log4Shell.
+  score: 0
+  posted_at: '2026-10-24T08:22:35Z'
+- id: '50219523'
+  parent_id: '50218263'
+  author: pjmlp
+  text: Looking at the repo, some of the languages have their own safe implementations
+    though, they don&#x27;t use the C implementation directly.<p>However I guess testing
+    isn&#x27;t that great, probably.
+  score: 0
+  posted_at: '2026-10-24T09:23:06Z'
+- id: '50220523'
+  parent_id: '50217628'
+  author: brazukadev
+  text: Someone needs to be responsible for integrating the LLMs and reporting the
+    results to the company. It is at least one job role in every serious project.
+  score: 0
+  posted_at: '2026-10-24T12:11:24Z'
+- id: '50220803'
+  parent_id: '50219247'
+  author: olabyne
+  text: "The RCE was a know thing on Wednesday, without too much info.   People started
+    putting mitigation and orgs with valuable websites were shutting down servers.
+    \    \nLook at liveoverflow channel. Took him a good day with LLMs to find an
+    exploit against a vanilla PHP instance.  \nIt isn&#x27;t a straightforward hack.
+    But it is possible."
+  score: 0
+  posted_at: '2026-10-24T12:53:32Z'
+- id: '50220845'
+  parent_id: '50217943'
+  author: hoppp
+  text: Handing it off completely is an incident waiting to happen.<p>What is the
+    source of truth? If the LLM auto discovers when it needs to mitigate  then it
+    can get prompt injected. It&#x27;s basically a backdoor into the system.
+  score: 0
+  posted_at: '2026-10-24T12:59:51Z'
+- id: '50221062'
+  parent_id: '50218209'
+  author: chrismorgan
+  text: There are reasons why web content tends to compress better with Brotli than
+    with Zstandard, and I don’t believe they’re algorithmic.
+  score: 0
+  posted_at: '2026-10-24T13:29:36Z'
+- id: '50221144'
+  parent_id: '50218263'
+  author: kccqzy
+  text: Is there ever a demo of the &quot;2shell&quot; aspect here? Seems like the
+    issue was fixed because it was thought to produce a hang. Has it ever been confirmed
+    that the issue could result in an RCE? Or is this just hypothetical?
+  score: 0
+  posted_at: '2026-10-24T13:42:14Z'
+- id: '50222562'
+  parent_id: '50218962'
+  author: iracigt
+  text: Curiosity. Calling it &quot;node2shell&quot; is a pretty strong claim. It
+    is clearly the type of bug that can lead to code execution. What it takes to get
+    there in the context of an http request is less clear.<p>As a practical matter,
+    the impact could be pretty low. Very few things would accept brotli encoded data
+    from a client. A PoC also doesn’t have to be for any particularly common configuration.<p>I’m
+    someone who really enjoys reading Google’s Project Zero blog posts where they
+    regularly walk through building exploits for phones and browsers. It gives you
+    an appreciation for what is possible.
+  score: 0
+  posted_at: '2026-10-24T16:00:26Z'
+- id: '50223169'
+  parent_id: '50218310'
+  author: robswc
+  text: I can agree.  I believe the R&amp;D component is very real but will take&#x2F;has
+    taken a backseat to the business.
+  score: 0
+  posted_at: '2026-10-24T17:09:01Z'
+- id: '50224027'
+  parent_id: '50221144'
+  author: mirashii
+  text: Imperva claims to have demonstrated it, but didn&#x27;t publish it openly
+    (and their article screams AI slop, so take that for what you will).<p><a href="https:&#x2F;&#x2F;www.imperva.com&#x2F;blog&#x2F;node2shell-from-brotli-data-to-remote-code-execution&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.imperva.com&#x2F;blog&#x2F;node2shell-from-brotli-data-to-...</a><p>There&#x27;s
+    also a public POC here, though with the caveat that they demonstrated it only
+    on builds with weaker configurations. <a href="https:&#x2F;&#x2F;github.com&#x2F;dimasma0305&#x2F;CVE-2026-111497-POC"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;dimasma0305&#x2F;CVE-2026-111497-POC</a><p>All
+    that said, we haven&#x27;t heard the major cloud providers or security labs saying
+    they&#x27;ve seen exploitation in the wild yet.
+  score: 0
+  posted_at: '2026-10-24T18:56:50Z'
+article:
+  url: https://nitter.click/AikidoSecurity/status/2113759110625906950?__galadriel=YUdngUyR0lZaahRjsc9O61cNkDZ9dn-CyNEtRZEMpROIM4VRqSWUCaNF6jYbez0GJhx5-mmA4Bsm25NI1tY6IxwqlU7Y7pL_w9zF6uO5OaYAPncJX_MWs-aETiR9i0bZNOkOPxmcsaT1zQsmfqHp9jU0c3F8w8LwG7MeRauAEwr3QRabzHvvLATWLSH7j5T_zpYrx0kj0_8
+  title:
+  fetch_status: error
+  content:
+  error: HTTP 302
+  fetched_at: '2026-10-24T19:18:57Z'
+archived_at: '2026-10-24T19:19:09Z'

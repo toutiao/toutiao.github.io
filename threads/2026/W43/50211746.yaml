@@ -1,0 +1,937 @@
+---
+post:
+  id: '50211746'
+  title: 'UUIDv7: Timestamps aren’t time-ordered and other oddities'
+  url: https://alexsci.com/blog/uuidv7-is-weird/
+  hn_url: https://news.ycombinator.com/item?id=50211746
+  score: 168
+  author: ibobev
+  posted_at: '2026-10-23T16:39:45Z'
+  fetched_at: '2026-10-24T19:18:11Z'
+  article_url: https://alexsci.com/blog/uuidv7-is-weird/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-24T19:18:11Z'
+  raw_comment_count: 145
+comments:
+- id: '50212576'
+  parent_id: '50211746'
+  author: pphysch
+  text: "&gt; My mental model for UUIDv7 is that it’s a mash-up of a bunch of different
+    ideas which implementations are free to choose as they see fit. There’s a wide
+    variance of properties that UUIDv7 implementations can provide, with varying degrees
+    of certainty they can successfully provide those properties.<p>I think this is
+    good. A proper UUID that has specific significant bits dedicated to (approximately)
+    monotonic values is useful. I don&#x27;t want it over-specified beyond that, and
+    I don&#x27;t want to just use UUIDv8."
+  score: 0
+  posted_at: '2026-10-23T17:33:59Z'
+- id: '50212669'
+  parent_id: '50211746'
+  author: sedatk
+  text: 'You probably don&#x27;t need a UUID: <a href="https:&#x2F;&#x2F;ssg.dev&#x2F;you-probably-dont-need-a-uuid&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;ssg.dev&#x2F;you-probably-dont-need-a-uuid&#x2F;</a>'
+  score: 0
+  posted_at: '2026-10-23T17:40:24Z'
+- id: '50212708'
+  parent_id: '50211746'
+  author: jefecoon
+  text: Great article.<p>I assume I&#x27;m oblivious and naive, but it seems theoretically
+    possible these issues could -- theoretically -- result in TOCTOU or similar issues.<p>Any
+    thoughts about relying on:<p>- central time service, with message-queue of inbound
+    requests, resulting in correctly timed + sequenced events [ albeit with hopefully
+    small lag tradeoffs ]?<p>- know of any databases that implement this type of logic
+    around their own minting of time-stamped UUIDs?<p>Prior efforts implementing event-driven
+    backend service with UUID7s minted in client-code seemed perfectly fine at low
+    usage&#x2F;scale. However, as clients + usage + event-volume scaled, team became
+    more curious about time&#x2F;timestamp&#x2F;related issues, and any minting client-side
+    quickly fell out of favor.<p>Any insights greatly appreciated -- thanks<p>[ edited
+    b&#x2F;c i don&#x27;t know how to format... ]
+  score: 0
+  posted_at: '2026-10-23T17:42:44Z'
+- id: '50212766'
+  parent_id: '50211746'
+  author: saagarjha
+  text: Just use UUIDs as they were meant to be used, as a random identifier. Don&#x27;t
+    shove random other junk into it!
+  score: 0
+  posted_at: '2026-10-23T17:46:39Z'
+- id: '50212811'
+  parent_id: '50211746'
+  author: phoronixrly
+  text: Wow... That is some nitpicking... The major issue these UUIDs solve for me
+    is the fact that using a random UUID as a primary key of a relational database
+    leads to horrible performance...<p>It has never crossed my mind to decode the
+    timestamp from them so I save myself a 12-byte column, neither has it crossed
+    my mind to have them monotonic in a distributed system...
+  score: 0
+  posted_at: '2026-10-23T17:50:14Z'
+- id: '50212868'
+  parent_id: '50211746'
+  author: hackingonempty
+  text: "&gt; If you need to list things ordered by creation time very often, it’s
+    useful if the primary index gives that behavior, removing the need for another
+    index.<p>I thought the main reason UUIDv7 was created with a time component is
+    to keep temporally related rows together in the index pages.  Randomly distributed
+    row ids seem OK until the entire index no longer fits in RAM."
+  score: 0
+  posted_at: '2026-10-23T17:54:14Z'
+- id: '50212944'
+  parent_id: '50211746'
+  author: skrebbel
+  text: I feel like this article way downplays the entire point of UUIDv7s, which
+    is that it lets you sort (and store!) your data <i>kinda sorta</i> by creation
+    time, no overlap ever. That&#x27;s great for cursors, for streaming data, for
+    twitter clones, for chat messages, for player moves, and so on and so forth. Nearly
+    everything that&#x27;s vaguely realtimey that you might like to both persist and
+    broadcast live to other clients, and displayed in a stable &amp; reasonable order,
+    benefits from a property like this.<p>In fairness, he does mention this, but squeezes
+    it into a single sentence near the end. But eg the fact that you can&#x27;t reliably
+    extract the precise timestamp from the UUIDv7 is a feature, not a bug. It&#x27;s
+    either that or collisions and you don&#x27;t want the collisions.
+  score: 0
+  posted_at: '2026-10-23T17:58:48Z'
+- id: '50212952'
+  parent_id: '50211746'
+  author: ForHackernews
+  text: Most (all?) of these are also true of UUIDv1. Devs in 2026 should be well
+    versed in using UUIDv4 if they really truly can never leak anything.
+  score: 0
+  posted_at: '2026-10-23T17:59:18Z'
+- id: '50212991'
+  parent_id: '50211746'
+  author: 0x20cowboy
+  text: As others have said, I don’t think the time was meant to be something you
+    relied on for the object time, but more the help with indexing and sharding.
+  score: 0
+  posted_at: '2026-10-23T18:02:05Z'
+- id: '50213063'
+  parent_id: '50212669'
+  author: kune
+  text: I support this. I wrote a Sqlite plugin for KSUIDs, but at the end I never
+    used them, since all I do can be handled by integer primary keys, which sqlite
+    maps to the rowid automatically. Autoincrement is only required, if you want to
+    prevent the reuse of ids in deleted rows.
+  score: 0
+  posted_at: '2026-10-23T18:06:48Z'
+- id: '50213203'
+  parent_id: '50212944'
+  author: roughly
+  text: Yeah, I think the key here is that you have to know what the limitations are.
+    UUIDv7 does _not_ provide you with sorted and ordered IDs by creation time, it
+    provides you with _kinda sorta_ sorted and ordered IDs by creation time. That&#x27;s
+    probably fine for a lot of use cases, but if it&#x27;s not OK for yours (forensic
+    accounting, risk mitigation for banks, whatever), you can&#x27;t use it for that.
+    You&#x27;re right it&#x27;s not a technical problem necessarily, but when the
+    marketing material describes something without an asterisk, people who are unaware
+    that what&#x27;s being described is impossible at the limits can make bad system
+    design decisions based on that promise.
+  score: 0
+  posted_at: '2026-10-23T18:16:00Z'
+- id: '50213206'
+  parent_id: '50211746'
+  author: nitwit005
+  text: |-
+    The Python version simply forces the timestamp forward if needed to preserve ordering:<p><pre><code>  if timestamp_ms &lt; _last_timestamp_v7:
+        timestamp_ms = _last_timestamp_v7 + 1
+    </code></pre>
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;blob&#x2F;8d119208074fef0f652f14f78612b044dd218c4f&#x2F;Lib&#x2F;uuid.py#L903" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;blob&#x2F;8d119208074fef0f652f1...</a><p>But if you did want &quot;monotonically increasing IDs&quot;, as the article suggests, that is what you want.
+  score: 0
+  posted_at: '2026-10-23T18:16:12Z'
+- id: '50213271'
+  parent_id: '50211746'
+  author: taylorbuley
+  text: '&gt; the problem is that system clocks cannot be synchronized to a suitable
+    precision.<p>There are fun conditions under which a quasicrystalline clock could
+    coordinate this in a distributed way. <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Time_crystal"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Time_crystal</a>'
+  score: 0
+  posted_at: '2026-10-23T18:21:08Z'
+- id: '50213342'
+  parent_id: '50211746'
+  author: adityaathalye
+  text: <i>alexsci</i> destroyed one of my core assumptions in a bitemporal data system
+    project I&#x27;ve been noodling on. Namely, this oh-so-confident presumption:<p><i>Realities
+    are arrows. Time marks flight. UUIDv7 is Time.</i><p>(Yes. Yes. No, hell no, not
+    after what Robert just told ya.)<p><a href="https:&#x2F;&#x2F;www.evalapply.org&#x2F;posts&#x2F;poor-mans-time-oriented-data-system&#x2F;index.html#realities-are-arrows.-time-marks-flight.-uuidv7-is-time"
+    rel="nofollow">https:&#x2F;&#x2F;www.evalapply.org&#x2F;posts&#x2F;poor-mans-time-oriented-data...</a>.<p>The
+    small saving grace for me is that, despite my broken mental model of UUIDv7&#x27;s
+    time and monotonicity properties, I get to <i>also</i> use SQLite&#x27;s automatic
+    rowid for ordering and disambiguation. That too, only because I can (still think
+    I can) <i>get away with</i> a &quot;DB per tenant&quot; architecture. Nevertheless,
+    the same breakage potential will return when (not if, when) I have to mix &#x2F;
+    remix records from two or more DB files.<p>brb, investigating whether I can <i>reliably</i>
+    construct UUIDv7s using db-time...
+  score: 0
+  posted_at: '2026-10-23T18:25:12Z'
+- id: '50213345'
+  parent_id: '50212669'
+  author: mahboi
+  text: For a database primary key, yeah. Just use serial.
+  score: 0
+  posted_at: '2026-10-23T18:25:24Z'
+- id: '50213360'
+  parent_id: '50211746'
+  author: mahboi
+  text: I&#x27;ve never bothered with anything but uuid4. Yes there are special circumstances
+    where a public uuid7 helps because you&#x27;re sure the timestamp leakage is ok,
+    and you made sure it&#x27;s not guessable, and you&#x27;re sure some index performs
+    better with it in a way that matters. There are also certain distributed systems
+    where it has helpful properties. The amount of times blanket advice is given to
+    use uuid7 far outweighs how often I&#x27;ve been in that situation, especially
+    when people are talking about Postgres primary keys.
+  score: 0
+  posted_at: '2026-10-23T18:26:15Z'
+- id: '50213409'
+  parent_id: '50212669'
+  author: nodamage
+  text: "...if you work specifically on web applications with a centralized database.<p>Some
+    of us don&#x27;t, so these types of universal proclamations are rather unhelpful."
+  score: 0
+  posted_at: '2026-10-23T18:30:48Z'
+- id: '50213473'
+  parent_id: '50212811'
+  author: alexchamberlain
+  text: The author is in DevSecOps (i understand the Sec part...) - nitpicking is
+    in the job description.
+  score: 0
+  posted_at: '2026-10-23T18:36:29Z'
+- id: '50213490'
+  parent_id: '50212991'
+  author: mahboi
+  text: 'Yeah this was odd: &quot;Superficially, it seems that embedding a timestamp
+    in the ID can remove the need to track the creation time in a separate database
+    column&quot; Who actually tried to do this?<p>I didn&#x27;t assume uuid7 was guaranteed
+    monotonic either. Of course not if you have different clocks. That&#x27;s not
+    the point of it.'
+  score: 0
+  posted_at: '2026-10-23T18:37:11Z'
+- id: '50213513'
+  parent_id: '50212811'
+  author: mahboi
+  text: Serial PK solves this too, better actually cause it&#x27;s smaller
+  score: 0
+  posted_at: '2026-10-23T18:39:08Z'
+- id: '50213542'
+  parent_id: '50212766'
+  author: cpburns2009
+  text: The point of shoving the timestamp into it is to make it work well with database
+    indexes. UUIDv4 is awful in that regard.
+  score: 0
+  posted_at: '2026-10-23T18:40:57Z'
+- id: '50213562'
+  parent_id: '50212868'
+  author: pkulak
+  text: Yeah, this is 99% of the benefit for me. And it&#x27;s not theoretical. My
+    company saw performance issues using pure random IDs with MySQL way back in 2015;
+    and consequently rolled our own UUIDv7 that we&#x27;re still using to this day.
+  score: 0
+  posted_at: '2026-10-23T18:42:09Z'
+- id: '50213640'
+  parent_id: '50213513'
+  author: phoronixrly
+  text: Why would I ever use a UUID PK if I had the option to use a serial one instead?
+  score: 0
+  posted_at: '2026-10-23T18:49:06Z'
+- id: '50213661'
+  parent_id: '50213345'
+  author: esafak
+  text: That depends on your database. Serial keys can create hot spots in distributed
+    databases because new writes are consistently directed to the same partition.
+  score: 0
+  posted_at: '2026-10-23T18:50:12Z'
+- id: '50213676'
+  parent_id: '50212708'
+  author: awesome_dude
+  text: 'See: NTP, Lamport and Vector clocks. Spanner (Google) does make a good job
+    of using atomic clocks, but it takes a hang of a lot of money.'
+  score: 0
+  posted_at: '2026-10-23T18:51:38Z'
+- id: '50213696'
+  parent_id: '50213542'
+  author: saagarjha
+  text: Sounds like the problem here is that databases need to index on more than
+    one thing at once
+  score: 0
+  posted_at: '2026-10-23T18:52:51Z'
+- id: '50213708'
+  parent_id: '50212868'
+  author: zeendo
+  text: Yeah, same.<p>I suppose it&#x27;s a problem if the spec actually says they&#x27;re
+    monotonically incrementing because it&#x27;s clear that isn&#x27;t guaranteed.
+    But that was never a property I wanted or expected out of them anyway.<p>All of
+    the other issues here sound like misunderstandings or misuses of ids, IMHO
+  score: 0
+  posted_at: '2026-10-23T18:53:13Z'
+- id: '50213721'
+  parent_id: '50212669'
+  author: woogle
+  text: another benefit of not using UUID:<p>for AI heavy apps&#x2F;agent they are
+    token expensive
+  score: 0
+  posted_at: '2026-10-23T18:54:12Z'
+- id: '50213788'
+  parent_id: '50213661'
+  author: JoshTriplett
+  text: There&#x27;s no <i>fundamental</i> reason for this. Much as with per-CPU memory
+    allocation, shards could pre-reserve chunks of the next serial space, and then
+    only coordinate when they need a new chunk.
+  score: 0
+  posted_at: '2026-10-23T19:00:00Z'
+- id: '50213797'
+  parent_id: '50211746'
+  author: awesome_dude
+  text: "&gt; Superficially, it seems that embedding a timestamp in the ID can remove
+    the need to track the creation time in a separate database column, providing marginally
+    more efficient database operations. If you need to list things ordered by creation
+    time very often, it’s useful if the primary index gives that behavior, removing
+    the need for another index.<p>This glares for me - I&#x27;m not &quot;listing&quot;
+    by creation time per se; I&#x27;m taking advantage of locality - the page of data
+    that a given key&#x27;s data is in should also contain data of other keys created
+    around the same time.<p>That locality means that I have less disk calls if I want
+    to get the data for a series of rows that were created around the same time.<p>The
+    blog post seems to be saying that (worst case) I cannot rely on that aspect."
+  score: 0
+  posted_at: '2026-10-23T19:00:25Z'
+- id: '50213849'
+  parent_id: '50213788'
+  author: baq
+  text: It’s much easier if you can simply not coordinate. Bonus points if that doesn’t
+    mean you need an atomic clock in your rack
+  score: 0
+  posted_at: '2026-10-23T19:03:56Z'
+- id: '50213874'
+  parent_id: '50213849'
+  author: mahboi
+  text: If you&#x27;re designing a distributed DB, sure. If you&#x27;re using something,
+    you do whatever it wants. Spanner recommends random keys. Citus uses serial.
+  score: 0
+  posted_at: '2026-10-23T19:06:02Z'
+- id: '50213914'
+  parent_id: '50213640'
+  author: mahboi
+  text: People do it, but seems like you get it. Every time I&#x27;m on a new team
+    or job, they have UUID PKs in a single DB for no reason.
+  score: 0
+  posted_at: '2026-10-23T19:09:16Z'
+- id: '50213916'
+  parent_id: '50211746'
+  author: kentm
+  text: Kind of funny title since I didn’t think UUIDv7 had any of the properties
+    being disputed here. The reason to use UUIDv7 is because it reduces the space
+    over which the UUID can cover at a given time, which improves write clustering.
+    They don’t need to be strictly ordered for this, just “good enough”.<p>I hope
+    to god no one is actually using the timestamp portion to replace an “updated at”
+    timestamp but I suspect I’ll be disappointed.
+  score: 0
+  posted_at: '2026-10-23T19:09:17Z'
+- id: '50213943'
+  parent_id: '50213206'
+  author: dpark
+  text: This is perfect if you only have one machine and the process never restarts.
+    But then if you only have one machine you don’t realistically need uuid identifiers.
+  score: 0
+  posted_at: '2026-10-23T19:11:52Z'
+- id: '50213951'
+  parent_id: '50211746'
+  author: computing
+  text: perfect example of missing the forest for the trees<p>the UUID timestamp is
+    not for de-duping purposes. it&#x27;s avoid expensive re-indexes that happen with
+    truly random ids
+  score: 0
+  posted_at: '2026-10-23T19:12:28Z'
+- id: '50213953'
+  parent_id: '50212868'
+  author: computing
+  text: you thought right. the author is just plain wrong here.
+  score: 0
+  posted_at: '2026-10-23T19:12:41Z'
+- id: '50213961'
+  parent_id: '50211746'
+  author: gcbirzan
+  text: "&gt;Unfortunately, the timestamp embedded in a UUIDv7 ID may not relate to
+    the object creation time. The Postgres docs for uuid_extract_timestamp helpfully
+    warn that “the extracted timestamp is not necessarily exactly equal to the time
+    the UUID was generated”.<p>Just like NOW() won&#x27;t have the current time."
+  score: 0
+  posted_at: '2026-10-23T19:13:19Z'
+- id: '50214091'
+  parent_id: '50213696'
+  author: cpburns2009
+  text: 'They already do. UUIDv7 neatly solves a common problem: a random, unguessable,
+    public id that works well with databaes. UUIDv4 is infamous for this.'
+  score: 0
+  posted_at: '2026-10-23T19:23:46Z'
+- id: '50214212'
+  parent_id: '50213661'
+  author: ndriscoll
+  text: Yeah but for nearly everyone, they&#x27;d get better performance from <i>not</i>
+    using a distributed database, and benefit from &quot;hotspots&quot; i.e. data
+    locality.
+  score: 0
+  posted_at: '2026-10-23T19:34:00Z'
+- id: '50214265'
+  parent_id: '50214091'
+  author: saagarjha
+  text: This very much sounds like databases do not, in fact, support indexing on
+    more than one thing at once.
+  score: 0
+  posted_at: '2026-10-23T19:37:36Z'
+- id: '50214349'
+  parent_id: '50211746'
+  author: real_faxenoff
+  text: Yes, UUIDv7 doesn&#x27;t have the same charm and texture as tree notches.
+    But it&#x27;s been a huge help with my tables containing billions of records.<p>Sure,
+    we could use faster alternatives specifically for indexes - but UUIDs are used
+    throughout all business processes. Setting up a separate &quot;conversion to UUID&quot;
+    step seems like a waste.
+  score: 0
+  posted_at: '2026-10-23T19:44:15Z'
+- id: '50214401'
+  parent_id: '50213696'
+  author: debazel
+  text: It doesn’t have anything to do with indexing more than one thing.<p>The issue
+    with truly random IDs is that inserts are scattered throughout the B-tree index,
+    which cause page splits, fragmentation, and poor cache locality. Using a timestamp
+    prefix makes new IDs sequential, so inserts tend to land near the end of the index,
+    which avoid all the B-tree trashing and improve write performance.
+  score: 0
+  posted_at: '2026-10-23T19:50:04Z'
+- id: '50214456'
+  parent_id: '50211746'
+  author: deepsun
+  text: "&gt; not necessarily exactly equal to the time<p>I believe it was Poincare
+    who has proven that it&#x27;s even theoretically impossible to synchronize clocks
+    exactly."
+  score: 0
+  posted_at: '2026-10-23T19:54:47Z'
+- id: '50214473'
+  parent_id: '50211746'
+  author: tanin
+  text: 'I generally avoid using UUID unless there&#x27;s a strong reason for it.<p>I
+    know the conventional wisdom says that the collisions are extremely rare &lt;&lt;insert
+    some sort of cosmis analogy&gt;&gt;. Then, some reddit users reported encountering
+    a collision: <a href="https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;webdev&#x2F;comments&#x2F;1kvkxte&#x2F;comment&#x2F;mudnxqw&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;webdev&#x2F;comments&#x2F;1kvkxte&#x2F;comment&#x2F;mud...</a><p>Ultimately,
+    we&#x27;d have to design the system to handle collision anyway. Might as well
+    design a system to avoid collision in the first place. Then, if we have a system
+    that avoids collision, then whether UUID is used is irrelevant.'
+  score: 0
+  posted_at: '2026-10-23T19:56:35Z'
+- id: '50214478'
+  parent_id: '50213943'
+  author: Lammy
+  text: This is why the oldschool UUIDv1 spec specifies initializing the sequence
+    value at a random number:<p>“12.4.4 — The Clock Sequence shall be originally (that
+    is, once in the lifetime of a system producing UUIDs) initialized to a random
+    number that is not derived from the Node value. NOTE – This is in order to minimize
+    the correlation across systems, providing maximum protection”
+  score: 0
+  posted_at: '2026-10-23T19:57:00Z'
+- id: '50214483'
+  parent_id: '50214401'
+  author: saagarjha
+  text: Yes, which means that you should probably be able to provide your timestamp
+    to the database so it can use it for optimizing its index, rather than trying
+    to shove it in your ID
+  score: 0
+  posted_at: '2026-10-23T19:57:31Z'
+- id: '50214494'
+  parent_id: '50213345'
+  author: F_r_k
+  text: I don&#x27;t want my competitors to know about my number of clients, etc.
+  score: 0
+  posted_at: '2026-10-23T19:58:41Z'
+- id: '50214508'
+  parent_id: '50214483'
+  author: debazel
+  text: If you did that you would also have to provide the timestamp every time you
+    wanted to look up an ID, and now we&#x27;re back to UUIDv7 again.
+  score: 0
+  posted_at: '2026-10-23T19:59:49Z'
+- id: '50214533'
+  parent_id: '50212868'
+  author: NyxWulf
+  text: It&#x27;s not just index pages.  Generally databases write records into pages,
+    which are then grouped into extents.  If the primary key gives an ordering you
+    can create new pages and start filling them up in an orderly fashion.  If it&#x27;s
+    random, you are doing random inserts into pages everywhere all the time, then
+    you start running out of room in pages and have to start splitting them.  UUIDv7
+    solves the most painful parts of this problem in general and is a much better
+    option for a Primary Key than UUIDv1-4.
+  score: 0
+  posted_at: '2026-10-23T20:01:42Z'
+- id: '50214549'
+  parent_id: '50214473'
+  author: tossandthrow
+  text: You don&#x27;t have to. You can absorb the risk. Which most orgs do.
+  score: 0
+  posted_at: '2026-10-23T20:03:18Z'
+- id: '50214559'
+  parent_id: '50214508'
+  author: saagarjha
+  text: Sure but at least you are being honest about it. For what it&#x27;s worth
+    the database can handle this internally without you needing to hand this back
+    but if you have a bad one then yes you should probably have it give you back a
+    location hint that you use for future queries
+  score: 0
+  posted_at: '2026-10-23T20:04:17Z'
+- id: '50214608'
+  parent_id: '50214473'
+  author: NyxWulf
+  text: The biggest advantage I&#x27;ve seen for UUID come with distributed systems
+    imo.  The ability to create an id without lock coordination allows for much easier
+    horizontal scaling.  UUIDv1 avoids the collision issue by using a portion of the
+    MAC in the id, but v1-4 all have sorting issues.  UUIDv7 is a good choice if your
+    use case warrants it.  If you can get away with a single integer field like a
+    database primary key and not get bottlenecked that&#x27;s much easier.  When that
+    doesn&#x27;t work anymore one of the distributed id schemes like UUID are the
+    only real options available.
+  score: 0
+  posted_at: '2026-10-23T20:09:01Z'
+- id: '50214612'
+  parent_id: '50211746'
+  author: simonbuilds
+  text: So where do you actually draw the line for a business and a customers table
+    whether to use uuidv4 vs uuidv7, in terms of privacy and efficiency?
+  score: 0
+  posted_at: '2026-10-23T20:09:17Z'
+- id: '50214713'
+  parent_id: '50211746'
+  author: btown
+  text: 'One of my favorite things about UUIDv7: the package <a href="https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;uuid7&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;uuid7&#x2F;</a> does
+    <i>not</i> implement compliant UUIDv7s, it&#x27;s from a wholly incompatible draft
+    format. That was not a fun debugging session.<p><a href="https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;uuid-utils&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;uuid-utils&#x2F;</a>
+    is what you want :)<p><a href="https:&#x2F;&#x2F;github.com&#x2F;stevesimmons&#x2F;uuid7&#x2F;issues&#x2F;1"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;stevesimmons&#x2F;uuid7&#x2F;issues&#x2F;1</a>'
+  score: 0
+  posted_at: '2026-10-23T20:16:25Z'
+- id: '50214746'
+  parent_id: '50214494'
+  author: mahboi
+  text: Don&#x27;t expose your PKs
+  score: 0
+  posted_at: '2026-10-23T20:19:06Z'
+- id: '50214768'
+  parent_id: '50213661'
+  author: NyxWulf
+  text: In my testing the primary bottleneck isn&#x27;t about writing to the same
+    partition.  Lock coordination to increment the serial key, then send it back across
+    a connection was the real culprit.  Virtually all databases make updates into
+    RAM and to a write ahead log, which is then spooled to disk in the background.  No
+    matter which pages are written or updated, the changes all go sequentially in
+    order into the WAL.  For me, getting rid of Serial Keys was the big hot spot in
+    processing.  YMMV.
+  score: 0
+  posted_at: '2026-10-23T20:20:55Z'
+- id: '50214775'
+  parent_id: '50214473'
+  author: tyre
+  text: You don&#x27;t have to handle collisions and I don&#x27;t believe that multiple
+    Redditors have experienced this. If they have, it&#x27;s an issue with the implementation
+    and not UUIDs.<p>The math is simply not in there favor, by a number so large we
+    cannot conceive of it in our tiny brains.<p>UUIDs have other useful properties.
+    For example, they don&#x27;t expose counts (e.g. how many customers you have.)
+    They make URL &#x2F; resource guessing impossible.<p>ids in the form of `[prefix]_[uuid
+    stripped of dashes]` is ideal for most use cases. It should be the default the
+    way Postgres is the default. Any deviation have good reason.
+  score: 0
+  posted_at: '2026-10-23T20:21:24Z'
+- id: '50214792'
+  parent_id: '50214746'
+  author: tyre
+  text: So you have a second, opaque unique identifier for the frontend to fetch?
+    At that point why not just use a single column (UUID)?
+  score: 0
+  posted_at: '2026-10-23T20:22:48Z'
+- id: '50214823'
+  parent_id: '50214612'
+  author: tyre
+  text: Do you care about users knowing <i>when</i> another business was put into
+    the system (e.g. how long they&#x27;ve been with you&quot;? If yes, v4. If no,
+    v7.<p>v4 is less efficient but more private.
+  score: 0
+  posted_at: '2026-10-23T20:24:46Z'
+- id: '50214841'
+  parent_id: '50213914'
+  author: tyre
+  text: It&#x27;s because it&#x27;s opaque. Signing up and seeing a page like `&#x2F;companies&#x2F;366`
+    unnecessarily leaks company data. Sometime it&#x27;s a huge deal, sometimes not;
+    not here to litigate that. But it&#x27;s trivially avoidable.
+  score: 0
+  posted_at: '2026-10-23T20:26:05Z'
+- id: '50214936'
+  parent_id: '50213490'
+  author: tredre3
+  text: |-
+    I have never tried to do this myself, for the obvious reasons you&#x27;ve stated, but postgres has a function to do it so clearly <i>enough</i> people did do it:<p><a href="https:&#x2F;&#x2F;www.postgresql.org&#x2F;docs&#x2F;current&#x2F;functions-uuid.html#FUNC_UUID_EXTRACT_TABLE" rel="nofollow">https:&#x2F;&#x2F;www.postgresql.org&#x2F;docs&#x2F;current&#x2F;functions-uuid.html#...</a><p><pre><code>    uuid_extract_timestamp ( uuid ) → timestamp with time zone
+        Extracts a timestamp with time zone from a UUID of version 1 or 7. For other versions, this function returns null. Note that the extracted timestamp is not necessarily exactly equal to the time the UUID was generated; this depends on the implementation that generated the UUID.
+        uuid_extract_timestamp(&#x27;019535d9-3df7-79fb-b466- fa907fa17f9e&#x27;::uuid) → 2025-02-23 21:46:24.503-05</code></pre>
+  score: 0
+  posted_at: '2026-10-23T20:33:24Z'
+- id: '50214991'
+  parent_id: '50214792'
+  author: ndriscoll
+  text: Higher density for indexes you use for joins. Also you can then use UUIDv4
+    to hide creation times if that&#x27;s sensitive too.
+  score: 0
+  posted_at: '2026-10-23T20:37:46Z'
+- id: '50215018'
+  parent_id: '50214841'
+  author: tredre3
+  text: The UUIDs discussed here leak the time that the record was created, so one
+    could conceivably extract the growth rate, retention, sequence of event, etc.
+    That&#x27;s not great either.<p>It&#x27;s almost always better (in my experience)
+    to use auto increment internally, and assign a random hash (or UUID) to each public-facing
+    record. All your SQL will be faster at the cost of one lookup (trivially cached)
+    to match the requested hash&#x2F;uuid to PK. Of course this requires discipline
+    across the team and, in that sense, &quot;just always use uuidv4&quot; is easier.
+  score: 0
+  posted_at: '2026-10-23T20:39:37Z'
+- id: '50215025'
+  parent_id: '50213916'
+  author: ajb
+  text: Yeah this is what pick-up &quot;artists&quot; call a &quot;neg&quot; - a negative
+    judgement made purely so the recipient feels, at some level, that their credibility
+    is on the line. In this case, for clickbait. I always either don&#x27;t read such
+    an article or come here to read the comments instead.
+  score: 0
+  posted_at: '2026-10-23T20:40:35Z'
+- id: '50215080'
+  parent_id: '50214775'
+  author: grey-area
+  text: It’s not the default though is it. I wonder why?
+  score: 0
+  posted_at: '2026-10-23T20:45:28Z'
+- id: '50215087'
+  parent_id: '50214768'
+  author: ndriscoll
+  text: It&#x27;s been a while since I&#x27;ve touched db stuff, but pg still has
+    to write the indexes before commit completes, no? So it&#x27;s still having to
+    go load and write a gazillion pages. And then unless your filesystem has atomic
+    page writes like ZFS, it also writes the whole page to WAL to ensure that it doesn&#x27;t
+    do torn writes. Writes to the same page within a checkpoint don&#x27;t need full
+    page write, so benefit.
+  score: 0
+  posted_at: '2026-10-23T20:46:02Z'
+- id: '50215088'
+  parent_id: '50213788'
+  author: NyxWulf
+  text: Many schemes do exactly this, if all you are doing is single table inserts
+    that works pretty well.<p>If you do anything that creates related records via
+    foreign keys you start to run into lock contention. For example:<p>If your insert
+    requires a parent record with a single child record, you have to get the next
+    sequential id which involves a non-preemptable single threaded lock, increment
+    it, and send it back to the connection which requested it.  In most databases
+    this would mean writing the parent record and getting the sequential id of the
+    parent record back so you can set the foreign key reference on the child record.  Stored
+    procedures are one way to mitigate the network transit time, but they don&#x27;t
+    solve the single threaded lock acquisition time.<p>The reason most distributed
+    systems use UUIDs or another flavor of distributed id is so you can generate the
+    id for the parent record on the client, set the foreign key there as well, then
+    send both records in as simple inserts.  It&#x27;s not that there aren&#x27;t
+    ways to work around it or mitigate it.  Using a coordination free id, is just
+    much easier to work with and scale in practice.
+  score: 0
+  posted_at: '2026-10-23T20:46:09Z'
+- id: '50215229'
+  parent_id: '50213797'
+  author: NyxWulf
+  text: I think generally you can still rely on that aspect, compared to the alternative
+    of UUIDv1-4.  Even the worst cases he mentioned would cause minimal page splitting
+    problems in a database compared to even the best cases with UUIDv1-4.  The biggest
+    take away I got from the article is that there is some wiggle room in how things
+    can be implemented in the UUIDv7 spec, and it&#x27;s important to be aware of
+    the implementations you are using.
+  score: 0
+  posted_at: '2026-10-23T20:57:39Z'
+- id: '50215338'
+  parent_id: '50212868'
+  author: dspillett
+  text: As well as keeping rows of similar age roughly together, which may create
+    access efficiencies but should not be relied upon, relatively ordered keys massively
+    reduces page splits as the index grows (this can be particularly significant for
+    clustered indexes as implemented by MS SQL and others) because you are always
+    adding items to the end of the index. This can reduce the size of the index overall,
+    potentially a big problem if working in a situation where your data+indexes do
+    not fit comfortably in RAM (you don&#x27;t want your precious RAM half full of
+    half-empty index pages).<p>Yes you can shrink it down when things get bad, but
+    if your index is large enough that you care then it is large enough that this
+    reorganisation is going to be costly in time and may slow your system while it
+    happens (or cause a complete lock if your DB doesn&#x27;t support, or optionally
+    supports and you don&#x27;t select the option, this as an online operation.
+  score: 0
+  posted_at: '2026-10-23T21:07:33Z'
+- id: '50215615'
+  parent_id: '50214533'
+  author: srcreigh
+  text: "&gt; Generally<p>Except for Postgres"
+  score: 0
+  posted_at: '2026-10-23T21:28:19Z'
+- id: '50215958'
+  parent_id: '50214456'
+  author: orthoxerox
+  text: Wasn&#x27;t that Einstein with special relativity?
+  score: 0
+  posted_at: '2026-10-23T22:00:46Z'
+- id: '50215977'
+  parent_id: '50214792'
+  author: crazygringo
+  text: Yes, this is standard. And the point is performance. The needs of user-facing
+    ID&#x27;s (short alphanumeric, randomly ordered) tend to be pretty orthogonal
+    to the needs of internal ID&#x27;s (raw bits, monotonically increasing, maybe
+    timestamp data).
+  score: 0
+  posted_at: '2026-10-23T22:02:57Z'
+- id: '50216193'
+  parent_id: '50214713'
+  author: 9dev
+  text: "<i>not python</i> is what you really want I suppose."
+  score: 0
+  posted_at: '2026-10-23T22:24:35Z'
+- id: '50216249'
+  parent_id: '50212868'
+  author: rrr_oh_man
+  text: I thought it was for distributed DBs?
+  score: 0
+  posted_at: '2026-10-23T22:30:02Z'
+- id: '50216575'
+  parent_id: '50212944'
+  author: vbezhenar
+  text: You probably can&#x27;t use that for streaming. Moment of UUID generation
+    and moment of transaction commit are different, so it&#x27;s very possible that
+    even if your code generates UUIDs strictly sequentially; the observable sequence
+    from the database will not be always sequential. I&#x27;ve been bitten by this
+    once when I&#x27;ve used serial IDs and I don&#x27;t think that UUIDv7 is any
+    different in that regard.
+  score: 0
+  posted_at: '2026-10-23T23:03:09Z'
+- id: '50216598'
+  parent_id: '50213206'
+  author: vbezhenar
+  text: So you can&#x27;t generate more than 1000 UUIDs per second without skewing
+    timestamp portion? That&#x27;s not a lot. Bulk imports often require a lot more
+    inserts.
+  score: 0
+  posted_at: '2026-10-23T23:06:03Z'
+- id: '50216621'
+  parent_id: '50214612'
+  author: vbezhenar
+  text: I prefer to use int16&#x2F;int32&#x2F;int64 IDs for primary keys and UUIDv4
+    for &quot;visible&quot; keys. So database always uses integer fields to refer
+    to other rows and web API uses UUID.
+  score: 0
+  posted_at: '2026-10-23T23:08:26Z'
+- id: '50216773'
+  parent_id: '50214936'
+  author: mahboi
+  text: It makes sense. Since part of the UUID is a timestamp, there should exist
+    a way to extract it.
+  score: 0
+  posted_at: '2026-10-23T23:28:48Z'
+- id: '50216943'
+  parent_id: '50215088'
+  author: JoshTriplett
+  text: "&gt; If your insert requires a parent record with a single child record,
+    you have to get the next sequential id<p>Why would you need the <i>next sequential</i>
+    ID, rather than just a <i>unique</i> ID? You could have a serial column that uses
+    per-shard preallocations like I was describing, and allocate the IDs for both
+    records."
+  score: 0
+  posted_at: '2026-10-23T23:51:03Z'
+- id: '50216954'
+  parent_id: '50214713'
+  author: cpburns2009
+  text: "&gt; &quot;... 48 bits of randomness&quot;<p>That&#x27;s an awful waste for
+    a 128 bit object!"
+  score: 0
+  posted_at: '2026-10-23T23:52:09Z'
+- id: '50217063'
+  parent_id: '50214746'
+  author: skrtskrt
+  text: This was hard enough to enforce when it was just people writing code, and
+    once one of those stupid incrementing integer IDs go in a public API or important
+    codepath, it can be a real pain to rip out.
+  score: 0
+  posted_at: '2026-10-24T00:11:22Z'
+- id: '50217209'
+  parent_id: '50214559'
+  author: ndriscoll
+  text: How would it internally sort your index by (timestamp, ID) without you later
+    having to provide the timestamp to locate the ID?
+  score: 0
+  posted_at: '2026-10-24T00:32:49Z'
+- id: '50217245'
+  parent_id: '50214265'
+  author: ndriscoll
+  text: Yes, you cannot be in one order and also a different order at the same time.
+    You can make another index, but that&#x27;s something else entirely.
+  score: 0
+  posted_at: '2026-10-24T00:38:08Z'
+- id: '50217251'
+  parent_id: '50215977'
+  author: mahboi
+  text: Yep, you&#x27;ll probably join like 20 of those for each public uuid lookup.
+    There <i>are</i> potential reasons not to do it this way, but it&#x27;s a good
+    default.
+  score: 0
+  posted_at: '2026-10-24T00:38:47Z'
+- id: '50217716'
+  parent_id: '50214792'
+  author: nextaccountic
+  text: It makes more sense to have two columns yes, one autoincrement for the primary
+    key, and another uuidv4. Because uuids are too large and makes indexes slower
+  score: 0
+  posted_at: '2026-10-24T01:59:21Z'
+- id: '50217721'
+  parent_id: '50214473'
+  author: nextaccountic
+  text: If there&#x27;s a collision, just generate another uuid
+  score: 0
+  posted_at: '2026-10-24T02:00:00Z'
+- id: '50217742'
+  parent_id: '50214473'
+  author: Dylan16807
+  text: Without that reddit user saying what kind of UUID or how it was generated,
+    that anecdote is nearly useless.<p>&gt; Ultimately, we&#x27;d have to design the
+    system to handle collision anyway.<p>It&#x27;s possible for a bug to create a
+    collision.  But it&#x27;s also possible for a bug to return someone else&#x27;s
+    ID at any point in the process.  So even if you <i>try</i> to &quot;handle&quot;
+    collisions, it might not work.  You can&#x27;t programmatically detect a mistake
+    like that.  Detection only works for bugs in a narrow slice of the pipeline.  And
+    extra complication in the pipeline, especially with a code path that has never
+    been taken before, adds its own risk and drops the trustworthiness of the entire
+    system.<p>&gt; Might as well design a system to avoid collision in the first place.<p>Agreed.  But
+    UUID accomplishes the goal of &quot;designed to avoid collisions&quot; by itself.
+  score: 0
+  posted_at: '2026-10-24T02:03:47Z'
+- id: '50218273'
+  parent_id: '50215958'
+  author: deepsun
+  text: Einstein read Poincare papers for sure, and realized that assembling all those
+    pieces together turns the physics upside down. But many of the results of the
+    special relativity were well known before. For example, the great Michelson–Morley
+    experiment was conducted in 1887, 18 years before. Einstein was the first to realize
+    that all the pieces form a totally new puzzle.
+  score: 0
+  posted_at: '2026-10-24T04:04:25Z'
+- id: '50218276'
+  parent_id: '50215615'
+  author: thayne
+  text: Postgresql uses pages too. The records aren&#x27;t kept in any kind of order,
+    but the indexes are. So uuidv7 is still useful for postgresql because it means
+    inserts are less likely to be spread across many pages in the primary index.
+  score: 0
+  posted_at: '2026-10-24T04:04:55Z'
+- id: '50218651'
+  parent_id: '50217721'
+  author: dtjohnnymonkey
+  text: It would be hard to know whether there is a collision at generation time.
+    If you did know, it implies a lookup in a global database, then you are back where
+    you started.
+  score: 0
+  posted_at: '2026-10-24T05:54:20Z'
+- id: '50218908'
+  parent_id: '50216598'
+  author: ben-schaaf
+  text: Reading that code there&#x27;s a 48-bit counter used for each millisecond,
+    so ~281 quadrillion UUIDs per second.
+  score: 0
+  posted_at: '2026-10-24T07:03:44Z'
+- id: '50219115'
+  parent_id: '50214456'
+  author: Dylan16807
+  text: It&#x27;s not impossible at all, you just need to agree on a reference frame.  Which
+    is not hard to do when you&#x27;re sitting on a planet.<p>And with computers it&#x27;s
+    fussy to get clocks synchronized below a millisecond but not <i>that</i> fussy.  You
+    can keep a single computer synchronized down to a single cycle, making timestamps
+    effectively perfect across different parts of it.  And then between computers,
+    if you have n latency between them you should be able to get the clocks within
+    n&#x2F;10, which might as well be perfect for coordination purposes.
+  score: 0
+  posted_at: '2026-10-24T07:54:58Z'
+- id: '50219242'
+  parent_id: '50214473'
+  author: xxs
+  text: UUID are amazing and should be the default primary key for pretty much anything.
+    They can be independently generated and require no central shared location.<p>Until
+    you have any reason to believe UUIDs (and not bugs or misunderstanding as the
+    blog post) are the critical component in the system, just use them. Look at the
+    odds for collision with a proper setup  (ntp + any modern cpus) then look at odds
+    for anything else being an issue.
+  score: 0
+  posted_at: '2026-10-24T08:21:37Z'
+- id: '50219645'
+  parent_id: '50214494'
+  author: rplnt
+  text: Use snowflake? It leaks some info, but not nearly as much.
+  score: 0
+  posted_at: '2026-10-24T09:48:53Z'
+- id: '50219928'
+  parent_id: '50218651'
+  author: nextaccountic
+  text: there&#x27;s some ways around this. for example, if you generate and the db
+    answers this uuid already exists, this obviously is a failure. will it ever happen
+    in your lifetime? if it does, you can be almost 100% sure that there is a problem
+    in your random number generator. but those DO exist, like the CA certs that had
+    to be revoked recently because they had like the number 4 as a random key<p>now,
+    what to do with such an error? I think you should either log the error and retry
+    with another uuid, or pass the error back to whoever called you (often the user,
+    giving them an error page). Or maybe you will try for N times, and then return
+    an error. what you <i>can&#x27;t</i> do is to pretend everything is fine<p>if
+    you do retry then it&#x27;s just generating the uuid again with extra steps. i
+    think this is fine<p>that&#x27;s a new failure mode for sure, but not very different
+    from other failures like connection loss to the db (also a fatal error, which
+    in this case always should be surfaced to the caller). every networking API should
+    have some possibility for error, and in this case this is just a new kind of error
+  score: 0
+  posted_at: '2026-10-24T10:36:21Z'
+- id: '50220693'
+  parent_id: '50213562'
+  author: jrs235
+  text: Similar experience here. Random guids as primary keys quickly fragment your
+    table and indexes. You&#x27;ll need to defrag frequently.
+  score: 0
+  posted_at: '2026-10-24T12:38:06Z'
+- id: '50220709'
+  parent_id: '50215080'
+  author: Dylan16807
+  text: In what?  Many things do default to UUID.  If you mean databases, an auto-incrementing
+    integer makes a lot of sense for the median database.  It&#x27;s not trying to
+    hide the number of IDs and traffic is well below the level that central generation
+    is a problem.
+  score: 0
+  posted_at: '2026-10-24T12:40:54Z'
+- id: '50221703'
+  parent_id: '50217716'
+  author: spixy
+  text: So when public APIs use uuidv4 to fetch item, those uuidv4 still need to be
+    indexed...
+  score: 0
+  posted_at: '2026-10-24T14:40:32Z'
+- id: '50223890'
+  parent_id: '50214533'
+  author: WorldMaker
+  text: "<i>Assuming</i> the database uses a UUID sort order that reflects UUIDv1
+    time-based sorting (the last version with timestamps and even then temporal ordering
+    of UUIDs was only one possible sort order; v1 also included machine IDs and some
+    databases optimized for locality by machine for reasons that made sense with v1
+    but also relate to why we gave up on v1 because machine IDs were problematic privacy
+    issues in wider usage). Many of the databases implementing explicit v7 support
+    are choosing time orders for v7 sorting, and only time orders."
+  score: 0
+  posted_at: '2026-10-24T18:39:11Z'
+article:
+  url: https://alexsci.com/blog/uuidv7-is-weird/
+  title: UUIDv7 doesn't have the properties you think it does
+  fetch_status: success
+  content: |-
+    **Hello!** I'm Robert Alexander, a DevSecOps consultant [available for contract work](https://robalexdev.com/). This blog features some of my work and thoughts on software, the cloud, and security. You can subscribe to my posts [with your favorite RSS client](https://alexsci.com/blog/rss.xml) and [follow me on Mastodon](https://indieweb.social/@robalex).
+
+    If you'd like to show your appreciation and help support my writing, you can do so via this link.
+
+    [![Buy Me A Coffee](https://alexsci.com/blog/static/buy-me-a-coffee.png)](https://www.buymeacoffee.com/robalexdev)
+  error:
+  fetched_at: '2026-10-24T19:18:11Z'
+archived_at: '2026-10-24T19:18:33Z'
