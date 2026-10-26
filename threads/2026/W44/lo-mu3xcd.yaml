@@ -1,0 +1,120 @@
+---
+post:
+  id: lo-mu3xcd
+  source: lobsters
+  title: writing about pratt parsing so I remember it
+  url: https://www.unix.dog/~yosh/blog/2026-10-25_pratt-parsing.html
+  hn_url: https://lobste.rs/s/mu3xcd
+  score: 24
+  author: FedericoSchonborn
+  posted_at: '2026-10-26T03:06:36Z'
+  fetched_at: '2026-10-26T14:51:24Z'
+  article_url: https://www.unix.dog/~yosh/blog/2026-10-25_pratt-parsing.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-26T14:51:29Z'
+  raw_comment_count: 7
+  tags:
+  - c
+  - plt
+comments:
+- id: lo-vnxc4j
+  parent_id: '0'
+  author: T6
+  text: 'Related: https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html'
+  score: 2
+  posted_at: '2026-10-26T03:21:43Z'
+- id: lo-umwjga
+  parent_id: '0'
+  author: spc476
+  text: I didn't find the Shunting Yard Algorithm all that difficult to use when parsing
+    expressions.  I handle unary operators and parenthesis at a lower level than binary
+    operators, and the Shunting Yard Algorithm can easily handle right-associative
+    binary operators.
+  score: 2
+  posted_at: '2026-10-26T05:38:02Z'
+- id: lo-ijh2gh
+  parent_id: '0'
+  author: wareya
+  text: |-
+    My current favorite version of this family of parsing algorithms is the one where you parse infix expressions into a scratch array by pretending they all have the same precedence, like x + y * -z / q becomes a 7-element array, where every other item is an infix operation, and then you run the pure precedence climbing algorithm on that array.
+    Having the array as a scratch state instead of as an emergent behavior of the algorithm saves you from the headache of having to think about how non-infix operators interact with precedence or making sure that you're tying them into the pratt parser correctly, but the end result and behavior of the algorithm is the same. In fact IMO it's secretly the same algorithm as pratt's, just organized differently. As a bonus, you have the option of implementing it as a CST->AST conversion step after a parser generator, instead of being forced to handwrite almost all of the expression-related stuff in your parser (this bonus is also a reminder of where to put the equal-precedence scratch array parse when you're handwriting it).
+  score: 3
+  posted_at: '2026-10-26T06:53:14Z'
+- id: lo-0fhw5a
+  parent_id: '0'
+  author: vinipsmaker
+  text: Comment removed by author
+  score: 1
+  posted_at: '2026-10-26T12:11:23Z'
+- id: lo-95vdyp
+  parent_id: '0'
+  author: vinipsmaker
+  text: "The whole point of Pratt parsing is eliminating the complexity of parsing
+    by reducing it to a single question: does the token expect something to the left?\nYou
+    no longer see binary, prefix, postfix, ternary, function call, and whatnot operators
+    in the stream. You only see nuds & leds.\nI not only dislike Matklad's approach
+    to teaching Pratt parsing, but I also strongly believe that it's harmful as it
+    completely ignores Pratt parsing mindset itself from growing roots. The whole
+    article is not about breaking tokens into nuds & leds, but extending a broken
+    parsing loop to actually handle binary, prefix, postfix ... operators. He extends
+    the parsing loop every time he stumbles on some \"new\" category of tokens. That's
+    not Pratt at all. The point in Pratt is: you don' need to change Pratt's algorithm.
+    Pratt's algorithm already works with all these operators. What you need is a framework
+    to describe the nuds & leds of your grammar.\nHere's the diff when he adds support
+    for postfix operators:\n loop {\r\n     let op = match lexer.peek() {\r\n         Token::Eof
+    => break,\r\n         Token::Op(op) => op,\r\n         t => panic!(\"bad token:
+    {:?}\", t),\r\n     };\r\n\r\n+    if let Some((l_bp, ())) = postfix_binding_power(op)
+    {\r\n+        if l_bp < min_bp {\r\n+            break;\r\n+        }\r\n+        lexer.next();\r\n+\r\n+
+    \       lhs = S::Cons(op, vec![lhs]);\r\n+        continue;\r\n+    }\n\nWhy is
+    Matklad introducing the unnecessary concept of postfix binding powers? Why is
+    Matklad changing the parsing algorithm when the parsing algorithm should already
+    be able to handle postfix operators (leds)? If you don't understand nuds & leds,
+    you haven't learnt anything about Pratt parsing."
+  score: 3
+  posted_at: '2026-10-26T12:11:39Z'
+- id: lo-bknynn
+  parent_id: '0'
+  author: ocharles
+  text: Do you have a suggestion of what we should read, the get this level of insight?
+  score: 2
+  posted_at: '2026-10-26T13:27:43Z'
+- id: lo-sp6959
+  parent_id: '0'
+  author: fanf
+  text: "Yeah, I have an evaluator for C preprocessor expressions which is basically
+    this:\nInteger eval_next(Expression *e, int rbp) {\r\n    next(e->here);\r\n    Integer
+    i = token[e->here->tok].nud(e);\r\n    while(token[e->here->tok].lbp > rbp)\r\n
+    \        i = token[e->here->tok].led(e, i);\r\n    return(i);\r\n}\n\nI removed
+    a couple of function calls that do debug tracing, but otherwise that’s it. The
+    special cases (including errors) are handled by the token table. The token table
+    also dispatches to functions that handle more general cases, such as for binary
+    operators:\nInteger led_bin(Expression *e, Integer left) {\r\n    Token op = e->here->tok;\r\n
+    \   Integer right = eval_next(e, token[op].lbp);\r\n    return(token[op].bin(left.val,
+    right.val));\r\n}"
+  score: 1
+  posted_at: '2026-10-26T13:55:33Z'
+- id: lo-p3nr1t
+  parent_id: '0'
+  author: icefox
+  text: In parsing especially, my experience is that different people have different
+    mental models that are equally valid.  Different techniques fit well into different
+    peoples' heads.
+  score: 1
+  posted_at: '2026-10-26T14:28:09Z'
+article:
+  url: https://www.unix.dog/~yosh/blog/2026-10-25_pratt-parsing.html
+  title: writing about pratt parsing so I remember it | ~yosh
+  fetch_status: success
+  content: |-
+    # writing about pratt parsing so I remember it
+
+    posted
+
+    I got bored and wanted to make a parser of C expressions. this will probably become a compiler at some point. previously, I’ve made a calculator using [shunting yard](https://en.wikipedia.org/wiki/Shunting_yard_algorithm), but with an itch to perhaps make a compiler of some kind, I looked at _pratt parsing_.
+
+    you won’t find much information about pratt parsing in a conventional learning path of computer science. the [dragon book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools), for all it talks about parsing, doesn’t mention it. as far as I’m aware, most programming language courses will probably teach either LR or recursive descent depending on how academic it is. pratt parsing specifically appears to be relegated mostly to compiler development and PLT circles. the most mainstream mention I know of it is in [crafting interpreters](https://craftinginterpreters.com/compiling-expressions.html); [wikipedia](https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing) also links a few other posts. I used the crafting interpreters text to get my bearings, but I also wanted to practice reading formal papers more, so I tried using [Pratt’s original paper text](https://tdop.github.io/) as much as possible. it did take a bit more time than I’d have liked to wrap my mind around how the recursion fits into the operator precedence, but it did just _click_ all at once, namely once I related it back to shunting yard. so now I’m writing the observations down so I don’t forget. maybe it’s useful to you.
+
+    [back](index.html)
+  error:
+  fetched_at: '2026-10-26T14:51:29Z'
+archived_at: '2026-10-26T14:51:29Z'

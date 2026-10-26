@@ -2,17 +2,17 @@
 post:
   id: lo-kiivg2
   source: lobsters
-  title: Partial Order Precedence
+  title: Partial Operator Precedence
   url: https://ziglang.org/devlog/2026/#2026-10-24
   hn_url: https://lobste.rs/s/kiivg2
-  score: 34
+  score: 59
   author: liberty
   posted_at: '2026-10-25T14:18:21Z'
-  fetched_at: '2026-10-26T03:36:28Z'
+  fetched_at: '2026-10-26T14:51:24Z'
   article_url: https://ziglang.org/devlog/2026/#2026-10-24
   article_fetch_status: success
-  article_fetched_at: '2026-10-26T03:36:29Z'
-  raw_comment_count: 13
+  article_fetched_at: '2026-10-26T14:51:30Z'
+  raw_comment_count: 16
   tags:
   - zig
 comments:
@@ -29,7 +29,7 @@ comments:
     in hindsight, especially after seeing a SQL query do a lot of damage in production
     due to or/and precedence not matching what the author expected. I adopted it for
     RCL as well. Great to see that Zig is adopting it too now!
-  score: 9
+  score: 14
   posted_at: '2026-10-25T15:52:44Z'
 - id: lo-xnrynx
   parent_id: '0'
@@ -38,7 +38,7 @@ comments:
     thing, which was mostly well-received by the community. It's cool to see that
     Zig is also making these changes! It's long overdue for programming languages
     to be more strict about this.
-  score: 7
+  score: 8
   posted_at: '2026-10-25T19:08:30Z'
 - id: lo-9pqpxj
   parent_id: '0'
@@ -46,7 +46,7 @@ comments:
   text: |-
     If you check out the original proposal they explicitly cite Pony. Fun fact, that person submitted quite a few language proposals around that time, most of which had me scratching my head, but this one struck me as a good idea.
     I think it's badass that Pony took it all the way, including + and *. Even I wouldn't dare to take it that far.
-  score: 12
+  score: 19
   posted_at: '2026-10-25T21:02:53Z'
 - id: lo-9aien2
   parent_id: '0'
@@ -72,7 +72,7 @@ comments:
   text: |-
     This is an extremely good idea that, I daresay, should become universal in all languages. Certainly I have followed similar rules informally, often using parens when not needed.
     What I'm curious about is how this is actually implemented in the parser. Traditional op precedence is easy to implement:  you have an expr[0], whose children are expr[1]'s, etc, each increment of prec level restricting the operators available. How do you adapt this idea to. a partial ordering?
-  score: 4
+  score: 6
   posted_at: '2026-10-25T22:27:05Z'
 - id: lo-i6qb9u
   parent_id: '0'
@@ -87,7 +87,7 @@ comments:
 
     Hm looks like Zig is transitive?  From my quick reading of the blog and https://ziglang.org/documentation/master/#Precedence
     The difference may matter more in mathematical languages, with many operators.  And also some operator combinations are disallowed by the type system, rather than by the syntax.
-  score: 3
+  score: 4
   posted_at: '2026-10-25T23:31:00Z'
 - id: lo-pkgfbz
   parent_id: '0'
@@ -111,7 +111,7 @@ comments:
     I don't particularly think it matters where you put it -- languages like smalltalk have done well with just one left to right precedence level, for example.
     You could also define bitwise as lower than arithmetic operators.
     There's no real ambiguity, you just scan across the line of code.
-  score: 3
+  score: 4
   posted_at: '2026-10-26T00:43:43Z'
 - id: lo-md1bzy
   parent_id: '0'
@@ -121,7 +121,7 @@ comments:
 
     There's no ambiguity in the rules, but there is ambiguity about whether or not the actual precedence rules match with what the programmer writing the code intended, since they could have misremembered the rules.
     The approach here tries to find a happy medium: precedence rules for common operator combinations that you might expect from a C-like language, with fewer rules to remember, and with the less common operator combinations always being fully unambiguous about the programmer's intent.
-  score: 2
+  score: 3
   posted_at: '2026-10-26T01:02:07Z'
 - id: lo-cwnich
   parent_id: '0'
@@ -130,7 +130,7 @@ comments:
     && and ||, so I'm in favour of Pony's stringency. If I had to write that many
     parentheses on a daily basis I might feel differently, though. No disrespect intended
     to lispers :)"
-  score: 2
+  score: 3
   posted_at: '2026-10-26T02:03:23Z'
 - id: lo-48wkax
   parent_id: '0'
@@ -141,6 +141,31 @@ comments:
     case and the preference should be to separate more highly nested statements.
   score: 1
   posted_at: '2026-10-26T02:08:04Z'
+- id: lo-0m8xy0
+  parent_id: '0'
+  author: bakkot
+  text: |-
+    Fun fact, JavaScript has this for "- x ** y" and "a ?? b && c" (that is, both are illegal). I think this is great, and is an obvious consequence of an "optimize for readers rather than writers" mindset.
+    A middle ground is to accept without parentheses, but for the canonical formatter to add them in confusing cases.
+  score: 3
+  posted_at: '2026-10-26T04:24:17Z'
+- id: lo-n39i4b
+  parent_id: '0'
+  author: ifreund
+  text: |-
+    You can see the Parsing Expression Grammar for this precedence stuff here: https://codeberg.org/ziglang/zig/src/commit/0084f08c30d91821e75cd0054100d751153576df/doc/langref/grammar.peg#L130-L159 (which I authored if you have any questions). Since it's a PEG, it's possible to directly translate that into a parser.
+    However, the Zig parser is handwritten for better error messages and recoverability (and fuzz tested against the PEG to ensure consistency). In the handwritten parser this is implemented with the following table: https://codeberg.org/ziglang/zig/src/commit/0084f08c30d91821e75cd0054100d751153576df/lib/std/zig/Parse.zig#L1733
+  score: 4
+  posted_at: '2026-10-26T08:29:56Z'
+- id: lo-l0cwas
+  parent_id: '0'
+  author: squeek502
+  text: |-
+    You might also be interested in looking at ~seb's example implementation of their Hare proposal (see this comment for context):
+    https://git.sr.ht/~sebsite/harec/commit/e8e4941a585be80870872c00936e2c284b58e8fe
+    The Zig implementation is a bit obscured due to the logic needed to add notes about what the previous precedence was, so it currently looks more complicated than it really is.
+  score: 2
+  posted_at: '2026-10-26T08:49:08Z'
 article:
   url: https://ziglang.org/devlog/2026/#2026-10-24
   title: |-
@@ -277,4 +302,4 @@ article:
         1.2M zig-pkg/zl
   error:
   fetched_at: '2026-10-25T18:43:57Z'
-archived_at: '2026-10-26T03:36:30Z'
+archived_at: '2026-10-26T14:51:31Z'

@@ -1,0 +1,148 @@
+---
+post:
+  id: lo-ekwolo
+  source: lobsters
+  title: Building Java ME Apps with Modern Tooling
+  url: https://voxelmanip.se/2026/10/24/building-java-me-apps-with-modern-tooling/
+  hn_url: https://lobste.rs/s/ekwolo
+  score: 16
+  author: mhd
+  posted_at: '2026-10-25T21:33:19Z'
+  fetched_at: '2026-10-26T14:51:24Z'
+  article_url: https://voxelmanip.se/2026/10/24/building-java-me-apps-with-modern-tooling/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-26T14:53:10Z'
+  raw_comment_count: 3
+  tags:
+  - java
+  - retrocomputing
+comments:
+- id: lo-rlu1zl
+  parent_id: '0'
+  author: franta
+  text: Almost two decades ago, I had a phone, it was not called a „smart phone“ however
+    I could write applications in a high-level language and run them on that phone.
+    It had a color display, camera, IrDA port and Bluetooth. What a great memories!
+  score: 4
+  posted_at: '2026-10-25T22:47:57Z'
+- id: lo-eegt0z
+  parent_id: '0'
+  author: aspizu
+  text: There is a whole community that have developed clients for Discord, Telegram
+    for J2ME phones. I learned about it when I was introduced to the concept of dumbphones-Intentionally
+    using older devices to stay away from the soul sucking nature of modern phones.
+    I learned how to develop my own J2ME ports-I made a client for Proton Mail, a
+    Gemini protocol web browser and a GUI library. Soon after, The phone I was developing
+    on gave up and I don't have access to more devices to test on. The cool part about
+    J2ME today is that these phones do not support TLS 2.0 and thus all internet connection
+    is insecure. People have been working on workarounds and implementing TLS in pure
+    Java but the last time I was involved there wasn't much progress. I'm sure things
+    must have changed drastically now.
+  score: 4
+  posted_at: '2026-10-25T23:56:23Z'
+- id: lo-gomyml
+  parent_id: '0'
+  author: nortti
+  text: How did you handle the TLS in your applications?
+  score: 1
+  posted_at: '2026-10-26T13:26:25Z'
+article:
+  url: https://voxelmanip.se/2026/10/24/building-java-me-apps-with-modern-tooling/
+  title: Building Java ME Apps with Modern Tooling - ROllerozxa
+  fetch_status: success
+  content: "![A Sony Ericsson S312 running an app with a bunch of raccoon icons scattered
+    across the screen, on top of a cobblestone background.](/media/building-java-me-apps-with-modern-tooling/cover.webp)\n#
+    Building Java ME Apps with Modern Tooling\n\n1558 words\n[Guides](/posts-by-tag/#Guides)[Java](/posts-by-tag/#Java)\n\nJava
+    ME (Micro Edition, also referred to as J2ME) is a platform for running Java applications
+    on small resource constrained devices, such as feature phones from before the
+    iPhone era. It is largely considered a dead platform with the advent of smartphones,
+    and modern feature phones such as KaiOS use web technologies instead for their
+    apps.\n\nHowever it is likely that you or someone you know have one of these old
+    phones lying around, and you may be interested in how you can make Java apps that
+    will run on it. This post goes through how to build a simple Java ME app solely
+    with modern tooling in a modern environment, without needing anything from the
+    old Sun Java ME SDKs.\n\n## Requirements\n\n- You will need some distribution
+    of OpenJDK 8, such as the [Temurin builds](https://adoptium.net/temurin/releases?version=8&os=any&arch=any)
+    for various platforms. You should ideally make the binaries available on the PATH
+    (and check that it’s the right version with `java -version`), for convenience.\n-
+    Also download [MicroEmulator](https://sourceforge.net/projects/microemulator/files/microemulator/2.0.4/),
+    because we will use their stub JARs that provides the Java ME APIs for compilation.\n-
+    Also download [ProGuard](https://github.com/Guardsquare/proguard/releases/tag/v7.1.1)
+    (I use 7.1.1 for this), which will be used for the preverification step.\n\nThe
+    instructions in this blog post assume a Linux-y terminal environment, but you
+    could also follow along with Git Bash or a similar environment on Windows.\n\n##
+    Hello World\n\nHere is a simple Hello World MIDlet that we will use. It will show
+    a simple form using the LCDUI API with the text “Hello World!”:\n\n    import
+    javax.microedition.midlet.MIDlet;\n    import javax.microedition.lcdui.Display;\n
+    \   import javax.microedition.lcdui.Form;\n    \n    public class HelloMIDlet
+    extends MIDlet {\n        public void startApp() {\n            Form form = new
+    Form(\"Hello\");\n            form.append(\"Hello World!\");\n            Display.getDisplay(this).setCurrent(form);\n
+    \       }\n        public void pauseApp() {}\n        public void destroyApp(boolean
+    unconditional) {}\n    }\n\nSave it as `src/HelloMIDlet.java`.\n\n## Compile the
+    class\n\nWe will compile this with `javac`, but we first need the stub JARs from
+    MicroEmulator available in the `lib` directory. Extract `cldcapi11.jar` and `midpapi20.jar`
+    and put them in a `lib` directory next to the `src` directory.\n\nThe `cldcapi11.jar`
+    provides the [CLDC 1.1 API](https://docs.oracle.com/javame/config/cldc/ref-impl/cldc1.1/jsr139/index.html)
+    and `midpapi20.jar` provides the [MIDP 2.0 API](https://docs.oracle.com/javame/config/cldc/ref-impl/midp2.0/jsr118/index.html).
+    MIDP 2.0 is circa 2002, and is probably what you want to use for widest compatibility,
+    while it has some important features that MIDP 1.0 lacks.\n\nThen we can compile
+    the Java source file with the following command:\n\n    mkdir -p build/classes\n
+    \   javac -source 1.3 -target 1.1 -bootclasspath \"lib/cldcapi11.jar:lib/midpapi20.jar\"
+    \\\n        -d build/classes src/HelloMIDlet.java\n\n- `-source 1.3` sets the
+    source compatibility to 1.3, which means that your source code will be Java 1.3
+    code.\n- `-target 1.1` sets the target compatibility to 1.1, which means that
+    the generated bytecode will be compatible with Java 1.1 ([bytecode version 45.3](https://javaalmanac.io/bytecode/versions/)).
+    This is what is required for MIDP 2.0, which is probably what you want to target.\n-
+    `-bootclasspath` specifies the libraries it should include on the classpath for
+    compiling code, and specifically we want these libraries to override all the built-in
+    libraries in OpenJDK 8 which are for the regular Java SE API.\n\n(To compile multiple
+    `.java` files in `src`, you would put `$(find src -name \"*.java\")` instead.)\n\n##
+    Package the JAR\n\nMIDlets need some metadata in the META-INF manifest file to
+    work. Most of the fields are self-explanatory:\n\n    Manifest-Version: 1.0\n
+    \   MIDlet-Name: hello-midlet\n    MIDlet-Version: 1.0.0\n    MIDlet-Vendor: The
+    Author\n    MIDlet-1: HelloMIDlet,/icon.png,HelloMIDlet\n    MicroEdition-Configuration:
+    CLDC-1.1\n    MicroEdition-Profile: MIDP-2.0\n\nFor the `MIDlet-1` field, the
+    format is a comma-separated list of three values: The human-readable name of the
+    MIDlet, the path to the icon inside of the JAR, and the fully qualified class
+    name of the entrypoint class. Since the above Java code specifies no package,
+    it will be in the default package at the root of the JAR.\n\nSave this to `resources/META-INF/MANIFEST.MF`,
+    creating a `resources/` directory to house assets to put in the final JAR. Also
+    put a 16x16 PNG icon in `resources/icon.png`. Then let’s package everything together
+    into a JAR:\n\n    cp -r resources/* build/classes\n    jar cfm build/input.jar
+    resources/META-INF/MANIFEST.MF -C build/classes .\n\nNow we have a JAR file `build/input.jar`…
+    But we need to preverify it before it can be run on a Java ME device.\n\n## Preverification\n\nPreverification
+    is a process required for the [KVM](https://en.wikipedia.org/wiki/K_virtual_machine)
+    (the minimal Java virtual machine used in Java ME) to ensure that the bytecode
+    is valid. Traditionally this would be done by a `preverify` tool from the original
+    Java ME SDK, but ProGuard supports doing the same thing and is more modern.\n\n
+    \   java -jar \"lib/proguard.jar\" \\\n        -injars \"build/input.jar\" -outjars
+    \"app.jar\" \\\n        -libraryjars \"lib/cldcapi11.jar\" \\\n        -libraryjars
+    \"lib/midpapi20.jar\" \\\n        -dontshrink -dontoptimize -dontobfuscate \\\n
+    \       -microedition\n\nYou can also use ProGuard to shrink, optimise and obfuscate
+    your code to reduce the footprint of the resulting JAR, which is especially important
+    for Java ME apps where the JAR size limit can be very strict. But for this example
+    we disable all of that for now and just specify `-microedition` to do the preverification.\n\nNow
+    you have a `app.jar` file that can actually be run on a Java ME device or in an
+    emulator. You can use MicroEmulator to run it, or something with more features
+    like [FreeJ2ME-plus](https://github.com/TASEmulators/freej2me-plus), currently
+    the best J2ME emulator for desktop platforms.\n\n[![Hello World](/media/building-java-me-apps-with-modern-tooling/hello_world.webp)](/media/building-java-me-apps-with-modern-tooling/hello_world.webp)\n\n##
+    Getting the JAR to your phone\n\nNow that you have gotten it running in an emulator
+    it would be nice to get it running on the real hardware. The feature phone I had
+    lying around that’s the most functional is the Sony Ericsson S312, a budget feature
+    phone from 2009. It even has a camera!\n\n[![A Dawn Blue coloured Sony Ericsson
+    S312 feature phone, on the screen is the photo viewer showing a selfie taken with
+    the phone.](/media/building-java-me-apps-with-modern-tooling/sony_ericsson_s312.webp)](/media/building-java-me-apps-with-modern-tooling/sony_ericsson_s312.webp)\n\nJava
+    feature phones tend to have connectivity and storage mediums that are generally
+    considered obsolete nowadays. My Sony Ericsson S312 has a proprietary charger
+    cable with no USB on either end - supposedly you can use a special USB transfer
+    cable, but that was a separate accessory that doesn’t seem worthwhile to obtain.
+    In addition to this, the physical external memory storage is some strange card
+    format that is distinct from any standard kind of SD card (M2 memory stick, not
+    to be confused with the M.2 connector).\n\nBluetooth ended up being the easiest
+    way to transfer files to and from the phone. After connecting the phone to my
+    computer and installing `bluez-obex` for OBEX, used for transferring files over
+    Bluetooth, I was able to explore the files on the phone like I had plugged it
+    in via USB and then copy over the JAR file"
+  error:
+  fetched_at: '2026-10-26T14:53:10Z'
+archived_at: '2026-10-26T14:53:11Z'

@@ -4,14 +4,14 @@ post:
   title: 'Bbtree: Fastest Ordered Map'
   url: https://bbtree.xiangpeng.systems/post/
   hn_url: https://news.ycombinator.com/item?id=50223777
-  score: 155
+  score: 161
   author: aoli-al
   posted_at: '2026-10-24T18:22:14Z'
-  fetched_at: '2026-10-26T03:36:22Z'
+  fetched_at: '2026-10-26T14:51:20Z'
   article_url: https://bbtree.xiangpeng.systems/post/
   article_fetch_status: error
-  article_fetched_at: '2026-10-26T03:36:22Z'
-  raw_comment_count: 22
+  article_fetched_at: '2026-10-26T14:51:20Z'
+  raw_comment_count: 23
 comments:
 - id: '50225449'
   parent_id: '50223777'
@@ -231,11 +231,33 @@ comments:
     and 2020s that are cool?
   score: 0
   posted_at: '2026-10-26T03:13:33Z'
+- id: '50240932'
+  parent_id: '50235383'
+  author: virtualritz
+  text: |-
+    TL;DR: whatever your agent told you it wrote and you then &quot;confirmed&quot; experimentally: there is a disconnect with reality ... somewhere.<p>I wasted more time on this, literally and figuratively.<p>InlinkeKey microbench results below.<p>Each row is one pass over n keys with three variants interleaved in one process:<p><pre><code>  ┌──────────────────────┬────────┬────────┬─────────┐
+      │     n = 65536,       │  std   │ bbtree │ bbtree  │
+      │    VertexId(u32)     │ BTree- │  Auto  │ Inline- │
+      │                      │  Map   │        │   Key   │
+      ├──────────────────────┼────────┼────────┼─────────┤
+      │ insert               │ 18.3ms │ 12.3ms │ 20.8ms  │
+      ├──────────────────────┼────────┼────────┼─────────┤
+      │ get                  │ 14.0ms │  9.2ms │ 16.6ms  │
+      ├──────────────────────┼────────┼────────┼─────────┤
+      │ iterate              │ 0.74ms │ 0.05ms │ 0.10 ms │
+      ├──────────────────────┼────────┼────────┼─────────┤
+      │ entry().or_default() │ 52ms   │ 47ms   │ 54 ms   │
+      │ .push                │        │        │         │
+      └──────────────────────┴────────┴────────┴─────────┘
+    </code></pre>
+    The same pattern shows at 4k and 1M entries and for the (u32,u32) pair and a (u8,usize) tuple my crate uses. Adding InlineKey makes the narrow keys <i>slower</i> than bbtree without inline keys.<p>It only beats the trait-less version on the 24-byte edge key. But there it still trails std!<p>Your post&#x27;s proven (?) u64 impl is possibly the ceiling for this mechanism on my CPU (Rhyzen 6800H, 8 cores&#x2F;16 threads). It is at parity with std at 4k to 65k on this CPU and about 10 percent ahead at 1M.<p>Iteration is where bbtree genuinely wins, 5-15x, but my kernel&#x27;s time is not in iteration. And I guess that is true for most applications.<p>You eventually need to add and&#x2F;or get&#x2F;read data.
+  score: 0
+  posted_at: '2026-10-26T08:47:52Z'
 article:
   url: https://bbtree.xiangpeng.systems/post/
   title: 'bbtree: fastest ordered map'
   fetch_status: error
   content: Loading…
   error: insufficient content (8 chars)
-  fetched_at: '2026-10-26T03:36:22Z'
-archived_at: '2026-10-26T03:36:27Z'
+  fetched_at: '2026-10-26T14:51:20Z'
+archived_at: '2026-10-26T14:51:24Z'

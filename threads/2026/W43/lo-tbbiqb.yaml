@@ -5,14 +5,14 @@ post:
   title: POSIX wordexp(3) is dangerous
   url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   hn_url: https://lobste.rs/s/tbbiqb
-  score: 52
+  score: 77
   author: yossarian
   posted_at: '2026-10-25T15:09:29Z'
-  fetched_at: '2026-10-26T03:36:28Z'
+  fetched_at: '2026-10-26T14:51:24Z'
   article_url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   article_fetch_status: success
-  article_fetched_at: '2026-10-26T03:36:28Z'
-  raw_comment_count: 14
+  article_fetched_at: '2026-10-26T14:51:25Z'
+  raw_comment_count: 19
   tags:
   - c
   - security
@@ -30,7 +30,7 @@ comments:
     defined function defined function defined function\n\nNobody is going to implement
     an entire shell inside libc ... that would be crazy.\nIt seems like it should
     be removed from libc.  Not sure who put it there, and why."
-  score: 17
+  score: 27
   posted_at: '2026-10-25T15:30:41Z'
 - id: lo-puuull
   parent_id: '0'
@@ -45,7 +45,7 @@ comments:
     It seems the problem was that people kept demanding more and more features for glob, so it seems like the committee threw up their hands and added the far-too-broad wordexp in attempt to cover all possible bases.
 
     From: https://www.cipht.net/2023/11/21/worried-by-wordexp.html
-  score: 10
+  score: 15
   posted_at: '2026-10-25T15:57:52Z'
 - id: lo-tnd4fh
   parent_id: '0'
@@ -58,7 +58,7 @@ comments:
 
     IMO providing a flag like WRDE_NOCMD which doesn't actually make the interface safe to use is worse than providing nothing at all, since it gives a false illusion of security.
     The main motivator for us to implement wordexp was for the upcoming hare.ini configuration format, to declare dependencies and linker flags and stuff (that way the user can use pkg-config, for example). Although wordexp wouldn't have been my first choice, I'm happy with the compromise we ended up with.
-  score: 4
+  score: 6
   posted_at: '2026-10-25T16:03:51Z'
 - id: lo-ysqg6f
   parent_id: '0'
@@ -77,7 +77,7 @@ comments:
     You can’t use it in a multithreaded program, because it usually forks a shell.
     On glibc wordexp is built in, but shell expansions that set variables call setenv() which is not thread safe, and which also modifies the caller’s environment which traditional forky wordexp() does not. (libc basically never calls setenv which is why this is a notable oddity.)
     It really is a lunatic function that should be documented with a big “do not use this” health warning.
-  score: 7
+  score: 11
   posted_at: '2026-10-25T16:41:49Z'
 - id: lo-ewq2s9
   parent_id: '0'
@@ -89,7 +89,7 @@ comments:
     https://nhimg.org/glossary/parser-differential/
     And even bash can't parse shell correctly in many cases, after 30 years of trying :-)   That is one reason I started https://oils.pub/
     I don't have the bugs handy, but simply parsing nested () {} $() ${} in shell is extremely difficult, and the unbalanced case 0 in *) is one reason, but not the only one.
-  score: 3
+  score: 4
   posted_at: '2026-10-25T16:43:23Z'
 - id: lo-coklno
   parent_id: '0'
@@ -105,7 +105,7 @@ comments:
 
     If shell and HTML and other "crappy languages" weren't already entrenched enough, then LLMs really put the nail in the coffin.  We will be using shell and HTML "forever".
     But maybe we can do better with LLMs ... i.e. nobody wants to do all this work to migrate toward stricter languages (e.g. OSH vs bash, which is easy in 99.9% of cases), but we really should.
-  score: 2
+  score: 4
   posted_at: '2026-10-25T17:28:19Z'
 - id: lo-l1kkbs
   parent_id: '0'
@@ -142,7 +142,7 @@ comments:
     If I continue to have say in this, wordexp() will never be in OpenBSD's libc.  Perhaps if there is one open source project which refuses to have it, coders will continue avoiding use of wordexp().
 
     —Theo de Raadt (2010)
-  score: 13
+  score: 28
   posted_at: '2026-10-25T21:12:45Z'
 - id: lo-pywn06
   parent_id: '0'
@@ -162,7 +162,7 @@ comments:
     the "safety" mechanism is basically impossible to implement correctly
 
     So it'd be better if there was a separate function that was guaranteed to only parse tildes, basic $VAR substitution, and maybe glob expansion (ideally with knobs for controlling which of these), and it was required to be safe on untrusted input and not just secretly shell behind your back.
-  score: 2
+  score: 3
   posted_at: '2026-10-26T00:23:45Z'
 - id: lo-lkl1gq
   parent_id: '0'
@@ -173,6 +173,48 @@ comments:
     At least nowadays there are C-frontend-as-libraries (i.e. libclang); I'm not aware of a POSIX shell that's usable as a library. The Unix distinction between executables and libraries (and lack of an omnipresent shell like DCL) is unfortunate.
   score: 1
   posted_at: '2026-10-26T03:26:51Z'
+- id: lo-cl2vts
+  parent_id: '0'
+  author: muvlon
+  text: With bash being as widespread as it is, by doing it "correctly" in oils, aren't
+    you creating just another parser differential?
+  score: 2
+  posted_at: '2026-10-26T05:19:48Z'
+- id: lo-jkaspg
+  parent_id: '0'
+  author: spc476
+  text: There is glob() which does glob expansion.  Linux allows one to do tilde expansion
+    but that's not POSIX.  No mention of environment substitution though.
+  score: 2
+  posted_at: '2026-10-26T05:51:44Z'
+- id: lo-zprdvl
+  parent_id: '0'
+  author: natsukagami
+  text: Oh wow, it’s an actual quote!
+  score: 2
+  posted_at: '2026-10-26T08:03:23Z'
+- id: lo-awoqbs
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    It really is a lunatic function that should be documented with a big “do not use this” health warning.
+
+    Sadly, not something that makes it unusual in POSIX.
+  score: 3
+  posted_at: '2026-10-26T11:58:29Z'
+- id: lo-etvywm
+  parent_id: '0'
+  author: regedit
+  text: |-
+    Additionally:
+
+    No kidding.  I agree with Ted; thanks for the effort but the code you
+    borrowed is bad, and it is was designed by people who the unabomber
+    should have gotten to first.
+
+    —Theo de Raadt (2010)
+  score: 0
+  posted_at: '2026-10-26T13:55:24Z'
 article:
   url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   title: 'TIL: POSIX wordexp(3) is dangerous'
@@ -205,4 +247,4 @@ article:
     inputs, even with `WRDE_NOCMD`."
   error:
   fetched_at: '2026-10-25T18:43:55Z'
-archived_at: '2026-10-26T03:36:28Z'
+archived_at: '2026-10-26T14:51:26Z'
