@@ -5,14 +5,14 @@ post:
   title: About the compromised eMudhra intermediate CAs
   url: https://support.apple.com/en-us/149555
   hn_url: https://lobste.rs/s/xzp4m0
-  score: 10
+  score: 39
   author: freddyb
   posted_at: '2026-10-26T09:58:55Z'
-  fetched_at: '2026-10-26T14:51:24Z'
+  fetched_at: '2026-10-26T20:53:44Z'
   article_url: https://support.apple.com/en-us/149555
   article_fetch_status: success
-  article_fetched_at: '2026-10-26T14:51:27Z'
-  raw_comment_count: 9
+  article_fetched_at: '2026-10-26T20:53:45Z'
+  raw_comment_count: 25
   tags:
   - mac
   - security
@@ -27,28 +27,28 @@ comments:
     userspace uses. Instead users are just left to run shell commands to patch it
     manually, which I assume the majority won’t (if they even become aware of this
     support page).'
-  score: 5
+  score: 24
   posted_at: '2026-10-26T11:32:45Z'
 - id: lo-tuhbt3
   parent_id: '0'
   author: mxey
   text: My best guess is that they cannot change that CA bundle without releasing
     a whole OS update.
-  score: 1
+  score: 3
   posted_at: '2026-10-26T12:17:21Z'
 - id: lo-5qxjys
   parent_id: '0'
   author: msangi
   text: Likely. What's odd is that they could have sent out an OS update and they
     choose not to.
-  score: 1
+  score: 4
   posted_at: '2026-10-26T12:32:10Z'
 - id: lo-rxegov
   parent_id: '0'
   author: craigstuntz
   text: What is doubly baffling is that homebrew curl does verify through SecTrust.
     It’s the version that Apple itself distributes which doesn’t.
-  score: 3
+  score: 5
   posted_at: '2026-10-26T12:36:17Z'
 - id: lo-tpnn2b
   parent_id: '0'
@@ -56,7 +56,7 @@ comments:
   text: That was what I thought too, but macOS has had “rapid security release” functionality
     for the last few years. In principle they should be able to ship this via an RSR,
     which doesn’t even necessarily require a reboot.
-  score: 3
+  score: 11
   posted_at: '2026-10-26T13:05:40Z'
 - id: lo-lcud4t
   parent_id: '0'
@@ -64,7 +64,7 @@ comments:
   text: |-
     (I’m one of Homebrew’s maintainers.)
     I think Homebrew’s curl actually uses Homebrew’s own CA bundle by default. It can use the SecTrust APIs but those aren’t the default because they’re deprecated by macOS and don’t support TLS 1.3. I think the same is true with the built-in curl, so it boils down to Apple just not shipping their own CA bundle update for whatever reason.
-  score: 4
+  score: 14
   posted_at: '2026-10-26T13:08:11Z'
 - id: lo-nlyhjb
   parent_id: '0'
@@ -75,7 +75,7 @@ comments:
     Xcode Command Line Tools — like curl and git — check certificates against /etc/ssl/cert.pem and can still accept these certificates until a future software update.
 
     Why the hell hasn't that "future software update" already shipped?
-  score: 2
+  score: 9
   posted_at: '2026-10-26T14:09:53Z'
 - id: lo-zxqczf
   parent_id: '0'
@@ -84,7 +84,7 @@ comments:
     Do I need to edit /etc/ssl/cert.pem?
 
     What? This is written as if there aren't millions of developers (and their agents) out there using command line tools on a Mac every single day.
-  score: 1
+  score: 5
   posted_at: '2026-10-26T14:15:17Z'
 - id: lo-5o25pe
   parent_id: '0'
@@ -93,8 +93,127 @@ comments:
     have been a mistake if their LibreSSL build won''t support the system certificate
     store and modifying non-Apple world things to support Networking.framework is
     highly invasive (as curl figured out).'
-  score: 1
+  score: 2
   posted_at: '2026-10-26T14:28:20Z'
+- id: lo-juevdv
+  parent_id: '0'
+  author: craigstuntz
+  text: Hm, I saw this on Daniel Stenberg's mastodon and presumed the claim was correct.
+    I don't have any insight here beyond that.
+  score: 2
+  posted_at: '2026-10-26T14:53:39Z'
+- id: lo-ikulph
+  parent_id: '0'
+  author: hoistbypetard
+  text: |-
+    Can you link to where it says that they're deprecated? (I don't think they should need to support TLS 1.3... they're just for validating the certificates you get from the handshake, right?)
+    This is where I'm looking.
+  score: 2
+  posted_at: '2026-10-26T15:05:15Z'
+- id: lo-kklmxd
+  parent_id: '0'
+  author: mxey
+  text: |-
+    in some GUI apps
+
+    Some? It's blocked in everything that uses the native Mac APIs.
+  score: 4
+  posted_at: '2026-10-26T15:10:08Z'
+- id: lo-qdjubx
+  parent_id: '0'
+  author: mxey
+  text: |-
+    WRT the cert bundle stuff: Makes me think deprecating Secure Transport might have been a mistake if their LibreSSL build won't support the system certificate store and modifying non-Apple world things to support Networking.framework is highly invasive (as curl figured out).
+
+    Go has its own TLS stack but it uses the “platform verifier” on macOS. I wonder how they do it.
+    edit: https://github.com/golang/go/blob/master/src/crypto/x509/internal/macos/security.go
+  score: 2
+  posted_at: '2026-10-26T15:10:46Z'
+- id: lo-dbxuhh
+  parent_id: '0'
+  author: mxey
+  text: How would SecTrust support TLS 1.3? Isn't it solely about certificate verification?
+  score: 2
+  posted_at: '2026-10-26T15:13:34Z'
+- id: lo-efcbgb
+  parent_id: '0'
+  author: mort
+  text: Which apparently none of their command line stuff does
+  score: 5
+  posted_at: '2026-10-26T15:14:38Z'
+- id: lo-xzj7je
+  parent_id: '0'
+  author: agwa
+  text: Really weird that removing the AAA root is labeled "optional" since if you
+    don't remove it, then doing the other steps is pretty much pointless
+  score: 2
+  posted_at: '2026-10-26T15:18:49Z'
+- id: lo-7js9fm
+  parent_id: '0'
+  author: mxey
+  text: Can that be used to push any arbitrary change?
+  score: 2
+  posted_at: '2026-10-26T15:23:31Z'
+- id: lo-xaaunt
+  parent_id: '0'
+  author: cos
+  text: I had macOS on my work laptop for a few years, and I gotta say, as a developer,
+    the experience left me feeling like a second-class citizen. Compared to pre-WSL
+    Windows, though, at least I was a citizen!
+  score: 2
+  posted_at: '2026-10-26T16:27:50Z'
+- id: lo-suh5fk
+  parent_id: '0'
+  author: nelson
+  text: Perhaps there are fewer developers using their Mac for command line work now.
+  score: 1
+  posted_at: '2026-10-26T18:32:16Z'
+- id: lo-dnihzz
+  parent_id: '0'
+  author: zmitchell
+  text: It's written as if developers aren't the only people who may find themselves
+    reading this article that doesn't have "for developers" in the title.
+  score: 2
+  posted_at: '2026-10-26T18:35:57Z'
+- id: lo-46ldiw
+  parent_id: '0'
+  author: yossarian
+  text: I was using it as a shorthand for Secure Transport, which is the deprecated
+    TLS stack on macOS (including X.509 path building).
+  score: 1
+  posted_at: '2026-10-26T19:09:25Z'
+- id: lo-rahnc2
+  parent_id: '0'
+  author: yossarian
+  text: I don’t think so, I think it’s limited in size and complexity. For example
+    I don’t think it can be used to deploy most kernel changes, although I might be
+    wrong about that. Modifying the CA bundle is the kind of thing that should be
+    within its capability, though.
+  score: 1
+  posted_at: '2026-10-26T19:11:30Z'
+- id: lo-fq2emg
+  parent_id: '0'
+  author: yossarian
+  text: I think you could use the SecTrust APIs for path building only but that isn’t
+    how curl uses them currently, I believe it uses them for the entire TLS stack.
+    The curl maintainers probably have more context on that decision and why it makes
+    sense for them.
+  score: 1
+  posted_at: '2026-10-26T19:15:12Z'
+- id: lo-fiaicj
+  parent_id: '0'
+  author: mxey
+  text: But it doesn’t seem like SecTrust on its own is deprecated.
+  score: 1
+  posted_at: '2026-10-26T19:46:05Z'
+- id: lo-4huctu
+  parent_id: '0'
+  author: yossarian
+  text: Depends on the APIs. But yeah, the more precise thing for me to say would
+    be that curl uses Secure Transport along with the SecTrust APIs, and the former
+    is 100% deprecated (and is where the TLS 1.2 restriction comes from).
+  score: 1
+  posted_at: '2026-10-26T20:39:49Z'
 article:
   url: https://support.apple.com/en-us/149555
   title: About the compromised eMudhra intermediate CAs - Apple Support
@@ -193,4 +312,4 @@ article:
     for additional information.\n\nPublished Date:&nbsp;"
   error:
   fetched_at: '2026-10-26T14:51:27Z'
-archived_at: '2026-10-26T14:51:28Z'
+archived_at: '2026-10-26T20:53:45Z'

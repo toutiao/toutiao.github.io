@@ -1,0 +1,128 @@
+---
+post:
+  id: lo-xmnhbt
+  source: lobsters
+  title: Simple Sudoku Solver in Assembly
+  url: https://blog.veitheller.de/Simple_Sudoku_Solvers_SIII%2C_EII%3A_Assembly.html
+  hn_url: https://lobste.rs/s/xmnhbt
+  score: 10
+  author: abhin4v
+  posted_at: '2026-10-26T13:28:45Z'
+  fetched_at: '2026-10-26T20:53:44Z'
+  article_url: https://blog.veitheller.de/Simple_Sudoku_Solvers_SIII%2C_EII%3A_Assembly.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-26T20:53:50Z'
+  raw_comment_count: 0
+  tags:
+  - assembly
+comments: []
+article:
+  url: https://blog.veitheller.de/Simple_Sudoku_Solvers_SIII%2C_EII%3A_Assembly.html
+  title: 'Simple Sudoku Solvers SIII, EII: Assembly | Veit''s Blog'
+  fetch_status: success
+  content: |-
+    Welcome back to another round of [Simple Sudoku Solvers](https://blog.veitheller.de/sss/)! If you are unfamiliar with the series, I suggest you start with [the first post](https://blog.veitheller.de/Six_Simple_Sudoku_Solvers_I:_Python_(Reference).html) or by perusing [the backlog](https://blog.veitheller.de/sss/). Last time, in [Agda](https://blog.veitheller.de/Simple_Sudoku_Solvers_SIII,_EI:_Agda.html), the solver wasn’t allowed to hand us a board without a correctness proof. Today we go in the opposite direction: assembly, where nothing is checked at all, and the machine stares at us directly.
+
+    To be quite specific, today we’ll write AArch64 assembly for macOS, because that’s the machine I’m sitting at. Surprisingly, the solver is just a little over 200 lines, and as always,[the code is on GitHub](https://github.com/hellerve/sudoku).
+
+    ## Why assembly?
+
+    Season three is about solvers, specifications, and constraints, and assembly might seem like the odd duck. But I think it fits!
+
+    After a proof assistant that checks everything, it’s worth looking at what’s left when nothing is checked, and nothing is proven.
+
+    - **Nothing is hidden.** There is no allocator, no garbage collector, no runtime, and no compiler making choices for us. The board gets copied because we wrote exactly the instructions that copy it.
+    - **The machine already knows our tricks!** We’ve been doing bit-twiddling with candidate masks since [the Common Lisp episode](https://blog.veitheller.de/Six_Simple_Sudoku_Solvers_II:_Common_Lisp.html), and in [Forth](https://blog.veitheller.de/Simple_Sudoku_Solvers_SII,_EIII:_Forth.html)we had to roll our own popcount and lowest-bit search. The CPU has instructions for most of that, and today we get to use them directly. So, in many ways, we gain some abstractions!
+    - **The stack is, uh, the stack.** In Forth we built our own stack of boards for backtracking. Here, the machine stack is right there, so we might as well use it.
+
+    Since there are no types, everything is a number, and the only thing standing between us and a wrong answer is our own diligence. Fun!
+
+    ## A quick primer on reading AArch64
+
+    If you’ve never read ARM assembly before, here is what you need for this post.
+
+    AArch64 has 31 general-purpose registers, `x0` to`x30`, each 64 bits wide. Writing `w0` instead of`x0` means “the lower 32 bits of register 0”, and since all of our numbers are small, we’ll use `w` registers most of the time. `sp` is the stack pointer.
+
+    Instructions read like `op destination, source, source`, so `add w0, w1, w2` means `w0 = w1 + w2`. Memory is only touched by loads and stores:`ldrb w9, [x19, w21, uxtw]` loads the byte at address`x19 + w21` into `w9`, and `strb`stores one. `[x7], #1` means “load from `x7`, then add 1 to `x7`”, which is handy for walking through memory.
+
+    We call functions with `bl`, which jumps and stores the return address in `x30`, and we return with `ret`, which jumps back to `x30`. Arguments go in `x0`and up, and the result comes back in `x0`. A function may freely overwrite `x0` to `x17` (`x18`is reserved), but has to restore `x19` to `x28`before it returns, so those are where we keep anything we need to survive a call.
+
+    Labels like `1:` are local, and `b.ne 1b` means “branch to the closest label `1` going **b** ackwards, if the last comparison was **n** ot **e** qual”. `1f` looks **f** orwards. Comments start with `//`.
+
+    That should be enough to get through it. Everything else I’ll explain as we go. I recommend keeping your favorite drawing tool (pen and paper work well) handy to simulate the stack and register movement in your head. I’ve always had trouble with the mnemonics, so I read assembly differently than most other programming languages, modelling stack and register state as I go. Maybe that works for you as well!
+
+    ## The board
+
+    The board is the same flat array of 81 bytes that we’ve been using for most of the series, with `0` for an empty cell. We put it in the data section (which means it’s baked into the executable quite literally), with the puzzle already filled in:
+
+        .data
+                .p2align 4
+        board: .byte 8,0,0,0,0,0,0,0,0
+                .byte 0,0,3,6,0,0,0,0,0
+                .byte 0,7,0,0,9,0,2,0,0
+                .byte 0,5,0,0,0,7,0,0,0
+                .byte 0,0,0,0,4,5,7,0,0
+                .byte 0,0,0,1,0,0,0,3,0
+                .byte 0,0,1,0,0,0,0,6,8
+                .byte 0,0,8,5,0,0,0,1,0
+                .byte 0,9,0,0,0,0,4,0,0
+
+    This is the same puzzle we used in the Agda episode, and it’s one of the harder ones I use for checking. `.p2align 4` aligns the board to 16 bytes. Strictly speaking we don’t need that, but we’re about to copy it around in 16-byte chunks, and it doesn’t cost us anything, so we might as well do it.
+
+    There is one global board, and the solver mutates it in place. Whatever is in `board` when `solve` returns is our answer.
+
+    ## The solver
+
+    As always, we’ll go outside-in. This is `solve` in its entirety, and it is the longest function in the file, so we’ll take it in pieces.
+
+        solve:
+                stp x29, x30, [sp, #-64]!
+                mov x29, sp
+                stp x19, x20, [sp, #16]
+                stp x21, x22, [sp, #32]
+                str x23, [sp, #48]
+                bl propagate
+                cbz w0, fail
+
+    The first five lines are the prologue, which is the ceremony every function that calls other functions usually goes through (it’s also the main thing that distinguishes functions and labels inside the block). We reserve 64 bytes on the stack, save our return address (`x30`) and the frame pointer (`x29`), and save the callee-saved registers we’re about to use. `stp` stores a pair of registers in one go, and the `!` means “update`sp` first”.
+
+    The rest is familiar. We propagate, and if propagation hits a dead end, we fail. `cbz` is “compare and branch if zero”, which comes up a lot, because it’s basically an `if` statement.
+
+    Next up is finding the cell with the fewest candidates:
+
+        adrp x19, board@PAGE
+                add x19, x19, board@PAGEOFF
+                mov w20, #-1 // best cell
+                mov w21, #10 // its candidate count
+                mov w22, #0 // cell
+        mrv:
+                ldrb w9, [x19, w22, uxtw]
+                cbnz w9, 1f
+                mov w0, w22
+                bl cands
+                fmov s0, w0
+                cnt v0.8b, v0.8b
+                addv b0, v0.8b
+                fmov w9, s0
+                cmp w9, w21
+                b.hs 1f
+                mov w21, w9
+                mov w20, w22
+                mov w23, w0 // its candidates
+        1: add w22, w22, #1
+                cmp w22, #81
+                b.lo mrv
+                tbnz w20, #31, done // no empty cell left
+
+    The first two lines load the address of the board. On AArch64, an instruction is always 32 bits wide, so you can’t fit a full address into one. Instead, `adrp` gets the address of the 4KB page the board is on, and `add` adds the offset within that page. You’ll see this pair a lot. It’s a weird little ceremony if you ask me, but nobody did.
+
+    Then we loop over all 81 cells. Filled cells are skipped. For empty cells, we get the candidate mask from `cands` and count its bits, and if the count beats the best one so far, we remember the cell, the count, and the mask.
+
+    Counting bits is the first weird, delightful bit. Base AArch64 has no instruction for counting the bits in a general-purpose register. It does have one for its vector registers, though. `cnt` counts the bits in each of eight bytes, and `addv` adds those eight counts up. So we move our mask over to the vector unit with `fmov`, count there, and move the result back. It’s four instructions instead of the nine-iteration loop we wrote in Forth where we implemented bit-counting by hand.
+
+    `w20` starts out as `-1` (all ones in binary). If it’s unchanged after the loop, there are no empty cells left, and we’re done. `tbnz` tests a single bit and branches if it is set, and bit 31 is the sign bit, so this is a cheap “is it negative?” check, and another one of those idioms you just kind of have to know.
+
+    Note that we never check if the best cell has zero ca
+  error:
+  fetched_at: '2026-10-26T20:53:50Z'
+archived_at: '2026-10-26T20:53:51Z'

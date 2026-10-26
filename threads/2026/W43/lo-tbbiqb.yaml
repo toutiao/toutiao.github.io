@@ -5,14 +5,14 @@ post:
   title: POSIX wordexp(3) is dangerous
   url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   hn_url: https://lobste.rs/s/tbbiqb
-  score: 77
+  score: 84
   author: yossarian
   posted_at: '2026-10-25T15:09:29Z'
-  fetched_at: '2026-10-26T14:51:24Z'
+  fetched_at: '2026-10-26T20:53:44Z'
   article_url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   article_fetch_status: success
-  article_fetched_at: '2026-10-26T14:51:25Z'
-  raw_comment_count: 19
+  article_fetched_at: '2026-10-26T20:53:46Z'
+  raw_comment_count: 20
   tags:
   - c
   - security
@@ -30,7 +30,7 @@ comments:
     defined function defined function defined function\n\nNobody is going to implement
     an entire shell inside libc ... that would be crazy.\nIt seems like it should
     be removed from libc.  Not sure who put it there, and why."
-  score: 27
+  score: 29
   posted_at: '2026-10-25T15:30:41Z'
 - id: lo-puuull
   parent_id: '0'
@@ -58,7 +58,7 @@ comments:
 
     IMO providing a flag like WRDE_NOCMD which doesn't actually make the interface safe to use is worse than providing nothing at all, since it gives a false illusion of security.
     The main motivator for us to implement wordexp was for the upcoming hare.ini configuration format, to declare dependencies and linker flags and stuff (that way the user can use pkg-config, for example). Although wordexp wouldn't have been my first choice, I'm happy with the compromise we ended up with.
-  score: 6
+  score: 7
   posted_at: '2026-10-25T16:03:51Z'
 - id: lo-ysqg6f
   parent_id: '0'
@@ -77,7 +77,7 @@ comments:
     You can’t use it in a multithreaded program, because it usually forks a shell.
     On glibc wordexp is built in, but shell expansions that set variables call setenv() which is not thread safe, and which also modifies the caller’s environment which traditional forky wordexp() does not. (libc basically never calls setenv which is why this is a notable oddity.)
     It really is a lunatic function that should be documented with a big “do not use this” health warning.
-  score: 11
+  score: 12
   posted_at: '2026-10-25T16:41:49Z'
 - id: lo-ewq2s9
   parent_id: '0'
@@ -89,7 +89,7 @@ comments:
     https://nhimg.org/glossary/parser-differential/
     And even bash can't parse shell correctly in many cases, after 30 years of trying :-)   That is one reason I started https://oils.pub/
     I don't have the bugs handy, but simply parsing nested () {} $() ${} in shell is extremely difficult, and the unbalanced case 0 in *) is one reason, but not the only one.
-  score: 4
+  score: 6
   posted_at: '2026-10-25T16:43:23Z'
 - id: lo-coklno
   parent_id: '0'
@@ -105,7 +105,7 @@ comments:
 
     If shell and HTML and other "crappy languages" weren't already entrenched enough, then LLMs really put the nail in the coffin.  We will be using shell and HTML "forever".
     But maybe we can do better with LLMs ... i.e. nobody wants to do all this work to migrate toward stricter languages (e.g. OSH vs bash, which is easy in 99.9% of cases), but we really should.
-  score: 4
+  score: 5
   posted_at: '2026-10-25T17:28:19Z'
 - id: lo-l1kkbs
   parent_id: '0'
@@ -122,7 +122,7 @@ comments:
     There's a bit of a footgun if you don't turn off features you don't need you get features you don't want. That's poor API design. It sounds like more of the issue is that there are some buggy libcs so that if you want shell expansion.
     I'm certainly not eager to rely on a libc with lines of code that look like:
     if (flags & WRDE_NOCMD) for (i=0; s[i]; i++) switch (s[i]) {
-  score: 1
+  score: 2
   posted_at: '2026-10-25T20:28:24Z'
 - id: lo-txjqtb
   parent_id: '0'
@@ -142,7 +142,7 @@ comments:
     If I continue to have say in this, wordexp() will never be in OpenBSD's libc.  Perhaps if there is one open source project which refuses to have it, coders will continue avoiding use of wordexp().
 
     —Theo de Raadt (2010)
-  score: 28
+  score: 32
   posted_at: '2026-10-25T21:12:45Z'
 - id: lo-pywn06
   parent_id: '0'
@@ -191,7 +191,7 @@ comments:
   parent_id: '0'
   author: natsukagami
   text: Oh wow, it’s an actual quote!
-  score: 2
+  score: 3
   posted_at: '2026-10-26T08:03:23Z'
 - id: lo-awoqbs
   parent_id: '0'
@@ -200,7 +200,7 @@ comments:
     It really is a lunatic function that should be documented with a big “do not use this” health warning.
 
     Sadly, not something that makes it unusual in POSIX.
-  score: 3
+  score: 5
   posted_at: '2026-10-26T11:58:29Z'
 - id: lo-etvywm
   parent_id: '0'
@@ -213,8 +213,23 @@ comments:
     should have gotten to first.
 
     —Theo de Raadt (2010)
-  score: 0
+  score: 3
   posted_at: '2026-10-26T13:55:24Z'
+- id: lo-nptu4p
+  parent_id: '0'
+  author: andyc
+  text: |-
+    I'd define parser differential as a security issue -- and in that case, the bug is that wordexp() exists, and it has a flag that implies parsing shell, which it does incorrectly.  (The problem is not even well-posed, because Parsing bash is undecidable, and bash is /bin/sh on Red Hat machines).
+    So even if everyone switched to OSH, wordexp() would STILL be bad and unsafe.  That's just fundamental.
+
+    On the other hand, It's true there are differences between bash and OSH.  Some of the differences I see as a feature, rather than a bug.
+    The most obvious one is that OSH lacks this security issue that bash, ksh, and zsh have: https://lobste.rs/s/mla0ns/til_some_surprising_code_execution (now I see this post is also from @yossarian !)
+    At first, OSH was indeed stricter than it should have been by default (more differences with bash).  Over time, more of the differences have moved under shopt --set strict:all.
+    So OSH is extremely compatible with bash, but you can opt into a better behavior.
+    One thing we could do to reduce "parser differences" is subsume the functionality of shfmt (parser in Go) and ShellCheck (parser in Haskell).  However I am only going to experiment along those lines, not promise it will be done, because it's a huge amount of work.  :-)
+    Probably the experiment will need to involve ways to make the problem more tractable -- formatting bash is harder than formatting Python or JavaScript, simply because it has so much more syntax.
+  score: 1
+  posted_at: '2026-10-26T15:01:55Z'
 article:
   url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   title: 'TIL: POSIX wordexp(3) is dangerous'
@@ -247,4 +262,4 @@ article:
     inputs, even with `WRDE_NOCMD`."
   error:
   fetched_at: '2026-10-25T18:43:55Z'
-archived_at: '2026-10-26T14:51:26Z'
+archived_at: '2026-10-26T20:53:47Z'

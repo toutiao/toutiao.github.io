@@ -4,14 +4,14 @@ post:
   title: PaperPilot – Zero-Cloud, Pure-Rust PDF Engine with WASM and MCP
   url: https://github.com/KrushnaVardhanReddy/PaperPilot
   hn_url: https://news.ycombinator.com/item?id=50238739
-  score: 196
+  score: 225
   author: vardhan1237
   posted_at: '2026-10-26T03:29:05Z'
-  fetched_at: '2026-10-26T14:51:19Z'
+  fetched_at: '2026-10-26T20:53:36Z'
   article_url: https://github.com/KrushnaVardhanReddy/PaperPilot
   article_fetch_status: success
   article_fetched_at: '2026-10-26T14:51:19Z'
-  raw_comment_count: 72
+  raw_comment_count: 81
 comments:
 - id: '50238740'
   parent_id: '50238739'
@@ -664,6 +664,135 @@ comments:
     a tiny bit of the interface at a time. Firefox on Android.
   score: 0
   posted_at: '2026-10-26T14:38:00Z'
+- id: '50244694'
+  parent_id: '50238739'
+  author: _rwo
+  text: been using <a href="https:&#x2F;&#x2F;github.com&#x2F;SimonBure&#x2F;presse"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;SimonBure&#x2F;presse</a> for
+    all my pdf needs for a while - works great thus far (not affiliated); simple cli
+    is in most case all you will ever need
+  score: 0
+  posted_at: '2026-10-26T14:48:09Z'
+- id: '50245672'
+  parent_id: '50241680'
+  author: gtirloni
+  text: LLMs will miss a lot of edge cases. This is critical for a library that parses
+    PDFs. Ask it to review the code for issues and by the 20th time you ask, it still
+    will find issues. How&#x27;s that faster (or safer)?<p>I use AI heavily but it&#x27;s
+    not this omnipresent deity that knows everything at all times.
+  score: 0
+  posted_at: '2026-10-26T15:42:56Z'
+- id: '50246531'
+  parent_id: '50243685'
+  author: zamadatix
+  text: The more optimistic hope is that actual prices continue to drop at the rate
+    they have been and then by the time the subsidization runs out (even if that&#x27;s
+    not far from now) it&#x27;s because there is nothing for the chickens to come
+    home and roost to anymore.<p>After all, a year ago and doing these same tasks
+    would just fall on its face. The hard part of the problem is solved, now it&#x27;s
+    not even &quot;do LLMs continue to get better&quot; but &quot;do LlMs keep getting
+    cheaper&quot;.
+  score: 0
+  posted_at: '2026-10-26T16:27:54Z'
+- id: '50246633'
+  parent_id: '50238739'
+  author: efields
+  text: I&#x27;m amazed to learn from these comments that there are so many local
+    PDF solutions (and opinions on them).
+  score: 0
+  posted_at: '2026-10-26T16:34:16Z'
+- id: '50247037'
+  parent_id: '50241196'
+  author: giancarlostoro
+  text: I just want a really exhaustive one in .NET land to be honest, some of these
+    paid companies are getting wild with their pricing schemes.
+  score: 0
+  posted_at: '2026-10-26T16:57:49Z'
+- id: '50248623'
+  parent_id: '50240075'
+  author: Surac
+  text: U have a typst template file mostly containig functions and variable defs.
+    Then i have a docutil -&gt; typst rewriter that makes use of the functions of
+    the the template. i18n is a non problem for me, because i have source files containig
+    the correct text, but i have created ttf fonts containing may international glyphs
+    using fontutils. As sphinx and typst support unicode it just works. the PDF are
+    then postprocessed and all glyphs not used are striped out of the pdf, also some
+    pdf streams are removed to shrink the pdf
+  score: 0
+  posted_at: '2026-10-26T18:29:30Z'
+- id: '50248705'
+  parent_id: '50241196'
+  author: devy
+  text: |-
+    Ditto.<p>I just ran an security analysis on the repo. As is, it&#x27;s not looking great (again nothing against vibe&#x2F;agentic coded projects) the lack of security consideration is astonishing (not suggesting a malice). Definitely NOT production ready.<p><pre><code>  Context: about 98% of the commits are by AI bots (Antigravity, Google Jules).
+      That explains the bugs below.
+
+      Security bugs
+
+      1. High: the local web API lets any website use the user&#x27;s files.
+      - paperpilot-gateway&#x2F;src&#x2F;server.rs:95-98 allows requests from any website, and
+        there&#x27;s no login or authentication.
+      - POST &#x2F;api&#x2F;v1&#x2F;pdf&#x2F;mcp-exec (handlers.rs:233) runs any tool with any file path
+        on the machine.
+      - So while the API is running, any web page the user visits can make it
+        overwrite files with PDFs, create folders, and read back text from any local
+        PDF.
+      - In the desktop app the user has to switch the API on. But docker-compose.yml
+        opens it to the network with no authentication.
+      - There&#x27;s also no limit on request size (usize::MAX), so one huge request can
+        exhaust memory.
+
+      2. High: a malicious document can run code in the desktop app.
+      - Search results display text from the user&#x27;s own documents as raw HTML
+        without escaping it:
+        - WorkspaceSearchModal.svelte:297
+        - workspaceSearch.ts:84
+        - WorkspaceSearchModal.svelte:118
+      - The app has no Content Security Policy, and lets its window read any file on
+        disk (tauri.conf.json:28-33, scope &quot;**&quot;).
+      - So a PDF or DOCX carrying an &lt;img onerror=…&gt; payload could read any local
+        file and send it out once the user searches it.
+
+      3. Medium: downloaded models and add-on packs are never verified.
+      - There&#x27;s no checksum check on models (ai_commands.rs, ocr_commands.rs). Some
+        come straight from the repo&#x27;s live main branch, so whatever lands there
+        ships to users.
+      - Pack downloads (pack_commands.rs:147-151) put pack_id straight into the file
+        path. A value containing ..&#x2F; writes outside the app&#x27;s data folder.
+      - Packs come from huggingface.co&#x2F;paperpilot&#x2F;packs, an account I didn&#x27;t confirm
+        the project owns.
+
+      4. Medium&#x2F;Low: the protection against fetching internal addresses can be
+      bypassed (paperpilot-core&#x2F;src&#x2F;url_fetch.rs:24-40).
+      - It only checks IP addresses typed directly into the URL, not what a domain
+        name resolves to.
+      - It follows redirects, so a public URL can redirect to an internal one.
+      - IPv6 addresses ([::1]), 0.0.0.0 and the 100.64.0.0&#x2F;10 range get through.
+      - The impact is limited because the response must start with %PDF.
+
+      5. Low: CI supply chain.
+      - release.yml installs wasm-pack via curl | sh.
+      - GitHub Actions are pinned to version tags, not commit hashes.
+      - The Android build ignores the lockfile (--no-frozen-lockfile).</code></pre>
+  score: 0
+  posted_at: '2026-10-26T18:34:15Z'
+- id: '50249193'
+  parent_id: '50242675'
+  author: jasomill
+  text: Without context, just reading the above, it sounds more like they&#x27;re
+    attempting to create an abstract interface for pluggable PDF engines, which shouldn&#x27;t
+    pose any licensing issues assuming all the licenses are AGPL v3 compatible and
+    builds that include AGPL engines are only used under the terms of the AGPL, sort
+    of like how ffmpeg works with the &quot;--enable-gpl&quot; switch.
+  score: 0
+  posted_at: '2026-10-26T19:00:15Z'
+- id: '50249870'
+  parent_id: '50241196'
+  author: j45
+  text: Possibly using AI as a search engine which it&#x27;s not always great at,
+    and then deciding why not.
+  score: 0
+  posted_at: '2026-10-26T19:46:48Z'
 article:
   url: https://github.com/KrushnaVardhanReddy/PaperPilot
   title: 'GitHub - KrushnaVardhanReddy/PaperPilot: Your local AI copilot for documents
@@ -793,4 +922,4 @@ article:
     ## Languages
   error:
   fetched_at: '2026-10-26T14:51:19Z'
-archived_at: '2026-10-26T14:51:24Z'
+archived_at: '2026-10-26T20:53:43Z'
