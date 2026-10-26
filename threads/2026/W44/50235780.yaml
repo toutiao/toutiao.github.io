@@ -1,0 +1,461 @@
+---
+post:
+  id: '50235780'
+  title: The State of Context Engineering
+  url: https://www.dbreunig.com/2026/10/24/the-state-of-context-engineering.html
+  hn_url: https://news.ycombinator.com/item?id=50235780
+  score: 99
+  author: pchristensen
+  posted_at: '2026-10-25T20:32:31Z'
+  fetched_at: '2026-10-26T03:36:24Z'
+  article_url: https://www.dbreunig.com/2026/10/24/the-state-of-context-engineering.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-26T03:36:24Z'
+  raw_comment_count: 32
+comments:
+- id: '50236572'
+  parent_id: '50235780'
+  author: jdw64
+  text: "&gt;This is the advice I keep giving now. Someone says, “My coding agent’s
+    doing something weird. Claude’s been nerfed.” And I ask, “How big is your context?”<p>That’s
+    really true, but on the other hand, if there’s too little information, it also
+    ends up working in strange ways. Most AGENT code anti-patterns work well at a
+    medium amount of context, but when there’s too much or too little information,
+    they don’t behave properly."
+  score: 0
+  posted_at: '2026-10-25T22:17:01Z'
+- id: '50236693'
+  parent_id: '50235780'
+  author: losvedir
+  text: "&gt; The tea task for FireRed was in its weights, so it poisoned its context.<p>Mmm,
+    to my mind, isn&#x27;t this mixing completely different things? I thought poisoned
+    context is stuff <i>in</i> the context that makes the model behave poorly. But
+    if it&#x27;s in the weights, that&#x27;s just... model issues."
+  score: 0
+  posted_at: '2026-10-25T22:32:08Z'
+- id: '50236737'
+  parent_id: '50235780'
+  author: agentdev001
+  text: So like- I considered this idea of using a fast decision model to prune before
+    compaction, but I scrapped it because A; im not bottlenecked by speed, and B;
+    cache invalidation dark magic<p>From my understanding, if we have turns [A, B,
+    C, D, E] and we decide that turn C is useless context, then we lose our cache
+    for the [D, E] segment. (plz correct me if im wrong, I havent tested this)<p>Personally,
+    I pay no mind to session state nowadays. I exclusively use provider native hosted
+    compaction, which if you believe the providers, is the way to go. For context
+    management- I spend most of my effort on the things which dump output back to
+    the model.<p>If anyone has any good reads on benchmarking OpenAI and Anthropic
+    hosted&#x2F;native compaction against custom stuff, I would love to read!
+  score: 0
+  posted_at: '2026-10-25T22:38:09Z'
+- id: '50236891'
+  parent_id: '50236737'
+  author: CBLT
+  text: Yeah, I also think decision models for pruning context isn&#x27;t worthwhile.  You&#x27;re
+    paying to load it into context (of your decision model), in order to save on loading
+    the same data into context (of your generation model).  The only way the economics
+    makes sense is if you need a much smarter model for the compaction, but can&#x27;t
+    pay for it to load all of that context (because it&#x27;s uncached or something).  That
+    sounds like a niche but it really doesn&#x27;t exist.  Cheap models are good enough,
+    and smart models are cheap enough.<p>Personally, I use a harness extension that
+    auto-compacts my context just before the cache expires.  Combined with the default
+    compact-when-full, this ends up being pretty much always what I want.  It&#x27;s
+    one less thing to think about.
+  score: 0
+  posted_at: '2026-10-25T22:57:59Z'
+- id: '50236935'
+  parent_id: '50235780'
+  author: mlmonkey
+  text: Anecdotally (sample size == 1), I have observed that as my context grows longer,
+    the model seems to get dumber. I&#x27;m not an advanced user with harnesses, etc.;
+    I just use the chat interface, as that&#x27;s all I can afford, but after a few
+    turns the model (I&#x27;m talking frontier models here from OAI and Ant) seems
+    to just do stupider things.
+  score: 0
+  posted_at: '2026-10-25T23:06:06Z'
+- id: '50236945'
+  parent_id: '50236737'
+  author: cyanydeez
+  text: I use dynamic context compaction in open code plugin. Then modified it further
+    to include eviction.<p>Since I run everything local, speed benefits from keeping
+    context low ~128k. This gets me through a single agent on multiple tasks through
+    the same repo. It seems to break around 6M but that&#x27;s more probablistic.<p>KV
+    cache is definitely valuable but context poisoning happens regardless of size
+    and it&#x27;s probability increases regardless of intelligence. So at some point
+    you&#x27;re going to suffer from context overload regardless.
+  score: 0
+  posted_at: '2026-10-25T23:07:13Z'
+- id: '50236988'
+  parent_id: '50236935'
+  author: joshheitzman
+  text: Let&#x27;s bump that sample size to 2.  I&#x27;ve observed the same and that
+    observation has heavily influenced the design of my coding agent harness.
+  score: 0
+  posted_at: '2026-10-25T23:14:34Z'
+- id: '50237032'
+  parent_id: '50236988'
+  author: jwpapi
+  text: 3<p>I have auto-compact on at 400k
+  score: 0
+  posted_at: '2026-10-25T23:20:19Z'
+- id: '50237128'
+  parent_id: '50237032'
+  author: throw-qqqqq
+  text: 4<p>I try to manually manage as much of the context as possible. Most of the
+    time, I limit myself to a context window of 200k, and it works great for my use
+    cases.
+  score: 0
+  posted_at: '2026-10-25T23:36:29Z'
+- id: '50237181'
+  parent_id: '50236935'
+  author: kadoban
+  text: DeepSeek v4.1 flash seems to do this thing where it starts saying that we
+    should wrap up the current work and start again &quot;next session&quot; (whatever
+    that means), that the &quot;context budget&quot; is almost up, or some other wording
+    I&#x27;m forgetting, as the context gets longer.<p>I&#x27;ve taken to just manually
+    making it write a handoff file and clearing context completely. I&#x27;m pretty
+    much manually compacting instead of my harness doing it. Feels weird, but it does
+    work.
+  score: 0
+  posted_at: '2026-10-25T23:43:39Z'
+- id: '50237188'
+  parent_id: '50236737'
+  author: winwang
+  text: It&#x27;s because the cache comes from the prefix. `f(f(f(A,B),C),D)` is quite
+    different from `f(f(A,B),D)`.
+  score: 0
+  posted_at: '2026-10-25T23:44:16Z'
+- id: '50237244'
+  parent_id: '50237188'
+  author: agentdev001
+  text: Yes, that&#x27;s my understanding- though I realize that OpenAI has made changes
+    to what you can do with caching over the API recently, so you may be able to do
+    some fancy stuff to get around this.
+  score: 0
+  posted_at: '2026-10-25T23:54:31Z'
+- id: '50237357'
+  parent_id: '50235780'
+  author: ethanj8011
+  text: "&gt; For me, around 200,000 or 300,000 is where I start looking. I’ll check,
+    see it’s at 250,000, and think: I’ve got a big job coming up. I’m going to reset
+    and start fresh<p>I don&#x27;t find this to be true, at least with the newer models.
+    I also find that the models fill up to 250k very quickly (presumably mostly by
+    looking through the codebase). Without that context I find the models perform
+    badly. I also don&#x27;t really notice that large of a change until around 700-800k
+    context and even then it isn&#x27;t as bad as it used to be. I suspect, that (especially
+    for coding), the long horizon RLVR tasks have helped with this quite a bit."
+  score: 0
+  posted_at: '2026-10-26T00:11:55Z'
+- id: '50237480'
+  parent_id: '50237357'
+  author: nfw2
+  text: having an index of the code that the agent can use to find what its looking
+    for instead of grep seems to work wonders
+  score: 0
+  posted_at: '2026-10-26T00:30:29Z'
+- id: '50237482'
+  parent_id: '50235780'
+  author: lioeters
+  text: "&quot;Engineering&quot;"
+  score: 0
+  posted_at: '2026-10-26T00:30:44Z'
+- id: '50237542'
+  parent_id: '50235780'
+  author: lhk931122
+  text: Until a few months ago I did it this way, but OpenAI and Anthropic built their
+    own harnesses, and since those end up conflicting with the harness I built myself,
+    having no setup at all actually ended up performing better. As a result, it doesn&#x27;t
+    seem necessary to set up rules or memory separately, and if I do, using skills
+    or agents made of only logging and flow (without things like rules or guardrails)
+    seems like the best option going forward.
+  score: 0
+  posted_at: '2026-10-26T00:39:55Z'
+- id: '50237623'
+  parent_id: '50235780'
+  author: antleys
+  text: "&gt; When building intelligent applications, harnesses, and workflows, our
+    job is to choose when to be deterministic (what to put in code) and when to be
+    probabilistic (when to let the model drive).<p>I really like this final sentence
+    from the presentation. When I read this phrase, I realized that it captured one
+    of the core dynamics that I&#x27;ve been using to figure out when and how to apply
+    AI to a task. I often find myself trying to figure out if it is better to A) ask
+    the AI to do a task for me or B) ask the AI to build something that can do the
+    task for me. A major component of that answer comes down to how deterministic
+    or probabilistic the task is."
+  score: 0
+  posted_at: '2026-10-26T00:52:44Z'
+- id: '50237666'
+  parent_id: '50235780'
+  author: bickfordb
+  text: I can&#x27;t tell if this engineering or just autocomplete that is mostly
+    helpful, sometimes.
+  score: 0
+  posted_at: '2026-10-26T00:58:51Z'
+- id: '50237697'
+  parent_id: '50235780'
+  author: DenisM
+  text: I like the overall idea of deliberate forgetting. And I found checkpointing
+    into artifacts (code, design, intent) to start with fresh context to work well
+    for that purpose.<p>Interestingly, the artifacts include not just code but alao
+    retroactive design and retroactive “execution plan”. I feed them to another agent
+    to validate the approach and resume work with fresh context and update mission
+    statement.<p>Unexpectedly, design doc and an execution plan are now  outcomes
+    of coding process, not inputs to it. I’m not sure how to think about this.
+  score: 0
+  posted_at: '2026-10-26T01:02:37Z'
+- id: '50237799'
+  parent_id: '50235780'
+  author: vcryan
+  text: I thought the price reduction was because both companies implemented Deepseek&#x27;s
+    published research which demonstrate effective approaches to lowering the cost
+    of inference while maintaining quality. Thanks to Deepseek, they did lower their
+    costs and they passed that in to their customers.
+  score: 0
+  posted_at: '2026-10-26T01:11:19Z'
+- id: '50237856'
+  parent_id: '50235780'
+  author: jthomas1
+  text: interesting read, thanks for sharing
+  score: 0
+  posted_at: '2026-10-26T01:19:24Z'
+- id: '50238014'
+  parent_id: '50235780'
+  author: cadamsdotcom
+  text: "&gt; As we focus more on memory, we also need to think about strategic forgetting.
+    Over time, overly precise memories become conflicted and messy, and nobody has
+    yet figured out how to handle this.<p>&gt; I think that’s the context problem
+    of tomorrow.<p>This passage is explains why humans have imperfect memory. Seems
+    the perfect memory we wish LLMs had impedes creativity and is maladaptive.<p>Strategic
+    forgetting helps put the non-deterministic machine to best use. LLMs don&#x27;t
+    need perfect memory; that&#x27;s covered by the computer itself.<p>I like that
+    this justifies the continuing relevance of context engineering - a seemingly dated
+    term - in the face of trends like loop engineering."
+  score: 0
+  posted_at: '2026-10-26T01:38:37Z'
+- id: '50238324'
+  parent_id: '50237181'
+  author: plasticchris
+  text: I think it’s trained into them so they emit a stop token with enough window
+    left to generate a compaction summary
+  score: 0
+  posted_at: '2026-10-26T02:18:15Z'
+- id: '50238346'
+  parent_id: '50236935'
+  author: bluerooibos
+  text: I can&#x27;t cite the sources at the moment but this is already well known
+    - a few papers on it and Anthropic say somewhere in their docs that you want to
+    get across the minimum amount of context required to achieve your goal.  Quality
+    diminishes the more you dump in.
+  score: 0
+  posted_at: '2026-10-26T02:21:25Z'
+- id: '50238432'
+  parent_id: '50235780'
+  author: nottanjune
+  text: Forgetting is the part I see break first. Old facts in memory don&#x27;t get
+    deleted, they get contradicted, and the model happily picks whichever one is closer
+    in the prompt. What&#x27;s worked better for me is having this really cool way
+    of jev compaction, there was a youtube video out there somewhere that spoke about
+    how to get compaction to be super fast, cheap and have it retain the most useful
+    information from the context compaction.
+  score: 0
+  posted_at: '2026-10-26T02:38:31Z'
+- id: '50238443'
+  parent_id: '50235780'
+  author: BenoitEssiambre
+  text: It&#x27;s nice that this article goes beyond the &quot;context too long&quot;
+    scapegoat diagnostic.<p>There is more to it than just reducing content in context.
+    LLMs attention mechanism works by finding graphs of related words and concepts
+    and it works best when the relevant relationships are close together in the text.
+    Length matters but how well the information is organized matters as well.<p>It&#x27;s
+    useful to be familiar with the concept of dependency length. The two sentences
+    in this image ( <a href="https:&#x2F;&#x2F;benoitessiambre.com&#x2F;img&#x2F;dependencylength.png"
+    rel="nofollow">https:&#x2F;&#x2F;benoitessiambre.com&#x2F;img&#x2F;dependencylength.png</a>
+    ) have the same words and same meaning but sentence C is organised to minimize
+    the distance between related words.<p>This can also apply to paragraphs and sections.
+    Ordering them so that related information is recursively closer together, helps
+    AIs think better (also helps humans, Dependency Length Minimization, DLM is an
+    idea from psycho-linguistics).<p>This is one reason progressive disclosure and
+    sub agents are important. Including unnecessary information spreads apart surrounding
+    information and makes it more difficult for AIs to figure things out.<p>For eg.
+    optimizing skills, it can help to put more important information at the bottom
+    of a skill. Usually after a skill is loaded, the AI will start “thinking”, talking
+    to itself to try to reason through a problem. The thinking block will have an
+    easier time considering the text closest to it, the last part of the skill, than
+    information farther up.<p>Thinking blocks can produce a lot of text (a lot of
+    it often hidden from users) that also spreads information apart. Sometimes, when
+    an early instruction is still relevant but there’s been a lot of thinking and
+    discussion added to the context since, it’s worth repeating a summary the early
+    information ( keeping in mind that too many reminders can also spread other information
+    apart ). I think however, LLMs are tuned to overweight very early information
+    so that they don&#x27;t disregard system prompts. You might be able to exploit
+    this by placing some important facts near the very beginning of a conversation.<p>If
+    you&#x27;ve ever written compression algorithms where repeated blocks are referenced
+    instead of encoded, you&#x27;ll be familiar with how related information being
+    clustered allows for better compression. It&#x27;s another example of the parallels
+    between intelligence and compression and it hints at the information theoretic
+    aspect of DLM.
+  score: 0
+  posted_at: '2026-10-26T02:40:33Z'
+- id: '50238449'
+  parent_id: '50238324'
+  author: kadoban
+  text: Any idea what the ~rule is or how it&#x27;s meant to work? I assume it&#x27;d
+    work better if I can wire up my harness to handle it, but no idea. It didn&#x27;t
+    seem to know itself, from it&#x27;s training. I didn&#x27;t search too much yet
+    though.
+  score: 0
+  posted_at: '2026-10-26T02:41:22Z'
+- id: '50238597'
+  parent_id: '50238014'
+  author: jphorism
+  text: actually, I think agents have a lot to design after Zettelkasten yet. It&#x27;s
+    the concept of having an append-only policy and gardening to consolidate knowledge.
+    IMO we&#x27;ve seen some, but there is still so much potential
+  score: 0
+  posted_at: '2026-10-26T03:08:20Z'
+- id: '50238644'
+  parent_id: '50238597'
+  author: viccis
+  text: I use a lightweight ticket system. Planning creates very detailed tickets
+    with acceptance criteria. Implementation finishes with updating any info relevant
+    to future work on the tickets as comments. The planner searches for previous related
+    work both to avoid past pitfalls but also to get any potentially relevant info
+    into its context. Works well with subagents ramping up quickly.
+  score: 0
+  posted_at: '2026-10-26T03:15:24Z'
+- id: '50238655'
+  parent_id: '50236935'
+  author: viccis
+  text: It does, and, when combined with Claude&#x27;s stingy cache TTL of 5 minutes
+    (unless you up it to 1h at a sizeable increase in token cost) for API billing,
+    means that some sessions cost like 10x what they should because of cold caches.
+  score: 0
+  posted_at: '2026-10-26T03:16:47Z'
+- id: '50238660'
+  parent_id: '50235780'
+  author: viccis
+  text: Anecdotally I only stuggle with this with Claude Code. Codex has been great
+    at auto managing its context and, when combined with how I handle memory outside
+    of the session, I haven&#x27;t thought about context window size in ages when
+    using Codex.
+  score: 0
+  posted_at: '2026-10-26T03:17:28Z'
+- id: '50238709'
+  parent_id: '50235780'
+  author: infogulch
+  text: 'I like the idea of VictorTaelin&#x27;s UniiChat [1] which summarizes every
+    message into a single line and on top of that a binary tree of lines combined
+    from lower levels. The context is then a view of that tree with more detail in
+    recent messages and less detail in historical messages, plus a `zoom` tool that
+    enables the agent to navigate the tree and read messages.<p>An implementation
+    of this idea based on the pi harness: <a href="https:&#x2F;&#x2F;github.com&#x2F;jonaslsaa&#x2F;pi-optchat"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;jonaslsaa&#x2F;pi-optchat</a><p>[1]:
+    <a href="https:&#x2F;&#x2F;gist.github.com&#x2F;VictorTaelin&#x2F;91837951a5ce5b38f341ec1ba1df6449"
+    rel="nofollow">https:&#x2F;&#x2F;gist.github.com&#x2F;VictorTaelin&#x2F;91837951a5ce5b38f341ec1...</a>'
+  score: 0
+  posted_at: '2026-10-26T03:23:58Z'
+article:
+  url: https://www.dbreunig.com/2026/10/24/the-state-of-context-engineering.html
+  title: The State of Context Engineering
+  fetch_status: success
+  content: |-
+    [CONTEXT ENGINEERING](/tags/context-engineering.html)[PRESENTATION](/tags/presentation.html)
+
+    # The State of Context Engineering
+
+    ### The Job is Knowing When to Be Deterministic & When to Be Probabilistic
+
+    This week, I gave a short talk at [AGNTCon](https://events.linuxfoundation.org/agntcon-mcpcon-north-america/) titled, “Context Fails & Fixes,” that functioned as a sort of “State of Context Engineering.” How did context engineering emerge, where has it gone, and where might it go in the future? As model makers target new capabilities, they inadvertently create challenges we, as users and harness builders, must overcome.
+
+    Below are the slides and a lightly edited transcript. As always, [shoot me a note with any feedback, thoughts, or questions](https://www.dbreunig.com/contact.html). I really appreciate it.
+
+    * * *
+
+    ![Title slide: Context Fails & Fixes. The continuing challenge of preparing precise instructions. Drew Breunig, Cmpnd, October 2026.](/img/resized/agnt_con/AGNT_Con.001.jpg)
+
+    Hi, everyone. Thanks for joining me today. We’re going to walk through context fails and fixes.
+
+    * * *
+
+    ![Hi, I'm Drew Breunig. I write about technology, data, and AI at dbreunig.com; I cofounded Cmpnd, a startup focused on compound AI research and DSPy; and I'm currently editing The Context Engineering Handbook.](/img/resized/agnt_con/AGNT_Con.002.jpg)
+
+    I have a book coming out in a bit, [_The Context Engineering Handbook_](https://www.oreilly.com/library/view/the-context-engineering/0642572260705/). When I first talked to the team at O’Reilly, back in June 2025, they asked me a very reasonable question: “How do we know this won’t become obsolete in a few weeks?” The trouble with AI textbooks is that many age extraordinarily quickly.
+
+    I said, I don’t know, but I’m optimistic. Giving clear instructions about what to do and what not to do, and ensuring those instructions are consistent and not noisy, will forever be a challenge with AI, no matter how good it gets.
+
+    We have coworkers, partners, and other people we know and interact with who _are_ sentient. They pass the Turing test, they are “AGI,” and yet: we still have a hard time conveying instructions, ideas, and concepts among each other.
+
+    Context engineering will continue to be hard. But it will be hard in unique ways, because models aren’t people. You can make assumptions about how models think or interpret things (use whatever anthropomorphizing word you like), but it helps to understand how they’re built, optimized, and trained. Their unique attributes and construction create a unique set of failure modes we need to reckon with.
+
+    So let’s review how we got here.
+
+    * * *
+
+    ![2024: The Promise of Long Contexts. Bar chart of context window sizes: GPT-4o at 128K tokens versus Gemini 1.5 at 1M.](/img/resized/agnt_con/AGNT_Con.003.jpg)
+
+    Let’s flash back to the end of 2024.
+
+    If you remember, this was the height of the “RAG is dead” moment.
+
+    The hope was: if we can just make the context window large enough, we can put the entire internet in it. We can put everything in it. We don’t have to be selective. We don’t have to build agentic systems. We can fit it all in there, and AI will be solved.
+
+    Model builders started aiming at long context capabilities and we had a big leap from ~128,000-token context window models to million-token context window models, starting with Gemini 1.5.
+
+    * * *
+
+    ![Google's Gemini 1.5 Pro marketing graphic comparing context windows: Gemini 1.0 Pro at 32K, GPT-4 Turbo at 128K, Claude 2.1 at 200K, and Gemini 1.5 Pro at 1M, with up to 10M in research, equal to 1 hour of video, 11 hours of audio, over 30K lines of code, or over 700K words.](/img/resized/agnt_con/AGNT_Con.004.jpg)
+
+    If you look at [the marketing material for Gemini 1.5 Pro](https://blog.google/innovation-and-ai/products/google-gemini-next-generation-model-february-2024/), it was mostly about the million-token context window. They were even teasing a _10-million-token context window_ model they had in the lab, that would come out soon.
+
+    * * *
+
+    ![2024: The Promise of Long Contexts. Bar chart of context windows: GPT-4o, Gemini 1.5 at 1M, and Llama 4 at 10M tokens.](/img/resized/agnt_con/AGNT_Con.005.jpg)
+
+    But they got beaten to the punch. Llama 4 Scout came out with a _10-million-token context window_, and well, it wasn’t quite what we hoped. Inference was a challenge, and Scout never really caught on, and we never got another Llama.
+
+    But we still got a million tokens. That’s pretty good. We’ll take it.
+
+    * * *
+
+    ![Just put everything in the context. (RAG is dead)](/img/resized/agnt_con/AGNT_Con.006.jpg)
+
+    So this was the brief at the time: just put everything in the context and let the model sort it out.
+
+    * * *
+
+    ![More Context, More Problems: long contexts are not a panacea. Four failure modes: Context Poisoning, when a hallucination or error is repeatedly referenced; Context Distraction, when the model over-focuses on a long context and neglects base knowledge; Context Confusion, when superfluous information produces low-quality responses; and Context Clash, when new information and tools conflict with other information in the context.](/img/resized/agnt_con/AGNT_Con.007.jpg)
+
+    But with more context, we had room for more problems. Long contexts are not a panacea.
+
+    When I wrote about this, I identified four key failure modes.
+
+    **[Context poisoning](https://www.dbreunig.com/2025/06/22/how-contexts-fail-and-how-to-fix-them.html#context-poisoning)** is when something gets into the context that shouldn’t be there. It could be a hallucination or a bad fact, and the model can’t get past it.
+
+    **[Context distraction](https://www.dbreunig.com/2025/06/22/how-contexts-fail-and-how-to-fix-them.html#context-distraction)** is when the context grows so long that the model starts to focus on the context over its base knowledge. We can see this in some really interesting ways.
+
+    **[Context confusion](https://www.dbreunig.com/2025/06/22/how-contexts-fail-and-how-to-fix-them.html#context-confusion)** is when extraneous facts—things that don’t relate to the problem I’m working on—come in and influence the model in ways we don’t fully understand. This one’s really pernicious. We’re not going to dig into it today, but it’s one of my favorite failure modes. The model makes assumptions about who you are, and those assumptions influence the answer.
+
+    Finally, **[context clash](https://www.dbreunig.com/2025/06/22/how-contexts-fail-and-how-to-fix-them.html#context-clash)** is when tool calls, skills, and other information within your harness start to conflict and work against you in ways you didn’t expect.
+
+    (How many of you keep memory on in ChatGPT or Claude? I turn it off. I hate it. Sometimes I’m talking about work conversations; sometimes I’m talking about a project I’m doing with my son. The model will take notes on both, mix up those contexts, and the confusion grows from there.)
+
+    * * *
+
+    ![Box art for Pokémon Red Version on the Game Boy, 1996, with a lemonade icon, next to Pokémon FireRed Version on the Game Boy Advance, 2004, with a tea icon.](/img/resized/agnt_con/AGNT_Con.008.jpg)
+
+    Let me give you my favorite example of context poisoning.
+
+    I’m going to date myself: I played the game on the left. The one from 1996, for the original Game Boy. This is the first _Pokémon Red_. It was in black and white.
+
+    In 2004, Nintendo released _Pokémon FireRed_ for the Game Boy Advance. These were essentially the same game, except one had better colors and audio.
+
+    But there was one subtle change. At some point in both Pokémon Reds, to get past a security guard, you have to give them something to drink. A bribe. Quite the practical lesson for children.
+
+    In the original game, you need to give the thirsty guard lemonade. In _FireRed_, for some reason, they changed it to iced tea.
+
+    * * *
+
+    ![Quote from the Gemini 2.5 Pro Technical Paper: Gemini 2.5 Pro at several points was deluded into thinking it had to retrieve the tea in order to progress, and as a result spent many, many hour
+  error:
+  fetched_at: '2026-10-26T03:36:24Z'
+archived_at: '2026-10-26T03:36:27Z'

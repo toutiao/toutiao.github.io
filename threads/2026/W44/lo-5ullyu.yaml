@@ -1,0 +1,137 @@
+---
+post:
+  id: lo-5ullyu
+  source: lobsters
+  title: When a glibc update accidentally breaks Chromium's audio (2021)
+  url: https://refi64.dev/posts/chromium-audio-break.html
+  hn_url: https://lobste.rs/s/5ullyu
+  score: 15
+  author: seb
+  posted_at: '2026-10-25T15:34:21Z'
+  fetched_at: '2026-10-26T03:36:28Z'
+  article_url: https://refi64.dev/posts/chromium-audio-break.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-26T03:36:32Z'
+  raw_comment_count: 2
+  tags:
+  - c
+  - debugging
+  - programming
+comments:
+- id: lo-phznhx
+  parent_id: '0'
+  author: refi64
+  text: Oh hey, this is my article! I'm a bit curious as how you ran into it half
+    a decade(!!) later.
+  score: 4
+  posted_at: '2026-10-25T16:40:18Z'
+- id: lo-u6skb2
+  parent_id: '0'
+  author: seb
+  text: Sometimes when I see insightful comments on here, I check out the commenter's
+    profile to see what else they're up to. In this case that led me to your website,
+    which led me to your blog, and yeah :)
+  score: 3
+  posted_at: '2026-10-25T19:21:23Z'
+article:
+  url: https://refi64.dev/posts/chromium-audio-break.html
+  title: When a glibc update accidentally breaks Chromium's audio - re:fi.64's site
+  fetch_status: success
+  content: "# Loading...\n\n[\n# When a glibc update accidentally breaks Chromium's
+    audio \n](#)\n\n[#flatpak](/tags.html#flatpak)[#glibc](/tags.html#glibc)[#programming](/tags.html#programming)\n
+    2021-11-15 ⋅ [Comments](#comments)\n\nA few weeks ago, I merged in a pull request
+    to update the Chromium Flatpak to use runtime version 21.08. I had given it some
+    testing without running into any issues, plus the binary-compiled Chromium variants
+    like Chrome, Brave, and Edge were all already on runtime 21.08, thus it seemed
+    like an easy merge. What could go wrong?\n\nThen, the next morning, I woke up
+    to see a PR filed to[revert the change](https://github.com/flathub/org.chromium.Chromium/pull/160),
+    due to a[newly filed issue](https://github.com/flathub/org.chromium.Chromium/issues/158)
+    detailing that the update _broke video playback_, with some errors about the \"audio
+    renderer\".\n\nSo, it turns out, a _lot_ could go wrong.\n\n[\n## Diving into
+    the Issue \n](#_diving_into_the_issue)\n\nFirst off, I tried it out myself and
+    confirmed that YouTube was completely broken. This didn’t show up in testing because
+    I almost never use YouTube on desktop, preferring the mobile app instead, so I
+    failed to observe any issues with it.\n\nThe logs in the issue were interesting:\n\n
+    \   Oct 05 09:51:57 fedora org.chromium.Chromium.desktop[2865]: [2:19:1005/095157.560929:ERROR:chrome_browser_main_extra_parts_metrics.cc(228)]
+    crbug.com/1216328: Checking Bluetooth availability started. Please report if there
+    is no report that this ends.\n    Oct 05 09:51:57 fedora org.chromium.Chromium.desktop[2865]:
+    [2:19:1005/095157.560954:ERROR:chrome_browser_main_extra_parts_metrics.cc(231)]
+    crbug.com/1216328: Checking Bluetooth availability ended.\n    Oct 05 09:51:57
+    fedora org.chromium.Chromium.desktop[2865]: [2:19:1005/095157.560962:ERROR:chrome_browser_main_extra_parts_metrics.cc(234)]
+    crbug.com/1216328: Checking default browser status started. Please report if there
+    is no report that this ends.\n    Oct 05 09:51:57 fedora org.chromium.Chromium.desktop[2865]:
+    [2:19:1005/095157.567208:ERROR:chrome_browser_main_extra_parts_metrics.cc(238)]
+    crbug.com/1216328: Checking default browser status ended.\n    Oct 05 09:52:16
+    fedora org.chromium.Chromium.desktop[3529]: The futex facility returned an unexpected
+    error code.\n    Oct 05 09:52:16 fedora org.chromium.Chromium.desktop[3543]: Failed
+    to load cookie file from cookie: Permission denied\n    Oct 05 09:52:16 fedora
+    org.chromium.Chromium.desktop[3543]: The futex facility returned an unexpected
+    error code.\n    Oct 05 09:52:17 fedora org.chromium.Chromium.desktop[3648]: Failed
+    to load cookie file from cookie: Permission denied\n    Oct 05 09:52:17 fedora
+    org.chromium.Chromium.desktop[3648]: The futex facility returned an unexpected
+    error code.\n\nThe last several lines are _definitely_ not from Chromium itself,
+    as they don’t follow the standard Chromium log format. A quick google of the error
+    pointed me to[this Gentoo issue](https://bugs.gentoo.org/799878#c8), detailing
+    that the error is actually being logged by glibc. It included this code fragment
+    from within the glibc source code:\n\n    static __always_inline__ attribute__((__noreturn__))
+    void\n    futex_fatal_error (void)\n    {\n      __libc_fatal (\"The futex facility
+    returned an unexpected error code.\\n\");\n    }\n    \n    static __always_inline
+    int\n    futex_wait (unsigned int *futex_word, unsigned int expected, int private)\n
+    \   {\n      int err = lll_futex_timed_wait (futex_word, expected, NULL, private);\n
+    \     switch (err)\n        {\n        case 0:\n        case -EAGAIN:\n        case
+    -EINTR:\n          return -err;\n    \n        case -ETIMEDOUT: /* Cannot have
+    happened as we provided no timeout. */\n        case -EFAULT: /* Must have been
+    caused by a glibc or application bug. */\n        case -EINVAL: /* Either due
+    to wrong alignment or due to the timeout not\n    \t\t     being normalized. Must
+    have been caused by a glibc or\n    \t\t     application bug. */\n        case
+    -ENOSYS: /* Must have been caused by a glibc bug. */\n        /* No other errors
+    are documented at this time. */\n        default:\n          futex_fatal_error
+    ();\n        }\n    }\n\nFor some context: futex is a Linux syscall that’s used
+    in various synchronization operations, such as mutexes and condition variables.
+    In this case, when futex is run, an unexpected error code is returned, causing
+    glibc to panic. The chance of the kernel returning a brand-new type of error due
+    to a Flatpak runtime upgrade is…​not very high, to say the least. But, how else
+    would another error code end up being returned here? Well, it turns out, there’s
+    _one_ important thing that stands between glibc and the kernel…​\n\n[\n## The
+    BPF Sandbox \n](#_the_bpf_sandbox)\n\nChromium’s sandboxing architecture on Linux
+    is an[impressive, multi-level system](https://chromium.googlesource.com/chromium/src/+/0e94f26e8/docs/linux_sandboxing.md),
+    where the first layer restricts the process’s runtime environment, and the second
+    layer restricts the process’s syscall access. That second layer is known as the
+    _BPF sandbox_: if a syscall is executed that is not explicitly allowed, the BPF
+    sandbox rejects it, returning a custom error code. Syscalls…​syscalls like futex,
+    right? Well, this seems rather interesting!\n\nAt this point, I recalled a previous
+    experience I had with Chromium’s sandboxing while working on the Flatpak port:
+    the _audio service sandbox_, which is what applies the BPF sandbox to the audio
+    process. Given that the errors in the screenshot showed a connection to the audio
+    renderer, this seemed like a useful target. With this in mind, I was able to grab
+    a core dump from the crashing audio service and retrieved this traceback:\n\n
+    \   #0 __GI_raise (sig=sig@entry=6) at ../sysdeps/unix/sysv/linux/raise.c:49\n
+    \   #1 0x00007fb3a3388867 in __GI_abort () at abort.c:79\n    #2 0x00007fb3a33e3bd7
+    in __libc_message (action=action@entry=do_abort, fmt=fmt@entry=0x7fb3a34f93f7
+    \"%s\") at ../sysdeps/posix/libc_fatal.c:155\n    #3 0x00007fb3a33e3c5a in __GI___
+    libc_fatal (message=message@entry=0x7fb3a46c2000 \"The futex facility returned
+    an unexpected error code.\\n\") at ../sysdeps/posix/libc_fatal.c:164\n    #4 0x00007fb3a46c1dc1
+    in futex_fatal_error () at ../sysdeps/nptl/futex-internal.h:87\n    #5 __futex_abstimed_wait_common64
+    (futex_word=futex_word@entry=0x3824001d8768, expected=expected@entry=0, clockid=clockid@entry=0,
+    abstime=abstime@entry=0x0, private=private@entry=0, cancel=cancel@entry=true)
+    at ../sysdeps/nptl/futex-internal.c:103\n    #6 0x00007fb3a46c1e8f in __GI___
+    futex_abstimed_wait_cancelable64 (futex_word=futex_word@entry=0x3824001d8768,
+    expected=expected@entry=0, clockid=clockid@entry=0, abstime=abstime@entry=0x0,
+    private=private@entry=0) at ../sysdeps/nptl/futex-internal.c:123\n    #7 0x00007fb3a46bb5b4
+    in __pthread_cond_wait_common (abstime=0x0, clockid=0, mutex=0x3824001d7690, cond=0x3824001d8740)
+    at pthread_cond_wait.c:504\n    #8 __pthread_cond_wait (cond=0x3824001d8740, mutex=0x3824001d7690)
+    at pthread_cond_wait.c:619\n    #9 0x00007fb39f732788 in pa_cond_wait (c=<optimized
+    out>, m=<optimized out>) at ../src/pulsecore/mutex-posix.c:146\n    #10 0x00007fb39f78fbc4
+    in pa_threaded_mainloop_wait (m=0x3824001e2400) at ../src/pulse/thread-mainloop.c:216\n\nNote
+    the bottom few frames, which refer to code inside PulseAudio’s client library,
+    libpulse. This essentially confirmed that the error was indeed from the audio
+    service. Given my previous experience with said service, I recalled that there
+    was a[feature flag](https://source.chromium.org/chromium/chromium/src/+/main:content/public/common/content_features.cc;l=62-69;drc=4d1cf30786b9d1cec55b7b5a713f4a78fd4c73b0)
+    controlling whether or not the audio sandbox was enabled, so I decided to try
+    disabling it to confirm it was actually the issue, via`--disable-features=AudioServiceSandbox`.
+    It _did_ indeed stop the audio service from crashing. (Unfortunately, videos still
+    did not play, but that later turned out to be due to unrelated network connection
+    issues.)\n\n[\n## Field Trials \n](#_fiel"
+  error:
+  fetched_at: '2026-10-26T03:36:32Z'
+archived_at: '2026-10-26T03:36:33Z'

@@ -5,14 +5,14 @@ post:
   title: POSIX wordexp(3) is dangerous
   url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   hn_url: https://lobste.rs/s/tbbiqb
-  score: 24
+  score: 52
   author: yossarian
   posted_at: '2026-10-25T15:09:29Z'
-  fetched_at: '2026-10-25T18:43:55Z'
+  fetched_at: '2026-10-26T03:36:28Z'
   article_url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   article_fetch_status: success
-  article_fetched_at: '2026-10-25T18:43:55Z'
-  raw_comment_count: 7
+  article_fetched_at: '2026-10-26T03:36:28Z'
+  raw_comment_count: 14
   tags:
   - c
   - security
@@ -30,7 +30,7 @@ comments:
     defined function defined function defined function\n\nNobody is going to implement
     an entire shell inside libc ... that would be crazy.\nIt seems like it should
     be removed from libc.  Not sure who put it there, and why."
-  score: 11
+  score: 17
   posted_at: '2026-10-25T15:30:41Z'
 - id: lo-puuull
   parent_id: '0'
@@ -45,7 +45,7 @@ comments:
     It seems the problem was that people kept demanding more and more features for glob, so it seems like the committee threw up their hands and added the far-too-broad wordexp in attempt to cover all possible bases.
 
     From: https://www.cipht.net/2023/11/21/worried-by-wordexp.html
-  score: 7
+  score: 10
   posted_at: '2026-10-25T15:57:52Z'
 - id: lo-tnd4fh
   parent_id: '0'
@@ -67,7 +67,7 @@ comments:
     I think the problem is that the specification of such a function involves the entire shell, because the entire shell language can appear inside command subs
 
     FWIW, glibc uses the system shell for command substitution, but implements all of the other word expansion logic itself.
-  score: 2
+  score: 5
   posted_at: '2026-10-25T16:07:27Z'
 - id: lo-abcl2u
   parent_id: '0'
@@ -77,7 +77,7 @@ comments:
     You can’t use it in a multithreaded program, because it usually forks a shell.
     On glibc wordexp is built in, but shell expansions that set variables call setenv() which is not thread safe, and which also modifies the caller’s environment which traditional forky wordexp() does not. (libc basically never calls setenv which is why this is a notable oddity.)
     It really is a lunatic function that should be documented with a big “do not use this” health warning.
-  score: 2
+  score: 7
   posted_at: '2026-10-25T16:41:49Z'
 - id: lo-ewq2s9
   parent_id: '0'
@@ -89,7 +89,7 @@ comments:
     https://nhimg.org/glossary/parser-differential/
     And even bash can't parse shell correctly in many cases, after 30 years of trying :-)   That is one reason I started https://oils.pub/
     I don't have the bugs handy, but simply parsing nested () {} $() ${} in shell is extremely difficult, and the unbalanced case 0 in *) is one reason, but not the only one.
-  score: 2
+  score: 3
   posted_at: '2026-10-25T16:43:23Z'
 - id: lo-coklno
   parent_id: '0'
@@ -105,8 +105,74 @@ comments:
 
     If shell and HTML and other "crappy languages" weren't already entrenched enough, then LLMs really put the nail in the coffin.  We will be using shell and HTML "forever".
     But maybe we can do better with LLMs ... i.e. nobody wants to do all this work to migrate toward stricter languages (e.g. OSH vs bash, which is easy in 99.9% of cases), but we really should.
-  score: 1
+  score: 2
   posted_at: '2026-10-25T17:28:19Z'
+- id: lo-l1kkbs
+  parent_id: '0'
+  author: stapelberg
+  text: |-
+    One person’s dangerous is another person’s useful ;)
+    i3’s “include” config file directive uses wordexp and the userguide includes examples like wildcard expansion (include ~/.config/i3/config.d/*.conf) and command substitution (include ~/.config/i3/hostname.conf): https://i3wm.org/docs/userguide.html#include
+  score: 2
+  posted_at: '2026-10-25T20:13:34Z'
+- id: lo-ced195
+  parent_id: '0'
+  author: ianloic
+  text: |-
+    There's a bit of a footgun if you don't turn off features you don't need you get features you don't want. That's poor API design. It sounds like more of the issue is that there are some buggy libcs so that if you want shell expansion.
+    I'm certainly not eager to rely on a libc with lines of code that look like:
+    if (flags & WRDE_NOCMD) for (i=0; s[i]; i++) switch (s[i]) {
+  score: 1
+  posted_at: '2026-10-25T20:28:24Z'
+- id: lo-txjqtb
+  parent_id: '0'
+  author: mjn
+  text: Digging through https://github.com/apple-oss-distributions/, it looks like
+    standard utilities shipped with macOS actually use wordexp themselves here and
+    there, though I imagine most of this is inherited from upstream sources. For example,
+    it's used in the :e command in less. There's also some special-case handling in
+    sudo, but this appears to be defensive in case a different program calls wordexp
+    via sudo.
+  score: 3
+  posted_at: '2026-10-25T20:35:26Z'
+- id: lo-fjt1lu
+  parent_id: '0'
+  author: bentley
+  text: |-
+    If I continue to have say in this, wordexp() will never be in OpenBSD's libc.  Perhaps if there is one open source project which refuses to have it, coders will continue avoiding use of wordexp().
+
+    —Theo de Raadt (2010)
+  score: 13
+  posted_at: '2026-10-25T21:12:45Z'
+- id: lo-pywn06
+  parent_id: '0'
+  author: worr
+  text: |-
+    Honestly, even without command expansion, I think it's an iffy function. I went through different implementations a decade ago on Twitter, and many just shelled out directly (as other people here have mentioned). It doesn't seem safe to use in many circumstances.
+    https://www.openwall.com/lists/oss-security/2015/02/10/11 (caveat here is that this is from 2015, and clearly some implantations have changed since)
+  score: 3
+  posted_at: '2026-10-25T23:59:11Z'
+- id: lo-3n6efv
+  parent_id: '0'
+  author: quasi_qua_quasi
+  text: |-
+    Using it for things like i3 config files where any attacker who can write to them can own you anyway is fine; the problem is that
+
+    sometimes people just want to parse tildes, variables, and maybe globs
+    the "safety" mechanism is basically impossible to implement correctly
+
+    So it'd be better if there was a separate function that was guaranteed to only parse tildes, basic $VAR substitution, and maybe glob expansion (ideally with knobs for controlling which of these), and it was required to be safe on untrusted input and not just secretly shell behind your back.
+  score: 2
+  posted_at: '2026-10-26T00:23:45Z'
+- id: lo-lkl1gq
+  parent_id: '0'
+  author: calvin
+  text: |-
+    Yeah, there are quite a few POSIX APIs that directly or indirectly assume the presence of a full sh lexer, a full C lexer, etc. But very few (approachably) POSIX systems are built such that the sh or C lexer is reusable from libc, so we end up with these crazy hacks instead.
+
+    At least nowadays there are C-frontend-as-libraries (i.e. libclang); I'm not aware of a POSIX shell that's usable as a library. The Unix distinction between executables and libraries (and lack of an omnipresent shell like DCL) is unfortunate.
+  score: 1
+  posted_at: '2026-10-26T03:26:51Z'
 article:
   url: https://yossarian.net/til/post/posix-wordexp-3-is-dangerous/
   title: 'TIL: POSIX wordexp(3) is dangerous'
@@ -139,4 +205,4 @@ article:
     inputs, even with `WRDE_NOCMD`."
   error:
   fetched_at: '2026-10-25T18:43:55Z'
-archived_at: '2026-10-25T18:43:55Z'
+archived_at: '2026-10-26T03:36:28Z'

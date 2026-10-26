@@ -1,0 +1,106 @@
+---
+post:
+  id: lo-hzrmwz
+  source: lobsters
+  title: Simple NetBSD webserver
+  url: https://bsandro.tech/posts/simple-netbsd-webserver/
+  hn_url: https://lobste.rs/s/hzrmwz
+  score: 10
+  author: bsandro
+  posted_at: '2026-10-25T23:13:40Z'
+  fetched_at: '2026-10-26T03:36:28Z'
+  article_url: https://bsandro.tech/posts/simple-netbsd-webserver/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-26T03:36:30Z'
+  raw_comment_count: 2
+  tags:
+  - netbsd
+comments:
+- id: lo-cjg0h3
+  parent_id: '0'
+  author: eBPF
+  text: |-
+    Related: Setup a simple web server with bozohttpd on NetBSD (31 votes, 1
+    comment).
+  score: 4
+  posted_at: '2026-10-26T00:25:18Z'
+- id: lo-vfdvvu
+  parent_id: '0'
+  author: johnklos
+  text: More things should be this simple. It says something that a minimal OS can
+    come with a pretty decently usable web server.
+  score: 1
+  posted_at: '2026-10-26T01:47:25Z'
+article:
+  url: https://bsandro.tech/posts/simple-netbsd-webserver/
+  title: Simple NetBSD webserver
+  fetch_status: success
+  content: "## Preface\n\nThere might be time you want to have a sensible space in
+    that untangible mess that is modern World Wide Web. The choices run slim and at
+    some point there are ~three operating systems that you can trust having on your
+    server.\n\nI’ll describe here the quick and proven route for running a **NetBSD
+    11** web server - the ‘stock’ way with **bozohttpd** that requires only one additional
+    package for HTTPS. It probably won’t do if you expect heavy traffic, but for homebrew
+    projects and small scale communities it should do just fine.\n\n## Prerequisites\n\nA
+    VPS (or local machine or virtual machine) and a terminal emulator.\n\nMaybe web-browser
+    to check the results (though `curl` is quite sufficient for that imo).\n\n## VPS\n\nI’m
+    not affiliated but as far as recommendations go - I’m using [netcup](https://www.netcup.com/en)
+    service, it looks okay. Not expensive and they already have NetBSD11 amd64 iso
+    preloaded in their OS library to install OS on your machine.\n\nThere are others
+    people recommend for netbsd - namely [panix](https://www.panix.com/) and [mythic
+    beasts](https://www.mythic-beasts.com/).\n\nIf you can recommend or suggest even
+    more - please email me, I’ll make a proper list.\n\n## Running bozohttpd\n\nNetBSD
+    has a small web-server that is sufficient for tons of stuff right out of the box
+    - `bozohttpd(8)`. It is somewhat limited by design, but the manpage is quite useful
+    and describes a lot of interesting stuff you can do with just marker files and
+    simple command line options.\n\nSome guides out there explain a path to run it
+    using `inetd(8)`, it is kinda native internet “super-server” for unix but I didn’t
+    like that it launches an instance of httpd (alias/hardlink to bozohttpd) on every
+    connection. Bozohttpd is capable running as daemon itself, I like that option.\n\nThe
+    only config httpd needs lies in command line options, which can be nicely wrapped
+    in `/etc/rc.conf` with self-explanatory keys like this:\n\n    httpd=YES\n    httpd_wwwuser=nobody\n
+    \   httpd_wwwdir=/var/www/my_magical_domain\n\nIf you have something in /var/www/my\\_magical\\_domain/index.html,
+    then after simple `/etc/rc.d/httpd start` voila - you already have it served via
+    plain http. Simple as that.\n\n## Using HTTPS\n\nI won’t explain usage of self-signed
+    procedure, instead resorting to one of the most popular freeware certificate issuer
+    on the internet - letsencrypt.\n\nThere are several methods of obtaining the certificates
+    from them, I’m using `acme-client` package (installed via `pkgin`) - it is a portable
+    version of an openbsd tool, I’m most used to it.\n\nWe need couple more directories
+    to expose our challenge and to keep the certificates on. Try to not use “4” as
+    a private key - it’s been exposed recently, stick with prime numbers at least
+    :)\n\n    mkdir -p /etc/ssl/private\n    mkdir -p /var/www/my_magical_domain/.well-known/acme-challenge\n\nAnd
+    we need a config file for our domain - **/usr/pkg/etc/acme-client.conf** :\n\n
+    \   authority letsencrypt {\n    \tapi url \"https://acme-v02.api.letsencrypt.org/directory\"\n
+    \   \taccount key \"/usr/pkg/etc/acme/letsencrypt-privkey.pem\"\n    }\n    \n
+    \   domain my_magical_domain {\n    \talternative names { www.my_magical_domain
+    }\n    \tdomain key \"/etc/ssl/private/my_magical_domain.key\"\n    \tdomain full
+    chain certificate \"/etc/ssl/my_magical_domain.fullchain.pem\"\n    \tchallengedir
+    \"/var/www/my_magical_domain/.well-known/acme-challenge\"\n    \tsign with letsencrypt\n
+    \   }\n\nRunning `acme-client my_magical_domain` should do the trick and put the
+    neccessary certs to their corresponding paths. Do not forget to wait for at least
+    few hours after putting your vps IP address into domain A record - it has to be
+    propagated everywhere properly and resolve for letsencrypt as well.\n\nAfterwards
+    we have to pass the keys to the bozohttpd, and that enables it serving the port
+    443 automatically. So an addition to /etc/rc.conf should look like this:\n\n    httpd_flags=\"-Z
+    /etc/ssl/my_magical_domain.fullchain.pem /etc/ssl/private/my_magical_domain.key\"\n\nRestart
+    httpd and Bob’s the uncle - we have a working web server showing whatever static
+    files you put into the directory.\n\nNow there is one more thing to that - Letsencrypt
+    certificates expire after certain amount of time, so we have to renew them using
+    same `acme-client(1)` program. The simplest way to do so would be a cronjob -
+    daily or even weekly - that tries to update the certificate and then restarts
+    the httpd, via `crontab(5)`:\n\n    0 2 * * 1 /usr/pkg/bin/acme-client my_magical_domain
+    && /etc/rc.d/httpd restart\n\n## Notable features\n\nDespite being spartan Bozotic
+    httpd supports some interesting features like **virtual hosts** (you can serve
+    each domain bound to your IP from different directory), **CGI** and **http basic
+    authorization**.\n\nAnother interesting feature I’d like to try out sometime is
+    native **Lua scripting**.\n\n**URL rewrites** also looks promising - especially
+    when coupled with CGI to seamlessly provide some feedback and interactivity (visitors’
+    count haha).\n\n`bozohttpd(8)` manpage contains quite a lot of useful info, don’t
+    forget to check it out.\n\n## Live example\n\n[Braincoded Software](https://braincoded.software)\n\n*
+    * *\n\n1. _Obviously_ other than netbsd there is 9front and templeos, though latter
+    lacks the network support (and therefore absolutely superior to everything else).&nbsp;[↩︎](#fnref:1)\n\n2.
+    The external tool is not needed if you want to run plain http or use self-signed
+    certificate.&nbsp;[↩︎](#fnref:2)"
+  error:
+  fetched_at: '2026-10-26T03:36:30Z'
+archived_at: '2026-10-26T03:36:31Z'
