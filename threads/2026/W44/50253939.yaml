@@ -1,0 +1,977 @@
+---
+post:
+  id: '50253939'
+  title: I still teach OpenGL ES 3.0
+  url: https://eliasfarhan.ch/graphics/cpp/2026/01/27/why-i-teach-opengles.html
+  hn_url: https://news.ycombinator.com/item?id=50253939
+  score: 129
+  author: majorchord
+  posted_at: '2026-10-27T02:15:10Z'
+  fetched_at: '2026-10-27T20:26:08Z'
+  article_url: https://eliasfarhan.ch/graphics/cpp/2026/01/27/why-i-teach-opengles.html
+  article_fetch_status: error
+  article_fetched_at: '2026-10-27T20:26:08Z'
+  raw_comment_count: 83
+comments:
+- id: '50254457'
+  parent_id: '50253939'
+  author: gulugawa
+  text: Sounds like a great way to make sure students understand fundamental concepts.
+  score: 0
+  posted_at: '2026-10-27T03:36:57Z'
+- id: '50254511'
+  parent_id: '50253939'
+  author: proc0
+  text: Nice breakdown. I&#x27;ve been wondering why it&#x27;s so complicated to program
+    on the GPU compared to the CPU. Is it a language paradigm issue or maybe a hardware
+    design limitation? I always think of this when looking at the graphic APIs, espeically
+    Vulkan.
+  score: 0
+  posted_at: '2026-10-27T03:48:27Z'
+- id: '50254555'
+  parent_id: '50253939'
+  author: yunnpp
+  text: I&#x27;ve learned more graphics writing software rasterizers and ray tracers
+    than using any APIs. If the goal is to teach GPU rendering specifically, then
+    OpenGL is indeed more amenable to teaching than the others. But if the goal is
+    to teach graphics and rendering concepts, then OpenGL et al are just miserable
+    and counter-productive.
+  score: 0
+  posted_at: '2026-10-27T03:57:46Z'
+- id: '50254593'
+  parent_id: '50254511'
+  author: avaer
+  text: It&#x27;s not more complicated, you have things like CUDA which is basically
+    C&#x2F;C++ that compiles to GPU.<p>But GPUs have thousands of cores, which means
+    if you want any benefit, the smallest data type you must use is something like
+    array[n * 1024], or your GPU is wasted doing nothing. So you must shape your programs
+    into that memory model or you&#x27;re just wasting your time (and GPU).<p>That&#x27;s
+    &gt;50% of the problem.
+  score: 0
+  posted_at: '2026-10-27T04:04:05Z'
+- id: '50254605'
+  parent_id: '50254593'
+  author: proc0
+  text: Right, that makes sense. There&#x27;s a ton of overhead in the setup though,
+    I&#x27;m assuming that&#x27;s because everything runs on the CPU by default. Is
+    this then an OS design choice? Thanks for your input.
+  score: 0
+  posted_at: '2026-10-27T04:07:21Z'
+- id: '50254635'
+  parent_id: '50254605'
+  author: avaer
+  text: There can be overhead, though GPU memory + drivers are some of the most optimized
+    software in the world.<p>Some OS&#x2F;hardware have separate GPU memory (Nvidia),
+    some have unified memory (Macos, modern consoles), but moving memory is usually
+    not the problem.<p>Things don&#x27;t &quot;run on CPU by default&quot;, it&#x27;s
+    up to the programmer where to run it. But the CPU and GPU paradigm of &quot;running
+    a program&quot; are very different, since on GPU you&#x27;re running SIMD (i.e.
+    running your code on arrays) or else there is no point to use a GPU.
+  score: 0
+  posted_at: '2026-10-27T04:13:40Z'
+- id: '50254656'
+  parent_id: '50253939'
+  author: avaer
+  text: GLES isn&#x27;t a bad way to teach graphics but I wish there was a middle
+    ground between it and VK.<p>The worst part of GL is the mysterious global state
+    you will never understand without studying the spec. The world could use an API
+    that&#x27;s basically GL but without global hidden singleton (per thread!) BS
+    behind the scenes.
+  score: 0
+  posted_at: '2026-10-27T04:17:16Z'
+- id: '50254760'
+  parent_id: '50254555'
+  author: FrostKiwi
+  text: |-
+    Disagree.
+    Trying to express all of graphics and rendering through the lens of OpenGL will of course fail and doing 3D rendering itself via raytracing is simply not possible in rasterization focused OpenGL without dirty workarounds. That is obvious.<p>A fundamental shift in thinking that got me into high performance graphics programming and parallelized image processing, the &quot;Aha&quot; Moment, is being forced to express how to calculate the final pixel independently, without having access to neighboring pixels of the same output buffer, confined to the straight jacket of the fragment shader. OpenGL with it&#x27;s combination of hand-holding and relative simplicity as compared to Vulkan and limits of a predefined shader pipeline as compared to a pure software implementation is exactly the thing that I needed to get into graphics programming. It&#x27;s an excellent jump in point I think.
+  score: 0
+  posted_at: '2026-10-27T04:38:51Z'
+- id: '50254915'
+  parent_id: '50253939'
+  author: snvzz
+  text: The linked webpage refuses keyboard navigation e.g. cursors, pageup&#x2F;down
+    and home&#x2F;end seem to do nothing.<p>Awful.
+  score: 0
+  posted_at: '2026-10-27T05:09:15Z'
+- id: '50254978'
+  parent_id: '50254511'
+  author: gryn
+  text: part of the reason is historical cruft &amp; history path dependency. GPUs
+    didn&#x27;t start as general computing device for parallelism but a device for
+    the specific purpose of accelerating graphics with very specific fixed functions
+    for that job and only that. with time that fixed pipeline became more complex
+    and more configurable, not fixed&#x2F;more flexible and hacks were in parallel
+    used to make use of it for tasks outside graphics those hacks were later made
+    into something more formal (CUDA&#x2F;OpenCL).<p>CUDA being the winner (closed
+    source, not really usable on non-nvidia GPUs) between those 2 and nvidia not wanting
+    to open their competitive advantage to the competition for the niche of non gamings
+    uses &#x2F; scientific computing (and later AI, which became a huge win for nvidia).<p>vulkan
+    came around after as this open thing (based on a previous attempt by AMD called
+    mantle) that&#x27;s trying to break down the leaky abstractions and the divide
+    between language for graphics &amp; video games and separate language&#x2F;frameworks
+    for gpu non-graphic computing with the promise of giving more control and more
+    room for squeezing performance from the hardware at the cost of more complexity
+    with the idea that you&#x27;ll probably build your own abstractions on top of
+    it for your subset of applications.<p>If GPU were from the get go designed as
+    a parallelism tool first and video game tools second the hardware architecture
+    and the language would probably be different than today and simpler (and if the
+    competition between the duopoly didn&#x27;t sabotage things)<p>don&#x27;t forget
+    that the drivers for GPUs would until recently get updates to patch specific video
+    games for performance issues (not sure if they still do that ?)
+  score: 0
+  posted_at: '2026-10-27T05:18:54Z'
+- id: '50254990'
+  parent_id: '50254760'
+  author: leecommamichael
+  text: The way I’m interpreting their post is, you could far more easily teach things
+    like introductory projective geometry without a GPU.
+  score: 0
+  posted_at: '2026-10-27T05:22:06Z'
+- id: '50255074'
+  parent_id: '50254511'
+  author: johnnyanmac
+  text: It&#x27;s partially historical; I&#x27;m sure if we redesigned GPGPU today
+    from the ground up, we&#x27;d have an entirely different pipeline. And partially
+    due to hardware vendor lock-in; you can&#x27;t really design an alternative to
+    Vulkan&#x2F;d3d12 even if you had the skill and drive to do so.<p>But also partly
+    in the fact that the GPU is specialized for certain operations over a CPU. It
+    wants and need to obtain data in a different way from a CPU to maximize throughput.
+    So language constructs are designed around making sure developers stay on this
+    fast path. The complexity can be seen as some intentional gatekeeping to signal
+    that this kind of programming is only for specific kinds of problems.
+  score: 0
+  posted_at: '2026-10-27T05:42:16Z'
+- id: '50255182'
+  parent_id: '50254915'
+  author: Cloudef
+  text: I think it&#x27;s because of the webgl demo at top stealing focus
+  score: 0
+  posted_at: '2026-10-27T06:02:51Z'
+- id: '50255183'
+  parent_id: '50254978'
+  author: proc0
+  text: Good summary, thanks. Sounds like it&#x27;s all still pretty early, even for
+    graphics but much more for parallel compute, which seems the direction the hardware
+    is going in. I&#x27;m sure there is a CUDA equivalent for CPU but I would guess
+    it&#x27;s all the way back in the 70s or earlier. Hopefully open standards gets
+    some traction.
+  score: 0
+  posted_at: '2026-10-27T06:02:53Z'
+- id: '50255270'
+  parent_id: '50255182'
+  author: edflsafoiewq
+  text: Specifically, it registers a keydown handler on the &lt;html&gt; that swallows
+    everything.
+  score: 0
+  posted_at: '2026-10-27T06:21:32Z'
+- id: '50255525'
+  parent_id: '50254656'
+  author: minraws
+  text: That middle ground is often called DirectX 11 but sadly it&#x27;s stuck to
+    a specific platform.
+  score: 0
+  posted_at: '2026-10-27T07:05:41Z'
+- id: '50255594'
+  parent_id: '50254978'
+  author: locknitpicker
+  text: "&gt; If GPU were from the get go designed as a parallelism tool first and
+    video game tools second the hardware architecture and the language would probably
+    be different than today and simpler (...)<p>The market demand was for video game
+    tools, though.<p>People didn&#x27;t wanted faster compute, they wanted their computer
+    games to work smoothly on the hardware they already own. Therefore, they preferred
+    to spend 100-200€ on a point upgrade, much like RAM, than scrapping their 2k€
+    PC.<p>To give people a reason to buy these upgrades, games had to use them. Therefore
+    video cards were designed specially for the usecases and development flow that
+    game developers already followed.<p>If it wasn&#x27;t for the video game market,
+    NVidia wouldn&#x27;t exist as we know it today."
+  score: 0
+  posted_at: '2026-10-27T07:13:37Z'
+- id: '50255617'
+  parent_id: '50254511'
+  author: modeless
+  text: 'It&#x27;s mostly hardware design limitations. GPU hardware is way more diverse
+    than CPU hardware, so you need to distribute shaders as either source code or
+    a portable intermediate representation, in both cases compiled at runtime for
+    the user&#x27;s actual GPU. There are also many fixed function parts of the graphics
+    pipeline with wildly different behavior on different hardware which you need to
+    abstract over. And it all runs in parallel with the CPU, often with a separate
+    pool of RAM, so you need implicit or explicit synchronization and data transfer
+    which adds a lot of complexity especially in error cases.<p>If you really want
+    to see why all the cruft is there, and how much you could remove if you dropped
+    support for older hardware, look no further than Sebastian Aaltonen&#x27;s &quot;No
+    Graphics API&quot; blog post (which he actually implemented too): <a href="https:&#x2F;&#x2F;www.sebastianaaltonen.com&#x2F;blog&#x2F;no-graphics-api&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.sebastianaaltonen.com&#x2F;blog&#x2F;no-graphics-api&#x2F;</a>'
+  score: 0
+  posted_at: '2026-10-27T07:17:33Z'
+- id: '50255633'
+  parent_id: '50254635'
+  author: tvbusy
+  text: For me, if-branching is the hardest to wrap my head around. &quot;If&quot;s
+    are so natural to CPU programming that it&#x27;s second nature to any developer
+    but on GPU, it&#x27;s expensive.
+  score: 0
+  posted_at: '2026-10-27T07:20:33Z'
+- id: '50255660'
+  parent_id: '50254656'
+  author: flohofwoe
+  text: '&gt; but I wish there was a middle ground between it and VK<p>There&#x27;s
+    WebGPU (probably the best option for teaching), D3D11 and Metal.<p>And (shameless
+    plug): sokol-gfx tries to find a balance between simplicity and modern 3D APIs:<p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;floooh&#x2F;sokol" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;floooh&#x2F;sokol</a><p>Demos
+    with links to C source and shader code:<p>WebGL2 backend: <a href="https:&#x2F;&#x2F;floooh.github.io&#x2F;sokol-html5&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;floooh.github.io&#x2F;sokol-html5&#x2F;</a><p>WebGPU
+    backend (has a couple more demos which use features not available on GLES3.0&#x2F;WebGL2,
+    like compute shaders): <a href="https:&#x2F;&#x2F;floooh.github.io&#x2F;sokol-webgpu&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;floooh.github.io&#x2F;sokol-webgpu&#x2F;</a>'
+  score: 0
+  posted_at: '2026-10-27T07:24:48Z'
+- id: '50255693'
+  parent_id: '50253939'
+  author: hollowonepl
+  text: I agree with Adam Sawicki that it&#x27;s not that relevant any more but also
+    I do believe it&#x27;s valuable lesson to tech students where the modernity comes
+    from.<p>I just don&#x27;t see personally sense to focus on it longer than just
+    1mo of intro, tutorial, get through simple example, show limitations, carry on
+    to Vulkan&#x2F;WGPU with background story that there is also DX12 and Metal that
+    follow similar principles.
+  score: 0
+  posted_at: '2026-10-27T07:31:15Z'
+- id: '50255727'
+  parent_id: '50253939'
+  author: modeless
+  text: TL;DR because WebGL 2 is basically equivalent to OpenGL ES 3.0, making it
+    the most portable GPU API in the world by far, running on everything from laptops
+    and phones to smart fridges and car head units.<p>Web browsers have also done
+    a lot of behind-the-scenes work on compatibility. The behavior of WebGL 2 is much,
+    much more consistent across platforms than native OpenGL [ES] ever was.
+  score: 0
+  posted_at: '2026-10-27T07:37:01Z'
+- id: '50255733'
+  parent_id: '50253939'
+  author: socalgal2
+  text: Personally I wouldn&#x27;t teach OpenGL ES 3.0 or any OpenGL because its state
+    machine (<a href="https:&#x2F;&#x2F;webgl2fundamentals.org&#x2F;webgl&#x2F;lessons&#x2F;resources&#x2F;webgl-state-diagram.html"
+    rel="nofollow">https:&#x2F;&#x2F;webgl2fundamentals.org&#x2F;webgl&#x2F;lessons&#x2F;resources&#x2F;webgl...</a>)
+    and horrible error system means tracking down bugs is hard. Instead I&#x27;d teach
+    WebGPU as it&#x27;s portable and has great error messaging.<p>I&#x27;m sure people
+    will objected but I&#x27;d argue WebGPU is easier to understand, has better errors,
+    has no state machine, works C++, Rust, JS&#x2F;TS and other languages, and closer
+    to modern GPU programming if you want to move to Metal or D3D12 or Vulkan later.<p>Further,
+    OpenGL (and ES) are a nightmare of bugs and incompatibilities students might run
+    into that WebGPU fixes.<p>That said, the article mentions Apple platforms where
+    you can use ANGLE if you happened to have students stuck there.
+  score: 0
+  posted_at: '2026-10-27T07:37:55Z'
+- id: '50255767'
+  parent_id: '50254511'
+  author: socalgal2
+  text: The thing that makes it &quot;hard&quot; is that it&#x27;s all indirect. You
+    compile a program for the GPU (a shader). Then you have to setup data (textures
+    and buffers) for it. Then, you need to spend a bunch of time telling the GPU how
+    to use that data, offsets where each piece of data is, what formats the data is
+    in,, how to advance to the next piece of data, etc.. etc..<p>There are a few libraries
+    that try to abstract over all this indirection but all the graphics APIs themselves
+    are lower-level so you&#x27;re left to do all of that yourself.<p><a href="https:&#x2F;&#x2F;docs.swmansion.com&#x2F;TypeGPU&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;docs.swmansion.com&#x2F;TypeGPU&#x2F;</a><p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;toucan" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;google&#x2F;toucan</a>
+  score: 0
+  posted_at: '2026-10-27T07:42:58Z'
+- id: '50255772'
+  parent_id: '50255733'
+  author: flohofwoe
+  text: I mostly agree regarding GL&#x27;s programming model, but tbf some problems
+    have been fixed by WebGL2 (much better validation and error reporting - e.g. very
+    helpful error messages right on the browser console - and it&#x27;s probably the
+    least buggy and most portable 3D API implementation of them all, including the
+    current state of WebGPU.<p>For teaching I would generally use the web browser
+    via WebGL2 or WebGPU, just because those APIs require much less boilerplate in
+    the browser environment to get to your first triangle and the edit-test-loop is
+    pretty much instant.
+  score: 0
+  posted_at: '2026-10-27T07:44:03Z'
+- id: '50255778'
+  parent_id: '50255633'
+  author: __del__
+  text: instead of iterating over an array and if-branching to one of two paths for
+    each item, conceive of your conditionals as logic operations which test for set
+    membership (i.e. &quot;is this array item a member of the set i care about?&quot;)
+    and with this array mask of &quot;do the thing or don&#x27;t do the thing&quot;
+    flags, you can mutate your data 0 or 1 times.<p>the key for me is thinking in
+    terms of sets—much of your conditional logic is probably about sorting things
+    into sets anyway.
+  score: 0
+  posted_at: '2026-10-27T07:45:04Z'
+- id: '50255835'
+  parent_id: '50254511'
+  author: flohofwoe
+  text: 'I think most of it comes down to &#x27;historical accidents&#x27; tbh.<p>E.g.
+    if CPUs would have closed ISAs and heavily guarded IPs, you&#x27;d also need a
+    &#x27;driver&#x27; and an &#x27;OpenCPU API&#x27; to make any use of them (of
+    course the public ISA of a CPU <i>is</i> essentially the driver interface  baked
+    into the hardware).<p>The other big difference is focus on decent single-thread
+    performance for CPUs versus performing thousands of small tasks in parallel on
+    GPUs, but each one slowly. This difference causes a different programming model
+    (e.g. running an entire application in a single &#x27;main&#x27; function from
+    start to finish, versus spawning small specialized tasks which are running across
+    hundreds of threads).<p>And the specific problem with Vulkan is that it tried
+    to solve two conflicting requirements: on one hand being an explicit low-level
+    API without &#x27;magic abstractions&#x27;, on the other hand supporting very
+    different GPU architectures (especially the mobile GPU zoo). The resulting mess
+    was quite predictable to be honest...'
+  score: 0
+  posted_at: '2026-10-27T07:53:30Z'
+- id: '50255960'
+  parent_id: '50255733'
+  author: pjmlp
+  text: WebGPU will however always suffer from being an API designed for the Web,
+    and targeting 2015 thereabouts hardware.<p>Better than OpenGL, but don&#x27;t
+    expect that much improvements coming into their way, other than what the Chrome
+    team might feel like pushing, as I doubt Firefox or Safari teams have much left
+    to say about where it goes beyond version 1.0.
+  score: 0
+  posted_at: '2026-10-27T08:12:05Z'
+- id: '50256007'
+  parent_id: '50254511'
+  author: pdpi
+  text: One thing that helped me understand it was to reframe it as a network application,
+    where you have a client running on the CPU and a server running on the GPU (the
+    shaders).<p>A bunch of the complexity comes from having to write both client and
+    server, and the communication protocol between them, then some more comes from
+    the client being responsible for spinning up the server. As with every network
+    service, client&#x2F;server traffic is the slowest part of the architecture, so
+    a bunch of complexity then comes from having to minimise the amount of network
+    calls (or draw calls, in this case).<p>Then you hit the part where all of this
+    is performance critical (soft-realtime requirements), so the whole thing is geared
+    towards “writing your own userspace IP stack in C++” rather than “writing a flask
+    application in Python”.
+  score: 0
+  posted_at: '2026-10-27T08:19:52Z'
+- id: '50256056'
+  parent_id: '50255693'
+  author: swiftcoder
+  text: "&gt; carry on to Vulkan&#x2F;WGPU with background story that there is also
+    DX12 and Metal that follow similar principles<p>Except that&#x27;s a minefield
+    all of its own. DirectX 12 is its own special beast that is unlike the others.
+    Vulkan is already mired in 3 revisions of architecture changes. WGPU is based
+    on the (outdated) first cut of Vulkan, not the current model. Of all of these,
+    only Metal has a reasonable on-ramp for newcomers to 3D graphics."
+  score: 0
+  posted_at: '2026-10-27T08:25:22Z'
+- id: '50256268'
+  parent_id: '50255074'
+  author: Pannoniae
+  text: actually yes you <i>could</i> design an alternative API and even implement
+    it....<p>there&#x27;s HW references + the linux drivers for AMD (both UMD and
+    KMD), there&#x27;s refs for NV and their open linux KMD (no UMD though), intel
+    also has HW refs and open drivers for linux<p>I think it <i>would</i> be possible
+    to put together as long as you don&#x27;t mind only working for certain hardware,
+    like a prototype you know<p>I might give it a shot to make a proof-of-concept
+    &quot;high level low level&quot; graphics API ngl if no one else feels like so...<p>I
+    think there&#x27;s space for a &quot;two-level&quot; design like have the driver
+    consist of the HW-specific parts, expose things in terms of GPU VAs, explicit
+    sync, explicit memory management, command buffers etc. then have a high-level
+    wrapper over it to provide vaguely GL-ish semantics, and you could intermix the
+    two APIs, obviously you wouldn&#x27;t be able to get the VA for a high-level object
+    because that&#x27;d break the autotracking, if you use low-level you&#x27;re responsible
+    for syncing, cycling etc.
+  score: 0
+  posted_at: '2026-10-27T08:55:35Z'
+- id: '50256333'
+  parent_id: '50254978'
+  author: kuschku
+  text: "&gt; If GPU were from the get go designed as a parallelism tool first and
+    video game tools second the hardware architecture and the language would probably
+    be different than today and simpler (and if the competition between the duopoly
+    didn&#x27;t sabotage things)<p>Sony tried that with the PS3&#x27;s Cell processor,
+    just a wise parallel vector processor instead of dedicated hardware.<p>If you
+    knew how to use it, you could get great results, which is how Naughty Dog&#x27;s
+    games became so spectacular. But if you just tried to port an existing game, things
+    went downhill quickly, which is why GabeN talked on stage how much he hated the
+    PS3.<p>Oh and this complexity led to lots of games just switching to one of the
+    existing engines that supported it natively, and started the modern dominance
+    of Unreal Engine. But it&#x27;s also why engines introduced more parallel architectures,
+    which a few years later became very useful when quad-core processors in PCs became
+    mainstream."
+  score: 0
+  posted_at: '2026-10-27T09:04:07Z'
+- id: '50256428'
+  parent_id: '50255525'
+  author: Pannoniae
+  text: dx11 isn&#x27;t bad but it has a looot of cruft around it, writing a good
+    constant buffer manager is witchcraft (remember, there&#x27;s no &quot;loose uniforms&quot;
+    injected into the command stream, it&#x27;s all constant buffer updates, drivers
+    do all sorts of writecombining magic to mitigate it, but the naive map &#x2F;
+    unmap cycle without any driver optimisations would absolutely tank....<p>Look
+    at a GDC talk (<a href="https:&#x2F;&#x2F;d29g4g2dyqv443.cloudfront.net&#x2F;sites&#x2F;default&#x2F;files&#x2F;akamai&#x2F;gamedev%2Ffiles%2Fgdc12%2FEfficient_Buffer_Management_McDonald.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;d29g4g2dyqv443.cloudfront.net&#x2F;sites&#x2F;default&#x2F;files&#x2F;ak...</a>),
+    efficient dx11 is also &quot;reinvent a diy memory allocator&quot; level except
+    that you don&#x27;t have much control.<p>btw you <i>can</i> run dx11 on other
+    platforms because dxvk exists, but while d3d9vk is a solid idea (high-level API,
+    lowering to vulkan often makes it much faster than the crummy MS d3d9 runtime
+    + DDI combo), d3d11vk is just often a wash or even a regression. I&#x27;ve had
+    to debug dxvk-only perf problems a bit too many times...<p>anyway, point is, it&#x27;s
+    not really an easy-to-use or intuitive API
+  score: 0
+  posted_at: '2026-10-27T09:16:54Z'
+- id: '50256509'
+  parent_id: '50253939'
+  author: herodoturtle
+  text: On a related note, I&#x27;d like to give a shout-out to NeHe (Neon Helium)
+    for his brilliant OpenGL tutorials back in the 90s.<p>I, and I suspect many others,
+    benefited immensely from him lessons.
+  score: 0
+  posted_at: '2026-10-27T09:27:50Z'
+- id: '50256604'
+  parent_id: '50255835'
+  author: david-gpu
+  text: 'You underestimate the effect of two factors.<p>First, GPUs aren&#x27;t simply
+    &quot;highly parallel CPUs&quot;, they also contain a whole lot of fixed function
+    hardware that is specialized for real-time computer graphics. This hardware isn&#x27;t
+    exposed as &quot;fancy instructions&quot;, it is set up in other ways, which is
+    achieved through a device driver.<p>Second: GPUs are coprocessor, separate from
+    the CPU where another OS is running. This also necessitates a device driver to
+    manage scheduling, synchronization, etc. with the main OS. Because, in case you
+    were not aware, the GPU itself runs its own little operating system, although
+    it is rarely called that.'
+  score: 0
+  posted_at: '2026-10-27T09:39:44Z'
+- id: '50256648'
+  parent_id: '50256509'
+  author: sspiff
+  text: Oh my I totally forgot about NeHe! I probably still have some of the lessons
+    printed out at my parents house somewhere.<p>Good times.
+  score: 0
+  posted_at: '2026-10-27T09:45:20Z'
+- id: '50256691'
+  parent_id: '50256604'
+  author: flohofwoe
+  text: "&gt; they also contain a whole lot of fixed function hardware that is specialized
+    for real-time computer graphics. This hardware isn&#x27;t exposed as &quot;fancy
+    instructions&quot;, it is set up in other ways, which is achieved through a device
+    driver.<p>Those hardwired fixed-function parts are getting fewer and less important
+    though (ok, and then raytracing units entered the scene...). Also AFAIK something
+    like a texture sampling operation is indeed a &#x27;fancy instruction&#x27;(?),
+    even though the actual texture sampling is done by a &#x27;fixed function&#x27;
+    hardware unit.<p>&gt; This also necessitates a device driver to manage scheduling,
+    synchronization, etc. with the main OS.<p>I bet this type of GPU&#x2F;CPU handshaking
+    work could also be baked into the hardware (similar to CPU mirocode) and exposed
+    via a standardized memory mapped IO interface (or whatever the current mechanism
+    is for letting the CPU control the GPU). E.g. a CPU also implements similar protocols
+    to talk to the rest of the computer system (e.g. memory and other CPUs), but this
+    is mainly implemented as &quot;hardware protocols&quot; - drivers &quot;just&quot;
+    offer more flexibility for hardware vendors because they can delegate the standardization
+    into software.<p>...also a lot of the &quot;CPU &#x2F; GPU software ecosystem&quot;
+    was probably shaped by CPU and GPU vendors historically being different companies,
+    and once the big consolidation started, the conventions were already set in stone."
+  score: 0
+  posted_at: '2026-10-27T09:52:31Z'
+- id: '50256696'
+  parent_id: '50256509'
+  author: cookiengineer
+  text: Yep, can confirm.<p>The tutorials and hands on coding examples made me understand
+    how to program with GPUs. I loved them because at the time, khronos was still
+    in its infancy and just started out with GLES extensions and the whole WebGL ecosystem.<p>Meanwhile
+    I kind of believe that learning where it came from (fixed function pipeline, buffer&#x2F;texture
+    and uniform problems etc) makes a lot of sense to learn first so you start thinking
+    in shader computation pipelines much easier, as you understand the whys and whens
+    much better.
+  score: 0
+  posted_at: '2026-10-27T09:53:08Z'
+- id: '50256718'
+  parent_id: '50254511'
+  author: WithinReason
+  text: If you care about every last bit of performance, CPUs are difficult to program
+    for as well, possibly more difficult than a GPU.<p>Generally GPUs punish you more
+    by bad performance if you don&#x27;t optimise your code.
+  score: 0
+  posted_at: '2026-10-27T09:56:47Z'
+- id: '50256786'
+  parent_id: '50253939'
+  author: raverbashing
+  text: Very interesting and I think it makes sense to teach it, though I&#x27;d prefer
+    something that works on MacOS<p>(what I don&#x27;t get is why this page is breaking
+    pgUp&#x2F;pgDown)
+  score: 0
+  posted_at: '2026-10-27T10:04:54Z'
+- id: '50256798'
+  parent_id: '50256428'
+  author: flohofwoe
+  text: "&gt; writing a good constant buffer manager is witchcraft<p>Tbh, I think
+    the main lesson is simply to not try to work around the specific 3D API conventions
+    too much, e.g. don&#x27;t try to shoehorn mechanisms into the D3D11 layer that
+    would be straightforward in Vulkan or D3D12 but would disable the special fast-paths
+    in D3D11.<p>E.g. for a traditional &quot;one uniform update per draw call&quot;
+    loop with one small constant buffer per shader updated via plain old UpdateSubresource(),
+    D3D11 is incredibly fast (you can easily do hundreds-of-thousands update+drawcall
+    pairs like this per 60Hz frame on a somewhat recent - e.g. post-2016 or so - mid-level
+    gaming PC.<p>Of course trying to emulate D3D11 on Vulkan or D3D12 might have all
+    sorts of issues that don&#x27;t exist on a good &quot;native&quot; D3D11 driver.<p>Also
+    somewhat related: in a GL shim it&#x27;s typically still faster to update uniform
+    data via the old glUniform*v calls instead of using uniform buffers, apparently
+    most GL drivers lack the special fast-path optimizations of small D3D11 constant
+    buffers, and the more abstract glUniform calls seems to give the driver more &#x27;wiggle
+    room&#x27; to implement an optimal upload path."
+  score: 0
+  posted_at: '2026-10-27T10:07:02Z'
+- id: '50257065'
+  parent_id: '50256056'
+  author: flohofwoe
+  text: Tbf, it all depends on how deep you look into the fractal ;) The main differences
+    between the modern APIs are in how resource binding is done, but many other concept
+    overlap quite well between Vulkan, D3D12 and Metal (especially in more recent
+    Vulkan revisions).<p>&gt; Of all of these, only Metal has a reasonable on-ramp
+    for newcomers to 3D graphics.<p>...unless you start with Metal 4, which is bringing
+    in a lot of Vulkan&#x2F;D3D12 concepts (for better or worse, it&#x27;s definitely
+    not great for &#x27;convenience&#x27; but may help with porting Vulkan or D3D12
+    code over).
+  score: 0
+  posted_at: '2026-10-27T10:38:54Z'
+- id: '50257140'
+  parent_id: '50253939'
+  author: mono442
+  text: These low level details have become unimportant since the ai can generate
+    and debug them well imo.
+  score: 0
+  posted_at: '2026-10-27T10:47:37Z'
+- id: '50257316'
+  parent_id: '50256428'
+  author: minraws
+  text: Nothing is an easy to use intuitive api with all the features and all the
+    performance, it&#x27;s (Dx11) the sweet spot of where I felt like it was easy
+    to learn and easy to use without worrying about performance too much.<p>Sure if
+    you are building the newer rendering pipelines DirectX 11 leaves a lot on the
+    table but it brought a lot of nice things with it, Debug Runtime alone was worth
+    moving to it, 99&#x2F;100 times your app written in DirectX 11 even if not optimised
+    properly will perform better than DirectX 9 in my experience.<p>This holds with
+    OpenGL though the modern OpenGL 4.6 and stuff wasn&#x27;t bad, but it&#x27;s a
+    lot of cruft still.<p>Either way there are no perfect APIs, a truly general purpose
+    API that just gives you basics like Texture handling and io and data mapping would
+    be enough today imho. Fully general purpose compute APIs are the solution with
+    some additional tweaks to make graphics stuff convenient. IMHO<p>Though it&#x27;s
+    definitely much harder than plain and simple paint colors and textures on vertices
+    &amp; geometry uv approach of old.
+  score: 0
+  posted_at: '2026-10-27T11:07:39Z'
+- id: '50257321'
+  parent_id: '50256798'
+  author: Pannoniae
+  text: I mean sure you can do a generic layer and common denominator stuff, basically
+    the kinda stuff webgpu or those rendering abstractions do and that&#x27;s fair
+    enough, it works well for simpler stuff!<p>The problem really is that if you do
+    that you&#x27;ll end up with random weird stalls or perf problems you can&#x27;t
+    really debug sadly :\<p>Re GL ye glUniform is usually much faster because you
+    just do a lot less, you&#x27;re writing a small amount of data directly into constant
+    memory, it doesn&#x27;t need resource tracking. UBOs &#x2F; constant buffers come
+    back to the theoretically slow but can-be-made-faster-with-driver-heuristics approach...i.e.
+    if you see a small UBO which is only used as a UBO, you get the same direct constant
+    bank upload<p>On NV it&#x27;s quite fast, on AMD it&#x27;s not really optimised,
+    on intel just use buffersubdata because everything else sucks....
+  score: 0
+  posted_at: '2026-10-27T11:07:54Z'
+- id: '50257603'
+  parent_id: '50255772'
+  author: whatthejesus
+  text: In real life there’s lots of bugs around and difficult to read error messages.<p>Re.
+    the boilerplate just have students clone a pre-fabbed repo with the boilerplate
+    handled for them.<p>The real question should be whether you want students to know
+    how to program in a low programming language or not. Whether they should see what
+    the reality of programming is or not.<p>If they can’t program in C&#x2F;C++ and
+    debug the error messages how are they going to survive in the wild? I guess they’ll
+    use an LLM.
+  score: 0
+  posted_at: '2026-10-27T11:36:20Z'
+- id: '50257651'
+  parent_id: '50257603'
+  author: flohofwoe
+  text: "&gt; If they can’t program in C&#x2F;C++ and debug the error messages how
+    are they going to survive in the wild?<p>The problem is that you don&#x27;t get
+    *any* error messages from native GL in the first place (unless you wire up a debug-message
+    callback via the optional KHR_debug extension which isn&#x27;t available everywhere),
+    and the builtin error system via glGetError() is pretty much completely useless.<p>Other
+    APIs don&#x27;t suffer from this problem, D3D, Vulkan and Metal all have excellent
+    validation layers which give very helpful messages, and WebGL or WebGPU running
+    in browsers basically implement such a validation layer out of the box."
+  score: 0
+  posted_at: '2026-10-27T11:41:17Z'
+- id: '50257696'
+  parent_id: '50256056'
+  author: pjmlp
+  text: And then there are also the NVN and LibGNM(X) in the corner that folks forget
+    about, due to NDAs and such.<p>Ah, and DirectX on XBox is not the same as on Windows.
+  score: 0
+  posted_at: '2026-10-27T11:46:11Z'
+- id: '50257828'
+  parent_id: '50253939'
+  author: MikeShah
+  text: 'I have found OpenGL 4.5&#x2F;4.6 to be a sweet spot for students currently
+    learning graphics in a semester course. SDL_GPU is otherwise a good intermediate
+    I would consider.<p>I remember for myself: learning a new API (opengl), new paradigm
+    (gpu programming), and new language(glsl) all on top of learning graphics concepts
+    is a lot. OpenGL 4.5 and 4.6 are modern enough to get started and there are good
+    resources to learn the 3.3+ stuff that I have built on.<p>See my website(mshah.io)
+    for my paper on some of the &#x27;why&#x27;.'
+  score: 0
+  posted_at: '2026-10-27T11:59:44Z'
+- id: '50257966'
+  parent_id: '50255960'
+  author: criddell
+  text: "&gt; but don&#x27;t expect that much improvements<p>What improvements are
+    needed? It sees pretty much complete to me and I think it&#x27;s a good thing
+    for it to be in maintenance mode (ie stable)."
+  score: 0
+  posted_at: '2026-10-27T12:12:22Z'
+- id: '50258055'
+  parent_id: '50253939'
+  author: hn_submit
+  text: Why is this website blocking the zoom function? I&#x27;ve never seen any site
+    do this before.
+  score: 0
+  posted_at: '2026-10-27T12:21:34Z'
+- id: '50258062'
+  parent_id: '50254555'
+  author: mvx64
+  text: Agree. But compared to the new APIs, OpenGL is better in that regard. I would
+    argue that legacy OpenGL is even better.<p>You can implement in software whatever
+    you want and just handwave specific parts to GL, like rasterization. The rest
+    of the boilerplate code will be minimal.<p>In new APIs you are bound to write
+    100s of lines of boilerplate code to get to the point. In the time you should
+    be learning about barycentric coordinates, you are still learning about descriptor
+    sets. And still, you don&#x27;t learn about rasterization, texture mapping, clipping,
+    face culling, because they are still fixed pipeline.<p>The only problem with learning
+    with 100% cpu rendering is that you need some patience before seeing beautiful
+    stuff because you need to learn&#x2F;implement everything up until that point.
+  score: 0
+  posted_at: '2026-10-27T12:22:15Z'
+- id: '50258064'
+  parent_id: '50257966'
+  author: flohofwoe
+  text: The rigid resource binding model via BindGroup objects in WebGPU is already
+    outdated (and funny enough, an area where WebGPU is actually <i>slower</i> than
+    WebGL2, at least when assuming that bindings need to change frequently and unpredictably).<p>This
+    was a restriction of the Vulkan 1.0 API and modelling the WebGPU resource binding
+    model around that was a quite predictable problem. It would have been better to
+    come up with a slim abstraction that might cost some performance on Vulkan (which
+    is only really relevant on Android phones and Linux desktops), but at least would
+    not slow down WebGPU across <i>all</i> platforms.<p>And now even the Vulkan maintainers
+    have realized the problem and are introducing the much more flexible descriptor-heap
+    extension (about a decade late, but better late than never).<p>WebGPU is essentially
+    the frozen cross-section of 3D APIs from about a decade ago, and the state of
+    GPU hardware from about 15 to 20 years ago (but tbf, apart from the broken binding
+    model there wasn&#x27;t much that could be done, because most restrictions are
+    coming from mobile GPUs which a browser 3D API simply <i>must</i> support).
+  score: 0
+  posted_at: '2026-10-27T12:22:37Z'
+- id: '50258077'
+  parent_id: '50257966'
+  author: Pannoniae
+  text: '1. monolithic pipelines, pretty much no hardware works like that, the hash-and-cache
+    design makes your design inflexible and adds a ton of overhead<p>2. WGSL, like
+    come on<p>3. Hilariously outdated feature set, no mesh shaders, no HWRT, cooperative
+    matrices&#x2F;tensors, etc.<p>4. It&#x27;s security-focused because web untrusted
+    code:tm: so most of the calls are hilariously slow. Yes even the desktop implementations.
+    There&#x27;s no good webGPU implementation out there<p>5. it&#x27;s also not simple
+    to either implement or use. it&#x27;s basically vulkan&#x27;s difficulty without
+    any of the advantages....'
+  score: 0
+  posted_at: '2026-10-27T12:24:17Z'
+- id: '50258094'
+  parent_id: '50257651'
+  author: Pannoniae
+  text: small nit, that&#x27;s not true, since GL4.3 the modern debug message callback
+    <i>is</i> core so you can rely on it. Sure that won&#x27;t save you on MacOS but
+    if you can target modern OpenGL this isn&#x27;t a problem in practice
+  score: 0
+  posted_at: '2026-10-27T12:26:00Z'
+- id: '50258207'
+  parent_id: '50254978'
+  author: flohofwoe
+  text: "&gt; don&#x27;t forget that the drivers for GPUs would until recently get
+    updates to patch specific video games for performance issues (not sure if they
+    still do that ?)<p>I bet it&#x27;s all the same if not worse, and that&#x27;s
+    why GPU drivers are closing in on the gigabyte &quot;sound barrier&quot; (and
+    I guess on Linux that part is played by Proton... e.g. I bet there&#x27;s a ton
+    of game-specific &#x27;workarounds&#x27; in Proton, if not for performance, then
+    at least to fix 3D API misuse)."
+  score: 0
+  posted_at: '2026-10-27T12:37:47Z'
+- id: '50258309'
+  parent_id: '50253939'
+  author: kwakwa_cat
+  text: Original poster here! Funny enough, I am preparing my new module to be taught
+    in modern Vulkan (with a twist). Looking forward to share the results about this
+    transition.
+  score: 0
+  posted_at: '2026-10-27T12:47:07Z'
+- id: '50258463'
+  parent_id: '50257696'
+  author: mananaysiempre
+  text: Live by the NDA, die (at least wrt education&#x2F;mindshare) by the NDA. Seems
+    fair.
+  score: 0
+  posted_at: '2026-10-27T12:58:14Z'
+- id: '50258676'
+  parent_id: '50258055'
+  author: kwakwa_cat
+  text: That was the WebGL demo that captured all the keyboard inputs, I pushed a
+    fix. Thanks for the notice.
+  score: 0
+  posted_at: '2026-10-27T13:10:47Z'
+- id: '50258759'
+  parent_id: '50256691'
+  author: david-gpu
+  text: "<i>&gt; Those hardwired fixed-function parts are getting fewer and less important
+    though</i><p>There is more machinery internally than what the user can see. Even
+    &quot;low level&quot; APIs hide quite a lot of the internal complexity.<p><i>&gt;
+    Also AFAIK something like a texture sampling operation is indeed a &#x27;fancy
+    instruction&#x27;(?)</i><p>Yes, and no. The &quot;I want to sample this texture&quot;
+    part looks like a fancy instruction to the shader processor. But there is a fair
+    amount of setup that needs to be done before and after, and that is the responsibility
+    of the device driver. Stuff like: where is the data, how is it arranged in memory,
+    how it is to be sampled, etc.<p>As you point out, the texture units are coprocessors
+    <i>inside</i> the coprocessor that is the GPU itself. It is turtles all the way
+    down. Think of a GPU as a whole network of processors inside a chip, some of which
+    are hidden from the application programmer.<p><i>&gt; I bet this type of GPU&#x2F;CPU
+    handshaking work could also be baked into the hardware (similar to CPU mirocode)
+    and exposed via a standardized memory mapped IO interface (or whatever the current
+    mechanism is for letting the CPU control the GPU)</i><p>Attempts have been made.
+    Last time I checked, they had not been very successful, but I have not kept up
+    with the latest developments after retirement.<p>The way this normally works is
+    that there is a circular command buffer where the CPU inserts commands and the
+    GPU consumes them. It works; there is nothing wrong with it. It is the obvious
+    way to handle asynchronous coprocessors.<p><i>&gt; E.g. a CPU also implements
+    similar protocols to talk to the rest of the computer system (e.g. memory and
+    other CPUs), but this is mainly implemented as &quot;hardware protocols&quot;
+    - drivers &quot;just&quot; offer more flexibility for hardware vendors because
+    they can delegate the standardization into software.</i><p>I suspect you underestimate
+    the amount of setup that is necessary to drive a GPU. And the amount of asynchronous
+    resource management involved.<p>Let me put it this other way: the people doing
+    this for a living for decades know what they are doing. There have been attempts
+    to try to make GPUs that behave more like CPUs in terms of how they are driven,
+    and they have not been very successful so far, to my knowledge. AMD acquired ATI
+    back in 2006, so it is not like there hasn&#x27;t been enough time for the concept
+    to cook in the oven. See also Intel&#x27;s Larrabee."
+  score: 0
+  posted_at: '2026-10-27T13:16:52Z'
+- id: '50258800'
+  parent_id: '50253939'
+  author: RunSet
+  text: OpenGL &gt;3.3 seems to mostly enable e-waste.<p>It is vexing to see ports
+    of N64 games and Quake requiring OpenGL 4 (or better) hardware for no discernible
+    reason other than the version number is bigger. Eyes on you, Ironwail.
+  score: 0
+  posted_at: '2026-10-27T13:19:27Z'
+- id: '50259513'
+  parent_id: '50258759'
+  author: flohofwoe
+  text: Very interesting. Thanks for the insights! ...and yeah, Larrabee is an interesting
+    case, I actually wonder whether it&#x27;s time for another attempt :)
+  score: 0
+  posted_at: '2026-10-27T14:01:41Z'
+- id: '50259547'
+  parent_id: '50254511'
+  author: dahart
+  text: Vulkan, OpenGL and DirectX make GPU programming more difficult than it has
+    to be for multiple reasons, some of which other people here have mentioned. They
+    are also low level, focused on high performance, and are primarily designed and
+    written for game engines. Making them easy to learn for newcomers is pretty low
+    on the priority list. ShaderToy makes it easy by taking care of everything except
+    the GLSL, you might like it. You can also try CUDA, which is generally a lot easier
+    than Vulkan. For a really easy&#x2F;fun time with CUDA, try Warp - it’s CUDA in
+    Python.
+  score: 0
+  posted_at: '2026-10-27T14:03:26Z'
+- id: '50259844'
+  parent_id: '50258463'
+  author: pjmlp
+  text: Playstation and Nintendo are doing just fine in regards to mindshare, XBox
+    less so, but it has nothing to do with DirectX NDA for it, rather mismanagement.
+  score: 0
+  posted_at: '2026-10-27T14:21:54Z'
+- id: '50259853'
+  parent_id: '50256056'
+  author: hollowonepl
+  text: I agree, this is also where I&#x27;m investing my time Metal mostly and then
+    try to adapt it to DX12 on Windows and I totally skipped Vulkan for that simple
+    reason you have described. but in generic terms only Vulkan comes with portability
+    as analogy to original OGL vision.. I respect that even though the whole framework
+    is to be ditched and rethought into something even more modern and sustainable...<p>so
+    Metal yes, if somebody wants to be Apple focused. but in the academic world I
+    don&#x27;t believe that&#x27;s the case either...
+  score: 0
+  posted_at: '2026-10-27T14:22:57Z'
+- id: '50259918'
+  parent_id: '50259853'
+  author: pjmlp
+  text: Note that in regards to OpenGL original vision, game consoles never supported
+    OpenGL, although some models kind of did support something, so game studios always
+    cared about pluggable backends than targeting the one true API.<p>Only the FOSS
+    community is so hard focused on Khronos APIs.
+  score: 0
+  posted_at: '2026-10-27T14:28:02Z'
+- id: '50259938'
+  parent_id: '50259844'
+  author: swiftcoder
+  text: Console mindshare is not the same as a broad body of engineers being familiar
+    with the graphics API thereon
+  score: 0
+  posted_at: '2026-10-27T14:29:02Z'
+- id: '50260102'
+  parent_id: '50257651'
+  author: klodolph
+  text: The KHR_debug is also kind of a pain to use because it gets called asynchronously
+    (which is what you <i>want</i>, yes, but the difficulty is still there).
+  score: 0
+  posted_at: '2026-10-27T14:39:25Z'
+- id: '50260131'
+  parent_id: '50256509'
+  author: herodoturtle
+  text: NeHe&#x27;s tuts are still online:<p><a href="https:&#x2F;&#x2F;nehe.gamedev.net&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;nehe.gamedev.net&#x2F;</a><p>Talk about nostalgia!
+  score: 0
+  posted_at: '2026-10-27T14:41:02Z'
+- id: '50260151'
+  parent_id: '50259938'
+  author: pjmlp
+  text: Those games are written by someone.
+  score: 0
+  posted_at: '2026-10-27T14:42:47Z'
+- id: '50260477'
+  parent_id: '50256509'
+  author: abroadwin
+  text: I probably owe my career to him; it was learning the old fixed pipeline OpenGL
+    API from his tutorials that led to me making games, and those games that led to
+    a family member encouraging me to interview for an internship at his company.
+    All that led to a 20 year career (so far) in software engineering.
+  score: 0
+  posted_at: '2026-10-27T15:06:13Z'
+- id: '50260663'
+  parent_id: '50257651'
+  author: lightedman
+  text: "&quot;unless you wire up a debug-message callback via the optional KHR_debug
+    extension which isn&#x27;t available everywhere&quot;<p>The beauty of OpenGL versus
+    say Direct3D is that OpenGL is extensible and thus you can add that feature should
+    you so choose."
+  score: 0
+  posted_at: '2026-10-27T15:18:55Z'
+- id: '50261026'
+  parent_id: '50260151'
+  author: swiftcoder
+  text: They are, but in practice you have a fairly small group of low-level rendering
+    specialists who bounce around the major studios and game engine vendors
+  score: 0
+  posted_at: '2026-10-27T15:44:23Z'
+- id: '50261163'
+  parent_id: '50257828'
+  author: corysama
+  text: I have been working for a while on a tutorial based on 4.6. When I get close
+    to a first release, I’ll have to ask you for a review :)<p>My take is that older
+    versions of GL feel nicer to teach to beginner programmers because they have so
+    many specific functions to do each specific thing. You can have a lot of verbose,
+    step-by-step instruction. But, much of what you have to convey is understanding
+    of a convoluted interface to a hidden state machine. And, the one-step-at-a-time
+    nature of the old interfaces build bad habits that don’t scale when you get serious.<p>With
+    4.6 we can get Direct State Access, Programmable Vertex Pulling and MultidrawIndirect.
+    With that we can move the complexity from “lots of functions to manipulate a state
+    machine” to a few functions that strongly resemble using malloc and memcpy to
+    work with arrays of structs. That’s not trivial. But, it should be extremely familiar.
+    It’s visible, flexible, scalable, and it sets you up to move on to Vulkan after
+    you’ve learned the essentials of 3D rendering.
+  score: 0
+  posted_at: '2026-10-27T15:54:31Z'
+- id: '50261349'
+  parent_id: '50255733'
+  author: CamperBob2
+  text: 'I have never understood and will never understand why so many programming
+    luminaries fell in love with OpenGL.  It violates the most important engineering
+    precept that I try to follow when I design a library: minimize hidden state.  OpenGL
+    is nothing <i>but</i> hidden state.  You have no way to tell what a piece of code
+    is going to render without seeing everything that set up the internal stack beforehand,
+    perhaps thousands of lines away, or in entirely different modules that you might
+    not even have access to.'
+  score: 0
+  posted_at: '2026-10-27T16:08:21Z'
+- id: '50261418'
+  parent_id: '50254555'
+  author: dahart
+  text: Unfortunately, the goal with OpengGL is not to teach graphics and rendering
+    concepts. Same goes for DirectX, Vulkan, WebGL, etc. These APIs are being designed
+    primarily for performance, not for ease of learning. For teaching and learning,
+    it’s a great idea to start with rasterization &amp; ray tracing in software first!
+    That can teach you the graphics concepts first, and also provide good motivation
+    to learn a graphics API if you want it to go faster.
+  score: 0
+  posted_at: '2026-10-27T16:13:08Z'
+- id: '50261465'
+  parent_id: '50255727'
+  author: parasti
+  text: Right, there is hardly any reason to start from &quot;install this toolchain
+    and these headers&quot; when you can literally get a GLES-equivalent context with
+    one line of JS in any browser from the past 10+ years.
+  score: 0
+  posted_at: '2026-10-27T16:16:03Z'
+- id: '50261745'
+  parent_id: '50260663'
+  author: flohofwoe
+  text: Fortunately &quot;beauty lies in the eye of the beholder&quot; ;) I definitely
+    prefer the D3D model instead of the extension soup of GL or Vulkan.
+  score: 0
+  posted_at: '2026-10-27T16:35:41Z'
+- id: '50262731'
+  parent_id: '50254555'
+  author: throw23423
+  text: "<i>&gt; I&#x27;ve learned more graphics writing software rasterizers and
+    ray tracers than using any APIs.</i><p>Could you recommend any resources for learning
+    that?"
+  score: 0
+  posted_at: '2026-10-27T17:35:01Z'
+- id: '50263340'
+  parent_id: '50261349'
+  author: Someone
+  text: At least partly, it’s a form of choice-supportive bias (<a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Choice-supportive_bias"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Choice-supportive_bias</a>).<p>Your
+    mind cannot live with the idea that you spent many, many hours learning an ugly
+    API, so it makes you think it is better than it is.
+  score: 0
+  posted_at: '2026-10-27T18:09:45Z'
+- id: '50263969'
+  parent_id: '50262731'
+  author: yunnpp
+  text: 'For rasterization, I would recommend: <a href="https:&#x2F;&#x2F;pikuma.com&#x2F;courses&#x2F;learn-3d-computer-graphics-programming"
+    rel="nofollow">https:&#x2F;&#x2F;pikuma.com&#x2F;courses&#x2F;learn-3d-computer-graphics-progra...</a><p>If
+    the video format is not for you, I would at least follow the contents, then look
+    up the individual pieces. The black book has a number of them: <a href="https:&#x2F;&#x2F;www.jagregory.com&#x2F;abrash-black-book&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.jagregory.com&#x2F;abrash-black-book&#x2F;</a><p>For
+    ray tracing, Ray Tracing from the Ground Up: <a href="https:&#x2F;&#x2F;www.amazon.in&#x2F;Ray-Tracing-Ground-Kevin-Suffern&#x2F;dp&#x2F;1568812728"
+    rel="nofollow">https:&#x2F;&#x2F;www.amazon.in&#x2F;Ray-Tracing-Ground-Kevin-Suffern&#x2F;dp&#x2F;15...</a><p>Then
+    people will jump in to say that the PBRT book (<a href="https:&#x2F;&#x2F;www.pbrt.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.pbrt.org&#x2F;</a>) is a better or more comprehensive
+    source, and it is true, but my opinion is that From the Ground Up is easier to
+    get started with.'
+  score: 0
+  posted_at: '2026-10-27T18:52:27Z'
+- id: '50263982'
+  parent_id: '50254990'
+  author: yunnpp
+  text: Yes, that is what I meant, thanks.
+  score: 0
+  posted_at: '2026-10-27T18:53:03Z'
+- id: '50265160'
+  parent_id: '50255733'
+  author: Cloudef
+  text: I disagree. Webgpu is completely useleless middleware that is already outdated,
+    and it bugs me it killed compute shaders for WebGL proposal. In addition webgpu
+    still does not work on browsers out of box.<p>Interacting with webgpu from wasm
+    is also often slower than webgl because the api is lower level and causes more
+    gc overhead on js side.
+  score: 0
+  posted_at: '2026-10-27T20:16:04Z'
+article:
+  url: https://eliasfarhan.ch/graphics/cpp/2026/01/27/why-i-teach-opengles.html
+  title:
+  fetch_status: error
+  content:
+  error: 'SSL_connect returned=1 errno=0 peeraddr=51.178.84.118:443 state=error: certificate
+    verify failed (unable to get local issuer certificate)'
+  fetched_at: '2026-10-27T20:26:08Z'
+archived_at: '2026-10-27T20:26:09Z'

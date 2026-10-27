@@ -1,0 +1,137 @@
+---
+post:
+  id: lo-d09iy3
+  source: lobsters
+  title: Compile-Time Dependent Types
+  url: https://thenumb.at/Syl-Intro/
+  hn_url: https://lobste.rs/s/d09iy3
+  score: 12
+  author: polywolf
+  posted_at: '2026-10-27T14:40:12Z'
+  fetched_at: '2026-10-27T20:26:10Z'
+  article_url: https://thenumb.at/Syl-Intro/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-27T20:26:13Z'
+  raw_comment_count: 1
+  tags:
+  - ml
+  - plt
+comments:
+- id: lo-gngwli
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    I've experimented with simple designs in this space but not very recently. Anyway, regarding the theorem proving side of things that you lose because of...
+    "Although this type system would not be suitable for a theorem proving language, it does not rule out type safety or even useful proofs. It has two practical consequences:
+
+    Functions used in type-level computations may diverge, so typechecking is not decidable.
+    Functions don’t discharge universally quantified claims, so the compiler must evaluate all applications that produce proofs before relying on their results."
+
+    "Not suitable" seems to assume the Curry-Howard approach for theorem proving, as in Rocq, Agda and Lean. But an alternative is some version of the HOL = STLC + LCF recipe. This should allow you to use type-level computation for proof automation. To be able to prove things about the code itself (so you can reflect it back to the type checker as trusted facts), you need a sound translation from code to logic.
+  score: 3
+  posted_at: '2026-10-27T20:22:46Z'
+article:
+  url: https://thenumb.at/Syl-Intro/
+  title: Syl
+  fetch_status: success
+  content: "# Compile-Time Dependent Types\n\nIt seems inevitable that compile-time
+    dependent types will come to systems programming.  \nC++ has templates and `constexpr`.
+    Rust has const generics. Zig has `comptime`. Even C has `_Generic`. However, these
+    features tend to be highly restricted, lack a proper type system, or both.\n\nI’m
+    working on [Syl](https://syl.dev/), a language which aims to encode compile-time
+    computation in a modal type system. Syl is primarily inspired by András Kovács’
+    work on [two-level](https://andraskovacs.github.io/pdfs/2ltt.pdf) [type theory](https://andraskovacs.github.io/pdfs/2ltt_icfp24.pdf),
+    as well as plans for [OxCaml](https://oxcaml.org/).\n\n_The Syl compiler may be
+    found on [GitHub](https://github.com/TheNumbat/Syl)._\n\n- [Modes](#modes)\n-
+    [Dependent Types](#dependent-types)\n- [Examples](#examples)\n- [Extensions](#extensions)\n-
+    [Everything Else](#everything-else)\n\n* * *\n\n## Modes\n\nIn Syl, all values
+    have a _mode_ along with a type. Modes describe properties of values independent
+    of their types. For example, [OxCaml uses modes](https://oxcaml.org/documentation/modes/intro/)
+    to indicate whether a value is uniquely owned, may be written to, may be sent
+    to another thread, etc.\n\nSyl has two mode axes: _staticity_ and _erasure_. On
+    the staticity axis, a value may be either `static` or `dynamic`. On erasure, either
+    `erased` or `unerased`.\n\n- A `static` value is knowable at compile time; a `dynamic`
+    value may not be.\n- An `unerased` value is knowable at runtime; an `erased` value
+    may not be.\n\nFor example, literals are `static unerased`, since they are clearly
+    knowable at both compile time and runtime. You can check by writing a mode annotation:\n\n
+    \   let x = 0 @ static unerased;;\n\nEach mode axis has a sub-moding relation.
+    If you have a `static` value, it’s safe to forget that it is knowable at compile
+    time and hence treat it as `dynamic`. Similarly, an `unerased` value may be treated
+    as `erased`. Mode annotations may “weaken” the mode, but not “strengthen” it:\n\n
+    \   let x = 0 @ dynamic;;\n    \n    let y = x @ static;;\n            ^^^^^^^^^^\n
+    \   Error: Expected a static expression, but got dynamic.\n\nAs you might expect,
+    branching on a `dynamic` value causes the result to be `dynamic`.\n\n    let x
+    = 0 @ dynamic;;\n    \n    let y = (if x == 0 then 1 else 2) @ static;;\n            ^^^^^^^^^^^^^^^^^^^^^^^^\n
+    \   Error: Expected a static expression, but got dynamic.\n\nAs long as they don’t
+    capture or branch on `dynamic` values, functions preserve staticity.\n\n    let
+    f = fn (x : int) -> x;;\n    \n    let x = (f 0) @ static;;\n    \n    let y =
+    (f (1 @ dynamic)) @ static;;\n            ^^^^^^^^^^^^^^^^^\n    Error: Expected
+    a static expression, but got dynamic.\n\nFunctions that return `erased` values
+    are themselves `erased`, so cannot be applied at runtime.\n\n    let f = fn (x
+    : unit) -> 1 @ erased;;\n    \n    let g = f @ unerased;;\n            ^\n    Error:
+    Expected an unerased expression, but got erased.\n\nNow, what can we do with this
+    information? When a value is knowable at compile time, surrounding code can be
+    _monomorphized_. Functions of `static` parameters take advantage of this fact:\n\n
+    \   let f = fn (static x : bool) -> print_bool x;;\n\nWhenever we call `f x`,
+    the compiler requires that both `f` and `x` have mode `static`. If they do, it
+    selects a particular implementation of `f` specialized to the value of `x`. Concretely,
+    `f true` would call a function that hard-codes `print_bool true`, and likewise
+    for `f false`.\n\nIn this example, we’re printing the value of `x` at runtime,
+    so it needs to be `unerased`. That’s often unnecessary: if `x` only determines
+    how to compile the body of `f`, it can be `erased`.\n\n    let f = fn (erased
+    x : bool) -> if erased x then print_int 0 else print_int 1;;\n\nHere, `erased`
+    also implies `static`, so `f` will be specialized on `x`. The `if erased` expression
+    accepts a `static erased` condition and is guaranteed to resolve at compile time.
+    Therefore, the body of `f true` is simply `print_int 0`, and likewise for `f false`.\n\n*
+    * *\n\n## Dependent Types\n\nOn their own, the `static` and `erased` modes let
+    us explicitly request specialization-based optimizations, but they don’t give
+    us dependent types. Functions of `static` arguments do.\n\n    let f = fn (erased
+    x : bool) -> if erased x then 0 else true;;\n\nHere, `if erased` allows us to
+    return an integer if `x` is true and a boolean otherwise. Hence, `f` has a dependent
+    function type, which encodes how the result type depends on the _value_ of the
+    input.\n\n    f : erased bool as x -> if erased x then int else bool\n\nNote `ty
+    as name` gives the argument a name for use in the result.\n\nApplications can
+    then determine the correct result type by evaluating `f`’s type.\n\n    let x
+    = (f true) : int;;\n    \n    let y = (f false) : bool;;\n\nThere is no distinct
+    type grammar: type formers like `->` and type annotations are normal expressions.`int`&nbsp;and&nbsp;`bool`
+    are just `erased` values of type `type`, and abstracting over them gives us polymorphism.\n\n
+    \   let id = fn (erased t : type) -> fn (x : t) -> x;;\n    \n    let x = id int
+    0;;\n    \n    let y = id bool true;;\n\nAs we saw above, functions of `static`
+    arguments are monomorphized. At runtime, `id int` refers to an identity function
+    that directly operates on integers, and likewise for `id bool`.\n\nThat is, Syl
+    is **dependently typed at compile time and simply typed at runtime.**\n\n- Constructs
+    that determine the shape of the runtime program require `static` information.\n\n-
+    Types are always `erased`, so the runtime program cannot inspect types.\n\nSyl
+    implements dependent typechecking similarly to existing languages, so we won’t
+    discuss it in detail. However, the relationship between types and propositions
+    in Syl differs from that of languages like Lean, Rocq, and Agda.\n\n### Proofs\n\nIn
+    particular, Syl supports general recursion in compile time computations and gives
+    `type` type `type`. Allowing either of these features implies that constructing
+    an expression of type `t` does **not** prove the proposition corresponding to
+    `t`.\n\nFor example, we can implement a function that ostensibly returns a value
+    of any type:\n\n    let magic =\n      fn (erased t : type) ->\n        fun loop
+    (_ : unit) : t = loop () in\n        loop ()\n    ;;\n\nNote `magic` could also
+    be implemented using `type : type` via [Girard’s paradox](https://ncatlab.org/nlab/show/Burali-Forti%27s+paradox).\n\nDespite
+    having type `erased type as t -> t`, this function never actually produces a value—it’s
+    an infinite loop. The type describes what `magic t` would produce if it completed,
+    but does not guarantee that it does.\n\nAlthough this type system would not be
+    suitable for a theorem proving language, it does _not_ rule out type safety or
+    even useful proofs. It has two practical consequences:\n\n- Functions used in
+    type-level computations may diverge, so typechecking is not decidable.\n\n- Functions
+    don’t discharge universally quantified claims, so the compiler must evaluate all
+    applications that produce proofs before relying on their results.\n\nIn return,
+    we don’t need a totality checker (all `static` expressions may be used in types)
+    or universe machinery (type-level programming is intuitive).\n\n### Totality\n\nBecause
+    Syl is a _programming language_, the point of compilation is to produce a runtime
+    artifact satisfying the invariants enforced by the type system. Therefore, we
+    only care about invocations of dependent functions that actually occur during
+    compilation—it’s fine for others to diverge.\n\nStill, typechecking getting stuck
+    during development is a poor user experience, so Syl also implements fuel limits.
+    Given competent compile-time debugging tools, I think this is reasonable.\n\n
+    \   fun f (erased _ : unit) : erased type = f ();;\n                                            ^\n
+    \   Error: Recursion limit reached.\n    \n    let x = 1 : f ();;\n\nEschewing
+    totality also means Syl can support explicitly partial functions at little additional
+    cost. For&nbsp;example, here’s a division function that statically"
+  error:
+  fetched_at: '2026-10-27T20:26:13Z'
+archived_at: '2026-10-27T20:26:13Z'

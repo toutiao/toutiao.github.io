@@ -1,0 +1,128 @@
+---
+post:
+  id: lo-rs6ce2
+  source: lobsters
+  title: Filian, Fil-C binaries on Debian
+  url: https://cr.yp.to/2025/fil-c.html
+  hn_url: https://lobste.rs/s/rs6ce2
+  score: 11
+  author: lollipopman
+  posted_at: '2026-10-27T16:42:17Z'
+  fetched_at: '2026-10-27T20:26:10Z'
+  article_url: https://cr.yp.to/2025/fil-c.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-27T20:26:13Z'
+  raw_comment_count: 1
+  tags:
+  - c
+  - linux
+comments:
+- id: lo-ljtrm7
+  parent_id: '0'
+  author: lollipopman
+  text: D. J. Bernstein is working on Filian, which would allow for installing Fil-C
+    binaries on a Debian machine, along side regular C binaries.
+  score: 4
+  posted_at: '2026-10-27T16:42:17Z'
+article:
+  url: https://cr.yp.to/2025/fil-c.html
+  title:
+  fetch_status: success
+  content: |-
+    # Notes by djb on using Fil-C (2025)
+
+    I'm impressed with the level of compatibility of the new memory-safe C/C++ compiler[Fil-C](https://fil-c.org)(filcc, fil++). Many libraries and applications that I've tried work under Fil-C without changes, and the exceptions haven't been hard to get working.
+
+    I've accumulated miscellaneous notes on this page regarding usage of Fil-C. My selfish objective here is to protect various machines that I manage by switching them over to code compiled with Fil-C, but maybe you'll find something useful here too.
+
+    ## FAQ
+
+    **Is it affordable?** As some data points, I've posted a[graph](20251028-filcc-vs-clang.html)showing nearly 9000 microbenchmarks of Fil-C vs. clang on cryptographic software (each run pinned to 1 core on a Zen 4). Typically code compiled with Fil-C takes between 1x and 4x as many cycles as the same code compiled with clang.
+
+    **Can I use Fil-C to compile replacement packages for my Debian machine?** I'm working on[Filian](https://gitlab.cr.yp.to/djb/filian), which adapts Debian packages to use Fil-C. On a Debian 13 system, Filian downloads Fil-C, compiles Fil-C, installs Fil-C, downloads selected Debian source packages, compiles those packages with Fil-C, and installs those packages.
+
+    **Are there other package managers that support compiling with Fil-C?** Yes:[Filnix](https://github.com/mbrock/filnix)from Mikael Brockman adapts[Nix](https://nixos.org/#) packages to use Fil-C. For example, an unprivileged user under Debian 12 with about 10GB of free disk space can download, compile, and install Fil-C, and run a Fil-C-compiled Nethack, as follows:
+
+        unshare --user --pid echo YES # just to test
+        git clone https://github.com/nix-community/nix-user-chroot
+        cd nix-user-chroot
+        cargo build --release
+        mkdir -m 0755 ~/nix
+        ~/nix-user-chroot/target/release/nix-user-chroot ~/nix \
+          bash -c 'curl -L https://nixos.org/nix/install | sh'
+        env TERM=vt102 \
+          ~/nix-user-chroot/target/release/nix-user-chroot ~/nix \
+          ~/nix/store/*-nix-2*/bin/nix \
+          --extra-experimental-features 'nix-command flakes' \
+          run 'github:mbrock/filnix#nethack'
+
+    **Are binary packages available precompiled with Fil-C?** I'm not distributing Filian binaries for now, but if you run multiple Debian systems with synchronized package versions then you can compile once and share the binary packages. For Filnix, some binary packages are already cached via[Cachix](https://www.cachix.org/). You can also use various packages from the[/opt/fil](https://fil-c.org/install_optfil)binary distribution from the Fil-C author.
+
+    **Is the supply chain safe?** As a starting point in answering this question, I've posted a[script](filc-diffs-20251027.sh)to help auditors see how Fil-C differs from upstream sources (clang, glibc, ...).
+
+    ## Older notes
+
+    I think everything later on this page is superseded by Filian, except for some package notes that I haven't integrated into the Filian database yet. Filian definitely supersedes version[20251030](20251030-filian-install-packages)posted here, versions[20251029](20251029-filian-install-compiler.sh),[20251030](20251030-filian-install-compiler.sh),[20251104](20251104-filian-install-compiler.sh)posted here, the[build-parallel](build-parallel-20251023.py) script posted here, and the libgc replacement posted here.
+
+    Timings below are from a mini-PC named except where otherwise mentioned. This mini-PC has a 6-core (12-thread) AMD Ryzen 5 7640HS (Zen 4) CPU, 12GB RAM, and 36GB swap. The OS is Debian 13. (I normally run LTS software, periodically upgrading from software that's 4–5 years old such as Debian 11 today to software that's 2–3 years old such as Debian 12 today; but some of the packages included in Fil-C expect newer utilities to be available.)
+
+    ## Compiler and C library
+
+    Current recommendations for things to do at the beginning as :
+
+        mkdir -p /var/empty
+        apt install \
+          autoconf-dickey build-essential bison clang cmake flex gawk \
+          gettext ninja-build patchelf quilt ruby texinfo time
+
+    I created an unprivileged user. Everything else is as that user.
+
+    I downloaded the Fil-C source package:
+
+        git clone https://github.com/pizlonator/fil-c.git
+        cd fil-c
+
+    This isn't just the compiler; there's also glibc and quite a few higher-level libraries and applications. There are also binary Fil-C packages, but I've worked primarily with the source package at this point.
+
+    I compiled Fil-C and glibc:
+
+        time ./build_all_fast_glibc.sh
+
+    There are also options to use musl instead of glibc, but musl is incompatible with some of the packages shipped with Fil-C: needs , needs ,'s test suite needs the glibc variant of , and's build needs to be able to convert from CP932 to UTF-8.
+
+    I had originally configured the server with only 12GB swap. I then had to restart a few times because compiling the Fil-C compiler ran out of memory (from automatically parallelizing the compilation across 12 threads; presumably compiling clang on the same machine would have the same issue). Switching to 36GB swap made everything work with no restarts; monitoring showed that almost 19GB swap (plus 12GB RAM) was used at one point. A larger server, 128 cores with 512GB RAM, took 8 minutes for Fil-C plus 6 minutes for musl, with no restarts needed.
+
+    ## More libraries and applications included with Fil-C
+
+    Fil-C includes athat builds many more libraries and applications (sometimes with patches from the Fil-C author). I wrote a replacement script[https://cr.yp.to/2025/build-parallel-20251023.py](https://cr.yp.to/2025/build-parallel-20251023.py)with the following differences:
+
+    - The script runs through everything, putting results into , whereas stops at the first error.
+    - The script tries to use multiple cores, while runs through targets serially, parallelizing only to the extent that each target's build mechanism is parallelized.
+    - The script might produce wrong results if it's parallelizing things that shouldn't be parallelized. But this should be easy to fix via tweaking the dependencies listed in the script.
+
+    On , runningwent through 61 targets in 101 minutes real time (467 minutes user time, 55 minutes system time), successfully compiling 60 of them.
+
+    **libcap.** This is the one that didn't compile:
+
+    **util-linux.** I skipped this one. It does compile, but the compiled utility needs to be patched to use and as library functions rather than via , or Fil-C needs to be patched for those syscalls. This is an issue for since relies on ; maybe should instead use Python's affinity functions.
+
+    **attr, bash, benchmarks, binutils, bison, brotli, bzip2, bzip3, check, cmake, coreutils, cpython, curl, dash, diffutils, elfutils, emacs, expat, ffi, gettext, git, gmp, grep, icu, jpeg-6b, libarchive, libcap, libedit, libevent, libpipeline, libuev, libuv, lua, lz4, m4, make, mg, ncurses, nghttp2, openssh, openssl, pcre2, pcre, perl, pkgconf, procps, quickjs, sed, shadow, simdutf, sqlite, tcl, tmux, toybox, vim, wg14\_signals, xml\_parser, xz, zlib, zsh, zstd.** No problems encountered so far (given whatever patches were already applied from the Fil-C author!). The benchmarks package is supplied with Fil-C and does a few miscellaneous measurements.
+
+    ## Further libraries and applications
+
+    I didbefore these.
+
+    **boost 1.89.0** : Seems to mostly work. Most of the package is header-only; a few simple tests worked fine.
+
+    I also looked a bit at the compiled parts. Runningran into , which Fil-C doesn't support, but editingto use for the no-fork test got past this.
+
+    Running produced an error message since I should have said instead of ; Fil-C said it caught a safety issue in the program after the error message:. I didn't compile with debugging so Fil-C didn't say where this is in .
+
+    **cdb-20251021** : Seems to work. One regression test, an artificial out-of-memory regression test, currently produces a different error message with Fil-C:
+
+    **libcpucycles-20250925** : Seems to work. I commented out the first three lines of .
+
+    **libgc** : I
+  error:
+  fetched_at: '2026-10-27T20:26:13Z'
+archived_at: '2026-10-27T20:26:13Z'

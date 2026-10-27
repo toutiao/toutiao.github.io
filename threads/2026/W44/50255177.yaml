@@ -1,0 +1,119 @@
+---
+post:
+  id: '50255177'
+  title: Writing about pratt parsing so I remember it
+  url: https://www.unix.dog/~yosh/blog/2026-10-25_pratt-parsing.html
+  hn_url: https://news.ycombinator.com/item?id=50255177
+  score: 80
+  author: dverlaeckt80
+  posted_at: '2026-10-27T06:02:23Z'
+  fetched_at: '2026-10-27T20:26:08Z'
+  article_url: https://www.unix.dog/~yosh/blog/2026-10-25_pratt-parsing.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-27T20:26:08Z'
+  raw_comment_count: 7
+comments:
+- id: '50256315'
+  parent_id: '50255177'
+  author: jstanley
+  text: Personally I never found the shunting yard algorithm very intuitive at all.<p>A
+    recursive descent parser makes much more sense to me.
+  score: 0
+  posted_at: '2026-10-27T09:02:06Z'
+- id: '50257144'
+  parent_id: '50256315'
+  author: throw-qqqqq
+  text: For me, the win is that a Pratt parser is more data-driven.<p>It’s easy to
+    look at a table or map of operators and their precedence and convince myself that
+    it’s correct. A recursive descent parser needs to be very clearly structured to
+    have similar clarity, IMO.<p>You can easily combine Pratt parsing with recursive
+    descent, using the Pratt part only for expressions. FWIW, this is my favorite
+    approach for parsing C.
+  score: 0
+  posted_at: '2026-10-27T10:47:55Z'
+- id: '50257324'
+  parent_id: '50255177'
+  author: mjbq
+  text: "Could I suggest also looking at a sed-inspired parsing language\n(a DSL)
+    which is called nom and is documented at <a href=\"http:&#x2F;&#x2F;www.nomlang.org\"
+    rel=\"nofollow\">http:&#x2F;&#x2F;www.nomlang.org</a>\nAn example script for parsing
+    symbolic expressions is at\n<a href=\"http:&#x2F;&#x2F;www.nomlang.org&#x2F;eg&#x2F;maths.parse.pss\"
+    rel=\"nofollow\">http:&#x2F;&#x2F;www.nomlang.org&#x2F;eg&#x2F;maths.parse.pss</a>
+    and another which turns the\nexpressions into LaTeX is &#x2F;eg&#x2F;maths.tolatex.pss<p>Nom
+    may seem quite verbose. I have written another language (which compiles\nto nom)
+    which I call Syntagma. The syntax of syntagma is much closer to \nEBNF but also
+    has powerful additions, such as a &quot;lookahead&quot; syntax, a \nnegated lookahead
+    syntax (eg: &quot;parse this as an expression if it is not\nfollowed by a multiply
+    operator&quot;). Also, Syntagma has a &quot;condition&quot; syntax, \nmeaning
+    that a parse rule will only reduce if the attributes of the \nparse tokens match
+    certain conditions.<p>An example of an expression parser written in Syntagma is
+    at\n<a href=\"http:&#x2F;&#x2F;www.nomlang.org&#x2F;syntagma&#x2F;eg&#x2F;expr.sta\"
+    rel=\"nofollow\">http:&#x2F;&#x2F;www.nomlang.org&#x2F;syntagma&#x2F;eg&#x2F;expr.sta</a>
+    \ This is much more succinct \nthan the equivalent nom script. The script &#x2F;syntagma&#x2F;eg&#x2F;expr.toforth.sta\nconverts
+    symbolic expressions (and assignments) into Forth.<p>Parsing is an interesting
+    topic, but I feel that it is quite difficult\nor non-intuitive with some of the
+    traditional tools and methods (at \nleast for me)."
+  score: 0
+  posted_at: '2026-10-27T11:08:10Z'
+- id: '50257412'
+  parent_id: '50257144'
+  author: arnsholt
+  text: Yeah, for “normal” syntax I’d generally go for recursive descent, but for
+    expression parsing with operator precedence I’d implement Pratt parsing if I had
+    any say in the matter.
+  score: 0
+  posted_at: '2026-10-27T11:17:09Z'
+- id: '50257473'
+  parent_id: '50257412'
+  author: throw-qqqqq
+  text: "I think of it as expressions vs statements, but I think we agree.<p>Lexing
+    for tokenization -&gt; \nrecursive descent for statements -&gt; Pratt parsing
+    for expressions.<p>S-Expressions and prefix-notation are so easy to work with
+    (compared to in-fix IMO), because the precedence is explicit."
+  score: 0
+  posted_at: '2026-10-27T11:22:33Z'
+- id: '50257558'
+  parent_id: '50257144'
+  author: bonzini
+  text: Pratt parsing, in its simplest form, is essentially an optimized recursive
+    descent that uses lookahead to skip levels. Which as you say ends up being clearer
+    too.
+  score: 0
+  posted_at: '2026-10-27T11:31:36Z'
+- id: '50260887'
+  parent_id: '50257144'
+  author: dunham
+  text: The table-driven aspect is nice when you have user defined operators. I&#x27;ve
+    used it inside a combinator based parser for a language with mixfix operators
+    (e.g. _≡⟨_⟩_ ).<p>Lean4 takes this to an extreme and has &quot;syntax categories&quot;
+    (e.g. expression), each of which has something like a pratt parser. Ambiguity
+    is broken by taking the option that makes the most progress, and it is made efficient
+    by memoization. You can add syntax at compile time, down to the lexing level.
+    There is an example that adds HTML-like syntax and uses it later in the same file.<p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;leanprover&#x2F;lean4&#x2F;blob&#x2F;0f2eaa6e776255083f999d11278ce656d09d853d&#x2F;tests&#x2F;playground&#x2F;webserver&#x2F;Webserver.lean#L171-L174"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;leanprover&#x2F;lean4&#x2F;blob&#x2F;0f2eaa6e776255083f9...</a><p>(I&#x27;m
+    not saying changing the language on the fly is a good idea, but it&#x27;s interesting
+    that they pulled it off.)
+  score: 0
+  posted_at: '2026-10-27T15:33:41Z'
+article:
+  url: https://www.unix.dog/~yosh/blog/2026-10-25_pratt-parsing.html
+  title: writing about pratt parsing so I remember it | ~yosh
+  fetch_status: success
+  content: |-
+    # writing about pratt parsing so I remember it
+
+    posted
+
+    modified
+
+    I got bored and wanted to make a parser of C expressions. this will probably become a compiler at some point. previously, I’ve made a calculator using [shunting yard](https://en.wikipedia.org/wiki/Shunting_yard_algorithm), but with an itch to perhaps make a compiler of some kind, I looked at _pratt parsing_.
+
+    you won’t find much information about pratt parsing in a conventional learning path of computer science. the [dragon book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools), for all it talks about parsing, doesn’t mention it. as far as I’m aware, most programming language courses will probably teach either LR or recursive descent depending on how academic it is (mine taught recursive descent). pratt parsing specifically appears to be relegated mostly to compiler development and PLT circles. the most mainstream mention I know of it is in [crafting interpreters](https://craftinginterpreters.com/compiling-expressions.html); [wikipedia](https://en.wikipedia.org/wiki/Operator-precedence_parser#Pratt_parsing) also links a few other posts.
+
+    I used the crafting interpreters text to get my bearings, but I also wanted to practice reading formal papers more, so I tried using [Pratt’s original paper text](https://tdop.github.io/) as much as possible. it did take a bit more time than I’d have liked to wrap my mind around how the recursion fits into the operator precedence, but it did just _click_ all at once, namely once I related it back to the shunting yard algorithm. so now I’m writing the observations down so I don’t forget. maybe it’s useful to you.
+
+    [back](index.html)
+  error:
+  fetched_at: '2026-10-27T20:26:08Z'
+archived_at: '2026-10-27T20:26:09Z'

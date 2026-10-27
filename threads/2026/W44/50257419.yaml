@@ -1,0 +1,1201 @@
+---
+post:
+  id: '50257419'
+  title: Python's experimental JIT to be removed
+  url: https://lwn.net/SubscriberLink/1102102/0c00e4d550f25f8c/
+  hn_url: https://news.ycombinator.com/item?id=50257419
+  score: 378
+  author: f311a
+  posted_at: '2026-10-27T11:17:57Z'
+  fetched_at: '2026-10-27T20:26:02Z'
+  article_url: https://lwn.net/SubscriberLink/1102102/0c00e4d550f25f8c/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-27T20:26:02Z'
+  raw_comment_count: 198
+comments:
+- id: '50257957'
+  parent_id: '50257419'
+  author: bratao
+  text: This is pretty bittersweet to see.<p>Python is my favorite language, but I&#x27;m
+    honestly tired of having to rewrite performance bottlenecks in Cython or Rust
+    all the time. When the Faster CPython project started with Microsoft&#x27;s backing,
+    I was really excited. Mark Shannon had that plan promising huge speedups across
+    a few cycles, and while that clearly turned out to be much harder than anticipated,
+    the team still kept pushing forward to deliver a real JIT.<p>Seeing all of that
+    get bogged down in committee bureaucracy now is just frustrating.<p>I have a lot
+    of respect for the core devs and I know maintaining CPython, and it is a time
+    donation job. It isn&#x27;t easy. But I feel that over-caution and red tape ends
+    up discouraging serious contributions. They are setting an unreasonably high bar
+    for something that would obviously help the entire ecosystem.<p>Just think about
+    the sheer amount of electricity and compute power being wasted every single day
+    running inefficient Python across millions of machines worldwide.<p>Python really
+    deserves a proper JIT. I genuinely hope they reconsider this.
+  score: 0
+  posted_at: '2026-10-27T12:11:26Z'
+- id: '50257972'
+  parent_id: '50257419'
+  author: xx_ns
+  text: It&#x27;s unfortunate that a technically exciting new feature is being killed
+    partly because of what is essentially bureaucracy (and the lack of the developer&#x27;s
+    personal bandwidth). On the other hand, it&#x27;s pretty safe to say that the
+    strict adherence to the PEP policy and all of the bureaucracy that comes with
+    it is what makes Python a great language, for better or worse.<p>Not to say that
+    the technical objections were without merit, they likely very much weren&#x27;t,
+    and the debugger and instrumentation support and maintenance work sounds fairly
+    painful on its own.
+  score: 0
+  posted_at: '2026-10-27T12:12:51Z'
+- id: '50258052'
+  parent_id: '50257419'
+  author: kannanvijayan
+  text: Gonna dump a technical hot take here.<p>Python is a mature production language
+    with a lot of users.  Even before it was huge - like 20 years ago when I was in
+    college - getting a small backwards compatible API change into a python extension
+    module (gnu readline in my case) required convincing GvR personally that the API
+    change was necessary.<p>Every JIT attempt I&#x27;ve seen for python just tries
+    to cut too deep in the first pass, and scope themselves too large.<p>I believe
+    any successful attempt at optimizing python performance from JIT will FIRST start
+    with a 100% semantically compatible hidden type model for optimizing object property
+    access and method dispatch.<p>The single biggest performance delta in most dynamic
+    language jits come from that, not from optimizing guards off of bytecode operations
+    or from compiling to machine code.  It&#x27;s from converting hashtable lookups
+    into constant-time guard + offset lookups.<p>The hidden type model is also a hard
+    nut to crack.  It needs to perserve dict semantics which have very dynamic behaviour
+    via the various `__*__` methods, and handle exotics scope objects since scoped
+    name lookups are the most common ones which have their own exotic behaviours (I
+    remember python providing some ability for callee frames to inspect caller scopes
+    in some limited ways).
+  score: 0
+  posted_at: '2026-10-27T12:21:17Z'
+- id: '50258054'
+  parent_id: '50257419'
+  author: graemep
+  text: 'If you look at the reasons for this it seems like a good decision: <a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython&#x2F;108010&#x2F;53"
+    rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;pep-836-jit-go-brrr-the-path-to...</a><p>There
+    are already many way of addressing Python performance (leaving aside whether Python
+    is a good choice if performance matters) such as Cython, Numba, Pypy and C extensions.'
+  score: 0
+  posted_at: '2026-10-27T12:21:31Z'
+- id: '50258067'
+  parent_id: '50257419'
+  author: pbronez
+  text: Interesting, makes sense. JIT in CPython main is a big deal, glad they’re
+    proceeding with caution. Overall looks like they added it as an experimental feature
+    for two years, then decided to back it out. Perfectly reasonable outcome.
+  score: 0
+  posted_at: '2026-10-27T12:23:17Z'
+- id: '50258076'
+  parent_id: '50257419'
+  author: anthk
+  text: The Rust based Python3 port can keep it and it can still be far more secure
+    than CPython. Not everything it&#x27;s JIT&#x27;ted on RustPython, it&#x27;s ondemand
+    per function, you have to enable it explicitly.
+  score: 0
+  posted_at: '2026-10-27T12:24:16Z'
+- id: '50258115'
+  parent_id: '50257419'
+  author: adrian17
+  text: Unfortunate. I&#x27;ve been following the work on it occasionally.<p>On one
+    hand, it seemed like JIT work was really progressing in high gear until SC requested
+    a new PEP. Also unfortunate, as it seemed like part of the hope for the JIT was
+    that it&#x27;d counter the performance penalty from free threading.<p>On the other,
+    it did feel (to me) like with all the fancy (and definitely cool) optimizations
+    it got (automatic refcount operation removal, new type-based specializations,
+    inplace math operations), the macrobenchmark benefits weren&#x27;t _that_ exciting
+    for a JIT. It definitely has potential for more, maybe with even fancier optimizations
+    like unboxing ints, but the complexity just keeps going up.<p>&gt; It said that
+    the PEP was &quot;overly optimistic&quot; about user-visible differences with
+    the JIT enabled.<p>The JIT is technically generated from the same source as the
+    interpreter loop itself, so originally the differences were extremely unlikely,
+    but I imagine the risk just kept going up as new JIT-only paths and optimizations
+    were introduced.<p>And politically, I feel like SC’s reasoning was just “this
+    side project has landed in main branch almost by accident and has been stewing
+    without oversight ever since, with no stabilization in sight”; and the latest
+    PEP was probably still too vague, with a lot of “here’s more things we can add
+    to the stew” - so I can understand if SC wasn’t satisfied.
+  score: 0
+  posted_at: '2026-10-27T12:27:38Z'
+- id: '50258125'
+  parent_id: '50257972'
+  author: Good4boothee
+  text: Looking at amount of JIT related (for example type confusion) security bugs
+    in V8 I am not surprised other developers are vary of its inclusion.
+  score: 0
+  posted_at: '2026-10-27T12:29:21Z'
+- id: '50258157'
+  parent_id: '50257419'
+  author: Krishansubudhi
+  text: I hope it does not lead to performance issues later. Python is already famous
+    for being slower than compiled languages.
+  score: 0
+  posted_at: '2026-10-27T12:32:54Z'
+- id: '50258178'
+  parent_id: '50258052'
+  author: Pxtl
+  text: It still blows my mind that the big &quot;we&#x27;re breaking backwards compatibility
+    Python 3000&quot; release didn&#x27;t do anything to lay the groundwork for this,
+    or any of Python&#x27;s other structural problems.
+  score: 0
+  posted_at: '2026-10-27T12:35:00Z'
+- id: '50258188'
+  parent_id: '50257957'
+  author: mananaysiempre
+  text: Unladen Swallow died for lack of upstream interest.<p>PyPy lacks upstream
+    interest, looked like it could have a shot after many years of development but
+    recently NumPy removed support because they just couldn’t fathom how a non-dead
+    project could be a couple of versions behind CPython.<p>Now the new JIT is dying
+    because of what seems to be a lack of upstream interest. (The things TFA describes
+    as being required are not unreasonable, but not realistic for a necessarily speculative
+    long-running project without wild amounts of committed funding.)<p>I’m not optimistic.
+  score: 0
+  posted_at: '2026-10-27T12:35:59Z'
+- id: '50258213'
+  parent_id: '50257972'
+  author: jeremyjh
+  text: 'I think it would be a mistake to conclude this has anything at all to do
+    with bureaucracy as a matter of inanimate policy that the SC was helplessly in
+    thrall to. Bureaucracy was the tool the SC used to demonstrate that this feature
+    lacked many important properties that they cared about, as mentioned: &quot;maintenance,
+    compatibility, and ... clear success metrics&quot;. For whatever detailed reasons,
+    the PEP was withdrawn after it couldn&#x27;t convincingly demonstrate those things
+    to the satisfaction of the critics on the SC.'
+  score: 0
+  posted_at: '2026-10-27T12:38:15Z'
+- id: '50258229'
+  parent_id: '50257419'
+  author: tweakimp
+  text: Sad to read this. I had hoped that with the advance of AI capabilities, features
+    like this could be prototyped, tested, implemented and shipped even faster. And
+    I was really looking forward to see performance gains for my favourite language.<p>Where
+    do we go from here? Microsoft did not continue to finance the Faster CPython project
+    and the current speed gains are good, but not what we hoped.
+  score: 0
+  posted_at: '2026-10-27T12:40:13Z'
+- id: '50258232'
+  parent_id: '50258178'
+  author: jeremyjh
+  text: Its possible this could have been the concrete pillar that broke the camel&#x27;s
+    back and set Python 3 on the path of Perl 6.
+  score: 0
+  posted_at: '2026-10-27T12:40:19Z'
+- id: '50258239'
+  parent_id: '50257419'
+  author: mhh__
+  text: It seems like such a failing and waste of human life that we spend all this
+    time waiting around for python when the JS engines are so cutting edge.
+  score: 0
+  posted_at: '2026-10-27T12:40:53Z'
+- id: '50258245'
+  parent_id: '50257957'
+  author: ZiiS
+  text: I know not everyone loves them; but `Claude rewrite the performance bottlenecks
+    in Rust` works so well it is hard to see the security surface area and harder
+    reason about performance as something that should be paid in core.
+  score: 0
+  posted_at: '2026-10-27T12:41:39Z'
+- id: '50258263'
+  parent_id: '50258052'
+  author: adrian17
+  text: "&gt; It&#x27;s from converting hashtable lookups into constant-time guard
+    + offset lookups.<p>Python already does it in a lot of cases, see opcode specializations
+    like LOAD_ATTR_INSTANCE_VALUE, LOAD_ATTR_SLOT."
+  score: 0
+  posted_at: '2026-10-27T12:43:38Z'
+- id: '50258282'
+  parent_id: '50257419'
+  author: btown
+  text: 'From <a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython&#x2F;108010&#x2F;53"
+    rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;pep-836-jit-go-brrr-the-path-to...</a>
+    :<p>&gt; We want the PEP to be clear that it’s ultimately the JIT team’s responsibility
+    to find solutions for these packages and tools, and how to deal with situations
+    where a tool can’t be supported or made to work<p>Is it just me or is this absurdly
+    impossible, to the point of willfully killing the project? Committing a team of
+    brilliant compiler engineers to doing free consulting ad infinitum for every bit
+    of tooling in the world, however hacked-together?<p>The alternative would be to
+    have the bravery to say: this is the way forward to keep this language relevant
+    into the future, and as a steering committee we collectively own that some tooling
+    may be out of date. Instead, this is a signal that Python is going to rest on
+    its laurels for a very long time.'
+  score: 0
+  posted_at: '2026-10-27T12:44:55Z'
+- id: '50258331'
+  parent_id: '50257419'
+  author: pansa2
+  text: 'Surprising, even though (IIRC) the performance of the JIT was always fairly
+    underwhelming.<p>What about the other major change to Python&#x27;s implementation:
+    free threading? Has it lived up to expectations? I assume it&#x27;s not also in
+    doubt, despite Guido recently saying &quot;Personally I wish we’d stuck with the
+    GIL&quot;? [0]<p>[0] <a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;pep-805-safe-parallel-python&#x2F;108670&#x2F;66"
+    rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;pep-805-safe-parallel-python&#x2F;10...</a>'
+  score: 0
+  posted_at: '2026-10-27T12:48:31Z'
+- id: '50258348'
+  parent_id: '50258178'
+  author: ModernMech
+  text: At the time, Python had a clear purpose as an easy to learn &quot;glue&quot;
+    language between other, perhaps more performant languages. There was no reason
+    to make Python as fast because that would muddy its purpose by introducing compromises
+    and complexity. For better or worse Python sat pretty well in its niche.<p>Today
+    there are far more people using it, and everyone has a different perspective on
+    what it is. No longer is it a niche glue language, now it&#x27;s a backbone of
+    AI technology at major tech firms, so it&#x27;s understandable they&#x27;d like
+    it to be faster on its own.
+  score: 0
+  posted_at: '2026-10-27T12:50:20Z'
+- id: '50258520'
+  parent_id: '50258229'
+  author: Retr0id
+  text: At this point if you have a python codebase where perf is an issue, the &quot;AI-pilled&quot;
+    answer is to rewrite it in a faster language.
+  score: 0
+  posted_at: '2026-10-27T13:01:07Z'
+- id: '50258527'
+  parent_id: '50258229'
+  author: Eji1700
+  text: A biased opinion as I dev in F#, but it strikes me that AI is going to play
+    best with functionally pure languages (strongly typed, no side effects, whatever
+    we call that these days)?<p>F# is on the softest side of that, but letting the
+    compiler tell the AI &quot;nope, here&#x27;s why&quot; seems like a huge win in
+    saving cycles and time.<p>The downside at first was simply, &quot;how many examples
+    of F# are there to learn from&quot;, and early on it showed, but I think that&#x27;s
+    been long overcome.<p>And F# is obviously NOT the best example since it&#x27;s
+    both &quot;soft&quot; on functional purity and niche.  I imagine something like
+    haskell is probably doing even better, although I&#x27;ve yet to check that at
+    all (not that I can code haskell but I haven&#x27;t looked at anecdotes or anything).<p>I
+    realize this doesn&#x27;t really help anyone who&#x27;s grown to love python,
+    and there&#x27;s surely no perfect language, but just like how the web catapulted
+    javascript, I see a future where the answer isn&#x27;t &quot;use AI to make python
+    better&quot; so much as &quot;what already works super well with AI, and does
+    it ease the user adoption&quot;
+  score: 0
+  posted_at: '2026-10-27T13:01:26Z'
+- id: '50258573'
+  parent_id: '50258282'
+  author: lemagedurage
+  text: Given that the speedup is modest (~10%) and the Python 3 migration caused
+    enough pain for users, I get it though. If it was a 2x speedup it would be a different
+    story IMO
+  score: 0
+  posted_at: '2026-10-27T13:04:19Z'
+- id: '50258596'
+  parent_id: '50258520'
+  author: tweakimp
+  text: But I want to continue to understand the code. I dont know Rust (maybe AI
+    can teach me?) and if I let Claude rewrite my current 50k LOC project in Rust,
+    how can I understand what is happening and how can I work on it and think it further?
+  score: 0
+  posted_at: '2026-10-27T13:05:59Z'
+- id: '50258604'
+  parent_id: '50258213'
+  author: bunderbunder
+  text: 'Im not sure I even like calling it bureaucracy. It’s a process, yes. But
+    we’re not talking many layers of abstract organizational hell, here. Were talking
+    a fairly direct process of documenting what you are doing and how you are going
+    to do it well enough that others working and depending on the project can understand
+    it, coordinate with it, and have a reasonable degree of confidence that it won’t
+    cause undue problems.<p>If having to put all that in writing and get a bunch of
+    people to agree feels too burdensome to you, maybe that’s a sign that you would
+    be happier working on something other than core changes to the world’s second
+    most popular programming language.<p>(edit: That wasn’t meant to be a jab at the
+    core developers working on the JIT. Based on what’s in the public discussion threads,
+    they have been handling things very well throughout the process. It’s unfortunate
+    that the SC let the project get this far before realizing the project had grown
+    well beyond its original PIP’s mandate, and I’m sure that is deeply frustrating
+    to the people leading the project. I know I would not be handling the setback
+    nearly as gracefully as they are.)'
+  score: 0
+  posted_at: '2026-10-27T13:06:32Z'
+- id: '50258634'
+  parent_id: '50258178'
+  author: 0xpgm
+  text: For a long time Guido wanted CPython to remain simple, as the reference implementation.<p>Probably
+    also during the 2 to 3 migration, but that goal appears to have now been abandoned.<p>I
+    wonder how the authors of other implementations like pypy will be able to keep
+    up as the reference implementation becomes more and more complex.
+  score: 0
+  posted_at: '2026-10-27T13:07:59Z'
+- id: '50258695'
+  parent_id: '50258520'
+  author: lemagedurage
+  text: It&#x27;s already typical to call into a native library with Python bindings
+    for performance critical work in Python. Even Pydantic&#x27;s validation runs
+    in Rust code.
+  score: 0
+  posted_at: '2026-10-27T13:12:25Z'
+- id: '50258720'
+  parent_id: '50258188'
+  author: pansa2
+  text: "&gt; <i>Unladen Swallow died for lack of upstream interest</i><p>IIRC Unladen
+    Swallow was, despite the extreme hype, nothing more than the internship project
+    of a couple of students. It died because their internship was over.<p>Otherwise
+    you&#x27;re right, though. Lots of CPython alternatives suffer from lack of upstream
+    interest - the Python language designers don&#x27;t seem very interested in anything
+    other than CPython. In particular, they appear to only consider CPython when adding
+    features to the language. Two examples:<p>- Requiring `dict`s to be ordered because
+    that&#x27;s how they work in CPython, without considering how they work in other
+    implementations<p>- Adding pattern matching syntax that&#x27;s suitable for CPython&#x27;s
+    PEG parser, even though it&#x27;s not LL(1) so can&#x27;t be parsed by, say, MicroPython"
+  score: 0
+  posted_at: '2026-10-27T13:13:58Z'
+- id: '50258727'
+  parent_id: '50258157'
+  author: FranOntanaya
+  text: Being slower than a compiled language is not saying much for an interpreted
+    language. But it&#x27;s slower than PHP which is a closer comparison, and PHP
+    has had JIT for six years now.
+  score: 0
+  posted_at: '2026-10-27T13:14:33Z'
+- id: '50258895'
+  parent_id: '50258245'
+  author: greenavocado
+  text: Done <a href="https:&#x2F;&#x2F;github.com&#x2F;can1357&#x2F;pon" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;can1357&#x2F;pon</a>
+  score: 0
+  posted_at: '2026-10-27T13:25:12Z'
+- id: '50258910'
+  parent_id: '50258727'
+  author: pansa2
+  text: Ruby has the reputation of being a very slow language, but Python has been
+    slower still since Ruby jumped ahead with version 1.9, almost 20 years ago. Ruby
+    also has had far more success with JIT compilers than Python has.
+  score: 0
+  posted_at: '2026-10-27T13:25:59Z'
+- id: '50259080'
+  parent_id: '50258263'
+  author: kannanvijayan
+  text: 'I haven&#x27;t kept up with python development lately, so thanks for pointing
+    that out.  I looked this up and it does seem like some sort of property access
+    is being optimized.  What&#x27;s not clear is what the hidden runtime type model
+    is being used for this, or if it&#x27;s a lightweight tracking that captures some
+    subset of property accesses.<p>More digging led to this: <a href="https:&#x2F;&#x2F;peps.python.org&#x2F;pep-0659&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;peps.python.org&#x2F;pep-0659&#x2F;</a> which
+    seems to be what the effort is organized around?<p>Python&#x27;s object semantics
+    are broadly similar to Javascript, bar the prototypical inheritance chain, but
+    with the extra complexity of potentially needing to handle dynamic `__*attr__`
+    overrides.  Optimizing for this would require a tree of hidden map objects much
+    like JS JIT engines use.  I dug around the codebase a while back looking for something
+    like that but didn&#x27;t find it.  `OrderedDict` seemed promising but after more
+    investigation that turned out to just be adding property ordering to dictionaries.<p>The
+    thing is, you can build that entire hidden type structure out, AND optimize against
+    it, without ever having to mess with things like bytecode replacement.  Once you
+    have the hidden type model, you can modify the property lookup algorithm in the
+    VM itself (as in cpython c code) to use some annotation structure hanging off
+    of the bytecode to look up inline caches of type-guarded fastpaths.  It would
+    be an optimized fastpath that integrated directly into the C code that interprets
+    the GETATTR opcode.'
+  score: 0
+  posted_at: '2026-10-27T13:35:30Z'
+- id: '50259123'
+  parent_id: '50258604'
+  author: vlovich123
+  text: The problem is that clearly documenting all details as required in the PEP
+    is at odds with complicated new features like a JIT where all the details can’t
+    be known and have to be decided on as they are realized. Process &#x2F; bureaucracy
+    is at direct odds with experimentation.
+  score: 0
+  posted_at: '2026-10-27T13:38:31Z'
+- id: '50259188'
+  parent_id: '50258895'
+  author: ddorian43
+  text: Seems unmaintained from July.
+  score: 0
+  posted_at: '2026-10-27T13:42:26Z'
+- id: '50259254'
+  parent_id: '50258331'
+  author: yxhuvud
+  text: Getting a JIT from underwhelming to actually good is always going to be a
+    whole lot of iterative work to remove blocking parts of the existing implementation.
+    In Ruby-land we have had a good JIT for a while now, but it took many release
+    cycles and a ton of resources before it was able to outperform the non JITed version
+    when using Rails. Don&#x27;t expect quick fixes that make great strides and any
+    investments in it needs to be persistent and apply over time.<p>It boggles my
+    mind that it apparently is the case that such a popular language as Python isn&#x27;t
+    able to get the resources to do this.
+  score: 0
+  posted_at: '2026-10-27T13:46:35Z'
+- id: '50259266'
+  parent_id: '50258695'
+  author: Retr0id
+  text: This works well if there are obvious hot spots that can be easily isolated,
+    but sometimes the perf issues are more uniformly distributed throughout a codebase.
+  score: 0
+  posted_at: '2026-10-27T13:47:24Z'
+- id: '50259276'
+  parent_id: '50258910'
+  author: chao-
+  text: "<i>&gt;Ruby also has had far more success with JIT compilers than Python
+    has.</i><p>Ruby is on its third (I think?) JIT now? I&#x27;m a little surprised,
+    given Ruby&#x27;s reputation as a wacky &quot;anything goes&quot; language with
+    a very complex grammar, and it makes me wonder why that is? Does it have to do
+    with the design of the runtime itself more than the language semantics? Or is
+    it more incidental, e.g. many popular ibs are C wrappers, already generates bytecode
+    files, and so on."
+  score: 0
+  posted_at: '2026-10-27T13:48:01Z'
+- id: '50259328'
+  parent_id: '50259080'
+  author: adrian17
+  text: |-
+    &gt; Optimizing for this would require a tree of hidden map objects much like JS JIT engines use.<p>I don’t really think that’s true or even that relevant , at least in context of classes (especially with slots - the class, by definition, _is_ the “hidden map”) and not generic dicts.<p>&gt; The thing is, you can build that entire hidden type structure out, AND optimize against it, without ever having to mess with things like bytecode replacement.<p>Pretty sure the motivation was exactly the opposite - that a simple “if a LOAD_ATTR encounters the same class with slots N times in a row, swap it out for LOAD_ATTR_SLOT with inline cached slot index, and swap back to generic one if something changes” is way easier (both to implement and reason about) than any alternative that’d interact with the object model.
+    (Also it means you skip having to branch between a slow and fast path at all)<p>&gt; you can modify the property lookup algorithm in the VM itself (as in cpython c code) to use some annotation structure hanging off of the bytecode to look up inline caches of type-guarded fastpaths. It would be an optimized fastpath that integrated directly into the C code that interprets the GETATTR opcode.<p>Sorry, that sounds a bit vague and not too different from what CPython already is doing.
+  score: 0
+  posted_at: '2026-10-27T13:51:30Z'
+- id: '50259363'
+  parent_id: '50258596'
+  author: Yossarrian22
+  text: You could try having it rewrite parts of the hot path into Rust with PyO3.
+  score: 0
+  posted_at: '2026-10-27T13:53:45Z'
+- id: '50259389'
+  parent_id: '50259123'
+  author: jeremyjh
+  text: What are you basing this statement on?<p>The experiments had long been done.
+    The topic at hand was including it as a core feature.
+  score: 0
+  posted_at: '2026-10-27T13:55:10Z'
+- id: '50259420'
+  parent_id: '50258596'
+  author: jerf
+  text: Rust is not your only option. Nor is it automatically the best option, though
+    it is certainly a solid option for a certain set of requirements. Go is a pretty
+    decent match for a Python rewrite; superficially it seems like you&#x27;re giving
+    up a lot but under the hood they&#x27;re philosophically more compatible than
+    meets the eye in a lot of ways. But any static language that you have some other
+    local reasons to prefer is going to blow its socks off in terms of performance.
+    And &quot;blow its socks off&quot; is just for the naive translation of a conventional
+    Python code base over to a new language. If your codebase is amenable to threading
+    and can take advantage of multiple CPUs somehow, the result may blow Python&#x27;s
+    socks off twice over.<p>The problem is that Python just isn&#x27;t going to go
+    fast. There are some languages that may have had more resources poured into them
+    to make them go faster in absolute terms, like perhaps Java. But I don&#x27;t
+    think there&#x27;s a single language that has had so <i>many</i> ways of trying
+    to make it go faster given so much effort over so many decades. It&#x27;s really
+    time to call it... if you have Python code and it&#x27;s a performance problem,
+    if one of the many many many different solutions aren&#x27;t adequate for some
+    reason, Python is not going to get any faster than it is today and you&#x27;re
+    going to have to move off of it.<p>If you need high performance code, Python is
+    simply not the right answer and you&#x27;re going to have to skill up. Or accept
+    what you have, which you&#x27;ll have to decide if that&#x27;s a viable option.
+    If it&#x27;s fast enough I don&#x27;t advocate switching casually. But if it isn&#x27;t,
+    there isn&#x27;t a realistic prospect that you&#x27;re going to wake up in a year
+    or two to a 30x-faster Python. I wasn&#x27;t terribly convinced by that claim
+    back in the early 2000s, but it hadn&#x27;t really been tested yet. It has been
+    tested now.
+  score: 0
+  posted_at: '2026-10-27T13:56:52Z'
+- id: '50259434'
+  parent_id: '50259123'
+  author: bunderbunder
+  text: But they weren’t asking for all the implementation details. They were asking
+    for a clearly stated scope, success criteria, support plan, etc.<p>As they themselves
+    pointed out, the problem isn’t that there’s anything wrong with an open-ended
+    experiment. It’s just that open-ended experimentation doesn’t belong in <i>main</i>,
+    of all places. They have an ongoing duty to ensure that a critical piece of global
+    infrastructure remains stable and trustworthy to consider.
+  score: 0
+  posted_at: '2026-10-27T13:57:35Z'
+- id: '50259625'
+  parent_id: '50258115'
+  author: cogman10
+  text: I think this is a major issue with requiring a PEP for what&#x27;s a performance
+    optimization.<p>JITs are big nasty things that by their nature have to do a lot
+    of things.  You are basically saying &quot;Give us a PEP for a new python interpreter
+    and compiler&quot;.<p>What they do is fuzzy by their nature because optimizations
+    are very rarely universally beneficial.  It&#x27;s a game of measuring, looking
+    for regressions, and tackling the biggest problem next for whatever sample applications
+    you have available.  You always run into the risk of overfitting on top of all
+    that (You may have made django faster, but you&#x27;ve made flask slower).<p>This
+    is the sort of thing that, IMO, should not go through the PEP process.  It&#x27;s
+    an implementation detail for the runtime.<p>Imagine, for example, if the JVM needed
+    a bunch of JEPs for JIT improvements.  They&#x27;d never get done.  Or if any
+    javascript engine needed ECMA acceptance before they could do a new JIT optimization.
+  score: 0
+  posted_at: '2026-10-27T14:07:58Z'
+- id: '50259808'
+  parent_id: '50259625'
+  author: adrian17
+  text: '&gt; Imagine, for example, if the JVM needed a bunch of JEPs for JIT improvements.<p>FWIW,
+    I definitely can find a bunch of both PEPs and JEPs for internal optimizations,
+    random examples:<p><a href="https:&#x2F;&#x2F;peps.python.org&#x2F;pep-0509&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;peps.python.org&#x2F;pep-0509&#x2F;</a><p><a
+    href="https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;147" rel="nofollow">https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;147</a>'
+  score: 0
+  posted_at: '2026-10-27T14:19:50Z'
+- id: '50259825'
+  parent_id: '50259434'
+  author: cogman10
+  text: "&gt; clearly stated scope<p>The scope of a JIT is the entire python runtime.
+    \ Not at the beginning, it can be more narrow, but certainly it can evolve to
+    cover everything.  JITs touch everything.<p>&gt; success criteria<p>Impossible
+    to measure.  JITs don&#x27;t universally make things faster and unless the SC
+    was willing to accept &quot;some programs will see around x% improvement&quot;
+    then it would be impossible to actually give them the criteria they want.  There&#x27;s
+    a reason C++ compilers and their optimizations aren&#x27;t defined by the ISO
+    committee.<p>&gt; support plan<p>Like most JITs, support for a JIT is an ongoing
+    and ever evolving process.  What&#x27;s needed depends entirely on what&#x27;s
+    needed today.  You usually need more than 1 or 2 dev working on it, which may
+    be the issue here.<p>&gt; It’s just that open-ended experimentation doesn’t belong
+    in main, of all places.<p>Very strong disagree.  That&#x27;s simply the nature
+    of performance optimizations for JITs.  They belong on main because new optimizations
+    and heuristics will always be generated.  The role of doing a compiler is a long
+    term experiment in performance, seeing what your runtime is currently doing and
+    how it&#x27;s being used and tweaking it to work better.<p>pypy isn&#x27;t in
+    a worse place because it&#x27;s been running a longterm performance experiment.<p>&gt;
+    They have an ongoing duty to ensure that a critical piece of global infrastructure
+    remains stable and trustworthy to consider.<p>None of the things mentioned actually
+    do that, other than perhaps a support plan.  There are plenty of critical infrastructure
+    projects who all can manage to develop JITs.  Python is the special snowflake
+    that has decided to do JIT development incorrectly.<p>This is a runtime optimization&#x2F;implementation
+    detail.  It&#x27;s foolish to send it through a committee approval process.  That&#x27;s
+    why you won&#x27;t be able to find a single language with a JIT or advanced optimizations
+    that has do it by committee."
+  score: 0
+  posted_at: '2026-10-27T14:21:00Z'
+- id: '50259830'
+  parent_id: '50259625'
+  author: stickfigure
+  text: '&gt; Imagine, for example, if the JVM needed a bunch of JEPs for JIT improvements.<p>They
+    do:<p><a href="https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;197" rel="nofollow">https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;197</a><p><a
+    href="https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;515" rel="nofollow">https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;515</a><p>Not
+    every optimization requires a JEP, but certainly something as big as &quot;add
+    or remove a JIT&quot; would 100% require a JEP.'
+  score: 0
+  posted_at: '2026-10-27T14:21:18Z'
+- id: '50259836'
+  parent_id: '50259420'
+  author: anthk
+  text: RustPython it&#x27;s pretty mature.
+  score: 0
+  posted_at: '2026-10-27T14:21:35Z'
+- id: '50259901'
+  parent_id: '50258604'
+  author: saghm
+  text: "&gt; Im not sure I even like calling it bureaucracy. It’s a process, yes.
+    But we’re not talking many layers of abstract organizational hell, here. Were
+    talking a fairly direct process of documenting what you are doing and how you
+    are going to do it well enough that others working and depending on the project
+    can understand it, coordinate with it, and have a reasonable degree of confidence
+    that it won’t cause undue problems.<p>Bureaucracy doesn&#x27;t definitionally
+    mean Kafkaesque. It&#x27;s popular to hate on it, but good or neutral bureaucracy
+    does exist."
+  score: 0
+  posted_at: '2026-10-27T14:26:49Z'
+- id: '50259906'
+  parent_id: '50258634'
+  author: Pxtl
+  text: "&gt; the reference implementation.<p>The problem was he exposed too much
+    of the implementation into the language itself, destroying its ability to be a
+    simple reference implementation that others could re-implement."
+  score: 0
+  posted_at: '2026-10-27T14:26:59Z'
+- id: '50259925'
+  parent_id: '50259808'
+  author: cogman10
+  text: You can find those JEPs, but frankly they are there for 1 of 2 reasons.<p>1.
+    An outsider to the regular OpenJDK dev team proposing an optimization.<p>2. Advertising
+    for a cool new performance tweak with potentially large impact.<p>You&#x27;ll
+    also notice that the JEP descriptions are very different from PEP descriptions.<p>Probably
+    the largest JEP for the JVM, Valhalla<p><a href="https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;401"
+    rel="nofollow">https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;401</a><p>Does not
+    have the same level of requirements being asked of the Python JIT.  Further, it&#x27;s
+    well understood that this JEP will &quot;live on main&quot; for quite some time
+    in preview before it&#x27;s accepted and merged.<p>What the JEP does, instead,
+    is simply describe the feature and potential risks.<p>The vast majority of JVM
+    optimizations do not get a JEP.
+  score: 0
+  posted_at: '2026-10-27T14:28:28Z'
+- id: '50259937'
+  parent_id: '50258054'
+  author: coldtea
+  text: "&gt;<i>There are already many way of addressing Python performance (leaving
+    aside whether Python is a good choice if performance matters) such as Cython,
+    Numba, Pypy and C extensions.</i><p>And all of them are lacking in different ways,
+    we ALSO, want faster pure Python."
+  score: 0
+  posted_at: '2026-10-27T14:28:55Z'
+- id: '50260013'
+  parent_id: '50259254'
+  author: ksec
+  text: It is more than that. CRuby have had multiple JIT attempt before YJIT landed.
+    From what I can tell CPython didn&#x27;t have that. And luckily enough we now
+    have ZJIT replacing YJIT.
+  score: 0
+  posted_at: '2026-10-27T14:32:19Z'
+- id: '50260058'
+  parent_id: '50259901'
+  author: bunderbunder
+  text: It doesn’t have to mean kafkaesque, but it does mean governance through layered
+    hierarchies and fixed procedures.<p>In this case a single committee directly engaged
+    with both core developers and the community, through a fairly open process, explicitly
+    bent several of their own official rules to suit the occasion, and indicated cases
+    where further flexibility might be needed depending on how things develop.<p>I
+    would call that a pretty stellar example of <i>non</i>-bureaucratic governance.
+  score: 0
+  posted_at: '2026-10-27T14:36:08Z'
+- id: '50260078'
+  parent_id: '50258229'
+  author: pjmlp
+  text: We pick languages that embrace machine code like Julia, Mojo, Common Lisp,
+    Scheme, and stop calling libraries that are written in C, C++, Fortran, Rust,
+    &quot;Python Libraries&quot;, when they are thin bindings.<p>Clearly the community
+    doesn&#x27;t want PyPy, GraalPy, or even a CPython JIT.
+  score: 0
+  posted_at: '2026-10-27T14:37:49Z'
+- id: '50260098'
+  parent_id: '50259925'
+  author: adrian17
+  text: Fair, I don’t argue with that, I’m not knowledgeable about Java’s processes.
+    Just one thing:<p>&gt; The vast majority of JVM optimizations do not get a JEP.<p>In
+    Python too. Still, the JIT really is just a really big thing. I don’t know if
+    there could be a better way to do it, as either 1. You develop it off-branch and…
+    make an enormous PR when you’re done, with risks of getting rejected anyway? Or
+    2, you allow more experiments on main like Rust, but then you end up with hundreds
+    of minor half-maintained nightly-only features, possibly conflicting with each
+    other, and eventually go through bureaucracy to remove them anyway.
+  score: 0
+  posted_at: '2026-10-27T14:39:06Z'
+- id: '50260100'
+  parent_id: '50257957'
+  author: skeledrew
+  text: "&gt; committee bureaucracy<p>That&#x27;s what&#x27;s kept the language and
+    ecosystem improving and from becoming a hot mess. If something isn&#x27;t properly
+    specced then it really shouldn&#x27;t be in prod. They allowed the experiment
+    in the first place so it&#x27;d be easier to gather sufficient data to guide said
+    speccing, but the ball was dropped by the proposers and so the experiment was
+    an ultimate failure (unlike free threading) and prod is now being appropriately
+    cleaned up."
+  score: 0
+  posted_at: '2026-10-27T14:39:19Z'
+- id: '50260138'
+  parent_id: '50257957'
+  author: pjmlp
+  text: "&gt; Just think about the sheer amount of electricity and compute power being
+    wasted every single day running inefficient Python across millions of machines
+    worldwide.<p>Every single time I remember the first AI wave was done with Lisp
+    and Prolog, both with tooling that supports machine code generation since about
+    50 years."
+  score: 0
+  posted_at: '2026-10-27T14:41:27Z'
+- id: '50260148'
+  parent_id: '50259420'
+  author: LtWorf
+  text: Pypy is really fast. Have you tried it?
+  score: 0
+  posted_at: '2026-10-27T14:42:27Z'
+- id: '50260205'
+  parent_id: '50258229'
+  author: samus
+  text: Mature projects simply don&#x27;t like large unexpected code drops if it is
+    not made clear beforehand what the blast radius is and how it is going to be maintained.
+    On top of that it seems that the performance gains weren&#x27;t as expected and
+    require further invasive changes.<p>Implementation effort has never been what
+    has held these efforts back. LLM helps with squirting out code, but the hard tasks
+    are benchmarking, profiling, community engagement, knowledge management, and dealing
+    with the hard questions such as whether the change is actually worth the additional
+    complexity.<p>These concerns won&#x27;t go away even if we give up on human developers
+    being able to grok the code and instead completely relying on LLMs for coding.
+  score: 0
+  posted_at: '2026-10-27T14:47:06Z'
+- id: '50260214'
+  parent_id: '50259328'
+  author: kannanvijayan
+  text: Ah, the `__slots__` feature makes it make a lot more sense.<p>&gt; Sorry,
+    that sounds a bit vague and not too different from what CPython already is doing.<p>With
+    slots being available, I can see where I was misled.  I went looking for a type
+    structure that modeled the dynamic properties on an object which would be used
+    as a typeguard, but the class itself functions as that if you&#x27;re restricting
+    the optimization to slotted properties.<p>Appreciate the clarfication!
+  score: 0
+  posted_at: '2026-10-27T14:47:26Z'
+- id: '50260258'
+  parent_id: '50259906'
+  author: mohamedkoubaa
+  text: This is slowly being addressed now, each version of Python sees the c API
+    become more opaque.
+  score: 0
+  posted_at: '2026-10-27T14:50:26Z'
+- id: '50260277'
+  parent_id: '50259825'
+  author: ModernMech
+  text: 'In that case I can understand why it&#x27;s not a fit for Python. The risks
+    you&#x27;re describing are more what a brand new language would face: universal
+    scope, impossible to measure success, no support plan... sounds like a nightmare
+    in a mature product. If that&#x27;s actually what it means to add a JIT to Python,
+    the SC is doing its job by steering Python around this quixotic task.<p>&gt; This
+    is a runtime optimization&#x2F;implementation detail.<p>I view JITs as a critical
+    architectural component. Like you said, it impacts the whole system. Optimization
+    and implementation details don&#x27;t usually do that.'
+  score: 0
+  posted_at: '2026-10-27T14:51:14Z'
+- id: '50260333'
+  parent_id: '50259825'
+  author: bunderbunder
+  text: And yet, not introducing unnecessary chaos into the CPython project remains
+    important.<p>Perhaps these priorities were always irreconcilable.<p>Perhaps that’s
+    why the existence of competing Python JIT projects that weren’t trying to commit
+    directly into CPython’s main branch kept coming up in the conversation.
+  score: 0
+  posted_at: '2026-10-27T14:55:34Z'
+- id: '50260359'
+  parent_id: '50259276'
+  author: samus
+  text: Getting a JIT right is hard work because time spent by the JIT is time not
+    spent doing actual work, and finding the correct tradeoffs is very much an empirical
+    problem.
+  score: 0
+  posted_at: '2026-10-27T14:57:13Z'
+- id: '50260390'
+  parent_id: '50258067'
+  author: samus
+  text: It looks like it very much should never have happened like this. The actually
+    hard and awkward questions have not been asked beforehand, and the SC doesn&#x27;t
+    like their hands being forced, and rightly so.
+  score: 0
+  posted_at: '2026-10-27T15:00:00Z'
+- id: '50260425'
+  parent_id: '50258727'
+  author: skeledrew
+  text: And PHP is quite the hot mess. Always has been, really. See the security issues
+    over the years, including the most recent for example. Meanwhile I&#x27;ve never
+    seen any serious issues for Python that&#x27;s triggered mass required fixing.
+    There&#x27;s something to be said for moving carefully and ensuring things aren&#x27;t
+    broken to the best of one&#x27;s ability, which is the SC&#x27;s purpose.
+  score: 0
+  posted_at: '2026-10-27T15:02:25Z'
+- id: '50260441'
+  parent_id: '50259937'
+  author: graemep
+  text: They all have drawbacks, but they also reduce the case for needing to speed
+    up CPython.<p>Pypy does provide faster pure Python. Its a compatible implementation
+    with JIT.
+  score: 0
+  posted_at: '2026-10-27T15:03:17Z'
+- id: '50260449'
+  parent_id: '50258213'
+  author: dcss_gardener
+  text: 'HN when AI is used to bomb a school: technology is neutral.<p>HN when an
+    organization achieves its intended goals: this can&#x27;t be bureaucracy because
+    it&#x27;s good.'
+  score: 0
+  posted_at: '2026-10-27T15:03:44Z'
+- id: '50260454'
+  parent_id: '50257957'
+  author: samus
+  text: It&#x27;s not red tape, it&#x27;s about making sure that the effort actually
+    delivers what it promises and can continue to so in the future. From the state
+    of the draft PEP it seems it doesn&#x27;t and it won&#x27;t ever. The SC merely
+    put the nail into the coffin.
+  score: 0
+  posted_at: '2026-10-27T15:04:00Z'
+- id: '50260512'
+  parent_id: '50260214'
+  author: adrian17
+  text: "(Note that this optimization can also trigger for plain classes (that’s LOAD_ATTR_INSTANCE_VALUE),
+    it just needs a bit more guards and is only useful if you don’t abuse instances
+    being dynamic objects. I just used slots as the most obvious example, but there
+    are lots of different op specializations since like 3.11)"
+  score: 0
+  posted_at: '2026-10-27T15:08:44Z'
+- id: '50260549'
+  parent_id: '50258596'
+  author: skeledrew
+  text: There are already many solutions to the performance issue from which you can
+    pick. You don&#x27;t need to understand the C in numpy to use it for example.
+    And I&#x27;d say it&#x27;s highly unlikely that you have a use case that, if it&#x27;s
+    applicable, isn&#x27;t already addressed. Like it&#x27;s generally pointless to
+    optimize language performance for code that&#x27;s doing a lot of network operations,
+    because network lag will always dwarf such optimizations.
+  score: 0
+  posted_at: '2026-10-27T15:11:02Z'
+- id: '50260607'
+  parent_id: '50259836'
+  author: skeledrew
+  text: Not at all.<p>&gt; RustPython is in development, and while the interpreter
+    certainly can be used in interesting use cases like running Python in WASM and
+    embedding into a Rust project, do note that RustPython is not totally production-ready.<p>-
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;RustPython&#x2F;RustPython" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;RustPython&#x2F;RustPython</a>
+  score: 0
+  posted_at: '2026-10-27T15:14:15Z'
+- id: '50260610'
+  parent_id: '50257972'
+  author: pphysch
+  text: Large codebases are bureaucracies of their own, that is, the complexity of
+    extra layers starts to bog things down at some point.<p>In this case, it seems
+    like the human bureaucracy made wise and measured decisions to contain the software
+    bureaucracy. They made reasonable requests to clarify the scope and impact of
+    a major, major core feature. The proposers didn&#x27;t feel like that was doable,
+    so a complexity nuke was avoided.
+  score: 0
+  posted_at: '2026-10-27T15:14:56Z'
+- id: '50260657'
+  parent_id: '50258527'
+  author: vovavili
+  text: The biggest winner from AI indeed appears to be Rust.
+  score: 0
+  posted_at: '2026-10-27T15:18:41Z'
+- id: '50260689'
+  parent_id: '50258282'
+  author: skeledrew
+  text: Python use is widely diverse. Anyone wishing to contribute to that which is
+    published to such a diverse community, all of whom expect Python to continue working
+    for them without any regressions, has to be ready to cater to that diversity in
+    its entirety.
+  score: 0
+  posted_at: '2026-10-27T15:20:18Z'
+- id: '50260752'
+  parent_id: '50258115'
+  author: ActorNightly
+  text: I mean, I have had great success with prototyping stuff in python, then letting
+    an llm translate it to C. My 3090 with Gemma4:31b does this very well with a few
+    guidelines.<p>Dunno how much investment is needed into language optimization anymore.
+  score: 0
+  posted_at: '2026-10-27T15:24:28Z'
+- id: '50260797'
+  parent_id: '50260277'
+  author: vlovich123
+  text: The problem is that “Python” the language includes native poorly isolated
+    FFI interfaces exposed by CPython. So the language isn’t “Python” but CPython.
+    That’s why alternate implementations like PyPy haven’t seen adoption despite having
+    a very mature JIT while languages like JavaScript have JITs that put CPython’s
+    performance to shame.
+  score: 0
+  posted_at: '2026-10-27T15:27:12Z'
+- id: '50261374'
+  parent_id: '50260058'
+  author: saghm
+  text: Fair enough. I was reacting more to the &quot;organizational hell&quot; part
+    and didn&#x27;t focus as much on the &quot;layers&quot; part.
+  score: 0
+  posted_at: '2026-10-27T16:09:51Z'
+- id: '50261380'
+  parent_id: '50258178'
+  author: jodrellblank
+  text: They weren&#x27;t rebuilding the whole language.<p><a href="https:&#x2F;&#x2F;peps.python.org&#x2F;pep-3000&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;peps.python.org&#x2F;pep-3000&#x2F;</a> - PEP
+    3000 says it will be a derived from the Python 2 codebase and not a complete rewrite
+    (referencing Joel Spolsky&#x27;s views on complete rewrites and Netscape Navigator).<p><a
+    href="https:&#x2F;&#x2F;peps.python.org&#x2F;pep-3099&#x2F;" rel="nofollow">https:&#x2F;&#x2F;peps.python.org&#x2F;pep-3099&#x2F;</a>
+    - PEP 3099 is changes Guido van Rossum rejected from Python 3 (including := as
+    a binding operator), parallel iteration, programmable syntax, parser going beyond
+    LL(1), changing the for&#x2F;else construct.<p><a href="https:&#x2F;&#x2F;peps.python.org&#x2F;pep-3100&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;peps.python.org&#x2F;pep-3100&#x2F;</a> - PEP
+    3100 is things he set as goals for it, things like all strings are Unicode and
+    byte arrays are a separate type, optional type annotations, &#x27;exec&#x27; and
+    &#x27;print&#x27; change from statements to functions, None&#x2F;True&#x2F;False
+    become keywords, old-style classes are gone, changing inequality comparison from
+    &lt;&gt; to != , require C99, drop BeOS support, drop old standard library modules,
+    and more.<p>actually, more changes than I remember.
+  score: 0
+  posted_at: '2026-10-27T16:10:11Z'
+- id: '50261420'
+  parent_id: '50258720'
+  author: genxy
+  text: Core Python is antagonistic to all other Python implementations.  There is
+    only one Python.
+  score: 0
+  posted_at: '2026-10-27T16:13:35Z'
+- id: '50261470'
+  parent_id: '50260425'
+  author: pjmlp
+  text: <a href="https:&#x2F;&#x2F;app.opencve.io&#x2F;cve&#x2F;?product=python&amp;vendor=python"
+    rel="nofollow">https:&#x2F;&#x2F;app.opencve.io&#x2F;cve&#x2F;?product=python&amp;vendor=python</a>
+  score: 0
+  posted_at: '2026-10-27T16:16:14Z'
+- id: '50261491'
+  parent_id: '50260797'
+  author: bunderbunder
+  text: It’s also part of why Python has been so successful in many domains. I was
+    there for Python’s takeover of the data space, and I got quite used to porting
+    things from Java (static, JIT, decent at multithreading) to Python (dynamic, interpreted,
+    GIL) and realizing substantial performance improvements in the process.<p>It’s
+    kind of wild how nice Python’s C extension system, which enables basically zero
+    cost interop with native code, is for certain purposes. It supports a situation
+    that’s comparable to the games industry’s tradition of putting a Lua or Lisp tip
+    on top of a C++ iceberg.
+  score: 0
+  posted_at: '2026-10-27T16:17:59Z'
+- id: '50261513'
+  parent_id: '50259276'
+  author: byroot
+  text: The difference is that Ruby follow the BDFL model, and Ruby&#x27;s BDFL was
+    willing to allow people to experiment with in-tree development of JITs.<p>If the
+    Python steering committee isn&#x27;t willing to do the same, they&#x27;ll probably
+    won&#x27;t get a working JIT any time soon. Developing a JIT externally, or even
+    from a branch, is just too hard.
+  score: 0
+  posted_at: '2026-10-27T16:19:39Z'
+- id: '50261515'
+  parent_id: '50260752'
+  author: mring33621
+  text: 'Agree with the general workflow: prototype with an easy-to-read language
+    then port to lower-level, faster language'
+  score: 0
+  posted_at: '2026-10-27T16:19:43Z'
+- id: '50261540'
+  parent_id: '50261374'
+  author: bunderbunder
+  text: I have a hard time seeing it as organizational hell, either? From the outside,
+    it looks like the process went smoothly and reached a decision in about half the
+    time they originally estimated.<p>It’s true that that decision didn’t involve
+    everybody getting their way. But that’s not organizational hell, that’s just organization.
+    If you don’t want to contend with other people’s competing interests, the solution
+    to that is solo development.
+  score: 0
+  posted_at: '2026-10-27T16:21:38Z'
+- id: '50261710'
+  parent_id: '50260098'
+  author: cogman10
+  text: So, I&#x27;d grant that it&#x27;d probably be a JEP for java (the initial
+    JIT) but not that every change to the JIT would result in a new JEP.  Java&#x27;s
+    JIT, hotspot, was integrated right before they started the JEP process.  The JEP
+    for the JIT would likely be pretty boring like &quot;It&#x27;s a JIT, it does
+    this, in some applications we see this sort of speed up&quot;.  Much like the
+    AOT JEP <a href="https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;514" rel="nofollow">https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;514</a><p>The
+    Java governance allows for a lot more open ended projects with follow ups.  Not
+    that it&#x27;s reckless, Valhalla is proof of that, but rather that once something
+    is good enough they are pretty open to just shipping it as a preview feature and
+    refining until it is worthy of being stable.<p>That&#x27;s why, for example, we
+    saw ZGC get merged, and then JDK after JDK seeing continuing development and improvement
+    on ZGC (Or G1 for that matter).  These GCs were fairly rough on their first release
+    and now they are pretty much best in class.<p>I see a Python JIT as the same thing.  Delivering
+    the infrastructure for a JIT would need a PIP, but I wouldn&#x27;t put in things
+    like &quot;acceptance criteria&quot; beyond &quot;doesn&#x27;t break older code&quot;.  I
+    would expect such a project to get continual updates without PEPs.
+  score: 0
+  posted_at: '2026-10-27T16:33:35Z'
+- id: '50261755'
+  parent_id: '50260752'
+  author: '14113'
+  text: That works well for greenfield code, but if working on compiler optimisations
+    has taught me anything, it&#x27;s that there is a <i>lot</i> of legacy code out
+    there in the world that would benefit from re-compilation with optimisations -
+    but would be very difficult to re-write for speed (regardless of whether the work
+    is done by a human, AI, or other machine tool). JIT compilation fits very nicely
+    in this niche, as it means that existing Python projects can get (theoretically)
+    better performance without re-writing.
+  score: 0
+  posted_at: '2026-10-27T16:36:04Z'
+- id: '50261970'
+  parent_id: '50258239'
+  author: mhh__
+  text: Why is this controversial? We spend hours waiting for python code when it
+    could be much faster if it was treated like a serious programming language
+  score: 0
+  posted_at: '2026-10-27T16:49:36Z'
+- id: '50262166'
+  parent_id: '50258634'
+  author: seabrookmx
+  text: That question is already answered. pypy only supports 3.11 today and is largely
+    unmaintained.
+  score: 0
+  posted_at: '2026-10-27T17:01:38Z'
+- id: '50262727'
+  parent_id: '50261710'
+  author: adrian17
+  text: "&gt;  I would expect such a project to get continual updates without PEPs.<p>Just
+    for completeness: the original JIT PR was merged quite enthusiastically \nand
+    only after the fact it was pointed out that it should have went through a PEP
+    process [1]. The following PEP 744 was of the “informational” type, and the just-withdrawn
+    PEP 836 was the first “standards track” PEP, which means that (in my understanding)
+    it’s technically the first actual PEP that the SC would formally comment on. So
+    in a way it’s not “can we update the JIT” PEP, but the first real “does SC want
+    this JIT as proposed” PEP.<p>That said, I do agree with most of what you said,
+    especially the acceptance criteria part.<p>The issue I have and find it hard to
+    resolve is that since the code was already on main, the feature was already in
+    “sunk cost” mode. It’s hard when the code is already on main and another 3 optimization
+    PRs are always there behind the corner, but it needs to be possible for SC to
+    say “we decided it’s not actually worth all this complexity for &lt;some small
+    number&gt;% speed improvement” (I’m not commenting whether in this particular
+    case it’d have been a right call), and the PEP (if not withdrawn) was the way
+    to exercise that control.<p>[1] <a href=\"https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;pull&#x2F;113465#issuecomment-1919888849\"
+    rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;pull&#x2F;113465#issuecomment-1...</a>"
+  score: 0
+  posted_at: '2026-10-27T17:34:51Z'
+- id: '50262741'
+  parent_id: '50260258'
+  author: twoodfin
+  text: Are there any PEPs that describe this work?
+  score: 0
+  posted_at: '2026-10-27T17:35:41Z'
+- id: '50262992'
+  parent_id: '50260258'
+  author: jsmith45
+  text: 'That&#x27;s at best a partial fix for the API side. Python side CPython sill
+    exposes a LOT of implementation details, and as a result occasionally projects
+    will choose to rely on some of these details. Then other implementations need
+    to decide whether to also pick the same implementations details and expose them,
+    or use different details, and lack compatibility with any library that depended
+    upon them.<p>The python documentation has historically also not been especially
+    clear at distinguishing between what the language guarantees, vs what is just
+    implementation details of the cPython implementation. So even if libraries wanted
+    to try to avoid depending on implementation specifics, it isn&#x27;t always clear
+    what those are.<p>The net result is that for the end user python the language
+    is effectively: whatever cpython does. This really, really discourages creating
+    alternate implementations, as the only way to be an alternative implementation
+    with good compatibility is to be a living fork of cpython, constantly merging
+    in all the changes from it, while also maintaining your improvements.'
+  score: 0
+  posted_at: '2026-10-27T17:48:49Z'
+- id: '50263233'
+  parent_id: '50258054'
+  author: cpburns2009
+  text: The problem with PyPy, which I&#x27;m a huge fan of BTW, is it&#x27;s on life-support.
+    The only reason the past couple major versions were released was due to a few
+    small companies or individuals directly implementing the updates themselves. That&#x27;s
+    my understanding at least. It&#x27;s disheartening because I&#x27;ve been primarily
+    using PyPy for 5 years, advocated for it, and was looking into contributing more
+    to it before finding out about its state.
+  score: 0
+  posted_at: '2026-10-27T18:01:49Z'
+- id: '50263386'
+  parent_id: '50258115'
+  author: bjourne
+  text: "&gt; On the other, it did feel (to me) like with all the fancy (and definitely
+    cool) optimizations it got (automatic refcount operation removal, new type-based
+    specializations, inplace math operations), the macrobenchmark benefits weren&#x27;t
+    _that_ exciting for a JIT. It definitely has potential for more, maybe with even
+    fancier optimizations like unboxing ints, but the complexity just keeps going
+    up.<p>Zero chance of shoehorning that into a standards-compliant Python runtime.
+    Some things are too fundamental to change without affecting the user-visible language:
+    JITting, lazy imports, threading, copying gc, ref counting, etc."
+  score: 0
+  posted_at: '2026-10-27T18:12:27Z'
+- id: '50263409'
+  parent_id: '50260441'
+  author: v3ss0n
+  text: Onlything is a lot of cextensions are super slow there. that is only bottleneck
+    left which could be solved with resources that those guys spent on experimental
+    jit.
+  score: 0
+  posted_at: '2026-10-27T18:13:46Z'
+- id: '50263733'
+  parent_id: '50259188'
+  author: greenavocado
+  text: I think its a meme but an interesting proof of concept nevertheless
+  score: 0
+  posted_at: '2026-10-27T18:36:04Z'
+- id: '50264022'
+  parent_id: '50260441'
+  author: thayne
+  text: The newest version of python that PyPy supports is 3.12. CPython is on 3.15.<p>And
+    from what I understand there are limitations with using libraries that use the
+    CPython API to interface with native code.
+  score: 0
+  posted_at: '2026-10-27T18:56:01Z'
+- id: '50264130'
+  parent_id: '50261710'
+  author: pjmlp
+  text: The original JIT certainly did not get a JEP, because JEPs replaced the previous
+    JSR process.<p>And even then, Hotspot did not got a JSR, because all that work
+    was done before Sun started collaborating with industry partners for Java evolution.<p>They
+    &quot;simply&quot; ported the JIT compiler from the Strongtalk acquisition into
+    Java.
+  score: 0
+  posted_at: '2026-10-27T19:04:37Z'
+- id: '50264345'
+  parent_id: '50260657'
+  author: pjmlp
+  text: 3GL code generation is only a transition step until models get more mature
+    for direct machine code generation.<p>AI needs formal verification, not a borrow
+    checker.
+  score: 0
+  posted_at: '2026-10-27T19:19:23Z'
+- id: '50265215'
+  parent_id: '50261470'
+  author: skeledrew
+  text: Are you helping me to prove my point? I see 156 results, with 1 in 2023 and
+    the rest before that. Meanwhile there are 801 results with at least a dozen in
+    2026 for PHP[0], and we still have 2 more months to go.<p>[0] <a href="https:&#x2F;&#x2F;app.opencve.io&#x2F;cve&#x2F;?vendor=php"
+    rel="nofollow">https:&#x2F;&#x2F;app.opencve.io&#x2F;cve&#x2F;?vendor=php</a>
+  score: 0
+  posted_at: '2026-10-27T20:20:03Z'
+article:
+  url: https://lwn.net/SubscriberLink/1102102/0c00e4d550f25f8c/
+  title: Python's experimental JIT to be removed [LWN.net]
+  fetch_status: success
+  content: "By **Joe Brockmeier**  \nOctober 26, 2026 \n\nPython's [experimental just-in-time
+    (JIT) compiler](https://docs.python.org/3.13/whatsnew/3.13.html#an-experimental-just-in-time-jit-compiler),
+    which was added to CPython in 2024 for the [3.13&nbsp;release](https://www.python.org/downloads/release/python-3130/),
+    is on its way out. In June, the Python steering council [announced](https://discuss.python.org/t/an-announcement-from-the-steering-council-regarding-the-jit-project/107638)that
+    it was pausing work on the JIT in CPython's main branch until there was an accepted
+    [Python Enhancement Proposal](https://peps.python.org/pep-0001) (PEP) that addressed
+    concerns about maintenance, compatibility, and set clear success metrics as well
+    as a timeline for completion. After creating[PEP&nbsp;836](https://peps.python.org/pep-0836/)
+    (\"JIT Go Brrr: The Path to a Supported JIT Compiler for CPython\") to try to
+    meet the council's request, and after months of discussion, the JIT maintainers
+    have withdrawn the PEP. For now, it appears that development on the once-promising
+    project has come to an end.\n\nThe JIT was [added to CPython by Brandt Bucher](https://github.com/python/cpython/pull/113465)
+    in early 2024. Generally, such a major feature would be expected to land only
+    after the council had approved a [standards-track PEP](https://peps.python.org/pep-0001/#pep-types:~:text=A%20Standards%20Track%20PEP).
+    Bucher had given a talk ([YouTube video](https://www.youtube.com/watch?v=HxSHIpEQRjs),[slides](https://github.com/brandtbucher/brandtbucher/blob/master/2023/10/10/a_jit_compiler_for_cpython.pdf))
+    about the JIT at a Python core developer sprint, and [announced his intent](https://github.com/python/cpython/pull/113465#issuecomment-1911279536)
+    to merge the feature—but he had not taken the step of authoring or submitting
+    a PEP for its approval. He was [prodded into doing so](https://github.com/python/cpython/pull/113465#issuecomment-1969415137)
+    by steering council member Thomas Wouters, who was also serving as the release
+    manager for Python 3.13.\n\nBucher and Savannah Ostrowski drafted [PEP&nbsp;744](https://peps.python.org/pep-0744/)
+    (\"JIT Compilation\"), which was an [informational PEP](https://peps.python.org/pep-0001/#pep-types:~:text=An%20Informational%20PEP%20describes%20a%20Python%20design%20issue)—meaning
+    it only provides information to the Python community and does not represent formal
+    consensus to proceed on a feature or project. LWN [covered](https://lwn.net/Articles/970397/)
+    the discussion of PEP&nbsp;744 in April&nbsp;2024, and later covered Bucher's
+    [talk on the JIT](https://lwn.net/Articles/977855/) at PyCon&nbsp;US&nbsp;2024,
+    as well as the [follow-up talk](https://lwn.net/Articles/1029307/) at PyCon&nbsp;US&nbsp;2025.\n\n####
+    PEP it up\n\nWork on the JIT had been proceeding on the basis of PEP&nbsp;744
+    until this June, when the council had put forward its formal request for the JIT
+    maintainers to create a standards-track PEP. One might wonder, [as Antoine Pitrou
+    did](https://discuss.python.org/t/an-announcement-from-the-steering-council-regarding-the-jit-project/107638/2),
+    why the council had decided that it was time to speak up and ask for a new PEP.
+    Wouters [said](https://discuss.python.org/t/an-announcement-from-the-steering-council-regarding-the-jit-project/107638/4)that
+    there was no \"\", but that the council had been discussing the topic for a while
+    and indicated that it was looking to ensure the JIT work did not interfere with
+    other projects. \"\" The council had waited until after the Python&nbsp;3.15 beta
+    release \"\".\n\nThe council asked for a PEP that would make the case for the
+    JIT \"\". The council set a deadline of six months for the PEP to be submitted
+    and accepted; failing that, the council would require the JIT code to be removed
+    from the CPython main branch.\n\n> **No AI slop, all substance: subscribe to LWN
+    today**\n> \n> LWN has always been about quality over quantity; we need your help
+    to continue publishing in-depth, reader-focused articles about Linux and the free-software
+    community. Please subscribe today to support our work and keep LWN on the air;
+    we are offering [a free one-month trial subscription](https://lwn.net/Promo/no-slop/claim)
+    to get you started.\n\nBucher, Ostrowski, and Ken Jin drafted PEP&nbsp;836 and
+    [published it on the Python forum](https://discuss.python.org/t/pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython/108010)
+    for community feedback on July&nbsp;3. It generated quite a bit of discussion,
+    some favorable and some critical. One of the key themes in the comments, such
+    as [this one](https://discuss.python.org/t/pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython/108010/19)
+    by Wouters, and [this comment](https://discuss.python.org/t/pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython/108010/28)
+    by Mark Shannon, was that the draft felt like it should be two separate PEPs.
+    Shannon, for example, thought that the PEP should only cover goals for accepting
+    the JIT work and felt that it should leave out implementation details. There were
+    also quite a few calls for additional information.\n\nBucher [pushed back](https://discuss.python.org/t/pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython/108010/21)
+    a bit on the suggestion that it should be two PEPs, and Ostrowski [defended](https://discuss.python.org/t/pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython/108010/22)the
+    structure of the PEP as it was. \"\"\n\nWhen we [last looked at this topic](https://lwn.net/Articles/1090385/)
+    in September, the discussion about the PEP had slowed down without a commitment
+    to develop new PEPs or a formal statement from the council. The last word from
+    the council at that time, in the form of a [summary of its August&nbsp;6 meeting](https://discuss.python.org/t/2026-08-06-python-steering-council-meeting-summary/108612),
+    was that it had met with the PEP authors and was \"\".\n\n#### Experimentation
+    in main\n\nOn September&nbsp;21, Wouters [posted](https://discuss.python.org/t/pep-836-jit-go-brrr-the-path-to-a-supported-jit-compiler-for-cpython/108010/53)a
+    statement from the steering council, minus Ostrowski (who is currently a member
+    of the steering council but did not participate since she is a co-author of the
+    PEP), that summarized its position. The statement said that PEP did answer all
+    of the questions that were highlighted in the council's request, \"\".\n\nThe
+    council wished to make clear that it was not looking for the criteria that the
+    JIT should meet to be a supported feature, or whether it should be considered
+    such. Instead, the council was evaluating whether the JIT should continue as an
+    experiment in CPython's main branch.\n\n> Part of the problem with allowing experimentation
+    in main is the lack of unified design, and the uncertainty that core developers,
+    package maintainers and users face as the experimentation changes behaviours and
+    API surfaces.\n\nThe council said that the PEP was not specific enough about support
+    plans, performance criteria, and too vague or too optimistic about a number of
+    other areas. The statement included a ten-point list of items that the council
+    wanted \"\". The council's list expressed concerns ranging from memory impact
+    to security. For example, on the topic of platform parity, the council wanted
+    to ensure that the JIT was designed to be easily adopted for new platforms. It
+    wanted assurance that the JIT's design would not be tied to specific platform
+    or require platform-specific knowledge to maintain.\n\nAnother area that the council
+    called out was user impact. It said that the PEP was \"\" about user-visible differences
+    with the JIT enabled. There were many cases where users depend on idiosyncrasies
+    in the interpreter design, \"\", and it wanted clarification on how those differences
+    would be handled. Would they be considered bugs, how would situations be handled
+    if a difference in behavior was unavoidable, and so on.\n\nSecurity was \"\",
+    according to the council;"
+  error:
+  fetched_at: '2026-10-27T20:26:02Z'
+archived_at: '2026-10-27T20:26:09Z'
