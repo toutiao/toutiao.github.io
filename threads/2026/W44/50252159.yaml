@@ -1,0 +1,319 @@
+---
+post:
+  id: '50252159'
+  title: Cross-request KV cache exposure in the GLM-5.3 Workers AI model (155 responses)
+  url: https://blog.cloudflare.com/kv-cache-exposure-remediation/
+  hn_url: https://news.ycombinator.com/item?id=50252159
+  score: 96
+  author: wondersky
+  posted_at: '2026-10-26T22:41:48Z'
+  fetched_at: '2026-10-27T04:02:44Z'
+  article_url: https://blog.cloudflare.com/kv-cache-exposure-remediation/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-27T04:02:44Z'
+  raw_comment_count: 30
+comments:
+- id: '50252267'
+  parent_id: '50252159'
+  author: thehamkercat
+  text: Other providers probably don&#x27;t even know&#x2F;care that this is happening
+  score: 0
+  posted_at: '2026-10-26T22:49:51Z'
+- id: '50252355'
+  parent_id: '50252267'
+  author: kolanos
+  text: Other providers might have better isolated KV stores?
+  score: 0
+  posted_at: '2026-10-26T22:57:51Z'
+- id: '50252383'
+  parent_id: '50252267'
+  author: 6thbit
+  text: Last year it happened to me more than once that dictating something in chatgpt
+    would become a completely different message after processing, not in a misheard
+    type of way but just a separate conversation more easily explained by the same
+    type of KV cache issue here.
+  score: 0
+  posted_at: '2026-10-26T23:01:32Z'
+- id: '50252415'
+  parent_id: '50252383'
+  author: kami23
+  text: I think in the last year I&#x27;ve had it happen once where I seemingly got
+    someone else&#x27;s response, it was very odd. I rewound and got what I expected.
+    It was correlated to Anthropic&#x27;s roll out of new models at the time which
+    always seems to cause instability in their apis.
+  score: 0
+  posted_at: '2026-10-26T23:03:57Z'
+- id: '50252432'
+  parent_id: '50252159'
+  author: kami23
+  text: I like this RCA a lot more than most. I appreciate the ownership and clear
+    explanation of why their testing did not catch this bug.<p>Also impressed with
+    the speed to address the issue unplug the model and then pretty quick remediation,
+    the speed to remediation matters less to me, but good to see they can act quickly
+    on their platform to kill the serving of the model.
+  score: 0
+  posted_at: '2026-10-26T23:05:41Z'
+- id: '50252438'
+  parent_id: '50252159'
+  author: 8cvor6j844qw_d6
+  text: Interesting. That might explain the few times I&#x27;ve received completely
+    unrelated responses from a certain provider&#x27;s API.
+  score: 0
+  posted_at: '2026-10-26T23:06:32Z'
+- id: '50252800'
+  parent_id: '50252159'
+  author: '0xbadcafebee'
+  text: I kind of forgot about the shared tenancy attack model. I think I was assuming&#x2F;hoping
+    the software was magically isolating my tokens, when in reality that&#x27;s impossible
+    for shared tenants. There&#x27;s whole classes of attacks on things like shared
+    cache, before we get to the LLM-specific features and potential bugs. Enterprises
+    with highly sensitive data should really be on non-shared hosts.
+  score: 0
+  posted_at: '2026-10-26T23:46:52Z'
+- id: '50252927'
+  parent_id: '50252159'
+  author: segmondy
+  text: "&quot;We deployed GLM 5.3 with a 1,048,576-token context window, but the
+    KV cache pool on our prefill GPUs only had room for 681,280 tokens.  We were aware
+    of this mismatch before launch. &quot;<p>Did they advertise it as 1,048,576 token
+    when they only had room for 681,280 tokens?"
+  score: 0
+  posted_at: '2026-10-26T23:59:34Z'
+- id: '50253436'
+  parent_id: '50252267'
+  author: Orygin
+  text: I wonder if the chatgpt shirtless guy is from the same kind of issue
+  score: 0
+  posted_at: '2026-10-27T01:01:05Z'
+- id: '50253442'
+  parent_id: '50252355'
+  author: jmalicki
+  text: I&#x27;ve had this happen with ChatGPT too.
+  score: 0
+  posted_at: '2026-10-27T01:02:28Z'
+- id: '50253459'
+  parent_id: '50252927'
+  author: weird-eye-issue
+  text: 'Next sentence: &quot;We expected the engine to return an error for any prompt
+    it could not process, and our long-context tests returned successful responses,
+    so we did not believe this to be an issue.&quot;'
+  score: 0
+  posted_at: '2026-10-27T01:05:05Z'
+- id: '50253568'
+  parent_id: '50252159'
+  author: paaloeye
+  text: Is that a new class of tenant isolation vulnerability?
+  score: 0
+  posted_at: '2026-10-27T01:19:32Z'
+- id: '50253701'
+  parent_id: '50253459'
+  author: freakynit
+  text: Bro, I had to read this sentence in the context of the previous one, 3 fcking
+    times.. and it sill does not make any sense to me.
+  score: 0
+  posted_at: '2026-10-27T01:40:49Z'
+- id: '50253748'
+  parent_id: '50252159'
+  author: jacquesm
+  text: This doesn&#x27;t really have anything to do with GLM-5.3. This is what happens
+    when you share models between users and don&#x27;t do your bookkeeping properly,
+    the actual model doesn&#x27;t matter. What it shows is that there isn&#x27;t enough
+    isolation between the user sessions and that memory can overlap when that should
+    never be possible.<p>This is an SGLANG and a Cloudflare bug <i>long</i> before
+    it is a Z.AI model bug, I don&#x27;t see what they could have done about it. Cloudflare
+    should own it instead of naming other (imo innocent) parties in the title.
+  score: 0
+  posted_at: '2026-10-27T01:49:29Z'
+- id: '50253773'
+  parent_id: '50253568'
+  author: dnautics
+  text: Seems not?  Just good old gpu allocations colliding
+  score: 0
+  posted_at: '2026-10-27T01:52:55Z'
+- id: '50253832'
+  parent_id: '50253748'
+  author: kflansburg
+  text: At no point do we claim that it is a bug with the model. We specifically outline
+    how it was a mis-configuration on Cloudflare&#x27;s part and a bug in SGLang.
+    We name the model in the title because our customers need to know which of our
+    endpoints was affected. In fact, we say &quot;the GLM-5.3 Workers AI model&quot;,
+    not &quot;GLM-5.3&quot;.
+  score: 0
+  posted_at: '2026-10-27T02:01:18Z'
+- id: '50253843'
+  parent_id: '50252159'
+  author: totetsu
+  text: Is anyone even offering single tenant inference as a service?
+  score: 0
+  posted_at: '2026-10-27T02:03:10Z'
+- id: '50253859'
+  parent_id: '50253459'
+  author: segmondy
+  text: Doesn&#x27;t matter, they could have marketed it as 1 million token window,
+    you would then infer, get to 600k and get an error.  You won&#x27;t be able to
+    finish your work, and you won&#x27;t get credit for 600k tokens.
+  score: 0
+  posted_at: '2026-10-27T02:05:12Z'
+- id: '50253870'
+  parent_id: '50253832'
+  author: jacquesm
+  text: Not buying that. You explicitly mention the model name in the title the &#x27;GLM
+    5.3 workers AI model&#x27; suggests it is something specific to GLM 5.3 which
+    it is not. You mention Sglang and are all surprised that it didn&#x27;t throw
+    an error. But the issue was yours all along.
+  score: 0
+  posted_at: '2026-10-27T02:07:02Z'
+- id: '50253891'
+  parent_id: '50253459'
+  author: jacquesm
+  text: Which is pointing the finger at Sglang, who also weren&#x27;t responsible
+    for this.<p>At a minimum someone should have realized during testing that their
+    utilization figures are off by 40%.<p>A much better title would be &quot;Cloudflare
+    configuration error leaked data between user sessions&quot;
+  score: 0
+  posted_at: '2026-10-27T02:09:33Z'
+- id: '50253902'
+  parent_id: '50253701'
+  author: Graziano_M
+  text: Sounds like they are saying they tested with a long prompt and just tested
+    for a failure, but the test likely would have seen that same KV cache leakage
+    and just interpreted it as success.
+  score: 0
+  posted_at: '2026-10-27T02:10:43Z'
+- id: '50254011'
+  parent_id: '50253870'
+  author: margalabargala
+  text: Yeah, their title is absolutely implying a GLM bug to anyone who doesn&#x27;t
+    read it super closely.<p>There&#x27;s a huge amount of unnecessary extraneous
+    details in the headline that distract from &quot;this is a Cloudflare bug&quot;.
+  score: 0
+  posted_at: '2026-10-27T02:22:13Z'
+- id: '50254122'
+  parent_id: '50254011'
+  author: literallyroy
+  text: Not sure if the title was edited but as is it is very clear to me this is
+    a bug on their side and I have no idea how a technically literate person (someone
+    using the model via cloudflare?) who would misinterpret given the reference to
+    the cache.
+  score: 0
+  posted_at: '2026-10-27T02:39:29Z'
+- id: '50254223'
+  parent_id: '50252159'
+  author: reassess_blind
+  text: Reminds me of a bug I found in a very popular browser testing service that
+    spun up iOS vm&#x27;s&#x2F;devices for on-device testing.<p>I copied the clipboard
+    from the device, and my clipboard was full of another users credentials that they
+    were obviously trying to paste into their own VM. Their devices were leaking clipboard
+    data to each other.<p>I reported the vulnerability and asked if there was any
+    bounty program (I wasn&#x27;t looking for vulnerabilities but didn&#x27;t hurt
+    to ask), to which they said no, but they could send me a signed letter thanking
+    me of my contributions. I said, great, thanks - and never heard back.<p>All pretty
+    disappointing.
+  score: 0
+  posted_at: '2026-10-27T02:57:35Z'
+- id: '50254246'
+  parent_id: '50253870'
+  author: XYen0n
+  text: I have read this post, and it appears that this is indeed an issue specific
+    to the GLM 5.3 model on their platform. I am unsure whether this is because only
+    GLM 5.3 uses SGLang or because only its configuration is problematic.
+  score: 0
+  posted_at: '2026-10-27T03:00:47Z'
+- id: '50254337'
+  parent_id: '50253832'
+  author: asdfsa32
+  text: "&quot;Cross-request KV cache exposure in X model&quot;.<p>Which part of that
+    is not claiming the exposure is in X model? Cloudflare is stopping to be cool,
+    this is the start. I guess, cf is now big enough for enshitification to start."
+  score: 0
+  posted_at: '2026-10-27T03:13:47Z'
+- id: '50254346'
+  parent_id: '50253748'
+  author: aliasxneo
+  text: It seems like you&#x27;re trying to imply this was an intentional bias due
+    to the nationality of the model authors. But the first sentence of the article
+    is:<p>&quot;On September 8, 2026, we were alerted by a security researcher, Gadi
+    Evron from Knostic, to a tenant isolation issue affecting the GLM-5.3 Workers
+    AI model (@cf&#x2F;zai-org&#x2F;glm-5.3) starting on August 27, 2026.&quot;<p>Meaning
+    the issue was a cache exposure with the GLM-5.3 Workers AI model. If the title
+    was, &quot;Cache exposure issue with GLM-5.3,&quot; I would agree it&#x27;s ambiguous
+    and maybe intentionally harmful. But it literally says, &quot;Workers AI model&quot;
+    which is clearly a Cloudflare product.
+  score: 0
+  posted_at: '2026-10-27T03:14:31Z'
+- id: '50254347'
+  parent_id: '50252927'
+  author: hedgehog
+  text: I read that as you can only do a single prefill up to 681k tokens, separate
+    from cache hit or generation. I think people try pretty hard to avoid a cache
+    miss on sessions that long and rarely do standalone requests that big so the situation
+    triggering this condition is rare. If you run a normal coding session with many
+    turns it would get to 1M ok.
+  score: 0
+  posted_at: '2026-10-27T03:14:33Z'
+- id: '50254441'
+  parent_id: '50254346'
+  author: jacquesm
+  text: 'Downthread I suggested &quot;Cloudflare configuration error leaked data between
+    user sessions&quot; which I think is far better. You could improve on it further:
+    &quot;Cloudflare AI worker configuration error leaked data between user sessions&quot;.
+    But this could have happened with any model.'
+  score: 0
+  posted_at: '2026-10-27T03:35:04Z'
+- id: '50254499'
+  parent_id: '50252159'
+  author: adg001
+  text: 'Please consider to update the title in: Cross-request KV cache exposure in
+    the AI model workers'
+  score: 0
+  posted_at: '2026-10-27T03:46:20Z'
+article:
+  url: https://blog.cloudflare.com/kv-cache-exposure-remediation/
+  title: Cross-request KV cache exposure in the GLM-5.3 Workers AI model, and our
+    remediation with SGLang | Cloudflare Blog
+  fetch_status: success
+  content: |-
+    ![](/_image?href=https%3A%2F%2Fblog.cloudflare.com%2F_emdash%2Fapi%2Fmedia%2Ffile%2F01M5X2P2KSNBX6J13E3B4219PW.png&w=1200&h=675&f=webp&fit=cover&position=center) ![](data:image/bmp;base64,Qk32BAAAAAAAADYAAAAoAAAACAAAAAgAAAABABgAAAAAAMAAAAATCwAAEwsAAAAAAAAAAAAAQAANRgAXUCArVzdCWDxSVDVVUCJJTQAuQQAZUAAkajQ6ekhOfExac0NbYjBNUxM1QwAeWhYtfkNFlFdYl1phiU9ecTpQWCE6RQAcXx4uhklInl1boV9iklNddz1OWiU5RwAKXhomgUZDllpWmVxcik9WcTlFWCAvSQAAWAsPcT03gVBLgVFQdERJYi43UhAaSgAAUQAAXTEmZEQ9YUVDWDc8UB4mTAAASgAATgAAUyscVD42Tz49SDE1RhUcSgAA)
+
+    On September 8, 2026, we were alerted by a security researcher, Gadi Evron from Knostic, to a tenant isolation issue affecting the GLM-5.3 Workers AI model (`@cf/zai-org/glm-5.3`) starting on August 27, 2026. We have remediated the issue, and we restored the model on September 9. We have confirmed that no other model hosted on Workers AI was affected.
+
+    Between August 27 and September 9, a small number of customers using the GLM 5.3 Workers AI model received responses that contained data from other customers' requests made to the same model shortly before theirs. In total, 155 responses were affected, all to prompts longer than 681,280 tokens.
+
+    After excluding our own testing and the researcher's, the requests we identified are consistent in timing and volume with ordinary long-context use, not with someone repeatedly exploiting the bug. We found no evidence of deliberate exploitation.
+
+    Today we are publishing this report alongside a post from&nbsp;SGLang, the open-source inference engine that we use, as a coordinated disclosure.&nbsp;This post describes the bug that caused this issue, our response timeline, and the subsequent hardening we have conducted on our production SGLang deployments. We also detail our continued efforts with the upstream maintainers of SGLang to address this and similar bugs.
+
+    ## What happened
+
+    GLM is a text generation model from [Z.ai](http://z.ai)&nbsp;that is built for agentic coding workflows; it is one of the many &nbsp;available through Workers AI. Gadi Evron submitted a report on September 8 through our HackerOne program stating that very long prompts sent to `@cf/zai-org/glm-5.3`&nbsp;on Workers AI sometimes returned text that belonged to other users' sessions. Cloudflare reproduced the issue the next morning and took the model offline within 40 minutes of declaring an incident. We then deployed a corrected configuration and a patched inference engine, and restored service the same day. &nbsp;
+
+    This specific report of cross-request KV cache exposure was the result of two overlapping issues. The first was a misconfiguration of the open-source inference engine, SGLang, used by Cloudflare. We deployed GLM 5.3 with a 1,048,576-token context window, but the KV cache pool on our prefill GPUs only had room for 681,280 tokens. We were aware of this mismatch before launch. We expected the engine to return an error for any prompt it could not process, and our long-context tests returned successful responses, so we did not believe this to be an issue.
+
+    The second was a bug in how SGLang handled the resulting over-length requests in disaggregated prefill/decode mode. A prompt that did not fit the pool was internally marked as rejected and replaced with a one-token placeholder, but instead of aborting the request and returning a client error, prefill generated the KV cache for the placeholder prompt and transferred it to the decode node. The decode node received a "transfer complete" message and assumed that prefill overwrote the KV cache from previous requests with the full prompt for this request, when in fact it left the majority of the previous state intact. The decode node subsequently generated a response while attending over stale cache pages that still held data from earlier requests. As a result, responses to prompts longer than 681,280 tokens could contain data from other users' GLM 5.3 sessions.
+
+    ## Immediate remediation
+
+    After , we took the following actions to correct this vulnerability before restoring public access to it:
+
+    **To fix our configuration, we made the pool hold the full context.** &nbsp;We adjusted our GLM 5.3 configuration to match our GLM 5.2 configuration, which freed enough GPU memory that the prefill KV pool now holds about 2.04 million tokens, roughly twice the 1,048,576-token context length. A prompt that fits the context window now always fits the pool, so the rejection path is never reached for a valid request. This alone prevents the bug from being exercised.
+
+    **To fix the engine, we also made the rejection path safe.** &nbsp;Relying on pool size alone is fragile: any change to quantization, tensor parallelism, CUDA graph sizes, or a future model version changes the pool size in a way that's easy to miss. Furthermore, there may be other situations in which the prefill scheduler can reject a request and trigger the same bug. To prevent this, we also patched the engine so that a request carrying a pending rejection is retired at the disaggregation admission queue, with its original error, before any bootstrap, allocation, or KV transfer happens. We proposed this upstream as , which also had the decode node verify that the number of tokens transferred matches the number it reserved. The fix was already on SGLang `main` in , merged September 6 for a related failure path but not yet released. The maintainers also merged , which rejects these requests earlier, following our approach.
+
+    We validated both changes against the researcher's reproduction script and our own canary-marker tests before restoring the model.
+
+    ## Background: how we serve GLM 5.3
+
+    Workers AI runs GLM 5.3 with SGLang in a disaggregated configuration: a pool of prefill GPUs processes the prompt and produces the model's KV cache for it, then hands that cache over remote direct memory access (RDMA), via [Mooncake](https://kvcache-ai.github.io/Mooncake/), to a pool of decode GPUs that generate the response. We have written about this architecture before in our posts on &nbsp;and&nbsp;.
+
+    The KV cache in GPU memory is a shared pool of fixed-size pages. Each request is assigned pages when it is admitted and releases them when it finishes. Pages are not currently zeroed between requests; the next request that gets a page simply overwrites it. This approach is common among inference engines and is necessary to achieve the best performance, but it means that the inference engine is responsible for tracking ownership of these memory pages. KV cache page ownership and lifetime tracking has to deal with not just shared ownership within a node (KV cache offload and token generation both access the memory with different lifetimes), but also ownership that is technically shared with the remote prefill node (which holds a simultaneous mutable reference to the page).
+
+    Furthermore, the size of this pool is not a configuration value. SGLang sizes it at startup from whatever GPU memory remains after loading the model weights. The model's advertised context length is a separate configuration value. Nothing forces the two to agree, and it is our job to check that they do.
+
+    ## Issue one: misconfiguration
+
+    On our GLM 5.3 prefill nodes with our configuration, the pool came to 681,280 tokens while the model's context length is 1,048,576 tokens. The selected KV pool size is printed by SGLang in logs during startup and exposed as a metric. We were aware of this size mismatch; however, during pre-launch testing we observed successful HTTP status codes and a streaming body with no error frames during benchmarking. We assumed that the engine was capable of gracefully handling the difference between the KV cache pool and requested context window via streaming or some other mechanism.
+
+    This was one critical gap in our testing: we only validated HTTP response codes and engine performance at long contexts, without validating model output and coherence.&nbsp;We now check KV pool size against context length directly, from the running engine, before any disaggr
+  error:
+  fetched_at: '2026-10-27T04:02:44Z'
+archived_at: '2026-10-27T04:02:47Z'

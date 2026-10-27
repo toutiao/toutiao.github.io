@@ -1,0 +1,154 @@
+---
+post:
+  id: lo-o5to4p
+  source: lobsters
+  title: A faster way to compute signed 64-bit floor division by constants
+  url: https://www.benjoffe.com/fast-floordiv
+  hn_url: https://lobste.rs/s/o5to4p
+  score: 23
+  author: benjoffe
+  posted_at: '2026-10-26T18:44:53Z'
+  fetched_at: '2026-10-27T04:02:48Z'
+  article_url: https://www.benjoffe.com/fast-floordiv
+  article_fetch_status: success
+  article_fetched_at: '2026-10-27T04:02:49Z'
+  raw_comment_count: 4
+  tags:
+  - c++
+  - performance
+comments:
+- id: lo-gcaqmz
+  parent_id: '0'
+  author: lyxia
+  text: |-
+    There is so much good stuff in this post! Love the Barack Obama quote.
+    Reminds me of this short note by Daan Leijen about the various forms of division, how they relate to each other, and what languages implement which.
+  score: 5
+  posted_at: '2026-10-26T19:38:09Z'
+- id: lo-irdv2v
+  parent_id: '0'
+  author: fanf
+  text: Also the epic wikipedia article on the modulo operator
+  score: 3
+  posted_at: '2026-10-26T19:58:41Z'
+- id: lo-tmypxl
+  parent_id: '0'
+  author: benjoffe
+  text: Thanks! I find myself getting more and more carried away throwing in content
+    to these blog posts, and they end up taking ages to finish. Am going to try to
+    get a few short ones out before AI sweeps away all this low hanging fruit.
+  score: 2
+  posted_at: '2026-10-27T00:05:56Z'
+- id: lo-iu0bid
+  parent_id: '0'
+  author: classichasclass
+  text: Don't worry about it. I think the long-form blog post is a lost art, and I'm
+    trying to revive it myself. There is a niche for the reader who wants a deep,
+    deep dive.
+  score: 1
+  posted_at: '2026-10-27T00:25:05Z'
+article:
+  url: https://www.benjoffe.com/fast-floordiv
+  title: A faster way to compute signed 64-bit floor division by constants
+  fetch_status: success
+  content: "# A faster way to compute signed 64-bit _floor division by constants_\n\n##
+    _The missing chapter of Hacker's Delight_\n\n27 October 2026\n\n**What is signed
+    integer floor division?**  \n_Signed integer floor division_ is where you do `a/b`
+    and get a result that rounds towards `−∞`,  \nwhereas standard (_“truncated”_)
+    signed division rounds towards `0`.  \nAs stated in Hacker's Delight: _“[I suspect
+    that] floor division more often gives the result you want”_.  \n  \nThis article
+    is about floor division where the **divisor is known at compile time**.\n\nDespite
+    the usefulness of this function, the world of _integer floor division_ is in shambles:\n\n-
+    Mainstream compilers and many languages do not provide it natively _(eg. C/C++/Go/Swift)_.\n-
+    Languages and software libraries that _do_ implement it seem to almost never use
+    the fastest algorithms.\n- At least one highly prominent software library had
+    a buggy overflowing implementation for over 4 years! \n- Typical online searches
+    and LLM prompts usually only surface the slow algorithms\n- And finally, Hacker's
+    Delight _(basically the bible on low-level computer math)_, has almost nothing
+    to say about it!\n\nThis blog post aims to not only shine light on the fast algorithms,
+    but will also **introduce a new fast approach** which, with ideal compilation:\n\n-
+    **On ARM** , benches 10–20% faster throughput than existing algorithms for most
+    64-bit divisors (occasionally tied), with equal or better latency\n- **On x86**
+    , benches:\n  - ~5-10% faster throughput for around 80% of positive 64-bit divisors
+    (60% of negative divisors)\n  - slower in the remaining x86 cases, and _usually_
+    worse (but competitive) latency\n\nThe [benchmark](#benchmarks) section has a
+    detailed overview showing per-divisor results over many platforms, for throughput
+    and latency.\n\nIt works in all bit-widths, and may find use on some 32-bit or
+    SIMD applications, but the biggest benefit is in 64-bit.  \nIt also can be used
+    for faster positive-modulus, and faster \"Euclidean\" division _(differs to floor
+    division for negative divisors)_.\n\n**Floor division can be much faster than
+    you probably realise.**  \nBelow is a snapshot _throughput_ benchmark for division
+    **by 86400** _(the number of seconds in one day)_, the kind of performance you
+    can expect using most languages' built-in methods, vs fast alternatives outlined
+    in this blog.\n\nNote: in the bar chart: lower = faster.\n\n**_Floor Div 86400
+    throughput - ARM64 Chips_** As tested on MacBook Pro M4 Pro  \nand Snapdragon
+    X1-26-100\n\n**Common**  \n_(Rust\\*, Zig, etc.)_\n**~2×**\n\n**Robison** _(2005)_\n**~1.1×**\n\n**Granlund-
+    \ \nMontgomery** _(1994)_\n**1×**\n\n**New Algo** _(2026)_\n**~0.8×**\n\n**_Floor
+    Div 86400 throughput - X86 Chips_** As tested on AMD Ryzen 9 9950X3D  \nand Intel
+    Core i7 (MacBook Pro 2016)\n\n**Common**  \n_(Rust\\*, Zig, etc.)_\n**~2×**\n\n**Granlund-
+    \ \nMontgomery** _(1994)_\n**1.05×**\n\n**Robison** _(2005)_\n**~1×**\n\n**New
+    Algo** _(2026)_\n**~0.95×**\n\nSince some people visiting this page will be just
+    looking to copy/paste code, I'll start with this function builder on the right:\n\n**New
+    Fast Division Functions:** Bit-Width:   \nDivisor: \n\n1. \n\n    // MIT License
+    \n\n2. \n\n    // \n\n3. \n\n    // Copyright (c) 2026 - Ben Joffe \\<https://www.benjoffe.com/\\>\n\n4.
+    \n\n    // \n\n5. \n\n    // Permission is hereby granted, free of charge, to
+    any person obtaining a copy\n\n6. \n\n    // of this software and associated documentation
+    files (the \"Software\"), to deal\n\n7. \n\n    // in the Software without restriction,
+    including without limitation the rights\n\n8. \n\n    // to use, copy, modify,
+    merge, publish, distribute, sublicense, and/or sell\n\n9. \n\n    // copies of
+    the Software, and to permit persons to whom the Software is\n\n10. \n\n    //
+    furnished to do so, subject to the following conditions:\n\n11. \n\n    // \n\n12.
+    \n\n    // The above copyright notice and this permission notice shall be included
+    in\n\n13. \n\n    // all copies or substantial portions of the Software.\n\n14.
+    \n\n    // \n\n15. \n\n    // THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY
+    OF ANY KIND, EXPRESS OR\n\n16. \n\n    // IMPLIED, INCLUDING BUT NOT LIMITED TO
+    THE WARRANTIES OF MERCHANTABILITY,\n\n17. \n\n    // FITNESS FOR A PARTICULAR
+    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\n18. \n\n    // AUTHORS OR
+    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n\n19. \n\n    //
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\n20.
+    \n\n    // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+    IN THE\n\n21. \n\n    // SOFTWARE.\n\n22. \n\n     \n\n23. \n\n    // Fast floor
+    division by 86400.\n\n24. \n\n    // (rounds towards negative infinity).\n\n25.
+    \n\n    // Accurate over the full signed 64-bit range.\n\n26. \n\n    // Sign-selected
+    multiplier variant.\n\n27. \n\n    // Optional ref:\n\n28. \n\n    // [https://www.benjoffe.com/fast-floordiv#fn=i64\\_86400](https://www.benjoffe.com/fast-floordiv#fn=i64_86400)\n\n29.
+    \n\n    inline int64\\_tfast\\_i64\\_floordiv\\_86400(int64\\_t_x_) {\n\n30. \n\n
+    \   const int64\\_t_M_= ((\\_\\_int128(1) << 79) / 86400 + 1);\n\n31. \n\n    const
+    int64\\_t_m_=_M_+ (_x_>> 63);\n\n32. \n\n    **return** (\\_\\_int128)_x_\\*_m_>>
+    79;\n\n33. \n\n    }\n\n**Testing**  \nA set of 65535 divisors from -32768 to
+    32767 for 64-bit can be generated into a single self-contained C++ file. It includes
+    a boundary test in the same file.  \nSee the comment at the top of the download
+    for how to build and run it.\n\nUsing this form, you can choose any bit-width
+    and any divisor to get a copy/paste function ready to go.\n\nThere is also [reference
+    algorithm ![](/static/media/link-external.f2d3f5e2e0517a859106527b07648224.svg)](https://github.com/benjoffe/fastdiv/blob/main/algorithms/benjoffe.hpp)
+    _(a reusable C++ template with additional microarchitectural performance tweaks)_.\n\n_As
+    you can see, the technique is so simple that I'd expect that somebody has done
+    this before, but I've looked around and not found it documented anywhere. If it
+    turns out to have been done before, at least this page will make it discoverable._\n\nFor
+    the rest of us, I'll cover a narrative about floor division, which matches my
+    process of discovery... And if you want to create a fast library or compiler/language
+    implementation, this will be your one-stop shop.\n\nIf you want to skip the history
+    lesson, you can [jump straight to the&nbsp;new&nbsp;stuff](#new).\n\n**Article
+    Sections:**\n\n- [Starting with Truncated (Standard) Division](#starting)\n- [Fixing
+    the Bug](#fixing-the-bug)\n- [What Hacker's Delight Has to Say About It](#hackers-delight)\n-
+    [Faster Techniques](#other)\n- [The Positive Divisor XOR Trick](#xor)\n- [Robison's
+    Multiply Add Technique](#robison)\n- [**Finally, on to the new stuff**](#new)\n-
+    [Never Roll Your Own Fast Floor Division Algorithm](#tensorflow-bug)\n- [Benchmarks](#benchmarks)\n-
+    [Which algorithm should I use?](#which)\n- [Annexure A. Proof](#proof)\n\n* *
+    *\n\n## Starting with Truncated (Standard) Division [Deep link](#starting)\n\nLet's
+    suppose you want to convert a Unix timestamp measured in seconds, to _rata-die_
+    (a day count). And let's also suppose you forgot how to do this properly, and
+    you use standard _(\"truncated\")_ division.\n\nWe need to divide by `86400` _(60×60×24)_.
+    We'll use a 64-bit timestamp, since a 32-bit timestamp can only hold about ±68
+    years.\n\nYou'll be very happy with this implementation on the right until somebody
+    hands you a timestamp before 1970!\n\n**C++ Standard Division (not floor-div)Given:
+    `x` — _signed 64-bit integer_**\n\n1. \n\n    const int64\\_t_rd_=_x_/86400;\n\n2.
+    \n\n    **return** _rd_;\n\nOf course, you should be using _floor division_, the
+    type of division that's useful for tracking repeating patterns like timestamps,
+    angle rotations, tile positions etc. This is the type of division where the associated
+    `\"%\"` operation is a proper _positive modulus_, not that fake modulus that \"`%`\"
+    provides in C++, JavaScript etc.\n\nNonetheless, it's useful to understand what
+    is going on under the hood when doing standard division like this. The pseudocode
+    below shows what the compiled assembly is actually doing. It's essentia"
+  error:
+  fetched_at: '2026-10-27T04:02:49Z'
+archived_at: '2026-10-27T04:02:49Z'
