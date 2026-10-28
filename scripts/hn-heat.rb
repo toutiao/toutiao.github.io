@@ -128,7 +128,10 @@ def load_threads
     data = (YAML.safe_load_file(f, permitted_classes: [Time]) rescue nil)
     next unless data.is_a?(Hash)
     id = (data['post'] && data['post']['id'] || File.basename(f, '.yaml')).to_s
-    threads[id] = { 'post' => data['post'] || {}, 'comments' => Array(data['comments']) }
+    # article (fetched source text) rides along for the category layers;
+    # other consumers ignore it
+    threads[id] = { 'post' => data['post'] || {}, 'comments' => Array(data['comments']),
+                    'article' => data['article'].is_a?(Hash) ? data['article'] : nil }
   end
   threads
 end
@@ -456,11 +459,87 @@ def category_of(title, url, cmap, tags = [])
   'other'
 end
 
+# ── Article-density category layer (L1): IDF-weighted keywords over text ──
+#
+# Rules are the precision layer on TITLES; this layer rescues threads whose
+# title carries no keyword but whose fetched article text is unambiguous
+# ("eMudhra ignored Mozilla Root investigation deadline" — the article is
+# wall-to-wall certificate/CA/TLS). Same map, same matcher, two density
+# guards because a keyword mentioned once in 800 tokens of prose is mention,
+# not topic: >= ARTICLE_RULE_MIN_HITS DISTINCT keywords AND total IDF weight
+# >= ARTICLE_RULE_MIN_WEIGHT (generic words — model/system/type, df near the
+# corpus size — barely count; tls/certificate/history carry the decision).
+#
+# Rejected alternatives (evidence, 342-thread corpus): naive Bayes self-trained
+# on rule labels — LOO 28%, softmax saturates on short docs; kNN over TF-IDF
+# full-text vectors — confidence fully decoupled from correctness (mRNA story
+# -> ai, NeXT office memoir -> ai), cross-post twins contaminate neighbors at
+# sim 1.0. Statistical learning waits for a ~10x corpus; revisit then.
+#
+# Article text is immutable once fetched, so assignments here are stable — no
+# hysteresis needed (unlike a corpus-trained model, which flaps).
+
+ARTICLE_RULE_MIN_HITS = 3    # distinct class keywords present in article text
+ARTICLE_RULE_MIN_WEIGHT = 8.0 # summed idf of those hits (df over all articles)
+ARTICLE_UNSEEN_IDF = 3.5     # keyword absent from corpus df = rare = this weight
+TF_ARTICLE_TOKENS_MAX = 800  # top of the article is the topical part
+
+def model_tokens(text)
+  text.to_s.downcase.gsub(/[^a-z0-9\s]/, ' ').split.reject { |t|
+    t.length < 3 || STOPWORDS.include?(t) || t =~ /^\d+$/
+  }.map { |t| canonical_token(t) }
+end
+
+# idf per token over every archived article's topical head — the weighting
+# that separates "history,historical,museum" (real signal) from
+# "hardware,cpu,window" (boilerplate generics).
+def article_idf(threads)
+  df = Hash.new(0)
+  n = 0
+  threads.each_value do |t|
+    next if t.dig('article', 'content').to_s.empty?
+    n += 1
+    model_tokens(t.dig('article', 'content')).first(TF_ARTICLE_TOKENS_MAX).uniq.each { |k| df[k] += 1 }
+  end
+  return {} if n.zero?
+  df.transform_values { |d| Math.log(1 + n.to_f / d) }
+end
+
+def article_rule_category(threads, id, cmap, idf)
+  t = threads[id] || {}
+  toks = Set.new(model_tokens(t.dig('article', 'content')).first(TF_ARTICLE_TOKENS_MAX))
+  return 'other' if toks.empty?
+  # Strongest evidence wins (NOT first-qualifying like the title layer): a
+  # story often brushes several classes' words, and map order would let an
+  # incidental 3-generic-word infra hit outrank law/court/lawsuit at w20.
+  # Ties break to the earlier category (map order), keeping determinism.
+  best_weight = ARTICLE_RULE_MIN_WEIGHT - 1
+  best_cat = 'other'
+  cmap['categories'].each do |cat|
+    hits = Array(cat['keywords']).select { |k| toks.include?(canonical_token(k)) }
+    next unless hits.size >= ARTICLE_RULE_MIN_HITS
+    weight = hits.sum { |k| idf[canonical_token(k)] || ARTICLE_UNSEEN_IDF }
+    if weight > best_weight
+      best_weight = weight
+      best_cat = cat['name']
+    end
+  end
+  best_cat
+end
+
 def assign_categories!(reg, threads, cmap)
   reg['category_version'] = cmap['version']
+  idf = article_idf(threads)
   reg['threads'].each do |id, e|
     tags = threads.dig(id, 'post', 'tags') || []
-    e['category'] = category_of(e['title'] || threads.dig(id, 'post', 'title'), e['url'], cmap, tags)
+    ruled = category_of(e['title'] || threads.dig(id, 'post', 'title'), e['url'], cmap, tags)
+    if ruled != 'other'
+      e['category'] = ruled
+      e['category_src'] = 'rule'
+    else
+      e['category'] = article_rule_category(threads, id, cmap, idf)
+      e['category_src'] = e['category'] == 'other' ? 'other' : 'article'
+    end
   end
 end
 
