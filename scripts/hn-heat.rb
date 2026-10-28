@@ -404,10 +404,44 @@ def load_category_map
   data
 end
 
+# Stem-lite canonical form: fold English inflections on BOTH title tokens and
+# keywords so the map stays singular-canonical ("election" covers "elections",
+# "vulnerability" covers "vulnerabilities"). c4 hand-enumerated plurals instead
+# and missed "elections" — a politics story fell to "other" while cluster-mates
+# of the same story hit "policy". Deterministic; only consistency matters, not
+# linguistic perfection ("series" → "sery" on both sides still matches).
+def canonical_token(tok)
+  s = tok.to_s
+  if s.end_with?('ies') && s.length > 4
+    s[0...-3] + 'y'
+  elsif s =~ /(?:ss|sh|ch|x|z)es\z/ && s.length > 5
+    s[0...-2]
+  elsif s.end_with?('s') && !s.end_with?('ss', 'us', 'is') && s.length > 3
+    s[0...-1]
+  else
+    s
+  end
+end
+
+# Multi-word concepts a token set cannot express ("supreme court", "context
+# window"): matched against the normalized title, whitespace-flexible.
+def phrase_match?(normalized_title, phrase)
+  pattern = /\b#{Regexp.escape(phrase.to_s.downcase).gsub('\ ', '\s+')}\b/
+  normalized_title.match?(pattern)
+end
+
 def category_of(title, url, cmap, tags = [])
   # collapse spaced compounds so "data center" hits the "datacenter" keyword
   normalized = title.to_s.downcase.gsub(/\bdata\s*cent(?:er|re)s?\b/, 'datacenter')
-  tokens = Set.new(topic_tokens(normalized) + Array(tags).map(&:to_s))
+  # classification tokens are NOT length/stopword filtered — clustering's
+  # 3-char floor (topic_tokens) would drop real keywords like "ai"/"c"/"doj".
+  # letter-digit hyphen compounds glue into one token when the letter side is a
+  # SINGLE character ("Bill C-22" → c22): designations, not the bare word "c".
+  # Multi-letter prefixes stay split so "CVE-2022" keeps the "cve" keyword and
+  # "Gemma-4" keeps "gemma".
+  normalized = normalized.gsub(/\b([a-z])-(\d)/, '\1\2')
+  tokens = Set.new(normalized.gsub(/[^a-z0-9\s]/, ' ').split + Array(tags).map(&:to_s))
+  canon = Set.new(tokens.map { |t| canonical_token(t) })
   host = begin
     URI.parse(url.to_s).host.to_s.downcase
   rescue StandardError
@@ -415,7 +449,9 @@ def category_of(title, url, cmap, tags = [])
   end
   cmap['categories'].each do |cat|
     return cat['name'] if Array(cat['domains']).any? { |d| host.include?(d) }
-    return cat['name'] if Array(cat['keywords']).any? { |k| tokens.include?(k) }
+    # exact keeps irregular hand-listed forms; canonical folds inflections
+    return cat['name'] if Array(cat['keywords']).any? { |k| tokens.include?(k) || canon.include?(canonical_token(k)) }
+    return cat['name'] if Array(cat['phrases']).any? { |p| phrase_match?(normalized, p) }
   end
   'other'
 end
@@ -1076,4 +1112,6 @@ def run
   end
 end
 
-run
+# Entry point — skipped when required as a library (hn-category-eval.rb reuses
+# the production classifier so eval and prod cannot drift apart).
+run unless ENV['HN_HEAT_AS_LIB'] == '1'

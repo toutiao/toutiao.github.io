@@ -22,12 +22,14 @@ require 'json'
 require 'optparse'
 require 'date'
 require 'fileutils'
-require 'set'
 
-ARCHIVE_DIR = ENV.fetch('HN_ARCHIVE_DIR', '.hn-archive')
+# Production classifier, required as lib — eval must grade the SAME matcher
+# hn-heat.rb uses (a duplicated classifier here once had its own stopword list
+# and its own host extraction, quietly drifting from prod).
+ENV['HN_HEAT_AS_LIB'] = '1'
+require_relative 'hn-heat'
+
 EVAL_DIR = File.join(ARCHIVE_DIR, 'eval')
-REGISTRY_PATH = File.join(ARCHIVE_DIR, 'topics.json')
-CATEGORY_MAP_PATH = File.join(__dir__, 'category_map.json')
 
 options = { sample: nil, grade: nil, gold: nil }
 OptionParser.new do |opts|
@@ -44,27 +46,10 @@ def load_category_names
 end
 
 if options[:sample]
-  require 'set'
   reg = JSON.parse(File.read(REGISTRY_PATH))
-  cmap = JSON.parse(File.read(CATEGORY_MAP_PATH))
+  cmap = load_category_map
 
-  # reuse the production classifier logic (title tokens > domains, order = priority)
-  stop = Set.new(%w[the a an and or of to in for on with is are was were be been at by from as that
-                    this it its new how why what when your about into over after before more most
-                    other some such no not only own same so than too very can will just now using
-                    use used vs via get got make made])
-  tokens = lambda { |title|
-    title.to_s.downcase.gsub(/[^a-z0-9\s]/, ' ').split.reject { |x| x.length < 3 || stop.include?(x) || x =~ /^\d+$/ }.to_set
-  }
-  classify = lambda { |title, url|
-    toks = tokens.call(title)
-    host = url.to_s.sub(%r{https?://}, '').split('/').first.to_s.downcase
-    cmap['categories'].each do |cat|
-      return cat['name'] if Array(cat['domains']).any? { |d| host.include?(d) }
-      return cat['name'] if Array(cat['keywords']).any? { |k| toks.include?(k) }
-    end
-    'other'
-  }
+  classify = ->(title, url) { category_of(title, url, cmap) }
 
   pool = reg['threads'].values.sort_by { |e| e['first_seen'].to_s }.reverse
   sample = pool.first(options[:sample])
