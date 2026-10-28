@@ -1,0 +1,227 @@
+---
+post:
+  id: lo-qr59sa
+  source: lobsters
+  title: Four Months of Zig
+  url: https://gracefulliberty.com/articles/four-months-of-zig/
+  hn_url: https://lobste.rs/s/qr59sa
+  score: 40
+  author: Defelo
+  posted_at: '2026-10-27T18:46:09Z'
+  fetched_at: '2026-10-28T04:14:50Z'
+  article_url: https://gracefulliberty.com/articles/four-months-of-zig/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T04:14:52Z'
+  raw_comment_count: 9
+  tags:
+  - zig
+comments:
+- id: lo-otyqiz
+  parent_id: '0'
+  author: dmytrish
+  text: |-
+    It was previously written in Rust but I grew tired of the massive dependency trees and want to take full advantage of Zig's build system.
+
+    I'm wondering what prevents the author from stripping away dependencies in Rust.
+  score: 4
+  posted_at: '2026-10-27T19:32:39Z'
+- id: lo-rqzdr7
+  parent_id: '0'
+  author: liberty
+  text: |-
+    This is answered in the article. It boils down to:
+
+    Most dependencies have many more dependencies
+    Rust's standard library doesn't include essential functionality that many projects depend on
+
+    It's possible but painful to make Rust work without large dependency trees. I do hope for the Rust ecosystem to make strides in a better direction here like they are in other places.
+    Zig avoids both through dependency culture and having basic stuff like error handling and serialization in the language or standard library.
+  score: 18
+  posted_at: '2026-10-27T19:45:17Z'
+- id: lo-hyeaud
+  parent_id: '0'
+  author: casperin
+  text: I was going to ask what Zig has that Rust doesn't (genuine question, I have
+    not spent much time with Zig yet). I'm surprised you say error handling, but serialization
+    is a big one!
+  score: 2
+  posted_at: '2026-10-27T21:36:17Z'
+- id: lo-dpesok
+  parent_id: '0'
+  author: wofo
+  text: |-
+    I do hope for the Rust ecosystem to make strides in a better direction here like they are in other places.
+
+    Amen to that! As a heavy Rust user and longtime fan, the current dependency situation (and culture) is maybe my biggest annoyance with the language/ecosystem.
+  score: 10
+  posted_at: '2026-10-27T21:51:42Z'
+- id: lo-epo6iy
+  parent_id: '0'
+  author: zmitchell
+  text: "This contrasts to Rust, which leads programmers to insert panics into their
+    code.\n\nInserting panics is definitely not the norm.\n\nIn Rust you can use ?,
+    which is quicker than unwrap, but you also have to do something like Result<Type,
+    Box<dyn std::error::Error>. That's a mouthful! Alternatively, you can use the
+    anyhow crate and return anyhow::Result, which also provides some nice helper methods.
+    But then you have to add a dependency for reasonable error handling. There's also
+    Zig-style composable errors with yet another library.\n\nYou definitely don't
+    have to return a boxed error. In fact I consider that a code smell. The alternative
+    not discussed here is to define your error enum like you would with thiserror
+    and then implement the Error trait yourself. This is totally doable, and not that
+    much of a pain if you're wanting to avoid a dependency.\nNitpicks aside, one of
+    the things I struggle with in Zig sometimes is that starting a new project can
+    be a worst case scenario for an ADHD brain. When I'm starting a new project I
+    want to jump right in to tinkering on the problem, and instead I find myself wiring
+    up similar functionality in build.zig that I use in many projects (check step
+    to help out ZLS, test steps, etc). By the time I'm satisfied with my build.zig
+    I've already spent a chunk of my dopamine budget on working through a part of
+    the project I find aggressively uninteresting \U0001F605\nAnyway, @liberty definitely
+    come say hi in Portland :)"
+  score: 11
+  posted_at: '2026-10-27T22:31:21Z'
+- id: lo-lhohf3
+  parent_id: '0'
+  author: liberty
+  text: |-
+    Inserting panics is definitely not the norm.
+
+    It's common to panic when prototyping, since it's the easiest way to handle errors. Sometimes these remain in production code because it's easy to forget about them. This is worsened when there are many examples online that both train new developers and LLMs how to write code.
+    I've seen Rust panics in apps I've used regularly and also have seen expect abused to produce error messages (I've done this when prototyping, so I'm also guilty).
+    In Zig, on the other hand, the easiest way to handle errors is to bubble them up. This is much easier to add proper error handling to later on, and doesn't crash the whole application.
+
+    You definitely don't have to return a boxed error. In fact I consider that a code smell. The alternative not discussed here is to define your error enum like you would with thiserror and then implement the Error trait yourself. This is totally doable, and not that much of a pain if you're wanting to avoid a dependency.
+
+    I have done this before. It's much more annoying to do than in Zig and doesn't handle composition nearly as cleanly.
+
+    .. sometimes is that starting a new project can be a worst case scenario for an ADHD brain ...
+
+    That's fair. Have you considered having a basic build.zig you use for your projects? Copy/paste is the time-old solution to boilerplate after all. I'm curious if there's anything that's specific to each project that prevents that. Maybe it'd be a good feature to have in ZLS?
+
+    Anyway, @liberty definitely come say hi in Portland :)
+
+    It's a bit of a trip but I'll definitely have to sometime!
+  score: 3
+  posted_at: '2026-10-28T01:13:22Z'
+- id: lo-bxzacg
+  parent_id: '0'
+  author: ghoti
+  text: |-
+    Sometimes these remain in production code because it's easy to forget about them.
+
+    If one is through with the prototyping stage and doesn't want to grep for unwrap( or expect(, the Clippy lints "unwrap_used" and "expect_used" will forbid these automatically.
+  score: 2
+  posted_at: '2026-10-28T02:10:04Z'
+- id: lo-zrrmvc
+  parent_id: '0'
+  author: liberty
+  text: |-
+    I use Clippy this way liberally. Unfortunately there's a whole ecosystem to consider that may not.
+    Also, it's generally the case that the code that is written first tends to be the code that remains (which is why TigerStyle emphasizes getting things right the first time).
+  score: 1
+  posted_at: '2026-10-28T02:33:04Z'
+- id: lo-gpgiq6
+  parent_id: '0'
+  author: ScottRedig
+  text: |-
+    It's nice to see a second blog post on a positive experience from the last Zig Day Seattle.  Positive feedback keeps these events happening, not that they're hard to organize once you've found a location that works.
+
+    I may even head down to Portland to catch one before the next local one comes around.
+
+    This is certainly do-able with the next Zig Day Portland being on Novemeber 7th, but the next Zig Day Seattle is the very next day on November 8th, so it's not like you'd have to wait long.  If this post piques anyone's interest in Zig and the Bellevue library isn't a hard place to get to, please join us as newbies are more than welcome!  I made sure we got the big room this time just in case, hah.
+  score: 1
+  posted_at: '2026-10-28T04:05:36Z'
+article:
+  url: https://gracefulliberty.com/articles/four-months-of-zig/
+  title: Four Months of Zig - Anna Liberty
+  fetch_status: success
+  content: |-
+    # Four Months of Zig
+
+    2026-10-27 · 15 min · [#computing](/articles/tags/computing)
+
+    It has been about four months since I [returned to Zig](/articles/return-to-zig) after being absent for a few years. In this time, I have written some software in Zig and reengaged with the community, online and in person. I decided to share some of that experience, including what I have liked about Zig so far and what I haven't. I'll include some comparisons to Rust along the way since that was my previous go-to language.
+
+    ## Projects
+
+    The first project I started in Zig was [snurl](https://codeberg.org/liberty/snurl). It is a library for interacting with the smallnet (Gemini, Finger, Gopher, Spartan, and such). My goal has been to provide an alternative to curl for the smallnet, with similar testing and fuzzing requirements but on a smaller scale. I wanted to roughly follow [TigerStyle](https://tigerstyle.dev/) insofar as it made sense for the project.
+
+    Something I ran into early on was that the fuzzer didn't actually work. When getting excited about fuzzing in my last post, I didn't realize that the feature had not yet been completed. This isn't surprising, considering Zig's status, but it was disappointing, especially since the fuzzer is demonstrated in the generated `main.zig` file provided by `zig init`.
+
+    After this, I wrote a two programs which I have not published yet. The first is a small TUI typer racer. It was simpler than I expected to get a minimum version working so far. The second is an n-body simulator with stellar evolution using raylib.
+
+    ## Zig Day
+
+    The most exciting opportunity in the last few months was the chance to go to a local Zig Day. I learned of Zig Day Seattle occurring on [Lobsters](https://lobste.rs) on August 20th. I was ecstatic to learn that there was a Zig Day in my area. Then I saw Andrew Kelley would be there and became more excited.
+
+    Zig Days are local meetups where people interested in Zig hang out, work on their projects together, and talk about Zig. For this Zig Day, I decided to work on snurl. A friend, [Evin Yulo](https://yujiri.xyz) also decided to attend.
+
+    The event itself occurred in the Bothell library, moved there from the Bellevue library after so many people signed up that capacity was overwhelmed. Having the creator of Zig at the event will do that.
+
+    I love the format of these Zig Days and I'm glad they are a part of the community. Since they are run by local groups, it gives the whole Zig community a more interconnected feeling. It's a way to interact with other people who are interested in Zig in person. And, in this case, the creator of Zig itself.
+
+    I got the chance to talk with other programmers about their projects. Hopefully some ideological cross-pollination occurred that will make all our projects stronger. I ended up working on snurl with evin, who started work on integrating Zig's standard library TLS implementation as alternative backend.
+
+    I also briefly talked with Andrew Kelley. I hope Zig's built-in fuzzing gets fixed sometime soon!
+
+    Ryan Hendrickson [wrote an excellent article](https://www.ryanjh.com/articles/my-first-zig-day/) outlining more of the events of that day from his perspective if you want more details.
+
+    I will definitely be attending Zig Day Seattle again in the future. I may even head down to Portland to catch one before the next local one comes around. I enjoy the opportunity to connect with other people interested in Zig and its values.
+
+    ## What I've Liked
+
+    ### anyzig
+
+    I love [anyzig](https://github.com/marler8997/anyzig). I've had to use zig master and 0.16.0 for different projects, and anyzig has made that doable.
+
+    Unfortunately, it breaks outside of directories without a `build.zig.zon`, meaning if you have tooling that requires a `zig` command to work, it can only occur in project directories. This breaks autoformatting for my one-off Zig scripts. Maybe a default zig version could be provided in that case.
+
+    ### IO and Allocators
+
+    I know it frustrates some people, but I love the fact that you have to pass IO and allocator parameters to functions in Zig.
+
+    #### Allocators
+
+    I'll start with allocators, since they've been around longer. For each Zig function you have to accept an explicit allocator parameter. This is different from most programming languages which either use a default allocator that may be changed globally or one changed by a local `context` (see Odin).
+
+    I like being able to change allocators for different parts of code. You might want an arena allocator for some things but need a general purpose allocator for others. Sometimes a `FixedBufferAllocator` is all you need to perform an operation. Zig's style makes this all obvious to handle.
+
+    I prefer Zig's system to Odin's implicit `context` system since Zig keeps things explicit. It's clear whether a function allocates memory or not, and hard to accidentally pass in the wrong allocator.
+
+    This is also superior to Rust's hidden, infallible allocations that panic when memory is exhausted. They're working on adding explicit allocations, but this will be yet another feature tacked onto the language rather than something built from the ground up.
+
+    It's much easier to reason about programs that allocate memory in Zig.
+
+    #### IO
+
+    The IO parameter is even more powerful, even if it is newer. It is well worth the breaking changes required to bring it about (even if I skipped the 0.15.0 -\> 0.16.0 transition). In Zig, every function that interacts with the underlying operating system (with caveats) requires an "IO" parameter. This provides the context for input, output, and everything else. Porting Zig to new operating systems is mostly just porting IO.
+
+    Practically, this is really nice for testing. When testing behavior, you just need to put in a testing IO instance that works as you need it to. You can change the input stream however you want, cause writes to fail, and anything else.
+
+    Just like with allocation, passing an IO argument makes it clear which programs are pure and which ones are not. You can tell at a glace whether or not a program is going to modify something external.
+
+    Zig has a really good track record of keeping things simple while also adding powerful features. Instead of adding 100 small features that do slightly different similar things, it tends to provide one major feature that supports all the various other use-cases. Low floor, high ceiling.
+
+    ### Comptime
+
+    I love comptime. It's a seamless way to do metaprogramming and precomputation all in one. Other people have written more detailed accounts so I shall move on.
+
+    ### Build System
+
+    [Zig's build system](https://ziglang.org/learn/build-system/) is stellar. So much so that companies like Uber have adopted it for their software written in other languages.
+
+    One thing I like about it is that I can integrate other tools with it seamlessly in ways that Cargo complains about. This is especially important for one of my projects that involves code generation.
+
+    ### Dependency Culture
+
+    Zig has an excellent dependency culture. The main ethos is simple: avoid. When you don't need a dependency, don't add one. However, when you do, it's often a battle-tested library that Zig can effortlessly integrate with translate-c. You can easily also vendor in external dependencies and audit their code.
+
+    Most of my Zig programs have about one or two direct Zig dependencies, with zero indirect dependencies. This makes the codebase much easier to audit and control.
+
+    This stands in stark contrast to Rust, where the smallest of my projects regularly have a few direct and dozens of indirect dependencies.
+
+    This is thanks both to Zig's dependency culture and the fact that essential features like reflection, random number generation, clean error handling, and JSON parsing are built into the language or standard library rather than maintained as separate individual libraries. No need to depend on serde or syn in every program.
+
+    Zig encourages careful consideration before adding dependencies, and I appr
+  error:
+  fetched_at: '2026-10-28T04:14:52Z'
+archived_at: '2026-10-28T04:14:52Z'

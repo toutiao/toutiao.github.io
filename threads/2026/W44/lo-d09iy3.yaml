@@ -5,14 +5,14 @@ post:
   title: Compile-Time Dependent Types
   url: https://thenumb.at/Syl-Intro/
   hn_url: https://lobste.rs/s/d09iy3
-  score: 12
+  score: 24
   author: polywolf
   posted_at: '2026-10-27T14:40:12Z'
-  fetched_at: '2026-10-27T20:26:10Z'
+  fetched_at: '2026-10-28T04:14:50Z'
   article_url: https://thenumb.at/Syl-Intro/
   article_fetch_status: success
-  article_fetched_at: '2026-10-27T20:26:13Z'
-  raw_comment_count: 1
+  article_fetched_at: '2026-10-28T04:14:54Z'
+  raw_comment_count: 9
   tags:
   - ml
   - plt
@@ -27,9 +27,93 @@ comments:
     Functions used in type-level computations may diverge, so typechecking is not decidable.
     Functions don’t discharge universally quantified claims, so the compiler must evaluate all applications that produce proofs before relying on their results."
 
-    "Not suitable" seems to assume the Curry-Howard approach for theorem proving, as in Rocq, Agda and Lean. But an alternative is some version of the HOL = STLC + LCF recipe. This should allow you to use type-level computation for proof automation. To be able to prove things about the code itself (so you can reflect it back to the type checker as trusted facts), you need a sound translation from code to logic.
+    "Not suitable" seems to assume the type inhabitation approach to theorem proving, as in Rocq, Agda and Lean. But an alternative is some version of the HOL-family approach, as in HOL4, HOL Light and Isabelle/HOL. Then you can still use internal compile-time computation for proof automation. To be able to prove things about the code itself (and reflect it back to the compiler as trusted facts), you need a sound translation from code to logic or from logic to code. Code to logic is more ergonomic and therefore more attractive for the end-user, but it is trickier to get right with respect to soundness (which ties to the issue with divergence).
+    Another way to put it is that if you have a sufficiently expressive compile-time system then you can build a bridge to an external proof system (exposed as a set of opaque LCF-style primitives) and still have internal proof automation, internal syntactic abstraction and all the rest, as opposed to having a jarring transition between the internal and external worlds.
+    I haven't thought much about it in this context, so maybe you run into unresolvable issues. Hopefully experts can chime in.
   score: 3
   posted_at: '2026-10-27T20:22:46Z'
+- id: lo-rvvnrb
+  parent_id: '0'
+  author: amw-zero
+  text: |-
+    I honestly know a fair bit of type theory, and this is confusing to me:
+
+    That is, Syl is dependently typed at compile time and simply typed at runtime.
+
+    For me, "typed at runtime" means dynamically typed. Is that the case here, or does that just mean that it has a "regular" type system after the staging layer?
+  score: 1
+  posted_at: '2026-10-27T22:34:59Z'
+- id: lo-rbnkne
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    does that just mean that it has a "regular" type system after the staging layer?
+
+    I think that's the only way the statement makes sense. E.g. if you look at section 2.4.1 of Staged Compilation with Two-Level Type Theory where monomorphization is discussed as an option, the residual language is simply typed.
+  score: 4
+  posted_at: '2026-10-27T22:41:37Z'
+- id: lo-tsfyo8
+  parent_id: '0'
+  author: fanf
+  text: |-
+    Syl has two mode axes: staticity and erasure.
+
+    A static value is knowable at compile time; a dynamic value may not be.
+    An unerased value is knowable at runtime; an erased value may not be.
+
+
+    I wonder why these are two axes, rather than three points on a single axis, i.e. dynamic <: const / static <: erased, i.e. when does it make sense for a dynamic value to be erased?
+    Also I wonder how this two-level type theory relates to the quantitative type theory used for similar purposes in Idris. The papers on the theories don’t compare either with the other.
+  score: 4
+  posted_at: '2026-10-27T22:41:44Z'
+- id: lo-feezbj
+  parent_id: '0'
+  author: amw-zero
+  text: Yea, the paper goes into it. I guess it's saying, these are the types that
+    describe the values that actually execute during the program's runtime. Pretty
+    suspect choice of terminology since everyone calls these static types already,
+    and then the paper calls the macro / meta-level types "static types."
+  score: 2
+  posted_at: '2026-10-27T22:54:52Z'
+- id: lo-jed9dl
+  parent_id: '0'
+  author: jado
+  text: |-
+    This is probably referring to simply typed lambda calc, meaning the dependent bits are erased and there are no types depending on runtime values.
+    I made a similar toy lang that extracts out the runtime program by erasing runtime irrelevant parts (which here are explicitly marked with a . prefix). This extracted program is a typed IR and could be translated to LLVM IR or similar quite easily.
+  score: 3
+  posted_at: '2026-10-27T23:35:25Z'
+- id: lo-on5njy
+  parent_id: '0'
+  author: aziis98
+  text: |-
+    I also wanted to try making a small language with these ideas!
+    I realized that Rust is the only popular language in the intersection of safe, sound and without a gc for memory management.
+    I would like a language where the type system is very flexible and powerful like typescript or zig comptime but have the runtime language be completely safe and allow for manual memory management. I don't really care the type system/comptime system might be slow, that would be the user/library author problem to keep compile time code reasonable. And the language could also provide nice primitives for easily returning custom errors or linting rules (I think there were some experimental languages on this front but I don't remember the names)
+  score: 2
+  posted_at: '2026-10-27T23:52:44Z'
+- id: lo-eee01x
+  parent_id: '0'
+  author: jado
+  text: |-
+    Dynamic + erased values will be erased / irrelevant for runtime computation and may be unknown at comptime, e.g. a function that takes the length of a Vec type as another param:
+    foo : {0 n : Nat} -> Vect n Int -> Int
+
+    Idris2's QTT models this with 0 / 1 / w: n is used 0 times at runtime and can be erased from the final program. Any usages of this within the runtime relevant parts of the program would be a compilation error, but usages within types are fine. We don't need to know the concrete value of n & we can erase all of the usages of it within those types.
+    Syl doesn't look like it's capable of type checking that with a dynamic n.
+
+    Here, erased also implies static, so f will be specialized on x. The if erased expression accepts a static erased condition and is guaranteed to resolve at compile time. Therefore, the body of f true is simply print_int 0, and likewise for f false.
+
+    Like Zig it's doing monomorphization on the comptime params. foo above need not be specialized for every value of n. In Syl, every distinct value of n passed to foo would need a specialized program in the final compilation unit. iiuc, the "second level" of 2LTT allows for the representation of the specialized functions, while QTT wouldn't require this specialization or a second layer representation (and can track linearity).
+  score: 2
+  posted_at: '2026-10-28T00:25:09Z'
+- id: lo-rkhsd3
+  parent_id: '0'
+  author: landon
+  text: The one i'm struggling with is static + erased. Known at compile time but
+    not runtime?
+  score: 2
+  posted_at: '2026-10-28T01:31:30Z'
 article:
   url: https://thenumb.at/Syl-Intro/
   title: Syl
@@ -134,4 +218,4 @@ article:
     cost. For&nbsp;example, here’s a division function that statically"
   error:
   fetched_at: '2026-10-27T20:26:13Z'
-archived_at: '2026-10-27T20:26:13Z'
+archived_at: '2026-10-28T04:14:55Z'

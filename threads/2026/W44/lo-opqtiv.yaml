@@ -1,0 +1,126 @@
+---
+post:
+  id: lo-opqtiv
+  source: lobsters
+  title: Finding panics with Call Graph Analyzer
+  url: https://tweedegolf.nl/en/blog/242/finding-panics-with-call-graph-analyzer/
+  hn_url: https://lobste.rs/s/opqtiv
+  score: 13
+  author: icefox
+  posted_at: '2026-10-27T16:45:26Z'
+  fetched_at: '2026-10-28T04:14:50Z'
+  article_url: https://tweedegolf.nl/en/blog/242/finding-panics-with-call-graph-analyzer/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T04:14:56Z'
+  raw_comment_count: 0
+  tags:
+  - compilers
+  - rust
+comments: []
+article:
+  url: https://tweedegolf.nl/en/blog/242/finding-panics-with-call-graph-analyzer/
+  title: Finding panics with Call Graph Analyzer — Tweede golf
+  fetch_status: success
+  content: "# Finding panics with Call Graph Analyzer\n\nWe often get asked \"How
+    can I eliminate panics in my Rust code?\" There have been several attempts to
+    tackle this issue. Under the Open Device Partnership and working together with
+    Microsoft, we have developed and released the Call Graph Analyzer (CGA), a tool
+    to extract the callgraph from monomorphized MIR. This callgraph can be used to
+    track down what functions in the compiled binary can panic.\n\nWe often get asked
+    \"How can I eliminate panics in my Rust code?\" There have been several attempts
+    to tackle this issue. Under the Open Device Partnership and working together with
+    Microsoft, we have developed and released the Call Graph Analyzer (CGA), a tool
+    to extract the callgraph from monomorphized MIR. This callgraph can be used to
+    track down what functions in the compiled binary can panic.\n\nFor example, when
+    you run cargo cga check on your code, you get:\n\nerror: call to method `core::num::<impl
+    u64>::strict_sub` which can panic --> src/main.rs:18:17 | 18 | let _ = 2u64.strict_sub(u64::MAX);
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nIn this blogpost we discuss why this new approach
+    is both better and worse than pre-existing approaches at finding panics.\n\n##
+    Why eliminate panics though?\n\nBefore discussing the Call Graph Analyzer, we
+    should first consider why panics are useful, and in what cases it might be beneficial
+    to minimize or perhaps even completely eliminate any possible panic. This topic
+    has been explored extensively by others [1][2][3][4], but it is useful to summarize
+    here. Lets start with a brief description:\n\n> Rust provides a mechanism to prevent
+    a function from returning normally, and instead “panic,” which is a response to
+    an error condition that is typically not expected to be recoverable ... The Rust
+    Reference - Panic\n\nRust provides a mechanism to prevent a function from returning
+    normally, and instead “panic,” which is a response to an error condition that
+    is typically not expected to be recoverable ...\n\nThe Rust Reference - Panic\n\nThese
+    unrecoverable error conditions may either be caused by a bug in the implementation
+    of a function, or constitute violated entry conditions for a function (so a bug
+    in the function itself or a mistake by the caller of that function).\n\nAn example
+    is calling 1.strict_add(u32::MAX), which would result in a panic in response to
+    the caller passing invalid arguments to the operation. Similarly a normal addition
+    1 + u32::MAX in Rust will panic if overflow-checks are enabled.\n\nInstead of
+    panicking, error conditions can be dealt with by:\n\n- making them recoverable
+    by having the function return a Result<T, E> or Option<T> instead. For addition
+    this is provided by u32::checked_add.\n\n- making the function fail implicitly
+    or silently and describing that behaviour in the function documentation. Arithmetic
+    operations can for example wrap around with u32::wrapping_add.\n\n- making a function
+    never return, e.g. using an infinite loop {}. Sometimes this approach is accidentally
+    used when employing a retry scheme without a timeout or maximum iteration count.\n\nHowever
+    striving for zero panics is very hard and quite foolish: code is rarely void of
+    assumptions. Returning Result<T, AssumptionViolated> everywhere just pushes the
+    burden up the call stack, until you will abort anyway at the root. This essentially
+    yields the same behaviour as if you were to panic.\n\nIt is useful to make panics
+    explicit though. It is better to know about your panic paths and to reason about
+    them, than to just accidentally include panics and ignore that they exist. Having
+    regression analysis on your panic paths is also very useful, notifying you of
+    any new panic paths introduced in your code.\n\nHaving said that, in the following
+    cases it might be justified to eliminate some of your panics:\n\n- In contexts
+    where code size really matters, like on embedded devices. Panics result in a relatively
+    large amount of code due to the required strings and associated code to format
+    these strings. Instead, we can: use defmt::panic to reduce this string bloat.
+    This requires all panics to be wrapped in the macro. For library dependencies
+    this is typically only done when the library is specifically intended to be used
+    on an embedded platform. Defmt is not used in other libraries, including the standard
+    library of Rust.use -Cpanic=immediate-abort to prevent panics from being emitted
+    entirely and instead just crash the application. This does not leave a lot of
+    information that can be used for debugging though.\n\n- use defmt::panic to reduce
+    this string bloat. This requires all panics to be wrapped in the macro. For library
+    dependencies this is typically only done when the library is specifically intended
+    to be used on an embedded platform. Defmt is not used in other libraries, including
+    the standard library of Rust.\n\n- use -Cpanic=immediate-abort to prevent panics
+    from being emitted entirely and instead just crash the application. This does
+    not leave a lot of information that can be used for debugging though.\n\n- In
+    critical code paths that must absolutely never fail, for example: an externally
+    accessible service that needs to prevent a Denial of Service (DOS) attack which
+    crashes the service. Invalid input should result in a user-facing error instead.the
+    firmware update path on an embedded device, including the bootloader.\n\n- an
+    externally accessible service that needs to prevent a Denial of Service (DOS)
+    attack which crashes the service. Invalid input should result in a user-facing
+    error instead.\n\n- the firmware update path on an embedded device, including
+    the bootloader.\n\n- In panic handling code itself. In Rust when unwinding a panic
+    in an implementation of Drop causes a so-called 'double-drop' and may cause the
+    program to abort. Secondly a panic in a custom #[panic_handler] is not allowed,
+    but it is unclear what should happen then.\n\nStriving for no unrecoverable error
+    conditions is extremely hard in practice. Generally it is better to implement
+    top-level recovery mechanisms. In embedded this would entail using a Watchdog
+    timer which resets the device if it is stuck, and a recovery image to restore
+    the device to a working state. On a host machine this could mean catching unwinding
+    panics using catch_unwind. Note that the latter is not fool-proof and comes with
+    a few caveats. Externally accessible services should be redundant and fast to
+    recover.\n\nIn conclusion, it is useful to find unintentional panics.\n\n## Prior
+    art\n\nCurrently, ways to extract callgraphs or detect panics include:\n\n- rustig
+    (ELF debug info analysis)\n\n- findpanics (ELF debug info analysis)\n\n- cargo-callgraph
+    (Rust HIR analyzer)\n\n- cargo-callgraph (rust-analyzer based exporter)\n\n- charon
+    (Rust MIR exporter)\n\n- no-panic (Linker-based panic detection)\n\n- dont_panic
+    (Linker-based panic detection)\n\nYou can download any of these projects, and
+    with the exception of Charon (which is not explicitly meant for this usecase)
+    it is very easy to get started.\n\nLinker-based panic detection methods work by
+    triggering an error in the linker when it tries to link in a special panic handler.
+    This detection approach only works if not a single panic is included in your binary.
+    It also only works on binaries and not on libraries.\n\nELF debug info analysis
+    looks at the DWARF debug info that is included in ELF artifacts like binaries
+    and Rust libraries compiled to object files. It is limited in what callgraph information
+    it can provide: the panic machinery can be completely inlined or disappear during
+    the linker phase.\n\nAnd finally we have HIR, MIR and rust-analyzer based approaches,
+    which use the various Intermediate Representations (IRs) of your code generated
+    by the compiler (and rust-analyzer) to extract the callgraph from. In a sense
+    all these approaches take your original Rust code, have the compiler process it,
+    and spit out what it thinks is happening. Theoretically these approaches work
+    on any Rust crate.\n\nThe HIR-based analysis can only analyze the code in your
+    specific crate. This analysis "
+  error:
+  fetched_at: '2026-10-28T04:14:56Z'
+archived_at: '2026-10-28T04:14:57Z'

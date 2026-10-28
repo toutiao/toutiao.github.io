@@ -1,0 +1,700 @@
+---
+post:
+  id: '50265128'
+  title: Four Months of Zig
+  url: https://gracefulliberty.com/articles/four-months-of-zig/
+  hn_url: https://news.ycombinator.com/item?id=50265128
+  score: 93
+  author: ibobev
+  posted_at: '2026-10-27T20:13:27Z'
+  fetched_at: '2026-10-28T04:14:47Z'
+  article_url: https://gracefulliberty.com/articles/four-months-of-zig/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T04:14:47Z'
+  raw_comment_count: 56
+comments:
+- id: '50265595'
+  parent_id: '50265128'
+  author: paaloeye
+  text: |-
+    $curl: (6) Could not resolve host: gracefulliberty.com
+    HN effect?
+  score: 0
+  posted_at: '2026-10-27T20:49:07Z'
+- id: '50265735'
+  parent_id: '50265595'
+  author: agumonkey
+  text: <a href="https:&#x2F;&#x2F;archive.is&#x2F;gEZGz" rel="nofollow">https:&#x2F;&#x2F;archive.is&#x2F;gEZGz</a>
+    just in case
+  score: 0
+  posted_at: '2026-10-27T21:00:09Z'
+- id: '50265912'
+  parent_id: '50265128'
+  author: LoganDark
+  text: "&gt; In Rust you can use ?, which is quicker than unwrap, but you also have
+    to do something like Result&lt;Type, Box&lt;dyn std::error::Error&gt;<p>No, you
+    don&#x27;t! When returning Result&lt;T, E&gt;, you can use ? on any Result&lt;T2,
+    E2&gt; where E: From&lt;E2&gt;. In other words E doesn&#x27;t have to be Box&lt;dyn&gt;,
+    it just has to satisfy From&lt;E2&gt;.<p>Crates like thiserror make it easy to
+    define your own error types that can be easily converted from all the other error
+    types you can encounter in your functions! I do this whenever it doesn&#x27;t
+    make sense to use an inner error type directly, or whenever a function does its
+    own validation that deserves its own error variant.<p>On top of that, I tend to
+    also have error variants for each place in the function rather than only for each
+    type of inner error. At error sites I do something like `.map_err(MyError::PlaceInTheFunction)?`
+    rather than only `?`, and then errors become like a very efficient backtrace :)"
+  score: 0
+  posted_at: '2026-10-27T21:15:02Z'
+- id: '50266016'
+  parent_id: '50265735'
+  author: paaloeye
+  text: Legend!
+  score: 0
+  posted_at: '2026-10-27T21:22:59Z'
+- id: '50266308'
+  parent_id: '50265128'
+  author: paaloeye
+  text: Does ReTangled have anything to do with <a href="https:&#x2F;&#x2F;tangled.org"
+    rel="nofollow">https:&#x2F;&#x2F;tangled.org</a>?
+  score: 0
+  posted_at: '2026-10-27T21:47:20Z'
+- id: '50266333'
+  parent_id: '50265912'
+  author: Graziano_M
+  text: I think you&#x27;re proving the author&#x27;s point.
+  score: 0
+  posted_at: '2026-10-27T21:49:06Z'
+- id: '50266361'
+  parent_id: '50266333'
+  author: tcfhgj
+  text: how so?
+  score: 0
+  posted_at: '2026-10-27T21:52:12Z'
+- id: '50266430'
+  parent_id: '50266333'
+  author: GreenDolphinSys
+  text: They&#x27;re saying that you don&#x27;t always have to return Result&lt;T,
+    Box&lt;dyn Error&gt;&gt;, you can implement the From&lt;Error&gt; trait on the
+    type and use ? as usual.<p>In other words implementing that trait lets you set
+    a return type like Result&lt;T, CustomAppError&gt; use ? on it.
+  score: 0
+  posted_at: '2026-10-27T21:59:18Z'
+- id: '50266448'
+  parent_id: '50266430'
+  author: LoganDark
+  text: I think they&#x27;re saying the author&#x27;s point is that it&#x27;s more
+    fiddly in Rust (even if there are strong, well-regarded fiddles to use)
+  score: 0
+  posted_at: '2026-10-27T22:00:47Z'
+- id: '50266467'
+  parent_id: '50266448'
+  author: Graziano_M
+  text: Yes, and your other part about the crate.<p>&gt; There&#x27;s also Zig-style
+    composable errors with yet another library.
+  score: 0
+  posted_at: '2026-10-27T22:02:23Z'
+- id: '50266544'
+  parent_id: '50266467'
+  author: LoganDark
+  text: 'Ah, it&#x27;s behind a link!<p>While I&#x27;d push back against implying
+    From&lt;E2&gt; is part of the crate, thiserror is an idiomatic approach these
+    days, so I can understand the confusion. I can totally see how they could come
+    to favor Zig if this behavior is &quot;the default&quot;, as opposed to Rust where
+    you&#x27;d usually see it done with &quot;yet another library&quot;.<p>And so
+    I see &quot;the author&#x27;s point&quot; has another meaning now: that Zig-style
+    errors are good :)<p>Edit: oh, after looking into Zig-style errors more, this
+    is actually not how they work! They don&#x27;t nest, they just exist in a global
+    namespace, so they don&#x27;t come with any location data themselves, but you
+    can compose sets of them. Less powerful, but certainly more appealing to some
+    :) I think out-parameters can be used as a side channel for error context.'
+  score: 0
+  posted_at: '2026-10-27T22:09:19Z'
+- id: '50266656'
+  parent_id: '50266544'
+  author: Graziano_M
+  text: Yeah I 1. wish they were properly composable and 2. think Rust would get less
+    flak if these &#x27;idiomatic&#x27; crates were just pulled into the standard
+    library to avoid some of the dependency mayhem.
+  score: 0
+  posted_at: '2026-10-27T22:19:38Z'
+- id: '50266679'
+  parent_id: '50266448'
+  author: GreenDolphinSys
+  text: I don&#x27;t think errors are fiddly in rust. They&#x27;re easy to compose.
+  score: 0
+  posted_at: '2026-10-27T22:21:54Z'
+- id: '50266833'
+  parent_id: '50265128'
+  author: Atlas48
+  text: I can&#x27;t wait until Zig is a little more stable, I&#x27;d love to get
+    into it more because the metaprogramming seems like such a draw.
+  score: 0
+  posted_at: '2026-10-27T22:36:09Z'
+- id: '50266877'
+  parent_id: '50265128'
+  author: michidk
+  text: |-
+    Pretty nice! I wrote a similar piece two years ago: <a href="https:&#x2F;&#x2F;blog.lohr.dev&#x2F;after-a-day-of-programming-in-zig" rel="nofollow">https:&#x2F;&#x2F;blog.lohr.dev&#x2F;after-a-day-of-programming-in-zig</a>
+    Great to see things are moving in the right direction.
+  score: 0
+  posted_at: '2026-10-27T22:39:44Z'
+- id: '50267002'
+  parent_id: '50266308'
+  author: contact9879
+  text: it’s hyperlinked to the repo where you can see it has nothing to do with tangled
+  score: 0
+  posted_at: '2026-10-27T22:51:34Z'
+- id: '50267099'
+  parent_id: '50265128'
+  author: i2talics
+  text: 'Why does everyone love being able to control the allocator in Zig? I rarely
+    want this low level control over the allocator, I would rather have an easy to
+    use interface to malloc&#x2F;free (such as RAII) or would prefer the language
+    push me to avoiding allocations when unnecessary. C and Zig users are always talking
+    about how arena allocators are easier to use than the alternative but I disagree
+    because the alternative is extremely easy to use when the language makes it so.<p>Arenas
+    have a lot of footguns like growing out of control if you don&#x27;t have space
+    in your logic to delete them (e.g. suppose every new HTTP connection required
+    obtaining a new allocation from the primary arena -- now you have a memory leak).
+    They also aren&#x27;t necessarily faster than malloc: I remember hearing a case
+    where mimalloc was <i>faster</i> than an arena for a one-shot program like a linker
+    because reclaiming space improved cache locality. Plus it&#x27;s difficult to
+    implement things like growable vectors or hashmaps using an arena without wasting
+    space.<p>I just don&#x27;t see how &quot;futz about with the allocator constantly&quot;
+    and &quot;use an arena&quot; is actually a good default.'
+  score: 0
+  posted_at: '2026-10-27T23:01:06Z'
+- id: '50267137'
+  parent_id: '50267002'
+  author: paaloeye
+  text: I know but the name is so sus
+  score: 0
+  posted_at: '2026-10-27T23:05:02Z'
+- id: '50267154'
+  parent_id: '50267099'
+  author: awesan
+  text: It is a good default for lib code because it makes that code truly re-usable.
+    The same is true for great C libraries, they let you provide a block of memory
+    instead of calling malloc inside. The library should not get to decide if&#x2F;when
+    allocations should be done.<p>In Zig app code you don&#x27;t have to pass allocators
+    all over if you don&#x27;t want to, that&#x27;s your code so do what you want.
+    But for libraries it&#x27;s the right thing to do because it puts the caller in
+    control.<p>The reason you have to pass allocators instead of making this implicit
+    like in e.g. Odin, is because Zig just takes a firm stance against implicit logic,
+    firmer than any other language I&#x27;ve ever used. The end result is that people
+    who like Zig tend to like passing allocators around even in their own code.
+  score: 0
+  posted_at: '2026-10-27T23:06:25Z'
+- id: '50267218'
+  parent_id: '50265128'
+  author: 22c
+  text: First I&#x27;m hearing of TigerStyle.<p>&gt; The time to solve performance,
+    and get the 1000x wins, is in the design phase, when you can&#x27;t profile.<p>How
+    does this make practical sense? I find it immensely easier to fix performance
+    issues by profiling, benchmarking, finding hotspots. Things that weren&#x27;t
+    obviously performance bottlenecks during design become obvious when you profile.<p>Interesting
+    write-up though. I haven&#x27;t properly tried zig but I like reading these &quot;initial
+    impressions&quot; style articles about it.
+  score: 0
+  posted_at: '2026-10-27T23:14:01Z'
+- id: '50267239'
+  parent_id: '50265128'
+  author: alexboehm
+  text: I agree with anyzig, it&#x27;s amazing.<p>I made a PR to add a default zig,
+    which was rejected, I&#x27;ve been using it ever since though.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;marler8997&#x2F;anyzig&#x2F;pull&#x2F;71"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;marler8997&#x2F;anyzig&#x2F;pull&#x2F;71</a>
+  score: 0
+  posted_at: '2026-10-27T23:16:46Z'
+- id: '50267286'
+  parent_id: '50267099'
+  author: elendilm
+  text: mimalloc aggressively reclaims space and it benefits the use case in our Dip
+    database built on rust.<p>This is for a long running process where consuming compute
+    and memory should only occur on processing a request and must revert to a baseline
+    memory consumption once the request is completed.<p>malloc with default allocator
+    always gradually increases the memory consumption. This continues with enough
+    request bursts on our testing until the process runs out of memory. mimalloc doesn&#x27;t.<p>On
+    mobile, we are stuck with the default allocator. On mobiles, the phenomenon of
+    the default allocator consuming memory is reproducible even with normal Qt apps.
+    It is what it is.
+  score: 0
+  posted_at: '2026-10-27T23:21:40Z'
+- id: '50267288'
+  parent_id: '50267218'
+  author: chrisco255
+  text: 'If you understand how the CPU, memory, network, and disk are processing your
+    program and its structures, you can design your programs to optimize for the hardware.<p>Full
+    guide for ref: <a href="https:&#x2F;&#x2F;github.com&#x2F;tigerbeetle&#x2F;tigerbeetle&#x2F;blob&#x2F;main&#x2F;docs&#x2F;TIGER_STYLE.md"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;tigerbeetle&#x2F;tigerbeetle&#x2F;blob&#x2F;main&#x2F;docs&#x2F;TI...</a>'
+  score: 0
+  posted_at: '2026-10-27T23:21:59Z'
+- id: '50267326'
+  parent_id: '50267099'
+  author: the-tomster
+  text: If you don&#x27;t like arenas then that will push you towards avoiding allocations
+    :)<p>I don&#x27;t love malloc &#x2F; free, managing frees one-to-one with allocations
+    is a nightmare. An HTTP server is actually a great example of a good fit for arenas...
+    you can have an arena created per connection, and then free the arena when the
+    connection closes. Now all of your allocations during that connection are guaranteed
+    to be freed instead of having to keep track of them individually. Need something
+    to live across connections? Use the general purpose allocator for those particular
+    things.<p>For one shot programs, why bother freeing anything at all? The gpa or
+    malloc or whatever else is fine there.<p>Personally I mostly lean on fixed-size
+    buffers, but if I&#x27;m writing Zig it&#x27;s just little toy programs where
+    blowing up when the buffer runs out of room is fine. But for big non-toy programs
+    it might be good to use fixed-size buffers anyway and define your limits in terms
+    of things actually relevant to your domain.<p>RAII and smart pointers are fine
+    too, but C++ has you covered if you want those. Zig is specifically avoiding that
+    kind of invisible code that destructors bring you.
+  score: 0
+  posted_at: '2026-10-27T23:26:24Z'
+- id: '50267408'
+  parent_id: '50267326'
+  author: i2talics
+  text: "&gt; If you don&#x27;t like arenas then that will push you towards avoiding
+    allocations<p>I mean push in the sense of a pit-of-success, not making me do things
+    because the alternative is unpalatable.<p>&gt; managing frees one-to-one with
+    allocations is a nightmare<p>It really isn&#x27;t a nightmare if your language
+    has tools to help you. I&#x27;m never particularly concerned about frees in Rust
+    outside of thinking about room to optimize.<p>&gt; Need something to live across
+    connections? Use the general purpose allocator for those particular things.<p>Well,
+    this is a determination you have to make very carefully and if you screw it up
+    (like in the situation I was trying to outline) you have a subtle bug.<p>&gt;
+    Personally I mostly lean on fixed-size buffers, but if I&#x27;m writing Zig it&#x27;s
+    just little toy programs where blowing up when the buffer runs out of room is
+    fine.<p>What&#x27;s also fine is using malloc, which will have perfectly reasonable
+    performance for your toy programs.<p>This is reinforcing my belief that Zig programmers
+    actually just have a sort of aesthetic attachment to the <i>idea</i> of managing
+    their allocations themselves and this has very little to do with the actual practical
+    concerns of writing software that works. I&#x27;m a lot more sympathetic to the
+    other reply that talked about library code improving flexibility for those relying
+    on the library, than this comment that only thinks about the case where everything
+    goes perfectly and using a fixed size buffer for no reason."
+  score: 0
+  posted_at: '2026-10-27T23:35:36Z'
+- id: '50267501'
+  parent_id: '50267288'
+  author: elendilm
+  text: |-
+    True. The guide is an interesting read. When you are deep in the trenches, most of what the github link says is just common sense.<p>Eg: &lt;
+    Optimize for the slowest resources first (network, disk, memory, CPU) in that order, after compensating for the frequency of usage, because faster resources may be used many times more. For example, a memory cache miss may be as expensive as a disk fsync, if it happens many times more.&gt;<p>This is just obvious common sense. Great read.
+  score: 0
+  posted_at: '2026-10-27T23:46:54Z'
+- id: '50267516'
+  parent_id: '50267288'
+  author: austin-cheney
+  text: This is also true for garbage collected languages, JavaScript in my case,
+    but it requires a custom profiler and a bit more digging while asking better questions.
+  score: 0
+  posted_at: '2026-10-27T23:48:38Z'
+- id: '50267538'
+  parent_id: '50265128'
+  author: llm_nerd
+  text: Sort of related from yesterday - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50247203">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50247203</a><p>(about
+    zig&#x27;s reimplementation of the libc, and some rough edges)
+  score: 0
+  posted_at: '2026-10-27T23:50:29Z'
+- id: '50267591'
+  parent_id: '50267408'
+  author: nvme0n1p1
+  text: "&gt; I&#x27;m never particularly concerned about frees in Rust outside of
+    thinking about room to optimize.<p>Zig&#x27;s position, love it or hate it, is
+    that you should be thinking about it. Dropping a Vec&lt;String&gt; in Rust is
+    O(n). Have you ever clicked the X on an app and it takes 10 seconds to disappear?
+    Stuff like this is part of the problem. You shouldn&#x27;t have to traverse your
+    process&#x27;s whole memory space just to call exit(0).<p>If you have to write
+    that for loop, the O(n) will jump out at you and push you towards an arena or
+    FixedBufferAllocator or std.process.cleanExit, or any other solution to avoid
+    the loop."
+  score: 0
+  posted_at: '2026-10-27T23:56:34Z'
+- id: '50267605'
+  parent_id: '50267408'
+  author: the-tomster
+  text: "&gt; This is reinforcing my belief that Zig programmers actually just have
+    a sort of aesthetic attachment to the idea of managing their allocations themselves
+    and this has very little to do with the actual practical concerns of writing software
+    that works.<p>Indeed if you don&#x27;t want to manage everything yourself I don&#x27;t
+    think there&#x27;s a need to use Zig. The whole pitch is making everything explicit
+    and not hiding control flow. And I do think that limits its usefulness to smaller-scale
+    codebases.<p>Writing quality software doesn&#x27;t require much from the programming
+    language until your codebase gets very large and you&#x27;re collaborating with
+    a ton of people. If I&#x27;m expecting a codebase to grow to a large scale I&#x27;m
+    not reaching for Zig for that. I don&#x27;t trust _myself_ to keep that much Zig
+    code tidy and correct let alone a big mob of developers and agents :)"
+  score: 0
+  posted_at: '2026-10-27T23:58:11Z'
+- id: '50267624'
+  parent_id: '50267516'
+  author: nvme0n1p1
+  text: You&#x27;ll have a more direct path towards better performance if the questions
+    you&#x27;re asking are closer to &quot;how does a CPU work&quot;, and further
+    away from &quot;what hoops do I have to jump through in 2026 to avoid optimization
+    bailouts after V8&#x27;s latest round of changes&quot;
+  score: 0
+  posted_at: '2026-10-28T00:00:00Z'
+- id: '50267666'
+  parent_id: '50267288'
+  author: Ygg2
+  text: Yeah, except the CPUs are complex, you might not understand ALL the details
+    of a working program (like randomising memory layout).<p>Plus not all speed-ups
+    are made equal. Some speedups of a part of program can have no or even negative
+    impact (as in making part of program faster slows down overall program execution).
+  score: 0
+  posted_at: '2026-10-28T00:05:57Z'
+- id: '50267827'
+  parent_id: '50267099'
+  author: giancarlostoro
+  text: The biggest interesting thing to me about Zig is that is is a true spiritual
+    successor to C.
+  score: 0
+  posted_at: '2026-10-28T00:27:49Z'
+- id: '50267862'
+  parent_id: '50267218'
+  author: rcxdude
+  text: There&#x27;s a different between fixing performance mistakes, which tend to
+    be obvious in profiling as big hotspots, and designing for maximum performance,
+    which requires that you start, really, with the specification of what your application
+    is doing, then follow that through to architecture and design with a strong view
+    to reducing unnecessary work and staying within the operations that can be done
+    at high speed with current systems.
+  score: 0
+  posted_at: '2026-10-28T00:31:56Z'
+- id: '50267901'
+  parent_id: '50266679'
+  author: LoganDark
+  text: Hey, I find it super easy and that&#x27;s why I commented! By fiddly I just
+    mean there are more steps&#x2F;choices.
+  score: 0
+  posted_at: '2026-10-28T00:36:38Z'
+- id: '50267937'
+  parent_id: '50267154'
+  author: latch
+  text: The library developer doesn&#x27;t know what allocator will be passed, and
+    the library user doesn&#x27;t necessarily know how it will be used. They share
+    an interface, so it will [probably] work, but it might not behave (mem&#x2F;perf
+    wise) as either expects. ArenaAllocators in particular don&#x27;t play great with
+    ArrayLists or nested ArenaAllocators.<p>I don&#x27;t think it&#x27;s a huge problem,
+    but it&#x27;s more subtle than an explicit allocator is a better because it provides
+    more flexibility.
+  score: 0
+  posted_at: '2026-10-28T00:41:45Z'
+- id: '50267957'
+  parent_id: '50267286'
+  author: grg0
+  text: "&gt; This continues with enough request bursts on our testing until the process
+    runs out of memory<p>Curious, how much memory and how many requests does that
+    take to exhaust?"
+  score: 0
+  posted_at: '2026-10-28T00:45:11Z'
+- id: '50267980'
+  parent_id: '50267666'
+  author: grg0
+  text: The truth is really a middle ground and the fact that you won&#x27;t get the
+    design right the first time around until you have built that hardware programming
+    experience and learned from past mistakes. But this statement doesn&#x27;t make
+    for a good marketing stunt.
+  score: 0
+  posted_at: '2026-10-28T00:48:40Z'
+- id: '50268010'
+  parent_id: '50267326'
+  author: grg0
+  text: "&gt; Now all of your allocations during that connection are guaranteed to
+    be freed instead of having to keep track of them individually<p>And how do you
+    size the arena?<p>&gt; keep track of them individually<p>I think this is an exaggeration
+    of the problem. This is what RAII semantics in C++ are for.<p>&gt; avoiding that
+    kind of invisible code<p>The invisible code is traded for defer statements right
+    after initialization that are obvious and therefore mostly just noise, and also
+    a problem if you forget to call them. This isn&#x27;t an issue with RAII. I get
+    the point of not wanting invisible code, but defers don&#x27;t seem much of an
+    improvement either. A trade-off at best."
+  score: 0
+  posted_at: '2026-10-28T00:51:40Z'
+- id: '50268099'
+  parent_id: '50267154'
+  author: elcritch
+  text: "&gt; Zig just takes a firm stance against implicit logic<p>I bought that
+    as Zig&#x27;s M.O., but then came the automatic &quot;async&#x2F;IO&quot; colorless
+    functions which is a huge chunk of implicit and hidden logic.<p>That&#x27;s more
+    implicit logic than what&#x27;s in say JavaScript async AFAICT. Arbitrary int
+    sizes with implicit casting rules, etc. More recently was the attempts of memory
+    safety via an some sort of (optional) implicit GC mode. Personally I don&#x27;t
+    get it."
+  score: 0
+  posted_at: '2026-10-28T01:02:54Z'
+- id: '50268283'
+  parent_id: '50267099'
+  author: amw-zero
+  text: If you had to pick a default, an arena allocator would definitely be it. Although
+    even better would be a fixed-size arena that can never grow, like Tigerbeetle
+    does.<p>I don&#x27;t think the footguns you&#x27;re talking about are real by
+    the way.
+  score: 0
+  posted_at: '2026-10-28T01:32:33Z'
+- id: '50268303'
+  parent_id: '50268010'
+  author: the-tomster
+  text: "&gt; And how do you size the arena?<p>Two options: you either say &quot;eh
+    20MB per request ought to be big enough&quot; and resize it later if you need
+    to. Or you take time to figure out reasonable limits in terms of whatever domain
+    you&#x27;re dealing with, and return descriptive errors when those limits are
+    exceeded. Maybe you&#x27;re saying your service supports up to N HTTP headers
+    and M query parameters in the URL and so on. For almost anything there&#x27;s
+    a limit you can place that&#x27;s reasonable. Having no limits at all just means
+    the limit is when you run out of memory &#x2F; disk &#x2F; whatever.<p>If you
+    like RAII and C++ just use that though, Zig is an alternative not an upgrade,
+    imo."
+  score: 0
+  posted_at: '2026-10-28T01:36:20Z'
+- id: '50268324'
+  parent_id: '50267862'
+  author: Ar-Curunir
+  text: And Zig doesn’t seem to help with most of that!<p>If you’re already in your
+    spec thinking about performance concerns at that level, then you can get pretty
+    good performance in almost any language, though some languages might make it a
+    little (lot) easier than others. But again I don’t think eg Zig vs Rust would
+    be a big perf difference there.
+  score: 0
+  posted_at: '2026-10-28T01:39:45Z'
+- id: '50268387'
+  parent_id: '50267538'
+  author: Numerlor
+  text: Zig&#x27;s reimplementation of all of the standard libraries even though it&#x27;s
+    possible to use the existing ones is both baffling to me and kills usage of the
+    implementation in my eyes.<p>Redoing critical parts such as crypto and compression
+    is crazy in this day and age, hell they even have issues and merge requests open
+    for issues that&#x27;d be headliners if found in any major language
+  score: 0
+  posted_at: '2026-10-28T01:49:03Z'
+- id: '50268491'
+  parent_id: '50267591'
+  author: kibwen
+  text: Dropping vecs that contain strings does not make any Rust code in the real
+    world slow. You would need to have a vec containing billions of strings, occupying
+    several gigs of memory, before dropping such a structure took any perceptible
+    amount of time. And for extreme cases like that, you can simply use arenas. The
+    bumpalo crate is approximately as old as Zig is. The reason that people so rarely
+    turn to arenas in Rust isn&#x27;t because you can&#x27;t do them, because you&#x27;ve
+    always been able to, but rather because arenas are a very specific solution to
+    a specific sort of memory access pattern, and going out of your way to strictly
+    adhere to that pattern doesn&#x27;t produce measurable differences for most software.
+  score: 0
+  posted_at: '2026-10-28T02:03:54Z'
+- id: '50268511'
+  parent_id: '50267218'
+  author: vlovich123
+  text: While I don&#x27;t agree TigerStyle inherently actually helps you with this,
+    design and architectural mistakes don&#x27;t usually get solved in the way you&#x27;re
+    describing. You sometimes have to rethink how to structure your entire codebase.
+    Sometimes you can evolve an architectural improvement but sometimes it requires
+    a complete rewrite and there&#x27;s no way to get outside of that path dependency.
+  score: 0
+  posted_at: '2026-10-28T02:07:36Z'
+- id: '50268564'
+  parent_id: '50268387'
+  author: colejohnson66
+  text: Not just that, but on Windows, they&#x27;re bypassing the actually guaranteed
+    stable Win32 API in favor of linking directly to the lower-level components. Completely
+    destroying any forward compatibility!<p><a href="https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;issues&#x2F;31131"
+    rel="nofollow">https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;issues&#x2F;31131</a><p>It&#x27;s
+    the kind of change that makes me read Zig as not trying to be a serious language.
+    Not that there&#x27;s anything wrong with that, but the way Zig positions itself
+    is at odds with the completely bizarre takes they do.
+  score: 0
+  posted_at: '2026-10-28T02:13:17Z'
+- id: '50268603'
+  parent_id: '50268099'
+  author: Mond_
+  text: Are you sure you&#x27;re up to date?<p>The async design changed multiple times,
+    and the current approach is that of requiring passing an I&#x2F;O interface that
+    encapsulates the logic, same approach as for passing around an allocator.<p>This
+    effectively makes all I&#x2F;O bound code &quot;quasi-async&quot;, and it&#x27;s
+    all explicit and the caller is in control.
+  score: 0
+  posted_at: '2026-10-28T02:19:53Z'
+- id: '50268628'
+  parent_id: '50265128'
+  author: delifue
+  text: The article says some Zig advantages but it&#x27;s worth noting that all these
+    advantages are tradeoffs.<p>Zig makes handling error easy but makes retaining
+    error information hard. The result is that Zig developers either write more code
+    than other languages to store diagnostic information, or just simply discard diagnostic
+    information. The second makes it much harder to debug because the useful error
+    information is discarded.<p>About the TigerStyle, it&#x27;s worth noting that
+    TigerBeetle doesn&#x27;t even support variable-sized string type. You can store
+    fixed-sized data, such as a string that&#x27;s at most 32 bytes. What if the order
+    information contains string longer than 32 bytes? Then you need to store that
+    string in antoher database. TigerBeetle is not a general database. Static memory
+    allocation doesn&#x27;t fit most applicaitons.<p>The fallable allocation is useful
+    in embedded system and OS development etc., but useless in common application
+    programming, because OOM results in crash rather than failed allocaiton.
+  score: 0
+  posted_at: '2026-10-28T02:24:10Z'
+- id: '50268873'
+  parent_id: '50265128'
+  author: yje07039
+  text: How much of the four months went to keeping up with breaking changes? Thats
+    been my main blocker with zig, more than the language itself.
+  score: 0
+  posted_at: '2026-10-28T03:07:35Z'
+- id: '50269042'
+  parent_id: '50267666'
+  author: chrisco255
+  text: No doubt, they are complex and you can&#x27;t factor for everything, but I
+    suspect that just even a cursory understanding of some broad characteristics across
+    hardware will help you to design faster software when using a low-level language
+    (and to some extent when using higher level languages as well), and your software
+    will probably achieve must faster speeds than focusing on exotic design patterns
+    in your software, for example.
+  score: 0
+  posted_at: '2026-10-28T03:30:45Z'
+- id: '50269069'
+  parent_id: '50267099'
+  author: slopinthebag
+  text: arena&#x27;s are popular in part because they are a way of grouping allocations
+    by a single lifetime, reducing the amount of use-after-free&#x27;s or double-free&#x27;s
+    that occur (reducing, not eliminating them).<p>they make a lot less sense in languages
+    where the compiler or runtime takes care of this for you.
+  score: 0
+  posted_at: '2026-10-28T03:34:06Z'
+- id: '50269097'
+  parent_id: '50267538'
+  author: slopinthebag
+  text: zig users hate rust so much they found a way to make it 12,000x slower! incredible
+    determination<p>(joking in case not obvious)
+  score: 0
+  posted_at: '2026-10-28T03:37:53Z'
+- id: '50269105'
+  parent_id: '50267218'
+  author: narnarpapadaddy
+  text: Most undergrad CS students go through an algorithms course and understand
+    a bubble sort is inherently slower than a quick sort, no amount of optimization
+    will get you past the fundamental n^2 time complexity. You can generalize those
+    same analysis principles to whole architectures and distributed systems. If you
+    don’t recognize that the server interactions your solution requires boils down
+    to an n^2 algorithm, you’re in for a bad time. Unlike a function a live, deployed
+    system is typically harder to evolve. Sometimes constraints like backwards compatibility
+    are such that you simply can’t fix it.
+  score: 0
+  posted_at: '2026-10-28T03:39:51Z'
+- id: '50269161'
+  parent_id: '50265128'
+  author: duoro
+  text: I want your honest opinion on Zig, for dev or internal tools I always use
+    Rust. Probably not because its the best choice for that project, but simply because
+    its more popular. Same reason everyone uses React instead of things like Solid
+    or Svelte that I find much better than React. Is it the same case with Zig as
+    well?
+  score: 0
+  posted_at: '2026-10-28T03:49:31Z'
+- id: '50269180'
+  parent_id: '50267099'
+  author: MathMonkeyMan
+  text: Passing allocator pointers around has the advantage of allowing you to customize
+    the allocator when you want, and to ignore it when you want (which is most of
+    the time), i.e. just use the allocator you were given and pass it around like
+    some piece of syntax or ctx in Go.<p>The trouble comes when you have data structures
+    that manage memory, and you want to associate the allocation strategy with the
+    particular instance of the data structure. Or, worse, you don&#x27;t store the
+    allocator pointer with the data and you require that all functions operating on
+    the data structure happen to use compatible allocators.<p>At its simplest, though,
+    passing allocators around is just removing an implicit global variable that is
+    sometimes helpful to customize locally, but nearly impossible to customize locally
+    if left as a global.
+  score: 0
+  posted_at: '2026-10-28T03:54:03Z'
+article:
+  url: https://gracefulliberty.com/articles/four-months-of-zig/
+  title: Four Months of Zig - Anna Liberty
+  fetch_status: success
+  content: |-
+    # Four Months of Zig
+
+    2026-10-27 · 15 min · [#computing](/articles/tags/computing)
+
+    It has been about four months since I [returned to Zig](/articles/return-to-zig) after being absent for a few years. In this time, I have written some software in Zig and reengaged with the community, online and in person. I decided to share some of that experience, including what I have liked about Zig so far and what I haven't. I'll include some comparisons to Rust along the way since that was my previous go-to language.
+
+    ## Projects
+
+    The first project I started in Zig was [snurl](https://codeberg.org/liberty/snurl). It is a library for interacting with the smallnet (Gemini, Finger, Gopher, Spartan, and such). My goal has been to provide an alternative to curl for the smallnet, with similar testing and fuzzing requirements but on a smaller scale. I wanted to roughly follow [TigerStyle](https://tigerstyle.dev/) insofar as it made sense for the project.
+
+    Something I ran into early on was that the fuzzer didn't actually work. When getting excited about fuzzing in my last post, I didn't realize that the feature had not yet been completed. This isn't surprising, considering Zig's status, but it was disappointing, especially since the fuzzer is demonstrated in the generated `main.zig` file provided by `zig init`.
+
+    After this, I wrote a two programs which I have not published yet. The first is a small TUI typer racer. It was simpler than I expected to get a minimum version working so far. The second is an n-body simulator with stellar evolution using raylib.
+
+    ## Zig Day
+
+    The most exciting opportunity in the last few months was the chance to go to a local Zig Day. I learned of Zig Day Seattle occurring on [Lobsters](https://lobste.rs) on August 20th. I was ecstatic to learn that there was a Zig Day in my area. Then I saw Andrew Kelley would be there and became more excited.
+
+    Zig Days are local meetups where people interested in Zig hang out, work on their projects together, and talk about Zig. For this Zig Day, I decided to work on snurl. A friend, [Evin Yulo](https://yujiri.xyz) also decided to attend.
+
+    The event itself occurred in the Bothell library, moved there from the Bellevue library after so many people signed up that capacity was overwhelmed. Having the creator of Zig at the event will do that.
+
+    I love the format of these Zig Days and I'm glad they are a part of the community. Since they are run by local groups, it gives the whole Zig community a more interconnected feeling. It's a way to interact with other people who are interested in Zig in person. And, in this case, the creator of Zig itself.
+
+    I got the chance to talk with other programmers about their projects. Hopefully some ideological cross-pollination occurred that will make all our projects stronger. I ended up working on snurl with evin, who started work on integrating Zig's standard library TLS implementation as alternative backend.
+
+    I also briefly talked with Andrew Kelley. I hope Zig's built-in fuzzing gets fixed sometime soon!
+
+    Ryan Hendrickson [wrote an excellent article](https://www.ryanjh.com/articles/my-first-zig-day/) outlining more of the events of that day from his perspective if you want more details.
+
+    I will definitely be attending Zig Day Seattle again in the future. I may even head down to Portland to catch one before the next local one comes around. I enjoy the opportunity to connect with other people interested in Zig and its values.
+
+    ## What I've Liked
+
+    ### anyzig
+
+    I love [anyzig](https://github.com/marler8997/anyzig). I've had to use zig master and 0.16.0 for different projects, and anyzig has made that doable.
+
+    Unfortunately, it breaks outside of directories without a `build.zig.zon`, meaning if you have tooling that requires a `zig` command to work, it can only occur in project directories. This breaks autoformatting for my one-off Zig scripts. Maybe a default zig version could be provided in that case.
+
+    ### IO and Allocators
+
+    I know it frustrates some people, but I love the fact that you have to pass IO and allocator parameters to functions in Zig.
+
+    #### Allocators
+
+    I'll start with allocators, since they've been around longer. For each Zig function you have to accept an explicit allocator parameter. This is different from most programming languages which either use a default allocator that may be changed globally or one changed by a local `context` (see Odin).
+
+    I like being able to change allocators for different parts of code. You might want an arena allocator for some things but need a general purpose allocator for others. Sometimes a `FixedBufferAllocator` is all you need to perform an operation. Zig's style makes this all obvious to handle.
+
+    I prefer Zig's system to Odin's implicit `context` system since Zig keeps things explicit. It's clear whether a function allocates memory or not, and hard to accidentally pass in the wrong allocator.
+
+    This is also superior to Rust's hidden, infallible allocations that panic when memory is exhausted. They're working on adding explicit allocations, but this will be yet another feature tacked onto the language rather than something built from the ground up.
+
+    It's much easier to reason about programs that allocate memory in Zig.
+
+    #### IO
+
+    The IO parameter is even more powerful, even if it is newer. It is well worth the breaking changes required to bring it about (even if I skipped the 0.15.0 -\> 0.16.0 transition). In Zig, every function that interacts with the underlying operating system (with caveats) requires an "IO" parameter. This provides the context for input, output, and everything else. Porting Zig to new operating systems is mostly just porting IO.
+
+    Practically, this is really nice for testing. When testing behavior, you just need to put in a testing IO instance that works as you need it to. You can change the input stream however you want, cause writes to fail, and anything else.
+
+    Just like with allocation, passing an IO argument makes it clear which programs are pure and which ones are not. You can tell at a glace whether or not a program is going to modify something external.
+
+    Zig has a really good track record of keeping things simple while also adding powerful features. Instead of adding 100 small features that do slightly different similar things, it tends to provide one major feature that supports all the various other use-cases. Low floor, high ceiling.
+
+    ### Comptime
+
+    I love comptime. It's a seamless way to do metaprogramming and precomputation all in one. Other people have written more detailed accounts so I shall move on.
+
+    ### Build System
+
+    [Zig's build system](https://ziglang.org/learn/build-system/) is stellar. So much so that companies like Uber have adopted it for their software written in other languages.
+
+    One thing I like about it is that I can integrate other tools with it seamlessly in ways that Cargo complains about. This is especially important for one of my projects that involves code generation.
+
+    ### Dependency Culture
+
+    Zig has an excellent dependency culture. The main ethos is simple: avoid. When you don't need a dependency, don't add one. However, when you do, it's often a battle-tested library that Zig can effortlessly integrate with translate-c. You can easily also vendor in external dependencies and audit their code.
+
+    Most of my Zig programs have about one or two direct Zig dependencies, with zero indirect dependencies. This makes the codebase much easier to audit and control.
+
+    This stands in stark contrast to Rust, where the smallest of my projects regularly have a few direct and dozens of indirect dependencies.
+
+    This is thanks both to Zig's dependency culture and the fact that essential features like reflection, random number generation, clean error handling, and JSON parsing are built into the language or standard library rather than maintained as separate individual libraries. No need to depend on serde or syn in every program.
+
+    Zig encourages careful consideration before adding dependencies, and I appr
+  error:
+  fetched_at: '2026-10-28T04:14:47Z'
+archived_at: '2026-10-28T04:14:50Z'

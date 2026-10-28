@@ -5,14 +5,14 @@ post:
   title: A fast and secure tar parser for the Rust ecosystem
   url: https://astral.sh/blog/tar-codec
   hn_url: https://lobste.rs/s/q7arzy
-  score: 17
+  score: 48
   author: yossarian
   posted_at: '2026-10-27T16:59:30Z'
-  fetched_at: '2026-10-27T20:26:10Z'
+  fetched_at: '2026-10-28T04:14:50Z'
   article_url: https://astral.sh/blog/tar-codec
   article_fetch_status: success
-  article_fetched_at: '2026-10-27T20:26:11Z'
-  raw_comment_count: 2
+  article_fetched_at: '2026-10-28T04:14:51Z'
+  raw_comment_count: 10
   tags:
   - python
   - rust
@@ -31,7 +31,7 @@ comments:
 
     This reminds me of an exploit that I learned about that I found quite clever. It was used to get the ability to add unauthorized 3rd party apps to a Kindle (the one I'm thinking of is the Kindle Touch but maybe applied to others as well). My recollection of it off the top of my head is as follows: system updates came packaged as a compressed tar file. The system would untar the update, then find a signature inside of the archive to decide if it was an approved software update based off of the signature matching a public key that was stored in something like /etc/authorized_keys. If the public key matched, then it would run the update; otherwise, it would delete it. Well, turns out there was a bug in the untar program, and you could craft a malicious tar file that had path (along the lines of) ../../../etc/authorized_keys, and when this was untarred it would clobber the original list of public keys, thus allowing a provided update payload to run.
     It's a somewhat different class of vulnerability in tar files than the OP was discussing, but I guess it just goes to show that there's a lot that goes into these things to keep them secure.
-  score: 7
+  score: 14
   posted_at: '2026-10-27T18:05:47Z'
 - id: lo-btn1lr
   parent_id: '0'
@@ -39,8 +39,139 @@ comments:
   text: |-
     Yeah, the layer beneath archive handling (of taking abstract "members" and turning them into contents on disk) is in a sense way harder: every OS and FS applies its own semantics/quirks that make it impossible to say with confidence that an archive, even an obvious one, will extract the same way on different hosts.
     (The exception to this would maybe be an archive containing only printable ASCII paths, all relative, with extremely conservative limits on path lengths. But too many real-world uses of archives reasonably violate these constraints.)
-  score: 2
+  score: 4
   posted_at: '2026-10-27T19:19:34Z'
+- id: lo-tu5qc2
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Hm very interesting.  This seems like a tight rope to walk, since compatibility and avoiding parser differentials are fundamentally opposed (i.e. more features supported is more potential differences).
+    Without knowing much about Python packaging, I wonder if there are something like 100K or 500K  source tarballs in PyPI?  If so, I wonder what the "minimum tar" necessary to parse those is.  It
+    seems like potentially a more bounded problem - parse the things that are in PyPI.
+    And then maybe reject input at PyPI upload time (although I understand why this is hard in a social sense)
+    I asked Gemini and practically speaking the "writers" include GNU tar, OS X tar which is more like BSD, Python's tarfile module, and Go's tar module.   All of them use SOME extensions, e.g. for long filenames, but I also wonder if the union of all features they emit is meaningfully smaller than "all tar extensions" !
+
+    Also reminding myself that this post also has a bunch of background on the various tar format extensions, in the context of OCI: https://www.cyphar.com/blog/post/20190121-ociv2-images-i-tar/
+    I also wonder if tar files that appear in practice in Docker/OCI  are of different dialects than PyPI, or it's all basically the same set of tools creating them.
+  score: 4
+  posted_at: '2026-10-27T20:27:22Z'
+- id: lo-giwk3j
+  parent_id: '0'
+  author: masklinn
+  text: |-
+    I wonder if there are something like 100K or 500K source tarballs in PyPI?
+
+    The homepage advertises 10 million releases across a million projects, and most of those would have an sdist: according to https://dev.to/munimv2/does-pypis-long-tail-still-ship-wheels-a-full-head-vs-tail-census-of-6000-latest-releases-1pf6, out of the top 3000 projects 95% have an sdist and out of a random sample of 2850, 91% had an sdist, the historical trend would likely have been more sdist and sdist-only distributions. So probably 8 or 9 million source tarballs.
+  score: 1
+  posted_at: '2026-10-27T20:49:43Z'
+- id: lo-iztya5
+  parent_id: '0'
+  author: hjvt
+  text: I wonder, what are the origins of octal strings being used instead of proper
+    integers in a bunch of Old Unix Things?
+  score: 1
+  posted_at: '2026-10-27T21:09:18Z'
+- id: lo-mvvqwy
+  parent_id: '0'
+  author: masklinn
+  text: The PDP family had word sizes of 18, 12, and 36 bits, so octal notation was
+    very common. The PDP-11 was a rare 16-bit architecture but was full of octal nonetheless
+    (e.g. the front panel switches used octal grouping, assembly immédiates defaulted
+    to octal, addresses and device registers were in octal, …) so octal would have
+    been quite natural to unix developers. In fact the original binary data formatter
+    was od, octal dump, and is so old it was reportedly why the bourne shell uses
+    do…done rather than do…od.
+  score: 5
+  posted_at: '2026-10-27T21:35:46Z'
+- id: lo-3eqnb0
+  parent_id: '0'
+  author: bakkot
+  text: |-
+    Turns out PyPI puts package metadata on BigQuery. 9.8m .tar.gz files. Mean of 1.2MB, so, 12TB of traffic if you just wanted to fetch and parse all of them (probably half that if you cap at 99%ile size). I wouldn't do that myself but OpenAI could certainly do so without blinking.
+
+
+
+    ext
+    n_files
+    total_tb
+    median_bytes
+    mean_bytes
+    p99_bytes
+
+
+
+
+    .tar.gz
+    9862381
+    11.99
+    32495
+    1216159.0
+    28042670
+
+
+    .zip
+    110489
+    0.11
+    42320
+    966581.0
+    19725143
+
+
+    .tar.bz2
+    3851
+    0.0
+    50655
+    641260.0
+    9156228
+
+
+    .tgz
+    226
+    0.0
+    57863
+    513786.0
+    6710606
+
+
+    null
+    49
+    0.0
+    68406
+    580108.0
+    12080860
+  score: 3
+  posted_at: '2026-10-27T22:04:39Z'
+- id: lo-4jcsba
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Ah this is interesting, and it's along the lines of what I was thinking.
+    I've worked on "J8 Notation" intermittently over the last few years -- basically  I would like to make something largely compatible with CSV/TSV and HTML5/XML, but as well-specified as JSON [1]
+    So I was hoping to do some data-driven experiments (most likely aided by LLMs), to see what the frontier between "compatible" and "well-specified" is ...
+    I would also add "declarative" -- I like that this tar-codec work seems to be based on explicit state machines.   I hope to find time to look into it more.
+    So basically I am curious what kind of metalanguage can express formats like CSV TSV HTML5 XML, while also being compatible with say 99.999% of some corpus that we can argue to be representative.
+    And you can ask the same question of tar -- PyPI and OCI would be great test corpora.  So basically I would like A fast and secure tar parser for the Rust ecosystem -> A fast and secure tar parser for all ecosystems :-)   (C and C++, Python, Ruby, etc.)
+    As mentioned in the article, these problems are NOT related to memory safety, so the same benefit would extend to C and C++, and all languages that use them.
+
+    (Aside: I think many people have PyPI mirrors, perhaps of all 12 TB?   For those  with fewer computing resources, maybe you could get that data with HTTP range requests -- maybe that depends on gzip --rsyncable or some such thing ...)
+    [1] JSON only has a couple holes in its spec, which have been addressed by follow-on RFCs I   believe.  Many of the "JSON is a minefield" problems are particular to the representation of values within a programming language, which is an inherent issue -- not part of the JSON spec.
+  score: 1
+  posted_at: '2026-10-27T23:06:37Z'
+- id: lo-lniewj
+  parent_id: '0'
+  author: fanf
+  text: And the fields in PDP-11 machine code instructions for things like register
+    numbers and addressing modes are aligned to octal digits, so it isn’t too hard
+    to read an octal dump without a disassembler. (In arm32 they are aligned to hex
+    digits.)
+  score: 1
+  posted_at: '2026-10-27T23:56:42Z'
+- id: lo-fmwf4p
+  parent_id: '0'
+  author: fanf
+  text: Maybe Kaitai Struct (6 comments)
+  score: 1
+  posted_at: '2026-10-28T00:08:03Z'
 article:
   url: https://astral.sh/blog/tar-codec
   title: 'tar-codec: a fast and secure tar parser for the Rust ecosystem'
@@ -88,4 +219,4 @@ article:
     - [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2718%27%20height=%2717%27/%3e) ![](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)](https://github.com/astral-sh)
   error:
   fetched_at: '2026-10-27T20:26:11Z'
-archived_at: '2026-10-27T20:26:11Z'
+archived_at: '2026-10-28T04:14:51Z'

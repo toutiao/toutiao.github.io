@@ -1,0 +1,134 @@
+---
+post:
+  id: lo-rswyzt
+  source: lobsters
+  title: 'Fuzzers vs. AI: Comparing Fuzzilli and BigSleep on JavaScript Engines'
+  url: https://projectzero.google/2026/10/fuzzing-v-AI.html
+  hn_url: https://lobste.rs/s/rswyzt
+  score: 11
+  author: ni5arga
+  posted_at: '2026-10-27T19:08:23Z'
+  fetched_at: '2026-10-28T04:14:50Z'
+  article_url: https://projectzero.google/2026/10/fuzzing-v-AI.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T04:14:55Z'
+  raw_comment_count: 3
+  tags:
+  - ai
+  - security
+comments:
+- id: lo-pbkhur
+  parent_id: '0'
+  author: Student
+  text: Interesting. In my own work I’ve found agent review to be fine, but that adding
+    generative and deterministic test suites (using agents) finds more bugs and more
+    interesting bugs.
+  score: 2
+  posted_at: '2026-10-27T22:14:29Z'
+- id: lo-zp239e
+  parent_id: '0'
+  author: riking
+  text: This blog post is amazingly deep in the management sauce
+  score: 1
+  posted_at: '2026-10-27T22:21:40Z'
+- id: lo-mhfrel
+  parent_id: '0'
+  author: glacambre
+  text: Interesting, could you expand on the techniques you use and the context you
+    use them in (e.g. what language, what kind of software you test, etc)?
+  score: 1
+  posted_at: '2026-10-28T01:49:23Z'
+article:
+  url: https://projectzero.google/2026/10/fuzzing-v-AI.html
+  title: 'Fuzzers vs. AI: Comparing Fuzzilli and BigSleep on JavaScript Engines -
+    Project Zero'
+  fetch_status: success
+  content: |-
+    ## Summary
+
+    Project Zero compared two automated tools used by Google to find vulnerabilities in Chrome’s JavaScript engine, V8, on a regular basis. Fuzzilli is a generative JavaScript engine fuzzer and BigSleep is an LLM-based bug finding system. In the past six months, BigSleep found more vulnerabilities than Fuzzilli (45 versus 37) with a 25% overlap in the specific bugs reported. Since this comparison methodology has a tendency to underestimate overlap, we also performed dedicated experiments to test theoretical overlap in vulnerabilities reported since 2023. These experiments estimated overlap at roughly 60%. Regardless of which value is accurate, a substantial portion of vulnerabilities were discoverable by only LLMs or only fuzzing. While it is extremely promising that LLMs have become able to find so many vulnerabilities so quickly, fuzzing and LLMs are still complementary approaches. We recommend vendors perform both fuzzing and agentic analysis of their code to maximize the number of vulnerabilities that get reported before they impact users.
+
+    ## Introduction
+
+    Fuzzing has long been successfully applied to software projects such as Chrome or V8 (Chrome’s JavaScript engine) to detect bugs. Recently, the arrival of powerful LLMs able to read, reason about, and write code is causing a transformative change to software development and software security. With hundreds, sometimes thousands of new bugs and vulnerabilities having been discovered in well-fuzzed targets, a natural question arises: how do new LLMs compare to “traditional” fuzzers? Are they starting to replace them or do the two approaches complement each other? To help answer this, we look at three key questions:
+
+    - How many bugs does each approach find in the real world?
+
+    How many bugs does each approach find in the real world?
+
+    - What is the overlap between the two approaches?
+
+    What is the overlap between the two approaches?
+
+    - What is the “shape” of bugs discovered by one system but not the other?
+
+    What is the “shape” of bugs discovered by one system but not the other?
+
+    For this blog post, we will limit ourselves to two concrete systems: Fuzzilli, a JavaScript engine fuzzer, and BigSleep, an agentic bug finding system. Both of these systems run in production and automatically look for bugs in newly added code, which makes them fairly directly comparable. Specifically, Fuzzilli runs continuously across many instances, with the first ones usually picking up new changes within a few hours, while BigSleep currently runs once per day and is prompted to review new commits and write proof-of-concept testcases for any bugs it discovers. Both systems report bugs through Clusterfuzz, which will do basic crash triaging, then file bug reports in Chrome’s issue tracker.
+
+    We also limit ourselves to V8 as a target, a high-performance JavaScript and WebAssembly engine with a sophisticated and mature testing and fuzzing setup. In particular, Fuzzilli is a special-purpose fuzzing tool designed to find bugs in these engines. The usually complicated nature of these bugs makes for an interesting “playground” to compare the two approaches’ ability to find deep and complex bugs in well-tested software. We leave it to future work to perform similar analysis on a broader set of targets, fuzzers, and agentic bug finding systems.
+
+    We will now look into each of the three main questions in a dedicated section. Each section will first summarize the general approach, then describe the methodology in detail (often as bullet points, so you can skip those blocks if you don’t care too much about the details) before exploring the results. We conclude with an attempt at interpreting the results to get a picture of the current state of fuzzing vs. AI.
+
+    # Part 1: Production Statistics
+
+    This is the simplest part to analyze, although with some caveats we’ll see in a bit. The basic idea is to query issues from Chromium’s bugtracker (where V8 bugs are tracked) and extract various statistics from there. This is especially easy since there’s a dedicated hotlist for each of the two systems. We limit our analysis to the six months from April to September 2026 as the automatic BigSleep pipeline only became active in April this year. As such, our raw data comes from the following two bug tracker queries:
+
+    - Fuzzilli: hotlistid:5433121 created:2026-04-01..2026-09-30
+
+    Fuzzilli: hotlistid:5433121 created:2026-04-01..2026-09-30
+
+    - BigSleep: hotlistid:8067258 created:2026-04-01..2026-09-30
+
+    BigSleep: hotlistid:8067258 created:2026-04-01..2026-09-30
+
+    From there, the raw numbers of bug reports are:
+
+    - Fuzzilli: 316
+
+    Fuzzilli: 316
+
+    - BigSleep: 441
+
+    BigSleep: 441
+
+    Small win for BigSleep. However, this includes all types of bugs, and BigSleep initially also found a lot of configuration and integration issues in V8, for example crbug.com/503869331 where the unsafe flag blocking mechanism didn’t work properly yet. These are legitimate issues, but less relevant for our comparison since there’s little real-world security impact. One easy way to get rid of these is to look specifically at vulnerabilities by limiting the results to type:vulnerability:
+
+    - Fuzzilli: 178
+
+    Fuzzilli: 178
+
+    - BigSleep: 95
+
+    BigSleep: 95
+
+    Suddenly a clear win for the fuzzers? Not quite. There are still some problems with this data, notably duplicates and unactionable reports (e.g. bugs closed as WAI). At first, this seems like a simple thing to fix: just include another constraint such as status:(fixed | verified). Unfortunately, things are a bit more complicated. Take for example Fuzzilli bug crbug.com/511935486. The events on this bug are basically:
+
+    - The bug is filed by Clusterfuzz on May 11 and assigned to an engineer
+
+    The bug is filed by Clusterfuzz on May 11 and assigned to an engineer
+
+    - The bug is closed by Clusterfuzz as the testcase no longer reproduces later that same day
+
+    The bug is closed by Clusterfuzz as the testcase no longer reproduces later that same day
+
+    As such, this bug received zero developer interactions. Most likely what happened here is that this bug was a duplicate of another bug, crbug.com/511210507, but Clusterfuzz didn’t realize it as the crash signature (derived from the stack trace) was slightly different. When the other bug received a fix, the testcase stopped reproducing on Clusterfuzz, which closed the issue.
+
+    Maybe the best thing we can do is to look at “actionable” bugs, defined as those that are not marked as duplicates or WAI and that received at least one fix commit referencing them. Then, looking at only Type-Vuln bugs filters out a lot of the less-relevant BigSleep bugs, even though these were “actionable”. With that, the final picture looks like this:
+
+    So in terms of vulnerabilities, it’s roughly a tie (small advantage BigSleep) at the moment: 45 vs. 37.
+
+    This naturally raises the question of cost: how expensive is each of the two approaches and what does that mean in terms of cost-per-bug? Unfortunately, it’s challenging to make a comparison at this stage in the research. While some effort has been dedicated to making Clusterfuzz more efficient, similar effort has not been expended for Big Sleep and neither system is particularly calibrated for an optimal cost-per-bug ratio.
+
+    # Part 2: Overlap
+
+    The next question is how much these approaches overlap each other. For this, our approach is twofold: we first attempt to find an answer in the bugtracker, by trying to identify bugs discovered by both systems. Next, we run a dedicated experiment in which we let BigSleep try to rediscover old Fuzzilli bugs.
+
+    ## Bugtracker Overlap
+
+    The basic idea is to see which bugs were found by both systems, so we’re effectively looking for duplicate bug reports. Similar to part 1, there are a few steps we need to take to ensure we get a somewhat accurate picture:
+
+    - First, we look for bugs filed by one system that get deduplicated into a bug filed by the other. For example crbug.com/522410841 which is a duplicate of crbug.com/522860268. This is a clea
+  error:
+  fetched_at: '2026-10-28T04:14:55Z'
+archived_at: '2026-10-28T04:14:55Z'
