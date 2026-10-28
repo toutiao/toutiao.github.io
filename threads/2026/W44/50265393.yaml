@@ -1,0 +1,1026 @@
+---
+post:
+  id: '50265393'
+  title: Code-execution flaw in UEFI firmware threatens most servers on planet Earth
+  url: https://arstechnica.com/security/2026/10/code-execution-flaw-in-uefi-firmware-threatens-most-servers-on-planet-earth/
+  hn_url: https://news.ycombinator.com/item?id=50265393
+  score: 212
+  author: DamnInteresting
+  posted_at: '2026-10-27T20:35:09Z'
+  fetched_at: '2026-10-28T14:51:44Z'
+  article_url: https://arstechnica.com/security/2026/10/code-execution-flaw-in-uefi-firmware-threatens-most-servers-on-planet-earth/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T14:51:44Z'
+  raw_comment_count: 134
+comments:
+- id: '50265410'
+  parent_id: '50265393'
+  author: DamnInteresting
+  text: "&gt; <i>There are important caveats and limitations to exploiting this latest
+    vulnerability. As noted, some level of control over a local network is a prerequisite.
+    That likely limits exploitation to insiders or attackers, such as nation-states
+    or ransomware operators, who manage to gain low-level access inside a network
+    and are looking for a way to elevate system rights.</i>"
+  score: 0
+  posted_at: '2026-10-27T20:36:25Z'
+- id: '50266227'
+  parent_id: '50265410'
+  author: bediger4000
+  text: This one seems weird. PXE-boot is such a fragile process in and off itself
+    this doesn&#x27;t strike me as end-of-the-world. If an attacker has enough presence
+    on your network to send a targeted ICMP packet, they almost certainly could also
+    fool around with your PXE-booting servers some other way.
+  score: 0
+  posted_at: '2026-10-27T21:39:50Z'
+- id: '50266543'
+  parent_id: '50265393'
+  author: saidnooneever
+  text: so how many firmwares actually compile in this ICMP stuff? because edk2 builds
+    in a way that it will only package the stuff actually used. u include protocola
+    and handles etc.<p>personally never found a reason why to include icmp in there
+    for what i was building using edk2.<p>as others noted pxe is also already very
+    fragile and enough network access to perform the icmp attack is likely enough
+    access to mitm the entire pxe run and slap in your own boot image or modules etc.<p>i
+    dont think most servers boot using PXE so that is grossly overstated? or would
+    it include the attacker going into the boot menu and selecting to pxe boot...
+    because why use an exploit then if you can just point it to your own server and
+    again pull the image like that.<p>all u need is a konboot or similar tool inserted
+    to then subsequently load the original image -_-
+  score: 0
+  posted_at: '2026-10-27T22:09:19Z'
+- id: '50268350'
+  parent_id: '50266227'
+  author: octoberfranklin
+  text: Yeah but that just lets them replace the OS that gets booted.<p>This gives
+    the attacker access at the UEFI level and above -- they can use it to produce
+    false attestations.
+  score: 0
+  posted_at: '2026-10-28T01:43:21Z'
+- id: '50268384'
+  parent_id: '50266227'
+  author: amluto
+  text: Except that a sensible deployment of PXE boot would also have the servers
+    attest to their state prior to giving them any secrets. This vulnerability breaks
+    this workflow.
+  score: 0
+  posted_at: '2026-10-28T01:48:33Z'
+- id: '50268972'
+  parent_id: '50266543'
+  author: Jhsto
+  text: Suppose the server only boots signed images created by itself, which the PXE
+    server happens to serve. You cannot just switch or mess with the menu. But if
+    you can exploit the boot chain before any Secure Boot components run, then you
+    might find your way in.
+  score: 0
+  posted_at: '2026-10-28T03:22:09Z'
+- id: '50268974'
+  parent_id: '50265393'
+  author: FrasiertheLion
+  text: We recently wrote about moving away from OVMF (~1M lines of C) to very minimal
+    and hyperspecific firmware (300 lines of assembly)[1] for our specific confidential
+    VM machine targets, and the idea that &quot;popular&quot; does not automatically
+    mean &quot;secure&quot;. You can point an LLM at any large codebase and it will
+    find vulnerabilities, so &quot;patch the planet&quot; isn&#x27;t very scalable.
+    You can instead just write hyperspecific, small codebases and throw all the security
+    practices at it - like LLMs (economical if it&#x27;s small), fuzzing, formal methods
+    etc.<p>[1] <a href="https:&#x2F;&#x2F;tinfoil.sh&#x2F;blog&#x2F;2026-10-25-less-is-more">https:&#x2F;&#x2F;tinfoil.sh&#x2F;blog&#x2F;2026-10-25-less-is-more</a>
+  score: 0
+  posted_at: '2026-10-28T03:22:41Z'
+- id: '50268998'
+  parent_id: '50265393'
+  author: mischanix
+  text: How is this a 9.5 if php2shell was a 9.2?
+  score: 0
+  posted_at: '2026-10-28T03:25:11Z'
+- id: '50269036'
+  parent_id: '50268998'
+  author: jacquesm
+  text: They can&#x27;t really call it a 12...
+  score: 0
+  posted_at: '2026-10-28T03:30:12Z'
+- id: '50269051'
+  parent_id: '50268998'
+  author: gnabgib
+  text: The PHP CVS were originally reported as perfect 10s and in theory allow remote
+    access (practically all of the internet).  This requires physical hardware access
+    (practically 0 of the internet).<p>Those original PHP 10s were negotiated down
+    into a 9.2 by disclosure.. so maybe this&#x27;ll be an 8.7 soon.
+  score: 0
+  posted_at: '2026-10-28T03:31:29Z'
+- id: '50269343'
+  parent_id: '50265393'
+  author: verandaguy
+  text: The astronauts on the ISS must be breathing a sigh of relief, I imagine.
+  score: 0
+  posted_at: '2026-10-28T04:27:20Z'
+- id: '50269371'
+  parent_id: '50268998'
+  author: verandaguy
+  text: CVSS is an imperfect system. Most of the time it gets the idea of how severe
+    an issue is across, but once you go above an 8, maybe an 8.5, there are some perverse
+    incentives at play. Even with newer versions of the framework coming out over
+    the years, there have always been gaps.<p>Even before AI, there was prestige in
+    being able to say that you (or your team) found a 9.2 in some major piece of software.
+    You could put that on your resume in some specializations.<p>Now with AI vulnerability
+    scanning being so hyper-commercialized (but not yet fully commoditized), this
+    is cranked way up since there are more monied interests involved, and many of
+    them are probably trying to make a quick buck before LLM-based vulnerability scans
+    <i>are</i> a commodity (for better or worse).
+  score: 0
+  posted_at: '2026-10-28T04:31:04Z'
+- id: '50269403'
+  parent_id: '50265393'
+  author: userbinator
+  text: Another breathless fearmongering. &quot;threatens&quot;? No, I don&#x27;t
+    think network booting is even all that common outside of extremely niche scenarios.<p><i>Instead,
+    it applies only to organizations with machines that boot from local networks,
+    or conceivably from Internet-connected resources.</i><p>Who is PXE-booting over
+    the open Internet!?
+  score: 0
+  posted_at: '2026-10-28T04:37:25Z'
+- id: '50269448'
+  parent_id: '50269403'
+  author: tptacek
+  text: Several large bare-metal hosting companies. Not over the open Internet, but
+    that doesn&#x27;t matter if the management networks are shared and the price of
+    admission a single server rental.
+  score: 0
+  posted_at: '2026-10-28T04:48:46Z'
+- id: '50269540'
+  parent_id: '50268974'
+  author: getcrunk
+  text: Yea I really like this idea.<p>We need a clean start. A lot of layers can
+    and should be rebuilt, and even if you do it without reducing functionality, I
+    feel like in a lot of cases like we’ll be able to cut down the code significantly.<p>When
+    I explain software bloat to non technical people, I say imagine you built a 10
+    story building, but every few years it was a story at a time with the renovations
+    along the way.<p>Like there’s gonna be a lot of inefficiencies. Yea I know we
+    refactor. But doing a clean slate rebuild. Knowing exactly what you need based
+    on real world experience, it should work to really streamline stuff.
+  score: 0
+  posted_at: '2026-10-28T05:06:19Z'
+- id: '50269549'
+  parent_id: '50268998'
+  author: phoe-krk
+  text: 'Check it yourself: paste CVSS:3.1&#x2F;AV:A&#x2F;AC:L&#x2F;PR:N&#x2F;UI:N&#x2F;S:U&#x2F;C:H&#x2F;I:H&#x2F;A:H
+    into a CVSS analyser and read the descriptions of the related categories.'
+  score: 0
+  posted_at: '2026-10-28T05:07:18Z'
+- id: '50269551'
+  parent_id: '50265393'
+  author: dustfinger
+  text: Fools! That is why I don&#x27;t keep my servers on the planet Earth. Mua ha
+    ha ha ha....
+  score: 0
+  posted_at: '2026-10-28T05:07:31Z'
+- id: '50269577'
+  parent_id: '50268350'
+  author: vintermann
+  text: Do any of the locked down consoles or phones use a vulnerable UEFI implementation
+    by any chance?
+  score: 0
+  posted_at: '2026-10-28T05:12:12Z'
+- id: '50269613'
+  parent_id: '50265393'
+  author: hn_submit
+  text: I&#x27;ve always been downright suspicious of the creation of UEFI. It executes
+    code before the operating system but doesn&#x27;t really provide a hardware abstraction
+    layer like BIOS does. Most operating system don&#x27;t use BIOS or any other software
+    layer and configure the hardware themselves. Why is it there then?<p>And unlike
+    BIOS which is relatively small UEFI is &quot;full-fat&quot; almost the size of
+    an operating system itself. It can even run its own applications.<p>The 1 million
+    lines of C code comprising UEFI are riddled with bugs and this is just one of
+    them. No doubt LLMs will be able to uncover a lot more of them.
+  score: 0
+  posted_at: '2026-10-28T05:19:25Z'
+- id: '50269701'
+  parent_id: '50269403'
+  author: kg
+  text: "&gt; No, I don&#x27;t think network booting is even all that common outside
+    of extremely niche scenarios.<p>It&#x27;s incredibly common though? I&#x27;ve
+    run across it and I work on games and client software, not server stuff."
+  score: 0
+  posted_at: '2026-10-28T05:43:02Z'
+- id: '50269728'
+  parent_id: '50269036'
+  author: moi2388
+  text: "“These go to eleven”"
+  score: 0
+  posted_at: '2026-10-28T05:50:11Z'
+- id: '50269731'
+  parent_id: '50269613'
+  author: imoverclocked
+  text: Well, looking at the mess that is most arm&#x2F;arm64 SBCs, I understand why
+    it’s nice to have a standard interface that can run (eg) grub. Can UEFI be much
+    smaller? Also yes.
+  score: 0
+  posted_at: '2026-10-28T05:50:27Z'
+- id: '50269769'
+  parent_id: '50269613'
+  author: mjg59
+  text: "&gt; doesn&#x27;t really provide a hardware abstraction layer like BIOS does<p>I&#x27;m
+    not really sure what this means. UEFI provides a consistent interface to access
+    storage devices, network devices, input devices, and access to a framebuffer.
+    How else would bootloaders work?"
+  score: 0
+  posted_at: '2026-10-28T05:59:03Z'
+- id: '50269775'
+  parent_id: '50266227'
+  author: mjg59
+  text: Yeah I&#x27;m actually not terribly worried about the server scenario, but
+    having a way to get code exec in the firmware lets you defeat measured boot, which
+    means this is a Bitlocker bypass in the default config.
+  score: 0
+  posted_at: '2026-10-28T06:00:25Z'
+- id: '50269965'
+  parent_id: '50269051'
+  author: merb
+  text: |-
+    Well because some php configurations had an absurdly low default max upload size, which made the rce way harder.
+    Plesk for example ships with 2m for some reason.
+  score: 0
+  posted_at: '2026-10-28T06:44:08Z'
+- id: '50270035'
+  parent_id: '50268974'
+  author: Maxion
+  text: I&#x27;ve been thinking similarly, that we&#x27;re quickly going to want to
+    start minimising dependencies and code size in the programs we make to try to
+    reduce attack surface area.
+  score: 0
+  posted_at: '2026-10-28T06:56:42Z'
+- id: '50270104'
+  parent_id: '50265393'
+  author: croes
+  text: Aah, that‘s why Musk wants space datacenters
+  score: 0
+  posted_at: '2026-10-28T07:06:45Z'
+- id: '50270108'
+  parent_id: '50265393'
+  author: Pavilion2095
+  text: Not only this is clickbait, they want me to solve a captcha in order to open
+    it. What a trash website.
+  score: 0
+  posted_at: '2026-10-28T07:07:40Z'
+- id: '50270124'
+  parent_id: '50270108'
+  author: timbaboon
+  text: They had a massive amount of bot attacks recently. That captcha wasn’t always
+    there, but the website became so slow as to be unusable. That captcha only surfaces
+    from certain countries. It comes up far, far less frequently than it did a few
+    weeks ago
+  score: 0
+  posted_at: '2026-10-28T07:10:22Z'
+- id: '50270165'
+  parent_id: '50270108'
+  author: lopis
+  text: Clearly you don&#x27;t work on anything on the Web in 2026, if you&#x27;re
+    complaining about a captcha.
+  score: 0
+  posted_at: '2026-10-28T07:16:32Z'
+- id: '50270187'
+  parent_id: '50269965'
+  author: dns_snek
+  text: 'The fact that a subset of systems are in a less vulnerable configuration
+    doesn&#x27;t have any bearing on the CVSS score.<p>&gt; Specific configurations
+    should not impact any attribute contributing to the CVSS Base metric assessment
+    , i.e., if a specific configuration is required for an attack to succeed, the
+    vulnerable system should be assessed assuming it is in that configuration. [1]<p>For
+    a vulnerability to score a 10 its Attack Complexity must be &#x27;Low&#x27; (broadly
+    speaking: it doesn&#x27;t require target-specific customizations or mitigations
+    [1]), which isn&#x27;t the case with php2shell.<p>Here&#x27;s a breakdown of that
+    9.2: <a href="https:&#x2F;&#x2F;www.first.org&#x2F;cvss&#x2F;calculator&#x2F;4.0#CVSS:4.0&#x2F;AV:N&#x2F;AC:H&#x2F;AT:P&#x2F;PR:N&#x2F;UI:N&#x2F;VC:H&#x2F;VI:H&#x2F;VA:H&#x2F;SC:N&#x2F;SI:N&#x2F;SA:N"
+    rel="nofollow">https:&#x2F;&#x2F;www.first.org&#x2F;cvss&#x2F;calculator&#x2F;4.0#CVSS:4.0&#x2F;AV:N&#x2F;AC:H...</a><p>[1]
+    <a href="https:&#x2F;&#x2F;www.first.org&#x2F;cvss&#x2F;v4.0&#x2F;specification-document#Attack-Complexity-AC"
+    rel="nofollow">https:&#x2F;&#x2F;www.first.org&#x2F;cvss&#x2F;v4.0&#x2F;specification-document#Attac...</a>'
+  score: 0
+  posted_at: '2026-10-28T07:19:20Z'
+- id: '50270196'
+  parent_id: '50269577'
+  author: mschuster91
+  text: Phones most commonly use their own bootloader stack.
+  score: 0
+  posted_at: '2026-10-28T07:20:20Z'
+- id: '50270240'
+  parent_id: '50270196'
+  author: mjg59
+  text: UEFI is pretty common on phones now, but it&#x27;s unlikely that any of them
+    are running this network stack there.
+  score: 0
+  posted_at: '2026-10-28T07:27:37Z'
+- id: '50270252'
+  parent_id: '50265393'
+  author: Frieren
+  text: And this is the reason why we need datacenters in space.
+  score: 0
+  posted_at: '2026-10-28T07:30:17Z'
+- id: '50270278'
+  parent_id: '50269613'
+  author: yjftsjthsd-h
+  text: "&gt; It executes code before the operating system but doesn&#x27;t really
+    provide a hardware abstraction layer like BIOS does.<p>Yes it does? If anything,
+    it provides way more; a .efi program can use firmware services to load files and
+    print text. There&#x27;s like 80% of a DOS in there.<p>&gt; Most operating system
+    don&#x27;t use BIOS or any other software layer and configure the hardware themselves.
+    Why is it there then?<p>Because we still want enough functionality to load the
+    OS in the first place, which means e.g. nvme drivers, Ethernet drivers (for netboot),
+    keyboard input and some display output (to let a user pick what to load), and
+    of course filesystem drivers because loading an OS&#x2F;bootloader from a single
+    shared MBR was <i>awful</i>."
+  score: 0
+  posted_at: '2026-10-28T07:33:09Z'
+- id: '50270293'
+  parent_id: '50269731'
+  author: yjftsjthsd-h
+  text: I think uboot is kinda doing that?
+  score: 0
+  posted_at: '2026-10-28T07:34:28Z'
+- id: '50270310'
+  parent_id: '50270240'
+  author: yjftsjthsd-h
+  text: Is it? I&#x27;d like a UEFI phone booting GNU&#x2F;Linux but last I looked
+    it was a bunch of hacky aftermarket firmwares.<p>PS your profile links a blog
+    that says you moved
+  score: 0
+  posted_at: '2026-10-28T07:37:37Z'
+- id: '50270316'
+  parent_id: '50266227'
+  author: michaelt
+  text: Yes - all the times I&#x27;ve seen PXE boot used, the usage has been &quot;Hold
+    F12 during boot to reformat the disk and re-install the OS from scratch&quot;<p>Which
+    is something that happens inside a trust boundary. After all, if an untrusted
+    third party gets to <i>install your OS</i> it&#x27;s game over, UEFI bug or not.<p>And
+    consumer devices often don&#x27;t have a network card - or come with PXE disabled
+    in the BIOS.
+  score: 0
+  posted_at: '2026-10-28T07:39:02Z'
+- id: '50270337'
+  parent_id: '50268998'
+  author: loeg
+  text: CVSS scores are essentially meaningless. Don&#x27;t read anything into it.
+  score: 0
+  posted_at: '2026-10-28T07:41:59Z'
+- id: '50270344'
+  parent_id: '50269403'
+  author: loeg
+  text: "&gt; Another breathless fearmongering.<p>It&#x27;s Ars; you come to expect
+    it."
+  score: 0
+  posted_at: '2026-10-28T07:42:51Z'
+- id: '50270354'
+  parent_id: '50270035'
+  author: apimade
+  text: Do one thing, and do it well.<p>The unix philosophy prevails!
+  score: 0
+  posted_at: '2026-10-28T07:44:58Z'
+- id: '50270368'
+  parent_id: '50268974'
+  author: snvzz
+  text: "&gt;You can point an LLM at any large codebase and it will find vulnerabilities,
+    so &quot;patch the planet&quot; isn&#x27;t very scalable.<p>So the solutions need
+    to be structural.<p>e.g. relative to a monolith kernel, seL4 is small, has no
+    known bugs (AI can try, but so far crickets) and is the only piece that needs
+    to run privileged.<p>Everything running under seL4 benefits from the guarantees
+    seL4 provides."
+  score: 0
+  posted_at: '2026-10-28T07:47:44Z'
+- id: '50270397'
+  parent_id: '50269775'
+  author: reorder9695
+  text: Would this mean any TPM based decryption keys could potentially be compromised
+    in this kind of attack? E.g. when they&#x27;re used for LUKS disk encryption.
+  score: 0
+  posted_at: '2026-10-28T07:50:40Z'
+- id: '50270417'
+  parent_id: '50270252'
+  author: N_Lens
+  text: I&#x27;d argue datacenters in Space implies datacenters outside of Space.
+  score: 0
+  posted_at: '2026-10-28T07:54:02Z'
+- id: '50270423'
+  parent_id: '50269343'
+  author: DeepSeaTortoise
+  text: They almost had a cybercriminal up there. Too bad it was all made up and the
+    position of the first ever space criminal is back up for grabs.
+  score: 0
+  posted_at: '2026-10-28T07:55:13Z'
+- id: '50270460'
+  parent_id: '50270310'
+  author: mjg59
+  text: It being UEFI doesn&#x27;t mean it&#x27;s a standard platform, there&#x27;s
+    no ACPI and you&#x27;re going to need a custom kernel that targets that specific
+    device. UEFI alone isn&#x27;t enough to support booting a generic OS.<p>And thanks!
+    Updated my profile.
+  score: 0
+  posted_at: '2026-10-28T08:01:34Z'
+- id: '50270461'
+  parent_id: '50265393'
+  author: voidUpdate
+  text: So you need to send an ICMP packet to a server while it&#x27;s booting? That
+    seems like an extremely small attack surface. I dont know when the last time our
+    enterprise servers actually booted up, they just stay on forever
+  score: 0
+  posted_at: '2026-10-28T08:01:38Z'
+- id: '50270467'
+  parent_id: '50270397'
+  author: mjg59
+  text: Yup, if there&#x27;s no passphrase involved.
+  score: 0
+  posted_at: '2026-10-28T08:02:00Z'
+- id: '50270518'
+  parent_id: '50265410'
+  author: izacus
+  text: This is literally some security people crying wolf until everyone just stops
+    listening to them.
+  score: 0
+  posted_at: '2026-10-28T08:11:20Z'
+- id: '50270585'
+  parent_id: '50270461'
+  author: nicce
+  text: You can technically send then all the time and it is enough that they boot
+    once. No need to know the time beforehand.
+  score: 0
+  posted_at: '2026-10-28T08:20:25Z'
+- id: '50270615'
+  parent_id: '50270585'
+  author: Jolter
+  text: At least some enterprise IDS &#x2F;AFW could presumably have a signature configured
+    for this traffic scenario.
+  score: 0
+  posted_at: '2026-10-28T08:25:01Z'
+- id: '50270648'
+  parent_id: '50270035'
+  author: Gibbon1
+  text: I&#x27;ve taken to saying Donald Knuth  was wrong, premature optimization
+    isn&#x27;t the root of all evil.<p>Dependencies are.<p>Part of that is reading
+    bits and pieces of what Nancy Leveson had to say about the subject. Subsystems
+    even when working to spec can produce spectacular failures.
+  score: 0
+  posted_at: '2026-10-28T08:29:19Z'
+- id: '50270665'
+  parent_id: '50270518'
+  author: syshyk
+  text: They&#x27;re admitting it though, at least?
+  score: 0
+  posted_at: '2026-10-28T08:32:17Z'
+- id: '50270700'
+  parent_id: '50270278'
+  author: preisschild
+  text: they also provide device trees to the kernel on modern arm uefi environments.
+    And in servers they provide an interface for the baseboard management controller
+    to interact with the firmware directly.
+  score: 0
+  posted_at: '2026-10-28T08:38:06Z'
+- id: '50270704'
+  parent_id: '50269731'
+  author: preisschild
+  text: some arm64 sbcs support edk2&#x2F;uefi btw. I make sure I just use those.
+    Look for &quot;Arm SystemReady&quot; certification, which requires this
+  score: 0
+  posted_at: '2026-10-28T08:38:52Z'
+- id: '50270732'
+  parent_id: '50269448'
+  author: preisschild
+  text: There is also HTTPS boot, which might be a lot more secure than PXE<p><a href="https:&#x2F;&#x2F;tianocore-docs.github.io&#x2F;EDKIIHttpsBootGettingStartedGuide&#x2F;draft&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;tianocore-docs.github.io&#x2F;EDKIIHttpsBootGettingStarte...</a>
+  score: 0
+  posted_at: '2026-10-28T08:42:51Z'
+- id: '50270786'
+  parent_id: '50269403'
+  author: rcxdude
+  text: It&#x27;s a pretty common setup on servers, even if it&#x27;s not the majority.
+    Probably more commonly it&#x27;s part of the boot sequence on servers even if
+    it&#x27;s not used. I would say this is a relevant issue for most organizations&#x27;
+    network security because of the risk it represents of being able to escalate from
+    compromising a less privileged machine (e.g. a user&#x27;s device) to a more privileged
+    machine. It&#x27;s not a &#x27;oh god every server is going to be pwned&#x27;
+    issue, but it doesn&#x27;t need to be to be worth alerting people to.
+  score: 0
+  posted_at: '2026-10-28T08:52:26Z'
+- id: '50270990'
+  parent_id: '50268974'
+  author: gjvr
+  text: I really like this idea of 300 lines (asm) vs ~1M lines (C) which was possible
+    by really understanding what you are doing and limiting to the core feature you
+    need. In this case you had &#x27;the luxury&#x27; of this being low level code.
+    What I fear for is all (application) the code that runs on top of frameworks&#x2F;run-times&#x2F;interpreters
+    (in reference to the recent PHP drama). We can harden our application code as
+    much as we like, but if the underlying code is not safe we have an issue - this
+    combined with you remark on attackers being in the advantage versus defenders.
+    At this time the only way that I see to protect this is by using some kind of
+    (virtual) private network. What are your ideas on this?
+  score: 0
+  posted_at: '2026-10-28T09:25:46Z'
+- id: '50271022'
+  parent_id: '50268974'
+  author: ErroneousBosh
+  text: "&gt; to very minimal and hyperspecific firmware (300 lines of assembly)<p>So,
+    just normal BIOS boot?"
+  score: 0
+  posted_at: '2026-10-28T09:32:25Z'
+- id: '50271065'
+  parent_id: '50270990'
+  author: b112
+  text: This is one of my biggest gripes with systemd.  Millions of lines of code.  Immense
+    complexity.  Constant churn.  Endless config changes(leading to outdated and potentially
+    dangerous configs).<p>Sysvinit, it&#x27;s a 1000 lines of code, maybe a bit more.  It&#x27;s
+    a rock compared to systemd.<p>So many devs have zero issue with large codebases.  Some
+    substitute &quot;small&quot; with &quot;perceived small because I pull in 10M
+    lines of node and composer packages&quot;.<p>And of course the new goal is to
+    bring &quot;trusted computing&quot;, eg Microsoft style EEE to Linux with Lennart&#x27;s
+    now corporate gig.<p>But it is a different world.  So, what can you do?
+  score: 0
+  posted_at: '2026-10-28T09:40:53Z'
+- id: '50271113'
+  parent_id: '50265410'
+  author: kikdij
+  text: I don&#x27;t know where Ars Technica got that from, though. The initial advisory
+    [1] says:<p>&gt; The attacker needs only to deliver a unicast ICMP error message
+    addressed to the client&#x27;s IP, from any network distance.<p>[1] <a href="https:&#x2F;&#x2F;github.com&#x2F;tianocore&#x2F;edk2&#x2F;security&#x2F;advisories&#x2F;GHSA-99cj-7hg9-mp4m"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;tianocore&#x2F;edk2&#x2F;security&#x2F;advisories&#x2F;GHSA-9...</a>
+  score: 0
+  posted_at: '2026-10-28T09:47:28Z'
+- id: '50271179'
+  parent_id: '50271065'
+  author: IshKebab
+  text: "&gt; It&#x27;s a rock compared to systemd.<p>Complete opposite of my experience.
+    I&#x27;ve never had a single problem with SystemD - it&#x27;s one of the most
+    surprisingly reliable parts of Linux IMO.<p>In contrast SysVInit worked ok on
+    servers and sort of on desktops, but on laptops forget it."
+  score: 0
+  posted_at: '2026-10-28T09:57:45Z'
+- id: '50271186'
+  parent_id: '50270368'
+  author: Good4boothee
+  text: The solution needs to be convenient, in practice that trumps security every
+    time. If i need to run my existing apps in Linux VM under seL4, others, fully
+    featured hypervisors will look more enticing.
+  score: 0
+  posted_at: '2026-10-28T09:58:31Z'
+- id: '50271284'
+  parent_id: '50270648'
+  author: throwaway27448
+  text: 'Man learns how to split code file in two. Man thinks world ending. Man not
+    know up from down, hot from cold. All code: single file! Single file! Single file!
+    Shell is HERESY! libc is HERESY! A user&#x2F;kernelspace divide is HERESY! Sound
+    abstractions only useful abstractions.'
+  score: 0
+  posted_at: '2026-10-28T10:12:57Z'
+- id: '50271315'
+  parent_id: '50268974'
+  author: sylware
+  text: You cannot trust compiler generated machine code and&#x2F;or significantly
+    sized runtimes. Some simple binary specifications with some assembly implementations
+    (could be on several ISAs, x86_64, RISC-V, etc).<p>I guess this is what they are
+    doing.
+  score: 0
+  posted_at: '2026-10-28T10:18:58Z'
+- id: '50271322'
+  parent_id: '50271065'
+  author: crote
+  text: But that&#x27;s not quite the the right comparison, is it?<p>Systemd doesn&#x27;t
+    <i>just</i> replace 1000 lines of Sysvinit. Those &quot;millions of lines&quot;
+    also replace the thousands of hundred-line poorly-vetted Bash scripts you need,
+    plus your syslog daemon, plus dozens of &quot;fork, setuid, chroot&quot; variants,
+    plus your cron daemon. And that&#x27;s <i>before</i> we get into things not directly
+    related to service management, like logind, hostnamed, networkd, resolved, timesyncd,
+    tmpfiles, udevd, and so on.<p>Systemd is an umbrella project. Look at each individual
+    component in isolation, and the <i>vast</i> majority of the time the thing it
+    replaces is significantly more complex and fragile. Systemd was adopted by most
+    of the Linux ecosystem because it was a significant improvement over the status
+    quo, there is no need to invent conspiracy theories here.
+  score: 0
+  posted_at: '2026-10-28T10:19:56Z'
+- id: '50271357'
+  parent_id: '50270354'
+  author: squidmaster
+  text: That was always little more than unix propaganda.  Until GNU came around and
+    held itself to a higher standard, it was common for unix tools to do bullshit
+    like read input into fixed length line buffers and <i>silently</i> truncate anything
+    longer (when they weren&#x27;t overtly crashing).  &quot;Do it well&quot;, hardly.  A
+    more true to life account of &quot;unix philosophy&quot; is &quot;worse is better&quot;.  It
+    doesn&#x27;t have to be good, merely available.
+  score: 0
+  posted_at: '2026-10-28T10:26:07Z'
+- id: '50271369'
+  parent_id: '50269613'
+  author: blablabla123
+  text: The value of UEFI is surely dubious. I recently had to update my BIOS using
+    Windows PE since there was no way of doing this on Linux. Of course my default
+    boot was reset. The funny thing was though that I could repair my Linux boot using
+    Win PE.<p>Before the only way was either fdisk &#x2F;mbr to reset for Windows
+    or boot a Linux system on stick&#x2F;CD and rebuild grub&#x2F;lilo. The latter
+    has gotten unreasonably complex though so I rather wouldn&#x27;t do this manually.<p>My
+    verdict is that UEFI does something right, but created for the enterprise sector
+    carries way too much complexity. Obviously so complex that everybody ends up using
+    the original same code base.
+  score: 0
+  posted_at: '2026-10-28T10:27:39Z'
+- id: '50271472'
+  parent_id: '50271322'
+  author: dv_dt
+  text: But is the actual architecture of systemd giving simple, securable, reviewable
+    boundaries?  This is a codebase that runs in stages of inherent privelege and
+    very low levels in many linux systems.
+  score: 0
+  posted_at: '2026-10-28T10:43:25Z'
+- id: '50271513'
+  parent_id: '50270316'
+  author: crote
+  text: 'Some thin clients boot from PXE so they can forego local storage completely.
+    Being able to update the entire fleet and completely prevent any kind of local
+    changes with a simple reboot is a gamechanger for maintainability: you can be
+    100% certain that every &quot;installation&quot; is absolutely identical.<p>It
+    also wasn&#x27;t uncommon to install a server&#x27;s hypervisor to a USB flash
+    drive, or a <i>tiny</i> local SSD. Server motherboards with internal USB-A ports
+    (not headers, the entire port) were quite common, and there were even IDE flash
+    drives you could plug straight into the motherboard. This allowed you to completely
+    dedicate the regular storage to the client VMs. I would not be surprised if that
+    same market also used PXE for the same reason in larger installations.'
+  score: 0
+  posted_at: '2026-10-28T10:48:10Z'
+- id: '50271619'
+  parent_id: '50268974'
+  author: nicce
+  text: "&quot;Popular&quot; usually means that supporting many use cases. Many use
+    cases means a lot of code. Probably means increased complexity. Tailored hyperspecific
+    firmware is much more usable now and maybe you can even formally verify it."
+  score: 0
+  posted_at: '2026-10-28T11:00:11Z'
+- id: '50271624'
+  parent_id: '50269448'
+  author: terom
+  text: I would be concerned for e.g. Hetzner dedicated servers. They assumedly PXE-boot
+    consumer grade UEFI hardware that is unlikely to have a dedicated management interface.
+    Exploitability would depend on how well they filter ICMP  within their network.
+  score: 0
+  posted_at: '2026-10-28T11:01:02Z'
+- id: '50271726'
+  parent_id: '50270293'
+  author: arcfour
+  text: You need to compile a device tree for every single device you want to support
+    individually, whereas x86 has ACPI to avoid that mess. ACPI is its own mess, yes.
+    And UBoot is great. But it isn&#x27;t a standalone replacement for a unified firmware
+    interface&#x2F;&quot;BIOS&quot;&#x2F;whatever.
+  score: 0
+  posted_at: '2026-10-28T11:14:09Z'
+- id: '50271868'
+  parent_id: '50271369'
+  author: jeroenhd
+  text: Your computer&#x27;s awful implementation says nothing about UEFI as a whole,
+    it just means that the vendor you bought your hardware from sucks at writing firmware.
+    I update my UEFI from the standard fwupdmgr command in Linux and it maintains
+    the standard bootloader. In fact, unlike BIOS, it allows me to select a bootloader
+    on startup if I want.<p>The absolute hackery that was necessary for BIOS to do
+    something as basic as booting an operating system was due for removal. And looking
+    at the rest of the bootstrapping landscape (ARM phones, Linux routers, you name
+    it), I&#x27;ll take UEFI over any of its competitors any day of the week.
+  score: 0
+  posted_at: '2026-10-28T11:27:31Z'
+- id: '50271913'
+  parent_id: '50270316'
+  author: jeroenhd
+  text: PXE can be great for stacks of virtual machines or thin client setups.<p>PXE
+    has been enabled by default on most devices I bought, but only after USB and SSD
+    boot failed, so in practice it&#x27;s not really something you&#x27;re going to
+    see a lot of.
+  score: 0
+  posted_at: '2026-10-28T11:32:37Z'
+- id: '50271922'
+  parent_id: '50270354'
+  author: shellwizard
+  text: Until you link against xz
+  score: 0
+  posted_at: '2026-10-28T11:34:02Z'
+- id: '50271978'
+  parent_id: '50269769'
+  author: hn_submit
+  text: 'Hint: they use BIOS, which is still present on all modern PCs. Even if UEFI
+    provides something similar it&#x27;s way too fat.<p>And why do I need mouse and
+    network? Just so the BIOS firmware can show me a graphical interface and connect
+    directly to the internet?'
+  score: 0
+  posted_at: '2026-10-28T11:39:27Z'
+- id: '50271989'
+  parent_id: '50270240'
+  author: fn-mote
+  text: Exactly. No phones have PXE boot enabled, regardless of the rest.
+  score: 0
+  posted_at: '2026-10-28T11:40:19Z'
+- id: '50272101'
+  parent_id: '50271978'
+  author: blueflow
+  text: bro you responding to Matthew Garret. I don&#x27;t want to defend either of
+    you two but you set the bar pretty low.
+  score: 0
+  posted_at: '2026-10-28T11:50:05Z'
+- id: '50272563'
+  parent_id: '50271868'
+  author: za_creature
+  text: Unfortunately, there&#x27;s plenty of vendors that suck at writing firmware,
+    and most usually give up on updating it immediately after they&#x27;ve EOL&#x27;d
+    the hardware revision. The hackintosh project mostly works by replacing the bugs
+    from the vendor firmware into the bugs that apple expected from their x86 line
+    of pcs.<p>If most vendors suck at writing firmware, it might be a problem with
+    the spec though.
+  score: 0
+  posted_at: '2026-10-28T12:31:46Z'
+- id: '50272603'
+  parent_id: '50270648'
+  author: StilesCrisis
+  text: When Knuth wrote that, I don&#x27;t think dependencies as we think of them
+    today existed. Libraries were few and solved specialized, difficult problems.
+  score: 0
+  posted_at: '2026-10-28T12:36:48Z'
+- id: '50272614'
+  parent_id: '50271179'
+  author: adrian_b
+  text: I do not believe that it is possible for SysVInit itself to have any problems
+    on laptops, because it does nothing that is hardware specific.<p>Since 2005, for
+    more than 2 decades, I have used on all my laptops only Linux with Gentoo and
+    SysVInit and I have never encountered any problem.<p>Perhaps you mean that your
+    particular Linux distribution had some startup shell scripts (which are not a
+    part of SysVinit, they are only launched by SysVInit when the run level is changed)
+    that were buggy on laptops. Buggy initialization shell scripts are not unusual,
+    but such scripts are normally small and any bugs are relatively easy to find and
+    fix, unlike with the bugs of SystemD.<p>While you did not had any single problem
+    with SystemD, when I first tried SystemD (with Arch Linux; that was many years
+    ago and that specific bug must have been fixed some time later, but nonetheless
+    it convinced me that the developers of SystemD are incompetent), SystemD exhibited
+    the most stupid bug that I have ever seen in a computer, i.e. the shutdown of
+    the computer was very slow in comparison with SysVInit and moreover it sometimes
+    failed, which is a thing that I have never seen in a computer elsewhere.<p>The
+    reason for failure was that SystemD, instead of just sending signals to all processes
+    like SysVInit, it used some inter-process messaging through DBus. At that time,
+    at least on my computer, there was some kind of race condition between the concurrent
+    processes that were terminated and some times DBus died before some other process
+    that tried to communicate through it and then the SystemD shutdown sequence remained
+    stuck and it never completed.<p>I consider such a bug much worse than a bug caused
+    by carelessness, like a buffer overflow, because it demonstrated an erroneous
+    design of the architecture of the system.
+  score: 0
+  posted_at: '2026-10-28T12:37:42Z'
+- id: '50272631'
+  parent_id: '50270467'
+  author: rocqua
+  text: Even if there is a passphrase, this would likely allow for brute-forcing it.
+  score: 0
+  posted_at: '2026-10-28T12:38:44Z'
+- id: '50272692'
+  parent_id: '50270035'
+  author: dspillett
+  text: It could push us further into dependency hell though, as people look for a
+    package that does a simple task instead of the risk of expanding their bug&#x2F;attack
+    surface area, assuming that the library they depend upon has itself been checked
+    (and the same for its dependencies all the way down).<p>Trying to keep code small
+    could backfire by ballooning dependency on dependencies to do more of the work.
+  score: 0
+  posted_at: '2026-10-28T12:43:48Z'
+- id: '50272704'
+  parent_id: '50271922'
+  author: some_furry
+  text: Yeah, well, the Unix philosophy is from the engineering department, not the
+    accounting department.<p>Funding FOSS projects without advertising, dopamine-hacking,
+    donation-begging into the void, or being subsidized by billionaires that want
+    to influence the electorate is still largely unsolved.
+  score: 0
+  posted_at: '2026-10-28T12:44:59Z'
+- id: '50272779'
+  parent_id: '50271868'
+  author: blablabla123
+  text: Yeah, probably it doesn&#x27;t make things better that the vendor is Lenovo.
+    I think for some models fwupdmgr might work but not for everything.
+  score: 0
+  posted_at: '2026-10-28T12:53:08Z'
+- id: '50272781'
+  parent_id: '50269540'
+  author: jodrellblank
+  text: |-
+    &gt; “<i>I say imagine you built a 10 story building, but every few years it was a story at a time with the renovations along the way</i>”<p>See the Versailles Wedding Hall collapse in Israel, 2001: <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Versailles_wedding_hall_disaster" rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Versailles_wedding_hall_disast...</a><p>&quot;&quot;&quot;
+    An initial inquiry blamed the collapse on the Pal-Kal method of constructing light-weight coffered concrete floor systems which was banned shortly after …<p>Late in the construction process … a third storey was added. … the structure supporting the new third storey was subjected to much greater loading than was originally anticipated. … somewhat mitigated by the construction of partitions on the floor below …<p>A few weeks before the collapse, the wedding hall owners decided to remove the partitions. …  the floor above began to sag several centimetres. The owners viewed the sagging floor primarily as a cosmetic problem, and attempted to level it with additional grout and fill … a new and significant dead load at the weakened area.
+    &quot;&quot;&quot;
+  score: 0
+  posted_at: '2026-10-28T12:53:16Z'
+- id: '50272785'
+  parent_id: '50271369'
+  author: p_l
+  text: UEFI provides a way to update in OS agnostic way, unfortunately motherboard
+    vendors do not necessarily provide archives that can be uploaded this way (assuming
+    they updated to new enough version to support the interface in the first place).<p>Unfortunately
+    we&#x27;re suffering from &quot;eh, it boots windows, ship it&quot; mentality
+    of many hardware manufacturers, whether back in horrible era of BIOS emulating
+    faux IBM PC 5150, or with modern UEFI
+  score: 0
+  posted_at: '2026-10-28T12:53:44Z'
+- id: '50272805'
+  parent_id: '50272779'
+  author: p_l
+  text: "&quot;Think&quot; (thinkpad, thinkcentre, etc.) series have AFAIK completely
+    different R&amp;D team plus the whole aspect of building on top of what was done
+    for earlier models, and on those the UEFI Capsule mechanism (which allows passing
+    firmware updates from booted OS to firmware) works just fine - it&#x27;s also
+    used to ship firmware upgrade as part of Windows Update."
+  score: 0
+  posted_at: '2026-10-28T12:56:04Z'
+- id: '50272831'
+  parent_id: '50272704'
+  author: 59percentmore
+  text: 'The problem isn&#x27;t that we don&#x27;t know how (solved issue: UBI, higher
+    pay for less work, high marginal income tax rate, unrealized capital gains tax
+    above a minimum, land tax, etc.).<p>The problem isn&#x27;t even the billionaires.<p>The
+    problem is convincing comfortable, ambitious middle-high earners to put a cap
+    on their and their bosses&#x27; prospects in exchange for the stability (and subsequent
+    ground preparation for innovation) of a higher floor.<p>They&#x27;re the stumbling
+    block because they&#x27;re the ones who, on balance and en masse, have the money
+    and votng power to excuse and enable the status quo.'
+  score: 0
+  posted_at: '2026-10-28T12:57:50Z'
+- id: '50272848'
+  parent_id: '50271113'
+  author: adrian_b
+  text: If such an ICMP error message comes from outside, the firewalls with stricter
+    rules will reject it, because it does not correspond to packets sent by the victim
+    computer.<p>Moreover, Ethernet booting is done usually from separate management
+    networks to which only the administrators are connected, on which also other vulnerable
+    protocols, like IPMI, are used, not from the main network that may have an Internet
+    gateway.
+  score: 0
+  posted_at: '2026-10-28T12:59:08Z'
+- id: '50272872'
+  parent_id: '50271369'
+  author: esseph
+  text: "&gt; The value of UEFI is surely dubious. I recently had to update my BIOS
+    using Windows PE since there was no way of doing this on Linux.<p>That sucks.
+    I&#x27;m able to upgrade the firmware of my <i>checks</i> 8 year old motherboard
+    <i>and</i> its backup firmware from a linux shell."
+  score: 0
+  posted_at: '2026-10-28T13:00:54Z'
+- id: '50272896'
+  parent_id: '50272779'
+  author: esseph
+  text: "&gt; probably it doesn&#x27;t make things better that the vendor is Lenovo.<p>You
+    mean, arguably the best vendor of linux laptops since 2005?<p>Just google around."
+  score: 0
+  posted_at: '2026-10-28T13:02:37Z'
+- id: '50273034'
+  parent_id: '50272692'
+  author: ses1984
+  text: When op talks of keeping code small I’m pretty sure they’re talking about
+    all code including dependencies.
+  score: 0
+  posted_at: '2026-10-28T13:15:16Z'
+- id: '50273064'
+  parent_id: '50271619'
+  author: kode-targz
+  text: |-
+    &gt; Tailored hyperspecific firmware is much more usable now<p>&quot;Now&quot;?
+    It&#x27;s always been that way. Most developers just didn&#x27;t want to admit it because it meant more work and that their past existing work was shite.
+  score: 0
+  posted_at: '2026-10-28T13:17:04Z'
+- id: '50273542'
+  parent_id: '50268974'
+  author: jodrellblank
+  text: I feel like I was reading this from Marcus Ranum in 2005 in the famous article
+    &quot;Six dumbest ideas in computer security&quot;[1] where he wrote about just
+    running a custom webserver that accepts only correctly specified requests, instead
+    of Apache and a filter set of bad-request-blockers and a default-permit firewall
+    and etc.<p>That article makes good re-reading in the &quot;Penetrate and Patch&quot;
+    section now, in the days of AI exploits popping up faster and faster.<p>[1] <a
+    href="https:&#x2F;&#x2F;www.ranum.com&#x2F;security&#x2F;computer_security&#x2F;editorials&#x2F;dumb&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.ranum.com&#x2F;security&#x2F;computer_security&#x2F;editorials&#x2F;...</a>
+  score: 0
+  posted_at: '2026-10-28T13:50:35Z'
+- id: '50273659'
+  parent_id: '50271065'
+  author: gf000
+  text: Sysvinit is not 1000 lines if you add all the scripts you have to write to
+    get feature parity with systemd. And now you have written that in the worst programming
+    language ever created, bash, that is basically impossible to not be chock full
+    of errors.<p>Frankly the amount of crying I have seen about systemd... and it&#x27;s
+    basically the most stable part of my Linux installs. Even though I really have
+    seen everything else &quot;catch on fire&quot;.
+  score: 0
+  posted_at: '2026-10-28T13:58:50Z'
+- id: '50273678'
+  parent_id: '50271472'
+  author: gf000
+  text: Well, my only gripe with it is that it&#x27;s C. Otherwise it&#x27;s very
+    modular.
+  score: 0
+  posted_at: '2026-10-28T13:59:45Z'
+- id: '50273930'
+  parent_id: '50272563'
+  author: jeroenhd
+  text: BIOS didn&#x27;t have a spec at all, it was hacks stapled to reverse-engineered
+    chips that were Good Enough To Ship for IBM decades ago.<p>Most of the alternatives
+    require brand+model specific kernels and boot mechanisms, at least UEFI has a
+    standard. I dream of the day smartphones run UEFI instead of the weird factory
+    bootloader + custom uBoot mess that we&#x27;re in right now.
+  score: 0
+  posted_at: '2026-10-28T14:12:49Z'
+- id: '50273973'
+  parent_id: '50272779'
+  author: jeroenhd
+  text: Lenovo&#x27;s business&#x2F;prosumer line is one of the best in terms of firmware
+    that I&#x27;ve seen so far (though I do have my gripes with their decisions on
+    laptops with Nvidia GPUs).<p>I don&#x27;t even want to touch Lenovo devices that
+    don&#x27;t have &quot;think&quot; in their name, and even that has been tainted
+    by their consumer brand at this point.
+  score: 0
+  posted_at: '2026-10-28T14:14:57Z'
+article:
+  url: https://arstechnica.com/security/2026/10/code-execution-flaw-in-uefi-firmware-threatens-most-servers-on-planet-earth/
+  title: Code-execution flaw in UEFI firmware affects most servers on planet Earth
+    - Ars Technica
+  fetch_status: success
+  content: "Story text\n\n\\* Subscribers only  \n &nbsp;&nbsp;[Learn more](/store/product/subscriptions/)\n\nDefenders
+    across the world face the burden of responding to yet another botched code-execution
+    vulnerability, this time in boot-time firmware used by most of the world’s server
+    vendors and data centers.\n\nThe vulnerability, with a severity rating of 9.5
+    out of 10, resides in the TianoCore [EDK II](https://www.tianocore.org/tianocore-wiki.github.io/reference/external-resources/edk_ii.html),
+    an open source codebase that hardware makers and cloud providers use to create
+    the UEFI firmware that runs during the boot-up sequence. Last year, a representative
+    of the UEFI Forum [called](https://uefi.org/sites/default/files/resources/State%20of%20UEFI_UEFI%202025%20DevCon_Final.pdf)
+    EDK2 the “preeminent solution / implementation of the UEFI specifications.” Virtually
+    all UEFI suppliers (sometimes still called IBVs or independent BIOS vendors),
+    including AMI, Insyde, and Phoenix, use the reference code extensively. Project
+    Mu, Microsoft’s hardened EDK2 fork, used the code containing the vulnerable component
+    as well.\n\nThe vulnerability, tracked as CVE-2026-97631, is a memory-corruption
+    flaw in an [ICMP](https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol)
+    component that attackers can exploit to execute malicious code that runs before
+    the operating system and firmware can implement defenses like [Secure Boot](https://uefi.org/sites/default/files/resources/UEFI_Secure_Boot_in_Modern_Computer_Security_Solutions_2019.pdf),
+    which establishes a chain of trust for all code, including the [Trusted Platform
+    Module](https://www.trustedcomputinggroup.org/work-groups/tpm) (TPM), loaded during
+    boot. While final payloads delivered by CVE-2026-97631 have no persistence—meaning
+    they run only once—they can give attackers a wide opening to install other payloads
+    that also run each time early in the boot process.\n\n## The cat has left the
+    bag\n\nThe parties that discovered CVE-2026-97631—Alex Matrosov of Anthropic and
+    Dan Holmes of Google—had arranged for it to stay under wraps until a coordinated
+    disclosure that was scheduled for January. AMI, a maker of motherboards and other
+    hardware, published [this pull request](https://github.com/tianocore/edk2/pull/13200)
+    last month that detailed the vulnerability and included a code fix. Once the post
+    came to the attention of the discovering parties, TianoCore Project members published
+    a [public advisory](https://github.com/tianocore/edk2/security/advisories/GHSA-99cj-7hg9-mp4m)
+    last week.\n\nWith publicly available patch code, it will be trivial for advanced
+    hackers to learn how the vulnerability is triggered and to build working exploits.
+    Further compounding the urgency, patching UEFI code vulnerabilities in millions
+    of end devices sold and used by thousands of hardware makers and cloud providers
+    is cumbersome and time-consuming. Word of the vulnerability comes six days after
+    another botched disclosure, this one involving a [critical code-execution vulnerability](https://arstechnica.com/security/2026/10/php-maintainers-tell-web-devs-to-prepare-themselves-for-critical-security-patches/)
+    in the PHP programming language.\n\n“This vulnerability in the ICMP parser of
+    the EDK2 network stack is interesting in terms of how it affects the chain of
+    trust and the broader ecosystem,” said HD Moore, creator of Metasploit and chief
+    research officer at security firm Dragos. “An attacker intent on compromising
+    a nearby endpoint or server could use this bug to hijack program flow at a point
+    where the boot process still has access to sensitive components, like the endpoint’s
+    TPM. This could be used to break disk encryption for cases where an attacker has
+    short-term network access (and it would be even easier in a theft scenario).”\n\nCVE-2026-97631
+    is a 16-year-old buffer overflow in the PXE-Base Code driver (NetworkPkg/UefiPxeBcDxe),
+    which is responsible for allowing servers, storage equipment, and other devices
+    to boot using code downloaded from a local network. During this process—known
+    as the pre-execution environment boot—the driver uses a network listener to monitor
+    for ICMP errors. Because the driver doesn’t enforce a memory copy limit of 504
+    bytes, overwriting adjacent data, a malicious insider or a hacker who has gained
+    low-level access to a local network can send an error message that appends code
+    past this limit. The IUEFI module running on the CPU then becomes corrupted.\n\nAs
+    the official advisory puts it:\n\n> During network boot, the PXE Base Code driver
+    (NetworkPkg/UefiPxeBcDxe) keeps a receive request open for ICMP error messages
+    and copies each received message into the fixed 504-byte field Mode.IcmpError
+    of its private context structure. The copy loop’s bounds handling is incorrect
+    in both the IPv4 and IPv6 handlers (PxeBcIcmpErrorDpcHandle and PxeBcIcmp6ErrorDpcHandle):
+    for a message longer than 504 bytes it still copies bytes into the field, and
+    it advances the destination pointer by the cumulative rather than the per-fragment
+    length, so an oversized message writes attacker-controlled bytes past the field.
+    Nothing earlier on the receive path restricts the message length.\n\nThe malicious
+    error can be delivered through a simple unicast sent from any network distance
+    to a target device’s IP address, as long as it’s sent during the PXE boot sequence.
+    An attacker can deliver a denial-of-service by causing the boot sequence to hang.
+    When the attacker knows what the target firmware build is, it can plant a “counterfeit
+    event” that executes the malicious code on the CPU in its UEFI firmware environment.
+    The code runs in ring 0, a CPU’s most privileged execution level. Because exploits
+    bypass attestation processes designed to cryptographically prove to remote servers
+    that the hardware is secure, they present a key opportunity for elevating limited
+    privileges.\n\n## Yet another forever day\n\nCVE-2026-97631 joins a long list
+    of previously discovered vulnerabilities in UEFI or code that works closely with
+    it. The most severe of them, [LogoFail](https://arstechnica.com/security/2023/12/just-about-every-windows-and-linux-device-vulnerable-to-new-logofail-firmware-attack/),
+    stemmed from logo images included in the UEFI of just about every hardware maker.
+    Rendering bugs allowed attackers to subvert the chain of trust UEFI enforces and
+    go on to install malicious components before the OS loaded or Secure Boot ran.
+    [PixieFail](https://arstechnica.com/security/2024/01/new-uefi-vulnerabilities-send-firmware-devs-across-an-entire-ecosystem-scrambling/)
+    was a vulnerability similar to CVE-2026-97631. It, too, was the result of faulty
+    PXE boot flaws in EDK2. Following discovery of the vulnerability, researchers
+    embarked on [multiple](https://introspector.oss-fuzz.com/project-profile?project=edk2)
+    [fuzzing](https://www.ndss-symposium.org/wp-content/uploads/2025-400-paper.pdf)
+    [projects](https://github.com/google/oss-fuzz/tree/master/projects/edk2) designed
+    to surface other critical flaws in the open source code library. It appears those
+    efforts failed to find this latest flaw.\n\nOther recently discovered UEFI flaws
+    include:\n\n- [PKFail](https://arstechnica.com/security/2024/09/secure-boot-neutering-pkfail-debacle-is-more-prevalent-than-anyone-knew/),
+    a supply-chain failure resulting from non-production test platform keys, public
+    for more than a decade before they were discovered, used in hundreds of device
+    models\n- [BootHole](https://arstechnica.com/information-technology/2020/07/new-flaw-neuters-secure-boot-but-theres-no-reason-to-panic-heres-why/)\n-
+    [Bootkit](https://arstechnica.com/security/2024/11/found-in-the-wild-the-worlds-first-unkillable-uefi-bootkit-for-linux/)
+    and\n- [BlackLotus](https://arstechnica.com/information-technology/2023/03/unkillable-uefi-malware-bypassing-secure-boot-enabled-by-unpatchable-windows-flaw/)\n\nLike
+    CVE-2026-97631, exploitation or use of these payloads is appealing because it
+    allows attackers to infect machines early in the boot process, before"
+  error:
+  fetched_at: '2026-10-28T14:51:44Z'
+archived_at: '2026-10-28T14:51:52Z'

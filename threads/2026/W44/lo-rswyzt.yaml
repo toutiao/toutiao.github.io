@@ -5,14 +5,14 @@ post:
   title: 'Fuzzers vs. AI: Comparing Fuzzilli and BigSleep on JavaScript Engines'
   url: https://projectzero.google/2026/10/fuzzing-v-AI.html
   hn_url: https://lobste.rs/s/rswyzt
-  score: 11
+  score: 17
   author: ni5arga
   posted_at: '2026-10-27T19:08:23Z'
-  fetched_at: '2026-10-28T04:14:50Z'
+  fetched_at: '2026-10-28T14:51:52Z'
   article_url: https://projectzero.google/2026/10/fuzzing-v-AI.html
   article_fetch_status: success
-  article_fetched_at: '2026-10-28T04:14:55Z'
-  raw_comment_count: 3
+  article_fetched_at: '2026-10-28T14:51:56Z'
+  raw_comment_count: 4
   tags:
   - ai
   - security
@@ -36,8 +36,23 @@ comments:
   author: glacambre
   text: Interesting, could you expand on the techniques you use and the context you
     use them in (e.g. what language, what kind of software you test, etc)?
-  score: 1
+  score: 2
   posted_at: '2026-10-28T01:49:23Z'
+- id: lo-70vbrb
+  parent_id: '0'
+  author: Student
+  text: |-
+    I’m working in golang for a fairly  standard graphql server backed by mostly Postgres. The challenges are the usual caching and auth correctness ones. A prompt that says at greater length than this sentence “look for bugs, use your adversarial review capabilities, you may write tests to find bugs, including generative tests, remember concurrency bugs exist” and specifying the parts of the code to look at (unfortunately I think I may not have saved this as a skill) finds about 40% as many issues as the other approach.
+    The other approach is defining what properties we want to hold for the component in question (in this case our Apache casbin backed auth system), asking the agent to build a deterministic simulation testing suite (based on the existing deterministic simulation testing apparatus I’d had an agent build previously, plus rapid  go generative testing library) run that, then use its adversarial review capabilities to find additional bugs or areas where we should define additional tests.
+    As I recall about half the findings of the prompt-to-find-bugs exercise overlapped with those found by the generative and review process.
+    I also had a hybrid process using that one shot prompt and showing it the results of the generative process. That overlapped but, like the other two that still found some of its own findings.
+    What I didn’t attempt to do was score the importance or quality of the findings at this stage. Amalgamating the whole set of findings there were a bunch of findings that amounted to identifying that we have some potential panics, including explicitly coded ones (which LLMs seem to hate), through real belt and braces type findings about what incorrectly constructed rules could do to the system (not a problem in practice), through to real concurrency bugs and a bug in the underlying casbin library (which in fairness I had told the agents about the manifestation of that bug in production; I’ve yet to report it to the casbin project although I should) which required multiple steps to reproduce.
+    I did (a) ask two of the agents to propose a design solution to the bugs and to the performance problem that together with the one observed bug kicked off the exercise; and (b) send them on their way to get on with it. At this stage I did give them read access to our staging database. Both of the agents I asked proposed some variant of sharding the authentication per customer.
+    I’ve had both agents working in parallel, reviewing each other’s work, telling them to adopt what seems better from the other’s work and sending each of them the reviews of the other. I’ve also been having the agents split out their work into chunks that can reasonably be considered as a single stacked merge request (MR), and having them look specifically at their own and each other’s chunks, I’ve reviewed the converged version and made suggestions (in several cases quite significant as to structuring or finding what was a fairly obvious race condition).
+    It’s not in production, and the work is ongoing, because (a) reviewing the produced amount of code is slow (b) the agents work in the background but their work is also quite slow (c) my only colleague who would review this is not at all AI-pilled which means I really need to bring each MR up to the highest standard (d) I’m doing this in parallel with other work that can be delivered faster.
+    Obviously the further you read into my account above the less this sounds like a win for agentic engineering. Ruthlessly qualifying the importance of the findings would have been a huge improvement in the process. Secondly, I wasn’t particularly familiar with this part of the codebase, so reading it thoroughly no later than the finding qualification stage would almost certainly have been smart.
+  score: 1
+  posted_at: '2026-10-28T14:12:46Z'
 article:
   url: https://projectzero.google/2026/10/fuzzing-v-AI.html
   title: 'Fuzzers vs. AI: Comparing Fuzzilli and BigSleep on JavaScript Engines -
@@ -131,4 +146,4 @@ article:
     - First, we look for bugs filed by one system that get deduplicated into a bug filed by the other. For example crbug.com/522410841 which is a duplicate of crbug.com/522860268. This is a clea
   error:
   fetched_at: '2026-10-28T04:14:55Z'
-archived_at: '2026-10-28T04:14:55Z'
+archived_at: '2026-10-28T14:51:56Z'

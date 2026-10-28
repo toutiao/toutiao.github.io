@@ -1,0 +1,931 @@
+---
+post:
+  id: '50271640'
+  title: Ten days later, Git on macOS still trusts the compromised eMudhra certificates
+  url: https://emudhra.we-have-a-problem.com/apple.html
+  hn_url: https://news.ycombinator.com/item?id=50271640
+  score: 465
+  author: galadran
+  posted_at: '2026-10-28T11:03:40Z'
+  fetched_at: '2026-10-28T14:51:39Z'
+  article_url: https://emudhra.we-have-a-problem.com/apple.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T14:51:39Z'
+  raw_comment_count: 180
+comments:
+- id: '50272089'
+  parent_id: '50271640'
+  author: aaomidi
+  text: This file is used by a bunch of CLIs. Apple is fundamentally dropping the
+    ball here from a security perspective.
+  score: 0
+  posted_at: '2026-10-28T11:48:59Z'
+- id: '50272137'
+  parent_id: '50271640'
+  author: davidcollantes
+  text: "Running (uname -a) Darwin arrakis.local 27.2.0 Darwin Kernel Version 27.2.0:
+    Wed Oct 14 23:47:07 PDT 2026; root:xnu-13432.41.4~25&#x2F;RELEASE_ARM64_T8132
+    arm64, I get the following for both:<p><pre><code>    curl: (60) SSL certificate
+    OpenSSL verify result: unable to get local issuer certificate (20)    \n    More
+    details here: https:&#x2F;&#x2F;curl.se&#x2F;docs&#x2F;sslcerts.html\n\n    curl
+    failed to verify the legitimacy of the server and therefore could not\n    establish
+    a secure connection to it. To learn more about this situation and\n    how to
+    fix it, please visit the webpage mentioned above.</code></pre>"
+  score: 0
+  posted_at: '2026-10-28T11:53:35Z'
+- id: '50272149'
+  parent_id: '50271640'
+  author: InsidiousWombat
+  text: That&#x27;s disingenuous title<p>It should be &quot;Apple still ships compromised
+    CA in &#x2F;etc&#x2F;&quot;. Git is just a victim like every other app using system
+    CA
+  score: 0
+  posted_at: '2026-10-28T11:54:39Z'
+- id: '50272155'
+  parent_id: '50271640'
+  author: qaz_plm
+  text: 'Apple’s statement: <a href="https:&#x2F;&#x2F;support.apple.com&#x2F;en-us&#x2F;149555"
+    rel="nofollow">https:&#x2F;&#x2F;support.apple.com&#x2F;en-us&#x2F;149555</a>'
+  score: 0
+  posted_at: '2026-10-28T11:55:16Z'
+- id: '50272181'
+  parent_id: '50272155'
+  author: davidcollantes
+  text: Indeed!<p><pre><code>  On Mac, some command-line tools included with macOS
+    or the Xcode Command Line Tools (including curl, git, python3, ruby, perl, and
+    openssl) check certificates against &#x2F;etc&#x2F;ssl&#x2F;cert.pem. For certificates
+    that chain to a root CA certificate in this file, these tools don&#x27;t check
+    Apple&#x27;s block or whether the certificate has been revoked. This file will
+    be updated in a future macOS update. If you use these tools and don&#x27;t want
+    to wait for the update, you can remove root CA certificates from the file.</code></pre>
+  score: 0
+  posted_at: '2026-10-28T11:57:11Z'
+- id: '50272188'
+  parent_id: '50271640'
+  author: cromka
+  text: Things like this is why I moved back to Linux after 10 years on macOS.
+  score: 0
+  posted_at: '2026-10-28T11:57:42Z'
+- id: '50272213'
+  parent_id: '50272181'
+  author: ChrisRR
+  text: Why are they not just pushing out the update asap? Unless they&#x27;re relying
+    on the compromised certs, then it feels it should be incredibly trivial to push
+  score: 0
+  posted_at: '2026-10-28T12:00:13Z'
+- id: '50272224'
+  parent_id: '50272155'
+  author: ChrisClark
+  text: Are they just saying &quot;do it yourself&quot;? Can&#x27;t they just send
+    out an update?
+  score: 0
+  posted_at: '2026-10-28T12:01:02Z'
+- id: '50272229'
+  parent_id: '50272149'
+  author: okr
+  text: Is using the system CA not the way to go?<p>(on linux you always have the
+    update-ca-certificates command that downloads the root certificates from a trusted™
+    source. but sure, it will not help, if each command starts to bring their own
+    ca package :)
+  score: 0
+  posted_at: '2026-10-28T12:01:30Z'
+- id: '50272253'
+  parent_id: '50272149'
+  author: sscaryterry
+  text: Agreed.
+  score: 0
+  posted_at: '2026-10-28T12:04:06Z'
+- id: '50272279'
+  parent_id: '50272213'
+  author: MomsAVoxell
+  text: 'Theory: Apple are moving away from user-controllable development tools, towards
+    an AI-hosted application development framework which removes the divide between
+    user and developer, and thus the need for specialized developer tools.<p>The writing
+    is on the wall for the command line tools.<p>(We can already see this tooling
+    devaluation happening all over the place. Apple have their variant of this response
+    to the AI tooling-paradigm tsunami…)'
+  score: 0
+  posted_at: '2026-10-28T12:05:52Z'
+- id: '50272309'
+  parent_id: '50272149'
+  author: broken-kebab
+  text: So git on MacOS does trust compromised certs by default? What&#x27;s wrong
+    with the title then?
+  score: 0
+  posted_at: '2026-10-28T12:08:31Z'
+- id: '50272323'
+  parent_id: '50272279'
+  author: JoBrad
+  text: Apple seems like an odd company to lump into this group. Any evidence for
+    this? I removed the cert using a CLI command on my Mac.
+  score: 0
+  posted_at: '2026-10-28T12:09:59Z'
+- id: '50272335'
+  parent_id: '50272137'
+  author: jpitz
+  text: Uname is not enough here to identify what has or has not been done to your
+    system to deal with the compromised certificates.
+  score: 0
+  posted_at: '2026-10-28T12:11:30Z'
+- id: '50272337'
+  parent_id: '50272309'
+  author: Liquid_Fire
+  text: It&#x27;s not factually wrong, but it implies that this is something specific
+    to Git, and possibly might even be interpreted that it is Git&#x27;s fault.<p>In
+    reality it&#x27;s macOS shipping the outdated certificates, and it affects various
+    other command-line tools, like Curl.
+  score: 0
+  posted_at: '2026-10-28T12:11:44Z'
+- id: '50272338'
+  parent_id: '50272309'
+  author: publlus_enigma
+  text: Because it isn&#x27;t got specifically, it is anything that uses the installation
+    of OpenSSL provided by Apple as part of macOS (at least is my understanding).
+  score: 0
+  posted_at: '2026-10-28T12:11:46Z'
+- id: '50272340'
+  parent_id: '50272149'
+  author: JoBrad
+  text: The lede is certainly buried, but calling out an affected development toll
+    on a tech site isn’t a bad call.<p>Pretty disappointed that Apple hasn’t pushed
+    out an emergency patch to address this, though.
+  score: 0
+  posted_at: '2026-10-28T12:11:49Z'
+- id: '50272347'
+  parent_id: '50272188'
+  author: petcat
+  text: Not sure what Linux offers that&#x27;s any better.  Didn&#x27;t Debian ship
+    trivially weak SSH keys for over 2 years because they were trying to silence Valgrind
+    warnings and the random maintainer had no idea what they were doing and there
+    was no oversight or peer review whatsoever?
+  score: 0
+  posted_at: '2026-10-28T12:12:24Z'
+- id: '50272357'
+  parent_id: '50272181'
+  author: bestouff
+  text: Some depending on the executable, sometimes it goes through &#x2F;etc&#x2F;ssl&#x2F;cert.pem
+    and sometimes through the Apple framework. This OS is a mess.
+  score: 0
+  posted_at: '2026-10-28T12:13:19Z'
+- id: '50272364'
+  parent_id: '50272279'
+  author: HFguy
+  text: Command line tools seem to mesh well with AI. Why would they move away?
+  score: 0
+  posted_at: '2026-10-28T12:13:50Z'
+- id: '50272372'
+  parent_id: '50272309'
+  author: smithofsmiths
+  text: The problem is that the title implies that it&#x27;s somehow the fault of
+    the package. That&#x27;s it, that&#x27;s the problem; the title is disingenuous
+    in its claim.<p>&quot;Ten days later, Apple Image Viewer on macOS still trusts
+    the compromised eMudhra certificates&quot; doesn&#x27;t sound as catchy, but is
+    equally correct because the apps use system CA.
+  score: 0
+  posted_at: '2026-10-28T12:14:32Z'
+- id: '50272382'
+  parent_id: '50271640'
+  author: paaloeye
+  text: |-
+    &gt; Anyone can intercept any HTTPS connection these tools make.<p>yeah, it&#x27;s not ideal but the scale of the threat is way overblown tbh.
+    You have to compromise a lot to be able to make a MITM here.<p>Let&#x27;s not treat it like PHP2Shell.
+  score: 0
+  posted_at: '2026-10-28T12:15:20Z'
+- id: '50272394'
+  parent_id: '50272213'
+  author: ratorx
+  text: The issue might be Root CA vs intermediates. The root CA that eMudhra rolls
+    upto may be used for other intermediates which were not compromised or revoked.
+    Removing the root CA will mean that these valid certificates no longer work.<p>This
+    is technically a problem in the CLI - it needs to support revocations properly,
+    not rely on root CA verification only. I’m not sure though whether there’s a standardised
+    mechanism (that Apple supports) for CLIs.<p>&gt; These steps affect every tool
+    that uses &#x2F;etc&#x2F;ssl&#x2F;cert.pem. Afterward, tools that use only this
+    file might not be able to verify some websites whose certificates chain to these
+    root CA certificates through intermediate CAs that weren&#x27;t affected.
+  score: 0
+  posted_at: '2026-10-28T12:16:09Z'
+- id: '50272406'
+  parent_id: '50272279'
+  author: ilvez
+  text: That would be a killer move!
+  score: 0
+  posted_at: '2026-10-28T12:17:27Z'
+- id: '50272412'
+  parent_id: '50272394'
+  author: matharmin
+  text: In pracitce, those root CAs have already been removed in major browsers. If
+    your server uses them, you would likely have needed to migrate to another root
+    already.
+  score: 0
+  posted_at: '2026-10-28T12:18:18Z'
+- id: '50272424'
+  parent_id: '50272382'
+  author: mschuster91
+  text: '&gt; You have to compromise a lot to be able to make a MITM here.<p>It&#x27;s
+    trivially easy to mount an ARP spoofing attack. I did that at school two decades
+    ago and on-the-fly rewrote &lt;img src=...&gt; to hardcore porn images for funsies.<p>mitmproxy
+    [1], a popular toolkit for making that easy, has the option to generate &quot;eMudhra&quot;
+    certificates on the fly now.<p>It is <i>trivially easy</i> to compromise things,
+    all you need is physical access to the network.<p>[1] <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50189232">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50189232</a>'
+  score: 0
+  posted_at: '2026-10-28T12:19:20Z'
+- id: '50272439'
+  parent_id: '50272229'
+  author: Zambyte
+  text: Exactly, so the title wrongly frames git as trusting certs that it shouldn&#x27;t,
+    when it&#x27;s correctly trusting the system certs, and MacOS is wrongly trusting
+    certs.
+  score: 0
+  posted_at: '2026-10-28T12:20:49Z'
+- id: '50272440'
+  parent_id: '50272188'
+  author: boxed
+  text: It&#x27;s funny. When Apple goes in and changes peoples systems deeply without
+    consent then it&#x27;s Apple being evil. When they don&#x27;t, it&#x27;s Apple
+    being evil. Heads I win, tails you lose.
+  score: 0
+  posted_at: '2026-10-28T12:20:51Z'
+- id: '50272446'
+  parent_id: '50272337'
+  author: boxed
+  text: Not macOS, but XCode dev tools. Still, it is Apple that ships them for sure.
+  score: 0
+  posted_at: '2026-10-28T12:21:34Z'
+- id: '50272449'
+  parent_id: '50272424'
+  author: paaloeye
+  text: "&gt;  all you need is physical access to the network.<p>yeah, it&#x27;s trivial
+    to punch somebody in the face in the morning, all you need to do is to be by their
+    bad in the morning when they are waking up."
+  score: 0
+  posted_at: '2026-10-28T12:21:46Z'
+- id: '50272450'
+  parent_id: '50272364'
+  author: MomsAVoxell
+  text: Precisely because the agent is becoming the user of the command line tools
+    now, these are all being abstracted behind an interface which blurs the developer&#x2F;user
+    requirement…<p>The original question is, why aren’t Apple fixing the CA problems
+    for the command line tools (whereas they have done it for .app’s such as Safari),
+    and the reasoning is, because the <i>user will just have to fix it themselves</i>,
+    because Apple don’t <i>care</i> about the command line users - they see that these
+    command line tools are, indeed, <i>becoming the front-line for agentic development</i>,
+    so .. presumably, they have an .app bundle which does away with this problem,
+    to be shipped on the horizon ...
+  score: 0
+  posted_at: '2026-10-28T12:21:49Z'
+- id: '50272478'
+  parent_id: '50272449'
+  author: bawolff
+  text: Have you never used wifi at a coffee shop?<p>Physical access to networks isn&#x27;t
+    that hard to come by.
+  score: 0
+  posted_at: '2026-10-28T12:24:19Z'
+- id: '50272481'
+  parent_id: '50272335'
+  author: davidcollantes
+  text: No, no, I meant it to show that the machine is running the current&#x2F;latest
+    macOS, and the results I am getting from curl on the two URLs.
+  score: 0
+  posted_at: '2026-10-28T12:24:26Z'
+- id: '50272483'
+  parent_id: '50272323'
+  author: MomsAVoxell
+  text: They have been treating the command line tools like the bastard child of their
+    software portfolio, and then there’s that whole drive to remove the Unix’ness
+    of MacOS .. Swift&#x2F;SwiftUI is a drive away from lower tooling layers, and
+    .. there is no doubt they already have a developer agent of their own, internally,
+    pushing their abilities to make projections of hardware requirements and  specifications
+    for the next 2 - 5 years …<p>I’m not saying they’re going to deprecate XCode today,
+    but I do believe they will “agent’ize” Developer Tooling <i>drastically</i> in
+    the next year or so.  <i>Agents are becoming the most important user of command
+    line tools.</i><p>Because they have to, in order to catch up with NVidia, their
+    only real competition.  If you want to understand why I think that, its because
+    I have been developing and deploying cross-platform Linux-centric (but MacOS and
+    Windows targeting) applications, mostly for the ARM platform but also with Intel
+    (SIMD on both) .. for the past few months, and I haven’t touched an IDE in a month.
+    On DGX Spark.  Which turns out is a truly, utterly, mind-blowingly great platform
+    to do cross platform high performance application development…
+  score: 0
+  posted_at: '2026-10-28T12:24:30Z'
+- id: '50272491'
+  parent_id: '50272440'
+  author: simondotau
+  text: I&#x27;ve seen this referred to as <i>the &quot;All Roads Lead to Rome&quot;
+    fallacy.</i>
+  score: 0
+  posted_at: '2026-10-28T12:25:06Z'
+- id: '50272502'
+  parent_id: '50272229'
+  author: mschuster91
+  text: The problem is macOS has two system CA stores, keychain and &#x2F;etc&#x2F;ssl&#x2F;cert.pem.<p>That
+    is unequivocally <i>bad</i>, similar to Java which ships its own keystore.jks
+    and many applications shipping its own copy on top of that. True nightmare fodder.
+  score: 0
+  posted_at: '2026-10-28T12:25:42Z'
+- id: '50272503'
+  parent_id: '50272347'
+  author: bawolff
+  text: In 2008.<p>I don&#x27;t think its wise to make current security decisions
+    based on screw ups from almost 2 decades ago.
+  score: 0
+  posted_at: '2026-10-28T12:25:47Z'
+- id: '50272505'
+  parent_id: '50272382'
+  author: rekoil
+  text: It&#x27;s pretty easy to compromise things like McDonalds or Starbucks WiFi
+    hotspots though, just setup a Pineapple with the right SSIDs and a 5G modem, funnel
+    your target domains through your mitmproxy via the DHCP DNS server you&#x27;re
+    providing, and that&#x27;s basically it.<p>I agree it&#x27;s not PHP2Shell, but
+    its certainly not being &quot;way overblown&quot; here.
+  score: 0
+  posted_at: '2026-10-28T12:25:54Z'
+- id: '50272528'
+  parent_id: '50272449'
+  author: mschuster91
+  text: Public wifi hotspots tend to give you that opportunity. Large commercial hotspots
+    have inter-client communication blocked, but your average coffee shop style network?
+    You&#x27;re lucky if it even is an isolated VLAN from the shop&#x27;s cash register
+    lol.
+  score: 0
+  posted_at: '2026-10-28T12:27:50Z'
+- id: '50272539'
+  parent_id: '50272347'
+  author: usef-
+  text: That&#x27;s one issue from one distro 18 years ago. Have there been recent
+    things? This thread is about a today&#x27;s MacOS, and an issue known publicly
+    for more than a week.
+  score: 0
+  posted_at: '2026-10-28T12:29:09Z'
+- id: '50272544'
+  parent_id: '50272213'
+  author: teki_one
+  text: I think since 10.15 the built-in command line tools in MacOS are there mostly
+    for backwards compatibility. This was clearly communicated about scripting languages,
+    but there was a feeling back then that this was about the whole lot (all cli tools).
+  score: 0
+  posted_at: '2026-10-28T12:29:36Z'
+- id: '50272545'
+  parent_id: '50272503'
+  author: petcat
+  text: Well that &quot;screw up&quot; was so egregious that it should take at least
+    a decade to regain any trust.<p>I don&#x27;t really care one way or another.  I
+    use Linux and I use macOS.  But I&#x27;m not naive to think the security is any
+    better in one or the other.
+  score: 0
+  posted_at: '2026-10-28T12:29:41Z'
+- id: '50272547'
+  parent_id: '50272478'
+  author: paaloeye
+  text: |-
+    I have, but good luck predicting where I&#x27;m going to have my next cuppa.
+    Outside of petty crimes mentioned, I don&#x27;t see how it could be industrially weaponised to make actual damage.<p>Regardless, real bad actors are busy compromising your next `npm install` anyway. Much better reward.
+  score: 0
+  posted_at: '2026-10-28T12:29:46Z'
+- id: '50272548'
+  parent_id: '50272424'
+  author: sersi
+  text: I don&#x27;t know why you&#x27;re downvoted, any public wifi access point
+    in a shop could be compromised and users would never notice.
+  score: 0
+  posted_at: '2026-10-28T12:29:56Z'
+- id: '50272550'
+  parent_id: '50272503'
+  author: baobabKoodaa
+  text: Two decades
+  score: 0
+  posted_at: '2026-10-28T12:30:11Z'
+- id: '50272555'
+  parent_id: '50272503'
+  author: simondotau
+  text: Somehow I doubt many people will be saying that about eMudhra a decade from
+    now.
+  score: 0
+  posted_at: '2026-10-28T12:30:41Z'
+- id: '50272560'
+  parent_id: '50272394'
+  author: ChrisRR
+  text: I&#x27;m no expert in the matter, but weren&#x27;t only the intermediate CAs
+    compromised, not the root?
+  score: 0
+  posted_at: '2026-10-28T12:31:23Z'
+- id: '50272587'
+  parent_id: '50272560'
+  author: ratorx
+  text: Yep, but the certs.pem file only contains the root and does not know anything
+    about intermediates.<p>So the only way to fix apps that don’t handle revocation
+    of intermediates (eg the ones that only look at certs.pem) is to revoke the root.
+  score: 0
+  posted_at: '2026-10-28T12:34:50Z'
+- id: '50272592'
+  parent_id: '50272547'
+  author: voidUpdate
+  text: Compromising a specific person is difficult. Compromising any old person is
+    trivial
+  score: 0
+  posted_at: '2026-10-28T12:35:18Z'
+- id: '50272599'
+  parent_id: '50272547'
+  author: rolosa
+  text: Why would I care about you specifically, and not the dozens of other people
+    working at the coffee shop? Does the world revolve around you?
+  score: 0
+  posted_at: '2026-10-28T12:36:11Z'
+- id: '50272606'
+  parent_id: '50272483'
+  author: pasc1878
+  text: Apple has pretty well always got users to do things via the GUI – look at
+    the Lisa and Classic MacOS.<p>CLI is just a thing that NeXT had and even that
+    made it easy to use GUI tools.<p>Xcode is a GUI tool – it happens to expose some
+    cli tools but they could be covered up – however some developers would complain
+    a lot so I don&#x27;t see that happeneing.
+  score: 0
+  posted_at: '2026-10-28T12:36:52Z'
+- id: '50272616'
+  parent_id: '50272394'
+  author: brewmarche
+  text: Apple’s own security framework is supported by curl with OpenSSL or GnuTLS
+    (build with .&#x2F;configure --with-apple-sectrust). That blocks the intermediate
+    certificates via the same mechanism Safari uses for example.<p>Not sure why macOS
+    doesn’t ship such a build of curl.
+  score: 0
+  posted_at: '2026-10-28T12:37:47Z'
+- id: '50272620'
+  parent_id: '50272424'
+  author: treesknees
+  text: Client isolation is very common on wireless and wired LANs these days in enterprise
+    and guest network environments. You also have tools like dynamic arp inspection
+    to block poisoning attempts via the network switch.<p>If you get past all of that,
+    you still need a victim who is actively using a cli tool on macOS using https.<p>It’s
+    not impossible, but the conditions are much more specific than those needed to
+    inject porn into a webpage on a poorly configured school network in 2006.
+  score: 0
+  posted_at: '2026-10-28T12:38:04Z'
+- id: '50272630'
+  parent_id: '50272545'
+  author: fg137
+  text: Security practice was generally very, very bad two decades ago, by today&#x27;s
+    standards, across the industry.<p>I don&#x27;t see the point of being so fixated
+    on that.
+  score: 0
+  posted_at: '2026-10-28T12:38:44Z'
+- id: '50272632'
+  parent_id: '50272279'
+  author: zf00002
+  text: The command line tooling lets you&#x2F;AI manage a lot of your app store interactions
+    though. It&#x27;s much easier to use that way then trying to deal with the Steamworks
+    UI and doing things manually.
+  score: 0
+  posted_at: '2026-10-28T12:38:50Z'
+- id: '50272710'
+  parent_id: '50272630'
+  author: petcat
+  text: I was responding to the OP saying &quot;stuff like this is why I&#x27;m moving
+    back to Linux&quot;.  It&#x27;s nonsense.
+  score: 0
+  posted_at: '2026-10-28T12:45:53Z'
+- id: '50272751'
+  parent_id: '50272503'
+  author: efficax
+  text: i think you mean almost 20 years ago old man
+  score: 0
+  posted_at: '2026-10-28T12:49:51Z'
+- id: '50272763'
+  parent_id: '50272478'
+  author: ForHackernews
+  text: Great, you have an inconvenient way to possibly-maybe see some random&#x27;s
+    gmail inbox at Starbucks.<p>You&#x27;d be better off just mugging them in the
+    parking lot.
+  score: 0
+  posted_at: '2026-10-28T12:51:34Z'
+- id: '50272799'
+  parent_id: '50272137'
+  author: lukasgelbmann
+  text: You could be running a different version of curl, e.g. homebrew. Try `which
+    curl` and `&#x2F;usr&#x2F;bin&#x2F;curl &lt;url&gt;`.
+  score: 0
+  posted_at: '2026-10-28T12:55:29Z'
+- id: '50272802'
+  parent_id: '50272440'
+  author: '1970-01-01'
+  text: Let&#x27;s pretend there&#x27;s a night and day difference between pushing
+    some MP3 onto all iPhones and distrusting a chain of certs that hold the value
+    of &#x27;4&#x27;. At minimum Apple need to revoke everywhere these joke-level
+    certs live and as fast as possible, and on all devices which also means out of
+    support. Breaking is acceptable here as CA trust is fully compromised.
+  score: 0
+  posted_at: '2026-10-28T12:55:48Z'
+- id: '50272828'
+  parent_id: '50272481'
+  author: microtonal
+  text: |-
+    Maybe you have another curl in your path?<p><pre><code>    $ uname -a
+        Darwin MacBook 27.2.0 Darwin Kernel Version 27.2.0: Wed Oct 14 23:47:21 PDT 2026; root:xnu-13432.41.4~25&#x2F;RELEASE_ARM64_T6030 arm64 arm Darwin
+        $ which curl
+        &#x2F;usr&#x2F;bin&#x2F;curl
+        $ curl https:&#x2F;&#x2F;dv-g3b-emudhra.we-have-a-problem.com&#x2F;
+        Your client successfully connected to the site. That&#x27;s bad!</code></pre>
+  score: 0
+  posted_at: '2026-10-28T12:57:40Z'
+- id: '50272840'
+  parent_id: '50272347'
+  author: kobalsky
+  text: You are going so back that gmail was served over HTTP (not HTTPS) in that
+    era.<p>If that&#x27;s the worst you have against Linux then it looks like it has
+    done very well.
+  score: 0
+  posted_at: '2026-10-28T12:58:36Z'
+- id: '50272851'
+  parent_id: '50272424'
+  author: raverbashing
+  text: "&gt; all you need is physical access to the network<p>Yeah that&#x27;s not
+    so much &quot;trivially easy&quot;"
+  score: 0
+  posted_at: '2026-10-28T12:59:32Z'
+- id: '50272876'
+  parent_id: '50272502'
+  author: WesolyKubeczek
+  text: Also certifi in every Python venv, keystores in every single container, nested
+    keystores within that, it’s certificate matryoshkas all the way down!
+  score: 0
+  posted_at: '2026-10-28T13:01:13Z'
+- id: '50272910'
+  parent_id: '50272851'
+  author: breakwaterlabs
+  text: Do you have a cell phone? Do you use Wifi? Do you use an ISP who, in the last
+    few decades, has performed any form of interception or traffic-tampering?<p>I
+    hazard that the answer to all three of those is &quot;yes&quot;.
+  score: 0
+  posted_at: '2026-10-28T13:03:43Z'
+- id: '50272912'
+  parent_id: '50272876'
+  author: mschuster91
+  text: "&gt; keystores in every single container, nested keystores within that<p>At
+    least for that, in $OLDJOB I went and created a new keystore.jks myself to account
+    for an internal CA, so my successors can just update that file, restart the containers
+    and that&#x27;s it..."
+  score: 0
+  posted_at: '2026-10-28T13:03:45Z'
+- id: '50272917'
+  parent_id: '50272828'
+  author: davidcollantes
+  text: Aha! Touche! Indeed, I am using brew&#x27;s curl (&quot;&#x2F;opt&#x2F;homebrew&#x2F;opt&#x2F;curl&#x2F;bin&#x2F;curl&quot;).
+    That&#x27;s why; the one at &quot;&#x2F;usr&#x2F;bin&quot; connects just fine
+    (facepalm).
+  score: 0
+  posted_at: '2026-10-28T13:04:03Z'
+- id: '50272972'
+  parent_id: '50272505'
+  author: '1718627440'
+  text: Why would these public network would allow guest hosts to communicate with
+    each other?
+  score: 0
+  posted_at: '2026-10-28T13:09:23Z'
+- id: '50272989'
+  parent_id: '50272763'
+  author: jfyi
+  text: Sure practicality is always an issue. It&#x27;s an issue that attackers will
+    go to great lengths to resolve too.<p>What if it&#x27;s the Starbucks at 1730
+    Pennsylvania Ave NW, Washington, DC 20006 for an extended period of time? Compounded
+    with other security issues like password reuse...<p>We can always draw a line
+    and say, &quot;that&#x27;s not practical&quot;. The assessment an attacker is
+    likely to do is going to be &quot;is this practical inside my budget for the value
+    I hope to acquire?&quot; or maybe even just &quot;waow, lulz&quot;.
+  score: 0
+  posted_at: '2026-10-28T13:10:33Z'
+- id: '50273017'
+  parent_id: '50272972'
+  author: jon-wood
+  text: They don&#x27;t need to, a Pineapple (or anything else that can run a wireless
+    access point, you could do this with a laptop) just needs to advertise the expected
+    SSID and do so with a stronger signal than the official ones for people&#x27;s
+    devices to connect to it instead of the actual network.
+  score: 0
+  posted_at: '2026-10-28T13:13:16Z'
+- id: '50273018'
+  parent_id: '50272972'
+  author: HiJon89
+  text: I think they&#x27;re saying you create your own malicious wifi network and
+    people will unintentionally connect to it. This network specifies your malicious
+    DNS server via DHCP, and everything looks secure to the client. I think the main
+    issue with this in practice is that all the major browsers have been updated to
+    not trust these certs.
+  score: 0
+  posted_at: '2026-10-28T13:13:22Z'
+- id: '50273021'
+  parent_id: '50272972'
+  author: ctippett
+  text: 'They wouldn&#x27;t. A device like the Pineapple broadcasts its own copycat
+    wireless signal and tricks unsuspecting clients to connect to it thinking it&#x27;s
+    the real one.<p>Edit: Holy moly we all jumped on this comment at the same time
+    didn&#x27;t we.'
+  score: 0
+  posted_at: '2026-10-28T13:13:33Z'
+- id: '50273027'
+  parent_id: '50272972'
+  author: SXX
+  text: You dont interact with anyone. You just set your own hotspot and people will
+    connect to it.
+  score: 0
+  posted_at: '2026-10-28T13:14:16Z'
+- id: '50273033'
+  parent_id: '50272347'
+  author: '1718627440'
+  text: "&gt; the random maintainer had no idea what they were doing<p>Upstream was
+    involved in it as well.  Sure it was a communication problem, but it&#x27;s not
+    like the maintainer just decided to this unilaterally.  Also this WAS undefined
+    behaviour, so from a language perspective it was already broken, even if it worked
+    accidentally in practice."
+  score: 0
+  posted_at: '2026-10-28T13:15:15Z'
+- id: '50273050'
+  parent_id: '50272544'
+  author: abujazar
+  text: Git comes with Xcode, it doesn&#x27;t come with macOS by default.
+  score: 0
+  posted_at: '2026-10-28T13:16:12Z'
+- id: '50273061'
+  parent_id: '50272545'
+  author: cromka
+  text: "&gt; Well that &quot;screw up&quot; was so egregious that it should take
+    at least a decade to regain any trust.<p>Do you use macOS? Because if you did,
+    then how did you recover from them allowing anyone to straight-up log in as root
+    without password? And then <i>mess up</i> the fix for that bug? That wasn&#x27;t
+    2008, that was 8 years ago."
+  score: 0
+  posted_at: '2026-10-28T13:16:54Z'
+- id: '50273078'
+  parent_id: '50272440'
+  author: '1718627440'
+  text: It&#x27;s funny, when I do steal something I get called bad, and when I do
+    nothing and turn the blind eye to others stealing, I get called bad too.<p>Morality
+    doesn&#x27;t solely depend on action or inaction, it also matter what you act
+    or don&#x27;t act to.
+  score: 0
+  posted_at: '2026-10-28T13:18:13Z'
+- id: '50273082'
+  parent_id: '50272840'
+  author: cromka
+  text: Not really, no. HTTPS was used, except for log-in only. But cookies traveled
+    unencrypted, so you had access to the account anyhow.<p>And not just GMail, this
+    was virtually every service out there. From a perspective, it&#x27;s laughable
+    how bad security was back then.
+  score: 0
+  posted_at: '2026-10-28T13:18:31Z'
+- id: '50273093'
+  parent_id: '50272440'
+  author: cromka
+  text: Eh? Changes systems without consent? Is that the ONLY way to update a fatal
+    flaw in system? Normal update channels don&#x27;t work?<p>Besides, how does this
+    relate to my Linux point, where no one installs anything without you knowing it?
+  score: 0
+  posted_at: '2026-10-28T13:19:40Z'
+- id: '50273110'
+  parent_id: '50273018'
+  author: rekoil
+  text: So you target some host like ssh.dev.azure.com, find all the hooks in the
+    proper repo the client is trying to access, make a new commit that puts your persistence
+    payload in one of them that you expect will be executed soon, this script can
+    additionally &quot;correct&quot; the git state when it finally runs, and moves
+    its persistence to some more appropriate location.<p>Users will be none-the-wiser
+    because they&#x27;re not accessing these hosts through a web browser, and you
+    net a few more compromised hosts in your inventory.
+  score: 0
+  posted_at: '2026-10-28T13:20:45Z'
+- id: '50273121'
+  parent_id: '50272620'
+  author: 9dev
+  text: "…and yet it doesn&#x27;t help at all if a laptop sees an AP with strong signal
+    in its vicinity and connects to that instead of the meticulously configured AP
+    that sits behind the counter with a slightly weaker signal."
+  score: 0
+  posted_at: '2026-10-28T13:21:37Z'
+- id: '50273130'
+  parent_id: '50272446'
+  author: SahAssar
+  text: Does &#x2F;etc&#x2F;ssl&#x2F;cert.pem not exist if you don&#x27;t install
+    XCode?
+  score: 0
+  posted_at: '2026-10-28T13:22:07Z'
+- id: '50273197'
+  parent_id: '50272229'
+  author: RetroTechie
+  text: "&gt; Is using the system CA not the way to go?<p>Yes, and that makes not
+    dealing with this issue worse on Apple&#x27;s part. If MacOS&#x27; setup somehow
+    doesn&#x27;t allow untangling a (still deemed trustworthy?!?) root certificate
+    issued by eMudhra from the broken intermediate certificates, then revoke that
+    whole chain including the root &amp; accept collateral damage.<p>Failing that
+    just provides an incentive for apps to do their own chain-of-trust implementations.
+    Which like you said is <i>not</i> the way to go."
+  score: 0
+  posted_at: '2026-10-28T13:28:03Z'
+- id: '50273199'
+  parent_id: '50272751'
+  author: bawolff
+  text: I edited my comment
+  score: 0
+  posted_at: '2026-10-28T13:28:18Z'
+- id: '50273237'
+  parent_id: '50272547'
+  author: bawolff
+  text: If they are specificly targeting you, then they probably dont need to use
+    the coffee shop. The coffee shop is for low skill attackers targeting people at
+    random.<p>If someone has it in for you and hired a high skill attacker, its not
+    a stretch to imagine they compromised your home network.
+  score: 0
+  posted_at: '2026-10-28T13:30:29Z'
+- id: '50273265'
+  parent_id: '50272440'
+  author: kqp
+  text: I don’t think you understand what consent means.
+  score: 0
+  posted_at: '2026-10-28T13:32:27Z'
+- id: '50273279'
+  parent_id: '50272449'
+  author: cryptonym
+  text: You don&#x27;t have physical access to the network, doesn&#x27;t mean other
+    actor aren&#x27;t here. Working for providers, governments, or being able to impersonate
+    them. This is a serious issue, it shouldn&#x27;t be downplayed.<p>If you think
+    it&#x27;s not that important, it becomes a critic about TLS and basically saying
+    that ciphers for web traffic are useless.
+  score: 0
+  posted_at: '2026-10-28T13:33:25Z'
+- id: '50273382'
+  parent_id: '50273021'
+  author: jfyi
+  text: "&gt; Holy moly we all jumped on this comment at the same time didn&#x27;t
+    we.<p>It&#x27;s good to see push back against this narrative that is trying to
+    develop that this isn&#x27;t any kind of big deal.<p>This has been every machine
+    on the internet compromised for at least 12 hours and probably some that are not
+    going to ever get patched."
+  score: 0
+  posted_at: '2026-10-28T13:40:33Z'
+- id: '50273595'
+  parent_id: '50273382'
+  author: rekoil
+  text: "&gt; probably some that are not going to ever get patched<p>This is a HUGE
+    deal for embedded devices, we can now mitm HTTPS traffic on many embedded device
+    running Linux produced between 2018 and now."
+  score: 0
+  posted_at: '2026-10-28T13:54:16Z'
+- id: '50273600'
+  parent_id: '50272763'
+  author: itintheory
+  text: "&gt; gmail inbox<p>Except it won&#x27;t impact gmail unless you&#x27;re accessing
+    it through curl. The browsers already distrusted the compromised intermediates
+    via CRL within hours of disclosure, and removed the affected root via update."
+  score: 0
+  posted_at: '2026-10-28T13:54:24Z'
+- id: '50273645'
+  parent_id: '50273093'
+  author: boxed
+  text: Because in the linux situation, you wouldn&#x27;t get such an update automatically
+    anyway so it&#x27;d be worse?
+  score: 0
+  posted_at: '2026-10-28T13:58:00Z'
+- id: '50273767'
+  parent_id: '50272547'
+  author: dahart
+  text: "&gt; good luck predicting where I’m going to have my next cuppa.<p>Why are
+    you assuming there isn’t someone else trying to hack you at the next cafe? Actual
+    damage can happen one person at a time, and can occasionally lead to larger scale
+    compromises. Randomizing your location isn’t going to reduce your risk. Now that
+    everyone who’s paying attention knows they can MITM your Mac, you shouldn’t trust
+    any network."
+  score: 0
+  posted_at: '2026-10-28T14:04:21Z'
+- id: '50273815'
+  parent_id: '50272616'
+  author: Orphis
+  text: It&#x27;s relatively new I think.
+  score: 0
+  posted_at: '2026-10-28T14:07:04Z'
+- id: '50273858'
+  parent_id: '50272213'
+  author: mike_hearn
+  text: 'Because to Apple once you open a terminal you leave the supported world behind.
+    This is a standard thing for them. Apple is not really a UNIX vendor and certainly
+    not a Linux vendor: they sell macOS which is primarily a consumer OS and has its
+    own APIs for everything.<p>Tools common on Linux like curl and git come with the
+    OS basically for developer convenience. Apple doesn&#x27;t write those programs,
+    they don&#x27;t use Apple&#x27;s APIs or platform features, and thus in some sense
+    you aren&#x27;t really meant to use them in Apple&#x27;s eyes. Ports of UNIX CLI
+    tools exist in a kind of semi-supported netherworld on macOS. They <i>run</i>
+    but they aren&#x27;t fully integrated or supported parts of the OS.'
+  score: 0
+  posted_at: '2026-10-28T14:09:49Z'
+- id: '50273864'
+  parent_id: '50273121'
+  author: treesknees
+  text: You’re not actually making the point you think you are. This comes back to
+    the original comment stating you need to compromise a lot to MITM here.<p>So you
+    need to somehow trick macOS into remotely connecting to the wrong bssid, and then
+    arp poison a user who happens to be using a macOS cli tool that’s using https.<p>Sounds
+    pretty targeted and unlikely to happen.
+  score: 0
+  posted_at: '2026-10-28T14:09:58Z'
+- id: '50273906'
+  parent_id: '50272337'
+  author: broken-kebab
+  text: Fair. I didn&#x27;t read it as something specific to git cause I know how
+    it works with MacOS
+  score: 0
+  posted_at: '2026-10-28T14:11:30Z'
+- id: '50273970'
+  parent_id: '50273110'
+  author: commandersaki
+  text: Yeah also got to be lucky that the users are using https and not ssh. You&#x27;re
+    very limited in what you can mitm, you&#x27;ll be trivially detected by patched
+    devices (though maybe not acted on because nobody is the wiser), but then you&#x27;ll
+    need to serve objects with common&#x2F;conflicting hashes -- fixing up that state
+    synchronisation (what you call &quot;correct&quot;) to then do nefarious things
+    is not trivial at all. Extremely difficult to pull off successfully for git anyways
+    or to do it in stealth.
+  score: 0
+  posted_at: '2026-10-28T14:14:48Z'
+- id: '50274000'
+  parent_id: '50272502'
+  author: kbolino
+  text: It&#x27;s also an indictment of Apple&#x27;s relationship to open source software.
+    Never mind contributing back to upstream, they haven&#x27;t even made the change
+    in their own fork to support their own keychain.
+  score: 0
+  posted_at: '2026-10-28T14:16:15Z'
+- id: '50274255'
+  parent_id: '50272394'
+  author: zarzavat
+  text: PKI works on trust. When a CA does things that violate that trust, their root
+    gets removed. That&#x27;s how it&#x27;s supposed to work.
+  score: 0
+  posted_at: '2026-10-28T14:30:34Z'
+- id: '50274388'
+  parent_id: '50272224'
+  author: nailer
+  text: 'I imagine their response would be: &quot;we need to parse a new file format,
+    that may have been edited by users, reliably. That takes time.&quot;'
+  score: 0
+  posted_at: '2026-10-28T14:37:01Z'
+article:
+  url: https://emudhra.we-have-a-problem.com/apple.html
+  title: Apple's git still trusts the compromised eMudhra certificates
+  fetch_status: success
+  content: |-
+    # Apple's git still trusts the compromised eMudhra certificates
+
+    **28th October 2026**
+
+    Apple was notified of the eMudhra incident on 17th October. As of 28th October, the developer tools Apple ships with macOS, including git, curl and python3, still trust the compromised certificates.
+
+    Worse, macOS 27.2, released on 26th October, did not fix the issue and undid the workaround that users had applied by hand, leaving them vulnerable again.
+
+    Meanwhile, [dozens of other projects](./#developers), many run by volunteers, shipped fixes days ago.
+
+    ## [Why does this matter?](#why)
+
+    Anyone can intercept any HTTPS connection these tools make.
+
+    For git, that means clones and pulls from `https://` remotes can deliver attacker-chosen code, pushes can be altered in transit, and your credentials, such as GitHub tokens, can be intercepted.
+
+    To check whether your git is affected, run:
+
+        git ls-remote https://git-emudhra.we-have-a-problem.com/check.git
+
+    A certificate error means your git is protected. If git lists a commit, your git is affected. Your connections to GitHub, or any other `https://` git remote, can be intercepted and tampered with.
+
+    To see an attack end to end, run the command below in a temporary directory. It clones a repository from a test server impersonating GitHub. The `-c` option redirects `github.com` to our test server for this one command only. The server presents a `github.com` certificate issued by one of the compromised eMudhra intermediates.
+
+        git -c http.curloptResolve=github.com:443:15.235.19.186 clone https://fake-user@github.com/galadran/emudhra-git-test
+
+    A patched git will refuse with a certificate error. If the clone succeeds, you'll see a `README.md` starting with **INTERCEPTED**.
+
+    A real attacker would not need the extra option. Anyone on the network path between you and GitHub can redirect your traffic themselves.
+
+    You can replace the demo repository with any other, public or private. Keep the `fake-user@` prefix. Without it, git would send your GitHub credentials to the test server. For example:
+
+        git -c http.curloptResolve=github.com:443:15.235.19.186 clone https://fake-user@github.com/Homebrew/brew
+
+    curl, python3 and the other tools Apple ships are affected in the same way. To check curl, run:
+
+        curl https://dv-g3b-noct-emudhra.we-have-a-problem.com/
+        curl https://dv-g3b-aaa-noct-emudhra.we-have-a-problem.com/
+
+    A certificate error means curl is protected.
+
+    ## [What should Apple do?](#ask)
+
+    Apple has already protected Safari and other apps built on its networking framework.
+
+    Apple needs to ship a fix for macOS developers as soon as possible, for example by removing the affected roots from `/etc/ssl/cert.pem`.
+
+    ## [What can developers do in the meantime?](#workaround)
+
+    The affected roots can be removed by hand. The [macOS workaround](./#macos-curl) on the main page walks through the steps. Apple's [guidance](https://support.apple.com/en-us/149555) states that macOS updates may revert the fix, so developers need to repeat the checks above and the workaround after every update until Apple ships a fix.
+
+    Security teams should also consider whether macOS runners are used in their CI or other build infrastructure and evaluate the supply chain risk.
+
+    * * *
+
+    Site published by [Dennis Jackson](https://github.com/dennisjackson). This site is the work of [many contributors](https://github.com/galadran/we-have-a-problem.com/graphs/contributors) from the community. The source is on [GitHub](https://github.com/galadran/we-have-a-problem.com) and PRs are welcome. Licensed under the [Apache License, Version 2.0](https://github.com/galadran/we-have-a-problem.com/blob/main/LICENSE).
+  error:
+  fetched_at: '2026-10-28T14:51:39Z'
+archived_at: '2026-10-28T14:51:52Z'
