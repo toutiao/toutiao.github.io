@@ -179,6 +179,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - 改 CLI 选项（增删改名）必须同步所有调用处（workflows / Makefile / skills / AGENTS.md）。守卫在**变更时**触发（check.yml push/PR + path 过滤，跑 make check-cli），不挂定时数据 run — 树静止时重验无意义，还会给数据管道加单点。
 - 测试克制：数据层改动用真实 HN URL 本地跑通再上 CI；Jekyll 可见的改动过 `make build` 即可；不为纯文案、样式改动写测试。
 - 已验证正向模式（保留勿回退）：列表行内热度趋势用零依赖 sparkline — `hn-heat.rb sparkline_points` 服务端确定性算好 `"x,y"` 点串，模板内联 `<svg class="spark"><polyline points="...">`（curve ≥3 点才渲染，移动端隐藏）。x 按真实日期间隔定位（`curve_day_offsets`，跨年单调）——复波间隔不被压缩；连续曲线与按点序布点等价。不用 JS 图表库，不改成 canvas/图片。
+- 已验证正向模式（保留勿回退）：聚簇话题热度 = 合并成员原始信号后单次压缩（`merge_topic_signals`：comment/score velocity 跨成员求和（评论集/HN item 不相交），expert/depth 取代表帖）——直接求和成员 heat 会双重计 log 压缩（log(1+a)+log(1+b) > log(1+a+b)）且把 ratio/百分位当可加量，同话题碎片化投稿即虚高。行业曲线是跨故事总能量语义，保持逐帖求和。
 
 ## 插件
 仅 `jekyll-seo-tag`。HTML 压缩用 `_config.yml` 的 `compress_html`（仅 production）。

@@ -48,7 +48,7 @@ TRENDS_AUX_WINDOWS = { 7 => TRENDS_PATH_7, 90 => TRENDS_PATH_90 }.freeze
 TRENDS_WINDOW_MAX = TRENDS_AUX_WINDOWS.keys.max
 CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
-RULE_VERSION = 'v3'
+RULE_VERSION = 'v4'
 WEIGHTS = { 'comment_vel' => 0.35, 'score_vel' => 0.25, 'expert' => 0.25, 'depth' => 0.15 }.freeze
 
 COHORT_WINDOW_DAYS = 14   # rolling window for expert cohort membership
@@ -298,6 +298,25 @@ def heat_value(signals)
     'depth' => Math.log(1 + signals['depth_p95']) / 1.5,
   }
   WEIGHTS.sum { |k, w| w * s[k] }.round(3)
+end
+
+# Topic-level signal merge: a cluster is scored as ONE virtual merged thread.
+# Activity signals sum across members (comment sets and HN items are disjoint),
+# then heat_value compresses the total once — summing per-thread heats instead
+# double-counts the log compression (log(1+a)+log(1+b) > log(1+a+b)), letting
+# many fragmented reposts outrank one genuine discussion. Quality signals
+# (expert_ratio, depth_p95) come from the representative (highest-heat)
+# member: a low-activity duplicate adds activity mass but cannot pump quality.
+def merge_topic_signals(members)
+  rep = members.max_by { |m| m['heat'] }
+  rs = rep['signals'] || {}
+  vels = members.filter_map { |m| m['signals'] && m['signals']['score_vel'] }
+  {
+    'comment_vel_24h' => members.sum { |m| m['signals'] ? (m['signals']['comment_vel_24h'] || 0) : 0 },
+    'score_vel' => vels.empty? ? nil : vels.sum,
+    'expert_ratio' => rs['expert_ratio'] || 0.0,
+    'depth_p95' => rs['depth_p95'] || 0,
+  }
 end
 
 # ── Daily heat file ──
@@ -629,15 +648,16 @@ def sparkline_points(curve, width: 100, height: 28, pad: 2)
   }.join(' ')
 end
 
-# Per-day thread heat map shared by every projection window (loading 90 day
-# files once instead of once per window)
-def load_per_day_thread_heat(today_payload, today, max_window)
+# Per-day thread data map shared by every projection window (loading 90 day
+# files once instead of once per window). Values carry each entry's heat AND
+# raw signals — topic curves merge member signals per day, then compress once.
+def load_per_day_thread_data(today_payload, today, max_window)
   map = Hash.new { |h, d| h[d] = {} }
   (max_window - 1).downto(0) do |back|
     d = today - back
     payload = (d == today) ? today_payload : load_day_heat(d)
     next unless payload
-    payload['entries'].each { |e| map[d][e['id']] = e['heat'] }
+    payload['entries'].each { |e| map[d][e['id']] = { 'heat' => e['heat'], 'signals' => e['signals'] } }
   end
   map
 end
@@ -649,7 +669,7 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
   entries = today_payload['entries']
 
   # Daily curves from historical heat files (shared across windows)
-  per_day_thread_heat = per_day || load_per_day_thread_heat(today_payload, today, window)
+  per_day_thread_data = per_day || load_per_day_thread_data(today_payload, today, window)
 
   # Topic aggregation: persistent cluster topics + singleton topics for uncovered threads
   topics = reg['topics'] || []
@@ -666,16 +686,18 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
   topic_entries = topic_members.map do |tid, ids|
     members = ids.map { |id| heat_by_id[id] }.compact
     next nil if members.empty?
-    heat = members.sum { |m| m['heat'] }.round(3)
-    deltas = members.filter_map { |m| m['delta_24h'] }
-    delta = deltas.empty? ? nil : deltas.sum.round(3)
+    heat = heat_value(merge_topic_signals(members)).round(3)
+    yday_members = ids.filter_map { |id| per_day_thread_data[today - 1][id] }
+    delta = yday_members.empty? ? nil : (heat - heat_value(merge_topic_signals(yday_members))).round(3)
     trend = members.any? { |m| m['trend'] == 'resurrected' } ? 'resurrected'
             : members.any? { |m| m['trend'] == 'new' } ? 'new'
             : delta && delta > TREND_DELTA_EPS ? 'up'
             : delta && delta < -TREND_DELTA_EPS ? 'down' : 'flat'
     curve = (window - 1).downto(0).filter_map do |back|
       d = today - back
-      v = ids.sum { |id| per_day_thread_heat[d][id] || 0 }.round(3)
+      present = ids.filter_map { |id| per_day_thread_data[d][id] }
+      next nil if present.empty?
+      v = heat_value(merge_topic_signals(present)).round(3)
       v > 0 ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
     end
     rep = members.max_by { |m| m['heat'] }
@@ -709,7 +731,7 @@ def build_trends(threads, reg, today_payload, now = Time.now.utc, window: TRENDS
   kept.each { |t| t['related'] = related_for(t, kept, threads, cohort) }
 
   # Industry aggregates (deterministic category map, see category_map.json)
-  industries = industry_curves(reg, per_day_thread_heat, kept, today, window)
+  industries = industry_curves(reg, per_day_thread_data, kept, today, window)
 
   counts = reg['threads'].values.group_by { |e| e['status'] }.transform_values(&:length)
   assigned = reg['threads'].count { |_id, e| e['category'] && e['category'] != 'other' }
@@ -772,7 +794,10 @@ def related_for(topic, topic_entries, threads, cohort)
   scored.first(RELATED_MAX).map { |r| { 'topic_id' => r['topic_id'], 'title' => r['title'], 'via' => r['via'] } }
 end
 
-def industry_curves(reg, per_day_thread_heat, topic_entries, today, window)
+# Industry curves aggregate per-thread heat as total energy (dozens of
+# independent stories per category — a sum, not a merged discussion; the
+# merge-then-compress rule applies to same-story clusters only)
+def industry_curves(reg, per_day_thread_data, topic_entries, today, window)
   cat_of_thread = {}
   reg['threads'].each { |id, e| cat_of_thread[id] = e['category'] || 'other' }
   topic_of_thread = {}
@@ -780,9 +805,9 @@ def industry_curves(reg, per_day_thread_heat, topic_entries, today, window)
   topic_heat = topic_entries.each_with_object({}) { |t, h| h[t['topic_id']] = t }
 
   by_cat = Hash.new { |h, k| h[k] = Hash.new { |h2, k2| h2[k2] = 0.0 } }
-  per_day_thread_heat.each do |d, heats|
-    heats.each do |id, heat|
-      by_cat[cat_of_thread[id] || 'other'][d] += heat
+  per_day_thread_data.each do |d, day_data|
+    day_data.each do |id, entry|
+      by_cat[cat_of_thread[id] || 'other'][d] += entry['heat']
     end
   end
 
@@ -794,7 +819,7 @@ def industry_curves(reg, per_day_thread_heat, topic_entries, today, window)
       v = daily[d].to_f.round(3)
       v > 0 ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
     end
-    driver_ids = (per_day_thread_heat[today] || {}).keys.select { |id| (cat_of_thread[id] || 'other') == cat }
+    driver_ids = (per_day_thread_data[today] || {}).keys.select { |id| (cat_of_thread[id] || 'other') == cat }
     drivers = driver_ids.filter_map { |id|
       t = topic_heat[topic_of_thread[id]]
       t ? { 'topic_id' => t['topic_id'], 'title' => t['title'], 'heat' => t['heat'] } : nil
@@ -826,8 +851,8 @@ def window_industry_curves(reg, per_day, topic_entries, today, window)
 
   by_cat = Hash.new { |h, k| h[k] = Hash.new(0.0) }
   days.each do |d|
-    per_day[d].each do |id, heat|
-      by_cat[cat_of_thread[id] || 'other'][d] += heat
+    per_day[d].each do |id, entry|
+      by_cat[cat_of_thread[id] || 'other'][d] += entry['heat']
     end
   end
 
@@ -875,18 +900,22 @@ def build_window_projection(threads, reg, per_day, window:, now: Time.now.utc, p
   end
 
   window_heat_of = lambda { |id|
-    days.sum { |d| per_day[d][id] || 0 }.round(3)
+    days.sum { |d| per_day[d][id] ? per_day[d][id]['heat'] : 0 }.round(3)
   }
 
   topic_entries = buckets.map do |tid, ids|
     curve = days.filter_map do |d|
-      v = ids.sum { |id| per_day[d][id] || 0 }.round(3)
+      present = ids.filter_map { |id| per_day[d][id] }
+      next nil if present.empty?
+      v = heat_value(merge_topic_signals(present)).round(3)
       v.positive? ? { 'd' => d.strftime('%m-%d'), 'h' => v } : nil
     end
     next nil if curve.empty?
 
-    today_heat = ids.sum { |id| per_day[today][id] || 0 }.round(3)
-    yday_heat = ids.sum { |id| per_day[today - 1][id] || 0 }.round(3)
+    today_members = ids.filter_map { |id| per_day[today][id] }
+    yday_members = ids.filter_map { |id| per_day[today - 1][id] }
+    today_heat = today_members.empty? ? 0.0 : heat_value(merge_topic_signals(today_members)).round(3)
+    yday_heat = yday_members.empty? ? 0.0 : heat_value(merge_topic_signals(yday_members)).round(3)
     delta_24h = (today_heat - yday_heat).round(3)
     rep = ids.max_by { |id| window_heat_of.call(id) }
     rep_entry = reg['threads'][rep] || {}
@@ -1037,7 +1066,7 @@ def run
   puts "Topics: #{reg['topics'].size} multi-thread (#{waves} recurring waves)"
 
   refresh_published if options[:mode] == :all
-  per_day = load_per_day_thread_heat(today_payload, now.to_date, [options[:window], TRENDS_WINDOW_MAX].max)
+  per_day = load_per_day_thread_data(today_payload, now.to_date, [options[:window], TRENDS_WINDOW_MAX].max)
   build_trends(threads, reg, today_payload, now, window: options[:window], cohort: cohort, per_day: per_day)
   # Companion windows (7d weekly / 90d quarterly), window-summed ranking;
   # skipped when the main window already covers that granularity
