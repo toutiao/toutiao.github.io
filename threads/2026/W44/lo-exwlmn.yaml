@@ -1,0 +1,166 @@
+---
+post:
+  id: lo-exwlmn
+  source: lobsters
+  title: GOTO Considered Totally Sick (for error handling in C)
+  url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
+  hn_url: https://lobste.rs/s/exwlmn
+  score: 21
+  author: eBPF
+  posted_at: '2026-10-28T16:07:18Z'
+  fetched_at: '2026-10-28T20:46:36Z'
+  article_url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T20:46:39Z'
+  raw_comment_count: 4
+  tags:
+  - c
+comments:
+- id: lo-tc2b8i
+  parent_id: '0'
+  author: dualvariable
+  text: Kids these days think they invented psychedelics, bisexuality, and using gotos
+    in C...
+  score: 10
+  posted_at: '2026-10-28T17:47:01Z'
+- id: lo-hp6pwj
+  parent_id: '0'
+  author: fanf
+  text: |-
+    C is getting a Zig-like defer feature https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3928.pdf
+    Worth noting that Golang’s defer is different from the Zig/C version: in Golang defer is scoped to a function, whereas in Zig and C it is scoped to a block. If you defer in a loop, Golang will build up an unbounded amount of work to do later (allocating on the heap), but Zig and C will run each defer statement between each iteration of the loop (using constant space).
+  score: 11
+  posted_at: '2026-10-28T18:07:37Z'
+- id: lo-etm0yg
+  parent_id: '0'
+  author: pervognsen
+  text: "I'm not going to address goto vs defer and just talk about the control flow
+    graph structure:\nNote that goto for error handling (and similar uses) maps directly
+    to structured programming with multi-level exits. Translating the article's example
+    to Rust using this recipe:\n'err_mem: {\r\n    // open the fd\r\n    if fd ==
+    -1 { break 'err_mem; }\r\n    // return successfully\r\n}\r\n// free mem\r\n//
+    return unsuccessfully\n\nIt maps to Wasm's structured control flow in exactly
+    the same way: br or br_if to an enclosing block.\nAnyway, this should convince
+    you that the difference is not that the control flow is unstructured (irreducible)
+    with goto error handling and structured (reducible) with multi-level exits. The
+    difference is that with blocks and multi-level exits the syntactic nesting (and
+    indentation) grows as you add multiple exit points. But you can change that by
+    making different syntax design choices in your language.\nAnd if you continue
+    to use goto for C error handling (like many of us do), then you can use this to
+    help win the argument the next time someone objects. :)"
+  score: 5
+  posted_at: '2026-10-28T19:08:22Z'
+- id: lo-4cglwg
+  parent_id: '0'
+  author: orib
+  text: |-
+    For what it's worth, defer ends up not cleaning up the code that much. It got standardized partly because everyone was already inventing their own versions of it with compiler extensions, so the standards committee had to chose between the language having it in a standard form or a nonstandard form.
+    (I attended that standards meeting)
+  score: 2
+  posted_at: '2026-10-28T20:31:28Z'
+article:
+  url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
+  title: GOTO Considered Totally Sick (for error handling in C)
+  fetch_status: success
+  content: "# GOTO Considered Totally Sick (for error handling in C)\nOct. 25th, 2026\n\nI
+    recently started writing C again for the first time since 2018, and handling errors
+    has been an especially difficult adjustment coming from languages like Go and
+    Zig that coddle me with their wonderful `defer` and `errdefer`. Then I read some
+    [emails from John Carmack on inlined code](https://cbarrete.com/carmack.html)
+    that gave me an epiphany on writing cleaner error handling code, and now I want
+    to share it with the world.\n\n# But First Let’s Defer\n\nI write Go all day at
+    my dayjob, and error handling is pretty trivial. When there’s an error we wrap
+    it and bubble it up, and let some top dog up the call stack figure out what they
+    want to do with it. If there is resource cleanup involved, it’s made easy with
+    `defer`:\n\n    type Doer interface {\n        MightError(int) error\n        Lock()\n
+    \       Unlock()\n    }\n    \n    func SomeFunc(d Doer) error {\n        d.Lock()\n
+    \       defer d.Unlock()\n    \n        if err := d.MightError(3); err != nil
+    {\n            return errors.Wrap(err, \"Doer.MightError()\")\n        }\n    \n
+    \       // the rest of this very important function has been hidden from you for
+    esoteric reasons\n    }\n\nSometimes there’s more complicated handling, but in
+    99% of scenarios it’s that simple because Go doesn’t have manual memory allocation
+    and you don’t need to worry about cleaning it up when there’s an error.\n\nZig
+    on the other hand does require you to manually manage memory, which I find a little
+    more difficult because I’m not experienced enough for it to be second nature like
+    it is when I write Go. Here’s a snippet from my toy multiplexer that uses `errdefer`:\n\n
+    \   fn init(allocator: std.mem.Allocator, env_map: *std.process.Environ.Map, cfg:
+    Config) !Model {\n        const sh = env_map.get(\"SHELL\") orelse \"/bin/sh\";\n
+    \       const shell_z = try std.fmt.allocPrintSentinel(allocator, \"{s}\", .{sh},
+    0);\n        errdefer allocator.free(shell_z);\n    \n        const posix_block
+    = try env_map.createPosixBlock(allocator, .{});\n        errdefer posix_block.deinit(allocator);\n
+    \   \n        const tabs: []Tab = try allocator.alloc(Tab, cfg.commands.len);\n
+    \       errdefer allocator.free(tabs);\n    \n        const pipes: []Pipe = try
+    allocator.alloc(Pipe, cfg.commands.len);\n        errdefer allocator.free(pipes);\n
+    \   \n        // all done with allocations (and errors)\n        errdefer comptime
+    unreachable;\n    \n        // the rest of this function has been stolen by bilgerats\n
+    \   }\n\nI’m allocating memory for several types, and because any one of the allocations
+    can fail I need to handle freeing up each succesful memory allocation that preceded
+    the failure. Zig’s `errdefer` makes this easy, there’s no manual tracking of what
+    needs to be freed at any point, because the deferred statements will execute in
+    reverse order if the function returns an error. Also I’m following the [Reserve
+    First](https://matklad.github.io/2025/08/16/reserve-first.html) pattern, which
+    is where I learned `errdefer comptime unreachable` from.\n\n# This is the C Part\n\nNow,
+    enter C. There’s no `defer` or `errdefer`. I’ve painted myself into a corner with
+    some ugly code a few times because I’m so used to those tools that I don’t regularly
+    plan ahead for what my error handling control flow will look like. Until recently
+    I’ve been writing code that looks like this:\n\n    struct S {\n        int foo;\n
+    \   };\n    \n    S**some_func(const char** paths, const size_t n) {\n        struct
+    S** s = calloc(n, sizeof(S*));\n        if (s == NULL) {\n            return NULL;\n
+    \       }\n    \n        for (int i = 0; i < n; i++) {\n            s[i] = malloc(sizeof(S));\n
+    \           if (s[i] == NULL) {\n                for (int j = 0; j < i; j++) {\n
+    \                   free(s[j]);\n                }\n                free(s);\n
+    \   \n                return NULL;\n            }\n    \n            int fd =
+    open(paths[i], O_RDONLY);\n            if (fd == -1) {\n                for (int
+    j = 0; j <= i; j++) { // note the <= instead of <\n                    free(s[j]);\n
+    \               }\n                free(s);\n    \n                return NULL;\n
+    \           }\n    \n            struct stat buffer;\n            if (fstat(fd,
+    &buffer) == -1) {\n                for (int j = 0; j <= i; j++) {\n                    free(s[j]);\n
+    \               }\n                free(s);\n                close(fd);\n    \n
+    \               return NULL;\n            }\n            *(s[i]) = (struct S){
+    .foo = buffer.st_size };\n    \n            close(fd);\n        }\n    \n        return
+    s;\n    }\n\nDo you see how resource cleanup is slightly different across each
+    error handling if-block? Yuck! Yeah yeah yeah, I know it’s a terrible, contrived
+    example, and nobody would ever write C like this. Except me like 3 weeks ago.
+    I knew something was wrong when I wrote code like this, but I was hopelessly `defer`-brained
+    in a world where `defer` hadn’t been born yet. Some classmates had mentioned using
+    `goto` but I couldn’t really wrap my head around it. (We can’t share code with
+    eachother otherwise the university would have us killed).\n\nThen when I read
+    those [John Carmack emails](https://cbarrete.com/carmack.html) something clicked.
+    Carmack doesn’t mention `goto` explicitly, but these two thoughts in particular
+    were the special sauce I needed to help me understand (emphasis mine):\n\nA quote
+    from Henry Spencer describing control flow in some flight software:\n\n> It disallowed
+    both subroutine calls and backward branches, except for the one at the bottom
+    of the main loop. **Control flow went forward only**. Sometimes one piece of code
+    had to leave a note for a later piece telling it what to do, but this worked out
+    well for testing: all data was allocated statically, and monitoring those variables
+    gave a clear picture of most everything the software was doing.\n\nAnd Carmack
+    on moving code out of large conditional blocks (emphasis mine):\n\n> Enclosing
+    pages of code inside a conditional or loop statement does have readability and
+    awareness drawbacks, so leaving that code in a separate function may still be
+    justified, but in some cases it is still possible to **move the code to another
+    place where its execution wouldn’t be conditional** , or just **execute it at
+    all times** and inhibit the results in some way with a very small conditional
+    block.\n\nOhmygodigetitnow. Instead of having multiple exit points scattered throughout
+    my function, each performing their own resource cleanup, I can put all resource
+    cleanup behind a single exit point at the very end of the function. Guarding cleanup
+    behind the default return, only reachable using a `goto`, is kinda like a psuedo-`errdefer`.
+    Hooray! Hooray for John Carmack and Henry Spencer!! Now let’s rewrite the function
+    above using this brand new discovery:\n\n    struct S {\n        int foo;\n    };\n
+    \   \n    S**some_func(const char** paths, const size_t n) {\n        struct S**
+    s = calloc(n, sizeof(S*));\n        if (s == NULL) {\n            return NULL;\n
+    \       }\n    \n        for (int i = 0; i < n; i++) {\n            s[i] = NULL;\n
+    \       }\n    \n        for (int i = 0; i < n; i++) {\n            int fd = open(paths[i],
+    O_RDONLY);\n            if (fd == -1) {\n                goto free_mem;\n            }\n
+    \   \n            struct stat buffer;\n            int fstat_ok = fstat(fd, &buffer);\n
+    \           close(fd);\n            if (fstat_ok == -1) {\n                goto
+    free_mem;\n            }\n    \n            s[i] = malloc(sizeof(S));\n            if
+    (s[i] == NULL) {\n                goto free_mem;\n            }\n    \n            *(s[i])
+    = (struct S){ .foo = buffer.st_size };\n        }\n    \n        return s;\n    \n
+    \   free_mem:\n        for (int i = 0; i < n; i++) {\n            free(s[i]);\n
+    \       }\n        free(s);\n    \n        return NULL;\n    }\n\nI’d say that’s
+    much simpler to read! And it should be less prone to bugs from expanded responsibilities
+    over time, because there’s only one spot where resource cleanup needs to be modified.
+    You could also use multiple labels to split cleanup into sections, if you "
+  error:
+  fetched_at: '2026-10-28T20:46:39Z'
+archived_at: '2026-10-28T20:46:40Z'

@@ -4,14 +4,14 @@ post:
   title: Four Months of Zig
   url: https://gracefulliberty.com/articles/four-months-of-zig/
   hn_url: https://news.ycombinator.com/item?id=50265128
-  score: 162
+  score: 171
   author: ibobev
   posted_at: '2026-10-27T20:13:27Z'
-  fetched_at: '2026-10-28T14:51:46Z'
+  fetched_at: '2026-10-28T20:46:32Z'
   article_url: https://gracefulliberty.com/articles/four-months-of-zig/
   article_fetch_status: success
   article_fetched_at: '2026-10-28T04:14:47Z'
-  raw_comment_count: 120
+  raw_comment_count: 134
 comments:
 - id: '50265595'
   parent_id: '50265128'
@@ -1138,6 +1138,107 @@ comments:
     one choosing which runtime to use. This just allows the libraries to be generic.
   score: 0
   posted_at: '2026-10-28T14:23:40Z'
+- id: '50274794'
+  parent_id: '50267288'
+  author: gf000
+  text: "&gt; if you understand how the CPU, memory, network, and disk are processing<p>I
+    don&#x27;t think it&#x27;s possible in the general case, it&#x27;s way too complex
+    for that. Sure for trivial examples it&#x27;s trivial to claim one program is
+    faster than the other, but can you really claim that your special allocator used
+    in one place plus the extra argument used in calling that function is worth it
+    without writing both options and measuring it? Like even measuring it is non-trivial,
+    will it be inlined at the use site, how is it called, etc."
+  score: 0
+  posted_at: '2026-10-28T14:59:20Z'
+- id: '50275160'
+  parent_id: '50269374'
+  author: sethops1
+  text: It sounds like you&#x27;re reinventing destructors with extra steps.
+  score: 0
+  posted_at: '2026-10-28T15:19:30Z'
+- id: '50275192'
+  parent_id: '50273990'
+  author: pron
+  text: 'Generational moving allocators don&#x27;t move objects much, and so the total
+    amount of work they need to do is substantially less than malloc&#x2F;free allocators
+    -- that&#x27;s the whole idea of these algorithms and the reason why they&#x27;re
+    used (that&#x27;s not under dispute; it&#x27;s just the mathematics of the algorithms
+    [1]). Still, there might be some situations where allocators in C++ could be faster,
+    but if that were the case for my purposes, I would have stuck with C++. We needed
+    very good performance for highly concurrent workloads, and C++ just doesn&#x27;t
+    come close in many of those (maybe at 10x the budget).<p>[1]: More precisely,
+    the work they need to do doesn&#x27;t scale linearly with the allocation rate
+    as is the case with non-moving approaches. Of course, arenas are sort of degenerate
+    moving collectors, so they also display the same effect, but they can&#x27;t always
+    be used.<p>The way this works is that you allocate in the young generation with
+    a pointer bump, and to free memory you compact (move) the surviving objects, which
+    make up a small minority, <i>a few</i> times and then promote (move) them to the
+    old generation (where you either manage memory with the same technique or a different
+    one). And so the total amount of moving is not high (objects either never move
+    or rarely move), and what you end up with is essentially two heaps, one where
+    the allocation rate may be high but you can completely negate all the extra work
+    by increasing the size of that heap, and one where the allocation rate is low.
+    This ability to, optionally, not double the amount of work when the allocation
+    rate doubles is what gives moving collectors their efficiency (and that you can
+    bump-allocate in virtually all cases).<p>Of course, it&#x27;s possible to come
+    up with programs where objects do move a lot (or there&#x27;s some other common
+    work), e.g. programs that don&#x27;t exhibit the behaviour of the generational
+    hypothesis, but the point is that in a very large class of programs, this technique
+    is hard to compete with.'
+  score: 0
+  posted_at: '2026-10-28T15:21:32Z'
+- id: '50275602'
+  parent_id: '50275160'
+  author: hansvm
+  text: They&#x27;re orthogonal concepts. Zig hasn&#x27;t done this, but you could
+    absolutely combine injected allocators and automatic destructors in the same language
+    if you wanted.<p>The bigger design point is who&#x27;s responsible for knowing
+    where the object lives. Zig has a balance of power more in favour of the caller
+    than the callee, a point I tend to agree with since it&#x27;s quite easy for a
+    caller to know exactly what they want done and quite hard for a callee to know
+    what all possible callers might want done. That principle is applied pretty liberally
+    through the rest of the language.
+  score: 0
+  posted_at: '2026-10-28T15:45:11Z'
+- id: '50276905'
+  parent_id: '50269105'
+  author: tialaramex
+  text: "&gt; Most undergrad CS students go through an algorithms course and understand
+    a bubble sort is inherently slower than a quick sort<p>That sounds about right,
+    a DS&amp;A course which introduces Hoare&#x27;s Quicksort, which is old enough
+    to draw a pension, as if that&#x27;s the state of the art.<p>Introspective sorting
+    is <i>more than a quarter of a century old</i> and yet probably most people with
+    a CS degree do not even know it exists. What a poor excuse for an engineering
+    discipline this is.<p>Their big-O studies will lead them to conclude, as a Fortran
+    textbook I&#x27;ve studied did almost forty years ago, that Heapsort is the right
+    choice. Same big-O best case as Quicksort, easier to write but a better worst
+    case. Of course the Fortran textbook does have the heart to mention that Heapsort
+    is actually noticeably slower - but same big-O as if that&#x27;s what your users
+    will care about.<p>With a following wind and enough free time (or if they ask
+    an LLM) they might come up with introspective sorting, putting them only a few
+    decades behind the state of the art. Amazing."
+  score: 0
+  posted_at: '2026-10-28T17:08:43Z'
+- id: '50278438'
+  parent_id: '50273747'
+  author: lunar_mycroft
+  text: I agree that arenas aren&#x27;t always the best choice, but I think you&#x27;re
+    underestimating how often they are.  Not only does a lot of software have elements
+    that are well suited to arenas (request handling for web servers, frames for games
+    and UI, etc), but a lot of allocations are for short lived intermediary values
+    anyway (the stack is basically an arena with a bit less flexibility).<p>(Also,
+    you do not need to sell me on bumpalo, I use it heavily already)
+  score: 0
+  posted_at: '2026-10-28T18:17:42Z'
+- id: '50280437'
+  parent_id: '50275602'
+  author: xedrac
+  text: With some notable exceptions, I would argue that most of the time, the caller
+    simply doesn&#x27;t care.  Maybe the &quot;right&quot; approach is to provide
+    two functions, one that takes an allocator, and one that does not.  That way the
+    caller doesn&#x27;t have to care unless it wants to.
+  score: 0
+  posted_at: '2026-10-28T20:29:22Z'
 article:
   url: https://gracefulliberty.com/articles/four-months-of-zig/
   title: Four Months of Zig - Anna Liberty
@@ -1232,4 +1333,4 @@ article:
     Zig encourages careful consideration before adding dependencies, and I appr
   error:
   fetched_at: '2026-10-28T04:14:47Z'
-archived_at: '2026-10-28T14:51:52Z'
+archived_at: '2026-10-28T20:46:36Z'

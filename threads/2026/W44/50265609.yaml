@@ -4,14 +4,14 @@ post:
   title: Early progress on accelerating drug development with Claude
   url: https://www.anthropic.com/research/early-progress-drug-development
   hn_url: https://news.ycombinator.com/item?id=50265609
-  score: 276
+  score: 313
   author: dataking
   posted_at: '2026-10-27T20:50:42Z'
-  fetched_at: '2026-10-28T14:51:42Z'
+  fetched_at: '2026-10-28T20:46:29Z'
   article_url: https://www.anthropic.com/research/early-progress-drug-development
   article_fetch_status: success
   article_fetched_at: '2026-10-28T04:14:45Z'
-  raw_comment_count: 261
+  raw_comment_count: 316
 comments:
 - id: '50265824'
   parent_id: '50265609'
@@ -1060,6 +1060,132 @@ comments:
     for these drug trials.
   score: 0
   posted_at: '2026-10-28T12:10:18Z'
+- id: '50276455'
+  parent_id: '50269639'
+  author: bijowo1676
+  text: currently we rely on  meatbags to do 2 and 3, we have not fully built in-vitro
+    done by Claude Code
+  score: 0
+  posted_at: '2026-10-28T16:36:55Z'
+- id: '50276497'
+  parent_id: '50271024'
+  author: bijowo1676
+  text: because SWEs are simply more superior. it is SWEs who built AI, and not the
+    biology students
+  score: 0
+  posted_at: '2026-10-28T16:40:13Z'
+- id: '50276936'
+  parent_id: '50270708'
+  author: dekhn
+  text: I&#x27;ve done SWE work at the highest level (I ran a job that ran a worker
+    on almost every idle machine at Google, and the workers formed a global torrent
+    for data distribution).  If you took all of Google&#x27;s data centers in the
+    world, along with their networks, it would be roughly the complexity of a few
+    cells in the human body.  Fortunately, with my training in biology, working on
+    such simple data centers was pretty easy.
+  score: 0
+  posted_at: '2026-10-28T17:10:23Z'
+- id: '50277001'
+  parent_id: '50266867'
+  author: dekhn
+  text: 'AlphaFold&#x27;s goals were twofold (heh): demonstrate that protein structure
+    prediction (for a subset of proteins) was solvable, and to accelerate drug discovery.  As
+    most people in the pharma field already know, PSP was never the gating step in
+    getting drugs approved.'
+  score: 0
+  posted_at: '2026-10-28T17:13:35Z'
+- id: '50277643'
+  parent_id: '50276936'
+  author: menaerus
+  text: I&#x27;m not sure what you mean by &quot;running a job that ran a worker&quot;.
+    Running the system is vastly different than building and maintaining one. I work
+    on highly available and distributed systems spanning multiple data centers, and
+    single node scalability of database kernels, so I guess I could also say that
+    I&#x27;ve done and still doing work at the highest level but in my case it is
+    the core development. Which one is yours?
+  score: 0
+  posted_at: '2026-10-28T17:39:59Z'
+- id: '50278094'
+  parent_id: '50276455'
+  author: randomImmigrant
+  text: Untrue. And you also don’t have robitics that can do all kinds of cell bio&#x2F;tissue
+    bio experiments that require the affordances and skills humans hands have but
+    no robot to date does. Seriously, have you been in a lab and seen the kinds of
+    experiments that get done?
+  score: 0
+  posted_at: '2026-10-28T18:00:15Z'
+- id: '50278125'
+  parent_id: '50270708'
+  author: randomImmigrant
+  text: I work in software now after a decade in a neuroscience lab. This is just
+    utter and complete nonsense. Please stop trying to see everything as analogous
+    to software. It might actually help you solve software problems too, rather than
+    this monomania on reducing the real world to software.
+  score: 0
+  posted_at: '2026-10-28T18:02:09Z'
+- id: '50278381'
+  parent_id: '50277643'
+  author: dekhn
+  text: |-
+    The system I built was called exacycle.  It ran as a borg job in every cluster we had access to, with priority 0 or 1, with N tasks (where N=# of machines in the cluster).  Borg ran the &quot;worker&quot; task as long as there were resources free on the machine (often, several workers ran on the same machine, and no workers ran on other machines).  There was a global schedulers that picked mini-tasks off a global queue and fed them to the cluster-level scheduler (batches based on instant resource availability, and subject to some data locality optimization) which then fed them to the machine workers.<p>At peak, we had 1-3 million xeon cores running our tasks (protein folding, protein design, drug docking), 24&#x2F;7.  This was before GPUs were really a thing.  Each mini-task was basically a rosetta or gromacs or autodock binary running on local inputs and writing local outputs for ~1 hour using ~1GB RAM and no network.  Input and output was via colossus, or distributed through a global torrent network (literally all 1-3 million cores formed a single data transfer group, with data passed between clusters at low probability).<p>I built most of the code of the system (which depended on Google infra) including the scheduler and the machine worker, and also ran the system as on-call &quot;SRE&quot; for 3 years.  During that time, we nearly almost didn&#x27;t take down the Google global network, and had small latency impacts on many services.  Managing to run the system for so long without antagonizing ads or search or youtube was a major challenge.<p>I would say the complexity of the system I built (considering everything down to the OS) was roughly the level of a few human cells in a plate, in terms of interacting components and the complexity of their interactions.<p>Here are some of the publications that came from running exacycle (we provided strong evidence that using more compute improves outcomes in molecular simulations)<p><a href="https:&#x2F;&#x2F;pubmed.ncbi.nlm.nih.gov&#x2F;24345941&#x2F;" rel="nofollow">https:&#x2F;&#x2F;pubmed.ncbi.nlm.nih.gov&#x2F;24345941&#x2F;</a>
+    <a href="https:&#x2F;&#x2F;pubmed.ncbi.nlm.nih.gov&#x2F;24265211&#x2F;" rel="nofollow">https:&#x2F;&#x2F;pubmed.ncbi.nlm.nih.gov&#x2F;24265211&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-28T18:14:50Z'
+- id: '50279221'
+  parent_id: '50278381'
+  author: menaerus
+  text: I appreciate the details, very interesting. So from a quick glance my understanding
+    is that exacycle is a task partitioning and dispatching system built on top of
+    existing google infra runtime (borg). Tasks are units that are massively parallel
+    and distributed across the compute, and have no or almost no shared data. Problem
+    space seems to be built around self contained tasks which have well defined input
+    and output, and main engineering challenge in the exacycle itself would be the
+    optimizing the system for maximum resource utilization? It&#x27;s complex but
+    not as complex as open problem space engineering problems dealing with highly
+    concurrent and distributed workloads with shared state and that are unknown at
+    the time you&#x27;re designing the algorithm.<p>Anyway, my point was not in that
+    I would equate software complexity with the complexity found in biology but that
+    I see the same trend and similar type of challenges that can be found in both
+    fields and therefore I see both fields amenable to the AI advancements whereas
+    many people from the thread do not, and I disagree with that.
+  score: 0
+  posted_at: '2026-10-28T19:08:34Z'
+- id: '50279352'
+  parent_id: '50279221'
+  author: dekhn
+  text: Yes, we explicitly avoided any kind of  high concurrency&#x2F;parallelism.  That
+    was an intentional decision, although note we did have a global torrent network
+    across all the workers, whose topology (node interactions) formed an extremely
+    complex graph.<p>I used to work in the MPI world on supercomputer jobs and it
+    was miserable.  I also worked on other high concurrency systems at Google (helped
+    run the Ads DB, did training and engineering of Sibyl).  I continue to insist
+    these systems are incredibly simple compared to even the most basic human cells
+    interactin g.
+  score: 0
+  posted_at: '2026-10-28T19:17:45Z'
+- id: '50279989'
+  parent_id: '50279221'
+  author: randomImmigrant
+  text: |-
+    I definitely see a huge role for AI in the lab. Don’t get my wrong at all. The physical labor in the biology lab would go a lot smoother if I knew the data analysis pipelines could be handled with AI.
+    I shudder to think where my phd would have gone if I’d had AI. And having had to work with jury rigged microscopy rigs and patch clamping rigs, I’m fascinated to see where physical AI for actuators and control systems goes. Certainly I’d be using Claude to improve the control UX to my taste so I could wander my samples with greater control, save time and reduce error.<p>But I don’t see how any current AI system will have the curiosity and drive. You need to create conditions for meaningful experiments to be done and a mechanistic way of doing this doesn’t work. The most elegant experiments find ways to cut to the core of the emergent behavior, around all the simultaneous changes happening in different levels of the system from which said behavior arises.<p>You simply cannot see it all. Not every AI can, we are measurement limited. We can track and measure some dynamics, and the art of the experiment lies in thinking through the connections, then picking the right places to look to catch the system in the act. And you better do it so the failure guides the next experiment, and the next and the next, till you finally have sliced through the complexity and found some key nodes that hold the keys.<p>And usually after all that, you find your key node is regulated by the key nodes of a few other grad students. The complexity here is in part because the entire system is in constant conversation across levels of organization. The causal flow is looped and is <i>also</i> very sensitive to the environment.<p>AI has a big role to play, but I doubt it’ll parse it without humans at play. It simply cannot invent a slight modification of a microscope and physically connect the new lens element in the right place, calibrate it, all in time for the biology grad student next door to bring some cells to image that are a mix of 40 days old (no contamination! Magic!) vs 30, 20, and so on, to do a very expensive experiment (in terms of labor and time and rats and materials).<p>So much can go wrong on so many vectors. Which is also what pushes humans to their creative best. And AI will help a lot. But till you have a robot that can drive, but also do mouse dissections and staining and manipulate a microscope with faulty parts to get a clear image, you’re going to need humans to study biology.<p>When you invent these super robots that somehow slide through all this physical labor without consuming a whole lot of power, we can talk.<p>Meanwhile, at the cutting edge, where neither procedure nor mass produced machinery exists to do the whole thing, the reality is, we already use a lot of fancy tech in biology, and can use more, and AI can help keep the focus on the actual physical experiments that take so much care and attention.
+  score: 0
+  posted_at: '2026-10-28T19:56:59Z'
+- id: '50280094'
+  parent_id: '50279352'
+  author: menaerus
+  text: Well, we have seen AlphaFold solving a decades old protein folding problem.
+    There&#x27;s no reason for me to believe, with all the AI advancements I&#x27;ve
+    seen in the meanwhile, that we will not solve other problems in this field too.
+  score: 0
+  posted_at: '2026-10-28T20:03:51Z'
+- id: '50280181'
+  parent_id: '50278094'
+  author: bijowo1676
+  text: can today&#x27;s labs prompt Claude Code to do 1488 experiments in-vitro continiously
+    over 48 hrs ?
+  score: 0
+  posted_at: '2026-10-28T20:10:26Z'
 article:
   url: https://www.anthropic.com/research/early-progress-drug-development
   title: Early progress on accelerating drug development with Claude \ Anthropic
@@ -1162,4 +1288,4 @@ article:
     previously validated ideas over riskier new on"
   error:
   fetched_at: '2026-10-28T04:14:45Z'
-archived_at: '2026-10-28T14:51:52Z'
+archived_at: '2026-10-28T20:46:36Z'

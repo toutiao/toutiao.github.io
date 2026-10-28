@@ -1,0 +1,120 @@
+---
+post:
+  id: lo-ansfvi
+  source: lobsters
+  title: Forging a Microsoft Edge Full Chain with Logic Bugs Only
+  url: https://blog.orange.tw/posts/2026-10-the-last-proof-of-human-craft-browser-full-chain/
+  hn_url: https://lobste.rs/s/ansfvi
+  score: 10
+  author: polywolf
+  posted_at: '2026-10-28T13:34:06Z'
+  fetched_at: '2026-10-28T20:46:36Z'
+  article_url: https://blog.orange.tw/posts/2026-10-the-last-proof-of-human-craft-browser-full-chain/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T20:46:45Z'
+  raw_comment_count: 0
+  tags:
+  - security
+comments: []
+article:
+  url: https://blog.orange.tw/posts/2026-10-the-last-proof-of-human-craft-browser-full-chain/
+  title: 'The Last Proof of Human Craft: Forging a Microsoft Edge Full Chain with
+    Logic Bugs Only! | Orange Tsai'
+  fetch_status: success
+  content: "* * *\n\nI think I should still dump some of my work once in a while,
+    even though it feels like fewer and fewer people actually sit down and read articles
+    these days (or maybe now they all leave it to their agents XD). Anyway, this is
+    what I built for Pwn2Own Berlin 2026 — a completely handmade, logic-only Microsoft
+    Edge Full Chain, with no memory corruption, and no AI at all! \U0001F525\n\n>
+    Confirmed! Orange Tsai (@orange\\_8361) of DEVCORE Research Team (@d3vc0r3) chained
+    4 logic bugs to achieve a sandbox escape on Microsoft Edge, earning $175,000 and
+    17.5 Master of Pwn points. Full win! #Pwn2Own #P2OBerlin https://t.co/vJaIpGG4cD\n>
+    \n> — TrendAI Zero Day Initiative (@thezdi) [May 14, 2026](https://x.com/thezdi/status/2054868495888777266?ref_src=twsrc%5Etfw)\n\n
+    \ \n\nThe whole chain is made up of five bugs and two Windows features. I have
+    also shared the whole bug-hunting and chaining process at this year’s HITCON and
+    Hexacon, plus some fun stories along the way. You can check [the slides here](https://github.com/orangetw/My-Presentation-Slides/blob/main/data/2026-The-Last-Proof-of-Human-Craft-en.pdf)!\n\nAlso,
+    maybe everyone thinks LLMs can already pwn everything in the AI era, so something
+    made entirely by hand somehow feels a bit more precious. That might also be why
+    this chain was nominated for this year’s Pwnie Awards and won the Epic Achievement
+    award. \U0001F389\n\n![pwnie-award-2026](/posts/2026-10-the-last-proof-of-human-craft-browser-full-chain/pwnie-award-2026.webp
+    \"w60\")\n\n# Let’s Navigate!\n\nSo where do we start with a logic-only full chain?
+    Well, since it’s a “browser,” let’s start by looking at how “browsing” (or what
+    Chromium calls “navigation”) works. I won’t go into too much detail in this post,
+    because I think in this era, you can just ask your agents to fill in the details
+    :)\n\nBut I’d still recommend reading “[Life of a Navigation](https://docs.google.com/presentation/d/1YVqDmbXI0cllpfXD7TuewiexDNZYfwk6fRdmoXJbBlM/edit)“
+    from Chrome University if you want to get the full picture.\n\n## The Forgotten
+    Navigation Throttles\n\nWhile I was walking through the Chromium Navigation flow,
+    something called “Navigation Throttles” caught my attention. They live in the
+    Browser Process, and intercept all navigation requests initiated by either the
+    Browser or the Renderer. Maybe it’s easy to say this in hindsight, but out of
+    the 3,000+ CVEs Google Chrome has fixed over the past five years, there are only
+    fewer than 20 related to them. So I guess this is also a corner not too many people
+    pay attention to.\n\nAnyway, I started digging into the Navigation Throttles,
+    and checked how Google Chrome and Microsoft Edge implemented them. And while going
+    through the code, I found that Edge has a throttle called `EdgeCAGuidanceNavigationThrottle`
+    for its enterprise Entra ID feature (the `CA` here stands for [Conditional Access](https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview)).
+    The purpose of this throttle is to guide users to the right User Profile when
+    Edge detects them signing in with a work account on a Microsoft website. And to
+    fire this throttle, you have to start a navigation from a specific Microsoft-owned
+    origin, such as `login.live.com`:\n\n| \n\n    1\n\n | \n\n    location.href =
+    `https://guidance-ca-error/?email={email}&switch_profile={url}`\n\n |\n\nAnd once
+    the throttle is fired, Edge would compare the email of the current User Profile
+    with `?email={email}`. If they don’t match, Edge pops up a dialog guiding you
+    to switch accounts.\n\n![image](/posts/2026-10-the-last-proof-of-human-craft-browser-full-chain/ba80963f-b4cb-4268-8c07-85b91cf4fa28.png
+    \"w60\")\n\n  \n\nBut if they do match, Edge would then grab the URL you were
+    originally heading to from `switch_profile={url}`, and launch a new navigation
+    with Chromium’s internal Navigation API:\n\n| \n\n    1\n    2\n    3\n    4\n
+    \   5\n\n | \n\n    NavigateParams params(browser, switch\\_profile\\_url, ui::PAGE\\_TRANSITION\\_LINK);\n
+    \   params.disposition = WindowOpenDisposition::CURRENT\\_TAB;\n    params.window\\_action
+    = NavigateParams::SHOW\\_WINDOW;\n    \n    Navigate(&params);\n\n |\n\nSo basically,
+    the throttle cancels the original navigation when the target URL matches a specific
+    internal format, and then launches a new one with the URL from the attacker-controlled
+    Query String, if the conditions are met. Since this new navigation is initiated
+    by the Browser Process, in theory we can do a few things we couldn’t do before,
+    such as jumping to normally prohibited pages like `edge://settings` or `devtools://...`,
+    or even pseudo-schemes like `javascript:alert(origin)`.\n\nThough the JavaScript
+    pseudo-scheme sounds like a powerful primitive, you still need to obtain the Execution
+    Context on `login.live.com` to fire the throttle in the first place. So being
+    able to jump to `javascript:` doesn’t really give you any extra capability. At
+    most, it’s just like a Self-XSS, or a way to turn an Open Redirect there into
+    XSS. Either way, you’re still only executing JavaScript in the same `login.live.com`
+    context.\n\nHonestly, I didn’t take this bug too seriously at first glance. To
+    me, it was just a stronger Open Redirect that could jump to a few more Browser-Level
+    Schemes, and still needed to be chained with other bugs. So the bug just sat in
+    my notes for weeks… \U0001F926‍♂️\n\n## Sourceless Navigation: A New UXSS Primitive\n\nThe
+    turning point was when I was going over the Chromium architecture one day and
+    started thinking: The throttle is handled in the Browser Process, so the new navigation
+    is initiated from the browser as well. However, the page we fired the throttle
+    from, `login.live.com`, lives in the Renderer, and while investigating the logic,
+    I couldn’t find any code tying the Browser and Renderer together. So… `CURRENT_TAB`
+    refers to which tab, exactly?\n\nTo find this out, I ran a quick test and added
+    a delay to the original trigger:\n\n| \n\n    1\n    2\n    3\n\n | \n\n    setTimeout(function(){\n
+    \    location.href = `https://guidance-ca-error/?email={email}&switch_profile={url}`\n
+    \   }, 8000)\n\n |\n\nAnd during the delay, we manually switched the Edge to a
+    new tab to see what would happen, and…\n\n  \n\nBoom! We got a UXSS on `google.com`,
+    and that’s also the first bug of the whole chain. To fully understand the UXSS
+    root cause, we dug into Chromium’s source code. We found that if `Navigate()`
+    is called without specifying the `source_contents` (the Renderer source to bind
+    to), Chromium would use the current active tab as the Renderer source automatically.\n\n_↓
+    **Path:** [chromium/chrome/browser/ui/browser\\_navigator.cc](https://source.chromium.org/chromium/chromium/src/+/refs/tags/148.0.7778.97:chrome/browser/ui/browser_navigator.cc)_\n\n|
+    \n\n    1\n    2\n    3\n    4\n    5\n    6\n    7\n    8\n    9\n    10\n    11\n
+    \   12\n    13\n    14\n    15\n    16\n    17\n    18\n    19\n    20\n    21\n
+    \   22\n    23\n    24\n    25\n    26\n    27\n    28\n    29\n    30\n    31\n
+    \   32\n    33\n    34\n    35\n    36\n    37\n    38\n    39\n    40\n    41\n
+    \   42\n    43\n    44\n    45\n    46\n\n | \n\n    base::WeakPtr\\<content::NavigationHandle\\>
+    Navigate(NavigateParams\\* params) {\n    \n    // [...]\n    \n    // If no source
+    WebContents was specified, we use the selected one from the\n    // target browser.
+    This must happen before GetBrowserAndTabForDisposition()\n    // has a chance
+    to replace |params-\\>browser| with another one, but after the\n    // above check
+    that relies on the original source\\_contents value.\n    if (!params-\\>source\\_contents
+    && params-\\>browser) {\n     params-\\>source\\_contents = params-\\>browser\n
+    \    -\\>GetBrowserForMigrationOnly()\n     -\\>tab\\_strip\\_model()\n     -\\>GetActiveWebContents();
+    // \\<--- [1] Use the active tab as the navigation source\n     }\n    \n    //
+    [...]\n    \n    // If no target WebContents was specified (and we didn't seek
+    and find a\n    // singleton), we need to construct one if we are supposed to
+    target a new\n    // tab.\n    if (!contents\\_to\\_navigate\\_or\\_insert) {\n
+    \   DCHECK(!params-\\>url.is\\_empty());\n    if (params-\\>disposition != WindowOpenDisposition::CURRENT\\_TAB)
+    {\n    /"
+  error:
+  fetched_at: '2026-10-28T20:46:45Z'
+archived_at: '2026-10-28T20:46:45Z'

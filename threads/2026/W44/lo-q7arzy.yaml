@@ -5,14 +5,14 @@ post:
   title: A fast and secure tar parser for the Rust ecosystem
   url: https://astral.sh/blog/tar-codec
   hn_url: https://lobste.rs/s/q7arzy
-  score: 48
+  score: 78
   author: yossarian
   posted_at: '2026-10-27T16:59:30Z'
-  fetched_at: '2026-10-28T04:14:50Z'
+  fetched_at: '2026-10-28T20:46:36Z'
   article_url: https://astral.sh/blog/tar-codec
   article_fetch_status: success
-  article_fetched_at: '2026-10-28T04:14:51Z'
-  raw_comment_count: 10
+  article_fetched_at: '2026-10-28T20:46:41Z'
+  raw_comment_count: 15
   tags:
   - python
   - rust
@@ -31,7 +31,7 @@ comments:
 
     This reminds me of an exploit that I learned about that I found quite clever. It was used to get the ability to add unauthorized 3rd party apps to a Kindle (the one I'm thinking of is the Kindle Touch but maybe applied to others as well). My recollection of it off the top of my head is as follows: system updates came packaged as a compressed tar file. The system would untar the update, then find a signature inside of the archive to decide if it was an approved software update based off of the signature matching a public key that was stored in something like /etc/authorized_keys. If the public key matched, then it would run the update; otherwise, it would delete it. Well, turns out there was a bug in the untar program, and you could craft a malicious tar file that had path (along the lines of) ../../../etc/authorized_keys, and when this was untarred it would clobber the original list of public keys, thus allowing a provided update payload to run.
     It's a somewhat different class of vulnerability in tar files than the OP was discussing, but I guess it just goes to show that there's a lot that goes into these things to keep them secure.
-  score: 14
+  score: 25
   posted_at: '2026-10-27T18:05:47Z'
 - id: lo-btn1lr
   parent_id: '0'
@@ -39,7 +39,7 @@ comments:
   text: |-
     Yeah, the layer beneath archive handling (of taking abstract "members" and turning them into contents on disk) is in a sense way harder: every OS and FS applies its own semantics/quirks that make it impossible to say with confidence that an archive, even an obvious one, will extract the same way on different hosts.
     (The exception to this would maybe be an archive containing only printable ASCII paths, all relative, with extremely conservative limits on path lengths. But too many real-world uses of archives reasonably violate these constraints.)
-  score: 4
+  score: 7
   posted_at: '2026-10-27T19:19:34Z'
 - id: lo-tu5qc2
   parent_id: '0'
@@ -53,7 +53,7 @@ comments:
 
     Also reminding myself that this post also has a bunch of background on the various tar format extensions, in the context of OCI: https://www.cyphar.com/blog/post/20190121-ociv2-images-i-tar/
     I also wonder if tar files that appear in practice in Docker/OCI  are of different dialects than PyPI, or it's all basically the same set of tools creating them.
-  score: 4
+  score: 6
   posted_at: '2026-10-27T20:27:22Z'
 - id: lo-giwk3j
   parent_id: '0'
@@ -69,7 +69,7 @@ comments:
   author: hjvt
   text: I wonder, what are the origins of octal strings being used instead of proper
     integers in a bunch of Old Unix Things?
-  score: 1
+  score: 4
   posted_at: '2026-10-27T21:09:18Z'
 - id: lo-mvvqwy
   parent_id: '0'
@@ -81,7 +81,7 @@ comments:
     been quite natural to unix developers. In fact the original binary data formatter
     was od, octal dump, and is so old it was reportedly why the bourne shell uses
     do…done rather than do…od.
-  score: 5
+  score: 9
   posted_at: '2026-10-27T21:35:46Z'
 - id: lo-3eqnb0
   parent_id: '0'
@@ -139,7 +139,7 @@ comments:
     68406
     580108.0
     12080860
-  score: 3
+  score: 6
   posted_at: '2026-10-27T22:04:39Z'
 - id: lo-4jcsba
   parent_id: '0'
@@ -155,7 +155,7 @@ comments:
 
     (Aside: I think many people have PyPI mirrors, perhaps of all 12 TB?   For those  with fewer computing resources, maybe you could get that data with HTTP range requests -- maybe that depends on gzip --rsyncable or some such thing ...)
     [1] JSON only has a couple holes in its spec, which have been addressed by follow-on RFCs I   believe.  Many of the "JSON is a minefield" problems are particular to the representation of values within a programming language, which is an inherent issue -- not part of the JSON spec.
-  score: 1
+  score: 2
   posted_at: '2026-10-27T23:06:37Z'
 - id: lo-lniewj
   parent_id: '0'
@@ -164,14 +164,61 @@ comments:
     numbers and addressing modes are aligned to octal digits, so it isn’t too hard
     to read an octal dump without a disassembler. (In arm32 they are aligned to hex
     digits.)
-  score: 1
+  score: 4
   posted_at: '2026-10-27T23:56:42Z'
 - id: lo-fmwf4p
   parent_id: '0'
   author: fanf
   text: Maybe Kaitai Struct (6 comments)
-  score: 1
+  score: 2
   posted_at: '2026-10-28T00:08:03Z'
+- id: lo-zwiras
+  parent_id: '0'
+  author: anordal
+  text: |-
+    s/parser differentials/parser differences/g:
+    Claude doesn't know how English works.
+  score: 0
+  posted_at: '2026-10-28T16:11:34Z'
+- id: lo-s73lgh
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Hm yeah that thread has a good wiki-like repo: https://github.com/dloss/binary-parsing
+
+    A list of generic tools for parsing binary data structures, such as file formats, network protocols or bitstreams
+
+    I remember looking at Hammer many years ago.
+    I probably shouldn't have said "declarative" -- what I mean more is probably "the most powerful language which can be inverted with respect to push-pull", e.g. comparing the styles of Go HTTP parsing (pull, with goroutines) and nginx / node.js (push, event driven)
+    And I would mix declarative with this powerful language.  e.g. Oils is regular languages + a bunch of procedural recursive-descent style code (+ algebraic data types).  The procedural code is "irreducible" -- it can't be purely declarative.
+    But I would like to invert it, and I see that problem in many other places too.  In that sense, the algorithm is de-coupled more from the code gen.
+  score: 1
+  posted_at: '2026-10-28T16:21:55Z'
+- id: lo-siddoh
+  parent_id: '0'
+  author: bakkot
+  text: '"Parser differentials" is a standard term.'
+  score: 6
+  posted_at: '2026-10-28T16:30:57Z'
+- id: lo-rqgamg
+  parent_id: '0'
+  author: masklinn
+  text: '"Parser differential" is a term of art for parsers interpreting the same
+    input differently, especially when that causes security vulnerabilities. It was
+    originally coined 15 years ago as "parse tree differential attack" in The Halting
+    Problems of Network Stack Insecurity (Sassaman, Patterson, Bratus, Shubina; 2011)
+    to label an existing method most famously employed in PKI Layer Cake (Kaminsky,
+    Patterson, Sassaman; 2010).'
+  score: 8
+  posted_at: '2026-10-28T16:39:17Z'
+- id: lo-bnch1k
+  parent_id: '0'
+  author: yossarian
+  text: |-
+    I can assure you that this was written by a human (me), and that “parser differentials” is the standard term of art.
+    (It would also be extremely funny if I had used Claude for this, given my employer.)
+  score: 2
+  posted_at: '2026-10-28T18:41:53Z'
 article:
   url: https://astral.sh/blog/tar-codec
   title: 'tar-codec: a fast and secure tar parser for the Rust ecosystem'
@@ -219,4 +266,4 @@ article:
     - [![](data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%2718%27%20height=%2717%27/%3e) ![](data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7)](https://github.com/astral-sh)
   error:
   fetched_at: '2026-10-27T20:26:11Z'
-archived_at: '2026-10-28T04:14:51Z'
+archived_at: '2026-10-28T20:46:41Z'

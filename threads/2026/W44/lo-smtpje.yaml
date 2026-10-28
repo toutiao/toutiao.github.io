@@ -1,0 +1,115 @@
+---
+post:
+  id: lo-smtpje
+  source: lobsters
+  title: The Benchmarking Crisis
+  url: http://databasearchitects.blogspot.com/2026/10/the-benchmarking-crisis.html
+  hn_url: https://lobste.rs/s/smtpje
+  score: 12
+  author: timschumi
+  posted_at: '2026-10-28T08:32:09Z'
+  fetched_at: '2026-10-28T20:46:36Z'
+  article_url: http://databasearchitects.blogspot.com/2026/10/the-benchmarking-crisis.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-28T20:46:44Z'
+  raw_comment_count: 7
+  tags:
+  - ai
+  - databases
+  - performance
+comments:
+- id: lo-hqx5ss
+  parent_id: '0'
+  author: marcecoll
+  text: |-
+    nk submissions on a hidden test set that participants never see, which makes overfitting on the public data pointless
+
+    I'm surprised this isn't done for database benchmarks, I guess there was no urgent need to fix this until LLM came along (there's always been microbenchmark gaming, but now it's 100x worse).
+    I guess the flipside is that the operational costs go up, since now the only person/org able to run the benchmark are the ones that created them instead of this being a distributed operation.
+  score: 3
+  posted_at: '2026-10-28T10:13:15Z'
+- id: lo-qmwqsr
+  parent_id: '0'
+  author: ds
+  text: |-
+    Has anyone thought about making a benchmark that generates queries (from prng seeds), rather than have fixed queries? Similar to how people do property-based testing and fuzzing and so on.
+    Then pick some random seeds every time a DB is added to the benchmark or every once in a while, average the results, and call it done. Given a u64 seed, you'll likely run out of ideas for new DBs before the seed combinations are exhausted even if you pick like a million seeds to average against.
+    In my mind these benchmarks really want to be more like fuzzers.
+  score: 1
+  posted_at: '2026-10-28T10:27:32Z'
+- id: lo-hf33so
+  parent_id: '0'
+  author: amw-zero
+  text: The only thing worse than an imperfect benchmark is no benchmark at all.
+  score: 1
+  posted_at: '2026-10-28T12:57:33Z'
+- id: lo-ggarm6
+  parent_id: '0'
+  author: hyperpape
+  text: |-
+    This is an important topic, but based on discussion from some db folks on Phil Eaton’s discord, I believe that the point about string hashes gives the wrong impression.
+    What I read was that pgrust does use string hashes in the way the post describes, but they’re 128 bit cryptographic hashes, making it a safe optimization, and in fact ClickHouse does the same optimization.
+  score: 4
+  posted_at: '2026-10-28T13:07:23Z'
+- id: lo-ol2b8v
+  parent_id: '0'
+  author: hyperpape
+  text: The difficulty with randomization is that it’s very important that your workload
+    represents something real. Imagine two systems, one of which is very basic, and
+    one of which includes a ton of situational optimizations that improved production
+    workloads for customers. Designing a real benchmark is tough and there’s no formula,
+    but broadly speaking, you want to make sure you neither over or under focus on
+    those areas.
+  score: 3
+  posted_at: '2026-10-28T13:12:02Z'
+- id: lo-8q4tx7
+  parent_id: '0'
+  author: typesanitizer
+  text: |-
+    Prof. Neumann responded to this in one of the comments. https://databasearchitects.blogspot.com/2026/10/the-benchmarking-crisis.html?showComment=1793163424003&m=1#c3961334139816292496
+
+    You are absolutely right that pgrust is not the only one that has fitted extremely well to the benchmark, I should have made that clear. ClickHouse does it, too. And to a certain degree our own system is also guilty. I tend to accept only changes that I consider correct and generally useful, but simply knowing that the benchmark does something influences your design. [..]
+  score: 1
+  posted_at: '2026-10-28T15:58:28Z'
+- id: lo-5w1qbu
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    Indeed, this is the tough part about synthetic workload generation for benchmarking.
+    Fully randomized input is easy to generate and is a valuable data point for characterizing a system for the engineer working on that system, but it introduces its own kind of bias. As a micro-scale example, if you have a critical inner loop then replacing an input-dependent branch with a branch-free alternative is going to unrealistically favor the branch-free option on fully random input.
+    There's really no easy solution to this other than starting from real data sets that represent diverse, realistic use cases. I've had success with synthesizing data sets based on a corpus of real data sets using both parametric (statistical inference of model parameters) and non-parametric (resampling) methods. For structured data you would combine such a model with some kind of structured generator which samples from it.
+    As long as you validate the benchmarks on those trained models against the real data sets you can get something pretty good, but it's not a panacea and you must be diligent.
+  score: 1
+  posted_at: '2026-10-28T20:34:10Z'
+article:
+  url: http://databasearchitects.blogspot.com/2026/10/the-benchmarking-crisis.html
+  title: 'Database Architects: The Benchmarking Crisis'
+  fetch_status: success
+  content: |-
+    ## Tuesday, October 27, 2026
+
+    ### The Benchmarking Crisis
+
+    [Goodhart’s law](https://en.wikipedia.org/wiki/Goodhart%27s_law), that any measurable target stops being useful when people start optimizing for it, very much holds in database benchmarking. That is not new, of course. Famously, [TPC-D](https://www.tpc.org/tpcd/default5.asp) got retired when people optimized so much for it that the query runtimes converged towards zero due to excessive caching. [TPC-H](https://www.tpc.org/tpch/default5.asp) fixed that by declaring itself to be an ad-hoc benchmark, and explicitly forbidding things like exploiting knowledge about the workload or caching results (and a number of other optimizations).
+
+    We now see the same problem with the [ClickBench](https://benchmark.clickhouse.com/) benchmark, heavily accelerated by today’s use of AI code generation. If you tell an AI to make the queries faster, it will make the queries faster, regardless of whether this is a generally plausible approach or not. For example, the pgrust implementation performs group-by aggregations on string columns purely on the hash value, ignoring the long string content. That is a great performance boost, of course, and works for this benchmark, but can produce wrong results. Is it faster? Yes. Is it a plausible optimization? Probably not. And it does many other things: For example, ClickBench repeats certain predicates across queries, and thus pgrust caches the predicate, completely eliminating the query cost the second time. Or for query Q17, which returns tuples grouped by userid, it makes use of the fact that a) tuples are roughly clustered by userid, and b) the query specifies a limit clause without order by. Thus any userid will do, and it never reads most of the data. A human would not do these tiny micro-optimizations, because they are unlikely to be relevant in general use cases, but an AI can of course look at each query in detail and tune for it.
+
+    Part of the problem is, of course, ClickBench itself. The benchmark is not well specified in what is permitted and what is not, there is no update stream, the queries are very simple, share predicates, are underspecified, etc. But the fundamental problem is independent of that concrete benchmark: The moment we start aggressively optimizing for a specific benchmark, the benchmark stops being very useful. Historically, that pressure was reduced a bit by the requirement that systems be generally useful. That is, they did not just want to perform well in benchmarks but also to be useful for their customers. That is, of course, not a concern for vibe-coded execution engines.
+
+    It is not clear what to do about it. Our [SQLStorm](https://github.com/SQL-Storm/SQLStorm) proposal tried to address this by having tens of thousands of queries, which makes overfitting harder. No human would fine-tune their system to such a huge workload. But with AI tools we could even investigate ten thousand queries in detail if needed, so that is not a real defense.
+
+    I think that to be meaningful, a benchmark has to a) like TPC-H, be ad-hoc, and forbid exploiting prior knowledge and any form of intermediate result caching. If we don’t do that, execution times converge towards zero. And b) the benchmark has to include some form of update stream, as otherwise overly aggressive read-only or read-mostly systems will always outperform systems that offer full transactional support. And c) the benchmark has to be truly ad-hoc, in the sense that the systems tested have to be older than the benchmark. One way to fight Goodhart’s law would be to (automatically) come up with a new benchmark from time to time, and then measure the systems that existed before the benchmark. The caching/pre-computation problem still remains, of course, but at least that would prevent the over-aggressive adjustment to just one specific benchmark.
+
+    Interestingly, the machine learning community has struggled with exactly the same problem for years, and we should probably borrow some of their ideas. Kaggle competitions, for example, rank submissions on a hidden test set that participants never see, which makes overfitting on the public data pointless. Similarly, benchmarks like [LiveBench](https://livebench.ai/) regularly release new questions to make sure that models cannot have seen them during training. For database benchmarking that could mean keeping the actual benchmark queries secret and only publishing a representative sample for development, or, even better, generating a fresh workload for every evaluation round. SQLStorm already uses generated queries, so producing a new query set from time to time would be fairly easy. We would probably want a more generic approach (higher variety in schemas, update streams, transactions, etc.), but that seems to be a direction that would help keep benchmarks meaningful.
+
+    Posted by[Thomas Neumann](https://www.blogger.com/profile/15209393663505917383 "author profile")at[![](https://resources.blogblog.com/img/icon18_edit_allbkg.gif)](https://www.blogger.com/post-edit.g?blogID=8891884956165580080&postID=8822167039705471517&from=pencil "Edit Post")
+    [Email This](https://www.blogger.com/share-post/8891884956165580080/8822167039705471517?https=true&target=email "Email This")[BlogThis!](https://www.blogger.com/share-post/8891884956165580080/8822167039705471517?https=true&target=blog "BlogThis!") [Share to X](https://www.blogger.com/share-post/8891884956165580080/8822167039705471517?https=true&target=twitter "Share to X")[Share to Facebook](https://www.blogger.com/share-post/8891884956165580080/8822167039705471517?https=true&target=facebook "Share to Facebook")[Share to Pinterest](https://www.blogger.com/share-post/8891884956165580080/8822167039705471517?https=true&target=pinterest "Share to Pinterest")
+
+    Labels:[clickbench](http://databasearchitects.blogspot.com/search/label/clickbench),[database benchmarking](http://databasearchitects.blogspot.com/search/label/database%20benchmarking)
+
+    [Older Post](http://databasearchitects.blogspot.com/2026/09/measuring-performance-of-deterministic.html "Older Post")[Home](http://databasearchitects.blogspot.com/)
+
+    Subscribe to:[Post Comments (Atom)](http://databasearchitects.blogspot.com/feeds/8822167039705471517/comments/default)
+  error:
+  fetched_at: '2026-10-28T20:46:44Z'
+archived_at: '2026-10-28T20:46:44Z'

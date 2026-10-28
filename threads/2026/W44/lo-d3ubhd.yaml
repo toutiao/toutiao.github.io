@@ -1,0 +1,68 @@
+---
+post:
+  id: lo-d3ubhd
+  source: lobsters
+  title: Billion-query-per-second lookup tables in C++
+  url: https://lemire.me/blog/2026/10/26/billion-query-per-second-lookup-tables-in-c/
+  hn_url: https://lobste.rs/s/d3ubhd
+  score: 16
+  author: signal-11
+  posted_at: '2026-10-28T09:47:41Z'
+  fetched_at: '2026-10-28T20:46:36Z'
+  article_url: https://lemire.me/blog/2026/10/26/billion-query-per-second-lookup-tables-in-c/
+  article_fetch_status: error
+  article_fetched_at: '2026-10-28T20:46:43Z'
+  raw_comment_count: 5
+  tags:
+  - c++
+  - programming
+comments:
+- id: lo-zg0vrr
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    For the article's key set {"GET", "POST", "PUT", "DELETE", "PATCH"} you can use the perfect hash function (0x13340001u * (n ^ s[0])) >> 29 into {0, 1, ..., 7}, assuming the length n is provided with s and s[n] is 0 (so that unconditionally indexing s[0] gives a well-defined value).
+    That's 5 cycles of latency on typical processors after s[0] is loaded. The article's (length + asso[key[i]] + ...) % table_size adapted to this example yields (n + a[s[0]]) & 7. The multiply-shift form is 1 cycle less than that on modern AMD (4 cycle L1 latency) and 1-2 cycles less on modern Intel (4-5 cycle L1 latency).
+    You can probably do even better.
+  score: 3
+  posted_at: '2026-10-28T14:57:19Z'
+- id: lo-hwh1qq
+  parent_id: '0'
+  author: snej
+  text: |-
+    Now I’m wondering what good use cases there are for this technique, where the speed boost is noticeable on (non-embedded) CPUs. What fraction of handling an HTTP request is looking up headers?
+    Parsing JSON is one, where typically one does a switch on the first character of a keyword. Sort of a degenerate case of this. In languages with more complex grammars I don’t know if identifying reserved words is a hot spot.
+  score: 1
+  posted_at: '2026-10-28T15:21:25Z'
+- id: lo-ezma2d
+  parent_id: '0'
+  author: fs111
+  text: maybe logging, where you typically have INFO, WARN, DEBUG, TRACE or similar
+    levels and they behave slightly different (like stdout vs stderr).
+  score: 2
+  posted_at: '2026-10-28T15:47:34Z'
+- id: lo-ba66lk
+  parent_id: '0'
+  author: masklinn
+  text: It would probably be most useful to quickly bail on levels which are disabled
+    because by the time you involve string formatting and possibly unbuffered IO I
+    feel like the map lookup is not going to be your main concern.
+  score: 1
+  posted_at: '2026-10-28T19:06:21Z'
+- id: lo-phxmyb
+  parent_id: '0'
+  author: gignico
+  text: |-
+    Reading past the end of a buffer is fine as long as you do not cross into another memory page, and pages are at least 4 kilobytes.
+
+    No, reading past the end of a buffer is UB no matter what.
+  score: 1
+  posted_at: '2026-10-28T20:42:28Z'
+article:
+  url: https://lemire.me/blog/2026/10/26/billion-query-per-second-lookup-tables-in-c/
+  title:
+  fetch_status: error
+  content:
+  error: HTTP 202
+  fetched_at: '2026-10-28T20:46:43Z'
+archived_at: '2026-10-28T20:46:44Z'
