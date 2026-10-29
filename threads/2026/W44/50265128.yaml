@@ -4,14 +4,14 @@ post:
   title: Four Months of Zig
   url: https://gracefulliberty.com/articles/four-months-of-zig/
   hn_url: https://news.ycombinator.com/item?id=50265128
-  score: 177
+  score: 181
   author: ibobev
   posted_at: '2026-10-27T20:13:27Z'
-  fetched_at: '2026-10-29T04:41:51Z'
+  fetched_at: '2026-10-29T14:56:54Z'
   article_url: https://gracefulliberty.com/articles/four-months-of-zig/
   article_fetch_status: success
   article_fetched_at: '2026-10-28T04:14:47Z'
-  raw_comment_count: 144
+  raw_comment_count: 148
 comments:
 - id: '50265595'
   parent_id: '50265128'
@@ -1299,6 +1299,54 @@ comments:
     the request.
   score: 0
   posted_at: '2026-10-29T01:31:31Z'
+- id: '50285031'
+  parent_id: '50283403'
+  author: lenkite
+  text: Yes, my bad, replied in a hurry. Technically, the arena size will be function
+    involving <i>both</i> the request body size, the response body size, along with
+    the sizes of any intermediate results of processing.
+  score: 0
+  posted_at: '2026-10-29T05:59:07Z'
+- id: '50286126'
+  parent_id: '50271331'
+  author: imtringued
+  text: "This is AI generated so it could be wrong:<p><pre><code>    const std = @import(&quot;std&quot;);\n
+    \   \n    fn performTasks(io: std.Io) !void {\n        var group: std.Io.Group
+    = .init;\n        errdefer group.cancel(io);\n\n        &#x2F;&#x2F; Launch concurrent
+    background jobs\n        try group.async(io, simulateWorker, .{ io, 1 });\n        try
+    group.async(io, simulateWorker, .{ io, 2 });\n\n        &#x2F;&#x2F; Wait for
+    all group tasks to complete\n        try group.await(io);\n    }\n    \n    fn
+    simulateWorker(io: std.Io, id: usize) void {\n        std.log.info(&quot;Worker
+    {d} started...&quot;, .{id});\n        \n        &#x2F;&#x2F; Any blocking operation
+    (like sleeping) routes through &#x27;io&#x27;\n        &#x2F;&#x2F; Under the
+    hood, this will either block an OS thread or yield an event loop stack.\n        io.sleep(.fromSeconds(1),
+    .awake) catch {};\n        \n        std.log.info(&quot;Worker {d} finished!&quot;,
+    .{id});\n    }\n    \n    pub fn main() !void {\n        var gpa_alloc = std.heap.GeneralPurposeAllocator(.{}){};\n
+    \       defer _ = gpa_alloc.deinit();\n        const allocator = gpa_alloc.allocator();\n
+    \   \n        &#x2F;&#x2F; Initialize the Threaded I&#x2F;O backend\n        var
+    threaded = std.Io.Threaded.init(allocator, .{\n            .async_limit = std.Io.Limit.limited(4),
+    &#x2F;&#x2F; Max concurrent tasks in the pool\n        });\n        defer threaded.deinit();\n
+    \       \n        &#x2F;&#x2F; Extract the generic I&#x2F;O interface pointer\n
+    \       const io = threaded.io();\n\n        std.log.info(&quot;Running on Threaded
+    backend:&quot;, .{});\n        try performTasks(io);\n    }\n\n\n    pub fn main()
+    !void {\n        var gpa_alloc = std.heap.GeneralPurposeAllocator(.{}){};\n        defer
+    _ = gpa_alloc.deinit();\n        const allocator = gpa_alloc.allocator();\n\n
+    \       &#x2F;&#x2F; Initialize the Evented (non-blocking) backend\n        var
+    evented: std.Io.Evented = undefined;\n        try evented.init(allocator, .{\n
+    \           .thread_limit = 4, &#x2F;&#x2F; Worker threads running the event loop\n
+    \       });\n        defer evented.deinit();\n    \n        &#x2F;&#x2F; Extract
+    the exact same generic interface\n        const io = evented.io();\n\n        std.log.info(&quot;Running
+    on Evented backend:&quot;, .{});\n        try performTasks(io);\n    }\n\n\n</code></pre>\nstd.Io.Threaded
+    and std.Io.Evented are two types of IO backends. std.Io.Threaded uses blocking
+    IO primitives and Evented uses asynchronous IO primitives. Switching between backends
+    is done via dynamic dispatch, the used backend is passed in via an explicit function
+    parameter.<p>The only real question you should have is, how does the &quot;non-blocking&quot;
+    case work when the interface is still a synchronous call? Well, the answer is
+    quite boring... You just call into the scheduler and it runs the other task inside
+    the blocked operation.<p>I was promised hidden magic and implicit logic! Now I
+    want a refund!"
+  score: 0
+  posted_at: '2026-10-29T08:45:46Z'
 article:
   url: https://gracefulliberty.com/articles/four-months-of-zig/
   title: Four Months of Zig - Anna Liberty
@@ -1393,4 +1441,4 @@ article:
     Zig encourages careful consideration before adding dependencies, and I appr
   error:
   fetched_at: '2026-10-28T04:14:47Z'
-archived_at: '2026-10-29T04:41:55Z'
+archived_at: '2026-10-29T14:56:58Z'

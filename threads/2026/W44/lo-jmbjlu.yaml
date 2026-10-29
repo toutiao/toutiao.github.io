@@ -1,0 +1,141 @@
+---
+post:
+  id: lo-jmbjlu
+  source: lobsters
+  title: The Future Trait Has A Missing State
+  url: https://blog.yoshuawuyts.com/the-future-trait-has-a-missing-state
+  hn_url: https://lobste.rs/s/jmbjlu
+  score: 15
+  author: fanf
+  posted_at: '2026-10-29T04:24:28Z'
+  fetched_at: '2026-10-29T14:56:58Z'
+  article_url: https://blog.yoshuawuyts.com/the-future-trait-has-a-missing-state
+  article_fetch_status: success
+  article_fetched_at: '2026-10-29T14:57:03Z'
+  raw_comment_count: 2
+  tags:
+  - rust
+comments:
+- id: lo-dwtlau
+  parent_id: '0'
+  author: christine
+  text: The author clearly has expertise here which I will defer to, but I'm not sure
+    I understand this argument. It seems like under what they are proposing, every
+    future would be internalizing the business logic of MaybeDone? But then there
+    is the possibility that this business logic is implemented incorrectly. Is that
+    really what is wanted?
+  score: 5
+  posted_at: '2026-10-29T06:53:42Z'
+- id: lo-mr9xis
+  parent_id: '0'
+  author: hailey
+  text: |-
+    I don't really understand the problem here, and I think panicking when you attempt to poll a future after it has already completed is a fine behaviour.
+    To me, the behaviour of Fuse::poll when called on a terminated future is a smell akin to handling EBADF from syscalls. It too should panic because doing so indicates that there are deeper structural issues with your implementation that really ought to be fixed. There's nothing sensible that can or should be done here. Such an error should be immediately and loudly fatal.
+  score: 6
+  posted_at: '2026-10-29T07:11:09Z'
+article:
+  url: https://blog.yoshuawuyts.com/the-future-trait-has-a-missing-state
+  title: The Future Trait Has A Missing State — Yosh Wuyts — Blog
+  fetch_status: success
+  content: "# The Future Trait Has A Missing State\n\n## Introduction\n\nIn async
+    Rust the `Future::poll` method is called to progress the state of the future,
+    which reports its progress via the `Poll` enum. This enum contains two variants:\n\n-
+    **Poll::Pending** : means that the future is not yet ready to produce a value,
+    and `poll` will need to be invoked again later.\n- **Poll::Ready(T)**: means the
+    future is ready to yield some value `T`.\n\nFutures are called that because they
+    will eventually resolve to a value, _in the future_. But that’s value singular,
+    not values plural. The stdlib documentation does not clearly make this guarantee
+    (though it should), and the ecosystem doesn’t always implement this correctly
+    (though it also should). But the intent is clear: one future should only ever
+    yield one value.\n\nNow what should happen when you try and call `Future::poll`
+    again after it has already yielded a value? The `Future` trait docs have the following
+    to say:\n\n> Once a future has completed (returned `Ready` from `poll`), calling
+    its `poll` method again may panic, block forever, or cause other kinds of problems;
+    the `Future` trait places no requirements on the effects of such a call. However,
+    as the `poll` method is not marked `unsafe`, Rust’s usual rules apply […].\n\nThe
+    docs state here that if you call `Future::poll` again after it’s yielded`Poll::Ready`,
+    that’s unsupported and there aren’t many limits on the future’s behavior. The
+    most common behavior here is to `panic!`, which is the behavior for all `async`
+    blocks and functions. Which is a shame, since being able to call`Future::poll`
+    again after it’s yielded `Ready` before is actually quite useful and something
+    I frequently wish I was able to do.\n\n## MaybeDone\n\nNot everyone writing Rust
+    writes async Rust, and not everyone writing async Rust will write async concurrency
+    primitives. But those who do will be familiar with the `MaybeDone` type. It’s
+    a simple wrapper around some `Future` whose only job it is to either hold a `Future`
+    or if it's completed hold its `Future::Output`. While not simple, assuming you're
+    familiar enough with async Rust it should be easy enough to follow:\n\nrust\n\n
+    \   use pin_project::pin_project;\n    use std::future::Future;\n    use std::pin::Pin;\n
+    \   use std::task::{Context, Poll};\n    \n    #[pin_project(project = DoneState)]\n
+    \   enum MaybeDone<F: Future> {\n        Future(#[pin] F),\n        Done(Option<F::Output>),\n
+    \   }\n    \n    impl<F: Future> MaybeDone<F> {\n        pub fn take(self: Pin<&mut
+    Self>) -> Option<F::Output> {\n            match self.project() {\n                DoneState::Done(output)
+    => output.take(),\n                DoneState::Future(_) => None,\n            }\n
+    \       }\n    }\n    \n    impl<F: Future> Future for MaybeDone<F> {\n        type
+    Output = ();\n    \n        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>)
+    -> Poll<()> {\n            match self.as_mut().project() {\n                DoneState::Future(future)
+    => match future.poll(cx) {\n                    Poll::Pending => Poll::Pending,\n
+    \                   Poll::Ready(output) => {\n                        self.set(Self::Done(Some(output)));\n
+    \                       Poll::Ready(())\n                    }\n                },\n
+    \               DoneState::Done(_) => Poll::Ready(()),\n            }\n        }\n
+    \   }\n\nIn essence what this provides is a slot that holds either a future, or
+    its final resolved value. And in doing so it also performs another trick: it replaces
+    the output of the future with the unit type and adds a new method `take` to actually
+    extract the value of the future.\n\nWhen attempting to call `Future::poll` again
+    after it has returned `Poll::Ready(())` once before, it will always continue to
+    return `Poll::Ready(())`. And if you call the `take` method again after having
+    received `Some(Future::Output)` before, it will keep returning `None` forever
+    after.\n\nWhat is a relatively straightforward way of creating a slot that holds
+    either a future or its output value has an interesting side effect of actually
+    being able to communicate the state of the future even after it has yielded a
+    value once. If a caller observes `Poll::Ready(())` + `None`, that means the future
+    is done and will not be yielding a value again.\n\n## Fixing Poll\n\n`MaybeDone`
+    isn’t the only API in the `futures` crate which tracks the done state of a future.
+    The `FusedFuture` trait provides an `is_terminated` method, and its `Fuse`adapter
+    keeps returning `Poll::Pending` once the inner future has returned`Poll::Ready`.
+    However this unfortunately abuses `Poll::Pending`, whose docs state:\n\n> When
+    a function returns `Pending`, the function _must_ also ensure that the current
+    task is scheduled to be awoken when progress can be made.\n\nThis definition is
+    incompatible with how `Fuse` uses `Pending`, and so bringing it into the stdlib
+    would require redefining `Pending` to mean both “pending” and “done”. This feels
+    bad, because if you forget to call `is_terminated` first, the future will hang
+    forever. There are other hacky schemes we could apply instead, but the right way
+    to fix this would be by making the `Done` state a part of`Poll` itself:\n\nrust\n\n
+    \   pub enum Poll<T> {\n        Ready(T),\n        Pending,\n        Done, //
+    ← new\n    }\n\nUnfortunately we can’t make this change since `Poll` is not marked`#[non_exhaustive]`.
+    Which is a shame since instead of panicking or hanging, futures would actually
+    have an opportunity to share that they have nothing more to report. This would
+    change the responsibility of what to do with that information from the callee
+    to the caller. The caller might still choose to panic, but it could also forward
+    the `Done` state, or in concurrency operations like `join` it could now be used
+    to track which futures have completed, without needing `MaybeDone`.\n\nThis would
+    also have the benefit that it removes the implicit dependency of the async effect
+    on the panic effect. The compiler can guarantee that calling`.await` never polls
+    after getting `Ready`, and so it doesn’t need to handle the`Done` state. With
+    this in place, `async` functions and blocks would no longer need to inject unwinding
+    support on every path, reducing the codegen size which especially benefits embedded
+    targets. It would also work well with the`no_panic` crate on crates.io, or an
+    eventual function/block-level no-panic annotation.\n\n## Fixing CoroutineState\n\nThe
+    `CoroutineState` enum has the same problems as the `Poll` enum, in that it cannot
+    express a final `Done` state. But unlike `Poll`, the `Coroutine` trait and `CoroutineState`
+    enum aren't stable and so can be fixed without any breakage.\n\nSince `Coroutine`
+    is used internally in compiler desugarings, these changes might still not be easy.
+    But at least we don’t have to repeat the same mistakes we've made for async with
+    iteration as well.\n\nTo better illustrate the problem with `CoroutineState`,
+    here is how it is defined today:\n\nrust\n\n    pub enum CoroutineState<Y, R>
+    {\n        Yielded(Y),\n        Complete(R),\n    }\n\n[The documentation](https://doc.rust-lang.org/std/ops/enum.CoroutineState.html)
+    has the following to say about the `Complete` variant:\n\n> Once a coroutine has
+    returned `Complete` it is considered a programmer error to call `resume` again.\n\n`resume`
+    here refers to `Coroutine::resume`, which drives the progress of the coroutine
+    similar to `Iterator::next` and `Future::poll`. But just like with futures (and
+    unlike iterators), coroutines are unable to express a “done” state.\n\nTechnically
+    `Iterator::next` returning `None` is no guarantee that `None` will keep being
+    returned. But at the very least returning `None` repeatedly is fine and expected,
+    and so it’s a valid way of encoding a “Done” state, which is what `FusedIterator`
+    does.\n\nThis means that we cannot define a generic `FusedCoroutine` trait like
+    we have with [`FusedIterator`](https://doc.rust-lang.org/std/iter/trait.FusedIterator.html).
+    Since `Complete(R)` takes a generic param we could of course require that `Complete(Option<R>)`,
+    but that would again be dancing aro"
+  error:
+  fetched_at: '2026-10-29T14:57:03Z'
+archived_at: '2026-10-29T14:57:03Z'

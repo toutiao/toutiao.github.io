@@ -1,0 +1,912 @@
+---
+post:
+  id: '50284255'
+  title: Claude Code regularly sends each background agent’s transcript to its model
+  url: https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce
+  hn_url: https://news.ycombinator.com/item?id=50284255
+  score: 504
+  author: NikZaal
+  posted_at: '2026-10-29T03:33:42Z'
+  fetched_at: '2026-10-29T14:56:47Z'
+  article_url: https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce
+  article_fetch_status: success
+  article_fetched_at: '2026-10-29T14:56:47Z'
+  raw_comment_count: 205
+comments:
+- id: '50284256'
+  parent_id: '50284255'
+  author: NikZaal
+  text: 'Claude Code&#x27;s (CC) status summaries used 16.4% of our token spend in
+    a week! We have investigated a source of overhead in CC: it&#x27;s an agent_summary
+    query that calls your current session&#x2F;subagent model approximately every
+    30 seconds for a few words in CC’s status line.<p>Our DRIM system flagged the
+    anomaly in CC&#x27;s OTEL traces. Grouping requests by query_source showed that
+    over one measured week agent_summary accounted for: 16.4% of total estimated spend
+    (versus 15.7% for the main conversation), and 19.7% of all API requests with approximately
+    9,000 input tokens per output token.<p>Most requests reuse the prompt cache, but
+    repeatedly reading a large cached transcript still has a cost. Longer contexts
+    and more concurrent agents increase the overhead.<p>We couldn’t find a supported
+    setting that disables only these summaries while preserving background agents
+    and forks. Disabling those capabilities also stops the summaries, but changes
+    the workflow we want to keep.<p>Our workaround is a small Bun preload that intercepts
+    the summary timer without modifying the CC binary. It identifies the timer callback
+    by source-text anchors and leaves other timers alone.<p>In controlled tests on
+    Linux (from ver 2.1.257 to 2.1.312), the same workload produced five summary calls
+    without the hook and zero with suppression enabled. On our current production
+    setup, agent_summary calls remained at zero with the hook enabled. Background
+    agents and forks continued running. The only visible change was that their generated
+    status summaries stopped updating.<p>The workaround depends on implementation
+    details. An update can break the callback matching and silently restore the requests.
+    macOS and Windows are untested. If someone could help us with testing there, it
+    would be much appreciated.<p>If you want to try it - the script, full technical
+    explanation, test results, and installation instructions are on GitHub: <a href="https:&#x2F;&#x2F;gist.github.com&#x2F;flamerix-ai&#x2F;c3905705cc4205e5de3011fa2e74efce"
+    rel="nofollow">https:&#x2F;&#x2F;gist.github.com&#x2F;flamerix-ai&#x2F;c3905705cc4205e5de3011fa...</a>'
+  score: 0
+  posted_at: '2026-10-29T03:33:42Z'
+- id: '50284507'
+  parent_id: '50284255'
+  author: messh
+  text: Bloat. I like Pi much better with it&#x27;s minimalism
+  score: 0
+  posted_at: '2026-10-29T04:17:13Z'
+- id: '50284529'
+  parent_id: '50284255'
+  author: rsalus
+  text: does this happen for Claude Desktop too?
+  score: 0
+  posted_at: '2026-10-29T04:20:12Z'
+- id: '50284537'
+  parent_id: '50284255'
+  author: quantbuilder
+  text: i think its not the status line at the bottom of the terminal, but actually
+    the few words summary claude generates for each background agents in the agents
+    panel. so if we mostly run one plain session we wont pay for this? i do run claude
+    code with disableAgentView on in my settings. does anyone know if that helps to
+    stop the summary calls or just hides the panel?
+  score: 0
+  posted_at: '2026-10-29T04:20:58Z'
+- id: '50284543'
+  parent_id: '50284255'
+  author: helsinki
+  text: I’m sure they release a decision model that alleviates this problem in due
+    time.
+  score: 0
+  posted_at: '2026-10-29T04:22:42Z'
+- id: '50284556'
+  parent_id: '50284255'
+  author: HeavenFox
+  text: If they are literally sending the entire transcript and asking for a summary,
+    wouldn&#x27;t almost all of the tokens be cache hit, and therefore fairly cheap?
+  score: 0
+  posted_at: '2026-10-29T04:25:11Z'
+- id: '50284567'
+  parent_id: '50284255'
+  author: gym
+  text: I was surprised the usage issue wasn&#x27;t mentioned here before this based
+    on my searching on hn.algolia.<p>I&#x27;m on pro. Two days ago, 100% 5 hour was
+    using 25% of my weekly. Today, 100% 5 hour is like 13% so something was fixed.
+  score: 0
+  posted_at: '2026-10-29T04:27:47Z'
+- id: '50284581'
+  parent_id: '50284556'
+  author: dietr1ch
+  text: Unless they prepend something like, &quot;summarise this, &quot;
+  score: 0
+  posted_at: '2026-10-29T04:30:13Z'
+- id: '50284586'
+  parent_id: '50284567'
+  author: OsrsNeedsf2P
+  text: This is an A&#x2F;B test
+  score: 0
+  posted_at: '2026-10-29T04:31:20Z'
+- id: '50284590'
+  parent_id: '50284255'
+  author: apt-apt-apt-apt
+  text: At least they seem to have fixed their free-revenue feature-bug, where they
+    randomly invalidate your cache (~$8 a pop (turn))
+  score: 0
+  posted_at: '2026-10-29T04:32:07Z'
+- id: '50284604'
+  parent_id: '50284586'
+  author: grim_io
+  text: More likely it depends on the overall load of the infrastructure.
+  score: 0
+  posted_at: '2026-10-29T04:34:20Z'
+- id: '50284612'
+  parent_id: '50284567'
+  author: bombcar
+  text: They very aggressively compact when the cache is about to expire, which saves
+    a ton of tokens, the equivalent of doing a handoff at 25% or less.
+  score: 0
+  posted_at: '2026-10-29T04:35:41Z'
+- id: '50284615'
+  parent_id: '50284581'
+  author: NewsaHackO
+  text: But they definitely wouldn’t do that.
+  score: 0
+  posted_at: '2026-10-29T04:36:12Z'
+- id: '50284621'
+  parent_id: '50284556'
+  author: minraws
+  text: I don&#x27;t want to sound rude but even at cache hit you are burning almost
+    input * 0.10 * context amount of tokens multiple times.<p>If it happens 10 times
+    you have already accepted the same cost as the entire session fresh prefill.<p>People
+    on HN are either too rich or wayyy too rich
+  score: 0
+  posted_at: '2026-10-29T04:36:52Z'
+- id: '50284624'
+  parent_id: '50284590'
+  author: lifeisloving
+  text: This is by design, its the same reason inference providers on Openrouter will
+    advertise super cheap pricing but cache TTLs of 2 min&#x2F; 70% hit rate.<p>Cache
+    rules everything around me.
+  score: 0
+  posted_at: '2026-10-29T04:37:06Z'
+- id: '50284625'
+  parent_id: '50284612'
+  author: adastra22
+  text: I assume that is only if compact is turned on? I never use compaction.
+  score: 0
+  posted_at: '2026-10-29T04:37:23Z'
+- id: '50284633'
+  parent_id: '50284255'
+  author: simianwords
+  text: Isn’t this prompt cached? Then it’s not that big of a deal
+  score: 0
+  posted_at: '2026-10-29T04:39:22Z'
+- id: '50284641'
+  parent_id: '50284255'
+  author: creamyhorror
+  text: Background agents only have 5 minutes&#x27; cache TTL, but I&#x27;m guessing
+    this doesn&#x27;t help extend it (not that it would be too useful anyway, especially
+    considering the extra burn).<p>Also, the claim &quot;15-20% of your tokens&quot;
+    seems unclear; of all tokens, or of tokens spent on background agents? Poorly
+    edited AI writing strikes again!
+  score: 0
+  posted_at: '2026-10-29T04:40:02Z'
+- id: '50284653'
+  parent_id: '50284621'
+  author: simianwords
+  text: Isn’t it 0.2?
+  score: 0
+  posted_at: '2026-10-29T04:41:53Z'
+- id: '50284660'
+  parent_id: '50284556'
+  author: buzer
+  text: Didn&#x27;t they change the cache TTL to 5 minutes earlier this year? So depending
+    on exact timing it could potentially be invalidated between the updates.
+  score: 0
+  posted_at: '2026-10-29T04:43:43Z'
+- id: '50284683'
+  parent_id: '50284255'
+  author: jakozaur
+  text: I tested it, and it looks real but more nuanced. It is just for subagents;
+    workflows do not seem affected. I guess many new users prefer workflows (ultracode),
+    so the impact is less than the report suggested.<p>Moreover it is mostly cached
+    reads, so subagents with short context cost little, while long-context ones cost
+    much more.<p>In my Claude Code sessions, it looks more like ~8% at most.
+  score: 0
+  posted_at: '2026-10-29T04:48:32Z'
+- id: '50284695'
+  parent_id: '50284507'
+  author: fractorial
+  text: As someone who rolled and daily drives a harness leaner than Pi, there’s still
+    a use case for both.<p>Similarly to “one language is best,” saying “one harness
+    is best” is shortsighted in the best possible case.<p>That being said, Claude
+    Code is bloatware.
+  score: 0
+  posted_at: '2026-10-29T04:51:11Z'
+- id: '50284699'
+  parent_id: '50284255'
+  author: edwinarbus
+  text: I work on Claude Code. You&#x27;ve got the basic mechanism right, but to be
+    super clear, this only applies to background agents that are actively working.
+    They get a summary call about every 30 seconds, and idle background agents don&#x27;t.
+    These summaries are used for both you and Claude Code to track what each background
+    agent is working on, without reading transcripts.<p>Your 16.4% sounds like it
+    was for a team running mostly background agents, and doesn&#x27;t seem like a
+    typical session. (Feel free to send me the session ID at edwinarbus@anthropic.com
+    and we can dig further.)<p>Last week, across Claude Code users who send us telemetry,
+    agent_summary was about 2% of cost at API list prices and just under 4% of requests.
+    In the terminal, where nearly all of these calls happen, it was about 6% of cost.<p>That
+    said, we agree that&#x27;s a lot for a status line. We just rolled out a fix for
+    the most expensive case, summaries that miss the prompt cache (2.1.311+), and
+    right now we&#x27;re working on a much cheaper mode that sends short notes to
+    a smaller model instead of the full transcript.
+  score: 0
+  posted_at: '2026-10-29T04:52:07Z'
+- id: '50284715'
+  parent_id: '50284653'
+  author: minraws
+  text: It&#x27;s 0.1 I think brain fart I typed the rest correctly though after 10
+    summaries you still burn the same amount of tokens
+  score: 0
+  posted_at: '2026-10-29T04:54:20Z'
+- id: '50284721'
+  parent_id: '50284255'
+  author: digitaltrees
+  text: It’s almost like they are trying to go public. Burn those tokens.
+  score: 0
+  posted_at: '2026-10-29T04:56:17Z'
+- id: '50284723'
+  parent_id: '50284683'
+  author: lemming
+  text: I mean… 8% still seems pretty indefensible, especially if you can’t turn it
+    off. That’s a big chunk of usage.
+  score: 0
+  posted_at: '2026-10-29T04:56:33Z'
+- id: '50284749'
+  parent_id: '50284723'
+  author: chii
+  text: any % is indefensible, because this should be user toggled. It&#x27;s an unnecessary
+    money burner.
+  score: 0
+  posted_at: '2026-10-29T05:00:37Z'
+- id: '50284786'
+  parent_id: '50284625'
+  author: SyneRyder
+  text: They enabled it for everyone in a recent Claude Code update, but you can turn
+    it off (I did).<p>I am definitely getting frustrated with a lot of the changes
+    they keep making in Claude Code. It&#x27;s one thing to find settings have changed
+    during your next interactive session, it&#x27;s another when it changes how overnight
+    unattended sessions behave. I really should be spending more time building my
+    own harness again.
+  score: 0
+  posted_at: '2026-10-29T05:09:40Z'
+- id: '50284803'
+  parent_id: '50284625'
+  author: Matticus_Rex
+  text: Check your idleCompaction line in &#x2F;config to make sure it&#x27;s off
+    -- several times they&#x27;ve toggled new features on by default for me. This
+    one isn&#x27;t in the VS Code extension so I don&#x27;t know if it shipped default-on.
+  score: 0
+  posted_at: '2026-10-29T05:12:30Z'
+- id: '50284811'
+  parent_id: '50284255'
+  author: _boffin_
+  text: Just looked and we&#x27;re burning around ~3%, but that&#x27;s across everything
+    &#x2F; everyone.
+  score: 0
+  posted_at: '2026-10-29T05:13:51Z'
+- id: '50284817'
+  parent_id: '50284255'
+  author: ab_wahab01
+  text: Does this happen in the VS Code extension? or only in the terminal?
+  score: 0
+  posted_at: '2026-10-29T05:14:29Z'
+- id: '50284844'
+  parent_id: '50284255'
+  author: leroman
+  text: At the base there is a conflict of interests- what we pay for
+  score: 0
+  posted_at: '2026-10-29T05:19:46Z'
+- id: '50284864'
+  parent_id: '50284660'
+  author: maxbond
+  text: It&#x27;s an hour. It&#x27;ll tell you the expiry time on the status line
+    now but that information is also available in &#x2F;usage.
+  score: 0
+  posted_at: '2026-10-29T05:23:51Z'
+- id: '50284867'
+  parent_id: '50284255'
+  author: rurban
+  text: That&#x27;s why people are using pi, not Claude. What a waste of money
+  score: 0
+  posted_at: '2026-10-29T05:23:55Z'
+- id: '50284877'
+  parent_id: '50284255'
+  author: hypfer
+  text: |-
+    With the ever-increasing amount of paper cuts one gets from using their products, I wonder how long this will really go on?<p>After all, for most of the work people seem to be doing daily, Claude kinda isn&#x27;t.. necessary?
+    In fact, for a lot of tasks, not using it leads to better results in my experience.<p>There are things that only it can reasonably accomplish, but if every interaction with it hurts you in various ways (like this one), then, eventually, I do not see that working out for them anymore.<p>But perhaps this is just a way to push the numbers a bit further up for the IPO?
+    That would make a lot of sense to me.
+  score: 0
+  posted_at: '2026-10-29T05:25:30Z'
+- id: '50284888'
+  parent_id: '50284864'
+  author: buzer
+  text: <a href="https:&#x2F;&#x2F;github.com&#x2F;anthropics&#x2F;claude-code&#x2F;issues&#x2F;46829"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;anthropics&#x2F;claude-code&#x2F;issues&#x2F;46829</a><p>Looks
+    like what I remembered was a bug.
+  score: 0
+  posted_at: '2026-10-29T05:27:27Z'
+- id: '50284894'
+  parent_id: '50284877'
+  author: jitl
+  text: i use opus 5.5 to delegate to sol and luna via codex-thread-bridge (<a href="https:&#x2F;&#x2F;github.com&#x2F;saidelike&#x2F;codex-thread-bridge"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;saidelike&#x2F;codex-thread-bridge</a>).
+    these days i’m experimenting with opus using luna as “hands” and it’s largely
+    resolved the tokens per output issue with my Anthropic subscription.<p>¯\_(ツ)_&#x2F;¯
+    it’s not efficient but yeah it’s the best
+  score: 0
+  posted_at: '2026-10-29T05:29:08Z'
+- id: '50284935'
+  parent_id: '50284255'
+  author: nullbio
+  text: Not good. Please fix.
+  score: 0
+  posted_at: '2026-10-29T05:36:57Z'
+- id: '50284964'
+  parent_id: '50284255'
+  author: dozerly
+  text: This is the harness’s job.  Incentives are not aligned for inference providers
+    to own the harnesses.
+  score: 0
+  posted_at: '2026-10-29T05:44:01Z'
+- id: '50285004'
+  parent_id: '50284567'
+  author: throwup238
+  text: This is (still) happening to three of my four 20x Max accounts and by all
+    accounts it seems they’re getting short changed on total weekly quota.<p>They’ve
+    got that IPO coming up so they’re turning up the fraud in preparation.
+  score: 0
+  posted_at: '2026-10-29T05:53:27Z'
+- id: '50285008'
+  parent_id: '50284255'
+  author: franticgecko3
+  text: Claude Code burning a large amount of tokens for no good reason is a headline
+    we&#x27;ve seen more than a few times now.<p>Time to start questioning the motivations
+    of model providers shipping their own harnesses.
+  score: 0
+  posted_at: '2026-10-29T05:53:52Z'
+- id: '50285016'
+  parent_id: '50284660'
+  author: skeledrew
+  text: If you&#x27;re using the API, I think. It&#x27;s an hour when using Claude
+    Code.
+  score: 0
+  posted_at: '2026-10-29T05:55:21Z'
+- id: '50285042'
+  parent_id: '50284624'
+  author: adamsmark
+  text: Hey, letting you know I&#x27;m stealing your quote about CREAM. It&#x27;so
+    absurd.
+  score: 0
+  posted_at: '2026-10-29T06:01:20Z'
+- id: '50285045'
+  parent_id: '50284621'
+  author: RockRobotRock
+  text: Who pays for their own tokens at full price?
+  score: 0
+  posted_at: '2026-10-29T06:02:15Z'
+- id: '50285048'
+  parent_id: '50285008'
+  author: bronlund
+  text: It&#x27;s not really a secret, the answer is profit. And in the part of the
+    world where this provider is from, greed is reckoned as a good thing.
+  score: 0
+  posted_at: '2026-10-29T06:02:39Z'
+- id: '50285059'
+  parent_id: '50285045'
+  author: serf
+  text: given that the subsidized plans from all companies are getting worse by the
+    hour it&#x27;s probably a smart thing to consider, at least.
+  score: 0
+  posted_at: '2026-10-29T06:04:10Z'
+- id: '50285120'
+  parent_id: '50284556'
+  author: simoncion
+  text: A cheap operation adds up to a large cost if it&#x27;s done enough times.
+    TFA even talks about caching.<p>Do you disagree with the numbers and conclusion
+    in the -pretty obviously bot-generated- Fine Article?
+  score: 0
+  posted_at: '2026-10-29T06:14:43Z'
+- id: '50285152'
+  parent_id: '50284699'
+  author: esikich
+  text: You&#x27;re telling us there are frequent scheduled summary calls to agents
+    that burns tokens like this is common knowledge. Is it? And is this documented
+    somewhere?
+  score: 0
+  posted_at: '2026-10-29T06:19:51Z'
+- id: '50285158'
+  parent_id: '50285042'
+  author: Implicated
+  text: About 6 months ago I embarked upon building a little mac native app to monitor
+    all my claude code sessions and alert me&#x2F;surface sessions that were going
+    to go stale so I could go ping them if I wanted to keep things cached. I named
+    it CREAM.<p>That eventually grew into what is now my &#x27;software factory&#x27;
+    and I&#x27;ve realized, eventually, it&#x27;s still C.R.E.A.M. (I named it flower)
+    but it&#x27;s _context_ rules everything around me.
+  score: 0
+  posted_at: '2026-10-29T06:20:31Z'
+- id: '50285189'
+  parent_id: '50285152'
+  author: simoncion
+  text: Perhaps this is terminology confusion, but the official docs explicitly state
+    that status lines &quot;[Run] locally and [do] not consume API tokens.&quot; [0]
+    <i>_If_</i> that documentation is talking about the same thing that TFA is talking
+    about, then I&#x27;d say that this is very much not common knowledge.<p>I also
+    wonder if the fix that they &quot;just rolled out&quot; is actually activating
+    the &#x27;short&#x27; mode that TFA mentions...<p>[0] &lt;<a href="https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;statusline#how-status-lines-work"
+    rel="nofollow">https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;statusline#how-status-lines-...</a>&gt;
+  score: 0
+  posted_at: '2026-10-29T06:26:59Z'
+- id: '50285194'
+  parent_id: '50284507'
+  author: Zizizizz
+  text: Can pi be used with Claude on an enterprise sub?
+  score: 0
+  posted_at: '2026-10-29T06:27:35Z'
+- id: '50285200'
+  parent_id: '50285048'
+  author: pants2
+  text: Really? Because you&#x27;d think for profit they would want to minimize token
+    burn and therefore get away with lower limits on their plans
+  score: 0
+  posted_at: '2026-10-29T06:28:30Z'
+- id: '50285245'
+  parent_id: '50285048'
+  author: weird-eye-issue
+  text: I disagree because with their subscriptions and people using Opus I doubt
+    the majority of users are hitting their limits often so this would just burn compute
+    on their end
+  score: 0
+  posted_at: '2026-10-29T06:34:53Z'
+- id: '50285280'
+  parent_id: '50285045'
+  author: cheeseface
+  text: All Claude Enterprise customers.
+  score: 0
+  posted_at: '2026-10-29T06:39:36Z'
+- id: '50285290'
+  parent_id: '50284699'
+  author: jawr
+  text: Sorry to side swipe this, but it&#x27;s related to token usage :peek:<p>Are
+    you aware of any updates on the SDK using more session usage vs claude code (<a
+    href="https:&#x2F;&#x2F;github.com&#x2F;anthropics&#x2F;claude-code&#x2F;issues&#x2F;97074"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;anthropics&#x2F;claude-code&#x2F;issues&#x2F;97074</a>)?
+  score: 0
+  posted_at: '2026-10-29T06:41:54Z'
+- id: '50285308'
+  parent_id: '50285200'
+  author: adwn
+  text: That only applies to subscriptions. Enterprise customers pay API rates and
+    therefore per-token. Being wasteful would directly increase Anthropic&#x27;s profit,
+    assuming they&#x27;re not selling them at a loss.
+  score: 0
+  posted_at: '2026-10-29T06:45:28Z'
+- id: '50285323'
+  parent_id: '50285200'
+  author: bronlund
+  text: This is not about the bottom line, it is about proving to the marked that
+    there is a demand - in order to attract more funding.
+  score: 0
+  posted_at: '2026-10-29T06:48:14Z'
+- id: '50285325'
+  parent_id: '50285245'
+  author: bronlund
+  text: They need to prove there is a demand in order to attract more funding. Funding
+    they are completely depended on.
+  score: 0
+  posted_at: '2026-10-29T06:49:22Z'
+- id: '50285327'
+  parent_id: '50284699'
+  author: rptx
+  text: That helps put the 16 percent in context. I think it would be better to add
+    a real setting to turn agent summaries off... in the current binary, both the
+    sdk option and the env var can only switch them on
+  score: 0
+  posted_at: '2026-10-29T06:49:45Z'
+- id: '50285361'
+  parent_id: '50285245'
+  author: queenkjuul
+  text: Enterprises pay API rates though and they account for the vast majority of
+    revenue
+  score: 0
+  posted_at: '2026-10-29T06:55:25Z'
+- id: '50285422'
+  parent_id: '50285361'
+  author: weird-eye-issue
+  text: The vast majority of revenue from Claude Code or from their integrating the
+    API in their own apps?
+  score: 0
+  posted_at: '2026-10-29T07:03:51Z'
+- id: '50285424'
+  parent_id: '50285004'
+  author: mirsadm
+  text: That assumes they know what is going behind the scenes. The whole company
+    is vibe coded at this point.
+  score: 0
+  posted_at: '2026-10-29T07:04:13Z'
+- id: '50285430'
+  parent_id: '50284699'
+  author: xyzsparetimexyz
+  text: Status lines should either be optional or the tokens used for them is free.
+    Anything else is insane.
+  score: 0
+  posted_at: '2026-10-29T07:05:53Z'
+- id: '50285526'
+  parent_id: '50284621'
+  author: odo1242
+  text: But you also burn the exact same number of tokens (actually more) every time
+    the model makes a tool call. It&#x27;s an agent, it makes a lot of tool calls.
+  score: 0
+  posted_at: '2026-10-29T07:24:17Z'
+- id: '50285541'
+  parent_id: '50285194'
+  author: fredoliveira
+  text: Doesn&#x27;t an enterprise account already use API rates? If that&#x27;s the
+    case, there&#x27;s no difference. You&#x27;ll end up paying less because Pi will
+    typically use less tokens for the same texture of requests.
+  score: 0
+  posted_at: '2026-10-29T07:26:43Z'
+- id: '50285587'
+  parent_id: '50285004'
+  author: James87211
+  text: How do you use up all the tokens on four 20x Max accounts. That&#x27;s really
+    impressive.
+  score: 0
+  posted_at: '2026-10-29T07:35:00Z'
+- id: '50285591'
+  parent_id: '50285422'
+  author: sshine
+  text: API vs. Subscriptions<p>I don’t know if there’s any openly available statistics
+    on how API costs divide between Claude Code, Claude SDK, raw API, and via OpenRouter.
+  score: 0
+  posted_at: '2026-10-29T07:35:51Z'
+- id: '50285650'
+  parent_id: '50285422'
+  author: krzyk
+  text: All the programmers that work in companies with &gt; 150 employees are forced
+    into API pricing.<p>You could decide where most work.
+  score: 0
+  posted_at: '2026-10-29T07:45:22Z'
+- id: '50285658'
+  parent_id: '50285045'
+  author: krzyk
+  text: Most claude code users, minority can still use subscriptions.
+  score: 0
+  posted_at: '2026-10-29T07:46:12Z'
+- id: '50285665'
+  parent_id: '50285194'
+  author: krzyk
+  text: There is no such thing as enteprise sub. You get API pricing, you can use
+    whatever tool that uses http&#x2F;https.
+  score: 0
+  posted_at: '2026-10-29T07:47:44Z'
+- id: '50285683'
+  parent_id: '50285526'
+  author: kristjansson
+  text: This is the right perspective.  It costs as much as one additional tool call
+    in the conversation.  It’s a bit weird to do it on a timer, which inflates a bit
+    over “just a tool call”, but not by much?
+  score: 0
+  posted_at: '2026-10-29T07:50:14Z'
+- id: '50285828'
+  parent_id: '50285323'
+  author: jstummbillig
+  text: What market is going to care about the number of tokens somebody uses? That&#x27;s
+    like a market that cares about the number of if statements in a piece of code.
+    It&#x27;s nonsense.
+  score: 0
+  posted_at: '2026-10-29T08:06:32Z'
+- id: '50285851'
+  parent_id: '50285665'
+  author: Zizizizz
+  text: Great thank you
+  score: 0
+  posted_at: '2026-10-29T08:09:11Z'
+- id: '50285855'
+  parent_id: '50285308'
+  author: stavros
+  text: You meant to write &quot;being frugal&quot;, I think.
+  score: 0
+  posted_at: '2026-10-29T08:09:36Z'
+- id: '50286018'
+  parent_id: '50284864'
+  author: simon83
+  text: Subagents have a default TTL of 5 minutes though, with an opt in to increase
+    it to 1h, for a premium for writing to cache.
+  score: 0
+  posted_at: '2026-10-29T08:29:09Z'
+- id: '50286061'
+  parent_id: '50284507'
+  author: yread
+  text: I just find indented paragraphs of proportional font on white background so
+    much easier to read:(
+  score: 0
+  posted_at: '2026-10-29T08:35:57Z'
+- id: '50286411'
+  parent_id: '50285855'
+  author: adwn
+  text: I meant &quot;being wasteful with tokens&quot;, as in, Anthropic makes more
+    profit when Claude Code sends many input tokens and requests many output tokens
+    when billing the customer for the API cost.
+  score: 0
+  posted_at: '2026-10-29T09:22:07Z'
+- id: '50286426'
+  parent_id: '50285828'
+  author: adwn
+  text: If Anthropic makes money on each token, the market would&#x2F;will care very
+    much.
+  score: 0
+  posted_at: '2026-10-29T09:25:33Z'
+- id: '50286433'
+  parent_id: '50286411'
+  author: stavros
+  text: Ahh, sorry, my bad.
+  score: 0
+  posted_at: '2026-10-29T09:26:32Z'
+- id: '50286551'
+  parent_id: '50284683'
+  author: simon83
+  text: In my sessions it is ~16%, not using workflows due to the nature of my work
+    (a lot of research subagents where fixed workflows don&#x27;t work well)
+  score: 0
+  posted_at: '2026-10-29T09:43:22Z'
+- id: '50286617'
+  parent_id: '50284615'
+  author: asaddhamani
+  text: Wouldn’t they?
+  score: 0
+  posted_at: '2026-10-29T09:53:33Z'
+- id: '50286689'
+  parent_id: '50284556'
+  author: gringofyx
+  text: No, not necessarily - the prompt-cache is only hit if everything prior matches...
+    including MCP &amp; tool definitions. So to benefit from prompt-caching themselves
+    they would need to include the tools you define to the summariser.<p>If they were
+    doing that, then a cheaper (prompt-cache friendly) option is just to silently
+    send the whole conversation with the summariser prompt appended
+  score: 0
+  posted_at: '2026-10-29T10:02:18Z'
+- id: '50286716'
+  parent_id: '50284624'
+  author: gringofyx
+  text: This is why I now avoid OpenRouter and just buy direct from DeepSeek.<p>$100
+    on DeepSeek has lasted over a week, whereas on OpenRouter it lasted two days
+  score: 0
+  posted_at: '2026-10-29T10:05:25Z'
+- id: '50286719'
+  parent_id: '50284567'
+  author: gptgautam1
+  text: just 13%? mine still eats up like 32 and I am on the max 20x plan
+  score: 0
+  posted_at: '2026-10-29T10:05:56Z'
+- id: '50286766'
+  parent_id: '50284894'
+  author: gptgautam1
+  text: tried the claude code delegating and codex doing workflow with sol 6.1 xhigh
+    and even that messes up my codebase still find lots of problems and half baked
+    assumptions codex makes. wonder how you are doing that while integrating luna
+    too..
+  score: 0
+  posted_at: '2026-10-29T10:10:55Z'
+- id: '50286864'
+  parent_id: '50284695'
+  author: dofm
+  text: "&gt; Similarly to “one language is best,” saying “one harness is best” is
+    shortsighted in the best possible case<p>You are arguing against something that
+    was not said?"
+  score: 0
+  posted_at: '2026-10-29T10:24:27Z'
+- id: '50286899'
+  parent_id: '50286617'
+  author: skerit
+  text: I just had a look, and they don&#x27;t. It&#x27;s really just a temporary
+    fork of the conversation, so it&#x27;s fully cached. But it does run every 30
+    seconds, so that is very bad especially if it&#x27;s a subagent that&#x27;s at
+    800k tokens.<p>And I don&#x27;t really get the point of this feature, I&#x27;ve
+    always found it super annoying that the main agent creates a subagent with the
+    clear description of &quot;Fix tile cache&quot; for example, and then after a
+    while it turns into something generic like &quot;Running browser tests&quot;
+  score: 0
+  posted_at: '2026-10-29T10:29:54Z'
+- id: '50287074'
+  parent_id: '50285045'
+  author: minraws
+  text: I mean all big businesses (150+ peep) have to pay that much, it&#x27;s the
+    reality of the times. Getting some AI imho essential&#x2F;good, one 200$ plan
+    or spending 5000-7000$ per engineering team sure, 100$ plans or 3000$ for most
+    semi technical staff definitely.<p>But if you are telling me I am wasting like
+    a good 10-20% of my tokens on summaries I might as well stop using your service,
+    worst part is claude doesn&#x27;t let you use something else.
+  score: 0
+  posted_at: '2026-10-29T10:54:29Z'
+- id: '50287268'
+  parent_id: '50285308'
+  author: NiloCK
+  text: Overall I find this line of thinking pretty dubious. Competition exists. Yes,
+    model provider X can run up my bill by instructing its model to do busywork. But
+    I can easily swap to providers Y, Z, A, B, C.<p>I happen to find I&#x27;m receiving
+    exceptional value from provider X, so I don&#x27;t switch.<p>API customers can
+    swap to alternate providers even more easily than subscription customers.
+  score: 0
+  posted_at: '2026-10-29T11:17:39Z'
+- id: '50287280'
+  parent_id: '50284699'
+  author: abelw
+  text: I&#x27;m also at 15+%. This feels like a lot when I think back on how often
+    I&#x27;ve hit the weekly limit.
+  score: 0
+  posted_at: '2026-10-29T11:18:10Z'
+- id: '50287555'
+  parent_id: '50285587'
+  author: throwup238
+  text: I have several difficult projects that are very amenable to the whole automated
+    agent swarm nonsense.
+  score: 0
+  posted_at: '2026-10-29T11:52:30Z'
+- id: '50287824'
+  parent_id: '50284699'
+  author: eddyg
+  text: Thank you for jumping in to the fray and providing additional context, data
+    and updates!
+  score: 0
+  posted_at: '2026-10-29T12:24:25Z'
+- id: '50287874'
+  parent_id: '50285325'
+  author: brookst
+  text: Do you really think there’s not enough organic demand so they have to fake
+    it?<p>I run three 20x max accounts to 100% every week. I could easily use more
+    if I could afford it.<p>And obviously they wouldn’t IPO if they didn’t need to
+    raise cash, but have you read the S1?
+  score: 0
+  posted_at: '2026-10-29T12:28:58Z'
+- id: '50287910'
+  parent_id: '50286411'
+  author: brookst
+  text: As long as price elasticity is zero.
+  score: 0
+  posted_at: '2026-10-29T12:32:14Z'
+- id: '50287931'
+  parent_id: '50285526'
+  author: brookst
+  text: Tool calls don’t sent the full transcript? I think you mean one more turn?
+  score: 0
+  posted_at: '2026-10-29T12:33:56Z'
+- id: '50288037'
+  parent_id: '50284625'
+  author: Silagi
+  text: Can I ask why? The modern models deal with compaction remarkably well, to
+    the point where I dropped my autocompact from 1M to 350k. I&#x27;ve seen no change
+    in efficacy and a reduced usage rate.
+  score: 0
+  posted_at: '2026-10-29T12:43:45Z'
+- id: '50288710'
+  parent_id: '50288037'
+  author: bombcar
+  text: For certain workloads compaction is great, for others you&#x27;re better off
+    manually doing a &#x2F;handoff (or a similar skill you write yourself to keep
+    what you need, toss what you don&#x27;t; Claude is not always good at figuring
+    it out).<p>Read your memory.md to see what Claude thinks is very important.
+  score: 0
+  posted_at: '2026-10-29T13:28:37Z'
+- id: '50288817'
+  parent_id: '50288710'
+  author: Silagi
+  text: That was my experience in the Opus 4.5 - 4.7 era, but recently it&#x27;s been
+    on the nose with what I want it to carry over, or close enough that a full handoff
+    would be more expensive than just letting it find what it needs again.<p>I&#x27;m
+    mostly working on moderately sized rust codebases (600k~ lines) with reasonably
+    long running tasks. The only time I intentionally do a handoff is if the next
+    goal is in an entirely different section of the code, or I let the session cache
+    expire, or I&#x27;m working with 6.1 Sol for more than a few hours, which admittedly
+    has some horrendous context drift compared to Opus.
+  score: 0
+  posted_at: '2026-10-29T13:36:52Z'
+- id: '50288850'
+  parent_id: '50284699'
+  author: subscribed
+  text: So are we just holding it wrong, or is the distinct absence of any mechanism
+    to tune&#x2F;turn it off for our own good?<p>Also why you&#x27;re so dismissive
+    with the 2&#x2F;4% figure while <i>completely</i> ignoring the TFA analysis and
+    the other examples in their linked github issue?<p>Seriously, you&#x27;re adding
+    a feature that silently burns 15-25% tokens (that is burning money for API clients
+    while hiding that fact),  take away everything that could be used to mitigate
+    it, and your response is basically, &quot;eh, your numbers are unimportant and
+    ours say it&#x27;s negligible but since you complain we&#x27;ll make it a bit
+    cheaper&quot;.<p>Seriously, that looks so intentionally customer-hostile and revenue-friendly,
+    but reading the room no one is surprised.
+  score: 0
+  posted_at: '2026-10-29T13:38:45Z'
+- id: '50289238'
+  parent_id: '50287931'
+  author: hedora
+  text: Pretty much everything sends the full transcript.  That’s how LLMs work, and
+    why “compact before cache expiry” is now a default in Claude Code.  Cache hits
+    are incredibly cheap to service on the provider side.
+  score: 0
+  posted_at: '2026-10-29T14:03:24Z'
+article:
+  url: https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce
+  title: 'Claude Code burns ~15-20% of your tokens on a 3-word status line: a Bun
+    preload that turns agent_summary off · by Flamerix AI, flamerix.ai · MIT · GitHub'
+  fetch_status: success
+  content: "Instantly share code, notes, and snippets.\n\n[![@flamerix-ai](https://avatars.githubusercontent.com/u/335226770?s=64&v=4)](/flamerix-ai)\n\n#
+    [flamerix-ai](/flamerix-ai)/**[README.md](/flamerix-ai/c3905705cc4205e5de3011fa2e74efce)**\n\n
+    Last active \n\n- [Star110(110)](/login?return_to=https%3A%2F%2Fgist.github.com%2Fflamerix-ai%2Fc3905705cc4205e5de3011fa2e74efce)\n-
+    [Fork5(5)](/login?return_to=https%3A%2F%2Fgist.github.com%2Fflamerix-ai%2Fc3905705cc4205e5de3011fa2e74efce)\n\n-
+    \n\n- \n\n[Download ZIP](/flamerix-ai/c3905705cc4205e5de3011fa2e74efce/archive/2fe224167473e3185c104a5dbff7a788ab025b3b.zip)\n\n
+    Claude Code burns ~15-20% of your tokens on a 3-word status line: a Bun preload
+    that turns agent\\_summary off · by Flamerix AI, flamerix.ai · MIT \n\n[Raw](/flamerix-ai/c3905705cc4205e5de3011fa2e74efce/raw/2fe224167473e3185c104a5dbff7a788ab025b3b/README.md)\n\n[**README.md**](#file-readme-md)\n\n#
+    Claude Code burns ~15–20% of your tokens on a 3-word status line. Here's how to
+    turn it off\n\nby [Flamerix AI](https://flamerix.ai) · MIT License\n\n> Tested
+    on Linux, Claude Code 2.1.257–2.1.312 (see Tested versions). The binary is not
+    modified (`BUN_OPTIONS=--preload`). An update can silently undo it, so see Verify.\n\n##
+    TL;DR\n\n    curl -fsSL https://gist.githubusercontent.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce/raw/no-agent-summary.js
+    -o~/.local/share/no-agent-summary.js\n    claude daemon stop --any\n    BUN_OPTIONS=\"${BUN\\_OPTIONS:+$BUN\\_OPTIONS
+    }--preload $HOME/.local/share/no-agent-summary.js\"claude\n\nTo make it permanent
+    for every Claude Code process, see [Install](#install).\n\n## The problem\n\nEvery
+    ~30 seconds, for every background agent, Claude Code sends that agent's **entire
+    transcript** to the agent's own model (usually Opus) and asks it to \"describe
+    your most recent action in 3-5 words\". The answer only updates the agent's status
+    line in the agents panel; it never reaches the model or your conversation. There
+    is no setting that turns it off, and since 2.1.232 (August 2026) it has been on
+    by default.\n\nThe anomaly was detected by [DRIM](https://flamerix.ai) in Claude
+    Code's OpenTelemetry export: grouping `claude_code.api_request` events by `query_source`
+    showed `agent_summary` costing **more than the main conversation itself**.\n\nSpend
+    here means Claude Code's own per-request estimate (`cost_usd`), not an invoice:
+    on a subscription, what you lose is rate-limit headroom. We are not the only ones
+    who measured it:[#86879](https://github.com/anthropics/claude-code/issues/86879)
+    collects four independent measurements of 18–26 %.\n\n## The fix (how it works)\n\n`no-agent-summary.js`
+    is a Bun preload (~80 lines of code). It wraps `setTimeout`/`setInterval`; when
+    a callback's source text contains a summarizer anchor (e.g. the `[AgentSummary]
+    Timer fired`log line), it returns an inert handle instead of arming the timer.
+    Every other timer passes through untouched. In the OpenTelemetry export the suppressed
+    requests are`claude_code.api_request` events with `query_source = agent_summary`.\n\nWhy
+    a timer hook rather than something simpler: the module ships as precompiled Bun
+    bytecode, so editing its JS text inside the binary changes nothing, and the API
+    client does not go through a wrapped `globalThis.fetch`. But `Function.prototype.toString`
+    still returns a callback's source even when it runs from bytecode, so the timer
+    can be recognised by a string inside it. The inert timer uses exactly 2³¹−1 ms:
+    Node and Bun treat a larger delay as 1 ms, so an \"infinite\" delay would fire
+    at once.\n\n## Install\n\n1. Put `no-agent-summary.js` somewhere stable; note
+    its **absolute** path.\n\n2. Set `BUN_OPTIONS` **globally** so every Claude Code
+    process gets it. One of:\n\n3. Restart the daemon and every already-running session,
+    then start Claude Code from an environment that has `BUN_OPTIONS`:\n\n### Env\n\n##
+    Nuances\n\n- **Restart the daemon after install.** The daemon, pty host and pre-warmed
+    `bg-spare` sessions inherit the environment of the client that started the daemon,
+    so a daemon started before`BUN_OPTIONS` was set keeps spawning unhooked sessions.
+    Hence `claude daemon stop --any`.\n- **Headless runs need it too:** `claude -p`,
+    cron, CI, editor integrations.\n- **Platform:** Linux tested, macOS and Windows
+    untested. On Windows the `/$bunfs/` gate most likely never installs the hook.\n-
+    **A/B:** `CC_AGENT_SUMMARY_MODE=pass` loads the hook but arms every timer; the
+    summaries come back, which shows the `off` result is the hook's doing.\n- **Background
+    processes:** daemon, pty host and `bg-spare` must carry `--preload` in their environment
+    (`/proc/<pid>/environ` on Linux); if not, restart the daemon.\n\n## Verify (after
+    every update)\n\n1. **Preload loads:**\n\n2. **Timer suppressed:** with the same
+    `BUN_OPTIONS` and `CC_AGENT_SUMMARY_LOG=/tmp/nas.log`, run a background subagent
+    for a minute or two. The log shows`summary timer #1 suppressed (setTimeout, delay=30000)`
+    and the agent's panel status stops updating. If you export OpenTelemetry, `query_source
+    = agent_summary` should stay at zero; this is the only check that catches every
+    failure mode.\n\n### Fail-open\n\nMatching is by **source text** : an anchor must
+    sit inside the callback passed to the timer. If an update breaks that, the hook
+    matches nothing and summaries silently come back. Ways it can happen:\n\n- the
+    log line or query-source id is renamed;\n- the callback is passed via `fn.bind(...)`
+    (no source in `toString`) or another wrapper;\n- the strings move to a shared
+    constant outside the callback;\n- the timer moves to an unwrapped API (`timers/promises`,
+    a scheduler loop).\n\nSo re-run Verify after every update.\n\n## Effect\n\n- We
+    run it under every Claude Code process on our machine (2.1.301). Since then there
+    have been zero `agent_summary` requests, and no other side query grew to take
+    its place.\n- Subagents, background agents, forked skills and background sessions
+    run normally; only the summary fork is skipped.\n- Visible change: the per-agent
+    panel status stops updating; SDK `task_progress` has no `summary`.\n- Overhead:
+    one `Function.prototype.toString` per distinct timer callback, cached in a `WeakMap`.`claude
+    --version`: ~10 ms → ~17 ms (one measurement).\n\n## Tested versions\n\nLinux
+    x64 binary from npm `@anthropic-ai/claude-code-linux-x64` (its sha256 equals the
+    native installer's `manifest.json` checksum). **Static:** the extracted bundle's
+    summary timer callback carries a hook anchor. **Live:** `claude -p --model haiku`
+    with`CLAUDE_CODE_AGENT_PROGRESS_SUMMARIES=1`, one subagent doing 8 steps of ~20
+    s, counting`[AgentSummary] Forking` in `--debug-file`.\n\n5 / 5 / 0 = the fork
+    happens on this version, merely loading the hook changes nothing, and `off`removes
+    it.\n\n## Why there is no setting for this\n\n- **The documented switch only turns
+    it on.** The SDK option `agentProgressSummaries` defaults to`false`, but in the
+    bundle it is one term of an OR, and every code path that writes it sets`true`.
+    So `false` changes nothing, and the undocumented `CLAUDE_CODE_AGENT_PROGRESS_SUMMARIES`can
+    only enable summaries too.\n- **The interval belongs to the server.** It comes
+    from a per-model-family server flag and is clamped to 30–240 s. The default is
+    already the minimum, and no value disables the timer.\n- **The obvious env vars
+    miss.** `DISABLE_NON_ESSENTIAL_MODEL_CALLS`, which some packagers set, does not
+    occur in the binary at all. `CLAUDE_CODE_FORK_SUBAGENT=0` and`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`
+    do stop it, but only by taking fork subagents or background agents with it.\n-
+    **The prompt cache makes it cheaper, not cheap.** About 98 % of these calls re-read
+    the transcript from cache; the ~2 % that hit a cold cache carry over a third of
+    its cost.\n- **Cost tools that read transcripts don't see it.** These requests
+    are not written to the session logs on disk ([#104358](https://github.com/anthropics/claude-code/issues/104358));
+    only the OpenTelemetry export shows them. The docs section on background token
+    usage doesn't list it either, while Agent View's row summaries are docu"
+  error:
+  fetched_at: '2026-10-29T14:56:47Z'
+archived_at: '2026-10-29T14:56:58Z'

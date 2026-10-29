@@ -5,14 +5,14 @@ post:
   title: GOTO Considered Totally Sick (for error handling in C)
   url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
   hn_url: https://lobste.rs/s/exwlmn
-  score: 29
+  score: 40
   author: eBPF
   posted_at: '2026-10-28T16:07:18Z'
-  fetched_at: '2026-10-29T04:41:55Z'
+  fetched_at: '2026-10-29T14:56:58Z'
   article_url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
   article_fetch_status: success
-  article_fetched_at: '2026-10-29T04:41:57Z'
-  raw_comment_count: 10
+  article_fetched_at: '2026-10-29T14:57:03Z'
+  raw_comment_count: 12
   tags:
   - c
 comments:
@@ -21,7 +21,7 @@ comments:
   author: dualvariable
   text: Kids these days think they invented psychedelics, bisexuality, and using gotos
     in C...
-  score: 20
+  score: 23
   posted_at: '2026-10-28T17:47:01Z'
 - id: lo-hp6pwj
   parent_id: '0'
@@ -29,7 +29,7 @@ comments:
   text: |-
     C is getting a Zig-like defer feature https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3928.pdf
     Worth noting that Golang’s defer is different from the Zig/C version: in Golang defer is scoped to a function, whereas in Zig and C it is scoped to a block. If you defer in a loop, Golang will build up an unbounded amount of work to do later (allocating on the heap), but Zig and C will run each defer statement between each iteration of the loop (using constant space).
-  score: 17
+  score: 21
   posted_at: '2026-10-28T18:07:37Z'
 - id: lo-etm0yg
   parent_id: '0'
@@ -48,7 +48,7 @@ comments:
     making different syntax design choices in your language.\nAnd if you continue
     to use goto for C error handling (like many of us do), then you can use this to
     help win the argument the next time someone objects. :)"
-  score: 9
+  score: 10
   posted_at: '2026-10-28T19:08:22Z'
 - id: lo-4cglwg
   parent_id: '0'
@@ -56,7 +56,7 @@ comments:
   text: |-
     For what it's worth, defer ends up (IMO) not cleaning up the code that much. It got standardized partly because everyone was already inventing their own versions of it with compiler extensions, so the standards committee had to chose between the language having it in a standard form or a nonstandard form.
     (I attended that standards meeting)
-  score: 12
+  score: 16
   posted_at: '2026-10-28T20:31:28Z'
 - id: lo-dborpj
   parent_id: '0'
@@ -89,7 +89,7 @@ comments:
     \  print (\"item is in table\");\r\n    missing: print (\"item is not in table\");\r\nendexit;\n\nThis
     particular syntax doesn't have implicit fallthrough (and I don't think it supports
     explicit fallthrough), but that's a choice."
-  score: 4
+  score: 6
   posted_at: '2026-10-28T22:24:00Z'
 - id: lo-d60g1u
   parent_id: '0'
@@ -124,7 +124,7 @@ comments:
     The advantage of defer is that it makes clear at the point of the defer statements which variables own temporary resources, and you no longer have to manually cross-check the success and failure cases.
     I think it’s a mistake to judge defer by how clean the code looks, because cleanliness is often judged by how many lines get deleted. If you have well-written C then defer only moves code around. If you judge a change from goto fail to defer by its diff then you are unlikely to consider how much state you need to keep in your head when reading the code in between the allocation and the cleanup.
     The advantage of defer is how much less useless mental state you need to keep track of when reading the useful part of a function.
-  score: 10
+  score: 20
   posted_at: '2026-10-29T00:53:52Z'
 - id: lo-bubuvg
   parent_id: '0'
@@ -159,15 +159,51 @@ comments:
     m {\r\n            if table[i,j] == target then {\r\n                print (\"item
     is in table\");\r\n                break :done;\r\n            }\r\n        }\r\n
     \   }\r\n    print (\"item is not in table\");\r\n}"
-  score: 3
+  score: 5
   posted_at: '2026-10-29T01:55:16Z'
 - id: lo-ugqurg
   parent_id: '0'
   author: landon
   text: Back in my day we called this "goto fail;" It even had a website, and a spat
     of CVEs!
-  score: 1
+  score: 2
   posted_at: '2026-10-29T03:26:04Z'
+- id: lo-y7fb1z
+  parent_id: '0'
+  author: masklinn
+  text: If you want to look at the codegen, rust has break-with-value (as well as
+    labelled breaks).
+  score: 3
+  posted_at: '2026-10-29T04:54:08Z'
+- id: lo-gygbgj
+  parent_id: '0'
+  author: pervognsen
+  text: "I'm glad my comment was sufficient provocation. You should finish the article.
+    :)\n\nThere’s an obvious simplification using labelled break without value (and
+    Knuth didn’t even compare multilevel break with his weirder alternatives):\n\nI
+    sent a similar example (a multi-level exit but no labeled break needed because
+    break is relative relative to loops and switches, not other blocks) to Xavier
+    Leroy 10 months ago as feedback for the draft of his excellent Control structures
+    in programming languages. Here's what it said in the book:\nAnother attempt uses
+    a while loop with a (structured) early\r\nexit via a break statement:\r\n\r\nvoid
+    add(key k, data d)\r\n{\r\n   int i = hash(k);\r\n   while (1) {\r\n       if
+    (A[i] == 0) { A[i] = k; B[i] = d; break; }\r\n       if (A[i] == k) { B[i] = d;
+    break; }\r\n       i = i + 1; if (i >= N) i = 0;\r\n   }\r\n}\r\n\r\nWhat ends
+    up being duplicated here is the storing\r\nof the data ⁠B⁠[⁠i⁠] = d, which occurs
+    in both the notfound\r\nand the found branches. This does not significantly\r\naffect
+    readability nor performance, however.\n\nAnd here was my comment:\nThere should
+    be no need to duplicate the assignment:\r\n\r\nvoid add(key k, data d)\r\n{\r\n
+    \  int i = hash(k);\r\n   while (1) {\r\n       if (A[i] == 0) { A[i] = k; break;
+    }\r\n       if (A[i] == k) { break; }\r\n       i = i + 1; if (i >= N) i = 0;\r\n
+    \  }\r\n   B[i] = d;\r\n}\r\n\r\nIt might also be worth mentioning 'early return'
+    as a\r\nwidely supported example of multi-level break.\n\nI know I linked Leroy's
+    book on Mastodon, so you probably read parts of it, plus you already knew much
+    of the history. But for anyone else, part 1 is a very accessible and self-contained
+    historical summary which should be interesting to any programmer. The rest of
+    the book is great too and increasingly so as it gets to the leading edge, but
+    the relevance to a general audience is narrower."
+  score: 2
+  posted_at: '2026-10-29T06:21:02Z'
 article:
   url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
   title: GOTO Considered Totally Sick (for error handling in C)
@@ -273,4 +309,4 @@ article:
     You could also use multiple labels to split cleanup into sections, if you "
   error:
   fetched_at: '2026-10-28T20:46:39Z'
-archived_at: '2026-10-29T04:41:58Z'
+archived_at: '2026-10-29T14:57:04Z'

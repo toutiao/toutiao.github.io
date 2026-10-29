@@ -1,0 +1,132 @@
+---
+post:
+  id: lo-brdwr2
+  source: lobsters
+  title: Redox Ring Buffers Project Summary
+  url: https://www.redox-os.org/news/nlnet-rb-summary/
+  hn_url: https://lobste.rs/s/brdwr2
+  score: 15
+  author: rslabbert
+  posted_at: '2026-10-29T02:04:00Z'
+  fetched_at: '2026-10-29T14:56:58Z'
+  article_url: https://www.redox-os.org/news/nlnet-rb-summary/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-29T14:57:05Z'
+  raw_comment_count: 1
+  tags:
+  - osdev
+comments:
+- id: lo-yw8lga
+  parent_id: '0'
+  author: m0th
+  text: |-
+    The ring buffers work is exciting, but a buried lede is that they also have QNX-style IPC now:
+
+    Direct context switching was implemented in kernel MR 694, resulting in a 15-20% IPC latency reduction. It separates the current context (reference) into the scheduled context and the running context, where the former is the context owning the current timeslice, and the latter is the context whose registers/memory/file table is currently active. When direct switching has not occurred, these always coincide.
+  score: 3
+  posted_at: '2026-10-29T09:56:11Z'
+article:
+  url: https://www.redox-os.org/news/nlnet-rb-summary/
+  title: Ring Buffers Project Summary - Redox - Your Next(Gen) OS
+  fetch_status: success
+  content: "# [Ring Buffers Project Summary](https://www.redox-os.org/news/nlnet-rb-summary/)\n\n#####
+    By Ibuki Omatsu, Anhad Singh, Jacob Lorentzon, Ron Williams on \n\nLast year,
+    the Redox team [received a grant](https://nlnet.nl/project/RedoxOS-ringbuffer/)
+    to develop io\\_uring-like Ring Buffer support at the system task level, as a
+    first step towards ring buffer communications between the application and the
+    majority of system services. This phase of the work finished up in September,
+    as the last pieces were put in place.\n\nWe want to thank the [NLnet Foundation](https://nlnet.nl/),
+    the NGI Zero Commons Fund, and Horizon Europe for their generous support. The
+    NGI Zero Commons Fund is reaching its end, but NLnet is now accepting applications
+    for grants from new funds,[Restack](https://nlnet.nl/restack/) and [Code Supply](https://nlnet.nl/codesupply/),
+    as well as some [smaller theme funds](https://nlnet.nl/themes/).[Apply for funding
+    before November 3rd 2026!](https://nlnet.nl/news/2026/20260903-call.html) (and
+    then every two months after that).\n\nThe team has done a fantastic job, and I
+    want to congratulate Ibuki, Anhad and Jacob, and thank them for their time and
+    effort.\n\nIn addition to implementing the Ring Buffer machinery for our system
+    services and drivers that can support it, an `io_uring` and `liburing`-like API
+    for applications was completed and demonstrated. There was also substantial work
+    done on support crates, including an async executor for drivers.\n\nAnd there
+    was some very exciting work on various performance improvements, to allow much
+    faster switching between applications and their system services. But I will let
+    the team tell you all the technical details.\n\n– Ron Williams\n\n## Ring Buffers
+    Overview\n\n– Anhad Singh\n\nHistorically asynchronous I/O on Linux was done through
+    the kernel’s native AIO interface. AIO is mainly useful for unbuffered (`O_DIRECT`)
+    _file_ I/O, and buffered requests silently block. Developers also raised concerns
+    about its complexity and performance . There is also POSIX AIO, but developers
+    often consider its implementation lackluster and slow. To address these problems,
+    several alternative asynchronous mechanisms such as [fibrils](https://lwn.net/Articles/219954/)
+    and [syslets/threadlets](https://lwn.net/Articles/223899/) were proposed but were
+    never merged into the mainline Linux kernel. In early 2019, [Jens Axboe](https://github.com/axboe)
+    proposed and developed the io\\_uring interface, designed to be an efficient,
+    extensible and “easy to use, hard to misuse.” In its early days, io\\_uring did
+    have a few security issues and memory leaks, but these have since been addressed.
+    It was merged in Linux 5.1 and is widely used today.\n\nThe Linux io\\_uring interface
+    allows the user to submit one or more I/O operations to the kernel, which are
+    then processed in an asynchronous fashion without blocking the userspace process.
+    Redox, being a microkernel, handles I/O in userspace _scheme_ processes rather
+    than in the kernel. Each _file description_ stores a handle to its scheme, so
+    an I/O system call on that file can forward the request to the scheme. The async
+    I/O interface developed in this project, called Redox Rings, uses a mechanism
+    similar to io\\_uring. However, unlike io\\_uring which is used to submit operations
+    to the kernel, the Redox Rings interface is used by the application to directly
+    submit requests to the appropriate scheme asynchronously without blocking the
+    application. Additionally, the interface allows I/O requests to be issued without
+    any memory copies, by having a separate shared memory region between the scheme
+    and the application (which can be requested as DMA-capable memory).\n\nFor portability,
+    the Redox Rings API is designed to be similar to that of [liburing](https://github.com/axboe/liburing)
+    and can also be used for general inter-process communication. For example it is
+    used for communication between the RedoxFS filesystem service and NVMed which
+    is the storage driver. The addition of this API has allowed several parts of Redox
+    to reap significant performance improvements!\n\n### Terminology\n\nA ring buffer
+    is a circular queue backed by an array. The interface makes use of two ring buffers
+    which are shared between the application and the scheme:\n\n- SQ: _submission
+    queue_, where the application writes requests and the scheme reads them\n- CQ:
+    _completion queue_, where the scheme writes responses and the application reads
+    them\n- SQE / CQE: _submission queue entry_ / _completion queue entry_, entries
+    in the SQ and CQ, respectively\n- Buffer pool: A contiguous block of memory, shared
+    between the application and the scheme, from which data buffers are allocated\n-
+    Data buffer: For a request, we currently support a single data buffer, which is
+    a slice of the contiguous buffer pool, defined by an offset and length\n\nSince
+    each queue has exactly one producer and consumer, each index is only ever modified
+    by one side. This eliminates the cost of having a shared locking mechanism.\n\n##
+    The “redox-ring API”\n\n– Ibuki Omatsu\n\nWe’ve introduced the first ring buffer
+    implementation to Redox OS. Unlike Linux’s io\\_uring, the submission queue (SQ)
+    and completion queue (CQ) are shared exclusively between userspace processes and
+    are never accessed by the kernel.\n\n`redox-rings` is a new crate for ring buffer
+    communication between userspace processes, also providing data structures for
+    FFI use cases. It uses futexes as the main synchronization mechanism, with optional
+    pipe file descriptor support.\n\nBased on its FFI support, we’ve introduced the
+    “redox-ring API” in relibc, inspired by Linux’s liburing.\n\nliburing is a library
+    for Linux’s io\\_uring, providing helpers for setting up and tearing down io\\_uring
+    instances, as well as a simplified interface for submitting I/O requests.\n\nSimilarly,
+    the redox-ring API allows applications to communicate with daemons that support
+    ring buffers using custom protocols.\n\n### Key functions\n\nThe API provides
+    functions for managing ring buffers, shared memory, and requests.\n\n- `redox_ring_queue_init_with_path()`
+    initializes a ring buffer connection to a daemon.\n- `redox_ring_alloc_buf()`
+    and `redox_ring_alloc_sized()` allocate buffers from the shared memory pool.\n-
+    `redox_ring_get_sqe()` obtains a submission queue entry (SQE) for preparing a
+    request.\n- `redox_ring_submit()` submits pending requests to the daemon.\n- `redox_ring_wait_cqe()`
+    waits for a completion queue entry (CQE), blocking if none is available.\n- `redox_ring_cqe_seen()`
+    marks a CQE as processed.\n\nThe API also provides functions for registering file
+    descriptors, freeing allocated buffers, and tearing down ring buffer instances.\n\n##
+    Memory Management and Shared Buffers\n\n– Ibuki Omatsu\n\nThe `redox-rings` implementation
+    uses shared memory to exchange SQEs, CQEs, and I/O data between applications and
+    daemons.\n\nDuring initialization, the SQ, CQ, and data buffer pool are mapped
+    into the application’s address space using the `fmap` syscall with `MAP_SHARED`.
+    This allows both sides to access the same memory without copying I/O data between
+    processes.\n\n### Buffer allocation\n\nThe redox-ring API supports two buffer
+    allocation strategies:\n\n- Fixed-size allocation: Uses a simple allocator that
+    divides the shared memory pool into fixed-size chunks and maintains a list of
+    available offsets.\n- Dynamic allocation: Uses the [redox-buffer-pool](https://gitlab.redox-os.org/redox-os/redox-buffer-pool)
+    crate to allocate buffers of varying sizes and alignments. The allocator uses
+    B-trees to manage free and occupied memory regions.\n\nBoth allocation strategies
+    return a pointer to the allocated buffer and its offset within the shared memory
+    pool.\n\nOnce an operation has completed, the application can release its buffer,
+    allowing the memory to be reused.\n\n## Session Creation and Management\n\n– Anhad
+    Singh\n\nThe `redox_ring_queue_init_with_path` function opens the scheme ring
+    handle and uses the `SYS_CALL` system call on it to set up the ring buffer session
+    with the given parame"
+  error:
+  fetched_at: '2026-10-29T14:57:05Z'
+archived_at: '2026-10-29T14:57:06Z'
