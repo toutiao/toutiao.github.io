@@ -1,0 +1,69 @@
+---
+post:
+  id: lo-siebde
+  source: lobsters
+  title: My favourite PowerMac is a Nintendo Wii
+  url: https://virtuallyfun.com/2026/10/29/my-favourite-powermac-is-a-nintendo-wii/
+  hn_url: https://lobste.rs/s/siebde
+  score: 20
+  author: ninakali
+  posted_at: '2026-10-29T16:32:18Z'
+  fetched_at: '2026-10-29T20:53:13Z'
+  article_url: https://virtuallyfun.com/2026/10/29/my-favourite-powermac-is-a-nintendo-wii/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-29T20:53:28Z'
+  raw_comment_count: 1
+  tags:
+  - retrocomputing
+  - reversing
+comments:
+- id: lo-uvfabl
+  parent_id: '0'
+  author: classichasclass
+  text: Well, it's basically a G3 anyway.
+  score: 1
+  posted_at: '2026-10-29T20:26:46Z'
+article:
+  url: https://virtuallyfun.com/2026/10/29/my-favourite-powermac-is-a-nintendo-wii/
+  title: My favourite PowerMac is a Nintendo Wii | Virtually Fun
+  fetch_status: success
+  content: |-
+    _(This is a guest post by Rairii)_
+
+    _Mac OS 7.6 booting on the Wii_
+
+    ![](https://virtuallyfun.com/wp-content/uploads/2026/10/macos922_wii1_00-00-59.png)
+    _Mac OS 9.2.2 booted on the Wii_
+
+    So today I reached a nice milestone in one of my projects: my work porting classic Mac OS to PowerPC systems with what I affectionately call ArtX chipsets (Nintendo GameCube, Wii, eventually Wii U; the GameCube’s Flipper integrated chipset was very much designed by ArtX as it was effectively finished when ATI acquired the company, and the Wii’s Vegas (and its later revision Bollywood) and Wii U’s Latte are effectively straight successors) reached the desktop for the first time, most likely the first time since the CHRP clone era that someone outside of Apple brought up classic Mac OS on a new system to the desktop. Despite still being nowhere near ready for a public release, I want to talk about the challenges I faced with this project so far.
+
+    But first, why port classic Mac OS to this hardware in the first place? I’d already ported NT of course, and during that work I acquired some PowerPC Mac laptops which I also ended up porting NT to, work on one port improved the others and so on. This got me acquainted with the classic Mac OS, and I fell in love with the jank as it were (hacks upon hacks upon hacks going back to the 1980s is something I’d definitely describe as “jank”). Not to mention the m68k part of the TBXI is called “SuperMario”, and was for the entire PowerPC era. I wonder if a developer was a fan in the early 1990s?
+
+    Also, for the record: I started this project on 2025-06-22 (when I forked upstream openbios), no kind of coding agent or LLM was used, all coding, reversing and debugging work done by myself. I do these projects for fun and to learn, if I used “AI” it wouldn’t be fun and I wouldn’t learn anything.
+
+    Let’s start with the initial boot. “New World” classic Mac OS starts out with a bootloader called the “Trampoline”, which runs on an Open Firmware environment. So I needed to port OpenBIOS. Luckily, around this time Goldfish64 had started his own port of Mac OS X to the Wii, and he’d made an OpenBIOS port that I could use some drivers from, although for various reasons I didn’t just want to use his port directly (which was only targeting Wii/Wii U, I wanted to target GameCube too). I also decided to reuse some existing code to make some driver development easier (specifically the display driver), and thus changed my existing NT ARC firmware loader to load a big endian ELF instead.
+
+    I needed some small number of disk drivers for initial bringup, so decided to port my two drivers for devices on the EXI bus (this is just Nintendo and Macronix’s name for SPI), the “SD Gecko” (which is just a straight through adapter for a GameCube memory card slot allowing for SD over SPI), and the “EXI-IDE” (my driver is actually not correct to real hardware, but to my inaccurate emulation in my Dolphin tree allowing for testing under emulator with the low level debugging support that implies).
+
+    I wasn’t sure what kind of on-disk format I wanted to use (these drivers on my earlier NT port ran entirely using disk images on a FAT filesystem, due to the requirement for compatibiltiy with existing homebrew loaders that load executables from FAT filesystems, but this would naturally be limited to 4GB images for FAT32, and later versions of classic Mac OS needed more), so for initial testing I just took the “Mac OS ROM” TBXI file and placed it directly on a FAT filesystem as `\ppc\bootinfo.txt` for OpenBIOS to load it on boot.
+
+    So with that I could get the Trampoline running. I decided that I should try and apply as many patches to the image as possible as close to run-time as possible, so mostly untouched existing CD images could be used eventually.
+
+    The first issue I had was that the Trampoline makes some assumptions of the physical address space layout that are not true for this system. The physical address of a buffer gets calculated as an invalid address, so I patched that to an address guaranteed to be valid, and also the corresponding code setting up the memory chunk list/page table entries for the kernel.
+
+    Additionally, the Trampoline expects that physical addresses from `0x8000_0000` onwards corresponds to memory mapped I/O (on existing systems this code ran on, this would correspond to PCI-bus address space). This is not the case here, and in fact on Wii U, this address would correspond to part of RAM. There was also another assumption that broke on these systems, with holes between areas of RAM in the physical address space, some of which were partially filled by memory-mapped I/O.
+
+    The way I fixed this was to patch the initialisation of this MMIO mapping in the kernel memory chunk list, to a map of physical address `0x0100_0000` (partway through one area of RAM) to virtual address `0xE000_0000`, with length `0x1000_0000`. This specifically maps the whole of the MMIO, plus the end of one RAM area and (for post-GameCube systems) the start of another. (I may change this in future, as on the Wii U, physical address range `0xD000_0000-0xEFFF_FFFF` is mapped to a part of the Radeon R7xx GPU called “HDP”, which can be used to map a view of physical memory with specific swizzling and/or endianness swapping, such that a texture in some GPU-specific format can appear to be a linear framebuffer. It depends on whether I need to use this block ) The function used for initialising a mapping in the Trampoline changed at some point and I ended up detecting the older version and hooking the function so I could work around it (earlier versions used a 16-bit page count, later versions used 32-bit). Additionally, older versions of the Trampoline sets up unconditional 1:1 mappings for physical memory above `0x8000_0000`, which needs to be removed as they conflict with the mappings set up earlier.
+
+    There follows various assorted patches that assume specific hardware. These include: patching out setting some bitflags which correspond to the presence of a microcontroller found on all PowerPC Macintosh hardware, attempting to recalculate the bus frequency using a specific hardware timer, and various register writes and fixups related to a specific interrupt controller device (it’s little endian because it’s on the PCI bus, and naturally, not present here).
+
+    Finally, the final call to jump into the loaded kernel initialisation code is hooked so additional patches can be made later after everything is loaded into memory.
+
+    Additionally, the device tree must be hacked up a bit to be in a shape the Trampoline will accept. The interrupt controller is faked to be one of the recognised ones (the little endian one from above, because at a register level it’s closest to the Flipper interrupt controller present on all the ArtX chipsets, albeit on Wii U it was changed somewhat to add support for the additional PowerPC cores). The address of the frame buffer in the device tree is changed to the uncached virtual address (in the `0xExxx_xxxx` mapping), and finally a fake Mac99-compatible power management device is added to the device tree, so the Trampoline prepares a power management driver for it, that can be replaced later.
+
+    As mentioned above, the kernel initialisation is hooked so extra patches can be made. On the kernel side, there is only one patch to be made: the kernel contains several interrupt controller drivers, the one chosen is patched to match the Flipper interrupt controller, with one of the unused ones sacrificed to gain more space for this. The main difference here is that the expected interrupt controller (whose driver is patched) has a legacy mode where it raises a PowerPC interrupt whenever the interrupts change (not just when interrupts are raised) so this needs to be worked around by masking the raised interrupts in the kernel and then unmasking them later on in drivers’ interrupt handlers.
+
+    Additional patches are made in the “SuperMario” m68k code, and in PowerPC native exec
+  error:
+  fetched_at: '2026-10-29T20:53:28Z'
+archived_at: '2026-10-29T20:53:29Z'

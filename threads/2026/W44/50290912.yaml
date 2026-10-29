@@ -1,0 +1,283 @@
+---
+post:
+  id: '50290912'
+  title: 'Grace Blackwell needs a new scheduler: 27% more usable GPUs from the same
+    racks'
+  url: https://skypilot.ai/blog/grace-blackwell-needs-a-new-scheduler
+  hn_url: https://news.ycombinator.com/item?id=50290912
+  score: 102
+  author: wondersky
+  posted_at: '2026-10-29T15:45:05Z'
+  fetched_at: '2026-10-29T20:53:06Z'
+  article_url: https://skypilot.ai/blog/grace-blackwell-needs-a-new-scheduler
+  article_fetch_status: success
+  article_fetched_at: '2026-10-29T20:53:06Z'
+  raw_comment_count: 18
+comments:
+- id: '50291965'
+  parent_id: '50290912'
+  author: jhgg
+  text: This blog post spends a lot of time telling why gang scheduling is needed
+    here (a fact obvious to anyone using the nvl72s), but doesn&#x27;t actually go
+    into detail about how their scheduler works.<p>At work, we have built something
+    very similar, a custom topology aware scheduler for workloads, and the most interesting
+    things about such a project are entirely absent from this article, making it more
+    of a fluff&#x2F;marketing piece than an actually interesting technical blog in
+    this area.<p>Our next iteration of this scheduler aims to scale to O(millions)
+    of GPUs, with a scheduling cycle time measured in the milliseconds.
+  score: 0
+  posted_at: '2026-10-29T16:43:22Z'
+- id: '50292327'
+  parent_id: '50291965'
+  author: ismailmaj
+  text: Feels AI-generated, so much text real estate is spent explaining the basics
+    in sufficient detail then just two paragraphs on their scheduler with a lot of
+    hand-waving.
+  score: 0
+  posted_at: '2026-10-29T17:02:13Z'
+- id: '50292752'
+  parent_id: '50291965'
+  author: porridgeraisin
+  text: "&gt; making it more of a fluff&#x2F;marketing piece than an actually interesting
+    technical blog in this area.<p>&#x2F;genuine do you recommend any other blog?"
+  score: 0
+  posted_at: '2026-10-29T17:25:30Z'
+- id: '50292775'
+  parent_id: '50291965'
+  author: zhwu
+  text: 'This blog&#x27;s goal is to introduce the problem around the new NVL72 system
+    with GPU failures in production, which not all people outside of xAI are aware
+    of. We have more blogs coming up for what we built to handle topology-aware scheduling,
+    defragmentation and hot swapping during failures. The short version of the scheduling
+    piece: jobs are decomposed into 16-node slices placed atomically on a single rack,
+    with two spares per rack reserved for hot swaps.<p>Seems very relevant to what
+    you are building. Quoting what Ali said: &quot;Quick PoC?&quot;'
+  score: 0
+  posted_at: '2026-10-29T17:27:25Z'
+- id: '50293062'
+  parent_id: '50290912'
+  author: novalite
+  text: This reads a bit disingenuous and click-baity. There&#x27;s no &quot;new&quot;
+    scheduler. Gang scheduling and rack-aware scheduling have been around since the
+    days of HTCondor, and are put in practice at almost every large GPU deployment
+    I&#x27;ve seen. The net new information added by this blog is close to zero, and
+    feels like shilling for SkyPilot.
+  score: 0
+  posted_at: '2026-10-29T17:45:23Z'
+- id: '50293421'
+  parent_id: '50290912'
+  author: zan2215
+  text: |-
+    &quot;Not all high-speed interconnects are created equal&quot;
+    I think he&#x27;s a red rising fan
+  score: 0
+  posted_at: '2026-10-29T18:09:40Z'
+- id: '50293464'
+  parent_id: '50293062'
+  author: hinkley
+  text: 'The danger of being excited about old techniques is giving the impression
+    that you are years behind everyone else.<p>A coworker once said of a particular
+    breed of manager who is an emphatic late adopter: it’s as if every time he goes
+    to the dentist he reads an old trade journal in the waiting room and comes back
+    to work with a “new” idea that everyone else is already busy replacing.<p>Are
+    there any actual newer techniques? For instance, putting 11% of your hardware
+    on reserve for hardware failures seems a bit generous to me for such an expensive
+    cluster. Even if it’s down from some much larger number. One solution to this
+    I’ve seen for handling cpu and memory variability with bin packing is to pool
+    the spare capacity between tasks. For instance a data center with four zones might
+    have 7 backup generators, instead of eight or twelve, counting on clusters of
+    generator failures not to happen frequently.<p>And of course there’s always running
+    low priority tasks on the spare hardware and evicting them on a fault. However
+    those low priority tasks tend to develop their own shadow priorities when they
+    are in house. But that’s a management problem not a technical one.'
+  score: 0
+  posted_at: '2026-10-29T18:12:35Z'
+- id: '50294375'
+  parent_id: '50291965'
+  author: zamalek
+  text: "&gt; O(millions)<p>Big-O doesn&#x27;t include constant factors for a reason
+    (never mind just being a constant entirely), but maybe I am misunderstanding what
+    you are trying to say?"
+  score: 0
+  posted_at: '2026-10-29T19:16:57Z'
+- id: '50294413'
+  parent_id: '50294375'
+  author: jhgg
+  text: "&quot;Order of millions of GPUs being scheduled on&quot; - which is to say
+    when a workload is submitted to the scheduler, it makes a scheduling decision
+    and the individual compute nodes are being programmed within milliseconds.<p>This
+    means that if say a job requesting GPUs is submitted with a given topology constraint,
+    we would already computed the physical nodes that satisfy the topology requirement,
+    and begun preemption &#x2F; begun spinning up processes on the target machines
+    within a few milliseconds of the job being submitted. If there were no preemptions
+    required (which means we need to first wait for graceful termination), the job
+    is fully scheduled in the blink of an eye, whether it&#x27;s on tens or hundreds
+    of thousands of GPUs."
+  score: 0
+  posted_at: '2026-10-29T19:20:35Z'
+- id: '50294514'
+  parent_id: '50294413'
+  author: deadnomore
+  text: You are abusing big O which is worst case time complexity scaling. If I simplify
+    your notation, then you just wrote O(1)
+  score: 0
+  posted_at: '2026-10-29T19:28:39Z'
+- id: '50294519'
+  parent_id: '50294514'
+  author: jhgg
+  text: Should have said &quot;order of&quot;
+  score: 0
+  posted_at: '2026-10-29T19:29:16Z'
+- id: '50294615'
+  parent_id: '50291965'
+  author: covi
+  text: Why do you target millisecond-level cycle time? Are you looking at very fine-grained
+    tasks like elastic sandboxes, in addition to beefy pre- and post-training jobs?
+  score: 0
+  posted_at: '2026-10-29T19:35:57Z'
+- id: '50294655'
+  parent_id: '50294375'
+  author: arjie
+  text: It&#x27;s not Big-O complexity notation. It means &quot;a few millions&quot;.
+    It&#x27;s sort of how the word &quot;sanction&quot; can mean one thing or a different
+    thing. The textual glyph sequence means a different thing based on context in
+    English. Pretty normal.<p>I like to call it Big-O Magnitude Notation.
+  score: 0
+  posted_at: '2026-10-29T19:38:34Z'
+- id: '50294669'
+  parent_id: '50290912'
+  author: timzaman
+  text: Who has nvl72s that this isnt absolutely plainly obvious to - and has been
+    for years. Not just that - topology has -always- been relevant to scheduling,
+    and hpc schedulers have always been aware. What a weird blogpost.
+  score: 0
+  posted_at: '2026-10-29T19:39:32Z'
+- id: '50294678'
+  parent_id: '50290912'
+  author: asaiacai
+  text: |-
+    There’s been some prior art in this space I feel that should be mentioned from k8s SIG batch in the Kueue project
+    <a href="https:&#x2F;&#x2F;kueue.sigs.k8s.io&#x2F;docs&#x2F;concepts&#x2F;topology_aware_scheduling&#x2F;" rel="nofollow">https:&#x2F;&#x2F;kueue.sigs.k8s.io&#x2F;docs&#x2F;concepts&#x2F;topology_aware_sched...</a>
+  score: 0
+  posted_at: '2026-10-29T19:40:02Z'
+- id: '50294949'
+  parent_id: '50294678'
+  author: zhwu
+  text: 'Yes, SkyPilot Platform built the scheduler on top of Kueue. There is some
+    shortcoming of Kueue&#x27;s TAS that you have to resolve, e.g., you cannot do
+    TAS with a Elastic job, which makes the hot swapping not possible for large-scale
+    jobs on NVL72 racks: <a href="https:&#x2F;&#x2F;kueue.sigs.k8s.io&#x2F;docs&#x2F;concepts&#x2F;elastic_workload&#x2F;#limitations"
+    rel="nofollow">https:&#x2F;&#x2F;kueue.sigs.k8s.io&#x2F;docs&#x2F;concepts&#x2F;elastic_workload&#x2F;#li...</a><p>&quot;No
+    Topology-Aware Scheduling (TAS) support.&quot;<p>There is another blog talking
+    about this coming soon.'
+  score: 0
+  posted_at: '2026-10-29T20:01:53Z'
+- id: '50295316'
+  parent_id: '50291965'
+  author: jeffinhat
+  text: open source the scheduler
+  score: 0
+  posted_at: '2026-10-29T20:23:23Z'
+- id: '50295355'
+  parent_id: '50295316'
+  author: retiredpapaya
+  text: jhgg and jlf PLEASE OPEN SOURCE THE SCHEDULER<p>i suspect you also have some
+    great 60Hz cluster observability software ;)<p>its good for the world if you do
+    it
+  score: 0
+  posted_at: '2026-10-29T20:25:32Z'
+article:
+  url: https://skypilot.ai/blog/grace-blackwell-needs-a-new-scheduler
+  title: 'Grace Blackwell needs a new scheduler: 27% more usable GPUs from the same
+    racks | SkyPilot'
+  fetch_status: success
+  content: "Not all high-speed interconnects are created equal, and using the wrong
+    one can be quite costly: running the same distributed training job over InfiniBand
+    rather than NVLink can [degrade performance by 43%](https://nanotron-ultrascale-playbook.static.hf.space/index.html#:~:text=which%20typically%20sees%20around,scenarios).\n\nHistorically,
+    NVLink was limited to communication within a single node, meaning that multi-node
+    AI workloads were forced to communicate over InfiniBand or a cloud equivalent
+    (EFA on AWS, GPUDirect-TCPX on GCP). NVIDIA’s NVL72 systems remove this limitation
+    by connecting all 72 GPUs in a rack with a unified NVLink fabric, so GPUs on different
+    nodes can exchange data with an order of magnitude more bandwidth.\n\n![Infiniband](https://cdn.sanity.io/images/9qcljuzt/production/ccfaea9718e3d712a67506090f439426775972b7-1080x1080.svg?auto=format&h=3840&w=3840&fit=min)\n\nHowever,
+    maximizing the benefits of NVL72 systems is highly dependent on workload placement:
+    a multi-node job spread across racks is still bottlenecked by InfiniBand. Preserving
+    rack-locality gets harder as hardware failures take nodes offline and jobs finishing
+    at different times scatter free capacity across racks.\n\nThis blog covers the
+    communication bottleneck in large-scale training and inference, the NVL72 rack-scale
+    fabric, and slice sizing for resilience to GPU failures, as well as how the [SkyPilot
+    Platform](https://skypilot.ai/platform) keeps multi-node jobs rack-local through
+    topology-aware placement, in-place recovery from hardware failures, and automatic
+    defragmentation of shared clusters.\n\n## [Training at scale is a communication
+    problem #](#training-at-scale-is-a-communication-problem)\n\nFrontier training
+    jobs run across thousands of GPUs. Doing so requires answering two questions:\n\n1.
+    How do you shard your model across GPUs to ensure that it can actually run?\n2.
+    Given your compute budget, how many copies of the sharded model can you run to
+    maximize training throughput?\n\nThe first question is typically answered with
+    a combination of:\n\n- Tensor Parallelism (TP): splitting a layer’s weight matrices
+    across GPUs\n- Expert Parallelism (EP): placing a mixture-of-experts (MoE) layer’s
+    experts on different GPUs\n- Pipeline Parallelism (PP): splitting a model layer-wise
+    across GPUs\n\nThe answer to the second question sets the degree of Data Parallelism
+    (DP): the number of copies of the sharded model that train in parallel, each on
+    a different slice of the training data.\n\nOf these parallelism strategies, tensor
+    parallelism’s all-reduce and expert parallelism’s all-to-all communication patterns
+    sit on the critical path during training, making them [the most important to keep
+    on NVLink](https://arxiv.org/abs/2603.07685) (§9.1.2).\n\n### Tensor Parallelism\n\nTensor
+    parallelism splits the weight matrices inside each layer across GPUs, so every
+    GPU only stores and computes a slice of each layer.\n\nTransformer layers are
+    made up of two blocks: self-attention and a multi-layer perceptron (MLP). At its
+    core, each block is two matrix multiplications (GEMMs) in a row. [Megatron-LM](https://arxiv.org/abs/1909.08053)
+    (§3) showed that by partitioning a block’s first GEMM column-wise and its second
+    GEMM row-wise, the GPUs only need to synchronize via all-reduce once per block,
+    after the second GEMM, instead of after each one.\n\n![Animated diagram: tensor
+    parallelism splits A column-wise and B row-wise across two GPUs, and one all-reduce
+    sums the partial z results](https://cdn.sanity.io/images/9qcljuzt/production/57989e427e99a44011eac3fcd2758eb912f7c4b4-1200x400.svg?auto=format&h=1280&w=3840&fit=min)\n\n_Figure
+    1. Tensor parallelism across two GPUs. A is split column-wise, so each GPU computes
+    its own slice of y without communicating. B is split row-wise to match, so each
+    GPU produces a partial z, and one all-reduce sums the partial results._\n\nEven
+    with this optimization, tensor parallelism still requires two all-reduces per
+    transformer layer during the forward pass. [These all-reduce steps sit on the
+    critical path](https://nanotron-ultrascale-playbook.static.hf.space/index.html#:~:text=The%20inability%20to%20fully%20hide,directly%20adds%20to%20the%20critical%20path)
+    during training because they cannot be fully overlapped with computation. As a
+    result, tensor parallelism is typically kept on NVLink: Hugging Face measured
+    a 43% drop in training throughput when it moved off NVLink onto InfiniBand.\n\n###
+    Expert Parallelism\n\nIn a mixture-of-experts (MoE) layer, the MLP block is replaced
+    by many smaller MLPs, called experts, and a router that sends each token to a
+    small subset of experts. Expert parallelism splits MoE layers such that these
+    small, independent experts are placed on different GPUs.\n\nUnder expert parallelism,
+    each MoE layer requires two all-to-all communication steps during the forward
+    pass, dispatch and combine. A router selects the top-_k_ experts for each token
+    and dispatches tokens to the GPUs that have those experts in memory. Each GPU
+    then computes its local experts on the tokens it received via a single grouped
+    matrix multiplication. Finally, the expert outputs are sent back to each token's
+    original GPU and combined.\n\n![Expert parallelism diagram: an all-to-all dispatches
+    tokens to experts on different GPUs, and a second all-to-all combines the results](https://cdn.sanity.io/images/9qcljuzt/production/0fdb50fb0732072a16f453ecd1a787bfd9bb9e9b-2008x950.png?auto=format&h=1817&w=3840&fit=min)\n\n_Figure
+    2. Expert parallelism distributes experts across GPUs. The all-to-all communication
+    dispatches tokens to their assigned experts and combines results. (Source: NVIDIA,
+    Figure 4.)_\n\nAs models add more MoE layers and route each token to more experts,
+    the volume of all-to-all traffic grows, introducing a communication bottleneck.\n\nTraining
+    an MoE model with 64-way expert parallelism spreads each MoE layer’s experts across
+    64 GPUs. On standard 8-GPU servers, that moves the all-to-all traffic off high-bandwidth
+    NVLink and through much narrower InfiniBand interconnects where unoptimized communication
+    can consume [up to 60% of training time](https://arxiv.org/abs/2603.07685) (§1.2).
+    On NVL72 systems, all 64 GPUs stay within a single NVLink domain, [effectively
+    eliminating the communication bottleneck](https://arxiv.org/abs/2603.07685) (§9.2.2).\n\n##
+    [Inference needs fast inter-node networking too #](#inference-needs-fast-inter-node-networking-too)\n\nThe
+    parallelism techniques discussed above are not unique to training. Beyond enabling
+    inference engines to serve models that are too large for a single GPU, model parallelism
+    can also improve throughput. Splitting a model's weights across more GPUs frees
+    up memory for the KV cache, so the engine can process [more concurrent requests
+    or support larger context windows](https://vllm.ai/blog/2026-05-14-elastic-expert-parallelism#:~:text=WideEP%20deployments,very%20long%20contexts).
+    In some cases, the freed memory grows faster than the number of GPUs: in one [vLLM](https://vllm.ai/blog/distributed-inference#:~:text=we%20are%20able%20to%20increase%20the%20amount%20of%20KV%20Cache%20blocks%20by%2013.9x)
+    benchmark, splitting a model tensor-parallel across two GPUs increased the amount
+    of KV cache blocks by 13.9x and delivered 3.9x more throughput.\n\n![Animated
+    diagram: Llama-3.1-70B weights fill most of one H100, and sharding them across
+    two H100s frees memory for 13.9x more KV cache blocks](https://cdn.sanity.io/images/9qcljuzt/production/562f38685bdd27a669651d0bb017fa6fc9b4d859-950x384.svg?auto=format&h=1552&w=3840&fit=min)\n\n_Figure
+    3. GPU memory breakdown for Llama-3.1-70B on one vs. two H100s. (Data: vLLM.)_\n\nExpert
+    parallelism follows the same logic. With a low degree of expert parallelism, each
+    GPU holds many experts, leaving less room for the KV cache. WideEP, which refers
+    to expert-parallel configurations spanning multiple nodes, significantly reduces
+    the number of experts per GPU. The trade-off is network traffic: every all-to-all
+    now spans more GPUs. "
+  error:
+  fetched_at: '2026-10-29T20:53:06Z'
+archived_at: '2026-10-29T20:53:13Z'

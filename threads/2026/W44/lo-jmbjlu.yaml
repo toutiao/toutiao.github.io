@@ -5,14 +5,14 @@ post:
   title: The Future Trait Has A Missing State
   url: https://blog.yoshuawuyts.com/the-future-trait-has-a-missing-state
   hn_url: https://lobste.rs/s/jmbjlu
-  score: 15
+  score: 20
   author: fanf
   posted_at: '2026-10-29T04:24:28Z'
-  fetched_at: '2026-10-29T14:56:58Z'
+  fetched_at: '2026-10-29T20:53:13Z'
   article_url: https://blog.yoshuawuyts.com/the-future-trait-has-a-missing-state
   article_fetch_status: success
-  article_fetched_at: '2026-10-29T14:57:03Z'
-  raw_comment_count: 2
+  article_fetched_at: '2026-10-29T20:53:32Z'
+  raw_comment_count: 3
   tags:
   - rust
 comments:
@@ -24,7 +24,7 @@ comments:
     future would be internalizing the business logic of MaybeDone? But then there
     is the possibility that this business logic is implemented incorrectly. Is that
     really what is wanted?
-  score: 5
+  score: 6
   posted_at: '2026-10-29T06:53:42Z'
 - id: lo-mr9xis
   parent_id: '0'
@@ -32,8 +32,26 @@ comments:
   text: |-
     I don't really understand the problem here, and I think panicking when you attempt to poll a future after it has already completed is a fine behaviour.
     To me, the behaviour of Fuse::poll when called on a terminated future is a smell akin to handling EBADF from syscalls. It too should panic because doing so indicates that there are deeper structural issues with your implementation that really ought to be fixed. There's nothing sensible that can or should be done here. Such an error should be immediately and loudly fatal.
-  score: 6
+  score: 12
   posted_at: '2026-10-29T07:11:09Z'
+- id: lo-w4tmxz
+  parent_id: '0'
+  author: oconnor663
+  text: |-
+    However this unfortunately abuses Poll::Pending, whose docs state: "When a function returns Pending, the function must also ensure that the current task is scheduled to be awoken when progress can be made." This definition is incompatible with how Fuse uses Pending, and so bringing it into the stdlib would require redefining Pending to mean both “pending” and “done”.
+
+    This came up in issue #163678. To me it doesn't seem like there's any contradiction between that documented rule and a future that returns Ready once and then Pending forever after that. (Or for that matter, a future that only ever returns Pending.) If there's no further progress to be made, then returning Pending without scheduling any wakeups is reasonable.
+    Specifically, an async fn future currently panics if you poll it again after it returned Ready. That seems like a fine way to catch mistakes early, at the cost of compiling in the panic machinery like you mentioned. But I don't think there would be anything fundamentally wrong with changing async fn futures to return Pending forever in that case instead. If I understand correctly, that's what the new/proposed compiler switch in that issue is doing. Seems like a good way to solve the problem?
+
+    The compiler can guarantee that calling .await never polls after getting Ready, and so it doesn’t need to handle the Done state.
+
+    In this model can the compiler really guarantee that .await is never going to see Done? An incorrect future could return Done before returning Ready. It presumably wouldn't be unsafe/unsound to do so? My intuition is that we'd need to lower .await to something that panicked in that case, which means we're not solving the problem we set out to solve. (Waiting forever on a future that returns Pending forever makes sense, but waiting forever on a future that returns Done doesn't make sense to me.)
+
+    This leads to a rule that we can apply recursively to every future: “When a future is polled, it must also poll all child futures that have had their waker called.” If every future follows this rule, no future will ever be snoozed.
+
+    Incidentally this is now an RFC: https://github.com/rust-lang/rfcs/pull/4019
+  score: 2
+  posted_at: '2026-10-29T17:36:52Z'
 article:
   url: https://blog.yoshuawuyts.com/the-future-trait-has-a-missing-state
   title: The Future Trait Has A Missing State — Yosh Wuyts — Blog
@@ -138,4 +156,4 @@ article:
     but that would again be dancing aro"
   error:
   fetched_at: '2026-10-29T14:57:03Z'
-archived_at: '2026-10-29T14:57:03Z'
+archived_at: '2026-10-29T20:53:32Z'
