@@ -4,14 +4,14 @@ post:
   title: Emacs Turns 50
   url: https://www.technologyreview.com/2026/10/20/1145399/emacs-turns-50/
   hn_url: https://news.ycombinator.com/item?id=50273171
-  score: 338
+  score: 452
   author: internet_points
   posted_at: '2026-10-28T13:25:11Z'
-  fetched_at: '2026-10-28T20:46:28Z'
+  fetched_at: '2026-10-29T04:41:45Z'
   article_url: https://www.technologyreview.com/2026/10/20/1145399/emacs-turns-50/
   article_fetch_status: success
   article_fetched_at: '2026-10-28T14:51:49Z'
-  raw_comment_count: 140
+  raw_comment_count: 189
 comments:
 - id: '50273432'
   parent_id: '50273171'
@@ -1053,7 +1053,7 @@ comments:
   parent_id: '50276297'
   author: a_e_k
   text: |-
-    If you&#x27;ve read Pratchett&#x27;s Discworld, I like to think of Emacs as an Igor: it&#x27;s a loyal servant that can swap out, share its own parts, and rebuild itself on the fly.<p>But to answer your question, It&#x27;s not just elisp itself, but rather that Emacs is basically a live elisp interpreter process with an editor UI on top, and the design is something of a ball-of-mud with few boundaries.<p>With typical systems you have plugins and they have fairly narrow interfaces.  If you want to do something that&#x27;s not covered by the plugin API, you&#x27;re pretty much out of luck.<p>With Emacs, everything is open as a free-for-all to extend or redefine, so you can monkey-patch pretty much anything.  Here&#x27;s an example from my init.el:<p><pre><code>    (define-key global-map [remap move-beginning-of-line] &#x27;move-beginning-of-line-dwim)
+    If you&#x27;ve read Pratchett&#x27;s Discworld, I like to think of Emacs as an Igor: it&#x27;s a loyal servant that can swap out its own parts, exchange them with other individuals, and rebuild itself on the fly.<p>But to answer your question, It&#x27;s not just elisp itself, but rather that Emacs is basically a live elisp interpreter process with an editor UI on top, and the design is something of a ball-of-mud with few boundaries.<p>With typical systems you have plugins and they have fairly narrow interfaces.  If you want to do something that&#x27;s not covered by the plugin API, you&#x27;re pretty much out of luck.<p>With Emacs, everything is open as a free-for-all to extend or redefine, so you can monkey-patch pretty much anything.  Here&#x27;s an example from my init.el:<p><pre><code>    (define-key global-map [remap move-beginning-of-line] &#x27;move-beginning-of-line-dwim)
         (defun move-beginning-of-line-dwim ()
           &quot;Cycles between the beginning of text on the line, the actual
         beginning of the line, and the beginning of the body of a comment
@@ -1100,6 +1100,233 @@ comments:
     is a thing. Of course, in your own code, anything goes.
   score: 0
   posted_at: '2026-10-28T20:41:05Z'
+- id: '50280623'
+  parent_id: '50275838'
+  author: samus
+  text: It&#x27;s just a Lisp dialect at the end of the day and not much more complicated
+    to learn than Javascript. The only unusual aspect is its prevalent use of dynamic
+    scoping, although nowadays lexical scoping is also available and encouraged AFAIK.
+  score: 0
+  posted_at: '2026-10-28T20:43:48Z'
+- id: '50280685'
+  parent_id: '50275019'
+  author: urams
+  text: What package do you use to interact with claude?
+  score: 0
+  posted_at: '2026-10-28T20:48:30Z'
+- id: '50281009'
+  parent_id: '50276965'
+  author: GalaxyNova
+  text: Emacs natively support Windows
+  score: 0
+  posted_at: '2026-10-28T21:16:41Z'
+- id: '50281054'
+  parent_id: '50280685'
+  author: jaaron
+  text: Not who you replied to, but:<p>I use agent-shell and I love the ecosystem
+    that&#x27;s being created there:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;xenodium&#x2F;agent-shell"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;xenodium&#x2F;agent-shell</a><p>And
+    for claude interacting back with emacs:<p>Some folks like having an MCP package.
+    I agree that gives you a bit more control. But I live dangerously and run emacs
+    in daemon mode and tell claude to just run emacsclient to execute elisp as needed.
+    It works amazingly well. Claude has full visibility into my editor and together
+    we can pretty much do anything.<p>In fact, I increasingly think of emacs as just
+    a live lisp machine. It&#x27;s a surface that I and the agents can interact against.
+    It acts as a document store, database, control surface, etc.
+  score: 0
+  posted_at: '2026-10-28T21:20:05Z'
+- id: '50281097'
+  parent_id: '50280623'
+  author: brabel
+  text: |-
+    emacs 31+ started emiting this warning for my custom Lisp files:<p>Warning (files): Missing ‘lexical-binding’ cookie in &quot;~&#x2F;.emacs.d&#x2F;custom.el&quot;.
+    You can add one with ‘M-x elisp-enable-lexical-binding RET’.
+    See ‘(elisp)Selecting Lisp Dialect’ and ‘(elisp)Converting to Lexical Binding’
+    for more information.<p>I am still trying to figure out what to do! The manual is quite verbose and I haven&#x27;t had the patience to go through it yet.
+  score: 0
+  posted_at: '2026-10-28T21:24:08Z'
+- id: '50281164'
+  parent_id: '50281097'
+  author: Jtsummers
+  text: |-
+    If you open the file and execute:<p><pre><code>  M-x elisp-enable-lexical-binding RET
+    </code></pre>
+    It will add a cookie (lexical-binding) to the top of the file. If you want to do it manually put this:<p><pre><code>  ;; -*- lexical-binding: nil; -*-
+    </code></pre>
+    or this:<p><pre><code>  ;; -*- lexical-binding: t; -*-
+    </code></pre>
+    at the top of your custom.el file. They want it to be explicit now because eventually lexical will be the default. If you put in the former then when lexical becomes the default, the file will still use the current dynamic bindings. And if you use the latter, if there are issues you&#x27;ll discover them now before the default changes and you&#x27;re surprised by it.
+  score: 0
+  posted_at: '2026-10-28T21:29:17Z'
+- id: '50281200'
+  parent_id: '50273757'
+  author: fmajid
+  text: 35 years in my case, thanks to Jean-Jacques Lévy of INRIA. But Emacs was started
+    by James Gosling, not Stallman.
+  score: 0
+  posted_at: '2026-10-28T21:32:44Z'
+- id: '50281232'
+  parent_id: '50275019'
+  author: demo4567
+  text: claude isn&#x27;t the repl. emacs is the one that made it possible for claude
+    to &quot;iterate&quot;. claude isn&#x27;t even &quot;iterating&quot; you are telling
+    it to.
+  score: 0
+  posted_at: '2026-10-28T21:35:38Z'
+- id: '50281319'
+  parent_id: '50276297'
+  author: skeledrew
+  text: Emacs is designed so only the most core operations are in C. Everything else
+    is in ELisp, and can be manipulated to your heart&#x27;s content while Emacs is
+    running. It&#x27;s pretty similar to Smalltalk VMs in that way; the only real
+    difference is that one is functionally oriented and the other object oriented,
+    but both are a dream to use.
+  score: 0
+  posted_at: '2026-10-28T21:41:11Z'
+- id: '50281423'
+  parent_id: '50274224'
+  author: ghosty141
+  text: Kinda, I don&#x27;t mind having quite a few packages but they are mostly self-contained
+    in their use-package blocks. This way even if things go wrong it&#x27;s usually
+    just one package I gotta remove and not something that&#x27;s intertwined with
+    the whole config.<p>Using emacs for 4-5 years now and it&#x27;s been a fantastic
+    experience so far.
+  score: 0
+  posted_at: '2026-10-28T21:49:58Z'
+- id: '50281716'
+  parent_id: '50276624'
+  author: DonHopkins
+  text: I&#x27;m going to name my next cat after my favorite Apple ][ DOS command:<p>]CATALOG<p>And
+    my next dog after the way you warm restart DOS after you hit RESET with Integer
+    Basic ROMs and get thrown into Woz&#x27;s system monitor:<p>*3D0G<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Apple_DOS#Technical_details"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Apple_DOS#Technical_details</a>
+  score: 0
+  posted_at: '2026-10-28T22:18:10Z'
+- id: '50282116'
+  parent_id: '50274224'
+  author: TacticalCoder
+  text: "&gt; Is anybody here consciously trying to keep their Emacs configs&#x2F;setup
+    &quot;lean&quot;, minimalist, as small as possible?<p>How small? I try for things
+    to not get out of control and as I ofc version my config, I semi-regulary remove
+    stuff I don&#x27;t use anymore from my config.<p>But I take about 3 000 of custom
+    elisp, written over the years, doesn&#x27;t qualify as lean and minimal?<p>Now
+    I gotta say: I saw packages making it into the main branch and that simplified
+    my configuration. For example <i>eglot</i>: I just adopted it."
+  score: 0
+  posted_at: '2026-10-28T22:55:28Z'
+- id: '50282249'
+  parent_id: '50274322'
+  author: bsoles
+  text: So your cat is about to get fired?
+  score: 0
+  posted_at: '2026-10-28T23:08:48Z'
+- id: '50282651'
+  parent_id: '50281054'
+  author: aag
+  text: I also strongly recommend agent-shell.  I use it for all my work with Claude.
+  score: 0
+  posted_at: '2026-10-28T23:58:27Z'
+- id: '50282660'
+  parent_id: '50279629'
+  author: knome
+  text: Oh, definitely. I had had some other shell calls and just followed the pattern.
+    It was fast enough that I never bothered to go back and look up the right way
+    to do it :)
+  score: 0
+  posted_at: '2026-10-28T23:59:43Z'
+- id: '50282667'
+  parent_id: '50281200'
+  author: aag
+  text: That&#x27;s simply not true.  Gosling wrote a commercial implementation, but
+    Steele and Stallman wrote the first versions of Emacs.
+  score: 0
+  posted_at: '2026-10-29T00:00:05Z'
+- id: '50282781'
+  parent_id: '50282667'
+  author: moishe_syzslak
+  text: There&#x27;s a megathread on r&#x2F;programming about the Gosling&#x2F;Stallman
+    legal fight, but long story short, the GNU Emacs we know today was continuously
+    built upon a foundation first laid down by Jim Blandy and Stallman.  Very little,
+    if any, code from Gosling, Moon, or Steele survives.
+  score: 0
+  posted_at: '2026-10-29T00:17:36Z'
+- id: '50282807'
+  parent_id: '50280016'
+  author: PuercoPop
+  text: "&gt; &#x2F;emacs gets daily, daily! announcements of new packages. Many of
+    them, if not most, are not some AI-sloped trash<p>Literally unsubscribed from
+    &#x2F;r&#x2F;emacs because it was, in fact, trash.<p>Haven&#x27;t used the canvas
+    patch but afaik minad didn&#x27;t use LLMs to write it."
+  score: 0
+  posted_at: '2026-10-29T00:21:44Z'
+- id: '50283015'
+  parent_id: '50273964'
+  author: bch
+  text: "&gt; […] the number of people who deeply grasp Emacs Lisp and Emacs&#x27;
+    internals is really small […] AI is not going to encourage any growth in that
+    small elite<p>I haven’t been all-emacs all-the-time for ages (I jumped back to
+    the other editor after years of emacs), but hasn’t that super-elite group always
+    been relatively small? We have to hope that the best of the next generation are
+    going to self-select and be curious (and hopefully get the support they need from
+    the established old guard) despite AI. We have to hope that the kids (no matter
+    their age) will be alright."
+  score: 0
+  posted_at: '2026-10-29T00:48:44Z'
+- id: '50283745'
+  parent_id: '50273964'
+  author: rsfern
+  text: Counterpoint, I’ve been  one those surface level emacs users for years and
+    coding agents have been super helpful for me to learn elisp and some emacs internals  by
+    hacking on some org mode  and elfeed extensions
+  score: 0
+  posted_at: '2026-10-29T02:12:16Z'
+- id: '50283812'
+  parent_id: '50281054'
+  author: gpderetta
+  text: I use claude-code.el plus monet.el, but I have since had claude extend it
+    in many ways, including exposing executeCode through monet &#x2F;ide support.
+  score: 0
+  posted_at: '2026-10-29T02:21:33Z'
+- id: '50284120'
+  parent_id: '50281097'
+  author: jibalt
+  text: It told you exactly what to do.
+  score: 0
+  posted_at: '2026-10-29T03:06:58Z'
+- id: '50284308'
+  parent_id: '50281716'
+  author: jsrcout
+  text: Awesome. I wasn&#x27;t sure if anyone else remembered those. Formative stuff
+    for me :-)
+  score: 0
+  posted_at: '2026-10-29T03:41:14Z'
+- id: '50284412'
+  parent_id: '50276297'
+  author: spauldo
+  text: To add to what everyone else is saying, most Lisps support redefining functions
+    in a running application. Instead of the code&#x2F;compile&#x2F;test loop most
+    languages use, you can create Lisp programs iteratively from inside the program.<p>It&#x27;s
+    really quite neat. Emacs is an easy way to play around with it, but if you&#x27;re
+    a CS language nerd Racket might be a good fit for you. And if you want this type
+    of environment but without all the parentheses and polish notation, check out
+    the Smalltalk implementation Squeak.
+  score: 0
+  posted_at: '2026-10-29T04:03:08Z'
+- id: '50284479'
+  parent_id: '50275019'
+  author: vjust
+  text: how do you use claude from within emacs - is it gptel? just curious. what
+    you describe is worth trying
+  score: 0
+  posted_at: '2026-10-29T04:12:54Z'
+- id: '50284533'
+  parent_id: '50273757'
+  author: jwrallie
+  text: |-
+    Do you have any resource to recommend for using AI with Emacs?
+    As in, aware and able to interact with the REPL.<p>Or maybe a more fundamental question, how do you find out what are good packages to use?
+  score: 0
+  posted_at: '2026-10-29T04:20:22Z'
 article:
   url: https://www.technologyreview.com/2026/10/20/1145399/emacs-turns-50/
   title: EMACS turns 50 | MIT Technology Review
@@ -1203,4 +1430,4 @@ article:
     claims about AGI"
   error:
   fetched_at: '2026-10-28T14:51:49Z'
-archived_at: '2026-10-28T20:46:36Z'
+archived_at: '2026-10-29T04:41:54Z'

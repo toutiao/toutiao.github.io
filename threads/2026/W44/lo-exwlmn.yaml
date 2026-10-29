@@ -5,14 +5,14 @@ post:
   title: GOTO Considered Totally Sick (for error handling in C)
   url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
   hn_url: https://lobste.rs/s/exwlmn
-  score: 21
+  score: 29
   author: eBPF
   posted_at: '2026-10-28T16:07:18Z'
-  fetched_at: '2026-10-28T20:46:36Z'
+  fetched_at: '2026-10-29T04:41:55Z'
   article_url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
   article_fetch_status: success
-  article_fetched_at: '2026-10-28T20:46:39Z'
-  raw_comment_count: 4
+  article_fetched_at: '2026-10-29T04:41:57Z'
+  raw_comment_count: 10
   tags:
   - c
 comments:
@@ -21,7 +21,7 @@ comments:
   author: dualvariable
   text: Kids these days think they invented psychedelics, bisexuality, and using gotos
     in C...
-  score: 10
+  score: 20
   posted_at: '2026-10-28T17:47:01Z'
 - id: lo-hp6pwj
   parent_id: '0'
@@ -29,7 +29,7 @@ comments:
   text: |-
     C is getting a Zig-like defer feature https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3928.pdf
     Worth noting that Golang’s defer is different from the Zig/C version: in Golang defer is scoped to a function, whereas in Zig and C it is scoped to a block. If you defer in a loop, Golang will build up an unbounded amount of work to do later (allocating on the heap), but Zig and C will run each defer statement between each iteration of the loop (using constant space).
-  score: 11
+  score: 17
   posted_at: '2026-10-28T18:07:37Z'
 - id: lo-etm0yg
   parent_id: '0'
@@ -48,16 +48,126 @@ comments:
     making different syntax design choices in your language.\nAnd if you continue
     to use goto for C error handling (like many of us do), then you can use this to
     help win the argument the next time someone objects. :)"
-  score: 5
+  score: 9
   posted_at: '2026-10-28T19:08:22Z'
 - id: lo-4cglwg
   parent_id: '0'
   author: orib
   text: |-
-    For what it's worth, defer ends up not cleaning up the code that much. It got standardized partly because everyone was already inventing their own versions of it with compiler extensions, so the standards committee had to chose between the language having it in a standard form or a nonstandard form.
+    For what it's worth, defer ends up (IMO) not cleaning up the code that much. It got standardized partly because everyone was already inventing their own versions of it with compiler extensions, so the standards committee had to chose between the language having it in a standard form or a nonstandard form.
     (I attended that standards meeting)
-  score: 2
+  score: 12
   posted_at: '2026-10-28T20:31:28Z'
+- id: lo-dborpj
+  parent_id: '0'
+  author: ghoti
+  text: I would be interested to see a language experiment with a version of goto
+    that is even more limited than in C, where in addition to being prohibited from
+    jumping out of the function it would also be prohibited from jumping backwards
+    or from jumping into blocks. I believe with these rules this version of goto would
+    guarantee reducible control flow and become truly equivalent to the labeled-break
+    approach demonstrated above. I believe this, not defer, would be the true ultimate
+    successor to C-style error handling.
+  score: 2
+  posted_at: '2026-10-28T22:06:19Z'
+- id: lo-wahpi3
+  parent_id: '0'
+  author: pervognsen
+  text: "Yes, I've tried this in homebrew languages, including the conventional label/goto
+    syntax. That's what I was alluding to with \"you can change that by making different
+    syntax design choices in your language\". One downside with the conventional syntax
+    is that the forward-looking scoping discipline for labels is awkward for both
+    humans and computers, and you don't know how many implicit blocks there are and
+    where they start while performing a single forward pass.\nYou can avoid that with
+    different choices of syntax, but the alternatives are unlikely to be quite as
+    syntactically lightweight. For example, Zahn's construct (1974) resolves both
+    of the issues I mentioned with scoping and block boundaries, and that's probably
+    familiar to some people here since Knuth describes it in Structured Programming
+    with Go To Statements. To keep the discussion inline, here's the exitwhen example:\nexitwhen
+    found or missing;\r\n    for I := 1 to N do\r\n        for J := 1 to M do\r\n
+    \           if table[I,J] = target then found;\r\n    missing;\r\nexits\r\n    found:
+    \  print (\"item is in table\");\r\n    missing: print (\"item is not in table\");\r\nendexit;\n\nThis
+    particular syntax doesn't have implicit fallthrough (and I don't think it supports
+    explicit fallthrough), but that's a choice."
+  score: 4
+  posted_at: '2026-10-28T22:24:00Z'
+- id: lo-d60g1u
+  parent_id: '0'
+  author: lhearachel
+  text: I tend to stick to GCC and Clang, and I agree. I was already doing some of
+    this kind of stuff with __attribute__((cleanup(...))). But having it be codified
+    in the standard is an obvious win.
+  score: 1
+  posted_at: '2026-10-28T23:11:33Z'
+- id: lo-fat9q5
+  parent_id: '0'
+  author: fanf
+  text: |-
+    defer ends up (IMO) not cleaning up the code that much
+
+    I think this is one of those cases where old guys (like me) who have been dealing with this bullshit for 30+ years don’t realise how much unnecessary cognitive load they (we) have been coping with.
+    The usual C resource allocation pattern (which this article describes perfectly) has several things you need to pay attention to:
+
+
+    Keep track of where important resources are allocated. NOTE: you can’t tell which local variables own important resources at the point of their declarations, but you must work it out.
+
+
+    Read the cleanup code (the goto targets) at the bottom of the function to get an idea of what resources might need cleanup. NOTE: you can’t tell which resources that are cleaned up on error paths are not temporary, and will outlive the function when it returns successfully.
+
+
+    Examine every early return (every goto fail) and compare how the position of the goto relates to resource allocation and the cleanup code. NOTE: make sure they are nested properly, and be aware of if/when cleanup is a no-op for a default initialized variable or a failed allocation.
+
+
+    Run through the happy path and make sure that temporary resources are freed (which usually duplicates the goto fail cases).
+
+
+    The advantage of defer is that it makes clear at the point of the defer statements which variables own temporary resources, and you no longer have to manually cross-check the success and failure cases.
+    I think it’s a mistake to judge defer by how clean the code looks, because cleanliness is often judged by how many lines get deleted. If you have well-written C then defer only moves code around. If you judge a change from goto fail to defer by its diff then you are unlikely to consider how much state you need to keep in your head when reading the code in between the allocation and the cleanup.
+    The advantage of defer is how much less useless mental state you need to keep track of when reading the useful part of a function.
+  score: 10
+  posted_at: '2026-10-29T00:53:52Z'
+- id: lo-bubuvg
+  parent_id: '0'
+  author: fanf
+  text: "(Dammit, I have a wip blog post about this and I’m cross with myself for
+    failing to finish it two months ago! I started writing it before Casey Muratori’s
+    video!)\nKnuth’s article is very annoying! It has several well-chosen examples
+    that are hard to write both readably and efficiently in strictly structured programming
+    style, so it’s a good resource for judging a language’s control structures. But
+    also, he pays a lot of attention to ad-hoc control structures (such as Zahn’s)
+    while almost completely ignoring labelled-break or break-with-value. He very briefly
+    mentions BCPL and BLISS (which both have break-with-value) but never considers
+    how to write his examples in those languages.\nAnd to answer ~ghoti’s request,
+    both BLISS and Wasm have that kind of block-structured break-with-value, and both
+    lack unstructured goto. There’s no need for an experiment because BLISS was used
+    for VMS and other operating systems between the 1970s and 1990s, and Will Smith
+    Wasm is the new hotness using the same kind of control structures decades later.\nTo
+    satisfy Knuth’s requirements, as well as break-with-value, you need a good case/match,
+    and a compiler that’s able to optimize break-within-case so that two jumps become
+    one. (This is easily within the capabilities of compilers of that era.) (And I
+    assume some way to justify the use of ad-hoc symbols, which I will write with
+    prefix . in the example, and I am sure the Zig fans can imagine how that might
+    work.)\nSo Knuth’s example that you quoted might become (in some unspecified language):\nif
+    :p {\r\n    for i in >= 1 <= n {\r\n        for j in >= 1 <= m {\r\n           if
+    table[i,j] == target then\r\n               break :p .found;\r\n        }\r\n
+    \   }\r\n    break :p .missing;\r\n} \r\nis .found then\r\n    print (\"item is
+    in table\")\r\nor .missing then\r\n    print (\"item is not in table\");\n\nBut
+    that’s over-complicated to illustrate the general form that can be used to deal
+    with many of Knuth’s examples. There’s an obvious simplification using labelled
+    break without value (and Knuth didn’t even compare multilevel break with his weirder
+    alternatives):\n:done {\r\n    for i in >= 1 <= n {\r\n        for j in >= 1 <=
+    m {\r\n            if table[i,j] == target then {\r\n                print (\"item
+    is in table\");\r\n                break :done;\r\n            }\r\n        }\r\n
+    \   }\r\n    print (\"item is not in table\");\r\n}"
+  score: 3
+  posted_at: '2026-10-29T01:55:16Z'
+- id: lo-ugqurg
+  parent_id: '0'
+  author: landon
+  text: Back in my day we called this "goto fail;" It even had a website, and a spat
+    of CVEs!
+  score: 1
+  posted_at: '2026-10-29T03:26:04Z'
 article:
   url: https://thestateofinahaze.net/blog/c-goto-considered-totally-sick/
   title: GOTO Considered Totally Sick (for error handling in C)
@@ -163,4 +273,4 @@ article:
     You could also use multiple labels to split cleanup into sections, if you "
   error:
   fetched_at: '2026-10-28T20:46:39Z'
-archived_at: '2026-10-28T20:46:40Z'
+archived_at: '2026-10-29T04:41:58Z'
