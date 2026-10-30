@@ -1,0 +1,133 @@
+---
+post:
+  id: lo-fskctn
+  source: lobsters
+  title: 'Infinite Mac: BeOS'
+  url: https://blog.persistent.info/2026/10/infinite-mac-beos.html
+  hn_url: https://lobste.rs/s/fskctn
+  score: 19
+  author: manuel
+  posted_at: '2026-10-30T16:06:56Z'
+  fetched_at: '2026-10-30T20:24:44Z'
+  article_url: https://blog.persistent.info/2026/10/infinite-mac-beos.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-30T20:24:47Z'
+  raw_comment_count: 4
+  tags:
+  - retrocomputing
+comments:
+- id: lo-qbtqv3
+  parent_id: '0'
+  author: darth-cheney
+  text: hell yeah
+  score: 2
+  posted_at: '2026-10-30T16:38:20Z'
+- id: lo-olyfgt
+  parent_id: '0'
+  author: m_eiman
+  text: 'I suppose most of you know about the open source successor to BeOS, Haiku
+    OS. But in case you don’t, here it is: https://www.haiku-os.org/'
+  score: 7
+  posted_at: '2026-10-30T18:46:42Z'
+- id: lo-uzjzdo
+  parent_id: '0'
+  author: dpassen
+  text: Very cool, but does anyone else's mouse just not work within the VM?
+  score: 1
+  posted_at: '2026-10-30T20:07:35Z'
+- id: lo-px463a
+  parent_id: '0'
+  author: abnercoimbre
+  text: I'm glad you linked this! Lucky ten thousand moment.
+  score: 1
+  posted_at: '2026-10-30T20:11:33Z'
+article:
+  url: https://blog.persistent.info/2026/10/infinite-mac-beos.html
+  title: 'persistent.info: Infinite Mac: BeOS'
+  fetch_status: success
+  content: "**tl;dr:** You can now [run many BeOS versions](https://infinitemac.org/?filter=beos)
+    in the browser at [Infinite Mac](https://infinitemac.org/), my site where you
+    can experience the Macintosh Cinematic Universe from 1984 to 2005. The installs
+    are full peers to their Mac cousins: you can boot them instantly (large disks
+    are streamed in), play around with pre-installed software from Infinite HD, insert
+    CD-ROMs from the Internet Archive, and save your work on the “Saved HD” drive.\n\n[BeOS](https://en.wikipedia.org/wiki/BeOS)
+    was a multimedia-focused, multi-tasking and multi-threaded OS that was eventually
+    ported to the Power Macintoshes of the mid-90s. It impressed many in the Mac community,
+    including Apple itself, who considered acquiring Be, the company that had created
+    it. If you’ve been following the [saga](https://relay.fm/designed/archive#:~:text=Designed%20in%20California%20%2311,the%20Road%20(Part%201))
+    of Apple’s search for a next-generation operating system, this lets you see what
+    the road not taken was like.\n\n![BeOS R5 running inside Infinite Mac, showing
+    GL Teapot, Mandelbrot, Gobe Productive, Terminal, image viewer and CPU monitor.](https://persistent.info/images/infinite-mac-beos-desktop.webp)\n\n###
+    Getting BeOS Running\n\nAfter the last [somewhat involved](https://blog.persistent.info/2026/09/infinite-mac-snow-and-aux.html)
+    (though still satisfying) project on Infinite Mac, I was looking for a quicker
+    win. BeOS had been on my radar for [a while](https://github.com/mihaip/infinite-mac/issues/237),
+    and (unlike A/UX) I had a personal connection to it: I remember spotting a BeBox
+    in Akihabara, making my Mac cosplay as it with [BeView](https://macintoshgarden.org/apps/beview),
+    and eventually dual-booting BeOS on my Power Macintosh 8500. DingusPPC, an emulator
+    I had already [integrated](https://blog.persistent.info/2023/12/dingusppc.html),
+    was making [good progress](https://github.com/dingusdev/dingusppc/issues/35) on
+    running BeOS, so it seemed like adding it to the site would be mostly a matter
+    of preparing some additional disk images.\n\nInitially it appeared to be as straightforward
+    as I had hoped; I [added](https://github.com/mihaip/infinite-mac/commit/98e3a7c62e8f676c83f63ecd37dc0dc49b519d54)
+    a Power Macintosh 7300 configuration (one of the Power Macs that was officially
+    [supported](https://web.archive.org/web/19970218184118/http://www.be.com/products/beosreadylist.html)),
+    found an [install CD](https://archive.org/details/BeOSRelease3PowerPC), made [a
+    disk image](https://github.com/mihaip/infinite-mac/commit/aa9e2ce9133c388f8c287c7cb261dac13014ec35),
+    and [was up and running](https://github.com/mihaip/infinite-mac/issues/237#issuecomment-5850551352).
+    But as I used it more and started to install additional versions, I began to find
+    a lot of small bugs and edge cases:\n\n- The BeOS boot loader thought that all
+    modifier keys were being held down due to [a bug in the ADB emulation](https://github.com/dingusdev/dingusppc/pull/225);
+    this made it present the (ugly, PC BIOS-like) partition choice screen every time.\n-
+    When changing the screen depth, there are two hardware components that need to
+    be notified: the video controller and the digital-to-analog converter. DingusPPC
+    had been [accidentally relying](https://github.com/dingusdev/dingusppc/pull/226)
+    on the order that Mac OS sent these notifications in; BeOS happened to make the
+    opposite choice and would end up with a corrupted display.\n- Early versions of
+    BeOS did video memory updates in little-endian mode; DingusPPC was [missing support](https://github.com/dingusdev/dingusppc/pull/229)
+    for that hardware capability.\n- Later versions of BeOS could mount HFS partitions,
+    but they were having trouble with the volumes that I generated via the `machfs`
+    Python library. It turned out that BeOS was (correctly) [stricter](https://github.com/mihaip/machfs/commit/5239f127bbf45fbf34132f5975e9fe2d8959791c)
+    than Mac OS about how some data structures should be populated.\n- [And](https://github.com/dingusdev/dingusppc/pull/240)
+    [so](https://github.com/dingusdev/dingusppc/pull/242) [on](https://github.com/dingusdev/dingusppc/pull/243)
+    – most of the commits that I [upstreamed to DingusPPC](https://github.com/dingusdev/dingusppc/commits?author=mihaip&since=2026-09-25&until=2026-10-16)
+    over the past month were in a quest for better BeOS compatibility.\n\n![Infinite
+    Mac emulating BeOS R5 emulating System 7.6.1 running Speedometer](https://persistent.info/images/infinite-mac-beos-sheepshaver.webp)
+    \ \n_The best of both worlds?_\n\n[SheepShaver](https://sheepshaver.cebix.net/),
+    a Power Macintosh emulator that is still around today (and that Infinite Mac also
+    [embeds](https://blog.persistent.info/2023/01/infinite-mac-2022-in-review.html#:~:text=SheepShaver%20and%20Mac%20OS%209)),
+    [originated](https://atpm.com/4.09/page12.shtml#Heading13) on BeOS. Mostly for
+    the [fun](https://justforfunnoreally.dev/) of another layer of inception/emulation,
+    I wanted to make sure that it worked too. As it turned out, it also required [a
+    compatibility fix](https://github.com/dingusdev/dingusppc/pull/241) – it relied
+    on an edge case of how the ROM is mapped to physical memory addresses that DingusPPC
+    did not accurately model.\n\nThere is a pattern to most of these bug fixes: DingusPPC
+    (and Infinite Mac) have been mostly focused on running Mac OS, and thus accidentally
+    became dependent on its quirks or implementation choices. Adding an independently
+    developed operating system to the mix exercised new paths, and ended up improving
+    the accuracy of the emulated hardware. To be clear, DingusPPC was pretty close
+    out of the box; kudos to [its](https://github.com/maximumspatium) [maintainers](https://github.com/dingusdev).
+    I believe that, with this work, it’s the only emulator that can run PowerPC versions
+    of BeOS. I’m also hopeful that this will help with bringing up alternate operating
+    systems like [MkLinux](https://en.wikipedia.org/wiki/MkLinux) (which I also have
+    [memories](https://blog.persistent.info/search?q=mklinux&max-results=20&by-date=true)
+    of) and [Rhapsody](https://en.wikipedia.org/wiki/Rhapsody_(operating_system)).\n\n![Infinite
+    Mac custom instance dialog with a BeOS control appearance.](https://persistent.info/images/infinite-mac-beos-appearance.webp)\n\nOn
+    the Infinite Mac side, there were obvious changes like a “BeOS” appearance for
+    my [custom controls](https://infinitemac.org/_controls) and collecting software
+    for the library. I also needed to [overlay](https://github.com/mihaip/infinite-mac/commit/44116ee75530dd454d2667257fedeff3b312c94d)
+    some dynamically generated content on the disk to get the OS to preselect a screen
+    resolution that matches the browser window’s (similar to what was [done for A/UX](https://blog.persistent.info/2026/09/infinite-mac-snow-and-aux.html#:~:text=The%20most%20complicated,current%20screen%20parameters.)).
+    An AI agent (still Codex for me) was once again helpful for this type of fiddly
+    reverse-engineering task: it’s one thing to observe that the OS stores a file
+    on disk with the screen size; it’s another to be able to reproduce all its nuances,
+    especially as the format changed with later releases.\n\n[Developer Release 8.2](https://infinitemac.org/1996/BeOS%20DR8.2),
+    the initial BeOS version for Power Macs, had a time bomb that kept it from booting
+    after April 1, 1997. This was not just to create a sense of urgency; it shipped
+    with a licensed font renderer that Be could not distribute indefinitely. DR8.3
+    [addressed this](https://www.mactech.com/1997/03/14/md1-beos-dr8-3-update/), but
+    to make that notable first version bootable, I did end up relying on [the custom
+    date support](https://blog.persistent.info/2024/03/infinite-mac-nextstep.html#:~:text=After%20recalling%20the%20KanjiTalk%20New%20Year%E2%80%99s%20Day%20easter%20egg%2C%20I%20added%20custom%20date/time%20support%20so%20can%20you%20see%20it%20anytime%20you%20want.)
+    to [hardcode](https://github.com/mihaip/infinite-mac/blob/a56fff18e1b7e6e6c80d307a35ed30b7fd94d36a/s"
+  error:
+  fetched_at: '2026-10-30T20:24:47Z'
+archived_at: '2026-10-30T20:24:47Z'

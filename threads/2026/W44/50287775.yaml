@@ -4,14 +4,14 @@ post:
   title: If IPv4 were land
   url: https://iptrust.co/blog/if-ipv4-were-land
   hn_url: https://news.ycombinator.com/item?id=50287775
-  score: 309
+  score: 319
   author: rokostik
   posted_at: '2026-10-29T12:19:00Z'
-  fetched_at: '2026-10-30T14:49:47Z'
+  fetched_at: '2026-10-30T20:24:17Z'
   article_url: https://iptrust.co/blog/if-ipv4-were-land
   article_fetch_status: success
   article_fetched_at: '2026-10-29T14:56:55Z'
-  raw_comment_count: 439
+  raw_comment_count: 464
 comments:
 - id: '50287889'
   parent_id: '50287775'
@@ -1909,6 +1909,86 @@ comments:
     my stomping ground.<p>&gt; 2.54 cm<p>Oops!  You&#x27;re right!  My bad."
   score: 0
   posted_at: '2026-10-30T12:39:23Z'
+- id: '50304952'
+  parent_id: '50302602'
+  author: mahboi
+  text: I know. All these things were possible and completed for IPv6, but that&#x27;s
+    only part of the battle. The rest is making it easy for users at various levels
+    to migrate. IPv6 didn&#x27;t do that, that&#x27;s why we&#x27;re stuck in today&#x27;s
+    situation.<p>IPv6 added an unnecessary requirement to change all existing routes,
+    which is huge. If still using old v4 addrs in v6, there should be no need to change
+    DNS yet. You shouldn&#x27;t need a different DNS or DHCP server, only one that
+    supports both protocols (also shouldn&#x27;t be forced to use SLAAC). V6 translation
+    to&#x2F;from v4 should be doable at any hop instead of relying on a flaky anycast
+    relay. The later stage of migration should just be that people start using longer
+    addresses given that both ends are v6 and DNS etc supports it then. Even still
+    there should be no requirement for every hop along the route to be v6, only the
+    ones that go deeper than &#x2F;32 near the ends. But we got all these extra constraints
+    because of ipv6 design decisions.
+  score: 0
+  posted_at: '2026-10-30T15:05:39Z'
+- id: '50307232'
+  parent_id: '50298578'
+  author: cowlevel
+  text: Nobody&#x27;s <i>stopping</i> you from using DHCP and NAT on IPv6, it&#x27;s
+    just not the norm.<p>The protocol itself is literally very similar to IPv4. They
+    got rid of the IP header&#x27;s checksum, but I don&#x27;t think that&#x27;s something
+    you&#x27;re complaining about, right? They renamed Time-To-Live to Hop Limit because
+    that&#x27;s what it actually does - is that a complaint you have?<p>What do you
+    mean it doesn&#x27;t share any state with v4?
+  score: 0
+  posted_at: '2026-10-30T17:28:24Z'
+- id: '50307321'
+  parent_id: '50298489'
+  author: cowlevel
+  text: Will you repeat the whole dance when you need a second extra octet? There
+    are good reasons IPv6 is designed the way it is.<p>They considered 64 bit addresses
+    at first but they didn&#x27;t want to ever risk running out again so they doubled
+    it again.<p>Try to remember it&#x27;s not just about the sheer number of addresses
+    - you also want to allocate them in big blocks so that few people ever need to
+    expand their blocks, and they can split their big block into more blocks that
+    are still big.
+  score: 0
+  posted_at: '2026-10-30T17:33:45Z'
+- id: '50308434'
+  parent_id: '50307321'
+  author: mahboi
+  text: No, the field should be 128-bit to have headroom, but you don&#x27;t need
+    to hand out &#x2F;128s to everyone. Everyone with a &#x2F;32 now would be fine
+    with &#x2F;32 or &#x2F;40.
+  score: 0
+  posted_at: '2026-10-30T18:47:54Z'
+- id: '50309091'
+  parent_id: '50307232'
+  author: mahboi
+  text: By not sharing state, I mean v6 doesn&#x27;t honor v4 routes&#x2F;addresses,
+    DHCP state, and DNS entries. They made all-new address blocks. This seemingly
+    never gets talked about for how big of a deal it is. That makes it so enabling
+    v6 instantly means reworking your entire network, not just speaking a different
+    protocol.<p>Say I have 1.2.3.4&#x2F;32 in v4. Let me keep that in v6. Just getting
+    everyone onto v6 is a big enough change without also changing the routes. If I
+    talk to 9.8.7.6 and it&#x27;s v4-only, fine, the last v6 hop translates to v4.
+    Even DNS doesn&#x27;t strictly need to change yet. Then let&#x27;s say enough
+    people get on v6, so I hand out 1.2.3.4.5 to some host. If 9.8.7.6.5 wants to
+    send to that, but there are some v4-only routers in the middle, no problem. The
+    last v6 router translates to v4 dst=1.2.3.4 and puts the extra address bits in
+    the payload, then when it reaches my router, it knows to rewrite as 1.2.3.4.5.
+    Even in this later state, you really only need v6 support on the ends and any
+    routers going deeper than &#x2F;32.<p>DHCP and NAT state on LAN too. My home router
+    should be able to speak both protocols while sharing all state. A host at 192.168.1.2
+    should be able to just turn on v6, it&#x27;s still 192.168.1.2, some other host
+    gets leased .3 instead, and the router knows to translate if .2 and .3 want to
+    talk. I don&#x27;t want it to suddenly be FC00::whatever.<p>I have no complaint
+    about the v6 header, and a subset of the v6 protocol is fine because it&#x27;s
+    indeed just v4 w&#x2F; extra bits like you said. That ipv5&#x2F;whatever proposal
+    people keep making is doable with most routers&#x2F;hosts just seeing it as ipv6
+    w&#x2F; DHCP+NAT.<p>And yeah, today I could use DHCP6 if I really wanted, but
+    it&#x27;d mean lots of incompatible devices get either booted off my network or
+    put on a separate SLAAC one, so it&#x27;s not a serious choice. NAT66 is way more
+    doable but also rare on consumer routers. So my only complaint about the protocol
+    is that the defaults are backwards.
+  score: 0
+  posted_at: '2026-10-30T19:35:28Z'
 article:
   url: https://iptrust.co/blog/if-ipv4-were-land
   title: If IPv4 Were Land - World Map Redrawn by IPv4 Addresses | IPTrust
@@ -1919,4 +1999,4 @@ article:
     The world has about 135 million km² of land outside Antarctica and 3.6 billion locatable IPv4 addresses. Redraw every country so its area matches its share of addresses instead of its share of ground.
   error:
   fetched_at: '2026-10-29T14:56:55Z'
-archived_at: '2026-10-30T14:50:08Z'
+archived_at: '2026-10-30T20:24:44Z'

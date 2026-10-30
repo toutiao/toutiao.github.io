@@ -1,0 +1,144 @@
+---
+post:
+  id: lo-ukj8mm
+  source: lobsters
+  title: The federated code forge
+  url: https://tangled.org/blog/forge/
+  hn_url: https://lobste.rs/s/ukj8mm
+  score: 14
+  author: novedevo
+  posted_at: '2026-10-30T17:57:54Z'
+  fetched_at: '2026-10-30T20:24:44Z'
+  article_url: https://tangled.org/blog/forge/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-30T20:24:47Z'
+  raw_comment_count: 5
+  tags:
+  - distributed
+  - vcs
+comments:
+- id: lo-kxofko
+  parent_id: '0'
+  author: minimax
+  text: |-
+    Should be read in light of https://lobste.rs/s/htgcuc/do_at_proto_users_know_this_is_public
+    A forge with no privacy model at all doesn't appeal to me, although I can see it certainly has its uses.
+  score: 4
+  posted_at: '2026-10-30T18:44:04Z'
+- id: lo-icktev
+  parent_id: '0'
+  author: novedevo
+  text: 'FWIW, they are planning private repo support soon™: https://news.ycombinator.com/item?id=50307062'
+  score: 2
+  posted_at: '2026-10-30T18:47:24Z'
+- id: lo-w54hex
+  parent_id: '0'
+  author: mariusor
+  text: 'I haven''t looked at which parts of source control they''re federating, but
+    one would hope that the developers have enough sense to enhance only the bits
+    that are related to social interactions: change requests, reviewing, commenting,
+    etc, not the repositories themselves.'
+  score: 3
+  posted_at: '2026-10-30T19:05:24Z'
+- id: lo-wv7nse
+  parent_id: '0'
+  author: pointlessone
+  text: It’s great that people are working on federated forges. I myself a bit meh
+    on ATProto and prefer ForgeFed. Not that I studied them extensively and can give
+    a well reasoned explanation why, more of a gut filling. There are already a few
+    small implementations out there. I can’t wait for Forgejo getting it implemented.
+  score: 1
+  posted_at: '2026-10-30T20:14:59Z'
+- id: lo-zb6xty
+  parent_id: '0'
+  author: pksunkara
+  text: |-
+    I have read the comments in there and doesn't the new ATproto spaces proposal solve this issue?
+    Is anyone more knowledgable about ATproto chime in here?
+  score: 1
+  posted_at: '2026-10-30T20:18:19Z'
+article:
+  url: https://tangled.org/blog/forge/
+  title: The federated code forge · The Tangled Blog
+  fetch_status: success
+  content: "For most of the past two decades, the code forge has been where projects
+    live: where code is hosted, where changes are reviewed, and where contributors
+    find each other. Forges offered convenience in exchange for centralisation.\n\nBut
+    the centralised forge is crumbling. Relying on someone else for uptime, for features,
+    and to be a good steward of your code hasn’t played out well. What_has_ stood
+    the test of time is email: Git to move the code, and email — an open protocol
+    — to talk about it. At the cost of user experience, however.\n\nTangled aims to
+    give you the best of both: the longevity of an open protocol, with the convenience
+    and polish of a proper forge.\n\nIt’s the first truly federated code forge — you
+    can host code on your own servers and still collaborate seamlessly with others.
+    Our approach is pragmatic: self-host just the parts you want, like Git hosting
+    or CI runners, or all of it, including the API server and UI. Whatever [you choose](https://tangled.org/docs/self-hosting),
+    you can still talk to everyone else.\n\nOwning your infrastructure also means
+    you can hack on, extend and customise your forge as you see fit. Because Tangled
+    is built on the AT Protocol, you can build your own extensions, subscribe to the
+    firehose, or even write entirely custom knots, like [this one](https://tangled.org/oppi.li/naut)
+    that runs on Cloudflare Workers and uses their Artifacts product for git storage.
+    Or an entirely custom spindle such as[mitchellh.com/tack](https://tangled.org/mitchellh.com/tack).
+    Go even further and host our [ultralight API server](https://tangled.org/docs/self-hosting/indexer)
+    and build your own custom forge.\n\nAgents have made building such hyper-personalized
+    software trivial, and especially so when software is designed with hackability
+    in mind from the get-go. Tangled is incredibly [agent](https://tangled.org/docs/api/bobbin/)[friendly](https://atproto.com/guides/identity).\n\nThe
+    future of software engineering may be a moving target, but our bets on open protocols
+    and developer agency give us the agility to move with it, and to become your code
+    forge for the next decade.\n\n# Product updates\n\n## A fresh look!\n\nThe obvious
+    big one: with this release, Tangled has a whole new look. We’ve redone the UI
+    on top of our new architecture (described further below), in Svelte. Things should
+    now be quicker, visually consistent and prettier! The keen eyed of you might’ve
+    also spotted that we’ve swapped out Inter for [Timeless Sans](https://timeless.co/type).\n\n##
+    A bobbin near you\n\nUntil now, Tangled’s web UI and backend were a single Go
+    monolith called the`appview`. The appview service handled AT Protocol indexing,
+    caching, off-protocol data and UI rendering using `html/template` + htmx. It ran
+    on a single SQLite database on one medium-sized server in Sweden.\n\nThis was
+    great as long as you were ~50–100 ms away from Sweden, but most of our users aren’t!
+    We rearchitected: we built a new standalone frontend app in Svelte, deployed at
+    the edge. It is populated by our new diskless, entirely in-memory indexer service
+    written in Rust:[bobbin](https://tangled.org/docs/api/bobbin/). Bobbins are deployed
+    globally in over 11+ regions, ensuring users around the world get the best API
+    and UI performance.\n\nThe astute reader might’ve noticed: bobbin is purely read-only
+    and only deals with AT Protocol data. What of the rest? That functionality (and
+    more) has been delegated to a new set of supporting services.\n\n## The new data
+    model and repo-owned data\n\nFirst, the data model itself: we have a new set of
+    lexicons, and everything now lives under `org.tangled.*`, replacing the old `sh.tangled.*`
+    records.\n\nKnot2 is our aptly named, second implementation of the knot server,
+    this time rewritten in Rust. Knot2 bakes a fully custom Git server, and also bundles
+    in an SSH server in the same binary.\n\nWith knot2, we’ve also changed where some
+    of that data lives. Issues, pull requests, comments, reactions and labels are
+    now stored on the knot, right next to the code, as collaborative objects (COBs).
+    A COB is just a chain of Git objects in the repo itself. Collaborators, knot members
+    and the blocklist are also stored the same way.\n\nIn that sense, knots now behave
+    a lot like a PDS: they hold signed records, full history included, for everything
+    that belongs to a repo and much like a PDS, these records are synced via the standard
+    AT Protocol firehose.\n\nBut why? A project’s issues and pull requests are as
+    much a part of it as its code, so they should live with it, wherever you choose
+    to host it. This gives your project maximum portability.\n\nIf the knot writes
+    your issues and comments, what stops it from putting words in your mouth? Attestations.
+    Every time you create or edit a record on a knot, the web app also writes an `org.tangled.graph.attestation`
+    record to your own PDS, pointing at that exact version of the record and the COB
+    change behind it. Two-way verification!\n\nSelf-hosters will have to upgrade their
+    knots to the v1.20.0 by [following the upgrade guide](https://tangled.org/docs/upgrading/knots-and-spindles/).\n\n##
+    Organizations\n\nOrganization accounts are here! An Organization on Tangled is
+    a real AT Protocol account, with its own DID and handle, hosted on a [Tranquil
+    PDS](https://tangled.org/tranquil.farm/tranquil-pds) instance. They’re passwordless,
+    delegated accounts: you create one from the [New Organization](https://tangled.org/organizations/new)
+    page, and you get`<name>.tngl.sh` with yourself as its owner. Owners can invite
+    members, and anyone in the Organization can act as it when creating or forking
+    repositories. Like any other account, you can swap the handle out for a domain
+    you own. If you’ve been running a regular account as a stand-in “org”, hang tight
+    — we’re working on a way to move those over. Read more in the[docs](https://tangled.org/docs/guides/organizations).\n\n##
+    Stacked PRs for everyone\n\nOur PR flow has been overhauled. The new flow gives
+    everyone, regardless of whether you use Jujutsu or just vanilla Git, the ability
+    to submit and review stacked PRs. If you’re using Git, you now get the ability
+    to interdiff between versions (previously called rounds). JJ users get to interdiff
+    between individual changes as well.\n\n## Launch weeks ahead\n\nThis isn’t all.
+    We’re staggering this launch across the next few weeks. Up next are private repos,
+    a CLI, SDKs for different languages and skills for your agent.\n\nUntil then,
+    enjoy every part of this launch equally.\n\n \n\nYour code, your network.  \nCome
+    build with us on Tangled.\n\n [Sign up](https://tangled.org/signup)"
+  error:
+  fetched_at: '2026-10-30T20:24:47Z'
+archived_at: '2026-10-30T20:24:47Z'
