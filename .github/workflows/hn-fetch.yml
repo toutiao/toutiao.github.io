@@ -8,7 +8,9 @@ concurrency:
 
 on:
   schedule:
-    - cron: "0 0,8,16 * * *"
+    # Every 3h (8 slots/day) — dense snapshots shrink hot-trigger latency;
+    # daily budget (--daily-max) still caps LLM spend, not the fetch cadence.
+    - cron: "0 */3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -48,16 +50,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # machine-readable stdout: only TRIGGER lines (summary goes to stderr,
-          # which shows in CI log directly since $(...) captures stdout only)
-          OUTPUT=$(bundle exec ruby scripts/hn-fetch.rb --hot-check --daily-max 2) || true
+          # machine-readable stdout: only TRIGGER/UPDATE lines (summary goes to
+          # stderr, which shows in CI log directly since $(...) captures stdout
+          # only). hot-check emits at most ONE line per call (--per-run 1
+          # default): two dispatches seconds apart cancel each other on the
+          # shared concurrency group (pending-run replacement kills the older
+          # one). TRIGGER -> new article (mode=url), UPDATE -> append update
+          # section to the existing article (mode=update).
+          OUTPUT=$(bundle exec ruby scripts/hn-fetch.rb --hot-check --daily-max 4 --update-max 2) || true
           echo "$OUTPUT"
-          echo "$OUTPUT" | grep -E '^TRIGGER ' | while read -r _ HN_URL; do
+          echo "$OUTPUT" | grep -E '^(TRIGGER|UPDATE) ' | while read -r KIND HN_URL; do
             [ -n "$HN_URL" ] || continue
-            echo "Dispatching hot trigger: $HN_URL"
-            gh workflow run hn-auto.yml -f mode=url -f hn_url="$HN_URL" || echo "dispatch failed (non-fatal)"
+            MODE=url
+            [ "$KIND" = "UPDATE" ] && MODE=update
+            echo "Dispatching $KIND: $HN_URL (mode=$MODE)"
+            gh workflow run hn-auto.yml -f mode=$MODE -f hn_url="$HN_URL" || echo "dispatch failed (non-fatal)"
           done
-          echo "$OUTPUT" | grep -qE '^TRIGGER ' || echo "No hot story today."
+          echo "$OUTPUT" | grep -qE '^(TRIGGER|UPDATE) ' || echo "No hot story today."
 
       - uses: ./.github/actions/hn-archive
         with:

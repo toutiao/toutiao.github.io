@@ -706,11 +706,16 @@ def refresh_published
     ids = content.to_enum(:scan, /hn_id:\s*"?(?<hn>\d+)"?|item\?id=(?<hn2>\d+)|lobste\.rs\/s\/(?<lo>[a-z0-9]+)/).map { Regexp.last_match }
                  .map { |m| m[:hn] || m[:hn2] || (m[:lo] ? "lo-#{m[:lo]}" : nil) }
                  .compact.uniq
+    # update-mode articles carry `updated:` (last append date); informational
+    # field on the projection — read side must tolerate its absence
+    upd = fm[/^updated:\s*['"]?(\d{4}-\d{2}-\d{2})/, 1]
     ids.each do |id|
       # permalink /articles/:year/:name has NO trailing slash (site-wide:
       # post.url is slash-less too); the directory-style "/.../" form 404s on
       # Pages — keep in sync with _config.yml
-      map[id] = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}" }
+      entry = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}" }
+      entry['updated'] = upd if upd
+      map[id] = entry
     end
   end
   FileUtils.mkdir_p(ARCHIVE_DIR)

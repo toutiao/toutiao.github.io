@@ -74,7 +74,8 @@ POLL_BATCH_MAX = 40                  # max polls per --poll-watching run (load s
 TRIGGERS_PATH = File.join(ARCHIVE_DIR, 'triggers.json')
 
 # Dual-channel hot trigger: point-value channel (legacy) + snapshot-delta channel
-HOT_DELTA_SCORE = 80        # score gained since previous snapshot (typically 8h)
+HOT_DELTA_RATE_MIN = 10.0   # score/h since previous snapshot (any gap ≥ HOT_DELTA_GAP_MIN_H; 80 pts per 8h == 10 pts/h)
+HOT_DELTA_GAP_MIN_H = 2.0   # min snapshot gap for a trustworthy velocity reading (skips backlog double-runs)
 HOT_DELTA_AGE_MAX_HOURS = 72
 HOT_DELTA_SCORE_MIN = 100
 
@@ -1001,15 +1002,23 @@ def load_trigger_state
   legacy.empty? ? { 'triggered' => [] } : { 'triggered' => legacy }
 end
 
-def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
+def hot_check(daily_max: 2, update_max: 2, per_run: 1, max_age_hours: HOT_AGE_MAX_HOURS,
               score_min: HOT_SCORE_MIN, velocity_min: HOT_VELOCITY_MIN)
   state = load_trigger_state
-  triggered_ids = Array(state['triggered'])
+  # Array() on an existing array returns the SAME object — without dup, the
+  # append below mutates state['triggered'] too, and the write guard
+  # (triggered_ids != Array(state['triggered'])) compares the object with
+  # itself, so triggers.json was written exactly once and the daily budget
+  # never decremented (every run re-triggered up to daily_max stories).
+  triggered_ids = Array(state['triggered']).dup
+  update_ids = Array(state['updates']).dup
   triggered_id_set = triggered_ids.map { |t| t.is_a?(Hash) ? t['id'] : t }.compact
   today = Time.now.utc.strftime('%Y-%m-%d')
   today_count = triggered_ids.count { |t| t.is_a?(Hash) && t['date'] == today }
+  update_count = update_ids.count { |t| t.is_a?(Hash) && t['date'] == today }
 
   known_article_ids = known_published_ids
+  published = load_published_map
   reg = load_registry
 
   hot = []
@@ -1046,9 +1055,9 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
     next unless hist.length >= 2
     prev, last = hist[-2], hist[-1]
     gap_h = ((Time.parse(last['t']) - Time.parse(prev['t'])) / 3600.0) rescue next
-    next unless gap_h > 0.5
+    next unless gap_h >= HOT_DELTA_GAP_MIN_H
     delta = last['s'] - prev['s']
-    next unless delta >= HOT_DELTA_SCORE
+    next unless delta / gap_h >= HOT_DELTA_RATE_MIN
 
     hot << {
       'id' => id,
@@ -1063,26 +1072,88 @@ def hot_check(daily_max: 2, max_age_hours: HOT_AGE_MAX_HOURS,
 
   hot.sort_by! { |h| -h['velocity'] }
 
-  budget = daily_max - today_count
-  hot.first([budget, 0].max).each do |h|
-    puts "TRIGGER #{h['hn_url']}"
-    triggered_ids << { 'id' => h['id'], 'date' => today, 'at' => Time.now.utc.iso8601 }
+  # Update channel — an ALREADY-covered story surging again (second wave, major
+  # development). Reuses the delta conditions verbatim, but targets published
+  # ids; the skill appends an update section instead of writing a new article.
+  # Gates: published before today (≥ ~1 day since publication), post age ≤ 72h,
+  # 24h cooldown per story, own daily budget — updates never crowd out fresh
+  # coverage because triggers are picked first below.
+  updates = []
+  cooldown_cutoff = Time.now.utc - (24 * 3600)
+  published.each do |id, info|
+    next unless info.is_a?(Hash) && info['date'].to_s =~ /\A\d{4}-\d{2}-\d{2}\z/
+    next unless info['date'] < today
+    next if update_ids.any? { |u|
+      next false unless u.is_a?(Hash) && u['id'] == id
+      at = (Time.parse(u['at'].to_s) rescue nil)
+      at.nil? || at > cooldown_cutoff
+    }
+    e = reg['threads'][id]
+    next unless e && e['posted_at'] && e['hn_url']
+    hours = ((Time.now.utc - (Time.parse(e['posted_at'].to_s) rescue nil)) / 3600.0) rescue nil
+    next unless hours && hours >= 0 && hours <= HOT_DELTA_AGE_MAX_HOURS
+    next if e['last_score'].to_i < HOT_DELTA_SCORE_MIN
+
+    hist = snapshot_history(id)
+    next unless hist.length >= 2
+    prev, last = hist[-2], hist[-1]
+    gap_h = ((Time.parse(last['t']) - Time.parse(prev['t'])) / 3600.0) rescue next
+    next unless gap_h >= HOT_DELTA_GAP_MIN_H
+    delta = last['s'] - prev['s']
+    next unless delta / gap_h >= HOT_DELTA_RATE_MIN
+
+    updates << {
+      'id' => id,
+      'title' => e['title'],
+      'score' => e['last_score'].to_i,
+      'age_hours' => hours.round(2),
+      'velocity' => (delta / gap_h).round(1),
+      'hn_url' => e['hn_url'],
+      'reason' => "update delta +#{delta} pts/#{gap_h.round(1)}h",
+    }
+  end
+  updates.sort_by! { |h| -h['velocity'] }
+
+  # per_run caps TOTAL emissions per invocation: CI dispatches one hn-auto run
+  # per emitted line, and two dispatches seconds apart cancel each other
+  # (concurrency groups keep only the newest PENDING run). Triggers outrank
+  # updates — fresh coverage beats refreshing an old article.
+  trigger_budget = [daily_max - today_count, 0].max
+  update_budget = [update_max - update_count, 0].max
+  picks = []
+  hot.each do |h|
+    break if picks.size >= per_run || trigger_budget.zero?
+    picks << h.merge('kind' => 'TRIGGER')
+    trigger_budget -= 1
+  end
+  updates.each do |h|
+    break if picks.size >= per_run || update_budget.zero?
+    picks << h.merge('kind' => 'UPDATE')
+    update_budget -= 1
   end
 
-  if hot.none?
+  picks.each do |h|
+    puts "#{h['kind']} #{h['hn_url']}"
+    entry = { 'id' => h['id'], 'date' => today, 'at' => Time.now.utc.iso8601 }
+    h['kind'] == 'TRIGGER' ? triggered_ids << entry : update_ids << entry
+  end
+
+  if hot.none? && updates.none?
     warn 'HOT: none'
   else
-    hot.each { |h|
+    (hot + updates).each { |h|
       reason = h['reason'] ? " #{h['reason']}" : ''
       warn "  #{h['velocity']} pts/h (#{h['score']} pts, #{h['age_hours']}h)#{reason} #{h['title'].to_s[0, 60]} [#{h['id']}]"
     }
   end
 
-  if !File.exist?(TRIGGERS_PATH) || triggered_ids != Array(state['triggered'])
+  if !File.exist?(TRIGGERS_PATH) || triggered_ids != Array(state['triggered']) ||
+     update_ids != Array(state['updates'])
     FileUtils.mkdir_p(ARCHIVE_DIR)
     tmp = TRIGGERS_PATH + '.tmp'
     File.write(tmp, JSON.pretty_generate(
       'triggered' => triggered_ids.last(200),
+      'updates' => update_ids.last(200),
       'updated_at' => Time.now.utc.iso8601
     ) + "\n")
     File.rename(tmp, TRIGGERS_PATH)
@@ -1374,6 +1445,16 @@ def known_published_ids
   Set.new(scan_published_ids_from_articles)
 end
 
+# Full id -> {date, slug, url} map (published.json only; the _articles scan
+# fallback is intentionally not replicated — update gating degrades to no-op
+# rather than paying a per-run directory walk).
+def load_published_map
+  return {} unless File.exist?(PUBLISHED_PATH)
+  data = (JSON.parse(File.read(PUBLISHED_PATH)) rescue nil)
+  return {} unless data.is_a?(Hash) && data['hn_ids'].is_a?(Hash)
+  data['hn_ids']
+end
+
 # ── CLI ──
 
 def run
@@ -1415,6 +1496,12 @@ def run
     opts.on('--daily-max N', Integer, "Max new hot triggers per day (default: 2)") { |v|
       options[:daily_max] = v
     }
+    opts.on('--update-max N', Integer, "Max article updates per day (default: 2)") { |v|
+      options[:update_max] = v
+    }
+    opts.on('--per-run N', Integer, "Max triggers per invocation (default: 1)") { |v|
+      options[:per_run] = v
+    }
     opts.on('-h', '--help') { puts opts; exit }
   end.parse!
 
@@ -1445,7 +1532,9 @@ def run
 
   # ─-- --hot-check mode ──
   if options[:mode] == :hot_check
-    hot_check(daily_max: options[:daily_max] || 2)
+    hot_check(daily_max: options[:daily_max] || 2,
+              update_max: options[:update_max] || 2,
+              per_run: options[:per_run] || 1)
     return
   end
 

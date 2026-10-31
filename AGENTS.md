@@ -9,7 +9,7 @@
 - Jekyll + GitHub Pages（分支 `master`，Pages 原生分支构建 — **无部署 workflow**，push master 自动构建）
 - 域名：`yuedulijie.com`
 - **本地开发**：Docker（ruby:3.2-slim，`docker compose`），**无需**本地 Ruby/Jekyll
-- **CI**：`.github/workflows/hn-fetch.yml`（HN 多页列表抓取每日 3 次：`/best` ×2 + `/news` ×2 分层采样——≥80 分全量抓取，50–79 分 lead 仅入 registry+快照；+ Lobsters hottest 副源 continue-on-error + hot 突发触发）+ `.github/workflows/hn-auto.yml`（每日北京早 8 点 `/hn --auto --batch 2` 生成文章，MiniMax-M3 主力，失败回退 gemini-3.5-flash → deepseek-v4-flash）+ `.github/workflows/hn-weekly.yml`（周一北京 10:30 `/hn --weekly` 热度周报，单发无回退链）
+- **CI**：`.github/workflows/hn-fetch.yml`（HN 多页列表抓取每 3 小时 1 次（8 slots/天）：`/best` ×2 + `/news` ×2 分层采样——≥80 分全量抓取，50–79 分 lead 仅入 registry+快照；+ Lobsters hottest 副源 continue-on-error + hot 突发触发：每调用单发 1 条（`--per-run 1`，防双 dispatch 在 concurrency 组互取消）、每日预算新文 `--daily-max 4` + 更新 `--update-max 2`；TRIGGER→新文（mode=url），UPDATE→既有文章追加更新段（mode=update））+ `.github/workflows/hn-auto.yml`（每日双 slot（00:00/12:00 UTC）`/hn --auto --batch 1` 各 1 篇，MiniMax-M3 主力，失败回退 gemini-3.5-flash → deepseek-v4-flash）+ `.github/workflows/hn-weekly.yml`（周一北京 10:30 `/hn --weekly` 热度周报，单发无回退链）
 - **子站**：[UP-6 英语学习导航](https://up-6.yuedulijie.com) — `github.com/Lax/up-6.yuedulijie.com`
 
 ## 项目结构
@@ -50,8 +50,8 @@ assets/           # main.scss (入口, 带 front matter), main.js, favicon
 
 ## HN 自动管道（事实来源：`.opencode/designs/hn-signal-architecture.md` + `phase2.md` + `phase3.md`）
 三 workflow + skill + 热度引擎，单层存储（hn-data 分支唯一存储，cache 层二期已退役）：
-1. `hn-fetch.yml` 每日 3 次：抓 HN 多页列表（`--lists`：`/best` ×2 全量层 + `/news` ×2 分层——≥80 分全量、50–79 分 lead 仅 registry+快照）+ Lobsters hottest（副源 continue-on-error）→ 归档（threads 含 post+comments+article、snapshots 时间序列、registry 分层状态机 active(14d)→watching(周探活)→cold(月)→deep(季)→settled，评论增长可复活）→ hn-data 分支 push；hot 触发双通道（点值阈值 OR 快照差分），触发历史永久化 triggers.json
-2. `hn-auto.yml` 每日：hn-data attach → `opencode run /hn --auto`（候选池 registry 驱动，Phase 0 按 heat 特征排序：resurrected 直通/up+expert 加权/spike 降权；MiniMax-M3 主力，回退 gemini-3.5-flash → deepseek-v4-flash）→ `hn-repair.rb` 门禁 → `hn-heat.rb --all`（日榜/聚簇+复波/专家群体/行业分类/published/多窗口 trends 投影 7/30/90）→ jekyll build 门禁 → git-auto-commit 提交 `_articles/` + `_data/hn_trends.json` + `_data/hn_trends_7.json` + `_data/hn_trends_90.json` → hn-data push
+1. `hn-fetch.yml` 每 3 小时：抓 HN 多页列表（`--lists`：`/best` ×2 全量层 + `/news` ×2 分层——≥80 分全量、50–79 分 lead 仅 registry+快照）+ Lobsters hottest（副源 continue-on-error）→ 归档（threads 含 post+comments+article、snapshots 时间序列、registry 分层状态机 active(14d)→watching(周探活)→cold(月)→deep(季)→settled，评论增长可复活）→ hn-data 分支 push；hot 触发双通道（点值阈值 OR 快照速率差分，gap ≥ 2h 才算有效速率窗）+ UPDATE 更新通道（已发布帖二次起量，发布次日才可触发、24h 冷却、独立日预算），每调用单发 1 条、每日预算新文 4 + 更新 2，触发历史永久化 triggers.json（`triggered` + `updates` 两数组）
+2. `hn-auto.yml` 每日：hn-data attach → `opencode run /hn --auto`（候选池 registry 驱动，Phase 0 按 heat 特征排序：resurrected 直通/up+expert 加权/spike 降权；热触发 dispatch 为 mode=url 单帖、UPDATE 为 mode=update 追加更新段；MiniMax-M3 主力，url/update/auto 均走回退链 gemini-3.5-flash → deepseek-v4-flash；update 模式产出判定用 git status——不产新文件）→ `hn-repair.rb` 门禁 → `hn-heat.rb --all`（日榜/聚簇+复波/专家群体/行业分类/published/多窗口 trends 投影 7/30/90）→ jekyll build 门禁 → git-auto-commit 提交 `_articles/` + `_data/hn_trends.json` + `_data/hn_trends_7.json` + `_data/hn_trends_90.json` → hn-data push
 3. `hn-weekly.yml` 周一 02:30 UTC：`/hn --weekly` 热度周报（单发无回退链）
 4. 本地：`make fetch url='<hn_url>'` / `make fetch-hn`（多页列表） / `make lobsters` / `make hn-archive-init` / `make hn-archive-sync`；`/hn` 命令（skill Phase 0-3/W0-W3，数据读 `.hn-archive/threads/`）
    ⚠ 本地 opencode 与 CI 版本 flag 不同：本地 `--auto`（无 `--dir`/`--dangerously-skip-permissions`），CI 反之
@@ -159,6 +159,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **热度** 热度、聚簇、行业分类全部确定性 Ruby — 0 LLM 调用；改公式只动权重常量并 bump `rule_version`，全部历史日榜必须可 `hn-heat.rb --recompute` 重建
 - **热度** 历史重算必须以锚点为地平线过滤输入：评论 `posted_at ≤ anchor`、帖出生 `≤ anchor`，所有下游信号（vel/expert/depth/resurrected）从过滤后集合推导（v3 事故：`comment_vel` 窗口无上界 + expert/depth 不截断 → 未来评论以恒定假平底泄入历史每一天，未出生帖在出生前发光；每日增量跑天然正确，仅 `--recompute` 受污染）
 - **内容** 单帖摘要必须带 `hn_id`；跨多帖的周报**不加** `hn_id` — 防止成员帖被 published dedup 屏蔽
+- **内容** update 模式只改既有文章：front matter 追加/覆盖 `updated:`（普通标量），更新段插在 disclaimer 之前；`hn_id`/title/date/excerpt 不动；无重大增量（<10 条新评论）时允许零产出 exit 0
 - **内容** 引文必须逐字（verbatim）+ 真实作者 + `[c:id]`；非 HN 引文 id 不走 Algolia 门禁，本地归档核验兜底
 - **内容** `title:`/`excerpt:`/`tagline:` 必须 `>-` block scalar — ASCII `"` 会破坏 YAML
 - **内容** 每篇生成文章结尾必须带免责声明 + AI 模型披露

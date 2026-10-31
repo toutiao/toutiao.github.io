@@ -2,7 +2,9 @@ name: HN Auto-Summarizer
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # Two slots, one article each (--batch 1): spreads publishing across the
+    # day instead of a single 2-article burst; hot triggers fill the gaps.
+    - cron: "0 0,12 * * *"
   workflow_dispatch:
     inputs:
       model:
@@ -16,13 +18,14 @@ on:
           - "google/gemini-2.5-flash"
           - "deepseek/deepseek-v4-flash"
       mode:
-        description: "运行模式 — auto 自动选择 / url 手动指定"
+        description: "运行模式 — auto 自动选择 / url 手动指定 / update 已发布文章追加更新段"
         type: choice
         required: false
         default: "auto"
         options:
           - "auto"
           - "url"
+          - "update"
       hn_url:
         description: "HN 讨论 URL（mode=url 时必填）"
         required: false
@@ -136,14 +139,16 @@ jobs:
           FORCE='${{ inputs.force_fetch }}'
           FLAGS=""
           [ "$FORCE" = "true" ] && FLAGS="--force"
-          if [ "$MODE" = "url" ]; then
+          if [ "$MODE" = "url" ] || [ "$MODE" = "update" ]; then
             if [ -z "$HN_URL" ]; then
-              echo "ERROR: mode=url 但 hn_url 为空"
+              echo "ERROR: mode=$MODE 但 hn_url 为空"
               exit 1
             fi
-            HN_CMD="/hn $HN_URL $FLAGS"
+            UPDATE_FLAG=""
+            [ "$MODE" = "update" ] && UPDATE_FLAG="--update"
+            HN_CMD="/hn $HN_URL $UPDATE_FLAG $FLAGS"
           else
-            HN_CMD="/hn --auto $FLAGS --batch 2"
+            HN_CMD="/hn --auto $FLAGS --batch 1"
           fi
           opencode run "$HN_CMD" --dir . \
             --dangerously-skip-permissions \
@@ -162,12 +167,19 @@ jobs:
           # Judge by today's article count vs baseline — NOT git status: the agent
           # occasionally commits its output in-run, which empties the dirty-tree
           # check and made the fallback chain fire needlessly.
+          # update 模式例外：不产新文件，只改既有文章 — 判定必须用 git status。
           YEAR=$(TZ=Asia/Shanghai date +%Y)
           TODAY=$(TZ=Asia/Shanghai date +%F)
           NOW=$(ls "_articles/$YEAR/" 2>/dev/null | grep -c "^${TODAY}-" || true)
           BASE='${{ steps.generate.outputs.baseline }}'
           [ -z "$BASE" ] && BASE=0
-          if [ "$NOW" -gt "$BASE" ]; then
+          PRODUCED=0
+          [ "$NOW" -gt "$BASE" ] && PRODUCED=1
+          RUN_MODE="${RUN_MODE:-auto}"
+          if [ "$RUN_MODE" = "update" ] && [ -n "$(git status --porcelain -- _articles/)" ]; then
+            PRODUCED=1
+          fi
+          if [ "$PRODUCED" = "1" ]; then
             echo "主模型已产出文章（今日 $NOW 篇 > 基线 $BASE），跳过回退"
             exit 0
           fi
@@ -178,12 +190,17 @@ jobs:
             PROV=${MODEL%%/*}
             if [ "$PROV" = "deepseek" ] && [ -z "$DEEPSEEK_API_KEY" ]; then echo "no DEEPSEEK_API_KEY, skip $MODEL"; continue; fi
             if [ "$PROV" = "minimax-cn-coding-plan" ] && [ -z "$MINIMAX_API_KEY" ]; then echo "no MINIMAX_API_KEY, skip $MODEL"; continue; fi
-            if [ "${RUN_MODE:-auto}" = "url" ]; then echo "url fallback 不支持"; exit 1; fi
+            if [ "$RUN_MODE" = "url" ]; then echo "url fallback 不支持"; exit 1; fi
             # Reset partial writes from previous attempt
             git checkout -- _articles/ 2>/dev/null || true
             git clean -fd _articles/ 2>/dev/null || true
             echo "=== Fallback: $MODEL ==="
-            if opencode run "/hn --auto $force_flag" --dir . \
+            if [ "$RUN_MODE" = "update" ]; then
+              CMD="/hn ${{ inputs.hn_url }} --update"
+            else
+              CMD="/hn --auto $force_flag"
+            fi
+            if opencode run "$CMD" --dir . \
               --dangerously-skip-permissions \
               --model "$MODEL" 2>&1 && [ -n "$(git status --porcelain -- _articles/)" ]; then
               echo "Fallback 成功: $MODEL"

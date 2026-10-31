@@ -12,6 +12,7 @@ metadata:
 |-----------|------|
 | `--auto` / `CI=true` / `GITHUB_ACTIONS=true` | **auto** — no prompts, auto-decide, auto-build, auto-deploy |
 | `--weekly` | **weekly** — 聚合本周热度数据生成周报文章（Phase W0-W3，见文末） |
+| `--update <url>` | **update** — 已发布文章追加更新段（Phase U，见文末），不产新文件 |
 | else | **interactive** — user prompts, confirm deploy |
 
 ---
@@ -283,6 +284,39 @@ Exit 0. No prompts.
 | ⚑ sensitive/political | Show matched terms. Add extended disclaimer. Ask "Confirm deploy? [y/N]" (default N). y → deploy. N → stay local. |
 
 ---
+
+## Mode: --update（已发布文章更新段 — 热触发 UPDATE 通道）
+
+同一讨论在成文后再次起量（二次复波/重大进展）时，向**既有文章**追加更新段。
+不产新文件、不改 title/excerpt/date。调用形如 `/hn <hn_url> --update`。
+
+### Phase U0 — 定位与证据（确定性）
+
+1. 解析 hn id（URL 中 `item?id=<id>`）
+2. 读 `.hn-archive/published.json` `hn_ids[id].slug` → 文章路径 `_articles/YYYY/<slug>.md`（YYYY = date 字段年份）。查不到 → `ERROR: 无成文记录 <id>`，exit 1（update 模式禁止产新文章）
+3. 增量评论 = thread yaml（`.hn-archive/threads/*/*/<id>.yaml`）中 `posted_at` 晚于文章 `date:`（北京时区当日 00:00 起）的 comments
+4. **充分性闸门**：增量评论 < 10 条 或 新增分数 < 40 → 「无重大更新」，**不改动文件**，exit 0（CI 判无产出走回退链，属预期 — 阈值只是双保险，hot-check 速率门禁才是主闸）
+5. 从增量评论选 1-3 条最强引文（按 score，verbatim EN + `[c:id]`，同 Phase 1/2.5 纪律）
+
+### Phase U1 — Write
+
+1. Front matter 加一行 `updated: $(TZ=Asia/Shanghai date +%Y-%m-%d)`（已有则覆盖为新日期；普通标量，非 block scalar）
+2. 在 `<div class="disclaimer">` 之前插入：
+
+   ```
+   ## 更新（YYYY-MM-DD）
+
+   <2-4 句：交代数据变化（分数从 X 涨到 Y / 新增 N 条评论）+ 新进展要点，
+   穿插 U0 选出的引文（格式同 Phase 2：`> "text" — user [c:id]` + 译文行）。
+   只写增量，不复述正文。>
+   ```
+3. 引文 `[c:id]` 必须来自归档 comments 逐字核验（Phase 2.5 Step 1 同流程）— 会过 hn-repair.rb Algolia 终验
+4. 敏感词扫描同 Phase 2.5
+
+### Phase U2 — Output
+
+同 Phase 3 纪律：任何环境禁 `make build`/`git` 操作；front matter 校验后 exit 0。
+Interactive 模式先展示 diff 再确认。
 
 ## Mode: --weekly（周报 — AIHOT reports 对应物）
 
