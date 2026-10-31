@@ -1,0 +1,385 @@
+---
+post:
+  id: '50308697'
+  title: Bunny CDN Security Incident
+  url: https://status.bunny.net/incidents/p6gf1by9kr7m
+  hn_url: https://news.ycombinator.com/item?id=50308697
+  score: 218
+  author: SondreDag
+  posted_at: '2026-10-30T19:05:22Z'
+  fetched_at: '2026-10-31T11:50:55Z'
+  article_url: https://status.bunny.net/incidents/p6gf1by9kr7m
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T11:50:55Z'
+  raw_comment_count: 38
+comments:
+- id: '50309394'
+  parent_id: '50308697'
+  author: eraclide
+  text: Bunny used Gcore in Armenia. Gcore themselves got hacked, not Bunny. Bunny
+    was just an affected downstream, in only one of their POPs.<p><a href="https:&#x2F;&#x2F;lowendtalk.com&#x2F;discussion&#x2F;222315&#x2F;gcore-compromised-via-ispsystem-panel#latest"
+    rel="nofollow">https:&#x2F;&#x2F;lowendtalk.com&#x2F;discussion&#x2F;222315&#x2F;gcore-compromised-v...</a><p>The
+    title is heavily misleading.
+  score: 0
+  posted_at: '2026-10-30T20:02:20Z'
+- id: '50309403'
+  parent_id: '50308697'
+  author: colonCapitalDee
+  text: Prompt and competent response, as expected from bunny.<p>&quot;Last week,
+    one of our infrastructure providers reported unauthorized access involving third-party
+    server management software. One of our CDN nodes, located in Armenia, was hosted
+    on a server supplied by this provider.<p>After receiving the alert from the affected
+    provider, our engineering team took immediate action. Within 20 minutes, we stopped
+    routing traffic through the server. We then reviewed and preserved the relevant
+    security logs for investigation, securely wiped the server, and revoked its access
+    to our other systems. The affected server has been permanently removed from our
+    infrastructure.&quot;
+  score: 0
+  posted_at: '2026-10-30T20:02:52Z'
+- id: '50309446'
+  parent_id: '50308697'
+  author: bobtheborg
+  text: |-
+    <p><pre><code>  While neither investigation has found any indication of unauthorized access to our server, we cannot completely rule out the possibility.
+
+      If unauthorized access to our CDN node did occur, the potentially exposed information would have been: temporarily cached CDN content, Pull Zone configurations, and TLS certificates stored on that server.
+
+      As an additional precaution, we have revoked and reissued all TLS certificates for bunny. net platform domains (b-cdn. net and bunny. run). Reissuance of managed TLS certificates for custom domains is ongoing and is expected to be completed within the next 24 hours. No action is required from customers using managed certificates. We will post a further update on our status page once this process is complete.
+
+      If you manage your own TLS certificates, we recommend revoking and reissuing them with new private keys as a precaution.
+
+      No other customer data, including bunny. net account data, was stored on the server in question, and no internal systems were affected.
+
+    </code></pre>
+    so it seems like the underlying provider <i>potentially</i> allowed, for instance, disk read, that above is what bunny says might have been on disk in this case? Am I reading that right?
+  score: 0
+  posted_at: '2026-10-30T20:06:35Z'
+- id: '50309480'
+  parent_id: '50309403'
+  author: ptsneves
+  text: It looked like competent,but some of the events look really bad for the company.
+    Especially the fact that TLS certificates that customers entrusted bunny now need
+    to be revoked by the customers themselves. This detail was at the very last of
+    the email I got and it was the only part I did not like, because it means customer
+    secrets were indeed compromised. I hope they followed up with all the customers
+    on revoking those certificates.
+  score: 0
+  posted_at: '2026-10-30T20:09:54Z'
+- id: '50309561'
+  parent_id: '50308697'
+  author: traceroute66
+  text: Sadly this is entirely predictable.<p>Some time ago my colleague and I were
+    doing some due-diligence on Bunny as a potential service provider.<p>We asked
+    them some basic security questions, nothing low-level, just some basic high-level
+    overview type of stuff to roughly check if they were following well-known best-practices.<p>Their
+    response was a consistent and constant &quot;cannot tell you due to security reasons&quot;.<p>That
+    rang alarm bells.  Any provider such as them who is not sufficiently confident
+    in their security to be willing and able to discuss security at a high-level perspective
+    is not worthy of trust as far as I am concerned.
+  score: 0
+  posted_at: '2026-10-30T20:17:30Z'
+- id: '50309753'
+  parent_id: '50309480'
+  author: freecodeio
+  text: it looks like they are doing automatic renewal of certificates, the only ones
+    that customers have to do themselves is the ones the customers uploaded themselves
+  score: 0
+  posted_at: '2026-10-30T20:31:29Z'
+- id: '50309771'
+  parent_id: '50309480'
+  author: solyin
+  text: "&gt; No action is required from customers using managed certificates. We
+    will post a further update on our status page once this process is complete.<p>&gt;
+    If you manage your own TLS certificates, we recommend revoking and reissuing them
+    with new private keys as a precaution.<p>Only if you manage them yourself. If
+    Bunny is managing them for you, they&#x27;ll roll them for you."
+  score: 0
+  posted_at: '2026-10-30T20:33:26Z'
+- id: '50309820'
+  parent_id: '50308697'
+  author: asimovDev
+  text: php.net is on Bunny to my knowledge and so is PECL for example. Great potential
+    for compromised packages if this hadn&#x27;t been caught , but I don&#x27;t know
+    the blast radius since the victim would need to connect to this particular CDN
+  score: 0
+  posted_at: '2026-10-30T20:37:15Z'
+- id: '50309850'
+  parent_id: '50309561'
+  author: freecodeio
+  text: care to share what you asked? just curious
+  score: 0
+  posted_at: '2026-10-30T20:41:02Z'
+- id: '50309997'
+  parent_id: '50309394'
+  author: OneDeuxTriSeiGo
+  text: It&#x27;s not really misleading. A lot of people here use Bunny and this is
+    a relevant security incident. It&#x27;s not a major failing but rather a &quot;hey
+    shit happened come make sure if it applies to you that you respond in kind&quot;.<p>NGL
+    it&#x27;s the exact wording I&#x27;d personally like to see from a product that
+    had an infra provider have an incident just so that I can mentally tune in enough
+    to figure out if I need to care.
+  score: 0
+  posted_at: '2026-10-30T20:52:21Z'
+- id: '50310028'
+  parent_id: '50309820'
+  author: ameliaquining
+  text: And so it comes full circle.
+  score: 0
+  posted_at: '2026-10-30T20:54:52Z'
+- id: '50310105'
+  parent_id: '50309753'
+  author: abofh
+  text: Which reads like the CA key got compromised - the customer&#x27;s keys are
+    fine
+  score: 0
+  posted_at: '2026-10-30T21:03:19Z'
+- id: '50310153'
+  parent_id: '50309394'
+  author: wbl
+  text: Do I need to post the Rickover responsibility copypasta again? Simply put
+    service providers own their outsourcing decisions and those consequences. Getting
+    popped by shitty hosting services is a risk of using those services.<p>Bunny is
+    doing the right thing here and owning it.
+  score: 0
+  posted_at: '2026-10-30T21:08:05Z'
+- id: '50310267'
+  parent_id: '50309561'
+  author: everfrustrated
+  text: It&#x27;s fairly well known that Bunny don&#x27;t own the servers in their
+    cdn pops so they will always be subject to the security of the people they lease
+    etc from. If you wanted good security you gotta pay for it. Bunny are very much
+    at the budget end of the market segment - servers cost money no way around it.<p>TL;DR
+    you get what you pay for.
+  score: 0
+  posted_at: '2026-10-30T21:17:55Z'
+- id: '50310334'
+  parent_id: '50310105'
+  author: freecodeio
+  text: no it reads as if all individual private keys got compromised, hence requesting
+    custom ssls to be updated
+  score: 0
+  posted_at: '2026-10-30T21:23:42Z'
+- id: '50310338'
+  parent_id: '50309480'
+  author: boredpudding
+  text: "&gt; because it means customer secrets were indeed compromised.<p>It does
+    not mean secrets were compromised. It means: If there is a risk customer secrets
+    were compromised, the right thing to do is to assume they were and refresh everything.
+    Even if there&#x27;s no evidence of it."
+  score: 0
+  posted_at: '2026-10-30T21:23:56Z'
+- id: '50310355'
+  parent_id: '50308697'
+  author: bitlad
+  text: It feels like theres an incident every hour.
+  score: 0
+  posted_at: '2026-10-30T21:25:48Z'
+- id: '50310413'
+  parent_id: '50310355'
+  author: esseph
+  text: Bigger the vault, better the treasure
+  score: 0
+  posted_at: '2026-10-30T21:31:17Z'
+- id: '50310457'
+  parent_id: '50310105'
+  author: jeremyjh
+  text: Bunny is not a CA and doesn’t have those keys.
+  score: 0
+  posted_at: '2026-10-30T21:35:13Z'
+- id: '50310634'
+  parent_id: '50308697'
+  author: gtirloni
+  text: "<i>&gt; Last week, one of our infrastructure providers reported unauthorized
+    access involving third-party server management software. One of our CDN nodes,
+    located in Armenia, was hosted on a server supplied by this provider</i><p>Are
+    they talking about physical security? Someone grabbed the server, etc?<p>Colocation
+    providers usually don&#x27;t care about security beyond that, or has that changed?"
+  score: 0
+  posted_at: '2026-10-30T21:51:34Z'
+- id: '50310680'
+  parent_id: '50308697'
+  author: lackoftactics
+  text: is it only me or those security incidents on front page are kinda out of control?<p>maybe
+    it&#x27;s my brain just primed or attacks picked up pace recently
+  score: 0
+  posted_at: '2026-10-30T21:57:04Z'
+- id: '50310755'
+  parent_id: '50310680'
+  author: freecodeio
+  text: result of years of negligent ceos and &quot;eh nothing will happen&quot; vibes
+    finally emerging as LLMs turn script kiddies into dangerous hackers
+  score: 0
+  posted_at: '2026-10-30T22:05:38Z'
+- id: '50310849'
+  parent_id: '50310413'
+  author: bcvvvy
+  text: Cloud bad! Vault big!
+  score: 0
+  posted_at: '2026-10-30T22:15:57Z'
+- id: '50310922'
+  parent_id: '50310413'
+  author: MikeNotThePope
+  text: Bigger the vault, the more room there is to lock your enemies inside.
+  score: 0
+  posted_at: '2026-10-30T22:24:58Z'
+- id: '50310942'
+  parent_id: '50310680'
+  author: elAhmo
+  text: It is not just you. I wasn&#x27;t actively reading for a few days, came back
+    from a short trip and there is like 5 open security breaches on the top page right
+    now.
+  score: 0
+  posted_at: '2026-10-30T22:26:57Z'
+- id: '50310944'
+  parent_id: '50308697'
+  author: evan_a_a
+  text: "&gt; After receiving the alert from the affected provider, our engineering
+    team took immediate action. Within 20 minutes, we stopped routing traffic through
+    the server. We then reviewed and preserved the relevant security logs for investigation,
+    securely wiped the server, and revoked its access to our other systems. The affected
+    server has been permanently removed from our infrastructure.<p>When responding
+    to a potential breach, the correct protocol is to contain the incident and PRESERVE
+    EVERYTHING for investigation. Do not try to be selective at what data you keep
+    or don&#x27;t keep. They&#x27;ve unfortunately likely destroyed evidence and will
+    not be able to determine if the attacker actually breached the server or not,
+    and if so, how. This speaks to them having a poor or non-existent incident response
+    plan."
+  score: 0
+  posted_at: '2026-10-30T22:27:11Z'
+- id: '50310959'
+  parent_id: '50309403'
+  author: philipallstar
+  text: "&gt; Prompt and competent response, as expected from bunny.<p>Call me pathologically
+    unbiased, but I doubt this same article written by Cloudflare would get this response."
+  score: 0
+  posted_at: '2026-10-30T22:28:49Z'
+- id: '50311015'
+  parent_id: '50310680'
+  author: arjie
+  text: No, the number of serious incidents is rising. The new -cyber models are incredibly
+    capable.
+  score: 0
+  posted_at: '2026-10-30T22:35:45Z'
+- id: '50311254'
+  parent_id: '50310959'
+  author: motionlessveloc
+  text: Cloudflare&#x27;s incident response usually gets high praise from HN. Look
+    at the remarkable lack of hate here:<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=45973709">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=45973709</a>
+  score: 0
+  posted_at: '2026-10-30T23:03:05Z'
+- id: '50311307'
+  parent_id: '50309394'
+  author: mmooss
+  text: 'Last week, after spending 30 minutes placing one order in Uber Eats, I finally
+    hit the last confirm and it told me the restaurant was no longer taking orders
+    that night. I called the restaurant and they said they couldn&#x27;t help: they
+    only take orders over Uber Eats and they can&#x27;t control UE&#x27;s system.<p>Yes,
+    they absolutely could help. They could take an order over the phone. They could
+    choose a subcontractor who delivered good service to the restaurant&#x27;s customers.
+    The restaurant is 100% responsible.<p>If I used a subcontractor for a client,
+    not in a million years would I tell the client, &#x27;the subcontractor&#x27;s
+    failure isn&#x27;t my problem; I can&#x27;t control them&#x27;. I would look like
+    a joke, entirely unreliable and clueless.'
+  score: 0
+  posted_at: '2026-10-30T23:07:55Z'
+- id: '50311488'
+  parent_id: '50309394'
+  author: giancarlostoro
+  text: Being affected downstream means it&#x27;s a security incident regardless?
+    I don&#x27;t understand why you think this is misleading, incomplete context in
+    the title? Sure.
+  score: 0
+  posted_at: '2026-10-30T23:27:47Z'
+- id: '50311687'
+  parent_id: '50309480'
+  author: quickthrowman
+  text: "&gt; Especially the fact that TLS certificates that customers entrusted bunny
+    now need to be revoked by the customers themselves. This detail was at the very
+    last of the email I got and it was the only part I did not like, because it means
+    customer secrets were indeed compromised.<p>It does not mean that at all, it’s
+    sane risk management. There was <i>an opportunity</i> for someone to steal customer
+    secrets so the safe thing to do is assume everything was compromised and revoke&#x2F;reissue
+    certificates even if nothing was stolen."
+  score: 0
+  posted_at: '2026-10-30T23:51:34Z'
+- id: '50311862'
+  parent_id: '50309394'
+  author: peri-cl
+  text: '&gt; <i>&quot;Bunny used Gcore in Armenia.&quot;</i><p>I&#x27;m unsure, but
+    I have to ask: isn&#x27;t this company Russian-controlled (with Luxembourg and
+    Cyprus shell-company fronts)? Their Wikipedia entry[0] features a controversy
+    involving RT (Russia Today); and a number of their top employees (i.e. Vsevolod
+    Vayner) seem to live in Russian cities; and Moscow was their 2nd cloud location,
+    after Luxembourg[1].<p>I&#x27;m not sure if I&#x27;ve got this right (most of
+    the primary sources are Russian websites that block me and also block Western
+    internet archives; I&#x27;m gleaning some things from Google preview caches).
+    But: is it <i>possible</i> the #1 &quot;European sovereign CDN&quot; has been
+    acting as a white-label reseller for Moscow? Is it <i>possible</i> they willingly
+    trusted all of their customers&#x27; TLS certificates to a contractor operating
+    from Russia?<p>Someone kindly fact-check me.<p>[0] <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Gcore#Controversies"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Gcore#Controversies</a><p>[1]
+    <a href="https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20260420215140&#x2F;https:&#x2F;&#x2F;www.streamingmediaglobal.com&#x2F;PressRelease&#x2F;G-Core-Labs-Launches-New-Public-Cloud-Region-in-Moscow_50654.aspx"
+    rel="nofollow">https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20260420215140&#x2F;https:&#x2F;&#x2F;www.strea...</a>'
+  score: 0
+  posted_at: '2026-10-31T00:13:15Z'
+- id: '50312142'
+  parent_id: '50311862'
+  author: peri-cl
+  text: 'I found an additional source of interest (translated from German):<p>&gt;
+    <i>&quot;An employee appears to be offering Medvedev access to intelligence information&quot;</i>
+    [...] <i>&quot;This recording shows Michael Shurygin, then-head of GCore Russia,
+    apparently discussing plans with former Russian President Dmitry Medvedev in April
+    2021.&quot;</i><p>&gt; [...] <i>&quot;The group laughs. Shurygin had made a pun
+    that only works in Russian: “Introduced”—that is, внедрять (vnedryat’)—is ambiguous.
+    It can also be understood to mean “to penetrate” or “to infiltrate.” So they would
+    have infiltrated Luxembourg. Medvedev says, “I hope on behalf of the state.” And
+    they laugh again.&quot;</i><p><a href="https:&#x2F;&#x2F;correctiv.org&#x2F;aktuelles&#x2F;russland-ukraine-2&#x2F;2023&#x2F;02&#x2F;17&#x2F;eu-sanktionen-gcore-russia-today&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;correctiv.org&#x2F;aktuelles&#x2F;russland-ukraine-2&#x2F;2023&#x2F;02&#x2F;1...</a><p>(Who?)
+    <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Correctiv" rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Correctiv</a>'
+  score: 0
+  posted_at: '2026-10-31T00:54:26Z'
+- id: '50313730'
+  parent_id: '50311687'
+  author: benatkin
+  text: Someone who never should have been their vendor, due to closeness to Moscow.
+    It&#x27;s too bad, but I will probably look elsewhere.<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50311862">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50311862</a>
+  score: 0
+  posted_at: '2026-10-31T06:28:54Z'
+- id: '50313732'
+  parent_id: '50309561'
+  author: r_lee
+  text: they&#x27;re not really a &quot;proper&quot; CDN<p>they use random providers
+    for their cheap bandwidth so they don&#x27;t have much control over their stuff,
+    thus I&#x27;d only really use them as a cache for bandwidth heavy stuff
+  score: 0
+  posted_at: '2026-10-31T06:29:55Z'
+- id: '50313738'
+  parent_id: '50309403'
+  author: usr1106
+  text: At least the statement is not competently written.<p>They write that TLS certificates
+    have potentially be exposed. That doesn&#x27;t make sense. TLS certifcates are
+    public. Probably they mean private server keys have been potentially be exposed.
+    And after that the certificates are not only useless but dangerous (if the private
+    is really in the hands of the attacker).<p>They write they have been revoked,
+    OK. But they continue to be served until new ones are in place. Hmm? Well, no
+    browser checks revocation anyway I guess.
+  score: 0
+  posted_at: '2026-10-31T06:31:07Z'
+- id: '50314914'
+  parent_id: '50311862'
+  author: eraclide
+  text: Based on what I know, Gcore split it&#x27;s Russian business into &quot;Edgecenter&quot;
+    after 2022. What that means in reality? Probably not much.
+  score: 0
+  posted_at: '2026-10-31T11:09:46Z'
+article:
+  url: https://status.bunny.net/incidents/p6gf1by9kr7m
+  title: bunny.net Status - Security update regarding one of our infrastructure providers
+  fetch_status: success
+  content: |-
+    # Subscribe to Incident
+
+    Subscribe to updates for Security update regarding one of our infrastructure providers via email and/or text message. You'll receive email notifications when incidents are updated, and text message notifications whenever bunny.net creates or resolves an incident.
+  error:
+  fetched_at: '2026-10-31T11:50:55Z'
+archived_at: '2026-10-31T11:51:17Z'

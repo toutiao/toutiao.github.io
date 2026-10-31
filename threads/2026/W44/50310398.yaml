@@ -1,0 +1,482 @@
+---
+post:
+  id: '50310398'
+  title: 'Sanstun: A sans-IO, parallel-friendly WireGuard implementation in Rust'
+  url: https://www.firezone.dev/blog/introducing-sanstun
+  hn_url: https://news.ycombinator.com/item?id=50310398
+  score: 138
+  author: wh33zle
+  posted_at: '2026-10-30T21:30:00Z'
+  fetched_at: '2026-10-31T11:51:00Z'
+  article_url: https://www.firezone.dev/blog/introducing-sanstun
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T11:51:00Z'
+  raw_comment_count: 29
+comments:
+- id: '50310928'
+  parent_id: '50310398'
+  author: temp0826
+  text: Mullvad spun their own implementation off of boringtun as well (called gotatun[0])<p>[0]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;mullvad&#x2F;gotatun" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;mullvad&#x2F;gotatun</a>
+  score: 0
+  posted_at: '2026-10-30T22:25:38Z'
+- id: '50311406'
+  parent_id: '50310398'
+  author: monocasa
+  text: Sweet, this is basically how I design my protocol implementations in rust
+    as well.<p>Way more testable, the bulk can be shared between async and blocking
+    IO, it&#x27;s a lot easier to completely ban unsafe in your dependencies (excepting
+    std and core), etc.
+  score: 0
+  posted_at: '2026-10-30T23:19:55Z'
+- id: '50311433'
+  parent_id: '50310398'
+  author: asdf88990
+  text: From their website about their product:<p>&gt; Hardware does the heavy lifting.<p>&gt;
+    Your operating system and network card take over the repetitive jobs whenever
+    they can. Your CPU gets room to breathe, and your battery stays full longer.<p>Where
+    does this operating system run? Where does the power come from to run it if not
+    battery?<p>Pure rubbish ai slop.<p>While the software might actually be ok upon
+    inspection but this kind of ai slop nonsense copy doesn’t inspire confidence in
+    using their software considering how security critical the vpn is.
+  score: 0
+  posted_at: '2026-10-30T23:22:05Z'
+- id: '50312223'
+  parent_id: '50311433'
+  author: hxtk
+  text: I imagine they’re talking about handling network protocols in the kernel or
+    the NIC instead of in userland code, and they’re generally right. It runs off
+    the same battery, but the kernel implementation and especially the (hardware-accelerated)
+    NIC implementations of protocols like TCP and TLS are generally more energy efficient
+    than doing the same amount of IO in userland code.
+  score: 0
+  posted_at: '2026-10-31T01:07:05Z'
+- id: '50312268'
+  parent_id: '50310398'
+  author: Twey
+  text: 'It was all going great until I read<p>&gt; The design also avoids problems
+    like function coloring and plays well with Rust&#x27;s ownership rules.<p>Async
+    is not I&#x2F;O. It can be <i>used</i> for I&#x2F;O, but it&#x27;s just a way
+    of writing pure, deterministic state machines that keeps a logical flow together
+    instead of scattered over a bunch of transitions.<p>Even if you choose to manually
+    compile your async flows into explicit state machines, you still have to deal
+    with ‘function colouring’ (a.k.a. typing): a flow that crosses several state transitions
+    (and may have other disjoint parts of the state updated in the meantime, via other
+    transitions) now has to be rewritten as a (series of) state transitions, and can&#x27;t
+    be called from a blocking function. If anything, rewriting all your state machines
+    without `async` makes the function colouring ‘problem’ worse, because multi-transition
+    flows are even <i>more</i> different from normal functions.'
+  score: 0
+  posted_at: '2026-10-31T01:13:59Z'
+- id: '50312270'
+  parent_id: '50310398'
+  author: clivedup
+  text: I&#x27;ve wanted Wireguard on some MCUs. Great!
+  score: 0
+  posted_at: '2026-10-31T01:14:36Z'
+- id: '50312315'
+  parent_id: '50310398'
+  author: mlhpdx
+  text: 'One of the fundamentally great things about the Wireguard protocol is the
+    simplicity. A small codebase can implement it, and that’s lead to some great libraries
+    and innovation.<p>Another great (and subtle) thing is the monotonically increasing
+    sequence number. Note that it isn’t incrementing, like DTLS. This small thing
+    makes it so much easier to implement with efficient concurrency, and event external
+    state (i.e. distributed concurrency).<p>That latter bit we’ve done in our own
+    library.<p>Edit: typo, don’t -&gt; done'
+  score: 0
+  posted_at: '2026-10-31T01:22:48Z'
+- id: '50312375'
+  parent_id: '50312268'
+  author: wh33zle
+  text: 'In principle, you are right. Async is not I&#x2F;O. And yes, `async` functions
+    compile to a deterministic state machine.<p>The problem is, the moment you use
+    `async`, your state machine reduces down to one API: `poll`. What if I want to
+    change some state in-between two state transitions (i.e. between two `await` points)?
+    Now I have to wire-in a channel to supply that data at the right point or access
+    some shared data via a Mutex.<p>Rust&#x27;s `async` implementation is great if
+    you know everything upfront before you kick off your state machine. The moment
+    you need to do many things concurrently, it can become a real mess.<p>Firezone&#x27;s
+    sans-IO core handles many things concurrently: inbound IP, inbound UDP, WebSocket
+    control messages, TURN allocations, timers, user commands, etc. Having essentially
+    one big struct that I can just call `&amp;mut self` functions on for any one of
+    these inputs makes this very easy to understand, compose and test.<p>A few things
+    like TURN request-response handshakes might be easier as an `async` function but
+    in reality, it is not a big deal and the composability you get from it outweighs
+    it in my opinion.'
+  score: 0
+  posted_at: '2026-10-31T01:34:02Z'
+- id: '50312379'
+  parent_id: '50312223'
+  author: boredatoms
+  text: I think the point is not if the text can be interpreted charitably, but that
+    the usage of AI text in what is intended for humans to read causes mistrust about
+    where else corners could have been cut, on what is security-critical software
+  score: 0
+  posted_at: '2026-10-31T01:34:15Z'
+- id: '50312402'
+  parent_id: '50312379'
+  author: asdf88990
+  text: And even the charitable reading is not a good indicator. There is reason things
+    are getting pulled out of kernel and more and more userland services are used,
+    it is because we have finally come to terms that secure software is hard and better
+    hack as little of it trusted with the whole system as possible.
+  score: 0
+  posted_at: '2026-10-31T01:38:07Z'
+- id: '50312469'
+  parent_id: '50311433'
+  author: wh33zle
+  text: There is actually more thought in it than that.<p>The quoted section is meant
+    to explain in layman&#x27;s terms that we are doing hardware offloading where
+    possible. That means vectorized instructions for encryption and checksum-offloading
+    and packet segmentation in the kernel &#x2F; hardware driver where supported.<p>Being
+    more efficient per packet means that we using less power to move the same amount
+    of data, hence less power draw on mobile platforms.<p>Having said that, I agree
+    that it could be better while still not be filled with technical jargon.
+  score: 0
+  posted_at: '2026-10-31T01:48:09Z'
+- id: '50313136'
+  parent_id: '50312375'
+  author: wyager
+  text: Isn&#x27;t this the idea behind generalizing `async` to `Generator`? You can
+    set the `R` type parameter to whatever type you want to resume the computation
+    with.
+  score: 0
+  posted_at: '2026-10-31T04:10:20Z'
+- id: '50313223'
+  parent_id: '50312469'
+  author: nostrebored
+  text: I don’t think it has much to do with technical jargon. You are making a product
+    for technical people, jargon is fine.<p>You should not write things with AI that
+    you expect people to read
+  score: 0
+  posted_at: '2026-10-31T04:30:15Z'
+- id: '50313230'
+  parent_id: '50313136'
+  author: wh33zle
+  text: Correct! I played around with this in the past. It helps less than you&#x27;d
+    think. As soon as you have a generic resume parameter, you can no longer drive
+    the generator with a generic runtime.<p>If I am now writing my own runtime &#x2F;
+    eventloop to advance my state machine anyway, what exactly am I getting from doing
+    that through an abstraction like the Generator trait?<p>On top of that, the resume
+    and yield abstraction can get convoluted because a lot of times, you only want
+    to do one or the other, meaning either case needs to support a no-op because a
+    single `yield` always does both.<p>Lastly, with all input going through a single
+    type, your state machine then needs to handle every possible input at every yield
+    point. That is a lot of `match` statements and branching.<p>I am sure there are
+    better ways to do this and having generators to express custom iterators would
+    be amazing. But for generic state machines, I don&#x27;t see much of a benefit.
+  score: 0
+  posted_at: '2026-10-31T04:31:34Z'
+- id: '50313672'
+  parent_id: '50310398'
+  author: dennysora-main
+  text: I&#x27;ve recently been developing a VPN Manager implementation using Rust,
+    and the underlying architecture also uses WireGuard. Currently, I&#x27;m using
+    WireGuard gotatun developed by Mullvad.<p>I wonder if you&#x27;ve tested any related
+    data, such as performance curves, connection jitter, and so on, as well as things
+    like security implementations.
+  score: 0
+  posted_at: '2026-10-31T06:18:05Z'
+- id: '50313803'
+  parent_id: '50312268'
+  author: athrowaway3z
+  text: Without actual code solving an actual problem discussing this is all a bit
+    wishy washy, but I think you&#x27;re mixing &#x27;levels&#x27;.<p>The sans-io
+    design here is about building reusable parts that any runtime or thread can drive
+    and incorporate into the colored interface they expose.<p>Function coloring is
+    about (the annoyance when) composing interfaces designed around those different
+    runtimes&#x2F;thread that might use the same sans-io library internally.<p>Yes
+    async compiles down to a statemachine, but we&#x27;re talking about the elegance
+    of the language syntax&#x2F;composition. Most languages require _a lot_ of ritual
+    (or overhead) if you want to use the async-statemachine as a pure statemachines
+    and sidestep the build in runtime-side-effect channels.
+  score: 0
+  posted_at: '2026-10-31T06:45:05Z'
+- id: '50313929'
+  parent_id: '50312268'
+  author: fzeindl
+  text: |-
+    &gt; Async is not I&#x2F;O. It can be used for I&#x2F;O, but it&#x27;s just a way of writing pure, deterministic state machines that keeps a logical flow together instead of scattered over a bunch of transitions.<p>I argue that it is exactly opposite. Blocking threads are a much more natural way of thinking about concurrency.<p>Quote from the erlang creator Joe Armstrong&#x27;s thesis. He argues that the only way to understand multi-threaded programs is writing strictly sequential code for every thread and not muddling all the code for all the threads in one place:<p>&quot;The structure of the program should exactly follow the structure of the problem. Each real world concurrent activity should be mapped onto exactly one concurrent process in our programming language. If there is a 1:1 mapping of the problem onto the program we say that the program is isomorphic to the problem.
+    It is extremely important that the mapping is exactly 1:1. The reason for this is that it minimizes the conceptual gap between the problem and the solution. If this mapping is not 1:1 the program will quickly degenerate, and become difficult to understand. This degeneration is often observed when non-CO languages [&quot;non concurrency-oriented&quot;, looking at you JavaScript!] are used to solve concurrent problems. Often the only way to get the program to work is to force several independent activities to be controlled by the same language thread or process. This leads to a inevitable loss of clarity, and makes the programs subject to complex and irreproducible interference errors.&quot; [0]<p>[0] <a href="https:&#x2F;&#x2F;erlang.org&#x2F;download&#x2F;armstrong_thesis_2003.pdf" rel="nofollow">https:&#x2F;&#x2F;erlang.org&#x2F;download&#x2F;armstrong_thesis_2003.pdf</a>
+  score: 0
+  posted_at: '2026-10-31T07:15:54Z'
+- id: '50314188'
+  parent_id: '50312268'
+  author: SkiFire13
+  text: "&gt; flow that crosses several state transitions (and may have other disjoint
+    parts of the state updated in the meantime, via other transitions) now has to
+    be rewritten as a (series of) state transitions, and can&#x27;t be called from
+    a blocking function<p>This is incorrect. You can easily call that flow from a
+    blocking function, just call it in a loop.<p>What normally prevents a blocking
+    function from &quot;simply&quot; calling an async one is that the async function
+    needs runtime support for certain operations: the simpliest of which is suspending
+    until it&#x27;s notified, with more complex ones being async I&#x2F;O primitives.<p>A
+    Sans-IO library needs none of these. It can simply be called in a loop and as
+    long as the caller provides more inputs it will make progress. An blocking caller
+    can simply call the std&#x27;s `Read::read` and pass the received bytes in, while
+    an async caller can use async I&#x2F;O primitives to do the same, and since the
+    Sans-IO library yields once it finishes consuming the current input it won&#x27;t
+    block the async library either.<p>It&#x27;s the best of both world but as always
+    you have a tradeoff, and in this case it&#x27;s the ability to express the state
+    machine as if it was a straightforward function. Maybe once Rust gets support
+    for generic coroutines this will get better."
+  score: 0
+  posted_at: '2026-10-31T08:28:29Z'
+- id: '50314207'
+  parent_id: '50313136'
+  author: SkiFire13
+  text: 'Nit: the relevant feature is now called `Coroutine`, not `Generator`'
+  score: 0
+  posted_at: '2026-10-31T08:33:14Z'
+- id: '50314346'
+  parent_id: '50313929'
+  author: skew-aberration
+  text: It&#x27;s interesting that we&#x27;ve gone from cooperative to preemptive
+    to cooperative multitasking again.<p>I agree that blocking threads is generally
+    more natural &#x2F; obvious. Cooperative multitasking was always done for performance
+    reasons and more recently for simplicity (in single thread implementations with
+    no locking) and&#x2F;or scaling reasons.<p>Message passing concurrency is going
+    even further though, and never really seems to have taken off wholistically. Again,
+    primarily for performance reasons. When we do pass messages (across networks,
+    too&#x2F;from RAM or disk, etc) we usually add caching and other optimizations
+    which make concurrency even harder to reason about.
+  score: 0
+  posted_at: '2026-10-31T09:09:54Z'
+- id: '50314380'
+  parent_id: '50312375'
+  author: joshka
+  text: ha - wh33zie and I have had this discussion before about sans-io on hn at
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=40872020">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=40872020</a>
+  score: 0
+  posted_at: '2026-10-31T09:20:05Z'
+- id: '50314719'
+  parent_id: '50314346'
+  author: fzeindl
+  text: Message passing on virtual threads on the JVM allows you to run millions of
+    threads and it has no performance downside to async.
+  score: 0
+  posted_at: '2026-10-31T10:34:40Z'
+- id: '50314735'
+  parent_id: '50314346'
+  author: thaumasiotes
+  text: "&gt; wholistically<p>You made me curious about the spelling of &#x27;holistic&#x27;,
+    given that it really is based on the concept of wholeness. It turns out:<p>- <i>Holistic</i>
+    is formed from the Greek root <i>hol-</i>, meaning &quot;whole&quot;. Like <i>hologram</i>.<p>-
+    It&#x27;s even closer to the English than it looks; modern <i>whole</i> descends
+    from Old English <i>hal</i> (cognate to the Greek word), which also gives us <i>hale</i>
+    and <i>health</i>. The W in the modern spelling is a spurious addition unrelated
+    to the etymology of the word. You&#x27;d expect &quot;hole&quot;.<p>- <i>Who</i>
+    is different, and the W in that word is etymologically correct. (Old English <i>hwa</i>.)"
+  score: 0
+  posted_at: '2026-10-31T10:37:13Z'
+- id: '50314917'
+  parent_id: '50314188'
+  author: Twey
+  text: "&gt; This is incorrect. You can easily call that flow from a blocking function,
+    just call it in a loop.<p>Sure, the same can be said of an async library — so
+    long as you&#x27;re okay with none of your other flows being able to make progress
+    in the meantime. You can just poll in a loop.<p>&gt; It&#x27;s the best of both
+    world but as always you have a tradeoff, and in this case it&#x27;s the ability
+    to express the state machine as if it was a straightforward function.<p>‘The best
+    of both worlds’ means that it shares the advantages of both, but the main (arguably
+    only) advantage of async&#x2F;await is that you get to write your temporally separated
+    flows sequentially. (And maybe also that they look a bit like functions, I guess.)
+    That&#x27;s not true here.<p>&gt; A Sans-IO library needs none of these.<p>To
+    be clear I&#x27;m not by any means arguing that ‘sans-IO’ (or, as we used to call
+    it, pure functional programming) is a bad thing. I&#x27;m very in favour of it.
+    I&#x27;m just saying that a ‘sans-IO’ design shouldn&#x27;t need to eschew async&#x2F;await,
+    which you can write in terms of pure functions.<p>(As a sibling comment points
+    out, there are languages where that is not true, i.e. async&#x2F;await inherently
+    introduces some kind of side effect around concurrency or a global event loop.
+    Thankfully that&#x27;s not the case in Rust.)"
+  score: 0
+  posted_at: '2026-10-31T11:10:22Z'
+- id: '50314950'
+  parent_id: '50313803'
+  author: Twey
+  text: "&gt; Function coloring is about (the annoyance when) composing interfaces
+    designed around those different runtimes&#x2F;thread that might use the same sans-io
+    library internally.<p>No, it&#x27;s about the difficulty of calling async functions
+    (or functions with other typed effects that can&#x27;t be handled locally) from
+    pure functions (or more generally functions that aren&#x27;t themselves typed
+    with that effect).<p>&gt; Yes async compiles down to a statemachine, but we&#x27;re
+    talking about the elegance of the language syntax&#x2F;composition. Most languages
+    require _a lot_ of ritual (or overhead) if you want to use the async-statemachine
+    as a pure statemachines and sidestep the build in runtime-side-effect channels.<p>That&#x27;s
+    true, which I would consider a limitation of those languages. Thankfully Rust
+    futures are exactly state machines; there are some rough edges on their API still,
+    but I&#x27;d have preferred a discussion about those to throwing the baby out
+    with the bathwater and claiming that those state machines are a type of I&#x2F;O."
+  score: 0
+  posted_at: '2026-10-31T11:15:57Z'
+- id: '50315038'
+  parent_id: '50313223'
+  author: foldr
+  text: 'The quoted section makes sense to me. It’s like video decoding: the more
+    you can do in hardware, and the fewer user mode &#x2F; kernel mode switches, the
+    less CPU you use and the less power you consume.'
+  score: 0
+  posted_at: '2026-10-31T11:27:32Z'
+- id: '50315081'
+  parent_id: '50314719'
+  author: skew-aberration
+  text: Every copy is a performance downside. There&#x27;s plenty of applications
+    where it is essential to use shared memory. You could not rewrite Linux to avoid
+    shared memory between threads.<p>The line is fuzzy though.<p>You might say that
+    each RAM access is really a message over a bus, and so is each cache access. Conversely,
+    you could write a message passing style key value store and create race conditions
+    by using like shared memory.<p>Transactional memory is also &#x27;message passing&#x27;
+    like -&gt; you bundle up access of shared memory into a single transaction &#x27;message&#x27;.<p>A
+    lot of shared memory code uses constructions like FIFO&#x2F;queues which are really
+    not too distinct from message passing except when ownership is shared or goes
+    back and forth. Perhaps that&#x27;s just an &#x27;implementation&#x27; of message
+    passing.
+  score: 0
+  posted_at: '2026-10-31T11:32:56Z'
+- id: '50315135'
+  parent_id: '50313929'
+  author: Twey
+  text: Your comment is phrased as a rebuttal, but I actually agree with it wholeheartedly,
+    with one minor quibble.<p>&gt; Blocking threads are a much more natural way of
+    thinking about concurrency.<p>The (ideal) programming model for writing a thread
+    vs an async task is identical, and indeed the most natural way of writing sequential
+    flows that may incidentally be temporally separated. A blocking operation and
+    an await are equivalent (in the absence of shared memory; in its presence they
+    differ in that an async task on a single thread gets to assume atomicity of the
+    code between awaits, but that&#x27;s not too relevant here). I think what Joe
+    is arguing against here is exactly splitting up your business flows into a bunch
+    of explicit state machine transitions.<p>The difference is only in the caller.
+    Callers of async tasks (à la Rust) have the right and responsibility of controlling
+    how (and whether) the task they create resumes, while threads&#x2F;BEAM processes
+    (and ‘stackful’ futures à la Go, JavaScript, etc.) are answerable only to the
+    great global event loop in the sky (sometimes known as the OS scheduler or the
+    BEAM multiplexer, etc.). This makes it easier to avoid bugs that are about forgetting
+    to drive a task, but harder to avoid bugs that are about forgetting to stop a
+    task, or stopping a task wrongly; see structured concurrency. It also hurts composability
+    a bit, because by construction there can be only one event loop and there&#x27;s
+    no way to decompose it.<p>You can see Erlang (or I suppose we should talk about
+    BEAM more generally now people like Elixir) in terms of OS processes as an analogy,
+    but it&#x27;s just as valid and perhaps a little more accurate to think about
+    it as a pool of async tasks with a global event loop, à la Go, where all blocking-looking
+    code is actually async. It shares a common problem of such languages that because
+    it can&#x27;t interrupt real blocking code, e.g. FFI, you have to be very careful
+    not to accidentally starve your other processes with such a call. This is made
+    more obvious (but not really fixed) by languages that colour async functions differently,
+    because the async colour acts as a promise (sadly not enforced by the language)
+    that the function will be a good neighbour and not block for too long (whatever
+    that means).
+  score: 0
+  posted_at: '2026-10-31T11:41:56Z'
+- id: '50315182'
+  parent_id: '50314346'
+  author: Twey
+  text: 'Message-passing is popular in HPC (e.g. MPI) because it more closely models
+    how hardware works. But at a higher level people mostly prefer to build abstractions
+    on top of it like async&#x2F;await because message-passing requires you to manually
+    compile your flows into per-process state machines, and that&#x27;s not how most
+    people think about flows (even though business people do sometimes: <a href="https:&#x2F;&#x2F;link.springer.com&#x2F;chapter&#x2F;10.1007&#x2F;978-3-540-72863-4_36"
+    rel="nofollow">https:&#x2F;&#x2F;link.springer.com&#x2F;chapter&#x2F;10.1007&#x2F;978-3-540-72863-4_...</a>).'
+  score: 0
+  posted_at: '2026-10-31T11:49:24Z'
+article:
+  url: https://www.firezone.dev/blog/introducing-sanstun
+  title: 'Introducing sanstun: sans-IO WireGuard | Firezone Blog'
+  fetch_status: success
+  content: |-
+    Today, we are announcing sanstun: a sans-IO Rust implementation of the WireGuard® state machine, optimized for ease of use, security and performance through a parallel-friendly and idiomatic API.
+
+    ## What is sans-IO?
+
+    sans-IO is the idea that you design your system such that IO and side-effects are cleanly separated from the state and "business logic". The IO in sans-IO doesn't just mean file or network IO. It also includes things like time and randomness!
+
+    Due to their lack of side-effects, sans-IO components compose very well and are relatively easy to test. The design also avoids problems like function coloring and plays well with Rust's ownership rules.
+
+    The code examples and references in this post are in Rust but sans-IO isn't Rust-specific at all. Its patterns and ideas can be applied in any language. For a more in-depth explanation, our sans-IO post is a good place to start.
+
+    ## History
+
+    When we first built Firezone, we reached for boringtun as our WireGuard implementation. boringtun more or less did what we wanted, but over time, we found ourselves patching our fork over and over with bug fixes as well as API additions. The goal was to allow these patches to still be upstreamed, so we always kept the existing API working the way it was.
+
+    What we found was that retaining 100% API compatibility with upstream was increasingly difficult as our product requirements evolved. One of the first big changes we made to boringtun was to make it fully sans-IO with regard to time handling (firezone/boringtun#5). This meant adding new APIs for everything with a _at suffix that would take an Instant. sans-IO time handling is very important if you want to accurately simulate an entire system. See this blog post to learn more about how we do that.
+
+    Another thing we feature-flagged was internal buffering. At first, it seems convenient that boringtun establishes a session automatically if you don't have one yet (or anymore) and you are trying to send a packet. Internal buffering, however, comes with several problems:
+
+    - At some point, the buffer needs to be drained. boringtun solves this by requiring you to call decapsulate with a zero-length datagram. Rather unintuitive.
+
+    - It incurs additional allocations (at least in the way it was implemented in boringtun).
+
+    - Buffer sizes should be configurable / tunable.
+
+    All of these problems point at the same solution: Just don't buffer in the library. It simplifies the interface and the implementation on both sides.
+
+    The full list of patches and fixes is pretty long. Even excluding dependency bumps, that is more than 70 PRs. Several of them are fixes for edge-cases we discovered. Others add new APIs or make certain aspects configurable.
+
+    After more than 2 years of using and patching boringtun, we had a pretty good idea of what the overall API of a userspace WireGuard implementation should be. Now it exists as sanstun.
+
+    ## A better sans-IO API
+
+    The core building blocks of the sans-IO API are now:
+
+    - Handling inbound packets: Tunnel::handle_handshake_initiation Tunnel::handle_handshake_response Tunnel::handle_cookie_reply Tunnel::begin_decapsulate & Tunnel::commit_decapsulate
+
+    - Tunnel::handle_handshake_initiation
+
+    - Tunnel::handle_handshake_response
+
+    - Tunnel::handle_cookie_reply
+
+    - Tunnel::begin_decapsulate & Tunnel::commit_decapsulate
+
+    - Handling outbound packets: Tunnel::begin_encapsulate
+
+    - Handling timer updates: Tunnel::handle_timeout & Tunnel::poll_timeout
+
+    - Handling events: Tunnel::poll_event
+
+    Without internal buffering, there is no API contract that requires you to call certain APIs in a loop, which fits much better into the overall sans-IO model. To send a packet, you call Tunnel::begin_encapsulate. It is up to you to buffer the packet if you don't have a session yet. Creating a new session means sending a handshake. You can initiate a new handshake at any point with Tunnel::initiate_handshake.
+
+    The design of these APIs is very deliberate and will make more sense if we quickly recap the WireGuard protocol.
+
+    ## WireGuard protocol
+
+    WireGuard's message format supports 4 types of messages: handshake init, handshake response, cookie reply and encrypted data.
+
+    Every WireGuard session starts with a Diffie-Hellman key exchange which is a moderately expensive operation. WireGuard's design ensures that exposing an endpoint doesn't open up a DoS opportunity.
+
+    Anyone who knows the endpoint's public key can easily create bogus handshake initiations and forge the source IP of the incoming UDP packet. The receiving WireGuard implementation has to run its half of the DH operations before it can tell that the supplied handshake data is bogus. But at that point, the CPU resources have already been spent. Send enough handshake initiations and the receiving end will spend all its CPU cycles on handling irrelevant handshakes.
+
+    To prevent this, WireGuard specifies a cookie mechanism that forces the remote to prove ownership of its claimed source IP, which in turn allows rate-limiting handshakes per source IP.
+
+    These rate limits apply to an entire WireGuard interface and not just to a single tunnel.
+
+    Once a handshake has been completed, both peers can exchange encrypted data packets with a symmetric cipher. As part of the handshake, the peers also exchange their locally-chosen session indices. These indices enable de-multiplexing of tunnels as well as multiple sessions within a tunnel.
+
+    ## Mapping protocol invariants to API design
+
+    If you are working in a language like Rust, chances are you enjoy using types. And using types well means enforcing invariants at compile-time such that you can't even ship a certain bug in the first place. For example, forgetting to apply the rate limiter to a message would be pretty bad because it doesn't show up under normal operation. Similarly, routing an incoming packet to the wrong tunnel is something that will only show up in production.
+
+    A good API design makes it impossible to build things that are broken and also guides you along in understanding how the protocol works.
+
+    ## One interface, many tunnels
+
+    A WireGuard interface is identified by a single key and a tunnel is a connection between two interfaces. Any time we want to send a packet, we therefore need to specify which tunnel it should be sent on and when we receive a packet, we need to figure out which tunnel it belongs to.
+
+    In sanstun, these concepts directly map to the Interface and Tunnel types. All inbound packets go through Interface::receive. That is the only public API that parses a raw datagram. It parses the packet, applies rate limits and hands you back a ReceivedMessage with one enum variant per WireGuard message type, or a cookie reply to send back if the interface is under load. These then map directly to the corresponding functions on a Tunnel: Tunnel::handle_handshake_initiation, etc. Handshake initiations are routed by the initiator's static public key. All other messages expose which Tunnel they should be dispatched to, identified by a TunnelId.
+
+    Every inbound datagram has to go through Interface::receive.
+
+    Under the hood, sanstun does a lot of things for you here. It parses the tunnel index and extracts the upper 24 bits, it applies rate limits, generates cookie replies and validates handshake messages.
+
+    Crucially, the constructors for types like HandshakeInitiation are all crate-private. Even though Tunnel exposes a public handle_handshake_initiation function, the only way to call that is by going through Interface::receive first to obtain such a type. And Interface::receive protects your application by applying the rate limiter, all without you having to think about it.
+
+    ## Parallel crypto
+
+    One of the best features of sanstun is its parallel-friendly API for encrypting and decrypting packets.
+
+    On a protocol level, WireGuard doesn't share any state between tunnels. Therefore, parallelizing a WireGuard implementation across peers is very easy.
+
+    But what about parallelizing work within a single tunnel? WireGuard operat
+  error:
+  fetched_at: '2026-10-31T11:51:00Z'
+archived_at: '2026-10-31T11:51:17Z'

@@ -1,0 +1,157 @@
+---
+post:
+  id: lo-vfllme
+  source: lobsters
+  title: Nim version 2.4.0 released
+  url: https://nim-lang.org/blog/2026/10/28/nim-240.html
+  hn_url: https://lobste.rs/s/vfllme
+  score: 13
+  author: durrendal
+  posted_at: '2026-10-29T12:07:26Z'
+  fetched_at: '2026-10-31T11:51:18Z'
+  article_url: https://nim-lang.org/blog/2026/10/28/nim-240.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T11:51:18Z'
+  raw_comment_count: 3
+  tags:
+  - programming
+  - release
+comments:
+- id: lo-adfipb
+  parent_id: '0'
+  author: gepardo
+  text: |-
+    I wonder when Nim will stop adding new garbage collectors every other release and finally picks one…
+    BTW the sum types improvement looks really nice :)
+  score: 1
+  posted_at: '2026-10-30T09:49:12Z'
+- id: lo-f06xri
+  parent_id: '0'
+  author: xx
+  text: |-
+    I wonder when Nim will stop adding new garbage collectors
+
+    Unfortunately, what ultimately turned me away from Nim was that the lead developer seemed to treat Nim primarily as his toy project where he could test out his specific ideas or concepts. This tended to result in features being added, abandoned, and later deprecated without much respect for input from the community.
+    This was further accelerated when LLMs became a viable way of generating code. The lead developer now generates entire specs with LLMs, where both the RFC and the corresponding features are generated with Claude. Whether this is overall negative or not is obviously up for debate, but it amplifies the speed at which (sometimes arguably) ill-designed features or design choices are added to Nim. It never really feels like the language is getting more mature; if anything, it's the opposite.
+    While a BDFL is not inherently a bad thing and ultimately this programming language is his own project to do with as he pleases, this also bled into the way that the lead developer interacted with the community that had formed around the language. It felt as if he really didn't give a shit and saw differing opinions on AI usage etc as a chance to argue with someone. It also felt at times that he was working against the community moderators, who were trying to keep the community a sane and pleasant space for everyone, not with them. The moderation guidelines were comparably lax enough as they were, but he still decided to ignore them, for example banning people who raised concern about the heavy AI usage without warning.
+    None of these issues on their own would necessarily be a deal-breaker on their own if the language itself was good enough to simply not care about them. Unfortunately, it isn't, breakage is still fairly common and your code randomly breaking and other similar papercuts simply made the entire experience not worth it for me.
+    I am not the only one who has had issues with the lead developer's interactions with the community. This comes up fairly frequently whenever Nim is posted anywhere and at this point it kind of feels like beating a dead horse, except this is still (in my personal opinion) a problem.
+    Nevertheless, it's great to see that incremental compilation, which was a long-requested feature, has been implemented in stable Nim and I wish the very best to the Nim team in their future endeavors.
+    Full disclosure for transparency's sake: I am a former Nim community moderator.
+  score: 3
+  posted_at: '2026-10-30T14:23:25Z'
+- id: lo-aqqkf7
+  parent_id: '0'
+  author: viega
+  text: |-
+    Araq doesn't care, and that's okay. Even when the B in BDFL is the same B from BOFH (as in Nim), at least you can quickly assess if the identity and direction are for you.
+    Once I paid attention to that, I exited the "community" faster than I waded into it, with no resentment...
+    Any language can find a small niche, and everyone's entitled to their hobby. I think it's pretty clear that Araq's views on his hobby do not align with anything that would lead Nim out of the niche. The fact that I had to put the word "community" in quotes because he's so actively hostile to the world is enough to ensure Nim's niche status.
+    Caveat Emptor.
+  score: 3
+  posted_at: '2026-10-30T22:59:24Z'
+article:
+  url: https://nim-lang.org/blog/2026/10/28/nim-240.html
+  title: Nim version 2.4.0 released - Nim Blog
+  fetch_status: success
+  content: "# Nim version 2.4.0 released \n\n### 28 October 2026 The Nim Team \n\nThe
+    Nim Team is happy to announce version 2.4.0, our new stable release.\n\nAfter
+    a way-too-long period of development, Nim 2.4 has finally become a reality. This
+    is a major update shipping major new features:\n\n1. `--strings:sso` for improved
+    string processing efficiency.\n2. `--ic:on` for parallel, incremental rebuilds.\n3.
+    `--mm:yrc`, a new cycle collection algorithm that supports cycles spanning multiple
+    threads.\n4. More convenient [sum types](#sum-types).\n5. [Cyclic module dependencies](#cyclic-module-dependencies):
+    still not encouraged, but fair game once you declare them with `{.cyclic.}`.\n\nIf
+    you’re still on Nim 1.6, take a look at the [version 2.0 release article](https://nim-lang.org/blog/2023/08/01/nim-v20-released.html)
+    to see all the features you’re missing. If you’ve been using Nim 2.0, the [version
+    2.2 release article](https://nim-lang.org/blog/2024/10/02/nim-220-2010.html) shows
+    the improvements available in Nim 2.2. If you want to stay on Nim 2.2 for now,
+    we also released [version 2.2.14](https://nim-lang.org/blog/2026/10/28/nim-2214.html)
+    today, a patch release with many bugfixes and security fixes.\n\n## Installing
+    Nim 2.4.0\n\nCheck out if the package manager of your OS already ships version
+    2.4.0 or install it as described [here](https://nim-lang.org/install.html).\n\nIf
+    you have installed a previous version of Nim using `choosenim`, getting Nim 2.4.0
+    is as easy as:\n\n    $ choosenim update self\n    $ choosenim update stable\n\n**NOTE:**
+    We recommend that you install and use the latest version of `choosenim`, v0.8.16,
+    available in [our choosenim repo](https://github.com/nim-lang/choosenim).\n\nAlternatively,
+    you can download Nim 2.4.0 from[our nightlies builds](https://github.com/nim-lang/nightlies/releases/tag/2026-10-28-version-2-4-14991af742d0833503741fd9a0918133d1bcf8a4).\n\n##
+    Release highlights\n\n### Strings based on the small-string optimization (SSO)\n\nSSO-based
+    strings come with a new low-level strings API that you have to use in order to
+    use this switch effectively.\n\nNim’s new strings API is compatible with Nimony’s,
+    so porting is always beneficial, even if `--strings:sso` might not improve the
+    performance of your code. See it as a worthwhile, future-proof refactoring in
+    its own right.\n\nThe general idea behind this API is to deprecate the operation
+    `addr myString[offset]` and to replace it with operations that clarify the _intent_.
+    Reading is distinguished from writing.\n\nHere is our porting guide:\n\n| Purpose
+    | Use | Notes |\n| --- | --- | --- |\n| Read-only raw pointer | `readRawData(s,
+    start = 0)` | valid while `s` is alive & untouched |\n| Raw pointer that survives
+    moves/copies | `readRawDataStable(s, start = 0)` | takes `var string`; promotes
+    small strings to heap first |\n| Bulk write into a string | `beginStore(s, newLen,
+    start = 0)` … `endStore(s)` | sets length, ensures unique ownership, returns writable
+    ptr |\n\nRules of thumb:\n\n- **Reading bytes** (`memcpy` out of a string, `memmem`,
+    scanning): replace`addr s[i]` / `unsafeAddr s[i]` with `readRawData(s, i)`.\n-
+    **Writing bytes in bulk** (`memcpy`/`fread` into a string): replace`setLen` +
+    `addr s[oldLen]` with `beginStore(s, newLen, start)` followed by`endStore(s)`.
+    `beginStore` already sets the length and does the copy-on-write / unique-ownership
+    dance, so an explicit `prepareMutation` is no longer needed.\n- **A pointer that
+    must outlive the current scope** (e.g. a cursor stored next to its buffer): use
+    `readRawDataStable`, which forces the string onto the heap so the payload address
+    is stable.\n- **Single-element write** `s[i] = c` still works unchanged. The compiler
+    lowers it to `nimStrPutV3`, which handles COW internally. You no longer need`prepareMutation(s)`
+    before an indexed assignment.\n\n#### Before / after examples\n\nBulk copy _into_
+    a string:\n\n    # before\n    result.setLen newLen\n    copyMem(addr result[oldLen],
+    buf, buflen)\n    \n    # after\n    copyMem(beginStore(result, newLen, oldLen),
+    buf, buflen)\n    endStore(result)\n\nReading bytes _out of_ a string:\n\n    #
+    before\n    copyMem(dest, addr(s.data[s.pos]), n)\n    \n    # after\n    copyMem(dest,
+    readRawData(s.data, s.pos), n)\n\nRead into a slice of a string:\n\n    # before\n
+    \   prepareMutation(buffer) # COW literal guard under ARC\n    result = s.readData(addr
+    buffer[slice.a], count)\n    \n    # after\n    result = s.readData(beginStore(buffer,
+    slice.b + 1 - slice.a, slice.a), count)\n    endStore(buffer)\n\n#### `cstring`
+    conversions\n\n- Converting `string → cstring` still works, but the C string is
+    only valid as long as the source string is alive and unmodified.\n- If you need
+    a stable, NUL-terminated buffer to hand to C, keep the owning`string` alive and
+    derive the pointer from it (via `readRawDataStable` / the normal `cstring` conversion)
+    rather than caching the pointer past a move.\n\n#### Migration checklist\n\n1.
+    Grep your code for `addr s[`, `unsafeAddr s[`, `addr(...data[`, and any cached
+    pointer/`cstring` into a string.\n2. Replace read accesses with `readRawData`
+    (or `readRawDataStable` if the pointer escapes the current scope / must survive
+    a move).\n3. Replace `setLen` + raw write with `beginStore` / `endStore`.\n4.
+    Drop now-redundant `prepareMutation` calls before indexed writes and `beginStore`.\n5.
+    Don’t assume `addr s[0]` is stable across `add`, reassignment, or passing the
+    string by value.\n6. Build once with `--strings:sso` and once without to confirm
+    the code compiles and behaves identically under both.\n\nBecause the helper API
+    has identical signatures on every string backend, code written this way keeps
+    working under refc/ARC/ORC without SSO; you can port incrementally and flip `--strings:sso`
+    on when ready.\n\n#### Once again, in order to avoid confusion:\n\n**Updating
+    your code is not required, but beneficial. The new API works for all `mm` switches
+    and is also offered by Nimony/Nim 3.**\n\n### Parallel and incremental builds
+    (IC)\n\nIC is finally shipping! Use it with the switch `--ic:on`. Parallel builds
+    are based on multi-processing, not multi-threading. Hence macros that make use
+    of global `.compileTime` variables might need to get patched before you can enjoy
+    the benefits of much faster rebuilds.\n\nFor an example of the required porting
+    effort, see my [PR here](https://github.com/guzba/nimsimd/pull/38) that allows
+    PolyWorld to be built with `--ic:on`!\n\nDepending on the shape of your import
+    graphs, even **cold** builds might be faster with IC turned on, as the build exploits
+    more parallelism. For example, compiling the Nim compiler itself takes 31s with
+    `--ic:off` on a machine with 16 physical cores, and 25s with `--ic:on`.\n\n###
+    YRC – the missing piece of Nim’s MM story\n\nYRC (“ürk”) is the thread-safe variant
+    of Nim’s ORC. Use `--mm:yrc` when you need shared refs and cycles across threads.
+    It offers the same API as ORC. Where it fits:\n\n| mm-switch | Thread-safe | Can
+    handle cycles |\n| --- | --- | --- |\n| **ARC** | No | No |\n| **Atomic ARC**
+    | Yes | No |\n| **ORC** | No | Yes |\n| **YRC** | **Yes** | **Yes** |\n\nORC can
+    only handle cycles that stay inside one thread. YRC lifts that: cycles can span
+    threads. For acyclic data it uses atomic reference counting; for cyclic data it
+    uses a write barrier that only runs at pointer assignments. There is no stop-the-world
+    phase and no arbitrary safepoints. Any thread can run the cycle collector when
+    needed (there is no dedicated GC thread), which helps locality and suits embedded
+    systems where every thread counts.\n\nNothing is free. In our orcbench, YRC is
+    about 2.0× slower than ORC and it uses twice as much memory, too. Still, we think
+    that’s a good trade: you no longer have to worry about cycles crossing thread
+    boundaries. The cost is a constant factor of two; the payoff grows with every
+    core you put to work on shared data.\n\n### Sum types\n\nNim always offered Ada-inspired
+    “discriminated unions”, for example:\n\n    type\n      NodeKind = enum # the
+    different node types\n        IntLit, # a leaf with an integer value\n        FloatLit,
+    #"
+  error:
+  fetched_at: '2026-10-31T11:51:18Z'
+archived_at: '2026-10-31T11:51:18Z'

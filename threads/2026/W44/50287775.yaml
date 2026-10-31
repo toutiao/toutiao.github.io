@@ -4,14 +4,14 @@ post:
   title: If IPv4 were land
   url: https://iptrust.co/blog/if-ipv4-were-land
   hn_url: https://news.ycombinator.com/item?id=50287775
-  score: 319
+  score: 322
   author: rokostik
   posted_at: '2026-10-29T12:19:00Z'
-  fetched_at: '2026-10-30T20:24:17Z'
+  fetched_at: '2026-10-31T11:50:53Z'
   article_url: https://iptrust.co/blog/if-ipv4-were-land
   article_fetch_status: success
   article_fetched_at: '2026-10-29T14:56:55Z'
-  raw_comment_count: 464
+  raw_comment_count: 493
 comments:
 - id: '50287889'
   parent_id: '50287775'
@@ -1974,21 +1974,115 @@ comments:
     last v6 router translates to v4 dst=1.2.3.4 and puts the extra address bits in
     the payload, then when it reaches my router, it knows to rewrite as 1.2.3.4.5.
     Even in this later state, you really only need v6 support on the ends and any
-    routers going deeper than &#x2F;32.<p>DHCP and NAT state on LAN too. My home router
-    should be able to speak both protocols while sharing all state. A host at 192.168.1.2
-    should be able to just turn on v6, it&#x27;s still 192.168.1.2, some other host
-    gets leased .3 instead, and the router knows to translate if .2 and .3 want to
-    talk. I don&#x27;t want it to suddenly be FC00::whatever.<p>I have no complaint
-    about the v6 header, and a subset of the v6 protocol is fine because it&#x27;s
-    indeed just v4 w&#x2F; extra bits like you said. That ipv5&#x2F;whatever proposal
-    people keep making is doable with most routers&#x2F;hosts just seeing it as ipv6
-    w&#x2F; DHCP+NAT.<p>And yeah, today I could use DHCP6 if I really wanted, but
-    it&#x27;d mean lots of incompatible devices get either booted off my network or
-    put on a separate SLAAC one, so it&#x27;s not a serious choice. NAT66 is way more
-    doable but also rare on consumer routers. So my only complaint about the protocol
-    is that the defaults are backwards.
+    routers going deeper than &#x2F;32.<p>DHCP and NAT on LAN could share state too.
+    A host at 192.168.1.2 should be able to just turn on v6, it&#x27;s still 192.168.1.2,
+    some other host gets leased .3 instead, and the router knows to translate if .2
+    and .3 want to talk. I don&#x27;t want it to suddenly be FC00::whatever.<p>I have
+    no complaint about the v6 header, and a subset of the v6 protocol is fine because
+    it&#x27;s indeed just v4 w&#x2F; extra bits like you said. That ipv5&#x2F;whatever
+    proposal people keep making is doable with most routers&#x2F;hosts just seeing
+    it as ipv6 w&#x2F; DHCP+NAT.<p>And yeah, today I could use DHCP6 if I really wanted,
+    but it&#x27;d mean lots of incompatible devices get either booted off my network
+    or put on a separate SLAAC one, so it&#x27;s not a serious choice. NAT66 is way
+    more doable but also rare on consumer routers. So my only complaint about the
+    protocol is that the defaults are backwards.
   score: 0
   posted_at: '2026-10-30T19:35:28Z'
+- id: '50310195'
+  parent_id: '50297965'
+  author: Dagger2
+  text: It&#x27;s one of the ways to <i>do</i> backwards compatibility. One of the
+    most compatible ways, even.
+  score: 0
+  posted_at: '2026-10-30T21:11:46Z'
+- id: '50310437'
+  parent_id: '50299199'
+  author: Dagger2
+  text: NAT is something you use when you&#x27;re <i>not</i> managing.<p>The spec
+    minimum is more like &#x2F;56, so maybe you&#x27;re forced to use slightly more
+    than 48, but not all 128 bits.
+  score: 0
+  posted_at: '2026-10-30T21:33:00Z'
+- id: '50311398'
+  parent_id: '50304952'
+  author: Dagger2
+  text: 'But v6 did most of what you&#x27;re asking for there??<p>It has &quot;IPv4-compatible
+    IPv6 address&quot;es: <a href="https:&#x2F;&#x2F;datatracker.ietf.org&#x2F;doc&#x2F;html&#x2F;rfc2373#section-2.5.4"
+    rel="nofollow">https:&#x2F;&#x2F;datatracker.ietf.org&#x2F;doc&#x2F;html&#x2F;rfc2373#section-2.5.4</a>,
+    and then a way to get them over networks where not every hop supports v6: <a href="https:&#x2F;&#x2F;datatracker.ietf.org&#x2F;doc&#x2F;html&#x2F;rfc2893#section-5"
+    rel="nofollow">https:&#x2F;&#x2F;datatracker.ietf.org&#x2F;doc&#x2F;html&#x2F;rfc2893#section-5</a>.
+    You don&#x27;t need new DNS or DHCP to use these, or SLAAC. There&#x27;s no anycast
+    relay. They can go over v4 hops.<p>Why spend all this energy complaining about
+    v6 not doing something that it did do?<p>&gt; The later stage of migration should
+    just be that people start using longer addresses given that both ends are v6 and
+    DNS etc supports it then<p>It seems your only real problem is that you completely
+    missed the early part of the transition. We&#x27;ve been in what you&#x27;re calling
+    the later stage for twenty or so years now.'
+  score: 0
+  posted_at: '2026-10-30T23:19:09Z'
+- id: '50311956'
+  parent_id: '50311398'
+  author: mahboi
+  text: IPv4-compatible v6 address was only for dual-stack hosts talking over a v4
+    network. They still had their own v6-native addresses that they had to use if
+    they wanted a v6 network. So this isn&#x27;t what I described where the v6-native
+    route is the same as the v4 route, or a superset in the later stages (shared down
+    to &#x2F;32, v6-only in deeper subnets).<p>The thing I want to solve isn&#x27;t
+    just v4 routers in the middle, that&#x27;s more of a bonus. All the routers between
+    my machine and any service probably support v6 anyway, but a bunch of services
+    are v4-only because of the migration effort. They should be able to turn on v6
+    without having to change everything about their networking.
+  score: 0
+  posted_at: '2026-10-31T00:25:45Z'
+- id: '50312331'
+  parent_id: '50311956'
+  author: Dagger2
+  text: Wasn&#x27;t &quot;dual-stack hosts talking over a v4 network&quot; what you
+    <i>wanted</i>?<p>v4 routers don&#x27;t understand and can&#x27;t route v6 packets,
+    so you can&#x27;t use the same route for both of them. v6 packets have to go to
+    a router that understands v6, and v4 packets have to go to a router that understands
+    v4.<p>I have no idea what &quot;or a superset in the later stages (shared down
+    to &#x2F;32, v6-only in deeper subnets).&quot; is trying to say.<p>It&#x27;s perfectly
+    possible to turn v6 on without changing anything at all about your networking.
+    When e.g. Windows Vista came out, hundreds of millions of people did exactly that.<p>Why
+    can&#x27;t the service just set up NAT64 to accept your v6 connections on their
+    v4 servers?
+  score: 0
+  posted_at: '2026-10-31T01:25:18Z'
+- id: '50313751'
+  parent_id: '50312331'
+  author: mahboi
+  text: 'I wanted switching to v6 to involve the minimum necessary changes. You keep
+    your old &#x2F;32. If you&#x27;re sending from a &#x2F;32 to a &#x2F;32, it follows
+    the same path of routers that an ipv4 packet would follow, that&#x27;s what I
+    meant by same route. There could be a v4-only router in the middle requiring translation,
+    but I&#x27;m not even assuming that&#x27;s a common issue at this point.<p>&quot;or
+    a superset in the later stages (shared down to &#x2F;32, v6-only in deeper subnets)&quot;:
+    The ipv6 state would be a superset of the ipv4 state. So if a router owns 1.2.3.4
+    in v4, it also owns that in v6. The ownership of 1.2.3.4.5 below that would only
+    be part of v6 state.<p>What we got instead was two separate states, or parallel
+    networks. Switching to v6 means changing everything all at once.<p>&gt; Why can&#x27;t
+    the service just set up NAT64 to accept your v6 connections on their v4 servers?<p>It&#x27;s
+    not that simple, otherwise they would&#x27;ve done it. They have stuff like multiple
+    addresses, geo DNS, and rate-limiting. Separate issue, AWS was v4-only for a long
+    time and still treats it as more first-class because of how many internal things
+    need to change for v6, well beyond just having hardware + OSes support it.'
+  score: 0
+  posted_at: '2026-10-31T06:33:22Z'
+- id: '50315026'
+  parent_id: '50298920'
+  author: cowlevel
+  text: Have you got your address tattooed on your forehead or why&#x27;s it so important
+    to keep it?
+  score: 0
+  posted_at: '2026-10-31T11:26:34Z'
+- id: '50315040'
+  parent_id: '50308434'
+  author: cowlevel
+  text: How about &#x2F;48<p>Oh wait that&#x27;s the standard recommendation so it&#x27;s
+    already exactly how you said
+  score: 0
+  posted_at: '2026-10-31T11:27:41Z'
 article:
   url: https://iptrust.co/blog/if-ipv4-were-land
   title: If IPv4 Were Land - World Map Redrawn by IPv4 Addresses | IPTrust
@@ -1999,4 +2093,4 @@ article:
     The world has about 135 million km² of land outside Antarctica and 3.6 billion locatable IPv4 addresses. Redraw every country so its area matches its share of addresses instead of its share of ground.
   error:
   fetched_at: '2026-10-29T14:56:55Z'
-archived_at: '2026-10-30T20:24:44Z'
+archived_at: '2026-10-31T11:51:17Z'
