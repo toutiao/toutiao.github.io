@@ -4,14 +4,14 @@ post:
   title: 'Show HN: A working Nintendo in ~1GB of Qwen weights'
   url: https://github.com/dbreunig/nesformer
   hn_url: https://news.ycombinator.com/item?id=50306442
-  score: 276
+  score: 281
   author: dbreunig
   posted_at: '2026-10-30T16:40:22Z'
-  fetched_at: '2026-10-31T16:56:55Z'
+  fetched_at: '2026-10-31T21:08:00Z'
   article_url: https://github.com/dbreunig/nesformer
   article_fetch_status: success
   article_fetched_at: '2026-10-30T20:24:26Z'
-  raw_comment_count: 136
+  raw_comment_count: 143
 comments:
 - id: '50306705'
   parent_id: '50306442'
@@ -1083,12 +1083,100 @@ comments:
     some big problems on the horizon.
   score: 0
   posted_at: '2026-10-31T14:06:45Z'
+- id: '50316356'
+  parent_id: '50315869'
+  author: modelfit_io
+  text: 'Two separate things. Sampling randomness goes away with greedy decoding:
+    always take the highest-probability token instead of sampling, which is what temperature
+    0 approximates.<p>The remaining nondeterminism comes from floating point. Addition
+    isn&#x27;t associative, and GPU kernels can change their reduction order depending
+    on how many requests are batched together, so the same prompt can get slightly
+    different logits under different server load and occasionally flip a token.<p>Fixing
+    that takes batch-invariant kernels (or running alone with fixed shapes). Thinking
+    Machines wrote it up in detail: <a href="https:&#x2F;&#x2F;thinkingmachines.ai&#x2F;blog&#x2F;defeating-nondeterminism-in-llm-inference&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;thinkingmachines.ai&#x2F;blog&#x2F;defeating-nondeterminism-in...</a>'
+  score: 0
+  posted_at: '2026-10-31T14:08:22Z'
 - id: '50317661'
   parent_id: '50315869'
   author: WithinReason
   text: Choosing the next token deterministically.
   score: 0
   posted_at: '2026-10-31T16:38:05Z'
+- id: '50318427'
+  parent_id: '50315869'
+  author: antonvs
+  text: 'The question should really be the other way around - LLMs are just computer
+    programs, and in general, computer programs are theoretically deterministic. Given
+    the same inputs and the same initial state, they produce the same outputs. So
+    the question is, what would make an LLM non-deterministic?<p>For any computer
+    program, there are two main ways determinism can be lost:<p>1. Randomization is
+    introduced deliberately, e.g. via random number generators.<p>2. The program&#x27;s
+    behavior depends on factors beyond its explicit inputs, e.g. its execution environment,
+    timing, concurrency, or interactions with other systems.<p>Actual deployed LLMs
+    <i>typically</i> lose determinism because of both of the above factors:<p>1. On
+    each request, the core model outputs a list of likely tokens, ranked in probability
+    order. To avoid repetitiveness or getting &quot;stuck&quot;, particularly in natural
+    language output, it&#x27;s common to introduce randomization when picking a token
+    from this list. This is what&#x27;s called &quot;temperature&quot;. This is deliberate
+    non-determinism that&#x27;s applied to the output of the core neural network model.
+    Setting temperature to zero can eliminate this kind of non-determinism.<p>2. In
+    practice, consumer-facing deployments run in complex hardware environments - distributed
+    processing, GPUs, hardware shared with other processes, etc. This leads to non-determinism
+    due to things like concurrency and timing issues. Calculations can execute in
+    different orders, numerical errors can accumulate in different ways, etc.<p>For
+    companies like OpenAI or Anthropic, which serve millions of concurrent sessions,
+    eliminating non-determinism from #2 would be difficult, and not worth the effort.<p>But
+    if you&#x27;re running an LLM on e.g. a single machine, it&#x27;s certainly possible
+    to eliminate non-determinism. People do this for various kinds of models. Machine
+    learning frameworks have explicit options to help with this. E.g. with Pytorch,
+    you can use `use_deterministic_algorithms(True)` to force it to use deterministic
+    algorithms where possible.<p>One point that sometimes confuses people here is
+    that even if you run a perfectly deterministic LLM, the output is <i>unpredictable</i>
+    in general. That&#x27;s because the output of the model depends on a large number
+    of trained weights, and the only practical way to &quot;predict&quot; what output
+    a model will produce is to run input through the model. This is not non-determinism,
+    though.<p>In diagram terms, at a high level an LLM looks like this: input --&gt;
+    neural network --&gt; token selection --&gt; output<p>Token selection can be randomized,
+    but doesn&#x27;t have to be. When it&#x27;s not, the above is perfectly deterministic
+    in theory, and can also be run that way in practice.<p>Now take that diagram and
+    run it across a data center full of machines, and achieving determinism gets more
+    difficult. It could be done if we wanted to, but in general it&#x27;s not important
+    enough to try in that scenario.'
+  score: 0
+  posted_at: '2026-10-31T18:06:27Z'
+- id: '50318801'
+  parent_id: '50318427'
+  author: anothereng
+  text: thank you for the detailed answer, this is all very interesting to me as I&#x27;m
+    just starting a Masters in AI. I always had the wrong idea that LLMs couldnt be
+    made deterministic. Now that I know they could be this opens up more possibilities
+    for me.
+  score: 0
+  posted_at: '2026-10-31T18:44:25Z'
+- id: '50318947'
+  parent_id: '50316356'
+  author: anothereng
+  text: thank you for answering, I will read the article. This is very exciting for
+    me. God bless!
+  score: 0
+  posted_at: '2026-10-31T18:56:56Z'
+- id: '50319446'
+  parent_id: '50315869'
+  author: Ohentis
+  text: Being more strict with how you perform operations and then using a set seed.
+    It isn&#x27;t super useful in most cases.
+  score: 0
+  posted_at: '2026-10-31T19:50:12Z'
+- id: '50319770'
+  parent_id: '50314190'
+  author: senordevnyc
+  text: I got laid off in Mar 2025 from a public tech company, started a SaaS, and
+    it’s almost at $500k in ARR. I never could have built this without AI. And I had
+    a child in there too, which seriously slowed me down, so I feel like I should
+    be a double what I am.<p>The world is full of opportunity.
+  score: 0
+  posted_at: '2026-10-31T20:23:59Z'
 article:
   url: https://github.com/dbreunig/nesformer
   title: 'GitHub - dbreunig/nesformer: An NES CPU compiled into the weights of a stock
@@ -1194,4 +1282,4 @@ article:
     with numba and skipping the all-zero blocks. It ran at about 1,650 "
   error:
   fetched_at: '2026-10-30T20:24:26Z'
-archived_at: '2026-10-31T16:57:16Z'
+archived_at: '2026-10-31T21:08:22Z'

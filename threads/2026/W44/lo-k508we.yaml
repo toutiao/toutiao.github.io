@@ -1,0 +1,104 @@
+---
+post:
+  id: lo-k508we
+  source: lobsters
+  title: Avoid Public Functions Calling Other Public Functions
+  url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
+  hn_url: https://lobste.rs/s/k508we
+  score: 19
+  author: telemachus
+  posted_at: '2026-10-31T18:05:03Z'
+  fetched_at: '2026-10-31T21:08:22Z'
+  article_url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T21:08:24Z'
+  raw_comment_count: 3
+  tags:
+  - api
+  - programming
+comments:
+- id: lo-dg0j7i
+  parent_id: '0'
+  author: telemachus
+  text: 'I see how having both foo and bar call a private helper improves the public
+    API. But I immediately wondered why not have different private helpers, frobnicate
+    and transmogrify. (To put this another way: helper(.frobnicate) and helper(.transmogrify)
+    struck me as swapping the original flag boolean for a flag enum.) I guess it all
+    depends on how much common code frobnicate and transmogrify would have, though
+    perhaps even then, the two private helpers could both call another private helper
+    for the overlap. (I''m probably focusing too much on the details of the example,
+    which is not fully fleshed out.)'
+  score: 2
+  posted_at: '2026-10-31T18:25:46Z'
+- id: lo-nimpts
+  parent_id: '0'
+  author: bputh
+  text: |-
+    I've been in the shoes of a developer adding optional function after optional function to make things "easier" for users. Some of the worst APIs grow this way. "Everything is in one function call" except that you've effectively reinvented having multiple functions by way of parameters.
+    Also, "sanctified ink" is definitely a phrase I will be using in the future.
+  score: 3
+  posted_at: '2026-10-31T18:37:25Z'
+- id: lo-aoysm3
+  parent_id: '0'
+  author: gavinmorrow
+  text: That was my thought too, but I assumed that it was just an example and that
+    it shouldn’t be looked into too deeply.
+  score: 2
+  posted_at: '2026-10-31T20:41:24Z'
+- id: lo-e0p76f
+  parent_id: '0'
+  author: andrewrk
+  text: |-
+    A concrete thing related to this I just ran into yesterday, is that when reporting certain kinds of errors, I collect a stack trace for later rendering to indicate which public function call was responsible for the creation of a particular artifact.
+    You can make the first stack frame be the callsite of the public function by capturing the return address there, and then passing that to all the private functions. If you called another public function, it would break this pattern because the call stack would contain 2 of the public functions. Not a big deal but it falls neatly into the pattern described by the article.
+  score: 1
+  posted_at: '2026-10-31T21:08:12Z'
+article:
+  url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
+  title: Avoid Public Functions Calling Other Public Functions
+  fetch_status: success
+  content: "A small-scale rule of thumb. This article will land much better with a
+    concrete example, but I am drawing a blank here, so you gotta just blindly trust
+    my say so!\n\nWhen implementing a software module, it’s often a case that you
+    are writing a public function `foo`, and at least part of what `foo` does is already
+    handled by another public function `bar`. The DRY instinct encourages you to call`bar()`
+    from within `foo`. This usually creates problems down the line. Instead, create
+    a new _private_ function and refactor both `foo` and `bar` to call that shared
+    helper:\n\n// BAD\n    pub fn foo() void {\n        return bar(.{ .frobnicate
+    = true });\n    }\n    \n    pub fn bar(options: struct {\n        frobnicate:
+    bool = false,\n    }) void {\n        // ...\n    }\n\n// GOOD\n    pub fn foo()
+    void {\n        return helper(.frobnicate);\n    }\n    \n    pub fn bar() void
+    {\n        return helper(.transmogrify);\n    }\n    \n    fn helper(mode: enum
+    { frobnicate, transmogrify }) void {\n        // ...\n    }\n\nRationale: the
+    goal of a public API is to provide an interface that works best at the call site.
+    If parts of public API are re-used to implement the rest of the API, then there’s
+    a tension between making the interface convenient for the outside user and making
+    it convenient to use from within abstraction itself. Namely, functions tend to
+    grow optional parameters that should never be set by the user. Crucially, the
+    parameter growth and interface degradation can happen_after_ the original code
+    sharing.\n\nBy proactively making the shared implementation private, the tension
+    is defused. You still might need to tinker with `helper` signature until it does
+    everything it needs to do, but, because the helper is private, this is a cheap,
+    local change.\n\nA notable exception to this rule of thumb are “shortcut” APIs,
+    where a public function is _defined_ as a commonly used chain of calls to other
+    public functions. There, the rule is the opposite — _no_ private calls are allowed,
+    to make sure that it is a genuine shortcut, and not a midlayer mistake.\n\nP.S.
+    While researching if anyone wrote a better blog post already, I stumbled upon
+    a fun stack overflow question, asking, paraphrasing:\n\n> I’ve heard that it is
+    bad when a public function calls another public function. Is this really so?\n\nThe
+    most upvoted answer explains that it is indeed bad, because this makes mocking
+    to test a single method in isolation more complicated. Which is, imo, a natural,
+    but horrible consequence of misguided approach to testing. You shouldn’t be mocking
+    your methods, you should mock your IO. And, similarly, you shouldn’t test methods,
+    but rather software functionality (unless you are building a public library with
+    a stable API, which is a fun and important, but very narrow fraction of software
+    development).\n\nThe accepted answer says that this recommendation makes no sense
+    if it is not backed by an industry wide or an organizational standard. Which somehow
+    manages to make even less sense — you shouldn’t follow the guideline rules because
+    they are written in sanctified ink! Rather, you should apply each particular rule
+    because of the underlying reasons that motivate the rule. Guidelines and best
+    practices articles can concentrate lots of good reasoning in a single place, but
+    they don’t absolve you from thinking!"
+  error:
+  fetched_at: '2026-10-31T21:08:24Z'
+archived_at: '2026-10-31T21:08:24Z'

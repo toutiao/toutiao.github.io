@@ -1,0 +1,195 @@
+---
+post:
+  id: lo-rpiu3w
+  source: lobsters
+  title: The Kluever Maneuver
+  url: https://jordi.inversethought.com/blog/the-kluever-maneuver/
+  hn_url: https://lobste.rs/s/rpiu3w
+  score: 23
+  author: JordiGH
+  posted_at: '2026-10-31T15:05:04Z'
+  fetched_at: '2026-10-31T21:08:22Z'
+  article_url: https://jordi.inversethought.com/blog/the-kluever-maneuver/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T21:08:23Z'
+  raw_comment_count: 14
+  tags:
+  - testing
+comments:
+- id: lo-5fkuqs
+  parent_id: '0'
+  author: pgeorgi
+  text: |-
+    https://aegis.sourceforge.net/ went a step further and expected only the correct test, but had some rules on how it can backport it separate from the fix.
+    So you submit a change, which comes with a test (for new features, the test would fail because there's no feature to exercise), and aegis would only merge the change if the test-on-its-own failed and passes with the change.
+    In "write a fix demonstrating the bug (by passing)" you lose the invariant that the very same test failed, then passed. That is, the fix might be unrelated to the test's behavior.
+  score: 7
+  posted_at: '2026-10-31T15:27:03Z'
+- id: lo-wzris2
+  parent_id: '0'
+  author: ryan-duve
+  text: Is there a difference between this and TDD?
+  score: 1
+  posted_at: '2026-10-31T15:50:26Z'
+- id: lo-72mqyb
+  parent_id: '0'
+  author: jdpage
+  text: |-
+    A couple, yeah. TDD would have you write a test asserting the correct behavior that initially fails, while this methodology has you write a test asserting the incorrect that initially passes, but must be fixed.
+    Also, more broadly, TDD is a practice that asserts that any code change, from new features to bug fixes, should be preceded by the creation of a test suite. Whether or not this is useful or not has long been a subject of debate.
+    Personally I've found writing a (failing) regression test first to be useful, followed by a fix that makes it pass. I don't mind failing test suites in branches, however. If I did mind, I might be more inclined to mark the test as expected to fail, rather than modifying the test itself when I fixed the bug.
+  score: 7
+  posted_at: '2026-10-31T16:15:59Z'
+- id: lo-irgrkb
+  parent_id: '0'
+  author: majaha
+  text: I'm familiar with this from contributing to LLVM.
+  score: 2
+  posted_at: '2026-10-31T16:42:28Z'
+- id: lo-nlu2ct
+  parent_id: '0'
+  author: jana
+  text: I love this. It's one of the things I very often ask new contributors to rust-lang/rust
+    to do when reviewing, and it's become kind of a standard. Any bug fix pr is two
+    commits, and imo that's extremely important.
+  score: 5
+  posted_at: '2026-10-31T17:06:32Z'
+- id: lo-op85l3
+  parent_id: '0'
+  author: icefox
+  text: I usually do this by adding a test for the fixed bug and a test that demonstrates
+    the bug in action, but this is an interesting modification of the idea.
+  score: 1
+  posted_at: '2026-10-31T17:10:11Z'
+- id: lo-cvmour
+  parent_id: '0'
+  author: epage
+  text: |-
+    We independently developed this in Cargo and it is a big help. It cuts a commit down to the esentials to better see what changed and it is a much better illustration of what a PR does than the description.
+    My write up for this is at https://epage.github.io/dev/pr-style/#c-test
+  score: 4
+  posted_at: '2026-10-31T17:15:20Z'
+- id: lo-mgc6g7
+  parent_id: '0'
+  author: JordiGH
+  text: I suppose this puts the burden on the human reviewer to ensure that the second
+    commit modifies the prevoiusly passing test.
+  score: 1
+  posted_at: '2026-10-31T17:16:19Z'
+- id: lo-lvuxdz
+  parent_id: '0'
+  author: pgeorgi
+  text: https://lobste.rs/c/72mqyb proposes using "expect fail" for such tests at
+    first, which encodes the expectation in a way that is verifiable, and easy to
+    flip (and to verify that change to the test) when the fix arrives.
+  score: 4
+  posted_at: '2026-10-31T17:33:26Z'
+- id: lo-pno3y0
+  parent_id: '0'
+  author: FeepingCreature
+  text: this is why unittest libraries have "known failing" annotations.
+  score: 3
+  posted_at: '2026-10-31T18:06:00Z'
+- id: lo-rykak9
+  parent_id: '0'
+  author: mxey
+  text: I adopted this from the CUE project and they got it from Google.
+  score: 1
+  posted_at: '2026-10-31T18:09:21Z'
+- id: lo-cpspfz
+  parent_id: '0'
+  author: epage
+  text: For me, a key point of this is to make the change of behavior clear, complementing
+    the PR description. If an "expect fail" doesn't clearly communicate what operation
+    failed and how, then I'd rather switch the code to assert that condition.
+  score: 1
+  posted_at: '2026-10-31T18:24:37Z'
+- id: lo-gt2nlw
+  parent_id: '0'
+  author: JordiGH
+  text: Hey, I got it from Google too!
+  score: 1
+  posted_at: '2026-10-31T18:57:20Z'
+- id: lo-xmn5j3
+  parent_id: '0'
+  author: nedbat
+  text: |-
+    "Known failing" would let you do it in a more natural way: write the test for the correct behavior, and mark it as "expected to fail". Then you can commit the fix to the code, with the change to remove the fail expectation.
+    The Kluever Maneuver seems odd to me: write the test confirming the wrong behavior. I'd rather have the first commit confirm the correct behavior with the @pytest.mark.xfail decorator.
+    Doing it this way could also let you separate the two commits by a long period of time without having misleading tests in the code.
+  score: 4
+  posted_at: '2026-10-31T19:35:23Z'
+article:
+  url: https://jordi.inversethought.com/blog/the-kluever-maneuver/
+  title: The Kluever Maneuver – The Scribbler of the Rueful Countenance
+  fetch_status: success
+  content: "# The Kluever Maneuver\n\n ![](https://secure.gravatar.com/avatar/3d7505f1580f996cefb2df0ed70c6f6a3b0a5dec4679ff35ef830dd49a450f33?s=48&d=identicon&r=g)\n\nWritten
+    by –\n\nJordi\n\nIn brief, it’s this: whenever you are doing a bugfix, do it in
+    two commits.\n\n1. **Write a passing test that exemplifies the buggy behaviour.**\n2.
+    **Fix the bug and also fix the test we just wrote.**\n\nFor example,\n\n    def
+    add(a, b):\n       return a + b + 1\n\nand through your keen eye you observe that
+    this addition function is buggy. You therefore write a test that records the bad
+    behaviour,\n\n    Commit 1\n    \n    diff --git a/test_arith.py b/test_arith.py\n
+    \   --- a/test_arith.py\n    +++ b/test_arith.py\n    @@ -0,0 +1,2 @@\n    +def
+    test_add(a, b):\n    + assert add(2, 2) == 5\n\nThen comes the bugfix,\n\n    Commit
+    2\n    \n    diff --git a/arith.py b/arith.py\n    --- a/arith.py\n    +++ b/arith.py\n
+    \   @@ -1,2 +1,2 @@\n     def add(a, b):\n    - return a + b + 1\n    + return
+    a + b\n    diff --git a/test_arith.py b/test_arith.py\n    --- a/test_arith.py\n
+    \   +++ b/test_arith.py\n    @@ -1,2 +1,2 @@\n     def test_add(a, b):\n    -
+    assert add(2, 2) == 5\n    + assert add(2, 2) == 4\n\n## BUT Y THO\n\nTwo reasons:\n\n1.
+    Demonstrable proof that the bugfix actually fixed the bug\n2. CI still passes
+    at every commit\n\nThe traditional way to do this is to do a bugfix and add a
+    test in the same commit. But what if the test accidentally already passed before
+    the alleged bugfix and the alleged bugfix didn’t actually work? In that case the
+    added test gives false confidence that the bugfix worked.\n\n## Alright, show
+    me\n\nHere’s a less obvious example.\n\nSuppose we want to make sure users are
+    not underage,\n\n    def age_in_years(birthday, today):\n        return today.year
+    - birthday.year\n    \n    def can_access(birthday, today):\n        return 18
+    <= age_in_years(\n            birthday,\n            today\n        )\n\nYou notice
+    that this age check is buggy. It’s only considering the years. If it’s October
+    2026, but you were born on December 2008, you are not 18 yet.\n\nTo fix it, the
+    problem is just an off-by-one.\n\n    diff --git a/dates.py b/dates.py\n    ---
+    a/dates.py\n    +++ b/dates.py\n    @@ -4,7 +4,7 @@ def age_in_years(birthday,
+    today):\n         return today.year - birthday.year\n    \n     def can_access(birthday,
+    today):\n    - return 18 <= age_in_years(\n    + return 18 < age_in_years(\n             birthday,\n
+    \            today\n         )\n    diff --git a/test_date.py b/test_date.py\n
+    \   --- a/test_date.py\n    +++ b/test_date.py\n    @@ -0,0 +1,5 @@\n    +def
+    test_can_access():\n    + assert can_access(\n    + date(2007, 1, 1),\n    + date(2026,
+    1, 1)\n    + )\n\nThe astute reader will observe the problem isn’t in the `can_access`
+    function but in the age calculation. The bugfix isn’t an actual bugfix and the
+    proposed test actually passes both before and after the proposed fix.\n\nThe _Kluever
+    Maneuver_ would have prevented this.\n\nWe wrongly check that someone born on
+    New Year’s Eve in 2008 is eighteen on New Year’s Day in 2026.\n\n    commit 1\n
+    \   \n    diff --git a/test_date.py b/test_date.py\n    --- a/test_date.py\n    +++
+    b/test_date.py\n    @@ -0,0 +1,5 @@\n    +def test_can_access():\n    + assert
+    can_access(\n    + date(2008, 12, 31),\n    + date(2026, 1, 1)\n    + )\n\nThen
+    we fix the age calculation and flip the test.\n\n    commit 2\n    \n    diff
+    --git a/dates.py b/dates.py\n    --- a/dates.py\n    +++ b/dates.py\n    @@ -1,7
+    +1,10 @@\n    +from dateutil.relativedelta import relativedelta\n    \n     def
+    age_in_years(birthday, today):\n    - return today.year - birthday.year\n    +
+    return relativedelta(\n    + today,\n    + birthday\n    + ).years\n    \n     def
+    can_access(birthday, today):\n         return 18 <= age_in_years(\n    diff --git
+    a/test_date.py b/test_date.py\n    --- a/test_date.py\n    +++ b/test_date.py\n
+    \   @@ -1,5 +1,5 @@\n     def test_can_access():\n    - assert test_can_access(\n
+    \   + assert not test_can_access(\n            date(2008, 12, 31),\n            date(2026,
+    1, 1)\n        )\n\n## What about bug tracking?\n\nAh, yes, it’s also a good idea
+    to log a bug in your tracker.\n\nReference the bug in your first commit.\n\n    add
+    a test showing the bug\n    \n    diff --git a/test_arith.py b/test_arith.py\n
+    \   --- a/test_arith.py\n    +++ b/test_arith.py\n    @@ -0,0 +1,2 @@\n    +FIXME:
+    bug #1729\n    +def test_add(a, b):\n    + assert add(2, 2) == 5\n\nRecord the
+    fix in the second commit:\n\n    remove off-by-one error\n    \n    fixes: #1729\n
+    \   \n    diff --git a/arith.py b/arith.py\n    --- a/arith.py\n    +++ b/arith.py\n
+    \   @@ -1,2 +1,2 @@\n     def add(a, b):\n    - return a + b + 1\n    + return
+    a + b\n    diff --git a/test_arith.py b/test_arith.py\n    --- a/test_arith.py\n
+    \   +++ b/test_arith.py\n    @@ -1,2 +1,2 @@\n    -FIXME: bug #1729\n     def
+    test_add(a, b):\n    - assert add(2, 2) == 5\n    + assert add(2, 2) == 4\n\n##
+    Okay but why “Kluever Maneuver”?\n\nOh. Because my colleague [Kurt Kluever](https://github.com/kluever)
+    taught it to me, and I immediately think back to him when I think of this technique.
+    He usualy calls it “terrible tests”, as in “Jordi, can you please write a terrible
+    test for this?” and off I go to write a test asserting something I know to be
+    wrong.\n\n* * *\n\n ![](https://secure.gravatar.com/avatar/3d7505f1580f996cefb2df0ed70c6f6a3b0a5dec4679ff35ef830dd49a450f33?s=48&d=identicon&r=g)\n\n[Jordi](https://jordi.inversethought.com/blog/author/jordigh/)\n\nMexican
+    free software enthusiast and mathematician.\n\n* * *\n\nPosted\n\nin\n\n[public](https://jordi.inversethought.com/blog/category/public/)\n\nTags:\n\n*
+    * *\n\n«[Previous](https://jordi.inversethought.com/blog/exercising-software-freedom-on-firefox/)"
+  error:
+  fetched_at: '2026-10-31T21:08:23Z'
+archived_at: '2026-10-31T21:08:23Z'

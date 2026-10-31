@@ -1,0 +1,607 @@
+---
+post:
+  id: '50319143'
+  title: 'TCP Use-After-Free: CVE-2026-98432 / CVSS 9.8'
+  url: https://atlasum.net/blog/cve-2026-98432-linux-ipv4-tcp-uaf
+  hn_url: https://news.ycombinator.com/item?id=50319143
+  score: 124
+  author: oger
+  posted_at: '2026-10-31T19:16:30Z'
+  fetched_at: '2026-10-31T21:08:05Z'
+  article_url: https://atlasum.net/blog/cve-2026-98432-linux-ipv4-tcp-uaf
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T21:08:05Z'
+  raw_comment_count: 60
+comments:
+- id: '50319161'
+  parent_id: '50319143'
+  author: oger
+  text: MikroTik routers seem affected but mitigations are available.<p>Watch your
+    Linux systems for kernel updates. Reboot!
+  score: 0
+  posted_at: '2026-10-31T19:17:53Z'
+- id: '50319473'
+  parent_id: '50319143'
+  author: voidfunc
+  text: Oh joy.
+  score: 0
+  posted_at: '2026-10-31T19:52:53Z'
+- id: '50319518'
+  parent_id: '50319143'
+  author: mrob
+  text: "&gt;the kernel handed those saved options from the request socket to the
+    new connection without copying them, then freed them immediately when the connection
+    went away, while another CPU could still be reading them to build a handshake
+    reply.<p>If this requires a multi-core system to exploit, it&#x27;s good news
+    for most of the consumer routers that will never get updates. Saved by cheap single-core
+    hardware."
+  score: 0
+  posted_at: '2026-10-31T19:57:44Z'
+- id: '50319519'
+  parent_id: '50319143'
+  author: wiskinator
+  text: "&gt; Anthropic says Claude wrote the exploit &quot;after initial prompting,&quot;
+    that it runs &quot;arbitrary commands as root, without any credentials or user
+    interaction&quot; on servers with a multipath TCP listener, and that in its proof
+    of concept &quot;it takes 48 minutes to leak a kernel pointer and another five
+    minutes to reach the shell command execution.&quot;<p>This is wild. I&#x27;m a
+    firmware nerd, not a backend nerd, what percentage of TCP&#x2F;IP servers are
+    &#x27;multipath&#x27;?<p>Also, since IPv6 isn&#x27;t affected, wouldn&#x27;t it
+    be funny if this is what it took to get everyone to switch."
+  score: 0
+  posted_at: '2026-10-31T19:58:08Z'
+- id: '50319553'
+  parent_id: '50319143'
+  author: theteapot
+  text: What is a &quot;multipath TCP listener&quot;?
+  score: 0
+  posted_at: '2026-10-31T20:01:09Z'
+- id: '50319570'
+  parent_id: '50319143'
+  author: swinglock
+  text: How are Ubuntu and RHEL not fixed? Few operating systems market themselves
+    more as suitable for servers. What are they doing over there?
+  score: 0
+  posted_at: '2026-10-31T20:02:56Z'
+- id: '50319571'
+  parent_id: '50319143'
+  author: Shank
+  text: 'At least if you’re on Amazon Web Services behind a load balancer you probably
+    aren’t really that impacted enough to spend Halloween patching.<p>&gt; AWS Web
+    Application Firewall, Application Load Balancer, Classic Load Balancer, TLS Listeners
+    on Network Load Balancer, Cloud Front, API Gateway<p>&gt; Customers using the
+    above services do not receive TCP connections from untrusted sources directly
+    when following best practices. AWS is applying updates to the underlying infrastructure
+    of these services and no immediate customer action is required if you are using
+    these services. We still recommend customers update their self-managed instances
+    behind these services within the next 30 days.<p>[0]: <a href="https:&#x2F;&#x2F;aws.amazon.com&#x2F;security&#x2F;security-bulletins&#x2F;2026-160-aws&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;aws.amazon.com&#x2F;security&#x2F;security-bulletins&#x2F;2026-160-...</a>'
+  score: 0
+  posted_at: '2026-10-31T20:02:59Z'
+- id: '50319584'
+  parent_id: '50319143'
+  author: daemonologist
+  text: 'Some previous discussion: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50299182">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50299182</a>'
+  score: 0
+  posted_at: '2026-10-31T20:04:04Z'
+- id: '50319595'
+  parent_id: '50319519'
+  author: dist-epoch
+  text: My understanding is that an app explicitly needs to open a &quot;multipath&quot;
+    socket. Go 1.24 does that by default, so does Caddy, these would be the big ones.
+  score: 0
+  posted_at: '2026-10-31T20:04:52Z'
+- id: '50319604'
+  parent_id: '50319519'
+  author: cataflam
+  text: "&gt; what percentage of TCP&#x2F;IP servers are &#x27;multipath&#x27;?<p>no
+    idea, but at least Tailscale and Caddy were opening MPTCP sockets on servers I
+    checked."
+  score: 0
+  posted_at: '2026-10-31T20:05:42Z'
+- id: '50319608'
+  parent_id: '50319518'
+  author: dist-epoch
+  text: Those routers probably have 20 other critical un-patched exploits ...<p>An
+    entire ecosystem of malware crawling and cohabiting in them.
+  score: 0
+  posted_at: '2026-10-31T20:06:36Z'
+- id: '50319615'
+  parent_id: '50319570'
+  author: Shank
+  text: I’m pretty confused because apparently Anthropic is the group that followed
+    “responsible disclosure” but apparently even though upstream was patched a couple
+    weeks ago, still nothing on either.
+  score: 0
+  posted_at: '2026-10-31T20:07:12Z'
+- id: '50319622'
+  parent_id: '50319143'
+  author: ogogmad
+  text: How are people finding Fil-C? It&#x27;s designed to avoid things like this.
+  score: 0
+  posted_at: '2026-10-31T20:07:39Z'
+- id: '50319623'
+  parent_id: '50319143'
+  author: jmclnx
+  text: |-
+    If I am reading this right, Slackware 15.0 is already fixed:<p><pre><code>     % uname -a
+         Linux XXXX 5.15.223 #1 SMP PREEMPT Thu Oct 22 00:03:07 CDT 2026
+         x86_64 Intel(R) Core(TM) i7-4810MQ CPU @ 2.80GHz GenuineIntel GNU&#x2F;Linux</code></pre>
+  score: 0
+  posted_at: '2026-10-31T20:07:39Z'
+- id: '50319631'
+  parent_id: '50319595'
+  author: grey-area
+  text: Your understanding seems to be wrong.<p>Every Ubuntu version in the last decade
+    is currently vulnerable.<p><a href="https:&#x2F;&#x2F;ubuntu.com&#x2F;security&#x2F;CVE-2026-98432"
+    rel="nofollow">https:&#x2F;&#x2F;ubuntu.com&#x2F;security&#x2F;CVE-2026-98432</a><p>Patches
+    not yet available. That makes this a big deal.<p>This article says that this isn’t
+    app level but is level and can be exploited before requests reach apps.
+  score: 0
+  posted_at: '2026-10-31T20:08:24Z'
+- id: '50319632'
+  parent_id: '50319553'
+  author: dist-epoch
+  text: You have a Wifi network interface and a wired Ethernet one, multipath is somehow
+    combining the two together.
+  score: 0
+  posted_at: '2026-10-31T20:08:28Z'
+- id: '50319649'
+  parent_id: '50319631'
+  author: dist-epoch
+  text: "&gt; on servers with a multipath TCP listener<p>I was talking about the Anthropic
+    blog post, only Go&#x2F;Caddy enable multipath TCP listeners by default."
+  score: 0
+  posted_at: '2026-10-31T20:10:19Z'
+- id: '50319652'
+  parent_id: '50319571'
+  author: sebmellen
+  text: Another reason hyperscaler cloud providers will continue to grow (IMO)!
+  score: 0
+  posted_at: '2026-10-31T20:10:25Z'
+- id: '50319657'
+  parent_id: '50319143'
+  author: api
+  text: 2027 is going to be the year of two to three major CVEs per day.<p>The discourse
+    on this is weird, sounds at times as if these are “because of AI.” These are mostly
+    pre-existing bugs, some very old, and they’ve been lurking. If they all get found
+    we exit the other side more secure and reliable.
+  score: 0
+  posted_at: '2026-10-31T20:10:43Z'
+- id: '50319664'
+  parent_id: '50319143'
+  author: grey-area
+  text: No patches for Ubuntu or red hat yet.<p><a href="https:&#x2F;&#x2F;ubuntu.com&#x2F;security&#x2F;CVE-2026-98432"
+    rel="nofollow">https:&#x2F;&#x2F;ubuntu.com&#x2F;security&#x2F;CVE-2026-98432</a><p><a
+    href="https:&#x2F;&#x2F;access.redhat.com&#x2F;security&#x2F;cve&#x2F;cve-2026-98432"
+    rel="nofollow">https:&#x2F;&#x2F;access.redhat.com&#x2F;security&#x2F;cve&#x2F;cve-2026-98432</a>
+  score: 0
+  posted_at: '2026-10-31T20:11:54Z'
+- id: '50319665'
+  parent_id: '50319518'
+  author: microtonal
+  text: You would be surprised. A lot of cheap consumer routers are have two or four
+    ARM cores. The bigger issue is that they are typically running a kernel from the
+    stone age (&lt; 6.0.0). Sometimes a still-supported LTS kernel like 5.10 or 5.15,
+    but then they stopped at an old patch level.<p>Heck, apparently even the new Unifi
+    UCG Fiber is running 5.4.213 (September 2022), but maybe they backport some fixes?<p>[1]
+    <a href="https:&#x2F;&#x2F;community.ui.com&#x2F;releases&#x2F;dd0283dc-bf71-4140-ae1d-c1c19503ac17?replyId=ee1fc17f-6a78-43d2-93f6-6d5228758187"
+    rel="nofollow">https:&#x2F;&#x2F;community.ui.com&#x2F;releases&#x2F;dd0283dc-bf71-4140-ae1d-c1...</a>
+  score: 0
+  posted_at: '2026-10-31T20:11:57Z'
+- id: '50319670'
+  parent_id: '50319553'
+  author: Noxwizard
+  text: 'I had to look it up too since I hadn&#x27;t heard of it. It&#x27;s an extension
+    to TCP that allows responses across different NICs. Sort of like Link Aggregation
+    on to a switch, except it can go out dissimilar interfaces, like your wifi connection
+    and your hardwired connection. Looks like you have to opt into it when you set
+    up your socket: <a href="https:&#x2F;&#x2F;docs.kernel.org&#x2F;networking&#x2F;mptcp.html"
+    rel="nofollow">https:&#x2F;&#x2F;docs.kernel.org&#x2F;networking&#x2F;mptcp.html</a>'
+  score: 0
+  posted_at: '2026-10-31T20:12:40Z'
+- id: '50319678'
+  parent_id: '50319649'
+  author: grey-area
+  text: 'Well somebody is wrong, this blog post says:<p><i>Why it&#x27;s urgent: the
+    bug sits in code every Linux server runs when it accepts an IPv4 TCP connection,
+    before any application sees the connection.</i><p>It reads like it was LLM generated
+    though so who knows. There is at least a simple mitigation for Golang apps if
+    that is the only concern.'
+  score: 0
+  posted_at: '2026-10-31T20:14:13Z'
+- id: '50319690'
+  parent_id: '50319161'
+  author: tgv
+  text: If you use sysctl to disable mptcp, you need to do that again after each reboot.
+  score: 0
+  posted_at: '2026-10-31T20:15:23Z'
+- id: '50319692'
+  parent_id: '50319571'
+  author: gwbas1c
+  text: I&#x27;m more worried about my consumer-grade router.
+  score: 0
+  posted_at: '2026-10-31T20:15:27Z'
+- id: '50319701'
+  parent_id: '50319678'
+  author: dist-epoch
+  text: Both are correct :)<p>Anthropic only exploited multipath TCP, but the bug
+    is deeper and also affects TCP connections, but it looks like this path is harder
+    to exploit, and it&#x27;s unclear if anybody managed to.
+  score: 0
+  posted_at: '2026-10-31T20:16:41Z'
+- id: '50319704'
+  parent_id: '50319553'
+  author: wahern
+  text: See <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Multipath_TCP"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Multipath_TCP</a><p>It&#x27;s
+    an extension to TCP that, similar to QUIC, allows you to use multiple address&#x2F;port
+    pairs to transmit data over a single logical stream. Both client&#x2F;initiator
+    and server&#x2F;listener have to opt into the extension. This might need to be
+    enabled explicitly by the application[1], which Go apparently does for you, or
+    judging from other posts may be enabled by default systemwide, depending on your
+    platform.<p>AFAIU, a major user of MPTCP is Apple and the iPhone, and the ubiquity
+    of iPhone clients motivated implementation in and deployment on Linux servers.<p>[1]
+    <a href="https:&#x2F;&#x2F;docs.kernel.org&#x2F;networking&#x2F;mptcp.html#sockets-api"
+    rel="nofollow">https:&#x2F;&#x2F;docs.kernel.org&#x2F;networking&#x2F;mptcp.html#sockets-api</a>
+  score: 0
+  posted_at: '2026-10-31T20:16:55Z'
+- id: '50319726'
+  parent_id: '50319143'
+  author: peanut-walrus
+  text: Some notes I&#x27;ve got about this:<p>- MPTCP is not a requirement, it is
+    a generic use-after-free.<p>- Exploitability over the internet is unlikely, most
+    ISP routers drop packets with ipoptions fields.<p>- At least according to Red
+    Hat, dropping packets with ipoptions yourself helps, but is not a full mitigation.<p>-
+    Successful exploit requires multiple CPU cores to process packets, so systems
+    with just a single core or packet processing pinned to a single core are not affected.
+  score: 0
+  posted_at: '2026-10-31T20:19:31Z'
+- id: '50319734'
+  parent_id: '50319632'
+  author: sweetjuly
+  text: In addition to aggregating, it can also be useful in cases where one link
+    is much slower or higher latency. For example, if you&#x27;re sitting in your
+    driveway trying to get directions in maps while your phone is still on your very
+    weak wifi network, it&#x27;s a better user experience to have it to attempt the
+    request using both radios concurrently so that it can fallback to cellular without
+    waiting for a timeout&#x2F;connection error if you&#x27;re too far for wifi to
+    actually work well.
+  score: 0
+  posted_at: '2026-10-31T20:20:17Z'
+- id: '50319739'
+  parent_id: '50319701'
+  author: grey-area
+  text: Thanks. Expanding exploits is something LLMs seem pretty good at so I’d expect
+    people to manage a more general exploit soon if not already. Hopefully it’ll be
+    patched before that happens.
+  score: 0
+  posted_at: '2026-10-31T20:20:48Z'
+- id: '50319761'
+  parent_id: '50319143'
+  author: gadtfly
+  text: Everything talks about this in terms of servers, but what about desktop Linux
+    in typical setups?  Consumer modems and routers?  IoT junk?
+  score: 0
+  posted_at: '2026-10-31T20:23:10Z'
+- id: '50319762'
+  parent_id: '50319143'
+  author: marcosscriven
+  text: Can anyone explain how user after free results in a practical exploit?<p>I
+    ask because I’ve been dabbling in rooting various closed devices at home. I’m
+    finding AI fantastic at finding vulnerabilities statically (from firmware upgrade
+    binaries), but when you then ask it to use it to get root or code execution it
+    just goes in circles.<p>In the end it usually ends up there’s no exploit it can
+    find, because it can’t actually influence the affected memory in a useful way.
+    This is especially so if that memory is in the heap. On the stack it’s a lot more
+    predictable (especially with OOB writes).
+  score: 0
+  posted_at: '2026-10-31T20:23:11Z'
+- id: '50319772'
+  parent_id: '50319664'
+  author: AdrianCX
+  text: so just block multipath and add the firewall rule from article that drops
+    packets with IPv4 options
+  score: 0
+  posted_at: '2026-10-31T20:24:08Z'
+- id: '50319803'
+  parent_id: '50319772'
+  author: grey-area
+  text: Hoping fix will be out soon so we don’t have to.
+  score: 0
+  posted_at: '2026-10-31T20:26:56Z'
+- id: '50319808'
+  parent_id: '50319762'
+  author: kstrauser
+  text: One example is that you might be able to read what was written there. Here
+    that may mean you could read another process’s packet(s). Imagine they were sending
+    unencrypted passwords, perhaps because it’s in a trusted LAN connection.
+  score: 0
+  posted_at: '2026-10-31T20:27:04Z'
+- id: '50319811'
+  parent_id: '50319726'
+  author: wahern
+  text: "&gt; Exploitability over the internet is unlikely, most ISP routers drop
+    packets with ipoptions fields.<p>That doesn&#x27;t track. Apple iPhones are a
+    major user of MPTCP and they report the majority of requests supporting MPTCP,
+    IIRC 70+%."
+  score: 0
+  posted_at: '2026-10-31T20:27:36Z'
+- id: '50319834'
+  parent_id: '50319570'
+  author: lakeviewterrace
+  text: Running regression tests I assume; they can&#x27;t just YOLO shit like most
+    OSS projects for the exact reason you mention.
+  score: 0
+  posted_at: '2026-10-31T20:29:31Z'
+- id: '50319853'
+  parent_id: '50319811'
+  author: peanut-walrus
+  text: MPTCP uses TCP options fields, the vulnerability is in IP options.
+  score: 0
+  posted_at: '2026-10-31T20:31:15Z'
+- id: '50319875'
+  parent_id: '50319834'
+  author: swinglock
+  text: For a month?
+  score: 0
+  posted_at: '2026-10-31T20:32:22Z'
+- id: '50319886'
+  parent_id: '50319143'
+  author: lakeviewterrace
+  text: Is OpenWRT affected? Because that would be a real fawkin problem.
+  score: 0
+  posted_at: '2026-10-31T20:32:59Z'
+- id: '50319905'
+  parent_id: '50319570'
+  author: Flockster
+  text: Going by the proxmox forum the fix is already in the sources (proxmox released
+    their kernel based on them a few days ago). But I could not see, if it is already
+    released for the users.<p><a href="https:&#x2F;&#x2F;forum.proxmox.com&#x2F;threads&#x2F;cve-2026-98432-in-proxmox-ve.187339&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;forum.proxmox.com&#x2F;threads&#x2F;cve-2026-98432-in-proxmox-...</a>
+  score: 0
+  posted_at: '2026-10-31T20:34:55Z'
+- id: '50319914'
+  parent_id: '50319553'
+  author: jacquesm
+  text: A listener is a piece of software that advertises itself as available to inbound
+    connections. You can do this on a variety of protocols.<p>Multipath TCP is a neat
+    trick that allows a single TCP connection (TCP = Transport Control Protocol, a
+    stateless protocol for long running connections) to use multiple physical interfaces.
+    You <i>could</i> do something similar before MTCP using bonding, but this was
+    annoying to set up and usually required application level code to efficiently
+    use the bonded connection. MTCP makes this much simpler from an application level
+    point of view and it can use widely diverse underlying transport layers at the
+    same time (for instance, WiFi, Cellular and wired connections).
+  score: 0
+  posted_at: '2026-10-31T20:35:29Z'
+- id: '50319957'
+  parent_id: '50319886'
+  author: ronnier
+  text: As much as I hate to link to this site, this particular sub is very good:<p><a
+    href="https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;openwrt&#x2F;comments&#x2F;1xka85h&#x2F;is_the_openwrt_update_frequency_fast_enough_in&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;openwrt&#x2F;comments&#x2F;1xka85h&#x2F;is_the_ope...</a><p>They
+    say 25.12-SNAPSHOT has it fixed
+  score: 0
+  posted_at: '2026-10-31T20:39:04Z'
+- id: '50319995'
+  parent_id: '50319886'
+  author: lunar_rover
+  text: OpenWrt doesn&#x27;t open ports by default so I think the impact is minimal,
+    unless this can breach nftables as well. CGNAT also mitigates this as a side effect.<p>If
+    you have services open on the IPv4 net however, close them immediately as a precaution.
+  score: 0
+  posted_at: '2026-10-31T20:42:38Z'
+- id: '50320015'
+  parent_id: '50319905'
+  author: tlamponi
+  text: Yes, we (Proxmox) included the fix for this in 7.0.14-25, which was initially
+    packaged two weeks ago.<p>It went through internal QA and to the test soon after
+    that, then a few days later to the no-subscription repository and as of yesterday
+    morning CEST it was cleared for the enterprise one, so it&#x27;s available on
+    all repos of all Products we got in their current supported releases.<p>For kernel
+    updates we where even more conservative in the past, but with the current churn
+    on often quite relevant fixes picked up the pace a bit on moving them along, trying
+    still to balance rolling out fixes fast(er) while not doing that so fast that
+    tricky (hardware&#x2F;setup specific) regressions don&#x27;t get caught.
+  score: 0
+  posted_at: '2026-10-31T20:45:19Z'
+- id: '50320018'
+  parent_id: '50319143'
+  author: bana-io
+  text: Without a test-case, read POC, how do I verify if my server is affected?
+  score: 0
+  posted_at: '2026-10-31T20:45:42Z'
+- id: '50320043'
+  parent_id: '50319772'
+  author: stefangordon
+  text: Both of which we are finding out are apparently insufficient to mitigate this.
+  score: 0
+  posted_at: '2026-10-31T20:48:07Z'
+- id: '50320044'
+  parent_id: '50319761'
+  author: rwmj
+  text: IoT devices will get fixes delivered on the 12th of never.
+  score: 0
+  posted_at: '2026-10-31T20:48:11Z'
+- id: '50320070'
+  parent_id: '50319143'
+  author: lakeviewterrace
+  text: The linked source spun up my fans with 100% GPU utilization. Is there some...
+    unwelcome... script running?
+  score: 0
+  posted_at: '2026-10-31T20:50:12Z'
+- id: '50320072'
+  parent_id: '50320044'
+  author: gadtfly
+  text: But are they exploitably vulnerable to this specifically in typical setups?
+  score: 0
+  posted_at: '2026-10-31T20:50:35Z'
+- id: '50320086'
+  parent_id: '50319761'
+  author: eterm
+  text: You should assume your IoT junk is already compromised, that&#x27;s why your
+    IoT junk runs on a dedicated VLAN.
+  score: 0
+  posted_at: '2026-10-31T20:51:36Z'
+- id: '50320107'
+  parent_id: '50320072'
+  author: rwmj
+  text: To be fair probably not as many will be single core and this requires multi-core.  As
+    for the thousands of other CVEs though ...
+  score: 0
+  posted_at: '2026-10-31T20:53:51Z'
+- id: '50320108'
+  parent_id: '50319762'
+  author: fguerraz
+  text: If it’s freed it can be reallocated, so then you have pointers to the same
+    area of memory used for completely different data structures, and this can go
+    very wrong
+  score: 0
+  posted_at: '2026-10-31T20:53:55Z'
+- id: '50320121'
+  parent_id: '50320086'
+  author: gadtfly
+  text: Desktop Linux in typical setups? Consumer modems and routers?
+  score: 0
+  posted_at: '2026-10-31T20:54:43Z'
+- id: '50320134'
+  parent_id: '50319143'
+  author: rurban
+  text: |-
+    In an earlier report, it said only affected is kernel 4.4, not all since. This quite dramatic now.<p>I see. <a href="https:&#x2F;&#x2F;nvd.nist.gov&#x2F;vuln&#x2F;detail&#x2F;cve-2026-98432" rel="nofollow">https:&#x2F;&#x2F;nvd.nist.gov&#x2F;vuln&#x2F;detail&#x2F;cve-2026-98432</a> affected versions format is the culprit. Entirely unusable.
+    We do have versions, branch names and tags for a reason.
+  score: 0
+  posted_at: '2026-10-31T20:56:07Z'
+- id: '50320143'
+  parent_id: '50319143'
+  author: geye1234
+  text: My home firewall runs Ubuntu. It doesn&#x27;t accept (new) incoming packets
+    from the internet. I don&#x27;t have any IoT devices except printers, whose packets
+    the firewall rejects, and has done since I bought them. Do I need to do anything
+    apart from wait for the patch to become available?
+  score: 0
+  posted_at: '2026-10-31T20:56:43Z'
+- id: '50320153'
+  parent_id: '50319692'
+  author: wtch98
+  text: I blocked packets arriving externally on my firewall with ip-options a couple
+    of days ago. Firewall rule has zero hits, and I&#x27;ve got a very open ISP (andrews+arnold),
+    if I want I can host SMTP, DNS, whatever
+  score: 0
+  posted_at: '2026-10-31T20:57:32Z'
+- id: '50320175'
+  parent_id: '50320108'
+  author: marcosscriven
+  text: I get the principle - what I struggle to find is concrete examples of how
+    it can practically be used.<p>How do you know <i>which</i> pointer (as I say,
+    especially if it’s in the heap)? And I know it can go wrong - but how do you do
+    more than just crash the kernel?<p>In OOB writes in a stack variable it’s completely
+    clear to me. For other situations I’d love to find real and clearly explained
+    exploits of past UAF or OOB vulnerabilities.
+  score: 0
+  posted_at: '2026-10-31T20:59:25Z'
+- id: '50320183'
+  parent_id: '50320175'
+  author: cowlevel
+  text: Getting the right thing allocated in the right place to exploit a UAF is usually
+    very very tricky. For a defender we just need to know it&#x27;s probably possible
+    and therefore we patch the bug, but the attacker still has a difficult job to
+    do even already knowing a UAF bug.<p>The simplest thing you could try to do is
+    allocate several more of the same type of object and hope one of them lands at
+    the same memory address. For example if you can UAF a web app&#x27;s user session
+    and keep it open for a long time period (not true in the TCP bug), you might try
+    to wait until an admin happens to log in with their session at the same address,
+    then use their admin session.<p>Or you can allocate a lot of something else objects
+    and hope a certain field overlaps, like a function pointer if you can write to
+    it. Like suppose you can get some kind of authentication callback pointer to overlap
+    where your packet sequence number was, maybe you can send a certain number of
+    packets to make it point to the return instruction and skip the authentication.
+  score: 0
+  posted_at: '2026-10-31T21:00:29Z'
+- id: '50320203'
+  parent_id: '50320134'
+  author: pizza234
+  text: Wrong. Every kernel from 4.4 onward is affected until the fixed releases (5.10.272,
+    5.15.223, 6.1.190 and so on).
+  score: 0
+  posted_at: '2026-10-31T21:02:36Z'
+article:
+  url: https://atlasum.net/blog/cve-2026-98432-linux-ipv4-tcp-uaf
+  title: 'Linux''s October 2026 TCP Use-After-Free: CVE-2026-98432 — Atlas'
+  fetch_status: success
+  content: |-
+    ## [#](#overview)Overview
+
+    Linux's stable kernels shipped a fix on October 11 and 15, 2026 for [CVE-2026-98432](https://www.cve.org/CVERecord?id=CVE-2026-98432), a use-after-free in the IPv4 TCP handshake that a remote, unauthenticated peer can reach. The kernel's own CVE Numbering Authority (CNA) scores it CVSS 3.1 **9.8, Critical**. The fixed releases are **5.10.272, 5.15.223, 6.1.190, 6.6.159, 6.12.113, 6.18.56, 7.2.10** , and **7.3** , and the bug goes back to Linux 4.4. The upstream fix is a four-line change, but most servers run a distribution's kernel, and as of 8:00 PM CDT, October 29, Ubuntu's tracker still reads "Vulnerable" for its kernel on every release, and Red Hat lists RHEL 8, 9, and 10 as affected with no fix.
+
+    **Why it's urgent:** the bug sits in code every Linux server runs when it accepts an IPv4 TCP connection, before any application sees the connection. Anthropic, whose researcher reported it, says its Claude model wrote a working proof-of-concept exploit that runs commands as root on "Linux servers with a multipath TCP listener," with no credentials. See the [timeline](#timeline-and-exploitation-status).
+
+    ### [#](#key-facts)Key facts
+
+    | Field | Detail |
+    | --- | --- |
+    | **CVE** | CVE-2026-98432, "ipv4: free inet\_opt and ireq\_opt after an RCU grace period," issued by the Linux kernel CNA |
+    | **Severity** | Critical, CVSS 3.1 **9.8** (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`), the kernel CNA's score. Red Hat rates it Important with CVSS 3.1 8.1 (`AC:H`), SUSE rates it important, Ubuntu rates it High, and Oracle and Amazon rate it Important with CVSS 3.1 8.1. |
+    | **Weakness** | Use-after-free of IPv4 option data during the TCP handshake (the record lists no CWE) |
+    | **Impact** | Per the CNA's scoring notes: kernel heap contents disclosed to the remote peer, kernel memory corruption, or a crash. Red Hat: "primarily results in a system crash leading to a Denial of Service (DoS) or potential memory corruption." |
+    | **Fixed in** | 7.2.10 and 6.18.56 (Oct 11) · 6.12.113, 6.6.159, 6.1.190, 5.15.223, and 5.10.272 (Oct 15) · 7.3 (Oct 18) |
+    | **No fix yet** | Ubuntu (every release), RHEL 8, 9, and 10, Amazon Linux 2, and Amazon Linux 2023's default kernel, as of 8:00 PM CDT, October 29. Upstream branches that reached end-of-life before 5.10 get no fix. |
+    | **Proof of concept** | Anthropic says Claude built a remote root exploit for servers with a multipath TCP listener. It hasn't published the exploit. |
+    | **CVE records** | Published on [cve.org](https://www.cve.org/CVERecord?id=CVE-2026-98432) on October 15. [NVD](https://nvd.nist.gov/vuln/detail/CVE-2026-98432) lists it as "Received," with no analysis of its own, as of 8:00 PM CDT, October 29. |
+    | **Credit** | Reported by Xinyang Ge of Anthropic. Fixed by Eric Dumazet and reviewed by Kuniyuki Iwashima, per the fix commit. |
+
+    ## [#](#who-is-affected)Who is affected
+
+    Any Linux kernel from 4.4 on that lacks the fix, whether it serves the network directly or hosts containers: a container runs on the host's kernel, so a new image doesn't change anything. IPv6 connections aren't affected by the main issue; the commit says "IPv6 is not affected by the first issue."
+
+    | Release line | Status on Oct 29, 2026 | Fixed in | Released |
+    | --- | --- | --- | --- |
+    | 7.3 | Mainline | **7.3** (from 7.3-rc7) | Oct 18, 2026 |
+    | 7.2 | Stable | **7.2.10** | Oct 11, 2026 |
+    | 6.18 | Longterm | **6.18.56** | Oct 11, 2026 |
+    | 6.12 | Longterm | **6.12.113** | Oct 15, 2026 |
+    | 6.6 | Longterm | **6.6.159** | Oct 15, 2026 |
+    | 6.1 | Longterm | **6.1.190** | Oct 15, 2026 |
+    | 5.15 | Longterm | **5.15.223** | Oct 15, 2026 |
+    | 5.10 | Longterm | **5.10.272** | Oct 15, 2026 |
+    | 4.4 – 5.4 | End-of-life upstream | distro fixes only | — |
+
+    ### [#](#distribution-status)Distribution status
+
+    Distribution kernels carry backported fixes under their own version numbers, so check the tracker, not the upstream number. As of 8:00 PM CDT, October 29:
+
+    - **Ubuntu:** the [tracker](https://ubuntu.com/security/CVE-2026-98432) lists the `linux` package as "Vulnerable" on every release. On 26.10, 26.04, 24.04, and 22.04 it adds "work in progress" in `7.3.0-10.10`, `7.0.0-43.43`, `6.8.0-149.149`, and `5.15.0-203.213`; 20.04, 18.04, and 16.04 show only "Vulnerable." Many cloud and hardware-enablement kernels are listed the same way, and no Ubuntu Security Notice has been published.
+    - **Red Hat:** RHEL 8, 9, and 10 and OpenShift Container Platform 4 are listed as affected, with no fix; RHEL 6 and 7 aren't affected ([CVE page](https://access.redhat.com/security/cve/CVE-2026-98432)). Red Hat says mitigation "is either not available or the currently available options do not meet the Red Hat Product Security criteria."
+    - **Debian:** fixed in 12 "bookworm" (`6.1.190-1`, DLA-4841-1, and `linux-6.12` `6.12.113-1~deb12u1`, DLA-4850-1), 13 "trixie" (`6.12.113-1`, DSA-6568-1), and unstable ([tracker](https://security-tracker.debian.org/tracker/CVE-2026-98432)).
+    - **SUSE:** rated important. SUSE Linux Enterprise Server 16.0 (`kernel-default` `6.12.0-160000.40.1`) and the 15 SP4, SP5, and SP6 LTSS kernels are fixed; 15 SP7 is in progress, and openSUSE Leap 15.6 and 16.0 are listed as affected ([CVE page](https://www.suse.com/security/cve/CVE-2026-98432/)).
+    - **Oracle Linux:** rated Important, CVSS 3.1 8.1. Unbreakable Enterprise Kernel (UEK) errata for Oracle Linux 7, 8, 9, and 10 came out October 16: ELSA-2026-500397, ELSA-2026-500398, and ELSA-2026-500399 ([CVE page](https://linux.oracle.com/cve/CVE-2026-98432.html)). The page lists only the UEK kernels.
+    - **Amazon Linux:** rated Important, CVSS 3.1 8.1. On Amazon Linux 2023, `kernel6.18` is fixed (ALAS2023-2026-3251, October 24) and `kernel6.12` is fixed (ALAS2023-2026-3335, October 29). The default `kernel` package and every Amazon Linux 2 kernel are "Pending Fix" ([CVE page](https://explore.alas.aws.amazon.com/CVE-2026-98432.html)).
+
+    ## [#](#how-the-vulnerability-works)How the vulnerability works
+
+    When a Linux server accepts a TCP connection, the kernel tracks the half-open handshake in a lightweight "request socket," then creates a full socket once the handshake completes. If the connecting peer's IPv4 header carried options, the kernel keeps them to echo in its replies. The bug: the kernel handed those saved options from the request socket to the new connection without copying them, then freed them immediately when the connection went away, while another CPU could still be reading them to build a handshake reply. Reading freed kernel memory is a use-after-free.
+
+    The peer needs no login, and it all happens inside the kernel's handshake handling, before any application code runs. The CNA's scoring notes say the stale data can leak kernel heap memory back to the peer, steer kernel writes out of bounds, or crash the machine. Anthropic says a lost race "only fails the handshake without crashing the whole system, so a determined attacker can retry indefinitely until they succeed."
+
+    ### [#](#the-fix)The fix
+
+    Eric Dumazet's commit, "ipv4: free inet\_opt and ireq\_opt after an RCU grace period," changes two plain `kfree()` calls to `kfree_rcu()`, which waits until every reader has finished with the memory before freeing it. Other code paths that replace these options already did that. The commit also fixes the same problem in request-socket migration (`net.ipv4.tcp_migrate_req=1`, or a `BPF_SK_REUSEPORT_SELECT_OR_MIGRATE` program), and says a related IPv6 case "will be addressed in a separate patch."
+
+    _ipv4: free inet_opt and ireq_opt after an RCU grace period
+    torvalds/linux · e3f33b0 · Oct 1, 2026_
+
+    net/ipv4/af\_inet.c
+    +1 −11 lines added, 1 removed
+
+    net/ipv4/tcp\_ipv4.c
+    +1 −11 lines added, 1 removed
+
+    2 files changed+2 −22 lines added, 2 removed
+
+    ## [#](#which-servers-are-exposed)Which servers are exposed
+
+    - **Every Linux host that accepts IPv4 TCP connections** on an affected kernel: web servers, SSH, databases, load balancers, and Kubernetes nodes. The CNA's notes say the vulnerable path runs "during the TCP
+  error:
+  fetched_at: '2026-10-31T21:08:05Z'
+archived_at: '2026-10-31T21:08:22Z'

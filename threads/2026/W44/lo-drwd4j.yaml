@@ -5,14 +5,14 @@ post:
   title: 'Jepsen: ParticleDB 1.1.4'
   url: https://jepsen.io/analyses/particledb-1.1.4
   hn_url: https://lobste.rs/s/drwd4j
-  score: 21
+  score: 56
   author: aphyr
   posted_at: '2026-10-31T13:39:52Z'
-  fetched_at: '2026-10-31T16:57:17Z'
+  fetched_at: '2026-10-31T21:08:22Z'
   article_url: https://jepsen.io/analyses/particledb-1.1.4
   article_fetch_status: success
-  article_fetched_at: '2026-10-31T16:57:18Z'
-  raw_comment_count: 6
+  article_fetched_at: '2026-10-31T21:08:22Z'
+  raw_comment_count: 10
   tags:
   - databases
   - testing
@@ -28,7 +28,7 @@ comments:
     Twitter: DB + AI + DST + Formal Methods == Bugs Vanished. I am curious on how
     far can we push this?\nThough at the end of the day, I would have a hard time
     on trusting a DB built this way."
-  score: 2
+  score: 4
   posted_at: '2026-10-31T14:44:56Z'
 - id: lo-hfffvv
   parent_id: '0'
@@ -36,8 +36,8 @@ comments:
   text: |-
     Sure, DST would have been helpful in finding bugs. Even basic manual QA would have been helpful! Most of these issues just required starting a fresh node and typing a handful of SQL queries into the shell.
     Understanding a bug is different than finding one. To understand the cause of a bug, you probably need to read some of the code involved, or at least have a solid mental model of the system. Until ~2025, clients generally needed to read code and understand a bug to fix it. With AI, you can just paste a bug report into Codex and say "fix".
-    Anecdotally, that does work! ParticleDB is much safer now than it was when we began. I don't think this kind of AI development is as robust a process as human understanding though. Anecdotally, from working with a few clients who rely heavily on LLMs, bugs are often "fixed" but still happen, or a specific case would be resolved but the general pattern remained, or the fix would introduce even weirder behavior.
-  score: 3
+    Anecdotally, that does work! ParticleDB is much safer now than it was when we began. I don't think this kind of AI development is as robust a process as human understanding though. From working with a few clients who rely heavily on LLMs, bugs are often "fixed" but still happen, or a specific case would be resolved but the general pattern remained, or the fix would introduce even weirder behavior.
+  score: 10
   posted_at: '2026-10-31T15:00:08Z'
 - id: lo-n9jqzq
   parent_id: '0'
@@ -49,7 +49,7 @@ comments:
     I have to wonder what leads a database developer to hiring Jepsen without first doing even fairly basic testing of their own database. Though I guess in this case it was probably "the LLM told them to", and they didn't even take the preliminary step of asking the LLM to do its own Jepsen-style analysis first (which obviously is nowhere near the same standard, but it sure sounds like it would have caught a lot of this stuff). Or maybe the LLM claimed that it had done so and they believed it?
 
     Orkes said they ran Jepsen’s existing Postgres test harness to find and resolve issues in ParticleDB prior to this work.
-  score: 3
+  score: 16
   posted_at: '2026-10-31T15:09:18Z'
 - id: lo-zzwghq
   parent_id: '0'
@@ -57,7 +57,7 @@ comments:
   text: |-
     To what extent do the bugs pop back up because the clients aren’t using generative/simulation testing/fuzzing?
     I’ve been fairly blindly asking LLMs to write simulation tests as well as non-simulated tests (golang) and that definitely finds issues, but at minimum I need to review the code for potential issues and then the clanker writes tests and finds more issues. It feels a little bit like I’ve made the fastest whackamole machine.
-  score: 1
+  score: 2
   posted_at: '2026-10-31T15:20:10Z'
 - id: lo-qkunxe
   parent_id: '0'
@@ -67,7 +67,7 @@ comments:
     Part of that might just be normal human struggle to keep up with a high volume of complex bugs. I normally find a handful of serious bugs in a 4-8 week collaboration, and here I found 10-20 per week. Likewise, I normally test just a few versions, and here we'd have several builds to test each week. I'm still waiting on Orkes to publish the repo with the issues we found, but once that goes live you can see both of us made mistakes about what versions had which bugs, or exactly what reproductions look like.
     Another challenge is that ParticleDB was so broken that the tests would fail for lots of reasons. To a human without intuition, or maybe to an LLM, it might be hard to tell whether a bug was fixed. Our most productive test, compare, also produced a fair bit of false positives--places where Postgres and ParticleDB behavior diverged in harmless ways. Easy for a human to sort through, but apparently really hard for LLMs to cope with.
     Agents will also just... flat-out lie to you about what the tests say, so that doesn't help!
-  score: 3
+  score: 12
   posted_at: '2026-10-31T15:33:45Z'
 - id: lo-nkvi2p
   parent_id: '0'
@@ -76,8 +76,44 @@ comments:
     same Postgres Jepsen test against ParticleDB--it took a little bit to get it to
     set up the database and connect, but once it did, it started screaming about every
     possible kind of safety violation. I'm not sure how they got it to pass!
-  score: 5
+  score: 21
   posted_at: '2026-10-31T15:35:49Z'
+- id: lo-eszq9j
+  parent_id: '0'
+  author: hmpc
+  text: |-
+    This is the most devastating Jepsen report I've ever read, and I will personally be hammering the entirety of section 4.5 ("LLM Tradeoffs") to our company doors. Too many good quotes to pull, but this from section 4.3 is perhaps the most emblematic:
+
+    Most databases have a test suite which exercises at least basic examples of each feature, and it is customary to run those tests before release, if not continuously. Where were those tests for ParticleDB? How does one add support for NOT NULL constraints without a test which tries to insert at least one NULL value? What development process adds a CHARACTER(10) type without trying to write a string of (e.g.) five characters?
+
+    It does raise the question of why Orkes engaged Jepsen in the first place; like hiring Michelangelo to paint your toilet. How could they be so utterly unaware of the most basic flaws in their product? The impression one takes away from the report is of an entire team deep in AI psychosis, experiencing their work (?) solely through agents, wholly out of touch with reality.
+    (Also great to see Kyle giving technical writing its due, another all too common victim of the mad dash for LLMs.)
+  score: 21
+  posted_at: '2026-10-31T17:20:54Z'
+- id: lo-u90imv
+  parent_id: '0'
+  author: coleifer
+  text: |-
+    Thank you for your work and integrity. I find it unbelievable that they could have missed all this low-hanging fruit while being bold enough to make the claims quoted. Or to shill a database at all… I’m doubly surprised they paid for this analysis. I wonder how do you understand their motivations? Assuming it’s vibes from top to bottom why didn’t they have their LLM run a Jepsen style analysis? Clearly they knew enough to want one. And how is it possible they can make so many vague guarantees in their marketing with a straight face? Is it just inexperience and ignorance or more?
+    Strange!
+  score: 2
+  posted_at: '2026-10-31T18:07:18Z'
+- id: lo-rp7jid
+  parent_id: '0'
+  author: fanf
+  text: Note that the previous Jepsen report last week was for different (less broken)
+    software from the same supplier. Since ParticleDB is intended to support Conductor,
+    it makes sense that a full examination of Conductor should also cover ParticleDB;
+    and since Conductor can use alternative databases (Jepsen tested with Postgres),
+    it makes sense to test ParticleDB separately.
+  score: 3
+  posted_at: '2026-10-31T18:16:01Z'
+- id: lo-cv8dda
+  parent_id: '0'
+  author: Student
+  text: My favorite is when the tests are entirely composed of test doubles.
+  score: 1
+  posted_at: '2026-10-31T20:29:13Z'
 article:
   url: https://jepsen.io/analyses/particledb-1.1.4
   title: 'Jepsen: ParticleDB 1.1.4'
@@ -173,4 +209,4 @@ article:
     | No locks, m"
   error:
   fetched_at: '2026-10-31T16:57:18Z'
-archived_at: '2026-10-31T16:57:18Z'
+archived_at: '2026-10-31T21:08:23Z'

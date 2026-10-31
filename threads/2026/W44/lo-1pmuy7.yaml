@@ -5,14 +5,14 @@ post:
   title: How hard is it to check for whitespace?
   url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
   hn_url: https://lobste.rs/s/1pmuy7
-  score: 36
+  score: 41
   author: serce
   posted_at: '2026-10-30T22:25:49Z'
-  fetched_at: '2026-10-31T16:57:17Z'
+  fetched_at: '2026-10-31T21:08:22Z'
   article_url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
   article_fetch_status: success
-  article_fetched_at: '2026-10-31T16:57:20Z'
-  raw_comment_count: 5
+  article_fetched_at: '2026-10-31T21:08:24Z'
+  raw_comment_count: 9
   tags:
   - java
   - performance
@@ -32,7 +32,7 @@ comments:
     The magic 1682554634 number does look magical, and it's unclear to me how it was chosen (please do share if you know the answer).
 
     I think it’s usually just brute forced, right?
-  score: 2
+  score: 3
   posted_at: '2026-10-31T01:55:41Z'
 - id: lo-pjywkw
   parent_id: '0'
@@ -50,7 +50,7 @@ comments:
     additions, shifts, and the special address-offset computation instructions to
     avoid using the general-purpose mulitplication circuits. But I didn't notice any
     regularities in 1682554634 that would enable fast multiplication.
-  score: 2
+  score: 3
   posted_at: '2026-10-31T09:37:46Z'
 - id: lo-znihol
   parent_id: '0'
@@ -76,6 +76,30 @@ comments:
     there are lots of clever cheats to get there.)'
   score: 1
   posted_at: '2026-10-31T16:56:53Z'
+- id: lo-kxbbia
+  parent_id: '0'
+  author: baer
+  text: |-
+    How is the proof complicated?
+    They compare the ...charAt(HASH) == c. If only whitespace is in that table, then it can't possibly yield false positives. How do you check for false negatives? You just test that those couple dozen values in the table all hash correctly. Or am I missing something?
+  score: 2
+  posted_at: '2026-10-31T17:01:18Z'
+- id: lo-aua9m8
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    A 64-bit integer multiply is 3 cycles of latency on a modern core, not 1 like an integer add. Integer multiply units have been fully pipelined for a long time, though, so each IMUL port can start a new multiply per cycle. That's the usual latency vs throughput thing.
+    For a long time x86 cores only had 1 IMUL port, but both Intel and AMD released new microarchitectures (Lion Cove and Zen 5) in 2024 with 3 IMUL ports. I haven't kept up with the latest M-series cores from Apple, but M1 in 2020 had 2 IMUL ports. So for the bleeding edge the reciprocal throughput is 0.33, but that's recent enough that I still go by 1 for day-to-day work. The latency of 3 cycles has been stable for a long time.
+    Double pumping is a separate thing. You might be thinking of how the integer adders (not multipliers) worked in P4/NetBurst (cursed be thy name). They ran at twice the core clock and chained additions could observe 0.5 cycle latency. Nowadays when you hear about double pumping for arithmetic circuits it's usually for vector units, e.g. Zen 4 double pumps its 256-bit vector data path when executing AVX-512 instructions.
+  score: 1
+  posted_at: '2026-10-31T21:00:16Z'
+- id: lo-xhxrvh
+  parent_id: '0'
+  author: '0x2ba22e11'
+  text: There's a bit of probability involved in the proof that you can find a suitable
+    hash function.
+  score: 1
+  posted_at: '2026-10-31T21:00:29Z'
 article:
   url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
   title: How hard is it to check for whitespace?
@@ -181,4 +205,4 @@ article:
     \           System.out.println(mul);\n    "
   error:
   fetched_at: '2026-10-31T16:57:20Z'
-archived_at: '2026-10-31T16:57:20Z'
+archived_at: '2026-10-31T21:08:25Z'
