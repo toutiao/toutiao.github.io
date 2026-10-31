@@ -1,0 +1,171 @@
+---
+post:
+  id: lo-soosuu
+  source: lobsters
+  title: The support case of a customer who said that all they could see was a black
+    screen
+  url: https://devblogs.microsoft.com/oldnewthing/20261029-00/?p=112808/
+  hn_url: https://lobste.rs/s/soosuu
+  score: 39
+  author: ubernostrum
+  posted_at: '2026-10-31T01:01:21Z'
+  fetched_at: '2026-10-31T16:57:17Z'
+  article_url: https://devblogs.microsoft.com/oldnewthing/20261029-00/?p=112808/
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T16:57:19Z'
+  raw_comment_count: 7
+  tags:
+  - historical
+  - windows
+comments:
+- id: lo-uvb18c
+  parent_id: '0'
+  author: chrismorgan
+  text: |-
+    If you hold a PC’s power button for 12 seconds, it will turn off at the hardware level without notifying the operating system. […] After eight seconds of the power button being held down, the Windows kernel realizes that the user is trying to do a force-power-off of the system, […]
+
+    What? 12 seconds? That’s just wrong. I’ve seen it done with plenty of computers (desktops and laptops spanning decades of vintage), and I’d have said 5–6 seconds, and definitely not more than 8. Historically, written guidance I remember was consistently to hold for ten seconds (then it used to be said to leave it for ten seconds before turning it on again, but that doesn’t get said much any more).
+    https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/forcing-a-system-crash-with-the-power-button indicates this LPBH bugcheck needs to be enabled in the registry, and says it triggers at 7 seconds and that reset is “usually about 10 seconds”, though “on some systems such as ARM64 laptops, the firmware timer is shorter”.
+  score: 11
+  posted_at: '2026-10-31T03:06:57Z'
+- id: lo-zlz6xc
+  parent_id: '0'
+  author: athas
+  text: When using minimalist window managers on Unix, I have also at least once been
+    confused as to whether the system had booted or not.
+  score: 7
+  posted_at: '2026-10-31T10:10:38Z'
+- id: lo-82jlab
+  parent_id: '0'
+  author: timthelion
+  text: "Yes I remember playing with keyboard layouts in ratpoison and more than once
+    being trapped with nothing but black..How do you press ctrl-t with a russian keyboard
+    \U0001F605"
+  score: 2
+  posted_at: '2026-10-31T10:19:48Z'
+- id: lo-tlsokq
+  parent_id: '0'
+  author: gir
+  text: |-
+    “the person who normally draws stuff is hung.”
+
+    are we seriously not doing phrasing anymore?! :D
+  score: 13
+  posted_at: '2026-10-31T11:22:57Z'
+- id: lo-2ggir4
+  parent_id: '0'
+  author: k749gtnc9l3w
+  text: Yeah, stipple background should always be preferred as default to the solid
+    black but alas…
+  score: 2
+  posted_at: '2026-10-31T13:16:18Z'
+- id: lo-aoya1l
+  parent_id: '0'
+  author: stapelberg
+  text: |-
+    This is the very reason why i3lock doesn’t default to turning the screen black :)
+    (In the early days of i3lock, black and white were easily available in the X11 wire protocol, so i3lock defaulted to an all-white screen. Later, we changed it to a shade of grey for ergonomics.)
+  score: 3
+  posted_at: '2026-10-31T13:36:49Z'
+- id: lo-d1j2no
+  parent_id: '0'
+  author: jcelerier
+  text: |-
+    ACPI / UEFI spec is 4 seconds: https://uefi.org/htmlspecs/ACPI_Spec_6_4_html/04_ACPI_Hardware_Specification/ACPI_Hardware_Specification.html
+
+    Power Button Override
+
+
+    User sequence (press the power button for 4 seconds) to turn off a hung system.
+  score: 4
+  posted_at: '2026-10-31T13:50:01Z'
+article:
+  url: https://devblogs.microsoft.com/oldnewthing/20261029-00/?p=112808/
+  title: The support case of a customer who said that all they could see was a black
+    screen - The Old New Thing
+  fetch_status: success
+  content: "![](https://devblogs.microsoft.com/oldnewthing/wp-content/uploads/sites/38/2019/02/RaymondChen_5in-150x150.jpg)\n\n[Raymond
+    Chen](https://devblogs.microsoft.com/oldnewthing/author/oldnewthing)\n\nIf you
+    hold a PC’s power button for 12 seconds, it will turn off at the hardware level
+    without notifying the operating system. This is a safety feature so that you can
+    turn of the computer even if the operating system’s “Shut down” command isn’t
+    working.\n\nAfter eight seconds of the power button being held down, the Windows
+    kernel realizes that the user is trying to do a force-power-off of the system,
+    and it quickly takes a kernel dump that can be uploaded to the Windows Error Reporting
+    service the next time you turn the system on. (Sometimes four seconds isn’t enough
+    time to get enough information, and the kernel dump is incomplete. I believe that
+    on Windows Insider builds of Windows, you get a message that says something like
+    “Please let go of the power button so we can collect more information, and then
+    we will turn off the computer.” This gives the kernel more time to finish capturing
+    its kernel dump.)\n\nThese emergency kernel dumps are internally classified as
+    “long power button hold” (LPBH) failures. One of the pieces of information recorded
+    in these emergency kernel dumps is whether the screen consists entirely of black
+    pixels. Those failures are sub-classified as “black screen LPBH”, and they go
+    to a special virtual team for analysis. (I happen to be a member of this black
+    screen LPBH team.)\n\nSometimes the problem is a broken video driver. Sometimes
+    the video driver is doing just fine, but the desktop compositor is just handing
+    black pixels to the video driver. Sometimes the desktop compositor is doing just
+    fine, but nobody is drawing anything to the screen. And those cases are further
+    subdivided further into cases like “there is nobody around to draw anything” or
+    “the person who normally draws stuff is hung.”\n\nBack in the Windows 3.1 days,
+    there was a customer product support call that would today have been classified
+    as a “black screen” bug: The customer reported that they turned on the computer,
+    and Windows started up, but when the logo went away, all they saw was a blank
+    screen.\n\nAfter some questioning, the customer support engineer put the story
+    together: It turned out that this customer really liked the color black, so they
+    decided to set up a [goth](https://en.wikipedia.org/wiki/Gothic_fashion) theme.
+    They set the wallpaper color to black. They set the title bar color to black.
+    They set the button color to black. They set the window background color to black.
+    They set the window text color to black. Every possible color you could pick in
+    the Colors control panel was set to black.\n\nOnce you get yourself into this
+    situation, it’s hard to get out because you can’t see anything.\n\nI don’t know
+    how the customer support engineer fixed the problem, but I’m guessing that they
+    booted into MS-DOS, ran `EDIT.COM`, and [deleted the section from the file](https://jeffpar.github.io/kbarchive/kb/083/Q83433/),
+    thereby returning all the system colors to defaults.\n\n### Category\n\n- [Old
+    New Thing](https://devblogs.microsoft.com/oldnewthing/category/oldnewthing/)\n\n###
+    Topics\n\n- [History](https://devblogs.microsoft.com/oldnewthing/tag/history/)\n\n###
+    Share\n\n- \n- \n- \n\n## Author\n\n ![Raymond Chen](https://devblogs.microsoft.com/oldnewthing/wp-content/uploads/sites/38/2019/02/RaymondChen_5in-150x150.jpg)\n\n[Raymond
+    Chen](https://devblogs.microsoft.com/oldnewthing/author/oldnewthing)\n\nRaymond
+    has been involved in the evolution of Windows for more than 30 years. In 2003,
+    he began a Web site known as The Old New Thing which has grown in popularity far
+    beyond his wildest imagination, a development which still gives him the heebie-jeebies.
+    The Web site spawned a book, coincidentally also titled The Old New Thing (Addison
+    Wesley 2007). He occasionally appears on the Windows Dev Docs Twitter account
+    to tell stories which convey no useful information.\n\n## 9 comments \n\nJoin
+    the discussion.\n\n### [Leave a comment](javascript:void(0) \"Leave a comment\")[Cancel
+    reply](/oldnewthing/20261029-00/?p=112808%2F#respond)\n\n[Sign in](https://devblogs.microsoft.com/oldnewthing/wp-login.php?redirect_to=https%3A%2F%2Fdevblogs.microsoft.com%2Foldnewthing%2F20261029-00%2F%3Fp%3D112808%2F%23comments)\n\nSort
+    by :\n\nNewest\n\n[Newest](javascript:void(0))[Popular](javascript:void(0))[Oldest](javascript:void(0))\n\n-
+    \n\n ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyAQMAAACQ++z9AAAAA1BMVEXW1taWrGEgAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAD0lEQVQokWNgGAWjYGgCAAK8AAGBAoNpAAAAAElFTkSuQmCC)\n\nI
+    had a similar experience when I was a developer on Windows PageMaker.\n\nI had
+    given a copy to a relative who was trying it out to write some report for work.
+    There was a hot key command for some simple operation like Goto Next Page. Every
+    time he used it all his text would be deleted, I was puzzling over it until I
+    happened to select a region on the page and there was the text in highlight mode.\n\nThe
+    kids had been playing with the PC and somehow had remapped the hot key to change
+    the text color scheme....\n\n[Read more](javascript:void(0))\n\nI had a similar
+    experience when I was a developer on Windows PageMaker.\n\nI had given a copy
+    to a relative who was trying it out to write some report for work. There was a
+    hot key command for some simple operation like Goto Next Page. Every time he used
+    it all his text would be deleted, I was puzzling over it until I happened to select
+    a region on the page and there was the text in highlight mode.\n\nThe kids had
+    been playing with the PC and somehow had remapped the hot key to change the text
+    color scheme. To white on white.\n\n[Read less](javascript:void(0))\n\n- \n\n
+    ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyAQMAAACQ++z9AAAAA1BMVEXW1taWrGEgAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAD0lEQVQokWNgGAWjYGgCAAK8AAGBAoNpAAAAAElFTkSuQmCC)\n\nI
+    once used an app that reduced screen brightness by overlaying a semi-transparent
+    layer on the screen. If the transparency was set to 0%, the screen would go completely
+    black.\n\n- \n\n ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAQMAAAC2MCouAAAAA1BMVEXW1taWrGEgAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAADElEQVQImWNgGFkAAADwAAFTiaRLAAAAAElFTkSuQmCC)\n\nWas
+    the customer’s name _Desiato_ by any chance? \U0001F601\n\n“It’s the wild colour
+    scheme that freaks me. Every time you try to operate on of these weird black controls
+    that are labelled in black on a black background, a little black light lights
+    up black to let you know you’ve done it.”\n\n- \n\n ![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAAAyAQMAAACQ++z9AAAAA1BMVEXW1taWrGEgAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAD0lEQVQokWNgGAWjYGgCAAK8AAGBAoNpAAAAAElFTkSuQmCC)\n\n12
+    seconds? Every (desktop) PC I’ve encountered shuts down after holding down the
+    power button for 5 seconds, so if Windows is waiting 8 seconds to do a dump, it
+    won’t do anything.\n\n## Read next\n\nOctober 30, 2026\n\n### [The Microsoft building
+    that was reportedly haunted](https://devblogs.microsoft.com/oldnewthing/20261030-00/?p=112815/)\n\n
+    ![](https://devblogs.microsoft.com/oldnewthing/wp-content/uploads/sites/38/2019/02/RaymondChen_5in-150x150.jpg)\nRaymond
+    Chen\n\n## Stay informed\n\nGet notified when new posts are published.\n\nFollow
+    this blog\n\n- \n- [![youtube](https://devblogs.microsoft.com/oldnewthing/wp-content/themes/devblogs-evo/images/social-icons/youtube.svg)](https://www.youtube.com/playlist?list=PLlrxD0HtieHge3_8Dm48C0Ns61I6bHThc
+    \"youtube\")\n- \n- \n\nAre you sure you wish to delete this comment?"
+  error:
+  fetched_at: '2026-10-31T16:57:19Z'
+archived_at: '2026-10-31T16:57:19Z'

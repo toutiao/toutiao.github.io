@@ -1,0 +1,184 @@
+---
+post:
+  id: lo-1pmuy7
+  source: lobsters
+  title: How hard is it to check for whitespace?
+  url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
+  hn_url: https://lobste.rs/s/1pmuy7
+  score: 36
+  author: serce
+  posted_at: '2026-10-30T22:25:49Z'
+  fetched_at: '2026-10-31T16:57:17Z'
+  article_url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T16:57:20Z'
+  raw_comment_count: 5
+  tags:
+  - java
+  - performance
+comments:
+- id: lo-c2j0xm
+  parent_id: '0'
+  author: '0x2ba22e11'
+  text: 'Perfect hashing is ready cute! The implementation is very small and simple
+    even though it''s very fast: it''s just the proof that it does actually work which
+    is complicated. :D'
+  score: 4
+  posted_at: '2026-10-30T23:27:33Z'
+- id: lo-wpvlhf
+  parent_id: '0'
+  author: notgull
+  text: |-
+    The magic 1682554634 number does look magical, and it's unclear to me how it was chosen (please do share if you know the answer).
+
+    I think it’s usually just brute forced, right?
+  score: 2
+  posted_at: '2026-10-31T01:55:41Z'
+- id: lo-pjywkw
+  parent_id: '0'
+  author: serce
+  text: |-
+    I think it’s usually just brute forced, right?
+
+    Quite possibly, but I'm not sure how and why they arrived at exactly this number since it's one of many options.
+  score: 1
+  posted_at: '2026-10-31T09:16:15Z'
+- id: lo-exyaln
+  parent_id: '0'
+  author: jkoppel
+  text: Some multiplications are faster than others, as compilers will try to use
+    additions, shifts, and the special address-offset computation instructions to
+    avoid using the general-purpose mulitplication circuits. But I didn't notice any
+    regularities in 1682554634 that would enable fast multiplication.
+  score: 2
+  posted_at: '2026-10-31T09:37:46Z'
+- id: lo-znihol
+  parent_id: '0'
+  author: '0x2ba22e11'
+  text: |-
+    From memory (recollection of a university lecture about 18 years ago), the usual trick for picking hash functions for perfect hashing is:
+
+    pick a function at random from some family of hash functions
+    you need that function's outputs to be distinct for all of the elements you care about
+    which isn't a very strict property
+    so when the randomly chosen function's output domain is big enough, the probability of that property being true is reasonably large
+    and you can brute force choosing a function that works in an acceptable small number of guesses
+
+    In this case the family of hash functions they picked from was functions of the form f(x)=x*c >> k for some constant c and k.
+    edit to add: my vague recollection is that the probability of a perfectly-random function being good enough is something like 50% when the function output domain has twice as many bits as the (log2 of the size of) thr list of items you want to match.
+  score: 2
+  posted_at: '2026-10-31T10:26:14Z'
+- id: lo-trqog5
+  parent_id: '0'
+  author: cpurdy
+  text: 'IIUC: On modern CPUs, integer multiplications are single-cycle operations.
+    Intel double pumps them, so they''re effectively a half cycle. (I''m sure that
+    there are lots of clever cheats to get there.)'
+  score: 1
+  posted_at: '2026-10-31T16:56:53Z'
+article:
+  url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
+  title: How hard is it to check for whitespace?
+  fetch_status: success
+  content: "By Sergey Tselovalnikov on 30 October 2026\n\n# How hard is it to check
+    for whitespace?\n\nWhen looking through a piece of source code recently, I stumbled
+    across this method from [Guava](https://github.com/google/guava) – a popular Java
+    library from Google.\n\n![Guava's whitespace matcher implementation](../images/whitespace/whitespace.png)\n\nAs
+    you might've guessed from the name, this method checks whether a given character
+    is a whitespace character. Yet the code looks a lot more complex than a simple
+    `c == ' '` check. This made me curious and sent me down a small rabbit hole trying
+    to understand where all this complexity was coming from. If you're curious how
+    this code works too, this article is for you.\n\n## What is whitespace, anyway?\n\nThe
+    first thing one needs when inspecting a function that checks whether a character
+    is whitespace is to define what whitespace actually is. While the `SPACE (U+0020)`
+    is probably the best-known whitespace character, it's not the only one. If you've
+    been writing code for a while, you can probably name a few more – the non-breaking
+    space `NO-BREAK SPACE (U+00A0)`, a tab `CHARACTER TABULATION (U+0009)`, a newline
+    `LINE FEED (U+000A)`.\n\nWell, there are more. Unicode defines a [`White_Space`
+    property](https://www.unicode.org/Public/17.0.0/ucd/PropList.txt) that gives us
+    a list of 25 characters. Here they are – meticulously copied `\t,\n,,,\r, ,\N, , , , , , , , , , , , , ,\L,\P, , ,　`.\n\nEach
+    of these characters has a different purpose. `FIGURE SPACE (U+2007)`, for example,
+    has the same width as a digit in a table, while `THIN SPACE (U+2009)` and `HAIR
+    SPACE (U+200A)` provide progressively smaller gaps. `NO-BREAK SPACE (U+00A0)`
+    has the width of an ordinary space, but keeps the surrounding text together when
+    wrapping a line.\n\nIt's not always easy to tell whether a character is in the
+    whitespace set from the name or by looking at the glyph either. For instance,
+    `ZERO WIDTH SPACE (U+200B)` isn't a whitespace character at all. Despite the name,
+    it's a format character that can indicate a word or line break opportunity without
+    adding a visible gap.\n\nThere are also some less obvious members of the set too.
+    `OGHAM SPACE MARK (U+1680)` can actually be rendered as a visible horizontal line.
+    In Ogham fonts with a stemline, the space continues that line between letters
+    (e.g. ᚛ᚆᚓᚂᚂᚑ ᚒᚑᚏᚂᚇ᚜), while in stemless fonts, it's blank. So even the assumption
+    that whitespace must look empty isn't always true.\n\n## Different runtimes, different
+    rules\n\nHaving a single definition of whitespace is only useful if everyone can
+    agree on it. But even within a single runtime, some libraries might disagree on
+    what whitespace is.\n\nConsider the `NO-BREAK SPACE (U+00A0)` I mentioned above.
+    It's included in Unicode's `White_Space` property, but Java explicitly [excludes
+    it](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Character.html#isWhitespace(char)),
+    along with two other non-breaking spaces. The javadoc usefully highlights that
+    the method checks for whitespace _according to Java_, rather than according to
+    the Unicode property we had a look at before.\n\n    Character.isWhitespace('
+    '); // true\n    Character.isWhitespace('\\u00A0'); // false\n\n![Java isWhitespace
+    screenshot](../images/whitespace/javaspace.png)\n\nBut what about other runtimes?
+    Looking at two more popular ones, Python and JavaScript, we can see that there
+    isn't a single authoritative list of characters everyone agrees on. Python, for
+    example, has a convenient `str.isspace()` method. And unlike Java, it considers
+    `U+00A0` a whitespace character.\n\nSo possibly Python just follows Unicode's
+    `White_Space` property? Not quite.\n\n    \"\\u00A0\".isspace() # True\n    \"\\u0085\".isspace()
+    # True\n    \"\\u001C\".isspace() # True\n    \"\\uFEFF\".isspace() # False\n\nThe
+    interesting one here is `FILE SEPARATOR (U+001C)`. It's an ASCII control character
+    originally intended to separate pieces of information, and it isn't included in
+    Unicode's White\\_Space property. So Python recognises 29 whitespace characters,
+    rather than Unicode's 25.\n\nJavaScript takes yet another approach. It doesn't
+    have an equivalent of the `Character.isWhitespace()` method, but we can use the
+    `\\s` character class in a regular expression:\n\n    /\\s/.test(\"\\u00A0\");
+    // true\n    /\\s/.test(\"\\u0085\"); // false\n    /\\s/.test(\"\\uFEFF\"); //
+    true\n\nThe odd one out above is `NEXT LINE (U+0085)`. Unicode explicitly includes
+    it in `White_Space`, and Python accepts it too, but JavaScript doesn't. Instead,
+    JavaScript recognises `ZERO WIDTH NO-BREAK SPACE (U+FEFF)`, which Unicode doesn't
+    include in the set.\n\nI haven't looked through any other runtimes, but something
+    tells me the inconsistencies won't stop at these three.\n\n## Nothing is set in
+    stone\n\nWhat adds more complexity is that Unicode is not frozen in time, and
+    is constantly evolving. And this affects the definition of whitespace. For example,
+    [Unicode 6.3](https://www.unicode.org/versions/Unicode6.3.0/) had reclassified
+    `MONGOLIAN VOWEL SEPARATOR (U+180E)` from a space separator to a format character,
+    removing its `White_Space` property. The Unicode whitespace set had changed from
+    26 characters to 25 as a result. For runtimes and libraries that strive for backwards
+    compatibility, these changes can be a pretty significant challenge as you'd want
+    the standard library of a language to be as stable as it can be.\n\n## Checking
+    for whitespace fast\n\nLet's say we've finally agreed on the set of characters
+    we want to check – the current set of Unicode whitespace characters. A naive way
+    to implement this would be to go through the list of characters and check whether
+    any of them matches. While this would work, it's definitely not the most efficient
+    approach.\n\nSo what [Guava's implementation](https://github.com/google/guava/blob/master/guava/src/com/google/common/base/CharMatcher.java)
+    that we saw at the beginning of the article did was implement a perfect hash function
+    – a hash function that guarantees no hash collisions for the characters in the
+    known set.\n\n    static final String TABLE = \"\\u2002...\";\n    \n    @Override\n
+    \   public boolean matches(char c) {\n        int slot = (1682554634 * c) >>>
+    27;\n        return TABLE.charAt(slot) == c;\n    }\n\nAbove, `TABLE` is a string
+    of 32 characters – effectively a hash table mapping each index (the key) to a
+    character (the value). It contains all 25 Unicode whitespace characters, with
+    some duplicates filling the remaining positions.\n\nThe most interesting part
+    here is calculating the index. The multiplication `1682554634 * c` produces a
+    32-bit integer, and `>>> 27` shifts it 27 bits to the right, isolating the five
+    most significant bits – a number in the [0, 32) range which can be used to look
+    up the table. Of course, there are more possible characters than table entries,
+    that's why the final `== c` check is needed to check that the character we found
+    is the one we were looking up.\n\nYou can click on the characters below to see
+    how the table is populated.\n\nThe magic `1682554634` number does look magical,
+    and it's unclear to me how it was chosen (please do share if you know the answer).
+    But it's not the only possible multiplier, and you can find all suitable options
+    by running a simple brute-force search.\n\n    static final char[] ALL_CHARS =
+    (\n            \"\\u2002\\u3000\\r\\u0085\"\n            + \"\\u200A\\u2005\\u2000\"\n
+    \           + \"\\u2029\\u000B\\u2008\"\n            + \"\\u2003\\u205F\\u1680\"\n
+    \           + \"\\u0009\\u0020\\u2006\"\n            + \"\\u2001\\u202F\\u00A0\"\n
+    \           + \"\\u000C\\u2009\\u2004\"\n            + \"\\u2028\\n\\u2007\"\n
+    \   ).toCharArray();\n    \n    public static void main(String[] a) {\n        var
+    slots = new BitSet(32);\n        outer:\n        for (int mul = 1; mul != 0; mul++)
+    {\n            slots.clear();\n            for (char c : ALL_CHARS) {\n                int
+    index = (mul * c) >>> 27;\n                if (slots.get(index)) {\n                    continue
+    outer;\n                }\n                slots.set(index);\n            }\n
+    \           System.out.println(mul);\n    "
+  error:
+  fetched_at: '2026-10-31T16:57:20Z'
+archived_at: '2026-10-31T16:57:20Z'

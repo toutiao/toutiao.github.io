@@ -5,14 +5,14 @@ post:
   title: How curl was accidentally Turing-complete for nine months
   url: https://seriot.ch/computation/curl.html
   hn_url: https://lobste.rs/s/f4aqog
-  score: 61
+  score: 77
   author: kytta
   posted_at: '2026-10-30T07:24:01Z'
-  fetched_at: '2026-10-30T20:24:44Z'
+  fetched_at: '2026-10-31T16:57:17Z'
   article_url: https://seriot.ch/computation/curl.html
   article_fetch_status: success
-  article_fetched_at: '2026-10-30T20:24:46Z'
-  raw_comment_count: 6
+  article_fetched_at: '2026-10-31T16:57:23Z'
+  raw_comment_count: 11
   tags:
   - compsci
 comments:
@@ -20,13 +20,13 @@ comments:
   parent_id: '0'
   author: gignico
   text: I love accidental Turing-completeness, I find it poetic somehow.
-  score: 16
+  score: 19
   posted_at: '2026-10-30T09:34:09Z'
 - id: lo-nnapzt
   parent_id: '0'
   author: pert
   text: When will we see doom running in curl 8.16
-  score: 15
+  score: 16
   posted_at: '2026-10-30T11:14:28Z'
 - id: lo-hmwf3w
   parent_id: '0'
@@ -45,13 +45,13 @@ comments:
     regexes are the classic example, but they are overpowered as this Curl example
     illustrates. Universities should teach that Turing completeness is not at all
     magical, but in fact quite difficult to avoid.'
-  score: 2
+  score: 8
   posted_at: '2026-10-30T16:26:44Z'
 - id: lo-jcaytd
   parent_id: '0'
   author: gignico
   text: Yes of course being poetic doesn’t make it desirable in a system :)
-  score: 2
+  score: 3
   posted_at: '2026-10-30T17:49:20Z'
 - id: lo-pliocm
   parent_id: '0'
@@ -61,6 +61,57 @@ comments:
     reducible with Turing machines, RAM machines, etc.
   score: 1
   posted_at: '2026-10-30T19:20:27Z'
+- id: lo-qodpy3
+  parent_id: '0'
+  author: AshkanKiani
+  text: Normalize deploying poetry machines and not programs
+  score: 2
+  posted_at: '2026-10-31T03:40:23Z'
+- id: lo-7wmk1e
+  parent_id: '0'
+  author: jkoppel
+  text: 'One of my favorites is https://www.usenix.org/system/files/conference/woot13/woot13-bangert.pdf
+    : Turing completeness without even executing any instructions!'
+  score: 4
+  posted_at: '2026-10-31T09:40:14Z'
+- id: lo-ckuo0m
+  parent_id: '0'
+  author: k749gtnc9l3w
+  text: |-
+    Even Turing completeness is not always clearly a weird machine: if you can draw on a bitmap board without limits, giving you game-of-life as a tool creates Turing-completeness but doesn't change what can be on the board in the end!
+    Here the construction is kind of even weaker: you can run arbitrary computation but not even construct an arbitrary novel string. Although obviously one can have a faster — and string-construction-capable — alternative version, because substring replacement are easy to implement here.
+    With cURL, as the article almost-explicitly notes, you start at the more powerful end of the airtight hatch than you end up. Although security implications are not strictly zero, it can be used to nerd-snipe people away from the weird machines they should have paid more attention to…
+  score: 1
+  posted_at: '2026-10-31T10:59:28Z'
+- id: lo-rz0kvi
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Yes it seems there is no strict definition of "weird machine"
+    My understanding was that LangSec wanted input formats NOT to be Turing complete (at least if you cross a trust boundary, which I mentioned curl config does not [1])
+    But the Dullien paper seems to weaken that a bit -- Turing completeness is allowed, as long as there is no "weird state" an attacker can "trick" you into entering.  All the states of a Turing machine could be allowed by the spec.
+    In this case, the only "weird state" was probably crash/stack overflow, which is why they limited the depth to 5 as a fix.
+
+    [1] On second thought, it is trivial to make a curl service that takes user curl configs, which makes it a trust boundary.  I have been thinking about this problem for many years with respect to config language design (e.g. YSH and Hay, and Hay is Turing complete), which is  why I mention it ...
+  score: 1
+  posted_at: '2026-10-31T14:53:32Z'
+- id: lo-xfrgv6
+  parent_id: '0'
+  author: k749gtnc9l3w
+  text: |-
+    All the states of a Turing machine could be allowed by the spec.
+
+    That's why my game-of-life example, yes.
+
+    In this case, the only "weird state" was probably crash/stack overflow, which is why they limited the depth to 5 as a fix.
+
+    Under an exotic enough threat model you could need an extra limit on the config size during expansion, if you want to limit the config and 5 steps already allow too much blow-up for you needs…
+
+    On second thought, it is trivial to make a curl service that takes user curl configs, which makes it a trust boundary.
+
+    On the one hand, yes, on the other hand, isn't curl config full of options that can be abused for resource exhaustion without any expansions needed?
+  score: 1
+  posted_at: '2026-10-31T15:47:05Z'
 article:
   url: https://seriot.ch/computation/curl.html
   title: How curl was accidentally Turing-complete for nine months
@@ -73,13 +124,13 @@ article:
     strings and resources, this construction was Turing-complete.\n\nCurl 8.17.0 added
     a five-level include cap that breaks this reduction.\n\n**Update 2026-10-30**
     : Jonathan Tremesaygues wrote me: _I couldn't help but implement “99 Bottles of
-    Beer on the Wall”_ [99\\_bottles.tar.gz](/resources/99_bottles.tar.gz)\n\n###
-    Minsky 2-Counter Reduction\n\nA counter value `n` is represented by `n` copies
-    of `x`.\n\nEach instruction state uses one or more config files, with file names
-    acting as labels, and `expand-config` selecting the next file.\n\nSyntax:\n\n-
-    `{{b}}` expands the current value\n- `[0-0]` keeps only the first byte (`x` or
-    empty)\n- `[1-]` keeps everything except the first byte\n- empty slices yield
-    empty strings ([doc](https://github.com/curl/curl/blob/curl-8_12_0/docs/cmdline-opts/variable.md))\n\n|
+    Beer on the Wall”_ [99\\_bottles.tar.gz](/resources/99_bottles.tar.gz): `curl
+    -q -s -K 99_bottles/main.conf`\n\n### Minsky 2-Counter Reduction\n\nA counter
+    value `n` is represented by `n` copies of `x`.\n\nEach instruction state uses
+    one or more config files, with file names acting as labels, and `expand-config`
+    selecting the next file.\n\nSyntax:\n\n- `{{b}}` expands the current value\n-
+    `[0-0]` keeps only the first byte (`x` or empty)\n- `[1-]` keeps everything except
+    the first byte\n- empty slices yield empty strings ([doc](https://github.com/curl/curl/blob/curl-8_12_0/docs/cmdline-opts/variable.md))\n\n|
     Minsky | Curl config |\n| --- | --- |\n| Register `R` | Variable `r` (`R` is the
     number of `x` bytes) |\n| `INC(R)` | `expand-variable = \"r={{r}}x\"` |\n| `DEC(R)`
     | `expand-variable = \"r[1-]={{r}}\"` |\n| `JZ(R, _, _x)` | `expand-variable =
@@ -114,5 +165,5 @@ article:
     between invocations. The repetition then comes from Bash, so this is a composition
     rather than curl-alone Turing completeness.\n\n### Security impact\n\nNone."
   error:
-  fetched_at: '2026-10-30T14:50:11Z'
-archived_at: '2026-10-30T20:24:47Z'
+  fetched_at: '2026-10-31T16:57:23Z'
+archived_at: '2026-10-31T16:57:24Z'

@@ -4,14 +4,14 @@ post:
   title: 'Sanstun: A sans-IO, parallel-friendly WireGuard implementation in Rust'
   url: https://www.firezone.dev/blog/introducing-sanstun
   hn_url: https://news.ycombinator.com/item?id=50310398
-  score: 138
+  score: 150
   author: wh33zle
   posted_at: '2026-10-30T21:30:00Z'
-  fetched_at: '2026-10-31T11:51:00Z'
+  fetched_at: '2026-10-31T16:56:59Z'
   article_url: https://www.firezone.dev/blog/introducing-sanstun
   article_fetch_status: success
   article_fetched_at: '2026-10-31T11:51:00Z'
-  raw_comment_count: 29
+  raw_comment_count: 38
 comments:
 - id: '50310928'
   parent_id: '50310398'
@@ -379,6 +379,91 @@ comments:
     rel="nofollow">https:&#x2F;&#x2F;link.springer.com&#x2F;chapter&#x2F;10.1007&#x2F;978-3-540-72863-4_...</a>).'
   score: 0
   posted_at: '2026-10-31T11:49:24Z'
+- id: '50315268'
+  parent_id: '50312375'
+  author: Twey
+  text: "&gt; What if I want to change some state in-between two state transitions
+    (i.e. between two `await` points)?<p>I think as phrased what you said is an _advantage_
+    of the Rust model: the state of your state machine is entirely contained within
+    the dedicated state-machine type and you know its behaviour can&#x27;t depend
+    on surprise outside state.<p>But I think the spirit of your criticism is correct:
+    you do really want to be able to type processes with intermediate inputs and outputs,
+    in general, and Rust makes this hard (though not impossible: see Munksgaard&#x27;s
+    work on session types in Rust, for example). I would not have had a problem if
+    the original article had decided that Rust&#x27;s futures are unfit for its purposes,
+    and it would have been an interesting case study in what exactly real-world code
+    needs from the API; my complaint is just that they get categorized as a type of
+    I&#x2F;O, which couldn&#x27;t be further from the truth."
+  score: 0
+  posted_at: '2026-10-31T11:59:06Z'
+- id: '50315319'
+  parent_id: '50313230'
+  author: Twey
+  text: I think at the end of this long road lies algebraic effects. You can write
+    your computations with typed effects and, once you&#x27;ve handled every effect
+    (or all but a finite subset, if you want to leave some to the runtime), you can
+    drive your computation generically. Because the effects are typed, you get to
+    narrow the types of the effect arguments at each yield, so you don&#x27;t have
+    to handle every possible effect at every yield (on either side of the channel).
+  score: 0
+  posted_at: '2026-10-31T12:03:16Z'
+- id: '50315344'
+  parent_id: '50315182'
+  author: skew-aberration
+  text: I&#x27;m no stranger to this but there is nuance. Thoughts on my other comment
+    below?
+  score: 0
+  posted_at: '2026-10-31T12:06:21Z'
+- id: '50315431'
+  parent_id: '50315081'
+  author: Twey
+  text: Message-passing doesn&#x27;t necessarily involve naïvely copying the data
+    around. If you have access to shared memory then you can pass a pointer; the only
+    thing you really need to ‘pass’ is the capability to access the message data.
+    This is how seL4 does it, for example.<p>Of course if you don&#x27;t have shared
+    memory then you have to copy anyway :) And because of CPU caching architecture
+    the benefits of having an owned copy of the data can sometimes outweigh the cost
+    of copying it, even if shared memory is available.
+  score: 0
+  posted_at: '2026-10-31T12:16:48Z'
+- id: '50315440'
+  parent_id: '50315344'
+  author: Twey
+  text: The programming model and the implementation are not 1:1. This thread is mostly
+    about the model; we can talk about implementation below :)
+  score: 0
+  posted_at: '2026-10-31T12:17:55Z'
+- id: '50315538'
+  parent_id: '50315431'
+  author: skew-aberration
+  text: Ok if you define message passing that broadly then I would agree, but I think
+    that definition is also broad enough to bring in the downsides of shared memory
+    such as deadlocking.<p>We&#x27;re also now talking about patterns which are common
+    in other contexts, but I don&#x27;t have a problem with that. io_uring for example
+    - is it shared memory, asynchronous, message passing, or all three (probably yes)?
+  score: 0
+  posted_at: '2026-10-31T12:28:21Z'
+- id: '50315854'
+  parent_id: '50310398'
+  author: jurschreuder
+  text: Does Rust always mean vibe-coded? I did not look into this deeper.
+  score: 0
+  posted_at: '2026-10-31T13:08:29Z'
+- id: '50316867'
+  parent_id: '50314917'
+  author: SkiFire13
+  text: |-
+    &gt; Sure, the same can be said of an async library<p>An generic future is much harder to be called like this. You need to to create wakers and if you don&#x27;t properly handle them you&#x27;ll busy loop. You also need to provide the exact runtime the future needs for its I&#x2F;O.<p>&gt; so long as you&#x27;re okay with none of your other flows being able to make progress in the meantime<p>And isn&#x27;t that what blocking code does all the time?<p>&gt; ‘The best of both worlds’ means that it shares the advantages of both<p>If you look at it from the perspective of a caller:<p>- you can easily use it from blocking code without needing a runtime
+    - you can easily use it from async code without blocking the executor<p>As such it does provide the best of both worlds to the caller.<p>It is true that it&#x27;s the worst of both worlds for who is writing the Sans-IO library though.<p>&gt; or, as we used to call it, pure functional programming<p>You can for sure describe this as &quot;pure&quot; and &quot;functional&quot;, but I bet most people think of a different paradigm when talking about pure functional programming.
+  score: 0
+  posted_at: '2026-10-31T15:09:22Z'
+- id: '50317617'
+  parent_id: '50315854'
+  author: Arodex
+  text: Last opinion I saw is that it is well suited for LLM coding thanks to good
+    error messages.
+  score: 0
+  posted_at: '2026-10-31T16:32:28Z'
 article:
   url: https://www.firezone.dev/blog/introducing-sanstun
   title: 'Introducing sanstun: sans-IO WireGuard | Firezone Blog'
@@ -479,4 +564,4 @@ article:
     But what about parallelizing work within a single tunnel? WireGuard operat
   error:
   fetched_at: '2026-10-31T11:51:00Z'
-archived_at: '2026-10-31T11:51:17Z'
+archived_at: '2026-10-31T16:57:17Z'

@@ -1,0 +1,176 @@
+---
+post:
+  id: lo-drwd4j
+  source: lobsters
+  title: 'Jepsen: ParticleDB 1.1.4'
+  url: https://jepsen.io/analyses/particledb-1.1.4
+  hn_url: https://lobste.rs/s/drwd4j
+  score: 21
+  author: aphyr
+  posted_at: '2026-10-31T13:39:52Z'
+  fetched_at: '2026-10-31T16:57:17Z'
+  article_url: https://jepsen.io/analyses/particledb-1.1.4
+  article_fetch_status: success
+  article_fetched_at: '2026-10-31T16:57:18Z'
+  raw_comment_count: 6
+  tags:
+  - databases
+  - testing
+comments:
+- id: lo-qnfaho
+  parent_id: '0'
+  author: sp6370
+  text: "...\"As with most Jepsen analyses, Orkes engineers offered detailed explanations
+    of the causes and resolutions of the bugs we found in Conductor. However, Orkes
+    seemed unable to explain the causes or resolutions of nearly every issue we found
+    in ParticleDB.\"...\U0001F62C\nI am wondering to what extent can this be mitigated
+    (bugs) by relying on DST and tools like Antithesis?\nNaively, based on vibes from
+    Twitter: DB + AI + DST + Formal Methods == Bugs Vanished. I am curious on how
+    far can we push this?\nThough at the end of the day, I would have a hard time
+    on trusting a DB built this way."
+  score: 2
+  posted_at: '2026-10-31T14:44:56Z'
+- id: lo-hfffvv
+  parent_id: '0'
+  author: aphyr
+  text: |-
+    Sure, DST would have been helpful in finding bugs. Even basic manual QA would have been helpful! Most of these issues just required starting a fresh node and typing a handful of SQL queries into the shell.
+    Understanding a bug is different than finding one. To understand the cause of a bug, you probably need to read some of the code involved, or at least have a solid mental model of the system. Until ~2025, clients generally needed to read code and understand a bug to fix it. With AI, you can just paste a bug report into Codex and say "fix".
+    Anecdotally, that does work! ParticleDB is much safer now than it was when we began. I don't think this kind of AI development is as robust a process as human understanding though. Anecdotally, from working with a few clients who rely heavily on LLMs, bugs are often "fixed" but still happen, or a specific case would be resolved but the general pattern remained, or the fix would introduce even weirder behavior.
+  score: 3
+  posted_at: '2026-10-31T15:00:08Z'
+- id: lo-n9jqzq
+  parent_id: '0'
+  author: bakkot
+  text: |-
+    Jepsen recommends users halt further deployment of ParticleDB and migrate to other databases as soon as possible.
+
+    That seems like the right conclusion, wow.
+    I have to wonder what leads a database developer to hiring Jepsen without first doing even fairly basic testing of their own database. Though I guess in this case it was probably "the LLM told them to", and they didn't even take the preliminary step of asking the LLM to do its own Jepsen-style analysis first (which obviously is nowhere near the same standard, but it sure sounds like it would have caught a lot of this stuff). Or maybe the LLM claimed that it had done so and they believed it?
+
+    Orkes said they ran Jepsen’s existing Postgres test harness to find and resolve issues in ParticleDB prior to this work.
+  score: 3
+  posted_at: '2026-10-31T15:09:18Z'
+- id: lo-zzwghq
+  parent_id: '0'
+  author: Student
+  text: |-
+    To what extent do the bugs pop back up because the clients aren’t using generative/simulation testing/fuzzing?
+    I’ve been fairly blindly asking LLMs to write simulation tests as well as non-simulated tests (golang) and that definitely finds issues, but at minimum I need to review the code for potential issues and then the clanker writes tests and finds more issues. It feels a little bit like I’ve made the fastest whackamole machine.
+  score: 1
+  posted_at: '2026-10-31T15:20:10Z'
+- id: lo-qkunxe
+  parent_id: '0'
+  author: aphyr
+  text: |-
+    I would have thought that given a test suite, agents would probably not claim a bug was fixed when the test still failed. However, Orkes was able to run the generative test suite I was writing through this process, and we had to go back and forth several times on bugs which were supposedly fixed but weren't.
+    Part of that might just be normal human struggle to keep up with a high volume of complex bugs. I normally find a handful of serious bugs in a 4-8 week collaboration, and here I found 10-20 per week. Likewise, I normally test just a few versions, and here we'd have several builds to test each week. I'm still waiting on Orkes to publish the repo with the issues we found, but once that goes live you can see both of us made mistakes about what versions had which bugs, or exactly what reproductions look like.
+    Another challenge is that ParticleDB was so broken that the tests would fail for lots of reasons. To a human without intuition, or maybe to an LLM, it might be hard to tell whether a bug was fixed. Our most productive test, compare, also produced a fair bit of false positives--places where Postgres and ParticleDB behavior diverged in harmless ways. Easy for a human to sort through, but apparently really hard for LLMs to cope with.
+    Agents will also just... flat-out lie to you about what the tests say, so that doesn't help!
+  score: 3
+  posted_at: '2026-10-31T15:33:45Z'
+- id: lo-nkvi2p
+  parent_id: '0'
+  author: aphyr
+  text: I asked about this too, hoping to discuss it in the report. FWIW, I ran the
+    same Postgres Jepsen test against ParticleDB--it took a little bit to get it to
+    set up the database and connect, but once it did, it started screaming about every
+    possible kind of safety violation. I'm not sure how they got it to pass!
+  score: 5
+  posted_at: '2026-10-31T15:35:49Z'
+article:
+  url: https://jepsen.io/analyses/particledb-1.1.4
+  title: 'Jepsen: ParticleDB 1.1.4'
+  fetch_status: success
+  content: "# [JEPSEN](/)\n\n[![PDF download](/images/file-pdf.svg \"PDF download\")](/analyses/particledb-1.1.4.pdf)\n#
+    ParticleDB 1.1.4\n\n Kyle Kingsbury \n\n2026-10-31\n\n[ParticleDB](https://particledb.ai)
+    is a multi-model database designed for AI workloads. We tested versions 1.1.4
+    through 1.1.18.11.rc-22 and found that ParticleDB’s claims of “Full ACID” were
+    somewhat premature. We present 96 issues in ParticleDB, ranging from the pedestrian
+    (crashes, deadlocks, data loss, etc.) to the piquant (partially-invisible rows
+    which could not be deleted, `WHERE 4 = 5`, dropped tables re-emerging in distorted
+    forms, confused columns, strings turning into integers, and so on). Most issues
+    required just a single server, single client, and no faults. By version 1.1.18.11.rc-22,
+    all but ten of those issues appeared resolved. However, ParticleDB continued to
+    lose committed writes during normal operation with the default `occ` transaction
+    mode, and allowed internal anomalies and Lost Update with `serializable`, the
+    strongest setting. Orkes, the makers of ParticleDB, have since released version
+    1.1.19-rc.13; [they claim](https://orkes.io/blog/particledb-database-built-for-ai-agents)
+    that it resolves all remaining issues discussed in this report. This research
+    was funded by Orkes, Inc., and conducted in accordance with the [Jepsen ethics
+    policy](https://jepsen.io/analyses/ethics).\n\n# 1 Background\n\nModern applications
+    often spread state across a variety of systems: databases, caches, queues, data
+    warehouses, search indices, and so on. Coordinating these systems is challenging:
+    caches are often stale, the analytics platform might lag days behind the primary
+    database, the search index might lose data, and transactional updates across disparate
+    systems [remains an open research problem](https://www.semanticscholar.org/paper/Typhon%3A-Consistency-Semantics-for-Data-Processing-Arora-Nawab/018ce7bfc890712fa62ab988fe0703bccb806907).\n\nParticleDB
+    aims to unify these workloads in a single engine with a special focus on AI agents
+    and applications. It offers transactional SQL, a key-value store, vector search,
+    live analytics, and user-defined functions called _Particles_. To integrate with
+    existing systems, clients can connect through [a variety of interfaces](https://particledb.ai/connectivity/overview/),
+    including the Postgres and Redis protocols, as well as its own gRPC and HTTP2
+    APIs. Written from the ground up in Rust, ParticleDB claims to be orders of magnitude
+    faster than [Postgres](https://www.postgresql.org/) while preserving the same
+    safety characteristics.\n\nParticleDB was built by [Orkes](https://orkes.io/)
+    to support their workflow orchestration platform, [Conductor](https://jepsen.io/analyses/orkes-conductor-5.3.2).
+    Conductor was initially built to store data in Redis and Postgres, but to improve
+    performance, Orkes opted to write their own database. ParticleDB 1.0.0 offered
+    a limited feature set specifically for Conductor’s queries, and was deployed as
+    the backing database for some of their Conductor clusters. A few Orkes customers
+    followed suit. In preparation for a broader release, Orkes undertook a major refactoring
+    of ParticleDB, adding a custom wire protocol, more datatypes, additional OLAP
+    queries, and more. While Orkes and their customers continued to run 1.0.0, they
+    soft launched the refactored versions on [particledb.ai](https://particledb.ai).
+    Orkes engaged Jepsen to test these versions of ParticleDB, beginning with 1.1.4.\n\nWhile
+    ParticleDB could run as a single node, it also offered a replicated cluster using
+    the [Raft](https://raft.github.io/)consensus protocol. This replication feature
+    was available only in enterprise cloud deployments. The builds Orkes provided
+    did not support replication, so this report covers only single-node behavior.\n\n##
+    1.1 Safety\n\nParticleDB’s home page [advertised](https://web.archive.org/web/20260518203012/https://particledb.ai/)that
+    ParticleDB was “formally proven” with a TLA+ proof. However, during our collaboration
+    no TLA+ specification was available. It is unclear what properties might be proven,
+    or whether they described ParticleDB as built.\n\nParticleDB offered [three tactics](https://web.archive.org/web/20260518193013/https://particledb.ai/architecture/transaction-engine/#wal-sync-modes)
+    for syncing its Write-Ahead Log (WAL). The `sync`mode called `fsync` on each commit,
+    `groupsync`batched multiple transactions into a single `fsync`, and`nosync` skipped
+    `fsync` altogether. The [Transaction Engine documentation](https://web.archive.org/web/20260518193013/https://particledb.ai/architecture/transaction-engine/#wal-sync-modes)
+    described `sync` as offering “stronger durability” than `groupsync`. On the other
+    hand,`particledb start --help` said the `groupsync`mode ensured that “COMMIT waits
+    for flush”, and Orkes’ internal operator guide concurred: `groupsync` offered
+    the “same durability as`sync`”.\n\nParticleDB’s home page proudly claimed “Full
+    ACID. 159K TPS.” However, the text immediately below this said “snapshot isolation”,
+    which is [not fully isolated](https://jepsen.io/consistency/models/snapshot-isolation).\n\nMost
+    SQL databases use the`SET TRANSACTION ISOLATION LEVEL` statement to control the
+    concurrent semantics of a transaction. However, ParticleDB [ignored or rejected
+    these statements](https://web.archive.org/web/20260518193013/https://particledb.ai/architecture/transaction-engine/#transaction-modes).
+    In some cases it instructed users to choose `READ COMMITTED`, a relatively weak
+    isolation level. In other cases it accepted requests for different isolation levels,
+    and silently ignored them (despite documentation to the contrary).\n\nInstead,
+    transaction isolation was governed by the`--txn-mode` setting passed at startup.
+    The transaction engine documentation [described four modes](https://web.archive.org/web/20260518193013/https://particledb.ai/architecture/transaction-engine/#transaction-modes):\n\n|
+    Mode | Behavior | When to use |\n| --- | --- | --- |\n| `fast` | No locks; commit-on-write
+    | Bulk loads, single-writer benchmarks |\n| `occ` | Overlay + commit-time OCC
+    validation (default) | General OLTP — safe under concurrency |\n| `zero-copy-occ`
+    | Partition-pinned OCC; single-partition txns skip cross-partition coordination
+    | High-throughput OLTP on partition-affine workloads (TPC-C, key-value) |\n| `table-2pl`
+    | Exclusive table locks at first touch | Strictest serialization, simple semantics
+    |\n\nThis table was difficult to interpret. While the [best practices documentation](https://web.archive.org/web/20260518193127/https://particledb.ai/sql/transactions/#best-practices)
+    warned that users should “pick`--txn-mode` deliberately”, since “it changes correctness
+    and throughput characteristics more than SQL text does”, the documentation did
+    not explain what these modes actually guaranteed. The`fast` mode was clearly intended
+    for weaker isolation, but was that Read Atomic, Read Uncommitted, or something
+    else? The`occ` mode was similarly unclear. “Commit-time OCC validation” could
+    describe a broad spectrum of consistency models from Read Uncommitted to Strong
+    Serializable, but “safe under concurrency” suggests it might be Serializable.
+    The `zero-copy-occ` mode described a performance optimization which could be as
+    safe as`occ`, but it was _not_ described as “safe under concurrency”—raising the
+    question: in what ways was it unsafe? Finally, if `table-2pl` offered the “strictest
+    serialization”, was`occ` some weaker isolation level?\n\nThe [CLI reference page](https://web.archive.org/web/20260518193140/https://particledb.ai/operations/cli-reference/)
+    contained another table which described`occ` and `table-2pl` as “Jepsen-safe”,
+    whereas`fast` was not “Jepsen-safe”, but did not explain their safety properties.
+    Since Jepsen evaluates safety with respect to documentation and marketing claims,
+    it is not clear how to interpret these terms.\n\nRunning `particledb start --help`
+    provided the following table:\n\n| Mode | Description |\n| --- | --- |\n| `fast`
+    | No locks, m"
+  error:
+  fetched_at: '2026-10-31T16:57:18Z'
+archived_at: '2026-10-31T16:57:18Z'
