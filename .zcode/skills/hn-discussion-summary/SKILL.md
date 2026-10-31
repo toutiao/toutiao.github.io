@@ -1,0 +1,1 @@
+../../../.opencode/skills/hn-discussion-summary/SKILL.md

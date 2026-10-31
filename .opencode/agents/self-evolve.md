@@ -20,6 +20,7 @@ Audit these artifacts for inconsistencies, gaps, and stale content:
 - `.opencode/agents/*.md` — prompts, permissions, capability gaps
 - `.opencode/skills/*/SKILL.md` — descriptions vs actual behavior
 - `opencode.jsonc` — commands, agent routing, templates
+- `.zcode/agents/*.md`, `.zcode/commands/*.md`, `.zcode/config.json`, `.zcode/hooks/guard.rb` — ZCode 运行时栈；`.zcode/skills/*/SKILL.md` 是 .opencode 侧的只读 symlink
 - `AGENTS.md`, `Makefile`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/hn-*.yml`, `.github/actions/*`, `scripts/*.rb`
 
 ## Process

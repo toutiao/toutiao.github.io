@@ -18,7 +18,10 @@
 require 'yaml'
 
 SCRIPTS = Dir['scripts/*.rb'].select { |f| File.read(f).include?('OptionParser') }
-SITES = ['.github/workflows/*.yml', 'Makefile', 'AGENTS.md', '.opencode/skills/*/SKILL.md'].flat_map { |p| Dir[p] }
+# .zcode/skills/*/SKILL.md 是 .opencode 侧的文件级 symlink（同一物理文件），
+# 不重复列入；.zcode/{commands,agents} 是 ZCode 运行时的真实调用处，必须覆盖。
+SITES = ['.github/workflows/*.yml', 'Makefile', 'AGENTS.md',
+         '.opencode/skills/*/SKILL.md', '.zcode/commands/*.md', '.zcode/agents/*.md'].flat_map { |p| Dir[p] }
 
 declared = SCRIPTS.to_h { |s|
   [File.basename(s), File.read(s).scan(/opts\.on\('--([a-z0-9-]+)/).flatten.uniq]

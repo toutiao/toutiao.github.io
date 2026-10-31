@@ -11,7 +11,8 @@ Audit and improve:
 - `.opencode/agents/*.md` — prompt effectiveness, permission appropriateness, capability gaps
 - `.opencode/skills/*/SKILL.md` — description vs actual behavior, discoverability, usefulness
 - `opencode.jsonc` commands — template quality, agent routing
-- Infrastructure files: `AGENTS.md`, `Makefile`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/deploy.yml`
+- `.zcode/agents/*.md`, `.zcode/commands/*.md`, `.zcode/config.json`, `.zcode/hooks/guard.rb` — ZCode 运行时栈（skill 正文唯一真源在 `.opencode/skills/`，`.zcode/skills/*/SKILL.md` 是只读 symlink，不得在 .zcode 侧建实体文件）
+- Infrastructure files: `AGENTS.md`, `Makefile`, `Dockerfile`, `docker-compose.yml`, `.github/workflows/hn-*.yml`
 - Workflows — test/deploy pipeline smoothness, automation opportunities
 
 ## Process

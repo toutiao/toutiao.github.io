@@ -1,6 +1,6 @@
 ---
 name: auto-deploy
-description: Full deployment pipeline: build validation → git stage → commit → push to master
+description: Full deployment pipeline — build validation → git stage → commit → push to master
 metadata:
   domain: ops
   workflow: pre-push

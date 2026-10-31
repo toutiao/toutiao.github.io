@@ -25,10 +25,22 @@ _data/hn/         # 已退役的 cache 层残留（二期 P2 起存储统一到 
 .hn-archive/      # hn-data 孤儿分支 worktree（唯一存储（二期 P2 起 cache 层退役）：snapshots/threads(含article)/topics/heat/cohort/triggers；gitignored，必须在 _data/ 外防 Jekyll 载入）
 scripts/          # hn-fetch.rb (多页列表抓取+快照+分层状态机), hn-heat.rb (热度/聚簇/行业/多窗口投影), hn-repair.rb (门禁), lobsters-fetch.rb (Lobsters 副源), hn-backfill-ids.rb (hn_id 回填), hn-archive-prune.rb (年度 prune), hn-category-eval.rb (分类评测), category_map.json (行业分类表, versioned)
 playwright-renderer/  # Playwright 文章渲染服务 (renderer mode, self-hosted)
-.opencode/        # agents, skills, designs/hn-signal-architecture.md + phase2.md + phase3.md (事实来源)
+.opencode/        # opencode 运行时栈：agents, skills（skill 正文唯一真源）, designs/hn-signal-architecture.md + phase2.md + phase3.md (事实来源), opencode.jsonc (命令路由+权限)
+.zcode/           # ZCode 运行时栈：agents/, commands/, skills/ (只读 symlink 镜像), config.json (hooks), hooks/guard.rb (铁律机械化); plans/ 为 session 本地产物 (gitignored)
 assets/           # main.scss (入口, 带 front matter), main.js, favicon
 ```
 导航页（`movies.html`、`books.html`、`articles.html`、`trends.html`）在 front matter 用 `nav: true`。`archives.html` 硬编码在 header，不进 nav。`trends.html` = 公开话题热度页（行业趋势/话题榜（复波+相关标注）/单讨论 Top/本周热度（7d 累计）/90 天走势，读 `_data/hn_trends{,_7,_90}.json` 三投影，由 hn-heat.rb 每日生成并提交 master）。`hn.html` 已退役（二期 P2）。
+
+## AI 运行时双栈（opencode + ZCode）
+
+项目被两个 agent 运行时共享，各有一套 agents/commands 定义，skill 正文单一真源：
+
+- **opencode**（CI 生成链 + 本地 opencode）：`.opencode/agents/*.md`（`permission` schema）+ `opencode.jsonc`（command 路由 + instructions）。CI `/hn` 调用链完全走这套，改动需过「先本地真实测试再上 CI」
+- **ZCode**（交互 harness）：`.zcode/agents/*.md`（`tools` schema）、`.zcode/commands/*.md`（`/test` `/deploy` `/plan` `/content` `/evolve` `/hn`）、`.zcode/config.json`（hooks，`enabled: true`）、`.zcode/hooks/guard.rb`
+- **skills 单一真源** = `.opencode/skills/<name>/SKILL.md`；`.zcode/skills/<name>/SKILL.md` 是文件级 symlink（真目录 + SKILL.md 链接，规避目录 symlink 遍历差异）。**改 skill 只改 `.opencode/` 源**；禁止在 `.zcode/skills/` 落实体文件（漂移源头）
+- **agents/commands 双份是格式差异所致**（opencode `permission` vs ZCode `tools`），不是冗余可合并项；正文保持薄，细节沉淀在 AGENTS.md 与 skills，改工作流语义时两栈同步改
+- **hooks 铁律机械化**：`.zcode/config.json` 的 PreToolUse 守卫拦 `git config --global/--system`、`git remote set-url/add/remove`、`gh auth`、shell 重定向/复制直写 `~/.gitconfig`、`~/.ssh/config` 与文件工具写这两文件（「开发环境铁律」的机器层；守卫 fail-open，行文层仍是主防线）。改守卫后必须重跑文件头注释里的本地测试用例
+- `scripts/check-cli.rb` 调用处扫描覆盖 `.zcode/commands/*.md` 与 `.zcode/agents/*.md`（`.zcode/skills` 与 `.opencode/skills` 同物理文件，不重复列）
 
 ## Collections 与 Permalink
 | Collection | 路径 | Permalink | 备注 |
@@ -57,6 +69,7 @@ assets/           # main.scss (入口, 带 front matter), main.js, favicon
    ⚠ 本地 opencode 与 CI 版本 flag 不同：本地 `--auto`（无 `--dir`/`--dangerously-skip-permissions`），CI 反之
 
 ## 命令
+六个命令在两个运行时均可用：opencode 走 `opencode.jsonc`，ZCode 走 `.zcode/commands/`（语义保持同步）。
 | 命令 | 作用 | Agent |
 |---|---|---|
 | `/test` | `make build`（Docker）— 验证站点可编译 | jekyll-builder |

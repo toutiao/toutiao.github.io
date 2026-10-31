@@ -1,0 +1,1 @@
+../../../.opencode/skills/self-evolve/SKILL.md
