@@ -5,14 +5,14 @@ post:
   title: How hard is it to check for whitespace?
   url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
   hn_url: https://lobste.rs/s/1pmuy7
-  score: 41
+  score: 44
   author: serce
   posted_at: '2026-10-30T22:25:49Z'
-  fetched_at: '2026-10-31T21:08:22Z'
+  fetched_at: '2026-11-01T04:52:40Z'
   article_url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
   article_fetch_status: success
-  article_fetched_at: '2026-10-31T21:08:24Z'
-  raw_comment_count: 9
+  article_fetched_at: '2026-11-01T04:52:47Z'
+  raw_comment_count: 11
   tags:
   - java
   - performance
@@ -23,7 +23,7 @@ comments:
   text: 'Perfect hashing is ready cute! The implementation is very small and simple
     even though it''s very fast: it''s just the proof that it does actually work which
     is complicated. :D'
-  score: 4
+  score: 5
   posted_at: '2026-10-30T23:27:33Z'
 - id: lo-wpvlhf
   parent_id: '0'
@@ -89,9 +89,9 @@ comments:
   author: pervognsen
   text: |-
     A 64-bit integer multiply is 3 cycles of latency on a modern core, not 1 like an integer add. Integer multiply units have been fully pipelined for a long time, though, so each IMUL port can start a new multiply per cycle. That's the usual latency vs throughput thing.
-    For a long time x86 cores only had 1 IMUL port, but both Intel and AMD released new microarchitectures (Lion Cove and Zen 5) in 2024 with 3 IMUL ports. I haven't kept up with the latest M-series cores from Apple, but M1 in 2020 had 2 IMUL ports. So for the bleeding edge the reciprocal throughput is 0.33, but that's recent enough that I still go by 1 for day-to-day work. The latency of 3 cycles has been stable for a long time.
-    Double pumping is a separate thing. You might be thinking of how the integer adders (not multipliers) worked in P4/NetBurst (cursed be thy name). They ran at twice the core clock and chained additions could observe 0.5 cycle latency. Nowadays when you hear about double pumping for arithmetic circuits it's usually for vector units, e.g. Zen 4 double pumps its 256-bit vector data path when executing AVX-512 instructions.
-  score: 1
+    For a long time x86 cores only had 1 IMUL port, but both Intel and AMD released new microarchitectures (Lion Cove and Zen 5) in 2024 with 3 IMUL ports. I haven't kept up with the latest M-series cores from Apple, but M1's Firestorm P-cores in 2020 had 2 IMUL ports. So for the bleeding edge the reciprocal throughput is 0.33, but that's recent enough that I still go by 1 for day-to-day work. The latency of 3 cycles has been stable for a long time.
+    Double pumping is a separate thing. You might be thinking of how the integer adders (not multipliers) worked in P4/NetBurst (cursed be thy name). They ran at twice the core clock rate using dynamic logic, and some dependency patterns like chained additions could observe 0.5 cycle latency. Confusingly, when people talk about double pumping nowadays for cases like the Zen 4 vector unit, it means something slightly different and the double-pumped datapaths don't run at twice the clock rate.
+  score: 2
   posted_at: '2026-10-31T21:00:16Z'
 - id: lo-xhxrvh
   parent_id: '0'
@@ -100,6 +100,25 @@ comments:
     hash function.
   score: 1
   posted_at: '2026-10-31T21:00:29Z'
+- id: lo-scwwwf
+  parent_id: '0'
+  author: pbsd
+  text: If that was the case they'd have chosen the optimal (in hamming weight) value
+    0x51032000. Or the smallest value 0x8fd3817. 1682554634=0x6449bf0a was likely
+    the result of a random search; the probability of a random 32-bit multiplier to
+    generate a perfect hash is ~2^-14, so it wouldn't be out of place.
+  score: 1
+  posted_at: '2026-10-31T21:58:18Z'
+- id: lo-mmkqtx
+  parent_id: '0'
+  author: doug-moen
+  text: |-
+    What adds more complexity is that Unicode is not frozen in time, and is constantly evolving. And this affects the definition of whitespace. For example, Unicode 6.3 had reclassified MONGOLIAN VOWEL SEPARATOR (U+180E) from a space separator to a format character, removing its White_Space property. The Unicode whitespace set had changed from 26 characters to 25 as a result. For runtimes and libraries that strive for backwards compatibility, these changes can be a pretty significant challenge as you'd want the standard library of a language to be as stable as it can be.
+
+    If you require API stability, then any function that depends on Unicode property tables needs to be versioned based on the unicode version being used. (Or you could pass the Unicode version as an argument, etc).
+    Likewise, if your language defines a “character” as a Unicode Extended Grapheme Cluster, and you want character string literals to have a stable meaning (in terms of how many characters a string literal contains), then your string literal syntax also needs to be versioned, based on the Unicode version. It might be a mistake to define a character this way; you may wish to consider the simpler option of defining a character to be a Unicode code point, as the definition of code points seems unlikely to change again.
+  score: 1
+  posted_at: '2026-11-01T01:12:37Z'
 article:
   url: https://serce.me/posts/2026-10-30-how-hard-is-it-to-check-for-whitespace
   title: How hard is it to check for whitespace?
@@ -205,4 +224,4 @@ article:
     \           System.out.println(mul);\n    "
   error:
   fetched_at: '2026-10-31T16:57:20Z'
-archived_at: '2026-10-31T21:08:25Z'
+archived_at: '2026-11-01T04:52:47Z'

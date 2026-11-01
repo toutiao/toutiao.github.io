@@ -5,14 +5,14 @@ post:
   title: Avoid Public Functions Calling Other Public Functions
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   hn_url: https://lobste.rs/s/k508we
-  score: 19
+  score: 46
   author: telemachus
   posted_at: '2026-10-31T18:05:03Z'
-  fetched_at: '2026-10-31T21:08:22Z'
+  fetched_at: '2026-11-01T04:52:40Z'
   article_url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   article_fetch_status: success
-  article_fetched_at: '2026-10-31T21:08:24Z'
-  raw_comment_count: 3
+  article_fetched_at: '2026-11-01T04:52:42Z'
+  raw_comment_count: 8
   tags:
   - api
   - programming
@@ -28,7 +28,7 @@ comments:
     perhaps even then, the two private helpers could both call another private helper
     for the overlap. (I''m probably focusing too much on the details of the example,
     which is not fully fleshed out.)'
-  score: 2
+  score: 5
   posted_at: '2026-10-31T18:25:46Z'
 - id: lo-nimpts
   parent_id: '0'
@@ -36,14 +36,14 @@ comments:
   text: |-
     I've been in the shoes of a developer adding optional function after optional function to make things "easier" for users. Some of the worst APIs grow this way. "Everything is in one function call" except that you've effectively reinvented having multiple functions by way of parameters.
     Also, "sanctified ink" is definitely a phrase I will be using in the future.
-  score: 3
+  score: 6
   posted_at: '2026-10-31T18:37:25Z'
 - id: lo-aoysm3
   parent_id: '0'
   author: gavinmorrow
   text: That was my thought too, but I assumed that it was just an example and that
     it shouldn’t be looked into too deeply.
-  score: 2
+  score: 4
   posted_at: '2026-10-31T20:41:24Z'
 - id: lo-e0p76f
   parent_id: '0'
@@ -51,8 +51,50 @@ comments:
   text: |-
     A concrete thing related to this I just ran into yesterday, is that when reporting certain kinds of errors, I collect a stack trace for later rendering to indicate which public function call was responsible for the creation of a particular artifact.
     You can make the first stack frame be the callsite of the public function by capturing the return address there, and then passing that to all the private functions. If you called another public function, it would break this pattern because the call stack would contain 2 of the public functions. Not a big deal but it falls neatly into the pattern described by the article.
-  score: 1
+  score: 9
   posted_at: '2026-10-31T21:08:12Z'
+- id: lo-pzdunp
+  parent_id: '0'
+  author: azimux
+  text: The problem I see there is not that foo calls bar specifically, but rather
+    that bar's public interface has been damaged as an implementation detail of foo
+    as opposed to a tiny refactor. So I feel like the better more general rule would
+    be something like "do not damage the public interface unless absolutely necessary."
+    Though, if using the avoid public->public rule works as a mechanism to help where
+    there might be ambiguity or a lack of discipline then, sure, could be a good best
+    practice.
+  score: 4
+  posted_at: '2026-10-31T22:09:31Z'
+- id: lo-srfixy
+  parent_id: '0'
+  author: azimux
+  text: 'Re: the private methods, I suppose I feel like either could be refactored
+    into the other without much issue. I''m viewing it more as that one problem with
+    extra stuff exposed through bar is that somebody outside could couple to that
+    and now removing it breaks stuff. That is, we could improve the internal code-quality
+    of the implementation as needed, but messing up the public API can be more painful
+    for longer and in some rare cases for eternity.'
+  score: 1
+  posted_at: '2026-10-31T22:13:48Z'
+- id: lo-1emjqa
+  parent_id: '0'
+  author: weberc2
+  text: |-
+    Which is, imo, a natural, but horrible consequence of misguided approach to testing. You shouldn’t be mocking your methods, you should mock your IO
+
+    Is mocking a MyCustomResourceStore “mocking your IO”, or does “mock your IO” refer to some lower layer of the I/O stack? Where does I/O begin?
+  score: 4
+  posted_at: '2026-10-31T22:27:21Z'
+- id: lo-1ikynx
+  parent_id: '0'
+  author: spc476
+  text: Data that comes from or goes outside the program itself.  This can be a file,
+    a socket, a TTY, environment variables, command line parameters, that type of
+    stuff.  When I made my DNS library I explicitly separated packet receiving/sending
+    from parsing/generating (you get a DNS packet, then send it to be decoded; it's
+    not decoded directly from the wire).
+  score: 1
+  posted_at: '2026-10-31T22:42:57Z'
 article:
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   title: Avoid Public Functions Calling Other Public Functions
@@ -101,4 +143,4 @@ article:
     they don’t absolve you from thinking!"
   error:
   fetched_at: '2026-10-31T21:08:24Z'
-archived_at: '2026-10-31T21:08:24Z'
+archived_at: '2026-11-01T04:52:42Z'

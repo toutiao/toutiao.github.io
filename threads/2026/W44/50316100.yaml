@@ -4,14 +4,14 @@ post:
   title: 'Jepsen: ParticleDB 1.1.4'
   url: https://jepsen.io/analyses/particledb-1.1.4
   hn_url: https://news.ycombinator.com/item?id=50316100
-  score: 128
+  score: 230
   author: aphyr
   posted_at: '2026-10-31T13:39:52Z'
-  fetched_at: '2026-10-31T21:08:04Z'
+  fetched_at: '2026-11-01T04:52:18Z'
   article_url: https://jepsen.io/analyses/particledb-1.1.4
   article_fetch_status: success
   article_fetched_at: '2026-10-31T21:08:04Z'
-  raw_comment_count: 66
+  raw_comment_count: 123
 comments:
 - id: '50317240'
   parent_id: '50316100'
@@ -616,6 +616,345 @@ comments:
     to ensure confidence in your software.
   score: 0
   posted_at: '2026-10-31T21:06:36Z'
+- id: '50320287'
+  parent_id: '50318753'
+  author: zamalek
+  text: "&quot;But AI can oneshot Redis, so we can just vibecode it.&quot;"
+  score: 0
+  posted_at: '2026-10-31T21:12:12Z'
+- id: '50320461'
+  parent_id: '50319275'
+  author: mnd999
+  text: Hi Claude, can you fix all the Jepsen findings and push to prod. Thanks.
+  score: 0
+  posted_at: '2026-10-31T21:34:41Z'
+- id: '50320531'
+  parent_id: '50319647'
+  author: mrkeen
+  text: |-
+    Hi apologist.  How was the woodwork?  Your exact comment was why I wrote mine.<p><pre><code>  You could write predicates over non-existent columns:
+
+      root=&gt; SELECT * FROM t
+             WHERE definitely_not_a_column = 4;
+    </code></pre>
+    Cool, <i>definitely_not_a_column</i> doesn&#x27;t exist, so therefore that whole WHERE clause doesn&#x27;t exist either, so the real query is <i>SELECT </i> FROM t<i>.<p><pre><code>  SELECT * FROM t WHERE 4 = 5;
+       a | b
+      ---+----
+       5 | 6
+      (1 row)
+    </code></pre>
+    We&#x27;re comparing 4 and 5.  Precedent?<p><pre><code>  System.out.println(((Integer)4).compareTo((Integer)5));
+      &gt; -1
+    </code></pre>
+    What happens when you treat -1 as a bool?  The following languages agree that -1 is true: C, C++, JS, Python, PHP, Ruby, Perl, Lua, R.<p>So it&#x27;s SELECT </i> FROM t WHERE true;<p>Now, let&#x27;s get busy blaming Jepsen for using the tool wrong.
+  score: 0
+  posted_at: '2026-10-31T21:42:20Z'
+- id: '50320653'
+  parent_id: '50320531'
+  author: debugnik
+  text: "&gt; therefore that whole WHERE clause doesn&#x27;t exist either<p>No, therefore
+    the condition is unsatisfiable and equivalent to WHERE FALSE. And that&#x27;s
+    letting you ignore the SQL spec, which says the query is invalid and should return
+    &quot;Column not found&quot; because the column name cannot be resolved.<p>&gt;
+    We&#x27;re comparing 4 and 5. Precedent?<p>I really hope you&#x27;re trolling,
+    for your own sake."
+  score: 0
+  posted_at: '2026-10-31T21:58:34Z'
+- id: '50320720'
+  parent_id: '50319275'
+  author: esafak
+  text: Where is the TLA+ proof?
+  score: 0
+  posted_at: '2026-10-31T22:06:15Z'
+- id: '50320775'
+  parent_id: '50318385'
+  author: qaq
+  text: it is surprising even for vibe coded database.
+  score: 0
+  posted_at: '2026-10-31T22:13:57Z'
+- id: '50320799'
+  parent_id: '50320239'
+  author: nikez96
+  text: We have extensive unit tests and integration tests that we run in our build
+    process as we test the db.
+  score: 0
+  posted_at: '2026-10-31T22:17:04Z'
+- id: '50320830'
+  parent_id: '50318395'
+  author: jeremyjh
+  text: The fact that they believed this product was anywhere near ready for a Jepsen
+    test means they lack the judgement and engineering competence to credibly provide
+    a database server. It doesn’t matter what their clanker does after they get the
+    report and the tooling - they should have already had coverage for the vast majority
+    of these issues and the fact that they now conform to a test doesn’t mean there
+    aren’t MANY other product issues that will be discovered at the cost of their
+    customers data.
+  score: 0
+  posted_at: '2026-10-31T22:20:35Z'
+- id: '50320842'
+  parent_id: '50319104'
+  author: jeremyjh
+  text: They clearly aren’t the right team to be working on it. It’s best if someone
+    else gives it a go.
+  score: 0
+  posted_at: '2026-10-31T22:21:58Z'
+- id: '50320868'
+  parent_id: '50320799'
+  author: phoe-krk
+  text: Show us.
+  score: 0
+  posted_at: '2026-10-31T22:25:59Z'
+- id: '50320882'
+  parent_id: '50318395'
+  author: dualvariable
+  text: Yeah, but none of those builds should have seen the light of day, given all
+    the problems that were found.<p>And given the bug churn, something is very wrong
+    with the testing harness.  Either there was grossly insufficient testing to start
+    with (indicating the humans involved were not taking the job of building a database
+    server seriously enough), or else the LLM agents were mangling the tests to get
+    the tests green while breaking the code (indicating that there was either no human
+    review or the human reviewers didn&#x27;t know enough about how the test+code
+    ran to be able to catch the LLMs misbehaving).<p>What I fear is that the humans
+    will implement more and more layers of LLMs to monitor the LLMs, rather than slow
+    down development and learn what their code actually does.
+  score: 0
+  posted_at: '2026-10-31T22:28:51Z'
+- id: '50320932'
+  parent_id: '50319938'
+  author: jeremyjh
+  text: Exactly, this is the takeaway. The agents are running everything, the humans
+    have no idea what is going on.
+  score: 0
+  posted_at: '2026-10-31T22:35:55Z'
+- id: '50320939'
+  parent_id: '50319104'
+  author: cwillu
+  text: 'There&#x27;s no prize for participation, and they very clearly didn&#x27;t
+    do even the most rudimentary testing before paying for an in-depth third party
+    analysis.  I&#x27;d say that this reflects a profoundly childish approach to software,
+    but that is unfair to children: I remember how much testing I did of my crappy
+    game before I submitted it to STFormat when I was 12.'
+  score: 0
+  posted_at: '2026-10-31T22:36:38Z'
+- id: '50320962'
+  parent_id: '50320144'
+  author: jeremyjh
+  text: They forgot the “don’t make any mistakes” part of the prompt.
+  score: 0
+  posted_at: '2026-10-31T22:40:59Z'
+- id: '50321049'
+  parent_id: '50318715'
+  author: meowface
+  text: I would guess in a matter of 1 - 2 years, a random amateur vibe coding a brand
+    new DB will get much better reliability and correctness guarantees than whatever
+    this is. This is just pure laziness.
+  score: 0
+  posted_at: '2026-10-31T22:55:00Z'
+- id: '50321052'
+  parent_id: '50320001'
+  author: eqvinox
+  text: Even the PR description reads like it has been generated by an LLM.<p>What
+    a waste of CO₂.
+  score: 0
+  posted_at: '2026-10-31T22:55:17Z'
+- id: '50321074'
+  parent_id: '50318352'
+  author: eqvinox
+  text: They probably asked an AI to run the tests against their DB.  And the AI said
+    &quot;yeah I ran it, all green!&quot; (except with a lot more words and perfect
+    grammar, and maybe a few section headings and emoji.)
+  score: 0
+  posted_at: '2026-10-31T22:59:21Z'
+- id: '50321132'
+  parent_id: '50320001'
+  author: zX41ZdbW
+  text: 'Previous attempts were strange, to say the least: <a href="https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pulls?q=is%3Apr+particledb"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pulls?q=is%3Apr+par...</a>'
+  score: 0
+  posted_at: '2026-10-31T23:08:22Z'
+- id: '50321625'
+  parent_id: '50318385'
+  author: bmm6o
+  text: Imagine bringing in any outside testing before your WHERE implementation works.
+  score: 0
+  posted_at: '2026-11-01T00:29:43Z'
+- id: '50321717'
+  parent_id: '50319944'
+  author: 12_throw_away
+  text: Right, exactly. All those disclaimers in front of various AI applications
+    have made people forget that in fact, AI cannot fail, it can only be failed.
+  score: 0
+  posted_at: '2026-11-01T00:45:59Z'
+- id: '50321816'
+  parent_id: '50319275'
+  author: d1l
+  text: If you took the findings seriously why didn’t you take the outrageous claims
+    you were making in your own copy seriously? Why couldn’t you provide cogent analysis
+    of these issues during the process? How did you hack up your db so bad in the
+    first place?! This thing looks so bad bro I can’t help but think this kind of
+    assertion only adds fuel to the fire.<p>&gt; we&#x27;re working on benchmarking
+    now as well.<p>But you already said you were 1000x faster than Postgres??
+  score: 0
+  posted_at: '2026-11-01T01:05:54Z'
+- id: '50321847'
+  parent_id: '50320531'
+  author: semiquaver
+  text: Apologist for what?
+  score: 0
+  posted_at: '2026-11-01T01:12:09Z'
+- id: '50321908'
+  parent_id: '50321049'
+  author: cmiles74
+  text: 'I was thinking that this is exactly what ParticleDB is: a random amateur
+    vibe coding a DB. I wouldn&#x27;t count on things changing much in a couple of
+    years, people will still be people.'
+  score: 0
+  posted_at: '2026-11-01T01:24:54Z'
+- id: '50321930'
+  parent_id: '50318395'
+  author: teraflop
+  text: '&gt; these were tests done on pre release builds<p>That&#x27;s a convenient
+    excuse, because <i>now</i> the website calls them &quot;release candidate&quot;
+    builds, but as far as I can tell there was no such disclaimer back in May. As
+    mentioned in the report, the Docker images were specifically advertised as being
+    production-ready.<p><a href="https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20260518201315&#x2F;https:&#x2F;&#x2F;particledb.ai&#x2F;installation&#x2F;binary&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20260518201315&#x2F;https:&#x2F;&#x2F;particled...</a><p><a
+    href="https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20260518200305&#x2F;https:&#x2F;&#x2F;particledb.ai&#x2F;installation&#x2F;docker&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20260518200305&#x2F;https:&#x2F;&#x2F;particled...</a>'
+  score: 0
+  posted_at: '2026-11-01T01:27:54Z'
+- id: '50322024'
+  parent_id: '50319647'
+  author: AtlasBarfed
+  text: Are we talking Oracle null or ansi null? I&#x27;m just being sarcastic and
+    I don&#x27;t actually remember all the fed up s** Oracle did
+  score: 0
+  posted_at: '2026-11-01T01:46:35Z'
+- id: '50322146'
+  parent_id: '50318668'
+  author: mariadb
+  text: Maybe you don&#x27;t know too much about engineering, but things happen, bugs
+    are possible.  Rome was not built in a day.  All systems have bugs.  The source
+    being closed, with no QA, what do you expect.  Maybe you don&#x27;t remember Postgres
+    in the early 2000s.
+  score: 0
+  posted_at: '2026-11-01T02:14:20Z'
+- id: '50322267'
+  parent_id: '50319275'
+  author: sunshowers
+  text: I would highly recommend leaving the industry. You are not at the caliber
+    required for this kind of work, and you are not <i>aware</i> that you are not
+    at the caliber required for this kind of work. You bring shame to our profession.
+  score: 0
+  posted_at: '2026-11-01T02:40:44Z'
+- id: '50322289'
+  parent_id: '50319275'
+  author: syngrog66
+  text: should you have done that in the first place? its a database engine
+  score: 0
+  posted_at: '2026-11-01T02:44:28Z'
+- id: '50322298'
+  parent_id: '50322267'
+  author: syngrog66
+  text: I wish more of us had the courage to speak up and say things like that. thank
+    you
+  score: 0
+  posted_at: '2026-11-01T02:47:00Z'
+- id: '50322303'
+  parent_id: '50320799'
+  author: syngrog66
+  text: both &quot;extensive&quot; and &quot;test&quot; are the load-bearing terms
+    there
+  score: 0
+  posted_at: '2026-11-01T02:48:30Z'
+- id: '50322313'
+  parent_id: '50320461'
+  author: syngrog66
+  text: you joke but that sounds like how many of the fully AI-psychotic shops operate
+  score: 0
+  posted_at: '2026-11-01T02:49:59Z'
+- id: '50322323'
+  parent_id: '50318395'
+  author: sunshowers
+  text: "&gt; Its also faster than Redis for KV<p>No. Wrong. False. All performance
+    numbers are plainly invalid. As my coworker says, performance numbers don&#x27;t
+    count if the code is broken."
+  score: 0
+  posted_at: '2026-11-01T02:53:27Z'
+- id: '50322387'
+  parent_id: '50322146'
+  author: teraflop
+  text: I remember Postgres in the early 2000s, and it didn&#x27;t have anywhere <i>near</i>
+    this level of problems. It had its issues, especially in terms of performance,
+    and there were of course occasional correctness bugs that tended to turn up when
+    you were doing something unusual. But you could certainly rely on basic SQL operations
+    to work correctly.
+  score: 0
+  posted_at: '2026-11-01T03:09:31Z'
+- id: '50322399'
+  parent_id: '50322146'
+  author: zbentley
+  text: I remember Postgres in the early 2000s. And early Mongo. And many others.<p>And
+    bugs like “WHERE 4 = 5”, or selecting from nonexistent columns, or selects permanently
+    modifying table behavior, or any of a dozen others that Jepsen found … didn’t
+    happen in released databases. Even young ones.<p>Prior to the age of LLMs, that
+    level of bugginess wasn’t “everything has growing pains”. That’s the kind of thing
+    previously associated with poor undergraduate CS homework or “the CEO’s kid wrote
+    our database” corporate horrorshows.<p>&gt; with no QA<p>That’s not immaturity.
+    That is a choice. A “the car we are selling does not have airbags, seat belts,
+    or brakes” kind of choice.<p>&gt; Maybe you don&#x27;t know too much about engineering<p>Save
+    it. You have no idea what you are talking about.
+  score: 0
+  posted_at: '2026-11-01T03:13:37Z'
+- id: '50322444'
+  parent_id: '50318395'
+  author: kantselovich
+  text: "&gt; Hey Claude, could you find some releases we can send to Aphyr for testing?<p>...
+    executing \n  SELECT * FROM releases WHERE 4 = 5 -- it&#x27;s not just a slopdb,
+    but TLA+ load bearing and 100% Jepsen ready<p>ParticleDB 1.1.4\nParticleDB 1.1.18.11.rc-22<p>2
+    rows returned"
+  score: 0
+  posted_at: '2026-11-01T03:24:23Z'
+- id: '50322514'
+  parent_id: '50322146'
+  author: McGlockenshire
+  text: "&gt; Maybe you don&#x27;t remember Postgres in the early 2000s.<p>Not even
+    the grungiest version of MySQL 3.23 running on some shared hosting provider in
+    the early 2000s would behave as <i>immediately illogically</i> as the database
+    under test here.<p>Someone with your username should know this."
+  score: 0
+  posted_at: '2026-11-01T03:44:41Z'
+- id: '50322539'
+  parent_id: '50318352'
+  author: danpalmer
+  text: Assuming the LLMs did actually run the tests, I think this points to the flaw
+    in TDD and LLMs following goals blindly.<p>Tests are usually not comprehensive.
+    The tests for SQL engines for example aren&#x27;t intended to provide full code
+    coverage, because they are intended to be re-usable across different codebases.
+    LLMs can therefore easily over-fit to those tests, solving problems in the dumbest
+    ways rather than solving them in the ways humans would.<p>The human&#x27;s goal
+    is to produce a working database engine, the LLM&#x27;s goal is to pass the test
+    suite or implement the spec it has been given.
+  score: 0
+  posted_at: '2026-11-01T03:50:49Z'
+- id: '50322563'
+  parent_id: '50322146'
+  author: overfeed
+  text: "&gt; Maybe you don&#x27;t remember Postgres in the early 2000s<p>Postgres
+    was already mature by the early 2000s - it was started in 1986 by a veteran who
+    had written Postgres&#x27; spiritual predecessor in the 70&#x27;s (Ingress). So
+    no, Postgres didn&#x27;t have amateur-hour data loss bugs in the early 2000s.
+    What Postgres was missing out of the box were some features, like replication."
+  score: 0
+  posted_at: '2026-11-01T03:55:49Z'
+- id: '50322664'
+  parent_id: '50322563'
+  author: lmm
+  text: "&gt; So no, Postgres didn&#x27;t have amateur-hour data loss bugs in the
+    early 2000s.<p>Well not until you&#x27;d been running it for a while and it ran
+    out of tuples at least."
+  score: 0
+  posted_at: '2026-11-01T04:16:29Z'
 article:
   url: https://jepsen.io/analyses/particledb-1.1.4
   title: 'Jepsen: ParticleDB 1.1.4'
@@ -711,4 +1050,4 @@ article:
     | No locks, m"
   error:
   fetched_at: '2026-10-31T21:08:04Z'
-archived_at: '2026-10-31T21:08:22Z'
+archived_at: '2026-11-01T04:52:40Z'

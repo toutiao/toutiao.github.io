@@ -1,0 +1,156 @@
+---
+post:
+  id: lo-54xwm8
+  source: lobsters
+  title: Novellas with groff
+  url: https://movq.de/blog/postings/2026-10-31/0/POSTING-en.html
+  hn_url: https://lobste.rs/s/54xwm8
+  score: 10
+  author: zk
+  posted_at: '2026-10-31T20:31:13Z'
+  fetched_at: '2026-11-01T04:52:40Z'
+  article_url: https://movq.de/blog/postings/2026-10-31/0/POSTING-en.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-01T04:52:45Z'
+  raw_comment_count: 1
+  tags:
+  - unix
+comments:
+- id: lo-bymcsx
+  parent_id: '0'
+  author: alexandria
+  text: |-
+    Ah! A very interesting read. Seconding the use of goyo... I really need to get back into writing, there really is SO much to learn about it — it's really easy to get obsessed with doing things the Right™ way, too.
+    One of my favourite quotes about doing anything artistic comes from the writer Brandon Sanderson, which I'll copy from my handwritten transcript:
+
+    "Suddenly your baby is ugly, and it's worse than that, because the baby was perfect in your mind, and then you made it ugly through your hands being unable to accomplish what you want. Very dangerous to new artists, your skill isn't up to your aspirations yet. You need to learn that the product of art isn't the art, it's you, as an artist. The time you spend will change you. It will make you better at expressing your ideas — you'll have a wonderful time."
+  score: 4
+  posted_at: '2026-10-31T23:19:56Z'
+article:
+  url: https://movq.de/blog/postings/2026-10-31/0/POSTING-en.html
+  title: Novellas with groff
+  fetch_status: success
+  content: |-
+    [blog](/blog/) - [git](/git/) - [desktop](/desktop/) - [contact](/contact.html)
+
+    * * *
+
+    # Novellas with groff
+
+    2026-10-31
+
+    I recently finished my second "novella".
+
+    [![pdfinfo-wc.png: Screenshot of the output of 'pdfinfo' and 'wc': About 50 pages / 15k words for the first document, 120 pages / 40k words for the second one.](t/pdfinfo-wc.png.jpg "Screenshot of the output of 'pdfinfo' and 'wc': About 50 pages / 15k words for the first document, 120 pages / 40k words for the second one.")](pdfinfo-wc.png)
+
+    Don't even think about it: I won't publish this. Nor send it to you privately, which is mostly the same as publishing it.
+
+    The first story is roughly 50[A5 pages](https://en.wikipedia.org/w/index.php?title=DIN_A5)long (~15k words), the second one is about 120 pages (~40k words). (Both barely fit the[definition of a "novella"](https://en.wikipedia.org/wiki/Novella), apparently, with the first one being a bit too short and the second one a tiny bit too long.)
+
+    It feels pretty absurd and surreal that I have done this at all. In school, _anything_ related to "writing" was pure horror for me -- unless it was related to maths, physics, or other "technical" stuff. But here we are.
+
+    How long did it take? Well, the first one took over seven months. But the second one, the longer one? Ten days.
+
+    Some time last year, probably around July, I started reading some of the books that were lying around in my appartment for decades. And this was much more enjoyable than I thought. No idea why. It's not like I never read a book before, but it was always a somewhat boring thing to do and it took me ages -- unless it was something technical. I'm only referring to fiction and novels here. Like, one book per year, tops. Yet, I somehow got hooked last year and now I've read about 30 novels since July 2025. Some faster (a couple of days), some slower (three months).
+
+    It wasn't that much of a stretch to try to do this myself.
+
+    This blog is still technical in nature, so I'll walk through the software that I used.
+
+    * * *
+
+    Table of contents:
+
+    - [groff](#groff)
+      - [Basic formatting](#basic-formatting)
+      - [Footers and page numbers](#footers-and-page-numbers)
+      - [Header](#header)
+      - [A closer look at traps](#a-closer-look-at-traps)
+      - [Inter-sentence spacing](#inter-sentence-spacing)
+      - [German hyphenation](#german-hyphenation)
+    - [Markdown and other pre-processing](#markdown-and-other-pre-processing)
+    - [Vim](#vim)
+      - [Goyo](#goyo)
+      - [Reflowing text](#reflowing-text)
+    - [Git](#git)
+    - [demo-book.tar.gz: Putting it all together](#demo-booktargz-putting-it-all-together)
+    - [The writing process itself](#the-writing-process-itself)
+    - [Where to go from here?](#where-to-go-from-here)
+
+    * * *
+
+    ## groff
+
+    Both of my books (they're not really "books", but I'll keep referring to them as such for the sake of simplicity) are typeset in[groff](https://www.gnu.org/software/groff/). You know, the thing that usually renders manual pages in your terminal on Linux. groff/troff is a full typesetting system, though, and it can be used to[produce real books](https://www.troff.org/pubs.html), which I've already mentioned a couple of times in[previous blog posts](/blog/postings/2025-08-30/0/POSTING-en.html).
+
+    [![troff-books-1.webp: Photo of my copies of 'The C Programming Language', 'The UNIX Programming Environment', and 'UNIX Network Programming'.](t/troff-books-1.webp.jpg "Photo of my copies of 'The C Programming Language', 'The UNIX Programming Environment', and 'UNIX Network Programming'.")](troff-books-1.webp)[![troff-books-2.webp: A page of 'The C Programming Language'.](t/troff-books-2.webp.jpg "A page of 'The C Programming Language'.")](troff-books-2.webp)[![troff-books-3.webp: A page of 'UNIX Network Programming', showing some diagrams.](t/troff-books-3.webp.jpg "A page of 'UNIX Network Programming', showing some diagrams.")](troff-books-3.webp)
+
+    In my case, the appeal of groff is that it's relatively small and_fast_, but still able to produce high-quality output. Making that 50-page document takes about _700 ms_ on my 13.5 year old PC, and the 120-page one takes _1.6 seconds_. This includes some pre-processing which we'll cover later. Given that most modern software these days feels like walking in mud, this is refreshingly quick.
+
+    Because it's more fun that way, I made my own little macro package. There really isn't a lot to it, though. It's tiny. Not a lot is needed for a simple novel / novella -- no table of contents, no cross-references, no diagrams, no code blocks, no lists, ... Just nicely flowing text and _sometimes_ a word gets emphasized.
+
+    Disclaimer: You'll note some TODO items in the text below. groff is a full-blown typesetting system and these things are complicated. I'm a long way from having mastered every aspect of it.
+
+    ### Basic formatting
+
+    There are only three macros:
+
+        .\" Section header / chapter title
+        .de SH
+        . sp 1v
+        . ps +5p
+        . ce
+        \f[HR]\\$1\fP
+        . ps
+        . sp 4v
+        ..
+        .\" Normal paragraph with hanging indent.
+        .de PP
+        . br
+        . ti +2m
+        ..
+        .\" "Long" paragraph, longer empty space.
+        .de LP
+        . sp 2v
+        ..
+
+    (The name `SH` is a spill-over from manual pages. I've written quite a few of those and this name somehow stuck. `CH` for "chapter heading" or`CT` for "chapter title" might have been better choices. Or, you know,`.CHAPTER`.)
+
+    You start defining a macro with `.de` -- anything until `..` is part of that macro.
+
+    - `.SH`: Go down one [vee](https://www.gnu.org/software/groff/manual/groff.html.node/Measurements.html), increase type size, request centering, print the macro's first argument with the `HR` font (Helvetica), return to previous type size, add another four vees of space.
+    - `.PP`: Just break the current line, then request a temporary indent for the next output line. This creates a hanging indent, which is customary in German books.
+    - `.LP`: Just some empty space between paragraphs. Used for things like intra-chapter time jumps.
+
+    You can look up the individual commands in `man 7 groff`.
+
+    And that would already be enough to produce a document that somewhat resembles a book.
+
+    Put the snippet above in a file called `macros.groff`. I made one file per chapter. For example:[`chapter01.groff`](chapter01.groff). You can then make a PDF using a command like this:
+
+        groff -Tpdf -dpaper=a5 -P-pa5 macros.groff chapter01.groff >book.pdf
+
+    A5 is roughly the page size of a "typical book".
+
+    ### Footers and page numbers
+
+    You'll note that there are no page numbers by default. You could actually just decide to not have them if all you want is a digital PDF. They're useful for printing, but you don't really need them in a file, if we're being honest.
+
+    Except: The thing gets confused about page breaks. Create the PDF using the example above and you'll see:
+
+    [![wrong-page-break.webp: PDF viewer screenshot: Last line of text outside of the page.](t/wrong-page-break.webp.jpg "PDF viewer screenshot: Last line of text outside of the page.")](wrong-page-break.webp)
+
+    Looks like the baseline of the last line of output is just outside the page. Not sure what's going on here -- it's related to setting the page size to A5. In other words, I probably missed _another_ spot where this has to be set. It'll be fixed implicitly by the following.
+
+    The whole page number thing consists of three parts: First, how large is the footer (the area where the page numbers live)? I defined this in a[register](https://www.gnu.org/software/groff/manual/groff.html.node/Setting-Registers.html)(which is not really necessary but I find the "code" easier to read this way) -- the name is arbitary:
+
+        .nr _FooterSize 5v
+
+    We than plant a[trap](https://www.gnu.org/software/groff/manual/groff.html.node/Page-Location-Traps.html)at the bottom of the page:
+
+        .wh -\n[_FooterSize]u _FooterTrap
+
+    `\n[_FooterSize]` "gets" the value of the register called `_FooterSize`. There's a minus sign in front of it, it's negative and relative to the bottom of the page.[The documentation sa
+  error:
+  fetched_at: '2026-11-01T04:52:45Z'
+archived_at: '2026-11-01T04:52:46Z'

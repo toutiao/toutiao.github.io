@@ -1,0 +1,322 @@
+---
+post:
+  id: '50271052'
+  title: Reading and writing are less symmetric than you (probably) think
+  url: https://fgiesen.wordpress.com/2015/10/25/reading-and-writing-are-less-symmetric-than-you-probably-think/
+  hn_url: https://news.ycombinator.com/item?id=50271052
+  score: 94
+  author: luu
+  posted_at: '2026-10-28T09:38:07Z'
+  fetched_at: '2026-11-01T04:52:23Z'
+  article_url: https://fgiesen.wordpress.com/2015/10/25/reading-and-writing-are-less-symmetric-than-you-probably-think/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-01T04:52:23Z'
+  raw_comment_count: 23
+comments:
+- id: '50317385'
+  parent_id: '50271052'
+  author: vatsachak
+  text: This is true even at the CPU cache level so it&#x27;s probably going to trickle
+    down all the way.<p>For example Jon G gave a talk at Jane Street about how he
+    had a mysterious performance bug that was later attributed to cores fighting over
+    the same cache line<p><a href="https:&#x2F;&#x2F;youtu.be&#x2F;tND-wBBZ8RY?is=624w3YoDN2QYBWuD"
+    rel="nofollow">https:&#x2F;&#x2F;youtu.be&#x2F;tND-wBBZ8RY?is=624w3YoDN2QYBWuD</a>
+  score: 0
+  posted_at: '2026-10-31T16:03:17Z'
+- id: '50317538'
+  parent_id: '50271052'
+  author: '1317'
+  text: oh i thought this would be about language and how the brain works, that article
+    sounds more interesting to be honest sorry
+  score: 0
+  posted_at: '2026-10-31T16:23:20Z'
+- id: '50317706'
+  parent_id: '50317538'
+  author: prmph
+  text: Indeed, that&#x27;s what I also thought this would be about; What a bummer.<p>Someone
+    should post that article instead, lol. I&#x27;d love to discuss why I am able
+    to comprehend and read a language almost fully but cannot speak it.
+  score: 0
+  posted_at: '2026-10-31T16:41:43Z'
+- id: '50317788'
+  parent_id: '50317706'
+  author: todowhatexactly
+  text: Production is different from reception.<p>Compare the ease with which you
+    recognize a bicycle and the difficulty of drawing one.<p>It’s not the mechanics
+    of the pencil alone although that plays a role a well. But even if you could somehow
+    imprint perfect lines like you imagine them, the bicycle and the lightening etc
+    will not be realistic unless you are a trained artist.
+  score: 0
+  posted_at: '2026-10-31T16:50:40Z'
+- id: '50317846'
+  parent_id: '50317538'
+  author: tbrownaw
+  text: Or even something about how writing usefully on a topic requires higher expertise
+    than reading and understanding what was written.
+  score: 0
+  posted_at: '2026-10-31T16:57:07Z'
+- id: '50317867'
+  parent_id: '50271052'
+  author: tbrownaw
+  text: Yep, reading something doesn&#x27;t invalidate your caches. Or everyone else&#x27;s
+    caches.
+  score: 0
+  posted_at: '2026-10-31T16:58:58Z'
+- id: '50317884'
+  parent_id: '50317706'
+  author: chrisweekly
+  text: Search for &quot;Broca and Wernicke&quot; to learn more about the distinct
+    areas of the brain responsible for producing vs processing language.
+  score: 0
+  posted_at: '2026-10-31T17:00:53Z'
+- id: '50318227'
+  parent_id: '50317846'
+  author: verdverm
+  text: or how if you want to write better, read more
+  score: 0
+  posted_at: '2026-10-31T17:40:59Z'
+- id: '50318230'
+  parent_id: '50271052'
+  author: mightyham
+  text: "&gt; the data may have made it to storage, but that doesn’t necessarily mean
+    it’s actually visible, because the metadata necessary to reach it might not have
+    been written yet.<p>The author should clarify here that this fsync wrinkle only
+    affects newly created files, not updates to existing ones."
+  score: 0
+  posted_at: '2026-10-31T17:41:04Z'
+- id: '50318279'
+  parent_id: '50271052'
+  author: rwmj
+  text: In any discussion of read, write &amp; sync, I&#x27;d want to talk about write
+    amplification (read&#x2F;modify&#x2F;write cycles), and also in Linux the sync_file_range
+    syscall which is a useful way to sync part of a file.
+  score: 0
+  posted_at: '2026-10-31T17:47:18Z'
+- id: '50318282'
+  parent_id: '50271052'
+  author: Pannoniae
+  text: Great article :D The rabbithole actually goes even deeper because buffering
+    on the read side is almost always good, but reads are often way more latency-sensitive
+    than writes. Which leads to the paradox that increasing the buffer size &#x2F;
+    prefetching more with mmapping can lead to worse performance due to the added
+    latency. And decreasing the buffer size can have the same effect due to issuing
+    more calls, so in order to squeeze in the optimal throughput&#x2F;latency ratio
+    on reads you have to tune it per workload.... or just try a few different buffer
+    sizes and see which one works better.<p>Writes are the opposite, they&#x27;re
+    usually not RAW (read-after-write), they&#x27;re &quot;fire and forget&quot;,
+    so you don&#x27;t really care about latency, but you do care a whole a lot about
+    your writes actually arriving... again two competing parameters because the more
+    you batch the writes, the faster they are but the bigger chance of a torn write
+    or data loss. And unlike reads, writes are <i>not</i> idempotent on the application
+    level so ideally you&#x27;d want some logic to atomically write a meaningful amount
+    of data so it won&#x27;t get torn, even if it crashes.<p>Now in practice just
+    about no one actually does any of this but it&#x27;s a fun thought :D
+  score: 0
+  posted_at: '2026-10-31T17:47:33Z'
+- id: '50318283'
+  parent_id: '50317385'
+  author: rwmj
+  text: False sharing is pretty well known isn&#x27;t it?  I learned about it at university.  It&#x27;s
+    the whole reason why the Linux &quot;dwarves&quot; tools were written, so you
+    can check struct field alignment &#x2F; grouping against cache line size and make
+    sure you don&#x27;t accidentally have two adjacent fields used by different cores.
+  score: 0
+  posted_at: '2026-10-31T17:47:44Z'
+- id: '50318769'
+  parent_id: '50317884'
+  author: kekebo
+  text: I probably don&#x27;t have the best reference at hand, but reducing language
+    to a handful of brain areas like Wernicke and Broca seems to be in flux recently
+    (while more research seems needed)[0].<p>[0]  <a href="https:&#x2F;&#x2F;psycnet.apa.org&#x2F;fulltext&#x2F;2024-11707-001.html"
+    rel="nofollow">https:&#x2F;&#x2F;psycnet.apa.org&#x2F;fulltext&#x2F;2024-11707-001.html</a>
+  score: 0
+  posted_at: '2026-10-31T18:42:23Z'
+- id: '50318880'
+  parent_id: '50318282'
+  author: Insimwytim
+  text: I have committed a sin of starting with the comments without reading an article,
+    assumed it was about reading and writing text by humans and was increasingly confused
+    by your first paragraph.<p>I tried to translate it as metaphor at first, but it
+    didn&#x27;t end up being coherent.
+  score: 0
+  posted_at: '2026-10-31T18:51:25Z'
+- id: '50319139'
+  parent_id: '50317867'
+  author: adrian_b
+  text: I am not sure if you mean what you have written, or you mean the opposite,
+    but reading a big file when there are no available free memory pages will flush
+    memory pages from the disk cache, which previously were caching data from files
+    accessed by your user, or by other users.<p>In high performance applications,
+    you must not let the kernel choose randomly what pages should be invalidated,
+    but you must use madvise for memory_mapped files or posix_fadvise for files accessed
+    with read&#x2F;write, with appropriate arguments so that cache memory pages that
+    are not needed any more will be freed with enough time in advance before reading
+    more data.
+  score: 0
+  posted_at: '2026-10-31T19:16:15Z'
+- id: '50319353'
+  parent_id: '50318880'
+  author: psdndown
+  text: As did I. My happy impression that I was to be commended for reading slowly
+    was turned upside down by the same realization.
+  score: 0
+  posted_at: '2026-10-31T19:38:29Z'
+- id: '50319399'
+  parent_id: '50271052'
+  author: chrchang523
+  text: "(2015)"
+  score: 0
+  posted_at: '2026-10-31T19:44:51Z'
+- id: '50319434'
+  parent_id: '50318769'
+  author: chrisweekly
+  text: Sure - just a decent place to start
+  score: 0
+  posted_at: '2026-10-31T19:49:19Z'
+- id: '50320079'
+  parent_id: '50319139'
+  author: tbrownaw
+  text: It can evict other things for space reasons, sure. But it doesn&#x27;t make
+    their contents invalid.
+  score: 0
+  posted_at: '2026-10-31T20:50:57Z'
+- id: '50320293'
+  parent_id: '50318282'
+  author: plasticchris
+  text: Makes sense. If you are reading something you need it to make progress, if
+    you are writing you are finished.
+  score: 0
+  posted_at: '2026-10-31T21:12:58Z'
+- id: '50320804'
+  parent_id: '50271052'
+  author: cryptonector
+  text: I was hoping for something about human reading and writing, but it was about
+    POSIX I&#x2F;O APIs.  Not bad, and I&#x27;d go further and point out that `mmap()`
+    is good for reading but not for writing, and why.
+  score: 0
+  posted_at: '2026-10-31T22:17:43Z'
+- id: '50321140'
+  parent_id: '50271052'
+  author: zokier
+  text: 'There is plenty of fun to be had with write errors and fsync. One example
+    was so called &quot;fsyncgate&quot; where postgresql stumbled upon fsync issues:
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=20491965">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=20491965</a><p>I
+    think there were some changes in kernel since that but I can&#x27;t remember what
+    exactly'
+  score: 0
+  posted_at: '2026-10-31T23:09:09Z'
+- id: '50322357'
+  parent_id: '50317538'
+  author: alsetmusic
+  text: 'I have a treat for you. A book on the history and development of the English
+    language:<p>Highly Irregular: Why Tough, Through, and Dough Don’t Rhyme—And Other
+    Oddities of the English Language'
+  score: 0
+  posted_at: '2026-11-01T03:02:09Z'
+article:
+  url: https://fgiesen.wordpress.com/2015/10/25/reading-and-writing-are-less-symmetric-than-you-probably-think/
+  title: Reading and writing are less symmetric than you (probably) think | The ryg
+    blog
+  fetch_status: success
+  content: "# Reading and writing are less symmetric than you (probably)&nbsp;think\n\n
+    October 25, 2015 \n\nI am talking about the I/O operations as used in computing
+    here. A typical example of how this kind of thing is exposed are the POSIX syscalls
+    `read(2)` and `write(2)`, which have the following C function prototypes:\n\n
+    \   ssize_t read(int fd, void *buf, size_t count);\r\n    ssize_t write(int fd,
+    const void *buf, size_t count);\n\nNow these are raw system calls; user programs
+    _can_ use them directly, but they usually don’t. They normally go through some
+    buffered IO layer; in the C standard library, this means `FILE*` and functions
+    `fread` and `fwrite`, which split `count` into a product of two values in a vestigial
+    nod to record-based IO but are otherwise equivalent. For concreteness, suppose
+    we’re interfacing with actual storage (i.e. not a pipe, socket, virtual filesystem
+    etc.). Then conceptually, a “read”-class operation (like `read` or `fread`) grabs
+    bytes from a file say on a disk somewhere and puts them into the specific memory
+    buffer, and a “write”-class operation takes bytes in a memory buffer and writes
+    them to the disk. Which definitely _sounds_ nice and symmetric—but there’s some
+    important behavioral asymmetries between them, especially when errors are in the
+    mix. The reasons have to do with buffering.\n\n### Buffered I/O\n\nIn general,
+    file I/O operations in your program will not go directly to a storage device;
+    data instead makes its way through several buffering layers (most of which can
+    be disabled using various flags, but in normal usage these layers are on). These
+    layers are there for good reason: on the kernel side, there’s what’s traditionally
+    called the “buffer cache”. Storage devices are “block devices”, which means they
+    store data in blocks. The block size depends on the device; on old hard disks
+    it used to be 512 bytes, CDs, DVDs etc. tend to use 2k blocks, newer storage devices
+    are now on 4k blocks. Block devices only read entire blocks at a time; that means
+    random byte-aligned IO requests such as “read 100 bytes from disk at byte offset
+    1234567” or “write 2000 bytes to location 987654” can’t be directly passed to
+    the device at all. The buffer cache is used to translate these requests into block-aligned
+    read and write operations that the device understands; non-block-aligned writes
+    also require reading the previous contents of the block that are not overwritten,
+    and those go in the buffer cache as well. And of course, as the name suggests,
+    it acts as a cache.\n\nOn the user-space side, we also have buffers, albeit for
+    a different reason: `read` and `write` are system calls, and as such incur a transition
+    to kernel space and back. They also need to check for and report errors every
+    time they are invoked. And of course they actually need to do the work we want
+    them to do – copy the data from (`read`) or to (`write`) the buffer cache. System
+    call overhead varies between OSes, but it’s safe to assume that the whole process
+    takes at least a couple hundred clock cycles in the best case. So for the overhead
+    not to completely dominate the actual work being done, you generally want to be
+    reading or writing at least a few kilobytes at a time. For scale reference, typical
+    IO buffer sizes as of this writing are 4096 bytes (e.g. Visual C++ 2013 `FILE*`,
+    Go `bufio.Reader`/`bufio.Writer`) or 8192 bytes (e.g. GNU libc `FILE*`, Java `BufferedReader`/`BufferedWriter`).\n\nOften
+    there are more buffers too. For example, most hard drives and RAID controllers
+    have their own caches, and it is not uncommon for user-space code to have several
+    layers of buffering for various reasons. But this is enough to illustrate the
+    basic structure.\n\nAll of these buffers are used in much the same way for reading
+    and writing. So where’s the behavioral asymmetry between reading and writing that
+    I’m talking about? You need to think about the state of the world (so to speak)
+    after you call a `read`-type call and how it differs from the state of the world
+    after a `write`-type call.\n\n### What happens when you issue an IO operation\n\nLet’s
+    look at what goes into servicing a `read`-type call first: say you open a C `FILE*`
+    and want to read the first 100 bytes via `fread`. The C standard I/O library notices
+    that its buffers are currently empty, and tries to fill them up, issuing a `read`
+    system call to read say 4k worth of data. The kernel in turn asks the file system
+    where the data for the first 4k of the file is located, checks the buffer cache
+    to see if it already has a copy in memory, and if not, it issues a block read
+    command to the storage device. Either way, the kernel makes sure to get those
+    4k of data into the buffer cache and from there copies them into the standard
+    IO buffers in user-space memory, then returns. The standard IO library looks at
+    the result of the system call, updates the state of its IO buffers, and then copies
+    the 100 requested bytes into the memory buffer the app supplied.\n\nAnd what if
+    anything goes wrong? Say the file is smaller than 100 bytes, or there was an error
+    reading from disk, or the file is on a network file system that’s currently inaccessible.
+    Well, if that happens, we catch it too: if something goes wrong filling up the
+    buffer cache, the kernel notices and returns an appropriate error to the I/O library,
+    which can in turn pass errors on to the app. Either way, anything that can go
+    wrong will go wrong _before_ the `fread` call returns. All the intervening layers
+    need to do is make sure to keep the error information around so it can be passed
+    to the app at the appropriate time.\n\nNow let’s go the other way round: let’s
+    open a fresh new file with a 4k write buffer and issue a 100-byte `fwrite`. This
+    time, the IO library copies the 100 bytes from the app buffer to the write buffer…
+    and immediately returns, reporting success. The underlying `write` system call
+    will not be executed until either the buffer fills up or is flushed as a result
+    of calling `fflush`, `fseek`, `fclose` or similar.\n\nQuick imaginary show of
+    hands: who reading this habitually checks return codes of `fread` or `fwrite`
+    at all? Of those saying “yes”, who also remembers to check return codes of `fflush`,
+    `fseek` or `fclose`? Probably not a lot. Well, if you don’t, you’re not _actually_
+    checking whether your writes succeeded at all. And while these remarks are C-specific,
+    this general pattern holds for _all_ buffered writer implementations. Buffered
+    writing delays making the actual `write` system call; that’s kind of the point.
+    But it implies that error reporting is delayed too!\n\n### More buffers\n\nThis
+    type of problem is not restricted to user-space buffering either. The implementation
+    of `write` itself has similar issues: generally, after a successful `write` call,
+    your data made it to the buffer cache, but it hasn’t hit actual storage yet. The
+    kernel will make its best effort to write that data to storage eventually (hopefully
+    within the next few seconds), but if there’s a device error or a system crash,
+    that data could still be lost. Both of these are relatively rare these days, so
+    we don’t worry about them too much, right? Except for those of us who do.\n\nOh,
+    and while `write` will go to some lengths to make sure there are no nasty surprises
+    when writing to local filesystems (for example, even with delayed write-back,
+    you want to make sure to reserve free space on the disk early, lest you run out
+    during write-back), at least on POSIX systems there can still be write errors
+    that you only get notified about on `close`, especially when network filesystems
+    such as NFS or SMB/CIFS are in play (I’m not aware of any such late-reported error
+    conditions on Windows, but that doesn’t mean there aren’t any). Something to be
+    aware of: if you’re using these system calls and are not checking the return code
+    of `close`, you might be missing errors.\n\nWhich brings up another point: even
+    on local file systems, you only have the guarantee that the data made it to the
+    buffer cache. It hasn’t necessarily made "
+  error:
+  fetched_at: '2026-11-01T04:52:23Z'
+archived_at: '2026-11-01T04:52:40Z'
