@@ -7,11 +7,11 @@ post:
   score: 157
   author: wh33zle
   posted_at: '2026-10-30T21:30:00Z'
-  fetched_at: '2026-11-01T04:52:20Z'
+  fetched_at: '2026-11-01T12:50:05Z'
   article_url: https://www.firezone.dev/blog/introducing-sanstun
   article_fetch_status: success
   article_fetched_at: '2026-10-31T11:51:00Z'
-  raw_comment_count: 38
+  raw_comment_count: 41
 comments:
 - id: '50310928'
   parent_id: '50310398'
@@ -464,6 +464,73 @@ comments:
     error messages.
   score: 0
   posted_at: '2026-10-31T16:32:28Z'
+- id: '50324454'
+  parent_id: '50315538'
+  author: Twey
+  text: 'Message-passing systems have always had the capability to deadlock: if you
+    have two processes that each wait for a message from the other, you have deadlock,
+    just the same as two threads trying to take a lock. So long as the memory is either
+    read-only or else transferred, not shared (the shared ^ writeable rule) you don&#x27;t
+    get hit with race conditions, which are the problem with shared memory.'
+  score: 0
+  posted_at: '2026-11-01T10:59:27Z'
+- id: '50324623'
+  parent_id: '50316867'
+  author: Twey
+  text: "&gt; An generic future is much harder to be called like this. You need to
+    to create wakers and if you don&#x27;t properly handle them you&#x27;ll busy loop.
+    You also need to provide the exact runtime the future needs for its I&#x2F;O.<p>You
+    don&#x27;t actually have to handle I&#x2F;O with the async runtime if you don&#x27;t
+    want. You _could_ just poll the futures yourself in a loop, which is roughly the
+    same as what happens if you just call the transition function in a loop for a
+    manual state machine. And likewise if you just keep calling the transition function
+    with empty input you&#x27;ll also busy-loop.<p>&gt; And isn&#x27;t that what blocking
+    code does all the time?<p>Sure, if you have only one flow you care about or you
+    have threads to take care of your concurrency, this is fine. You can do it with
+    any model (blocking, async, manual state machine).<p>&gt; - you can easily use
+    it from blocking code without needing a runtime - you can easily use it from async
+    code without blocking the executor<p>But these things are already true of a state
+    machine compiled from async&#x2F;await instead of written by hand. `poll()` is
+    just a function, and you can call it where you like. By the contract of `Future`,
+    just like the contract of the state machine transition, it&#x27;s guaranteed to
+    ‘not block’.  The waker machinery exists to help you write engines that decide
+    when to poll, but if you&#x27;ve got your own external notion of that you&#x27;re
+    free to just call `poll()`. The standard library even has some optimization around
+    this case, e.g. `Waker::noop()`.<p>&gt; You can for sure describe this as &quot;pure&quot;
+    and &quot;functional&quot;, but I bet most people think of a different paradigm
+    when talking about pure functional programming.<p>I agree, but it&#x27;s confusing
+    to me that this is the case. Original pure functional programming was all about
+    ‘how can we write more useful programs without any effects’ and ‘what benefits
+    can we get from doing so’. I think those questions are kind of answered; since
+    Moggi&#x27;s work in the early nineties it&#x27;s been focused more on ‘how can
+    we keep the benefits of pure functions while also being able to encode effectful
+    logic?’, to which manually-written state machines are a rather primitive sort
+    of answer. They bear pretty strong resemblance to iteratees&#x2F;transducers&#x2F;pipes&#x2F;etc.
+    from that lineage, except that those things aim to build a higher-level combinator
+    language on top to reduce the amount of manual state-machine writing one has to
+    do."
+  score: 0
+  posted_at: '2026-11-01T11:32:01Z'
+- id: '50324799'
+  parent_id: '50324623'
+  author: SkiFire13
+  text: "&gt; You don&#x27;t actually have to handle I&#x2F;O with the async runtime
+    if you don&#x27;t want. You _could_ just poll the futures yourself in a loop,
+    which is roughly the same as what happens if you just call the transition function
+    in a loop for a manual state machine.<p>How would the future get the I&#x2F;O
+    result then?<p>&gt; And likewise if you just keep calling the transition function
+    with empty input you&#x27;ll also busy-loop.<p>This makes no sense, why would
+    I ever want to do that?<p>&gt; but if you&#x27;ve got your own external notion
+    of that<p>That&#x27;s a very big if. I said &quot;easily&quot; and this is not
+    easy at all.<p>Moreover it ignores the context: the SansIO&#x2F;async&#x2F;await
+    code is generally a library written by a user, while the code that wants to use
+    it is written by someone else entirely. Good luck sharing this external notion
+    between the two!<p>---<p>I agree that it would be ideal to have a way to automatically
+    generate the state machine from straightforward looking code, and async&#x2F;await
+    kinda does this, but this usecase requires more flexibility than what async&#x2F;await
+    provides."
+  score: 0
+  posted_at: '2026-11-01T11:59:21Z'
 article:
   url: https://www.firezone.dev/blog/introducing-sanstun
   title: 'Introducing sanstun: sans-IO WireGuard | Firezone Blog'
@@ -564,4 +631,4 @@ article:
     But what about parallelizing work within a single tunnel? WireGuard operat
   error:
   fetched_at: '2026-10-31T11:51:00Z'
-archived_at: '2026-11-01T04:52:40Z'
+archived_at: '2026-11-01T12:50:22Z'

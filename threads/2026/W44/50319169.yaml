@@ -1,0 +1,585 @@
+---
+post:
+  id: '50319169'
+  title: 'Show HN: NES Contra (1987) port (ASM –> C and then C –> WebAssembly)'
+  url: https://epoyraz.github.io/nes-contra-us/
+  hn_url: https://news.ycombinator.com/item?id=50319169
+  score: 83
+  author: tevlon
+  posted_at: '2026-10-31T19:18:48Z'
+  fetched_at: '2026-11-01T12:50:14Z'
+  article_url: https://epoyraz.github.io/nes-contra-us/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-01T12:50:14Z'
+  raw_comment_count: 66
+comments:
+- id: '50319440'
+  parent_id: '50319169'
+  author: BSPtree
+  text: Cool, how did you build the multiplayer mode? And how much AI was used?
+  score: 0
+  posted_at: '2026-10-31T19:49:49Z'
+- id: '50319721'
+  parent_id: '50319169'
+  author: gwbas1c
+  text: 'One of the things that I&#x27;m curious about: How easy &#x2F; hard is it
+    to use the same NES game with higher resolution &#x2F; color graphics, and sample-based
+    sound?<p>Are there any emulators out there that let you swap in higher resolution
+    assets so a game can be freshened without a complete port?'
+  score: 0
+  posted_at: '2026-10-31T20:19:04Z'
+- id: '50319835'
+  parent_id: '50319721'
+  author: kekebo
+  text: 'Idk about swapping assets but zsnes used to have a range of video filters
+    that could improve the experience on a modern screen quite a bit.<p>Edit: For
+    SNES, not NES, my bad.'
+  score: 0
+  posted_at: '2026-10-31T20:29:37Z'
+- id: '50319880'
+  parent_id: '50319169'
+  author: einpoklum
+  text: Most of the keys aren&#x27;t working for me in Firefox though :-(
+  score: 0
+  posted_at: '2026-10-31T20:32:40Z'
+- id: '50319975'
+  parent_id: '50319721'
+  author: unleaded
+  text: Mesen has texture packs. Don&#x27;t know about sound, you&#x27;d have to reverse
+    each game&#x27;s sound driver first. <a href="https:&#x2F;&#x2F;vgmpf.com&#x2F;Wiki&#x2F;index.php?title=Famicom&#x2F;NES_Sound_Driver_List"
+    rel="nofollow">https:&#x2F;&#x2F;vgmpf.com&#x2F;Wiki&#x2F;index.php?title=Famicom&#x2F;NES_Sound_Dri...</a>
+  score: 0
+  posted_at: '2026-10-31T20:40:45Z'
+- id: '50319978'
+  parent_id: '50319721'
+  author: BSPtree
+  text: I would not think so, at least not in a meaningful way. That would require
+    to edit the cartridge data thus the ROM, as all sprite data was contained within
+    the cartridge. Sample based sound is impossible natively, as NES and older game
+    consoles don&#x27;t work with digital data but synthesizers. You could perhaps
+    synthesize the music to WAV files and then enchance it. But then again, NES and
+    thus its emulators have no way of playing digitized audio!
+  score: 0
+  posted_at: '2026-10-31T20:41:06Z'
+- id: '50320012'
+  parent_id: '50319978'
+  author: cowlevel
+  text: The NES in particular is probably not too difficult to upscale, because the
+    graphics data is stored on its own ROM chip (sometimes RAM) in a well structured
+    layout. SMB1 just uses a ROM chip containing many tile graphics which the CPU
+    code addresses by tile index. It would be really easy for an emulator to use the
+    same tile indices to address any arbitrary set of tiles loaded from a PNG. Some
+    games use RAM, which makes it harder as you&#x27;d have to index the PNG by hash
+    or something.
+  score: 0
+  posted_at: '2026-10-31T20:44:53Z'
+- id: '50320067'
+  parent_id: '50319978'
+  author: pantelisk
+  text: Compute motion vectors, faux depth, and add DLLS5 to it maybe? Could be pretty
+    cool, or pretty horrific. Only one way to find out :)
+  score: 0
+  posted_at: '2026-10-31T20:50:03Z'
+- id: '50320099'
+  parent_id: '50319880'
+  author: tevlon
+  text: i only testing in chrome. Will look into it!
+  score: 0
+  posted_at: '2026-10-31T20:53:00Z'
+- id: '50320162'
+  parent_id: '50319721'
+  author: vunderba
+  text: You might like 3dSen, which came out several years ago. It does some pretty
+    crazy stuff, converting NES games into essentially 3D voxel environments.<p><a
+    href="https:&#x2F;&#x2F;store.steampowered.com&#x2F;app&#x2F;1147940&#x2F;3dSen_PC"
+    rel="nofollow">https:&#x2F;&#x2F;store.steampowered.com&#x2F;app&#x2F;1147940&#x2F;3dSen_PC</a>
+  score: 0
+  posted_at: '2026-10-31T20:58:22Z'
+- id: '50320182'
+  parent_id: '50319440'
+  author: tevlon
+  text: 'For the Multiplayer part: It&#x27;s deterministic lockstep. Both browsers
+    run the same C core (compiled to WebAssembly), and the only thing sent over the
+    network is each player&#x27;s button bitmask per frame. Local input is delayed
+    by 4 frames (~67 ms), which hides normal internet latency; if the other player&#x27;s
+    input for a frame hasn&#x27;t arrived yet, the game waits for it. Every 2 seconds
+    both sides compare a hash of the game RAM to catch desyncs. Transport is a WebRTC
+    data channel via PeerJS (its free cloud server handles matchmaking with a room
+    code), with Google&#x27;s STUN server for NAT traversal and Metered&#x27;s free-tier
+    TURN relay as a fallback when a direct connection isn&#x27;t possible.<p>For AI
+    usage: It was all done by Claude&#x2F;Codex, but it wasn&#x27;t that straight
+    forward. First: i started in April and the models weren&#x27;t good enough and
+    would make errors. You could see those immediately in glitches. Then, i spent
+    some time in building a harness and collect telemetry data in Mesen. Once, i had
+    that: i just played the game in the emulator and asked Claude Opus 5.5 to use
+    this as verification. The rest was smooth.'
+  score: 0
+  posted_at: '2026-10-31T21:00:28Z'
+- id: '50320191'
+  parent_id: '50320162'
+  author: tevlon
+  text: whoa, that&#x27;s cool. I didn&#x27;t know about this. Thanks for sharing!
+  score: 0
+  posted_at: '2026-10-31T21:01:34Z'
+- id: '50320248'
+  parent_id: '50319169'
+  author: raldi
+  text: But the Japanese Contra was so much better! <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;shorts&#x2F;CiXzONyCDW0"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;shorts&#x2F;CiXzONyCDW0</a>
+  score: 0
+  posted_at: '2026-10-31T21:07:23Z'
+- id: '50320602'
+  parent_id: '50319169'
+  author: Dwedit
+  text: All that work and then somehow transposing the A and B keys at the very end.
+  score: 0
+  posted_at: '2026-10-31T21:50:48Z'
+- id: '50320687'
+  parent_id: '50319169'
+  author: shinryudbz
+  text: Is the audio not supposed to work? I was hoping to hear the legendary tracks!
+  score: 0
+  posted_at: '2026-10-31T22:01:54Z'
+- id: '50320710'
+  parent_id: '50319169'
+  author: gosen
+  text: thanks for bringing back my childhood memories!
+  score: 0
+  posted_at: '2026-10-31T22:04:58Z'
+- id: '50320806'
+  parent_id: '50319440'
+  author: esikich
+  text: 100% AI I&#x27;m sure. I played around with this kind of thing a month or
+    so ago and Codex had no problems mashing games up from just the ROMs. In about
+    30 minutes I had the contra guys running through SMB 1 shooting enemies.
+  score: 0
+  posted_at: '2026-10-31T22:17:52Z'
+- id: '50320829'
+  parent_id: '50319169'
+  author: egonschiele
+  text: Contra is my favorite game of all time so this is a real treat, and the co-op
+    idea is fantastic. Not to be greedy, but how hard would it be to add music? :)
+  score: 0
+  posted_at: '2026-10-31T22:20:28Z'
+- id: '50321073'
+  parent_id: '50319169'
+  author: pxx
+  text: No controller support?
+  score: 0
+  posted_at: '2026-10-31T22:59:21Z'
+- id: '50321278'
+  parent_id: '50319978'
+  author: kevin_thibedeau
+  text: '&gt; Sample based sound is impossible natively, as NES and older game consoles
+    don&#x27;t work with digital data<p>The NES supports PCM audio. It was notably
+    implemented wrong in the title screen of Double Dribble and fixed with a patch
+    that produces clearer audio after bit reversal into the correct encoding for the
+    hardware:<p><a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=Jli0RGpuZDg"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=Jli0RGpuZDg</a>'
+  score: 0
+  posted_at: '2026-10-31T23:31:39Z'
+- id: '50321445'
+  parent_id: '50320806'
+  author: waltbosz
+  text: Can you elaborate on the process? Do you just provide it with the ROMs and
+    it is able to pull apart the relevant sprites and code pieces, and recombine into
+    a new ROM?
+  score: 0
+  posted_at: '2026-10-31T23:57:33Z'
+- id: '50321448'
+  parent_id: '50319169'
+  author: msephton
+  text: 'A couple months ago I wrote about this kind of transcompilation hop-skip-jump:
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=49643284">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=49643284</a><p>I
+    used it to get games written in Lua running on SNES and in my own language&#x2F;engine
+    running on Dreamcast, Wii, Web and more.'
+  score: 0
+  posted_at: '2026-10-31T23:57:42Z'
+- id: '50321475'
+  parent_id: '50319169'
+  author: jasonlotito
+  text: Whenever I see a game that uses the arrow keys and doesn&#x27;t offer WASD
+    as well, I can&#x27;t help but see a game written by a non-gamer. I consider these
+    fundamentals, and a shibboleth of whether I should care.
+  score: 0
+  posted_at: '2026-11-01T00:02:38Z'
+- id: '50321503'
+  parent_id: '50321475'
+  author: anonymous908213
+  text: While I&#x27;m not defending a slop port, I have to question your gamer credentials.
+    Maybe by gamer you mean a Call of Duty player? WASD is traditional for FPS&#x2F;TPS
+    games that expect you to have one hand on the mouse. Most 2D games, and every
+    emulator I&#x27;ve ever used, have never offered WASD.
+  score: 0
+  posted_at: '2026-11-01T00:06:33Z'
+- id: '50321539'
+  parent_id: '50321503'
+  author: literallyanythi
+  text: "correct me if i&#x27;m wrong, gamer credential questioner, but WASD was immortalized
+    by the id Software &quot;win Carmack&#x27;s ferrari&quot; tournament. Before then
+    EDSF was also popular because it gave you more keys on the left side for hotkeys.<p>I
+    do think you&#x27;re objectively correct in your post, but I think what the grandparent
+    meant was that &quot;The author isn&#x27;t actually interested in playing Contra
+    on his website&quot; which is why QoL stuff like that wasn&#x27;t added and it
+    &quot;smells&quot; like it should be there if you cared about playing on the thing
+    you actually shared to HN. \nI know the first thing I would do would be to add
+    wasd + mouse support to Contra, since the control scheme is the reason I don&#x27;t
+    try to play it. But at the same time I have never been interested in games that
+    deliberately limit your controls as a form of difficulty (feels like a Japanese
+    gamedev thing, from Resident Evil to Dark Souls)"
+  score: 0
+  posted_at: '2026-11-01T00:13:21Z'
+- id: '50321580'
+  parent_id: '50321539'
+  author: justsomehnguy
+  text: 'NB: WASD won because most (like 99%) of the keyboards did had (and I can
+    bet cheap shit still have) some dead keys aka &#x27;key ghosting&#x27; on ESDF.'
+  score: 0
+  posted_at: '2026-11-01T00:20:25Z'
+- id: '50321640'
+  parent_id: '50321580'
+  author: literallyanythi
+  text: |-
+    You awoke negative-nostalgia to membrane keyboards where I remember I couldn&#x27;t hold Shift + W + A at the same time in Minecraft as a kid so you&#x27;re definitely right about bad keyboards, but I remember dead keys on WASD as well.
+    I wasn&#x27;t there, but the largest consensus seems to be that Quake popularized it, plain and simple. I&#x27;m sure other factors like what you mention helped it become the dominant layout as well<p>edit: figured out why that nostalgia happened. I was revisiting an old flash game I liked [0] and people were complaining to the dev about this exact key ghosting issue to him when it wasn&#x27;t his fault but a fault of their keyboards, and in the Newgrounds description he links to a forum post [1] elaborating on the issue<p>[0] <a href="https:&#x2F;&#x2F;www.newgrounds.com&#x2F;portal&#x2F;view&#x2F;547881" rel="nofollow">https:&#x2F;&#x2F;www.newgrounds.com&#x2F;portal&#x2F;view&#x2F;547881</a><p>[1] <a href="https:&#x2F;&#x2F;board.flashkit.com&#x2F;board&#x2F;showthread.php?789015-wont-respond-to-keyboard-up-left-and-space-at-the-same-time" rel="nofollow">https:&#x2F;&#x2F;board.flashkit.com&#x2F;board&#x2F;showthread.php?789015-wont-...</a>
+  score: 0
+  posted_at: '2026-11-01T00:32:28Z'
+- id: '50321834'
+  parent_id: '50319835'
+  author: gwbas1c
+  text: Yeah, its upscaler is nicer than the Switch and the mini SNES.
+  score: 0
+  posted_at: '2026-11-01T01:09:02Z'
+- id: '50321866'
+  parent_id: '50319169'
+  author: pmarreck
+  text: Where&#x27;s the sound? You can likely ask AI to emulate the sound hardware
+    with WASM!
+  score: 0
+  posted_at: '2026-11-01T01:16:41Z'
+- id: '50321948'
+  parent_id: '50319169'
+  author: erictheguy
+  text: Nostalgic!! Took me a few tries to beat the first level haha
+  score: 0
+  posted_at: '2026-11-01T01:32:07Z'
+- id: '50322144'
+  parent_id: '50321580'
+  author: em3rgent0rdr
+  text: I think because the computer mouse is typically on the right side of the keyboard
+    (because most people are right-handed), WASD has the advantage of allowing your
+    mouse to be controlled by your right hand and you can keep your left hand in the
+    normal position it is used for typing and not have to have your left hand move
+    all the way to the arrow keys to control directions.
+  score: 0
+  posted_at: '2026-11-01T02:12:30Z'
+- id: '50322282'
+  parent_id: '50319169'
+  author: davesque
+  text: Unfortunately, I&#x27;m a bit concerned that cool labor of love hacker projects
+    like this will become much less common now that Anthropic (and possibly soon others)
+    is moving to restrict this kind of usage. Oh well, so much for cool fun stuff.
+  score: 0
+  posted_at: '2026-11-01T02:43:21Z'
+- id: '50322329'
+  parent_id: '50319169'
+  author: sfblah
+  text: No sound and the a and b buttons should be the other direction (a is to the
+    right of b) on the keyboard.
+  score: 0
+  posted_at: '2026-11-01T02:54:39Z'
+- id: '50322359'
+  parent_id: '50322282'
+  author: pansa2
+  text: "&gt; <i>Anthropic is moving to restrict this kind of usage</i><p>I hadn’t
+    heard about that - any details?"
+  score: 0
+  posted_at: '2026-11-01T03:02:29Z'
+- id: '50322371'
+  parent_id: '50322359'
+  author: gnabgib
+  text: A short search away <i>Anthropic takes steps to block Claude from reverse-engineering
+    video games</i> (106 points, 71 comments) <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50320255">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50320255</a>
+  score: 0
+  posted_at: '2026-11-01T03:05:06Z'
+- id: '50322383'
+  parent_id: '50321475'
+  author: lightedman
+  text: Literally 95% of 2D games on a PC were controlled via arrow keys. Not many
+    allowed rebinding. Even in emulators, until later on.<p>You sure you&#x27;re a
+    gamer? I&#x27;ve been at it since about 1986.
+  score: 0
+  posted_at: '2026-11-01T03:08:11Z'
+- id: '50322476'
+  parent_id: '50321445'
+  author: esikich
+  text: Yep. Fire up a new project, give it the two ROMs and the emulator to use and
+    tell it what you what. I had to guide it a little bit about the sprite size and
+    collison logic, but it was extremely painless.
+  score: 0
+  posted_at: '2026-11-01T03:33:32Z'
+- id: '50322609'
+  parent_id: '50322282'
+  author: EmX_3000
+  text: It&#x27;s not really that cool to get a bot to do this work for you, anybody
+    can ask for that assuming they have the tokens to burn.
+  score: 0
+  posted_at: '2026-11-01T04:06:41Z'
+- id: '50322640'
+  parent_id: '50322609'
+  author: jkahrs595
+  text: "“It’s not really that cool” they said on hacker news."
+  score: 0
+  posted_at: '2026-11-01T04:12:38Z'
+- id: '50322641'
+  parent_id: '50322282'
+  author: userbinator
+  text: Local models will never be restricted, and I suspect the Chinese ones wouldn&#x27;t
+    try to do so either.
+  score: 0
+  posted_at: '2026-11-01T04:12:55Z'
+- id: '50322676'
+  parent_id: '50322640'
+  author: gnabgib
+  text: Long standing account freaks out about latest GenAI&#x2F;green account making
+    vapid statement?  Where are you going here?
+  score: 0
+  posted_at: '2026-11-01T04:19:08Z'
+- id: '50322731'
+  parent_id: '50322676'
+  author: jkahrs595
+  text: I’m going to sleep actually. Goodnight
+  score: 0
+  posted_at: '2026-11-01T04:34:31Z'
+- id: '50322909'
+  parent_id: '50322282'
+  author: em3rgent0rdr
+  text: The first project like this (of using AI to port old software from assembly)
+    was interesting and novel. But every subsequent post has me wondering what new
+    insight or lessons we have learned and if doing more of these is worth the energy
+    burn.
+  score: 0
+  posted_at: '2026-11-01T05:18:45Z'
+- id: '50322921'
+  parent_id: '50322282'
+  author: Panzerschrek
+  text: Recently I did something similar (or even more labor-intensive). I recreated
+    an existing game from scratch by manually rewriting its code without even thinking
+    about LLM&#x2F;&quot;AI&quot; tools usage. (see my submissions).<p>But I agree,
+    that using an &quot;AI&quot; tool may be a serious temptation and thus way less
+    new porting projects will be done with such care.
+  score: 0
+  posted_at: '2026-11-01T05:23:13Z'
+- id: '50323014'
+  parent_id: '50322609'
+  author: davesque
+  text: I could write a well crafted reply, with a convincing argument, but why bother?
+    You&#x27;re just trolling. The whole anti AI coding thing is such a meme. I suppose
+    you&#x27;d like to spend all the time it would take to reverse engineer a classic
+    NES game by hand? Go familiarize yourself with 6502 assembly and everything else
+    you&#x27;d need to know?
+  score: 0
+  posted_at: '2026-11-01T05:46:20Z'
+- id: '50323412'
+  parent_id: '50319169'
+  author: throwaway2037
+  text: 'Wow, the source 6502 assembly <i>with</i> comments is incredible: <a href="https:&#x2F;&#x2F;github.com&#x2F;vermiceli&#x2F;nes-contra-us&#x2F;blob&#x2F;main&#x2F;src&#x2F;bank0.asm"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;vermiceli&#x2F;nes-contra-us&#x2F;blob&#x2F;main&#x2F;src&#x2F;ban...</a><p>The
+    whole thing (all banks) is more than 10,000 lines of assembly code.  When I wrote
+    assembly code for a university computer science course, it was hard to manage
+    even 200 lines.  I cannot imagine writing and managing 10,000 lines!'
+  score: 0
+  posted_at: '2026-11-01T07:32:32Z'
+- id: '50323476'
+  parent_id: '50319721'
+  author: throwaway2037
+  text: How would that work for hit detection algorithms in the code?
+  score: 0
+  posted_at: '2026-11-01T07:48:08Z'
+- id: '50323477'
+  parent_id: '50323014'
+  author: tadfisher
+  text: I would rather read a write up of someone doing just that. This exact thing
+    has been done many times now and no one is really learning or demonstrating anything
+    new. It is cool, insofar as AI tools are capable of reverse-engineering, mechanical
+    translation, and automatic verification, but it is no longer _novel_ and borders
+    on spam.
+  score: 0
+  posted_at: '2026-11-01T07:48:10Z'
+- id: '50323509'
+  parent_id: '50323014'
+  author: pjmlp
+  text: Yes, that is exactly the fun, not contracting someone else to do it.
+  score: 0
+  posted_at: '2026-11-01T07:55:49Z'
+- id: '50323511'
+  parent_id: '50322282'
+  author: Buttons840
+  text: A silver lining is that porting games will serve as a catalyst to help the
+    self-hosted LLM ecosystem grow.
+  score: 0
+  posted_at: '2026-11-01T07:55:49Z'
+- id: '50323519'
+  parent_id: '50323509'
+  author: Buttons840
+  text: You are free to do so. Have fun!
+  score: 0
+  posted_at: '2026-11-01T07:57:45Z'
+- id: '50323521'
+  parent_id: '50322383'
+  author: pjmlp
+  text: Very true, WASD only became a thing with FPS games.
+  score: 0
+  posted_at: '2026-11-01T07:58:43Z'
+- id: '50323533'
+  parent_id: '50323519'
+  author: pjmlp
+  text: I certainly am, only pointing out the comments vibe.<p>When someone commissions
+    a painting, or a sculpture, they might cut the ribbon that holds the curtain on
+    the opening day, that is all.
+  score: 0
+  posted_at: '2026-11-01T08:01:31Z'
+- id: '50323579'
+  parent_id: '50323412'
+  author: zahlman
+  text: As much as I wouldn&#x27;t <i>want</i> to write that much assembly, you make
+    it less daunting the same way that you would with any other programming language.
+    There are simple idioms for loops that you can macro-ize; similarly for function
+    setup and teardown; more importantly, the <i>concept of a function</i> still exists
+    at that level.
+  score: 0
+  posted_at: '2026-11-01T08:11:16Z'
+- id: '50323842'
+  parent_id: '50323533'
+  author: davesque
+  text: 'What if you&#x27;ve already played that game many other times during your
+    15 year long career?  I mean the &quot;game&quot; of learning the ins and outs
+    of a technical subtopic.  And you know you <i>could</i> spend months ramping up
+    on another thing just to see an idea take shape, but you only have limited resources
+    in your life, a full time job, and so forth.  And you&#x27;d still like to see
+    an idea become a reality regardless of all that.  So I guess that&#x27;s not real
+    work and it&#x27;s cheating and it doesn&#x27;t have value?<p>I mean, if you insist
+    on doing everything by hand, go right ahead.<p><i>Afterthoughts</i>: I really
+    just don&#x27;t get why people are so weird about this AI coding thing.  What
+    difference does it make to you if someone thinks they have more to learn from
+    high-level planning work than from low-level coding work?  A lot of the time,
+    I get the vibe from people who talk this way that they are still early on in their
+    career and think they have to prove their coding chops.  I think that&#x27;s why
+    people like Linus Torvalds couldn&#x27;t give a shit if people use AI or not,
+    as long as it&#x27;s not slop and suits its purpose.  If you&#x27;ve already spent
+    over a decade writing code and savoring the process, maybe you&#x27;re just getting
+    a little tired of it.  And maybe agonizing over code perfection even drives you
+    slightly insane sometimes.  Who the f*** knows?  In any case, it&#x27;s none of
+    your business.  I don&#x27;t know why I&#x27;m even writing all this.  Because
+    I know you&#x27;ll just come back with the same old tired gatekeeping non-arguments.'
+  score: 0
+  posted_at: '2026-11-01T09:14:23Z'
+- id: '50323866'
+  parent_id: '50323412'
+  author: tevlon
+  text: 'Bear in mind: the dissambly was done pre-LLMs. The early commits are from
+    2023. Although, ChatGPT 4 existed then, it was not capable of doing these things.<p>Impressive
+    work, indeed. vermiceli the GOAT.'
+  score: 0
+  posted_at: '2026-11-01T09:18:29Z'
+- id: '50323870'
+  parent_id: '50320248'
+  author: tevlon
+  text: i had no idea. TIL
+  score: 0
+  posted_at: '2026-11-01T09:18:51Z'
+- id: '50323878'
+  parent_id: '50320687'
+  author: tevlon
+  text: I added audio support, but now you need to upload your own ROM. I didn&#x27;t
+    expect this to get so much attention. Since Konami is company behind Contra and
+    they are known for DMCAing, i want to be better safe than sorry.
+  score: 0
+  posted_at: '2026-11-01T09:20:17Z'
+- id: '50323883'
+  parent_id: '50322329'
+  author: tevlon
+  text: fixed. But, now you have to upload your own ROM. (Afraid of getting DMCAed
+    by Konami)
+  score: 0
+  posted_at: '2026-11-01T09:21:55Z'
+- id: '50323885'
+  parent_id: '50320829'
+  author: tevlon
+  text: fixed. But, now you have to upload your own ROM. (Afraid of getting DMCAed
+    by Konami)
+  score: 0
+  posted_at: '2026-11-01T09:22:09Z'
+- id: '50323887'
+  parent_id: '50320602'
+  author: tevlon
+  text: fixed!
+  score: 0
+  posted_at: '2026-11-01T09:22:49Z'
+- id: '50323919'
+  parent_id: '50321278'
+  author: BSPtree
+  text: It does work with channels that produce pulse waves yes, but what I meant
+    is that you can&#x27;t supply samples of a wave and expect it to play it. The
+    sound is still analog.
+  score: 0
+  posted_at: '2026-11-01T09:28:51Z'
+- id: '50323935'
+  parent_id: '50319169'
+  author: incr_me
+  text: 'Nice! Can you speak to your process? How much structure did you give the
+    agent? Did you have to &quot;discover&quot; the right way to do the port? Perhaps
+    you just asked Claude, and then iterated? How do you feel about the final architecture&#x2F;layout
+    of the code, and would you approach a similar project in a new way given what
+    you&#x27;ve learned?<p>You said in another comment:<p>&gt; Then, i spent some
+    time in building a harness and collect telemetry data in Mesen. Once, i had that:
+    i just played the game in the emulator and asked Claude Opus 5.5 to use this as
+    verification.<p>Can you comment on how this verification process worked?<p>You&#x27;ll
+    have to forgive me for not trying to answer these questions myself by investigating
+    the code&#x2F;git history, but... I hope you understand.<p>Actually, I am peeking
+    around the code a bit and it&#x27;s a bit disappointing, but it&#x27;s what I
+    should have expected having tried a project like this myself with a Game Boy game.
+    I would like to see what an AI-produced <i>semantic</i> (?) rewrite of a retro
+    game would look like. That is, what a port&#x2F;rewrite that wasn&#x27;t so faithful&#x2F;wedded
+    to the original ROM layout or platform architecture. For example, the agent (and
+    you, presumably) was satisfied with writing a sort of RP2C02 emulator facade instead
+    of doing the hard work of translating the bytes into platform-agnostic graphics
+    rendering code. So now any customization&#x2F;extensions you write to the game
+    are fundamentally constrained to the abstractions of a specific chip from the
+    80s.'
+  score: 0
+  posted_at: '2026-11-01T09:32:08Z'
+- id: '50323940'
+  parent_id: '50323866'
+  author: throwaway2037
+  text: 100% agree.  That makes this commented code so incredibly impressive to me!
+  score: 0
+  posted_at: '2026-11-01T09:33:25Z'
+- id: '50324119'
+  parent_id: '50320248'
+  author: pipes
+  text: Yeah I noticed this when I was mucking about with emulators. Thought I was
+    imagining things until I looked it up. As far as I remember it has better sound
+    too, or maybe I&#x27;m remembering castlevania three.
+  score: 0
+  posted_at: '2026-11-01T10:05:10Z'
+- id: '50324380'
+  parent_id: '50323842'
+  author: pjmlp
+  text: There is some quite tasty microwave food, it doesn&#x27;t make the person
+    into a proper cook, not even an aspiring chef.
+  score: 0
+  posted_at: '2026-11-01T10:46:06Z'
+article:
+  url: https://epoyraz.github.io/nes-contra-us/
+  title: Contra — NES Native Port (WebAssembly)
+  fetch_status: success
+  content: "# CONTRA\n\nNES native port — running in your browser via WebAssembly\n\nLoading…\n\n##
+    Choose a game\n\n## Waiting…\n\n- \n- \n\nPress (or tap **START** ) to begin.
+    \  \n move · fire · / jump · Start · Select   \n On-screen: **A** = jump · **B**
+    = fire   \n Online: both players use these same keys on their own computer. Player
+    1 picks **2 PLAYERS** with on the title screen.\n\nNintendo\n\n⇓\n\n⇓\n\n⇓\n\n⇓\n\nWOOHOO!
+    \ \nHOORAY FOR NOSTALGIA!!!"
+  error:
+  fetched_at: '2026-11-01T12:50:14Z'
+archived_at: '2026-11-01T12:50:22Z'

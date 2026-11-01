@@ -5,14 +5,14 @@ post:
   title: Avoid Public Functions Calling Other Public Functions
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   hn_url: https://lobste.rs/s/k508we
-  score: 46
+  score: 65
   author: telemachus
   posted_at: '2026-10-31T18:05:03Z'
-  fetched_at: '2026-11-01T04:52:40Z'
+  fetched_at: '2026-11-01T12:50:22Z'
   article_url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-01T04:52:42Z'
-  raw_comment_count: 8
+  article_fetched_at: '2026-11-01T12:50:26Z'
+  raw_comment_count: 12
   tags:
   - api
   - programming
@@ -28,7 +28,7 @@ comments:
     perhaps even then, the two private helpers could both call another private helper
     for the overlap. (I''m probably focusing too much on the details of the example,
     which is not fully fleshed out.)'
-  score: 5
+  score: 6
   posted_at: '2026-10-31T18:25:46Z'
 - id: lo-nimpts
   parent_id: '0'
@@ -36,7 +36,7 @@ comments:
   text: |-
     I've been in the shoes of a developer adding optional function after optional function to make things "easier" for users. Some of the worst APIs grow this way. "Everything is in one function call" except that you've effectively reinvented having multiple functions by way of parameters.
     Also, "sanctified ink" is definitely a phrase I will be using in the future.
-  score: 6
+  score: 8
   posted_at: '2026-10-31T18:37:25Z'
 - id: lo-aoysm3
   parent_id: '0'
@@ -51,7 +51,7 @@ comments:
   text: |-
     A concrete thing related to this I just ran into yesterday, is that when reporting certain kinds of errors, I collect a stack trace for later rendering to indicate which public function call was responsible for the creation of a particular artifact.
     You can make the first stack frame be the callsite of the public function by capturing the return address there, and then passing that to all the private functions. If you called another public function, it would break this pattern because the call stack would contain 2 of the public functions. Not a big deal but it falls neatly into the pattern described by the article.
-  score: 9
+  score: 15
   posted_at: '2026-10-31T21:08:12Z'
 - id: lo-pzdunp
   parent_id: '0'
@@ -63,7 +63,7 @@ comments:
     Though, if using the avoid public->public rule works as a mechanism to help where
     there might be ambiguity or a lack of discipline then, sure, could be a good best
     practice.
-  score: 4
+  score: 11
   posted_at: '2026-10-31T22:09:31Z'
 - id: lo-srfixy
   parent_id: '0'
@@ -83,7 +83,7 @@ comments:
     Which is, imo, a natural, but horrible consequence of misguided approach to testing. You shouldn’t be mocking your methods, you should mock your IO
 
     Is mocking a MyCustomResourceStore “mocking your IO”, or does “mock your IO” refer to some lower layer of the I/O stack? Where does I/O begin?
-  score: 4
+  score: 5
   posted_at: '2026-10-31T22:27:21Z'
 - id: lo-1ikynx
   parent_id: '0'
@@ -93,8 +93,58 @@ comments:
     stuff.  When I made my DNS library I explicitly separated packet receiving/sending
     from parsing/generating (you get a DNS packet, then send it to be decoded; it's
     not decoded directly from the wire).
-  score: 1
+  score: 3
   posted_at: '2026-10-31T22:42:57Z'
+- id: lo-i3xrkp
+  parent_id: '0'
+  author: enobayram
+  text: Or you could do whatever makes the most sense at a given moment and then when
+    the circumstances change, refactor your code so it keeps making the most sense
+    under the new circumstances
+  score: 1
+  posted_at: '2026-11-01T08:03:17Z'
+- id: lo-fwu0ct
+  parent_id: '0'
+  author: ohrv
+  text: 'It depends: for example, in Rust''s Vec there are a lot of pub methods that
+    call other pub methods for a bunch of different reasons (safety, reuse, allocator
+    API, ..).'
+  score: 1
+  posted_at: '2026-11-01T11:07:26Z'
+- id: lo-xaztk2
+  parent_id: '0'
+  author: Sietsebb
+  text: "Instead of reading my comment, you should watch Gary Bernhardt's superb talk
+    \"Boundaries\", which discusses this very question.\nhttps://www.destroyallsoftware.com/talks/boundaries\nBut
+    I'll try to do a very brief answer to only your question. Your question sounds
+    like it assumes a code structure that looks like this ...\ndef my_procedure():\r\n
+    \   input_data = my_custom_resource_store.load()\r\n    ... big block of logic
+    that analyses input data and takes actions ...\r\n\n... and now you're wondering
+    whether to test the logic by mocking out MyCustomResourceStore.load(), or by mocking
+    out the filesystem/database/network calls inside of MCRS.load().\nYou can sidestep
+    that dilemma if you refactor this so the logic function does not call MCRS at
+    all. Instead, extract a pure input-values-in, decision-values-out function. Then\n\nThe
+    logic can be tested with lots of unit tests because it has many paths, but no
+    external dependencies.\nAnd you test MCRS.load() by an integration test, or by
+    mocking out the lower-level IO calls.\nAnd the function lying above both is hopefully
+    so trivial that it hardly needs testing -- it doesn't do IO, and it doesn't do
+    logic -- it just threads the data from the MCRS call to the logic function, which
+    is something the typechecker can check for you."
+  score: 2
+  posted_at: '2026-11-01T12:01:15Z'
+- id: lo-t1aipx
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    I’m not sure I agree with this. I tend to build public APIs in layers. The low layer public API exposes all necessary functionality. The higher layers expose convenient functionality for common use cases. In C/C++, the higher-level interfaces are often header-only and designed to be inlined in the caller. They also serve as documentation: if you have a use case that is similar to this common case, you can use the body of this wrapper API as inspiration for how you should be calling the lower layer.
+    The fact that the lower layer now has additional constraints on its refactoring is a feature. It’s a public API, it should be stable. If the low layer wasn’t useful for implementing the higher layer, then it also probably want useful for other consumers.
+    I think the real messages should be:
+
+    Build public APIs to meet requirements and be stable.
+    Understand the layering in your system and don’t have lower layers depend on higher layers (except via explicit dependency injection).
+    Design your APIs to be composable.
+  score: 3
+  posted_at: '2026-11-01T12:03:17Z'
 article:
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   title: Avoid Public Functions Calling Other Public Functions
@@ -143,4 +193,4 @@ article:
     they don’t absolve you from thinking!"
   error:
   fetched_at: '2026-10-31T21:08:24Z'
-archived_at: '2026-11-01T04:52:42Z'
+archived_at: '2026-11-01T12:50:26Z'

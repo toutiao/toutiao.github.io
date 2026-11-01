@@ -1,0 +1,137 @@
+---
+post:
+  id: '50315782'
+  title: 'Show HN: A language model that lives in a boot sector'
+  url: https://github.com/kerlenton/bootgpt
+  hn_url: https://news.ycombinator.com/item?id=50315782
+  score: 87
+  author: kerlenton
+  posted_at: '2026-10-31T12:58:29Z'
+  fetched_at: '2026-11-01T12:50:14Z'
+  article_url: https://github.com/kerlenton/bootgpt
+  article_fetch_status: success
+  article_fetched_at: '2026-11-01T12:50:14Z'
+  raw_comment_count: 5
+comments:
+- id: '50321702'
+  parent_id: '50315782'
+  author: aDyslecticCrow
+  text: This is the kind of silly engineering that makes me appreciate humans.<p>I
+    need reminders sometimes that the world is filled with humans doing wierd things
+    to share with one another.<p>Not everything is about economic value or practicality.
+    Making silly shit can be the goal.
+  score: 0
+  posted_at: '2026-11-01T00:42:25Z'
+- id: '50322771'
+  parent_id: '50321702'
+  author: andai
+  text: This principle applied to YouTube:<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50319510">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50319510</a><p>It
+    very much reminded me of what the web was like 15 years ago. Just people sharing
+    cool stuff with each other. I&#x27;m glad we still have that here.
+  score: 0
+  posted_at: '2026-11-01T04:43:33Z'
+- id: '50322783'
+  parent_id: '50315782'
+  author: andai
+  text: Delightful. Would love to read more about how you made it, or how you learned
+    to do this kind of thing.
+  score: 0
+  posted_at: '2026-11-01T04:45:40Z'
+- id: '50323611'
+  parent_id: '50321702'
+  author: kerlenton
+  text: Thanks very much, it really cheered me up. Yes, I believe that there are things
+    that are done for fun and nothing else. I am sure that most people who delve into
+    software engineering have that urge occasionally.
+  score: 0
+  posted_at: '2026-11-01T08:18:55Z'
+- id: '50323696'
+  parent_id: '50322783'
+  author: kerlenton
+  text: Thanks! Seriously, it is quite difficult for me to recommend the way that
+    would lead you to this. I believe that you should be interested in it and have
+    the motivation to dig deep into it. It is a long process that requires patience
+    and persistence.<p>The surrounding also plays its role here, even greater than
+    one might think at first. If the people around you create such things, sooner
+    or later, you will want to do it as well, and you only need to channel this need
+    in the right way. For instance, my team lead at work takes time to reverse engineer
+    electric cars. It is still wizardry to me, but one thing that is for sure is that
+    it motivates me to do this type of stuff.
+  score: 0
+  posted_at: '2026-11-01T08:40:58Z'
+article:
+  url: https://github.com/kerlenton/bootgpt
+  title: 'GitHub - kerlenton/bootgpt: A language model that lives in a boot sector
+    · GitHub'
+  fetch_status: success
+  content: |-
+    ## Latest commit
+
+    ## History
+
+    ## Folders and files
+
+    ## Repository files navigation
+
+    # bootgpt
+
+    A neural network that boots your PC.
+
+    The MBR is 512 bytes of hand written asm. It loads an 11.5 KB int8 model from the next 23 sectors and runs it in 16-bit real mode on a 386. No OS, no C runtime, nothing. The machine wakes up and dreams a Linux boot log: timestamps, PCI bars, ACPI events for hardware that never existed.
+
+    Build thread: https://x.com/krlntn/status/2116514628457185757
+
+    With 8 chars of context and one hidden layer this is roughly the quality you get:
+
+    [ 2.283888] pci 0000:01:01.4: [1b36:0a35] ryndrde c4128 6422 Vveine [ 1.953886] pci 0000:01:1f.2: reg 0x10: [mem 0x7e4515e5-0x2d766c27] usbbore: reg [ 0.206596] Command line: BOOT_IMAGE=/vmlinu -5.5.2-1-generic gcc version 13.3.0, GNU ld ... [ 1.815765] ACPI: PCI Interrupt Link [LNKA: v/s.xos212 [ 1.883084] NET: Registered protocol family 16
+
+    ## Run it
+
+    brew install nasm qemu python3 -m venv .venv && .venv/bin/pip install numpy ./build.sh ./run.sh
+
+    disk.img is a normal boot image. dd it to a USB stick and boot any BIOS box if you have one. It only reads its own sectors.
+
+    ## Pieces
+
+    corpus_gen.py makes 3 MB of fake dmesg. One kernel version and one disk per boot session, because real boot logs repeat themselves and that repetition is what makes a tiny model look sane.
+
+    train.py trains the model (char embeddings, one hidden layer, softmax) and quantizes everything to int8 with power-of-two scales, so the boot sector can do the whole forward pass with imul and a single idiv. The script also simulates the exact integer math the asm will run, LCG sampler included, so the Python output and the boot sector output can be diffed. They match char for char.
+
+    boot.asm is the entire runtime: int 13h to load weights, int 10h to print, a softclip activation done with cdq/idiv, argmax sampling with timer seeded noise. Any keypress reboots the machine.
+
+    record.py records the demo gif from headless QEMU through the monitor socket. No window involved.
+
+    The boot sector is code only. Strings, weights and the vocab table all live in the data sectors, it was the only way to fit inference plus BIOS plumbing into 510 bytes.
+
+    ## Prior art
+
+    The boot sector genre is old and glorious. Oscar Toledo put chess, a whole OS and even a BASIC interpreter in there, other people did a C compiler, all inside 512 bytes. His book on boot sector games is a good read.
+
+    The closest neighbor is sectorllm, which boots a real llama2 transformer (5 layers, attention, the works) from about 1.2 KB of real mode asm, running Karpathy's stories260K model. sectorlisp-nn runs a TensorFlow-trained network during boot on a Lisp interpreter, and there are UEFI apps that boot straight into llama-class models on modern hardware.
+
+    bootgpt takes the other extreme: the whole engine fits in the 510-byte MBR itself, weights and strings live in the following sectors, and the model is not a general story teller but a tiny char-level net trained for exactly one thing, hallucinating the boot log of the machine it wakes up on.
+
+    ## About
+
+    A language model that lives in a boot sector
+
+    ### Topics
+
+    ### Resources
+
+    ### Stars
+
+    ### Watchers
+
+    ### Forks
+
+    ## Releases
+
+    ## Packages
+
+    ## Contributors
+
+    ## Languages
+  error:
+  fetched_at: '2026-11-01T12:50:14Z'
+archived_at: '2026-11-01T12:50:22Z'

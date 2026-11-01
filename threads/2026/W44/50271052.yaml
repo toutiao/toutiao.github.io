@@ -4,14 +4,14 @@ post:
   title: Reading and writing are less symmetric than you (probably) think
   url: https://fgiesen.wordpress.com/2015/10/25/reading-and-writing-are-less-symmetric-than-you-probably-think/
   hn_url: https://news.ycombinator.com/item?id=50271052
-  score: 94
+  score: 122
   author: luu
   posted_at: '2026-10-28T09:38:07Z'
-  fetched_at: '2026-11-01T04:52:23Z'
+  fetched_at: '2026-11-01T12:50:13Z'
   article_url: https://fgiesen.wordpress.com/2015/10/25/reading-and-writing-are-less-symmetric-than-you-probably-think/
   article_fetch_status: success
   article_fetched_at: '2026-11-01T04:52:23Z'
-  raw_comment_count: 23
+  raw_comment_count: 27
 comments:
 - id: '50317385'
   parent_id: '50271052'
@@ -213,6 +213,90 @@ comments:
     Oddities of the English Language'
   score: 0
   posted_at: '2026-11-01T03:02:09Z'
+- id: '50322841'
+  parent_id: '50318282'
+  author: Veserv
+  text: Most of that is just due to the fundamentally poor I&#x2F;O model of synchronous
+    operations used on Linux and other Unix derived systems followed by hardware manufacturers
+    cheating to make that fundamentally poor model look okay.<p>Essentially all modern
+    high speed hardware is batched and asynchronous. The way to get high speed performance
+    is to batch and asynchronously submit operations then wait for batchs of asynchronous
+    completion. In addition to being more efficient to process, batching also enables
+    &quot;smart&quot; hardware to more efficiently schedule the operations if needed
+    since it has more context.<p>Batching many of the reads you want upfront reduces
+    the need for as much speculative read buffering because you are more capable of
+    telling it &quot;all&#x2F;most&quot; of the information you actually want instead
+    of it having to guess that you are going to do linear reads. The reads being asynchronous,
+    which is what the hardware does, allows you to issue speculative reads explicitly.
+    If you intend to read a 1 GB file then the userspace I&#x2F;O library can fire
+    off 1,000 1MB reads and then you can wait until the &quot;next&quot; desired portion
+    of the data comes back before continuing your processing. This is in contrast
+    to issuing a 1 GB synchronous read followed by your processing which delays your
+    processing by the time of the entire read even though the hardware I&#x2F;O can
+    happen in parallel.<p>Essentially, the only remaining case where you then want
+    meaningful speculative read buffering (beyond the default efficient block size
+    of the hardware) is that you either do not understand your access patterns enough
+    to batch them, or you have a data-dependent load pattern which happens to regularly
+    resolve to something within the speculative read buffer. For instance, you read
+    8-bytes which tells you the offset into the file where the desired record is and
+    that record happens to be nearby almost all of the time.<p>For writes, what you
+    want is a data-or-time flush strategy which is actually just the flush strategy
+    you should use in basically all cases where you do buffering. Data-based flushing
+    exists to achieve efficient batching. Issuing large amounts of small operations
+    kills you with overhead, so you buffer the operations to attempt to coalesce them
+    into larger operations where the overhead is amortized away. However, if inadequate
+    data is generated to reach the data-based flush condition, then you get large
+    or potentially unbounded latency. You resolve this by also targeting a worst-case
+    acceptable latency in low throughput conditions. In that case your overhead has
+    been &quot;amortized&quot; away as a percentage of your processing time since
+    the processing time was long enough to reach the time-based flush condition. What
+    you are effectively doing is allocating N% of your time to completion to overhead
+    which either fires if you generate enough data to amortize it away or if you generate
+    enough time to amortize it away.<p>Writes being asynchronous also allows you to
+    resolve the data loss issue (if the hardware cooperates). You fire it off and
+    wait for the hardware to signal persistence of that write. Until you see a asynchronous
+    completion for that asynchronous write, you can not assume it is persisted. You
+    achieve ordering by issuing a write barrier which tells the hardware to signal
+    completion of the write barrier when all writes earlier in the asynchronous queue
+    have signaled completion. This can also be further extended to other layers if
+    desired to allow the detection of various levels of &quot;persistence&quot;.<p>Unfortunately,
+    Linux and other Unix derived systems use the awesomely terrible fsync() model
+    which is antithetical to efficient I&#x2F;O. Instead of you issuing a write barrier
+    and then getting notified when it completes, allowing you to continue to asynchronously
+    issue subsequent writes, you synchronously wait for all earlier I&#x2F;O to complete.
+    This serializes execution as you wait ensuring that any attempt at ordering or
+    persisting data is monstrously expensive. In fact, this is so horrible that hardware
+    manufacturers realized they could massively improve their throughput benchmarks
+    by lying about when data is persisted so the fsync() would complete faster ensuring
+    that their throughput benchmarks would not get shot due to data persistence latency
+    which is a different property. With a asynchronous model you can just rapid-fire
+    the operations and the write barriers (which is the way the hardware is designed
+    to operate) allowing you to evaluate both read&#x2F;write throughput and data
+    persistence latency without confounding them. This is both dramatically more useful
+    and more efficient.
+  score: 0
+  posted_at: '2026-11-01T04:58:06Z'
+- id: '50323571'
+  parent_id: '50271052'
+  author: zahlman
+  text: "(2015)<p>I don&#x27;t know why I&#x27;d &quot;(probably) think&quot; they&#x27;re
+    anything like symmetrical. After all, I have first-hand experience of reading
+    code and writing code; clearly, very different processes."
+  score: 0
+  posted_at: '2026-11-01T08:09:05Z'
+- id: '50323673'
+  parent_id: '50271052'
+  author: 6LLvveMx2koXfwn
+  text: I was thinking &#x27;brains&#x27;; you read something, well, ok, you write
+    something, Boom that thing is sticking!
+  score: 0
+  posted_at: '2026-11-01T08:33:20Z'
+- id: '50324335'
+  parent_id: '50320079'
+  author: thaumasiotes
+  text: What&#x27;s the difference between erasing a cache and invalidating it?
+  score: 0
+  posted_at: '2026-11-01T10:39:01Z'
 article:
   url: https://fgiesen.wordpress.com/2015/10/25/reading-and-writing-are-less-symmetric-than-you-probably-think/
   title: Reading and writing are less symmetric than you (probably) think | The ryg
@@ -319,4 +403,4 @@ article:
     buffer cache. It hasn’t necessarily made "
   error:
   fetched_at: '2026-11-01T04:52:23Z'
-archived_at: '2026-11-01T04:52:40Z'
+archived_at: '2026-11-01T12:50:22Z'
