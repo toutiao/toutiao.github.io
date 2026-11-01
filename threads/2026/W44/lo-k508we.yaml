@@ -5,14 +5,14 @@ post:
   title: Avoid Public Functions Calling Other Public Functions
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   hn_url: https://lobste.rs/s/k508we
-  score: 65
+  score: 80
   author: telemachus
   posted_at: '2026-10-31T18:05:03Z'
-  fetched_at: '2026-11-01T12:50:22Z'
+  fetched_at: '2026-11-01T19:24:34Z'
   article_url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-01T12:50:26Z'
-  raw_comment_count: 12
+  article_fetched_at: '2026-11-01T19:24:39Z'
+  raw_comment_count: 19
   tags:
   - api
   - programming
@@ -28,7 +28,7 @@ comments:
     perhaps even then, the two private helpers could both call another private helper
     for the overlap. (I''m probably focusing too much on the details of the example,
     which is not fully fleshed out.)'
-  score: 6
+  score: 7
   posted_at: '2026-10-31T18:25:46Z'
 - id: lo-nimpts
   parent_id: '0'
@@ -51,7 +51,7 @@ comments:
   text: |-
     A concrete thing related to this I just ran into yesterday, is that when reporting certain kinds of errors, I collect a stack trace for later rendering to indicate which public function call was responsible for the creation of a particular artifact.
     You can make the first stack frame be the callsite of the public function by capturing the return address there, and then passing that to all the private functions. If you called another public function, it would break this pattern because the call stack would contain 2 of the public functions. Not a big deal but it falls neatly into the pattern described by the article.
-  score: 15
+  score: 18
   posted_at: '2026-10-31T21:08:12Z'
 - id: lo-pzdunp
   parent_id: '0'
@@ -63,7 +63,7 @@ comments:
     Though, if using the avoid public->public rule works as a mechanism to help where
     there might be ambiguity or a lack of discipline then, sure, could be a good best
     practice.
-  score: 11
+  score: 18
   posted_at: '2026-10-31T22:09:31Z'
 - id: lo-srfixy
   parent_id: '0'
@@ -93,7 +93,7 @@ comments:
     stuff.  When I made my DNS library I explicitly separated packet receiving/sending
     from parsing/generating (you get a DNS packet, then send it to be decoded; it's
     not decoded directly from the wire).
-  score: 3
+  score: 5
   posted_at: '2026-10-31T22:42:57Z'
 - id: lo-i3xrkp
   parent_id: '0'
@@ -109,7 +109,7 @@ comments:
   text: 'It depends: for example, in Rust''s Vec there are a lot of pub methods that
     call other pub methods for a bunch of different reasons (safety, reuse, allocator
     API, ..).'
-  score: 1
+  score: 3
   posted_at: '2026-11-01T11:07:26Z'
 - id: lo-xaztk2
   parent_id: '0'
@@ -130,7 +130,7 @@ comments:
     so trivial that it hardly needs testing -- it doesn't do IO, and it doesn't do
     logic -- it just threads the data from the MCRS call to the logic function, which
     is something the typechecker can check for you."
-  score: 2
+  score: 4
   posted_at: '2026-11-01T12:01:15Z'
 - id: lo-t1aipx
   parent_id: '0'
@@ -143,8 +143,75 @@ comments:
     Build public APIs to meet requirements and be stable.
     Understand the layering in your system and don’t have lower layers depend on higher layers (except via explicit dependency injection).
     Design your APIs to be composable.
-  score: 3
+  score: 20
   posted_at: '2026-11-01T12:03:17Z'
+- id: lo-yxlnky
+  parent_id: '0'
+  author: matklad
+  text: |-
+    That's a good observation, that there are many different ways to cut the interfaces such that pure  business is on the one side, and side-effecting syscalls are on the other. And any cut works! But I think ideally you actually want two:
+
+    Most importantly, you cut the thinnest waist that connects your app to the external world (the trick here is architecting your application in a way that creates thin waist. Eg, you can have MyCustomeResourceStore, our you can can sprinkle raw SQL calls all other the place).
+    But then, to test implementation of the thin waist itself, you want to cut at the layer of syscalls. This second cut is significantly messier, and gives relatively less bang for buck, but is still a good idea to have.
+
+    The first layer tests logical, the second layer tests physical.
+  score: 4
+  posted_at: '2026-11-01T12:58:40Z'
+- id: lo-xcmwkb
+  parent_id: '0'
+  author: neilmadden
+  text: |-
+    My tuppence worth: if foo() can be implemented in terms of bar(), then that suggests the API isn’t well factored. Maybe one of them is at a different level of abstraction?
+    I note that features like Java’s default methods on interfaces encourage public methods to depend on other public methods, because that is all that is visible.
+  score: 1
+  posted_at: '2026-11-01T13:22:01Z'
+- id: lo-tfmvdm
+  parent_id: '0'
+  author: weberc2
+  text: |-
+    Thanks for clarifying! A couple more questions:
+
+    the trick here is architecting your application in a way that creates thin waist. Eg, you can have MyCustomeResourceStore, our you can can sprinkle raw SQL calls all other the place
+
+    Should I interpret this as “both of these are examples of a thin waist” or is one meant to be thicker than the other? My intuition is the latter—that MCRS is thinner than sprinkling SQL around, but I’m not sure if my idea of a thin waist matches yours.
+
+    But then, to test implementation of the thin waist itself, you want to cut at the layer of syscalls. This second cut is significantly messier, and gives relatively less bang for buck, but is still a good idea to have.
+
+    Ok, so assuming MCRS is the first cut, we would mock that to test everything “above it” and then we would unit test the MCRS implementation in isolation by mocking syscalls?
+    If so, why mock the syscalls as opposed to, say, using a real Postgres? Mocking the network syscalls to behave like Postgres seems like a herculean effort (specifically to have confidence that my mocks do what Postgres does), and I’m not sure what it buys—maybe the ability to inject faults?
+  score: 2
+  posted_at: '2026-11-01T14:05:56Z'
+- id: lo-168dfs
+  parent_id: '0'
+  author: foonathan
+  text: Similar, in C++, the public function captures the callers source location
+    and passes it around the implementation.
+  score: 1
+  posted_at: '2026-11-01T15:16:50Z'
+- id: lo-x9atah
+  parent_id: '0'
+  author: foonathan
+  text: But e.g. you wouldn't want to implement push by calling reserve, because the
+    implementation of push already needs the branch to check whether it needs to grow,
+    which reserve would duplicate.
+  score: 1
+  posted_at: '2026-11-01T15:18:36Z'
+- id: lo-qoahrm
+  parent_id: '0'
+  author: snej
+  text: OP did say it’s OK to have helper functions that call only other public functions.
+  score: 5
+  posted_at: '2026-11-01T15:20:01Z'
+- id: lo-rj84mv
+  parent_id: '0'
+  author: snej
+  text: This is especially true when some internal state is guarded by a mutex. In
+    that situation there’s the danger of a function holding the mutex calling another
+    function that acquires the mutex, causing deadlock. If you have a rule that public
+    functions grab the mutex and internal functions can assume the mutex is held,
+    and the class never calls its own public methods, you avoid the problem.
+  score: 2
+  posted_at: '2026-11-01T15:27:57Z'
 article:
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   title: Avoid Public Functions Calling Other Public Functions
@@ -193,4 +260,4 @@ article:
     they don’t absolve you from thinking!"
   error:
   fetched_at: '2026-10-31T21:08:24Z'
-archived_at: '2026-11-01T12:50:26Z'
+archived_at: '2026-11-01T19:24:39Z'

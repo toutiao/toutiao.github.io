@@ -1,0 +1,163 @@
+---
+post:
+  id: lo-bzazar
+  source: lobsters
+  title: Pratt parsing is a black box
+  url: https://vinipsmaker.github.io/blog/article/pratt-parsing-is-a-black-box/
+  hn_url: https://lobste.rs/s/bzazar
+  score: 10
+  author: vinipsmaker
+  posted_at: '2026-11-01T17:41:53Z'
+  fetched_at: '2026-11-01T19:24:34Z'
+  article_url: https://vinipsmaker.github.io/blog/article/pratt-parsing-is-a-black-box/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-01T19:24:35Z'
+  raw_comment_count: 3
+  tags:
+  - compilers
+  - plt
+comments:
+- id: lo-3n4wkz
+  parent_id: '0'
+  author: vinipsmaker
+  text: I used Pratt parsing in the compiler for a macro-heavy language that I've
+    been developing for almost a year before finally sitting down on my chair to write
+    my thoughts on Pratt parsing. The code is closed right now because I don't want
+    LLMs training on my code before the public release for 0.1, but what I can say
+    is that Pratt fundamentally changed the design of my language by allowing metaprogramming
+    stuff that I never dreamed of.
+  score: 2
+  posted_at: '2026-11-01T17:44:34Z'
+- id: lo-pg9izt
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    For Pratt parsing as a component of a self-extensible language like this, it's worth checking out what Lean does.
+    Most dependently typed languages require explicit forward declarations and other things that already force them to run in a single pass at the top level. In Lean's case, the top-level granularity is one command-like item executed in a monad, which provides a natural synchronization boundary for an on-the-fly self-extensible language. You can read an overview with links to code here. Quoting the initial excerpt:
+    "The Lean parser was developed with the following primary goals in mind:
+
+    flexibility: Lean's grammar is complex and includes indentation and other whitespace sensitivity. It should be possible to introduce such custom "tweaks" locally without having to adjust the fundamental parsing approach.
+    extensibility: Lean's grammar can be extended on the fly within a Lean file, and with Lean 4 we want to extend this to cover embedding domain-specific languages that may look nothing like Lean, down to using a separate set of tokens.
+    losslessness: The parser should produce a concrete syntax tree that preserves all whitespace and other "sub-token" information for the use in tooling.
+    performance: The overhead of the parser building blocks, and the overall parser performance on average-complexity input, should be comparable with that of the previous parser hand-written in C++. No fancy optimizations should be necessary for this.
+
+    Given these constraints, we decided to implement a combinatoric, non-monadic, lexer-less, memoizing recursive-descent parser. Using combinators instead of some more formal and introspectible grammar representation ensures ultimate flexibility as well as efficient extensibility: there is (almost) no pre-processing necessary when extending the grammar with a new parser.
+    The lack of a dedicated lexer ensures we can modify and replace the lexical grammar at any point, and simplifies detecting and propagating whitespace. [...] Tokens also play a central role in the prattParser combinator, which selects a leading parser followed by zero or more trailing parsers based on the current token. [...] The Parser type is extended with additional metadata over the mere parsing function to propagate token information: collectTokens collects all tokens within a parser for registering. firstTokens holds information about the "FIRST" token set used to speed up parser selection in prattParser."
+    The language reference also has a chapter that goes into greater detail, including on macros and elaborators, which you can roughly think of as type-directed, context-directed macros that can access the semantic environment.
+    An interesting facet of so-called postponement in languages like this is that it lets you schedule elaborators to run out of syntactic order depending on their mutual dynamic data dependencies; they synchronize implicitly through so-called holes, which from an operational perspective are like dataflow variables. Because elaborators run encapsulated in a monad, you don't need to use suspend/resume scheduling or any other particular strategy. E.g. you can use abort/retry scheduling as described in the Build Systems á la Carte paper, which I believe is more or less what Lean does: you optimistically run an elaborator and if it tries to read the content of a hole then its partial execution is aborted and its re-run is postponed (until another elaborator can hopefully fill in that hole and let the postponed elaborator make progress when the scheduler gets back to it eventually).
+  score: 4
+  posted_at: '2026-11-01T18:22:03Z'
+- id: lo-j49tuv
+  parent_id: '0'
+  author: hjvt
+  text: I don't know what could possibly be causing this, but in Firefox's reading
+    mode the contents of every code block are repeated four times.
+  score: 1
+  posted_at: '2026-11-01T19:21:22Z'
+article:
+  url: https://vinipsmaker.github.io/blog/article/pratt-parsing-is-a-black-box/
+  title: Pratt parsing is a black box
+  fetch_status: success
+  content: "## [#](#label-Introduction)\n\n## Introduction\n\nIt caught my attention
+    that most of Pratt parsing tutorials that I've stumbled on spend almost all of
+    their time explaining Pratt's algorithm and none explaining the properties behind
+    Pratt that actually matter. Pratt fits into just 9 lines of code if you're programming
+    in a high-level language such as Rhombus:\n\n    \n\n    fun expression(rbp =
+    0):\n\n    \n\n     let mutable t = token\n\n    \n\n     advance()\n\n    \n\n
+    \    let mutable left = t.nud()\n\n    \n\n     while rbp \\< token.lbp:\n\n    \n\n
+    \    t := token\n\n    \n\n     advance()\n\n    \n\n     left := t.led(left)\n\n
+    \   \n\n     left\n\n    \n\n    fun expression(rbp = 0):\n\n    \n\n     let
+    mutable t = token\n\n    \n\n     advance()\n\n    \n\n     let mutable left =
+    t.nud()\n\n    \n\n     while rbp \\< token.lbp:\n\n    \n\n     t := token\n\n
+    \   \n\n     advance()\n\n    \n\n     left := t.led(left)\n\n    \n\n     left\n\n
+    \   \n\n    fun expression(rbp = 0):\n\n    \n\n     let mutable t = token\n\n
+    \   \n\n     advance()\n\n    \n\n     let mutable left = t.nud()\n\n    \n\n
+    \    while rbp \\< token.lbp:\n\n    \n\n     t := token\n\n    \n\n     advance()\n\n
+    \   \n\n     left := t.led(left)\n\n    \n\n     left\n\n    \n\n    fun expression(rbp
+    = 0):\n\n    \n\n     let mutable t = token\n\n    \n\n     advance()\n\n    \n\n
+    \    let mutable left = t.nud()\n\n    \n\n     while rbp \\< token.lbp:\n\n    \n\n
+    \    t := token\n\n    \n\n     advance()\n\n    \n\n     left := t.led(left)\n\n
+    \   \n\n     left\n\nAnd here's a secret: that's the least important thing you
+    need to understand about Pratt's. In fact, you don't need to understand this piece
+    at all! Imagine if you were only able to use quicksort if you understood its implementation.
+    Imagine if you were only able to use files if you knew how to implement a filesystem
+    from scratch. It's the same logic here. If you lack the power to abstract, you'll
+    arrive nowhere in computer science because that's how the whole field works. In
+    fact, I wrote the backbone of a heavily Pratt-based parsing machinery for a compiler
+    that I've been writing since last year w/o even bothering to understand the above
+    snippet in any detail.\n\nNot convinced? Think for a second on how they do in
+    traditional parsing techniques: compiler compilers! They use code generators to
+    spit the parsing algorithm because just a minuscule crowd bothers to learn what
+    the parsing engine is actually doing. It's no different with Pratt. However Pratt
+    is so small that you can just copy'n'paste these 9 lines of code in your project
+    and call it a day instead of adding a new complex dependency to your project.
+    The algorithm hasn't changed since 1973 and it's not gonna change now.\n\nIn this
+    article I'll go over what you actually need to keep in mind for Pratt parsing.
+    The point won't be about memorizing any of it though. The point is about acquiring
+    a mindset. As long as you acquire the mindset you don't need to even bother to
+    remember even a single word of what I say here.\n\n## [#](#label-Nuds%20&%20leds)\n\n##
+    Nuds & leds\n\nThe only tutorial on Pratt parsing that I can firmly recommend
+    to someone who has never been exposed to the topic is actually a talk that Douglas
+    Crockford gave in the conference GOTO 2013[¹](#). Douglas Crockford nailed it
+    when he stated:\n\n> Pratt takes parsing which is a really complicated thing and
+    reduces it to one simple question: _What do we expect to see to the left of a
+    token_?\n\n— Douglas Crockford, GOTO 2013\n\nAt first glance it may look like
+    a mystical statement devoid of meaning, but that's the question that becomes the
+    framework on how you face parsing problems and it'll rewire your brain to internalize
+    the Pratt parsing mindset. That's the most important thing you need to understand.
+    You register semantic actions for two categories: nuds and leds. A nud is a token
+    that expects nothing to its left (nud stands for null denotation) while a led
+    expects something (led stands for left denotation).\n\nTraditional parsing techniques
+    register semantic actions to production rules. Here's an example I took straight
+    from GNU Bison's manual:\n\n    \n\n    expr: expr '+' expr { $$ = $1 + $3; }
+    ;\n\n    \n\n    expr: expr '+' expr { $$ = $1 + $3; } ;\n\n    \n\n    expr:
+    expr '+' expr { $$ = $1 + $3; } ;\n\n    \n\n    expr: expr '+' expr { $$ = $1
+    + $3; } ;\n\nThe text between the braces is code that executes when the BNF-like
+    grammar on the left matches. I'm gonna repeat myself because that's really important:
+    traditional parsing techniques register semantic actions to _production rules_
+    (which by definition are non-terminal symbols). In contrast Pratt parsing registers
+    semantic actions to the _terminals themselves_ instead. That's a fundamental shift
+    on how you face parsing problems.\n\nHere's a stripped down version of the code
+    for the tables that I have in my compiler right now:\n\n    \n\n    static constinit
+    const auto nud\\_table = make\\_dispatch\\_table(\n\n    \n\n    rule\\_c\\<token::lparen,
+    token::nud::parse\\_lparen\\>,\n\n    \n\n    rule\\_c\\<token::lbrace, token::nud::parse\\_lbrace\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::exclamation\\_mark, token::nud::parse\\_negation\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::less\\_than\\_sign, token::nud::parse\\_enter\\_type\\_scope\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::plus\\_sign, token::nud::parse\\_unary\\_plus\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::minus\\_sign, token::nud::parse\\_unary\\_minus\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::dplus\\_sign, token::nud::parse\\_preincrement\\>,\n\n
+    \   \n\n    // ...\n\n    \n\n    rule\\_c\\<token::code::user\\_macro, token::nud::parse\\_user\\_macro\\_expansion\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::identifier, token::nud::parse\\_identifier\\>\n\n
+    \   \n\n    );\n\n    \n\n    \n\n    \n\n    static constinit const auto led\\_table
+    = make\\_dispatch\\_table(\n\n    \n\n    rule\\_c\\<token::lparen, token::led::parse\\_function\\_call\\>,\n\n
+    \   \n\n    rule\\_c\\<token::lbrack, token::led::parse\\_array\\_indexing\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::dvertical\\_bar, token::led::parse\\_logical\\_disjunction\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::dampersand, token::led::parse\\_logical\\_conjunction\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::dequals\\_sign, token::led::parse\\_equality\\>,\n\n
+    \   \n\n    // ...\n\n    \n\n    rule\\_c\\<token::code::dminus\\_sign, token::led::parse\\_postdecrement\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::asterisk, token::led::parse\\_multiplication\\>\n\n
+    \   \n\n    );\n\n    \n\n    \n\n    \n\n    enum : unsigned\n\n    \n\n    {\n\n
+    \   \n\n    parse\\_until\\_end = 0,\n\n    \n\n    prefix\\_operator\\_binding\\_power
+    = 120,\n\n    \n\n    };\n\n    \n\n    \n\n    \n\n    static constexpr auto
+    binding\\_power = make\\_dispatch\\_table(\n\n    \n\n    rule\\_c\\<token::code::dvertical\\_bar,
+    10\\>,\n\n    \n\n    rule\\_c\\<token::code::dampersand, 20\\>,\n\n    \n\n    rule\\_c\\<token::code::dequals\\_sign,
+    30\\>,\n\n    \n\n    // ...\n\n    \n\n    rule\\_c\\<token::code::lparen, 130\\>,\n\n
+    \   \n\n    rule\\_c\\<token::code::lbrack, 130\\>,\n\n    \n\n    rule\\_c\\<token::code::dplus\\_sign,
+    130\\>,\n\n    \n\n    rule\\_c\\<token::code::dminus\\_sign, 130\\>,\n\n    \n\n
+    \   rule\\_c\\<token::code::dot\\_asterisk, 130\\>,\n\n    \n\n    rule\\_c\\<token::code::rarrow,
+    130\\>,\n\n    \n\n    rule\\_c\\<token::code::dot, 130\\>\n\n    \n\n    );\n\n
+    \   \n\n    static constinit const auto nud\\_table = make\\_dispatch\\_table(\n\n
+    \   \n\n    rule\\_c\\<token::lparen, token::nud::parse\\_lparen\\>,\n\n    \n\n
+    \   rule\\_c\\<token::lbrace, token::nud::parse\\_lbrace\\>,\n\n    \n\n    rule\\_c\\<token::code::exclamation\\_mark,
+    token::nud::parse\\_negation\\>,\n\n    \n\n    rule\\_c\\<token::code::less\\_than\\_sign,
+    token::nud::parse\\_enter\\_type\\_scope\\>,\n\n    \n\n    rule\\_c\\<token::code::plus\\_sign,
+    token::nud::parse\\_unary\\_plus\\>,\n\n    \n\n    rule\\_c\\<token::code::minus\\_sign,
+    token::nud::parse\\_unary\\_minus\\>,\n\n    \n\n    rule\\_c\\<token::code::dplus\\_sign,
+    token::nud::parse\\_preincrement\\>,\n\n    \n\n    // ...\n\n    \n\n    rule\\_c\\<token::code::user\\_macro,
+    token::nud::parse\\_user\\_macro\\_expansion\\>,\n\n    \n\n    rule\\_c\\<token::code::identifier,
+    token::nud::parse\\_identifier\\>\n\n    \n\n    );\n\n    \n\n    \n\n    \n\n
+    \   static constinit const auto led\\_table = make\\_dispatch\\_table(\n\n    \n\n
+    \   rule\\_c\\<token::lparen, token::led::parse\\_function\\_call\\>,\n\n "
+  error:
+  fetched_at: '2026-11-01T19:24:35Z'
+archived_at: '2026-11-01T19:24:35Z'

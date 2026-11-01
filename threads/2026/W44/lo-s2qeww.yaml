@@ -1,0 +1,105 @@
+---
+post:
+  id: lo-s2qeww
+  source: lobsters
+  title: An outsider's perspective on Scion and Mononoke
+  url: https://typesanitizer.com/blog/scion.html
+  hn_url: https://lobste.rs/s/s2qeww
+  score: 15
+  author: typesanitizer
+  posted_at: '2026-11-01T15:22:36Z'
+  fetched_at: '2026-11-01T19:24:34Z'
+  article_url: https://typesanitizer.com/blog/scion.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-01T19:24:34Z'
+  raw_comment_count: 1
+  tags:
+  - vcs
+comments:
+- id: lo-zibnmw
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Thanks for writing this up.  Your background and experience convinced me :-)
+    There's an obvious incentive for AI companies to credit their own model, over the people whose work the model digested.
+    If there isn't already, there should probably be a list of these incidents:
+
+    The Navier-Stokes proof and unethical behavior by OpenAI - IIRC they backchanneled an offer to credit one author, as long as they could discredit a rival at Anthropic
+
+    (A related issue, which is arguably also bad: "dumping" of hundreds of proofs with questionable citations.)
+
+
+    Anthropic's source control system, as discussed here
+  score: 7
+  posted_at: '2026-11-01T17:35:56Z'
+article:
+  url: https://typesanitizer.com/blog/scion.html
+  title: An outsider's perspective on Scion and Mononoke
+  fetch_status: success
+  content: |-
+    # An outsider’s perspective on Scion and Mononoke
+
+    Recently, Anthropic wrote a blog post about their new centralized version control system Scion. As someone working on the Source Control team at Databricks, where we have a huge monorepo and are exploring different options, I figured it might be useful to share my perspective here.
+
+    (Obligatory disclaimer: This post represents my own views, not my employer’s.)
+
+    I recommend reading Anthropic’s post before continuing to read this one. You may also want to pre-read Rain Paharia’s Anthropic’s Scion is heavily inspired by Mononoke and the follow-up More on Anthropic’s Scion ripping off Mononoke.
+
+    ## My history with version control
+
+    Before we get into the weeds, it might be helpful to you to know where I’m coming from. If you’re not interested in this, you can jump to the Technical Commentary section.
+
+    I have never worked at Facebook, but one of my all-time favorite tech talks is Durham Goode’s Scaling Mercurial at Facebook from Git Merge 2017.Goode was the longest-serving and most senior member on Facebook’s Source Control team. (source)
+
+    The talk covers various interesting aspects for both the server side and the client side. For the server side, some of the topics include solving push contention with server-side rebasing (pushrebase), using scalable object storage for commits, moving various source control queries to the server, etc. For the client, there’s mention of the smartlog and other CLI commands for easier manipulation of history (compared to rebasing in Git).
+
+    However, more so than the technical aspects of the talk (which are interesting in their own right!), the main thing that has stayed with me throughout these years is the deep care for users that is reflected in Goode’s tone and words. It’s a bit difficult to convey this without the power of voice,You should watch the presentation! but here are some quotes which reflect this:
+
+    In the context of hg smartlog:hg smartlog gives you a focused view of your branches and how they relate to the development trunk.
+
+    > I know Git can produce this kind of UI if you know the incantation, but the critical thing here is not that it can be done; it’s that it becomes the default view of their source-control environment. That is where the power comes from: making it really intuitive for users to use source control and understand the concepts without reading a man page.
+
+    I know Git can produce this kind of UI if you know the incantation, but the critical thing here is not that it can be done; it’s that it becomes the default view of their source-control environment. That is where the power comes from: making it really intuitive for users to use source control and understand the concepts without reading a man page.
+
+    In the context of hg absorb:hg absorb auto-magically identifies the right commits in a stack to squash fixes into and rewrites history accordingly. This makes it easier to work with stacked changes.
+
+    > This is the type of UI that we need to be inventing for our users: ones that match their intent and do it to the best of their ability, without making the user understand everything they have to do. It’s a little bit magic, but it’s magic in a very clean way. I think a lot of user experiences could benefit from this approach.
+
+    This is the type of UI that we need to be inventing for our users: ones that match their intent and do it to the best of their ability, without making the user understand everything they have to do. It’s a little bit magic, but it’s magic in a very clean way. I think a lot of user experiences could benefit from this approach.
+
+    On recovering from mistakes:
+
+    > If you want to undo an amend or undo parts of a commit in Mercurial, you just run unamend and uncommit. You don’t have to understand a reflog; you don’t have to get a PhD to understand reset anymore. It just works, and it gives users confidence that they can recover from mistakes. That’s one of the most important things we can do: provide user experiences that give them confidence in what they’re doing.
+
+    If you want to undo an amend or undo parts of a commit in Mercurial, you just run unamend and uncommit. You don’t have to understand a reflog; you don’t have to get a PhD to understand reset anymore. It just works, and it gives users confidence that they can recover from mistakes. That’s one of the most important things we can do: provide user experiences that give them confidence in what they’re doing.
+
+    Near the end, summing things up:
+
+    > On the user experience side, we as a source control community need to do a better job of building UIs that are accessible, intuitive, and that enable novice users to be power users. Everything I just talked about is how we are trying to do that for our users at Facebook. If the Git community could do that, the massive number of Git users taking advantage of it has the potential to redefine productivity for an entire generation of users.
+
+    On the user experience side, we as a source control community need to do a better job of building UIs that are accessible, intuitive, and that enable novice users to be power users. Everything I just talked about is how we are trying to do that for our users at Facebook. If the Git community could do that, the massive number of Git users taking advantage of it has the potential to redefine productivity for an entire generation of users.
+
+    Over the years, the possibility of these workflows lingered in my mind as I continued working with Git. I tried building my own wrappers on top of the git CLI to do some of these things, but I couldn’t get the performance to be reasonable since everything shelled out to git all the time, and I didn’t understand Git’s internals well enough to do something better.
+
+    I ended up sticking with vanilla Git until Waleed KhanWaleed worked at Facebook on dev tools, and later did work at Twitter related to version control. created git-branchless, with support for a smartlog, in-memory rebases, undo and more. I eagerly adopted it. I also used Stephen Jung’s git-absorb quite a bit. Even today, the initial bit of git absorb’s README cites the mention of hg absorb on a Mozilla mailing list as the key inspiration.
+
+    Finally, earlier this year (2026), I mostly switched to using jj, after having bounced off of it a couple of times. jj was created by Martin von Zweigbergk, who previously contributed to Git and later joined Google and worked on their internal Mercurial client for the monorepo.Source: Mercurial at Google (2023).
+
+    So even though I have almost exclusively worked with Git throughout my career, I am in a way indebted to the work on Mercurial by Goode and numerous other contributors.
+
+    I’ve talked a bit about my personal usage of version control tooling. Let me briefly describe work I’ve done related to version control.
+
+    From late 2021 to late 2025, I worked at Sourcegraph on code indexing and navigation. For the last two of those years, I worked more on the backend written in Go, where the code navigation was coupled to version control.This is because code navigation data could be uploaded for ~any commit.
+
+    During this time, one of the recurring sources of incidents was the (non-)incremental updates for the commit graph structure that was mirrored into Postgres, in order to be able to efficiently compute what code navigation data (stored in Postgres) was “visible” at which commit.
+
+    I recall being frustrated with that, and half-jokingly proposing that it would be good to move to a more custom storage solution or have custom indexes next to Git’s storage itself. That proposal didn’t particularly go anywhere (not that I expected it to), but the frustration with Git as a hard-to-operate database stayed with me.
+
+    Since around March 2026, I’ve been working on Source Control at Databricks. Some of the things I’ve worked on include:
+
+    - Enforcing consistent Git configurations across our devboxes.
+
+    - Creating various safety nets to prevent agents from messing up Git repos in ways that trig
+  error:
+  fetched_at: '2026-11-01T19:24:34Z'
+archived_at: '2026-11-01T19:24:35Z'

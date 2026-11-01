@@ -5,14 +5,14 @@ post:
   title: The Kluever Maneuver
   url: https://jordi.inversethought.com/blog/the-kluever-maneuver/
   hn_url: https://lobste.rs/s/rpiu3w
-  score: 48
+  score: 53
   author: JordiGH
   posted_at: '2026-10-31T15:05:04Z'
-  fetched_at: '2026-11-01T12:50:22Z'
+  fetched_at: '2026-11-01T19:24:34Z'
   article_url: https://jordi.inversethought.com/blog/the-kluever-maneuver/
   article_fetch_status: success
-  article_fetched_at: '2026-11-01T12:50:24Z'
-  raw_comment_count: 25
+  article_fetched_at: '2026-11-01T19:24:39Z'
+  raw_comment_count: 30
   tags:
   - testing
 comments:
@@ -23,7 +23,7 @@ comments:
     https://aegis.sourceforge.net/ went a step further and expected only the correct test, but had some rules on how it can backport it separate from the fix.
     So you submit a change, which comes with a test (for new features, the test would fail because there's no feature to exercise), and aegis would only merge the change if the test-on-its-own failed and passes with the change.
     In "write a fix demonstrating the bug (by passing)" you lose the invariant that the very same test failed, then passed. That is, the fix might be unrelated to the test's behavior.
-  score: 9
+  score: 10
   posted_at: '2026-10-31T15:27:03Z'
 - id: lo-wzris2
   parent_id: '0'
@@ -38,7 +38,7 @@ comments:
     A couple, yeah. TDD would have you write a test asserting the correct behavior that initially fails, while this methodology has you write a test asserting the incorrect that initially passes, but must be fixed.
     Also, more broadly, TDD is a practice that asserts that any code change, from new features to bug fixes, should be preceded by the creation of a test suite. Whether or not this is useful or not has long been a subject of debate.
     Personally I've found writing a (failing) regression test first to be useful, followed by a fix that makes it pass. I don't mind failing test suites in branches, however. If I did mind, I might be more inclined to mark the test as expected to fail, rather than modifying the test itself when I fixed the bug.
-  score: 11
+  score: 13
   posted_at: '2026-10-31T16:15:59Z'
 - id: lo-irgrkb
   parent_id: '0'
@@ -82,13 +82,13 @@ comments:
   text: https://lobste.rs/c/72mqyb proposes using "expect fail" for such tests at
     first, which encodes the expectation in a way that is verifiable, and easy to
     flip (and to verify that change to the test) when the fix arrives.
-  score: 8
+  score: 9
   posted_at: '2026-10-31T17:33:26Z'
 - id: lo-pno3y0
   parent_id: '0'
   author: FeepingCreature
   text: this is why unittest libraries have "known failing" annotations.
-  score: 6
+  score: 8
   posted_at: '2026-10-31T18:06:00Z'
 - id: lo-rykak9
   parent_id: '0'
@@ -102,7 +102,7 @@ comments:
   text: For me, a key point of this is to make the change of behavior clear, complementing
     the PR description. If an "expect fail" doesn't clearly communicate what operation
     failed and how, then I'd rather switch the code to assert that condition.
-  score: 1
+  score: 2
   posted_at: '2026-10-31T18:24:37Z'
 - id: lo-gt2nlw
   parent_id: '0'
@@ -144,7 +144,7 @@ comments:
   text: I don't think I like committing passing but known-wrong tests to the codebase,
     even if immediately patched. But I could see the argument if you mark the test
     XFAIL and then fix the bug in the commit that removes the XFAIL mark.
-  score: 10
+  score: 15
   posted_at: '2026-11-01T02:33:53Z'
 - id: lo-sm5sjk
   parent_id: '0'
@@ -160,7 +160,7 @@ comments:
     But what if the test accidentally already passed before the alleged bugfix and the alleged bugfix didn’t actually work? In that case the added test gives false confidence that the bugfix worked.
 
     Why do we have confidence that the new test is any better implemented? It could accidentally be passing the implementation in commit 2 too. This intrinsic problem is why the TDD guys focus on the Red-Green-Refactor cycle.
-  score: 4
+  score: 5
   posted_at: '2026-11-01T05:39:49Z'
 - id: lo-afcyut
   parent_id: '0'
@@ -168,7 +168,7 @@ comments:
   text: |-
     In our case, it's mostly because we're using Java. I added a section addressing this concern:
     https://jordi.inversethought.com/blog/the-kluever-maneuver/#:~:text=Shouldn%E2%80%99t%20we%20use%20XFAIL%20instead%3F
-  score: 2
+  score: 3
   posted_at: '2026-11-01T06:39:08Z'
 - id: lo-jv2nys
   parent_id: '0'
@@ -193,7 +193,7 @@ comments:
   parent_id: '0'
   author: mxey
   text: How does a test “slip into production”?
-  score: 1
+  score: 2
   posted_at: '2026-11-01T10:03:03Z'
 - id: lo-9jff26
   parent_id: '0'
@@ -208,8 +208,47 @@ comments:
   parent_id: '0'
   author: Ambroisie
   text: Bisecting, commit atomicity, general code hygiene, just to name a few?
-  score: 1
+  score: 3
   posted_at: '2026-11-01T12:35:30Z'
+- id: lo-cj9lmc
+  parent_id: '0'
+  author: rustybolt
+  text: |-
+    Can you not bisect when there's a test failing?
+    Commit atomicity as far as I understand is a concept that (often) includes the requirement that tests pass after every commit, but to me it's still not clear why having a failing CI on some commit is a bad thing.
+    General code hygeine is very general and subjective and again, I don't see the problem with a failing test after you commit "add failing test" is problematic.
+  score: 1
+  posted_at: '2026-11-01T13:22:46Z'
+- id: lo-r5qjtb
+  parent_id: '0'
+  author: Ambroisie
+  text: If you're bisecting a (new) failing  test, having test failures in your history
+    makes that harder to automate.
+  score: 2
+  posted_at: '2026-11-01T14:26:17Z'
+- id: lo-qp954o
+  parent_id: '0'
+  author: hc
+  text: |-
+    this seems good if you're already heavy on process in a large team.
+    i would want to require the bug/fixme comment as part of the process, when doing this. you could even commit the reproduction before the fix, as part of triage, if it's annotated as [BugReproduction(issue#)] or something so that if someone breaks the test they can tell it wasn't intended behaviour
+  score: 1
+  posted_at: '2026-11-01T15:03:49Z'
+- id: lo-ufvj1e
+  parent_id: '0'
+  author: JulianWgs
+  text: |-
+    Probably multiple ways. The first one I can think of: The commit introducing the fix introduces another bug and gets reverted by another developer who is not familiar with the Kluever Maneuver.
+    Development can be messy and slip ups happen. I don‘t think this approach is bad, but I think it breaks the assumption that a commit change is atomic.
+  score: 1
+  posted_at: '2026-11-01T15:56:21Z'
+- id: lo-6ifbxd
+  parent_id: '0'
+  author: shrestha
+  text: I thought same but you can create a PR with both commits, marking the PR DRAFT
+    initially, let CI pass and finally committing the fix letting CI pass again.
+  score: 1
+  posted_at: '2026-11-01T18:13:47Z'
 article:
   url: https://jordi.inversethought.com/blog/the-kluever-maneuver/
   title: The Kluever Maneuver – The Scribbler of the Rueful Countenance
@@ -296,4 +335,4 @@ article:
     * *\n\n«[Previous](https://jordi.inversethought.com/blog/exercising-software-freedom-on-firefox/)"
   error:
   fetched_at: '2026-11-01T12:50:24Z'
-archived_at: '2026-11-01T12:50:24Z'
+archived_at: '2026-11-01T19:24:40Z'

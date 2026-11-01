@@ -4,14 +4,14 @@ post:
   title: It's the memory latency, stupid
   url: https://pivotlake.io/blog/its-the-memory-latency-stupid/
   hn_url: https://news.ycombinator.com/item?id=50318720
-  score: 215
+  score: 244
   author: ntur1337
   posted_at: '2026-10-31T18:38:16Z'
-  fetched_at: '2026-11-01T12:49:59Z'
+  fetched_at: '2026-11-01T19:24:26Z'
   article_url: https://pivotlake.io/blog/its-the-memory-latency-stupid/
   article_fetch_status: success
   article_fetched_at: '2026-11-01T04:52:20Z'
-  raw_comment_count: 69
+  raw_comment_count: 78
 comments:
 - id: '50319344'
   parent_id: '50318720'
@@ -642,7 +642,7 @@ comments:
   parent_id: '50321276'
   author: sparkie
   text: |-
-    If you don&#x27;t need insert&#x2F;remove in middle, only at the end, there are more optimal data structures for list like RAOTS[1].<p>Btrees are O(log n) random access, O(log n) cons and use O(log n) excess space.<p>Unrolled linked lists are still O(n) random access because we ignore the constant factor of block size. They also use O(n) excess space for pointers, but have O(1) cons.<p>RAOTS are O(1) random access, O(1) amortized cons [O(√n) worse case], and use O(√n) excess space.<p>RAOTS is basically a tree of depth 1. The root is an &quot;index block&quot; of pointers to data blocks which grow in size proportional to the square root of the data length (similar to Hashed Array Trees, but doesn&#x27;t require restructuring on each power of 2).<p>The square root is an approximation - the structure grows in &quot;superblocks&quot; where each superblock has `~√n` blocks of size `~√n` The pattern is: [1x1, 1x2, 2x2, 2x4, 4x4, 4x8, 8x8, 8x16, 16x16, 16x32, ...] Even indexed superblocks double the data block size, odd indexed superblocks double the number of blocks per superblock. It doesn&#x27;t use an actual `sqrt()` call uses but some bit tricks via `clz`.<p>A simpler trick, which has no single name but have been known as &quot;segmented lists&quot;, is where the index block points to blocks increasing in size geometrically essentially like a dynamic array but where we don&#x27;t need to `realloc`. The index block is length 1+log₂n and each index i points to a block of length 2⁽ⁱ⁻¹⁾. These have O(1) random access, O(1) amortized cons [O(n) worst case] and waste O(n) space [with constant factor of 1&#x2F;2]. The random access is very efficient as it&#x27;s only two dereferences and a few bit tricks:<p><pre><code>    index_block[bit_width(idx)][idx - bit_floor(idx)]
+    If you don&#x27;t need insert&#x2F;remove in middle, only at the end, there are more optimal data structures for Lists like RAOTS[1].<p>Btrees are O(log n) random access, O(log n) cons and use O(log n) excess space.<p>Unrolled linked lists are still O(n) random access because we ignore the constant factor of block size. They also use O(n) excess space for pointers, but have O(1) cons.<p>RAOTS are O(1) random access, O(1) amortized cons [O(√n) worse case], and use O(√n) excess space.<p>RAOTS is basically a tree of depth 1. The root is an &quot;index block&quot; of pointers to data blocks which grow in size proportional to the square root of the data length (similar to Hashed Array Trees, but doesn&#x27;t require restructuring on each power of 2). The index block has length ~√n.<p>The square root is an approximation - the structure grows in &quot;superblocks&quot; where each superblock has `~√n` blocks of size `~√n` The pattern is: [1x1, 1x2, 2x2, 2x4, 4x4, 4x8, 8x8, 8x16, 16x16, 16x32, ...] Even indexed superblocks double the data block size, odd indexed superblocks double the number of blocks per superblock. It doesn&#x27;t use an actual `sqrt()` call uses but some bit tricks via `clz`.<p>A simpler trick, which has no single name but have been known as &quot;segmented lists&quot;, is where the index block points to blocks increasing in size geometrically, essentially like a dynamic array but where we don&#x27;t need to `realloc`. The index block is length 1+log₂n and each index i points to a block of length 2⁽ⁱ⁻¹⁾. These have O(1) random access, O(1) amortized cons [O(n) worst case] and waste O(n) space [with constant factor of 1&#x2F;2]. The random access is very efficient as it&#x27;s only two dereferences and a few bit tricks:<p><pre><code>    index_block[bit_width(idx)][idx - bit_floor(idx)]
     </code></pre>
     This is more cache friendly than the other approaches.<p>There&#x27;s also Bagwell&#x27;s VList[2] which is like a mashup of the &quot;segmented list&quot; and an unrolled list - the blocks grow geometrically in size, but still contain the pointer the the next block rather than them being in a separate index block.<p>[1]:<a href="https:&#x2F;&#x2F;cs.uwaterloo.ca&#x2F;research&#x2F;tr&#x2F;1999&#x2F;09&#x2F;CS-99-09.pdf" rel="nofollow">https:&#x2F;&#x2F;cs.uwaterloo.ca&#x2F;research&#x2F;tr&#x2F;1999&#x2F;09&#x2F;CS-99-09.pdf</a><p>[2]:<a href="https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.5555&#x2F;1756972.1756975" rel="nofollow">https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.5555&#x2F;1756972.1756975</a>
   score: 0
@@ -657,6 +657,83 @@ comments:
     game tech either.
   score: 0
   posted_at: '2026-11-01T12:30:14Z'
+- id: '50325293'
+  parent_id: '50319988'
+  author: cffan2
+  text: Absolute nonsense, people claiming that on here are usually hiding their deep
+    political biases and as liberal lefties dont like it when someone in their space
+    calls a spade a spade, especially someone with a lot more reach and respect. Slightly
+    different playbook than calling everything you disagree with racist. Yawn spells
+    are spent. This is how they attack Bob now because they realize being a leftie
+    is ridiculous and this “im a centralist” crap carries no weight, so they hide
+    that and try to attack him on his contributions to software engineering.
+  score: 0
+  posted_at: '2026-11-01T13:06:51Z'
+- id: '50325382'
+  parent_id: '50323292'
+  author: maccard
+  text: The exact same can be about agile, and all the arguments against that are
+    the same.
+  score: 0
+  posted_at: '2026-11-01T13:17:35Z'
+- id: '50325748'
+  parent_id: '50321405'
+  author: imtringued
+  text: Well, MCUs tend to have a buffer for execute in place from flash, but often
+    they just have SRAM as main memory which can be accessed with a fixed latency
+    and there is not much point in having a cache.
+  score: 0
+  posted_at: '2026-11-01T13:58:23Z'
+- id: '50326289'
+  parent_id: '50324470'
+  author: hyperman1
+  text: I&#x27;ve known about a student, long ago in the &#x27;90s, who got to speed
+    up a batch codebase in some bigcorp, as a summer job.  The original did basically
+    everything wrong, up to bubblesort.  So student diligently cleaned up the mess
+    and got a speedup from multiple hours to a few minutes.<p>Then he could not get
+    an interview anywhere.  After some backchannel communication it turned out he
+    had to remove that experience from his CV, as all employers assumed he was just
+    lying.
+  score: 0
+  posted_at: '2026-11-01T14:57:07Z'
+- id: '50326499'
+  parent_id: '50324873'
+  author: aravpanwar
+  text: LLMs helping with efficiency comes long after AGI.
+  score: 0
+  posted_at: '2026-11-01T15:21:17Z'
+- id: '50327024'
+  parent_id: '50326289'
+  author: kevsamuel
+  text: 'To be fair, I would have assumed that too. Occam&#x27;s razor: in a sea of
+    lying candidates, the next one is probably lying too.'
+  score: 0
+  posted_at: '2026-11-01T16:19:25Z'
+- id: '50327224'
+  parent_id: '50325382'
+  author: teddyh
+  text: The same applies there, except he hasn’t made a second book.
+  score: 0
+  posted_at: '2026-11-01T16:41:29Z'
+- id: '50327235'
+  parent_id: '50318720'
+  author: inoknowtoask
+  text: 'Hi, i just have 2 questions. Are your machines priorizing Space over Processing
+    ? In terms to save a few bytes, cos &quot;Rendering&quot; (for example) is done
+    by the clients machine as an example? Or have i missunderstood something? I am
+    asking, cos the first answer in the posting seem to miss: &quot;commenting the
+    code good enough than anyone may &#x27;understood, what <i>heck</i> this typed
+    line may be for...&#x27;&quot; just asking...thanks'
+  score: 0
+  posted_at: '2026-11-01T16:43:01Z'
+- id: '50327655'
+  parent_id: '50322420'
+  author: inoknowtoask
+  text: 'Elder Scrolls...(Retro) maybe you missed it: <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=oiI0PR2F7o4"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=oiI0PR2F7o4</a><p>cos...everyone
+    seems still &#x27;unreal busy&#x27;...or mentioning doom (3) ^^'
+  score: 0
+  posted_at: '2026-11-01T17:28:50Z'
 article:
   url: https://pivotlake.io/blog/its-the-memory-latency-stupid/
   title: It's the memory latency, stupid · Pivot blog
@@ -761,4 +838,4 @@ article:
     the right\n            let partition = (hash >> 52) as usize;\n            self.partitions[partition].push(&mut"
   error:
   fetched_at: '2026-11-01T04:52:20Z'
-archived_at: '2026-11-01T12:50:22Z'
+archived_at: '2026-11-01T19:24:33Z'
