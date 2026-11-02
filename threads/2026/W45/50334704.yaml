@@ -1,0 +1,579 @@
+---
+post:
+  id: '50334704'
+  title: 'Show HN: I''ve updated my Linux System Call website and API'
+  url: https://syscall.sh/
+  hn_url: https://news.ycombinator.com/item?id=50334704
+  score: 188
+  author: guitmz
+  posted_at: '2026-11-02T09:29:16Z'
+  fetched_at: '2026-11-02T21:29:46Z'
+  article_url: https://syscall.sh/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T21:29:46Z'
+  raw_comment_count: 47
+comments:
+- id: '50335175'
+  parent_id: '50334704'
+  author: ReDress
+  text: If syscalls are so similar, for instance, like &#x27;read&#x27; and &#x27;readv&#x27;
+    or &#x27;pread&#x27;, &#x27;sendmsg&#x27; and &#x27;sendmsgv&#x27; or &#x27;fork&#x27;
+    and &#x27;vfork&#x27;.<p>Does it still make sense to term or classify them as
+    two distinct syscalls?
+  score: 0
+  posted_at: '2026-11-02T10:41:54Z'
+- id: '50335227'
+  parent_id: '50335175'
+  author: rustyhancock
+  text: It definitely makes sense to have a section &quot;similar syscalls on this
+    architecture&quot; on the details page.
+  score: 0
+  posted_at: '2026-11-02T10:50:44Z'
+- id: '50335254'
+  parent_id: '50335227'
+  author: guitmz
+  text: 'There&#x27;s a &quot;Same syscall on other architectures&quot; section already,
+    maybe I could add the Similar section next to it. Edit: but this means it needs
+    a way to actually know they are similar apart from only their names'
+  score: 0
+  posted_at: '2026-11-02T10:55:18Z'
+- id: '50335255'
+  parent_id: '50335175'
+  author: PhilipRoman
+  text: I wouldn&#x27;t call any of them similar, except for &#x27;pread&#x27; maybe.
+    Each one has a lot of subtle semantics. Either way, it&#x27;s syscall.tbl that
+    determines whether they are distinct syscalls, not the author&#x27;s page
+  score: 0
+  posted_at: '2026-11-02T10:55:19Z'
+- id: '50335284'
+  parent_id: '50335255'
+  author: ReDress
+  text: I&#x27;m just noting this because it makes the number of Linux syscalls seem
+    very exaggerated at a whole around 400 syscalls.<p>But, anyways, not like it matters
+    that much but still.<p>400 distinct syscalls is a very large number of syscalls
+    if you generally presume they&#x27;re entirely distinct.
+  score: 0
+  posted_at: '2026-11-02T10:58:58Z'
+- id: '50335358'
+  parent_id: '50335254'
+  author: rustyhancock
+  text: This maybe unpopular idea if you&#x27;ve avoided AI thus far, but it does
+    seem like an LLM would make short work of that task.
+  score: 0
+  posted_at: '2026-11-02T11:10:56Z'
+- id: '50335400'
+  parent_id: '50335284'
+  author: PhilipRoman
+  text: I think the number is mostly meaningless even if we ignore whether they&#x27;re
+    distinct or not. Consider ioctl() - it&#x27;s a single syscall but if I remember
+    correctly the number of subcommands is in the thousands.
+  score: 0
+  posted_at: '2026-11-02T11:16:22Z'
+- id: '50335409'
+  parent_id: '50335284'
+  author: adrian_b
+  text: The number of Linux syscalls depends on the architecture and on x86-64 there
+    are over 450 Linux syscalls.<p>Nonetheless, about one third of those syscalls
+    are obsolete (being replaced by newer improved syscalls), even if a large number
+    of programs are still using them, and about one other third of them are rarely
+    used in the environments familiar to most Linux users, like personal computers
+    and small servers.<p>The obsolete syscalls inflate a lot the number of Linux syscalls,
+    because there are a lot of syscalls that were originally defined with an inadequate
+    set of parameters, then they were fixed by adding parameters or changing the meaning
+    of the existing parameters. There are many syscalls were even 3 or 4 attempts
+    were needed until reaching an acceptable definition for their parameters.<p>New
+    programs should use only the newest improved syscalls, but the documentation of
+    the Linux syscalls in various places is usually not up-to-date itself, so a lot
+    of people are still using older syscalls, without being aware that they are suboptimal.
+    So the obsolete syscalls will have to be supported forever by the Linux kernels
+    (though in most cases when an obsolete syscall is invoked it just fills the parameters
+    with adjusted values and then it jumps to the current syscall).
+  score: 0
+  posted_at: '2026-11-02T11:17:50Z'
+- id: '50335432'
+  parent_id: '50335284'
+  author: Joker_vD
+  text: Well, there really is about 400 syscall numbers allocated, and each has its
+    own entrypoint in the kernel. That&#x27;s an entirely objective criterion as opposed
+    to arguing &quot;well, sbrk and mmap (or recv and read) are kinda similar, maybe
+    we should count them as just one syscall instead of two&quot;, because in the
+    end we can might as well say &quot;well, technically there is only one syscall,
+    it just has an additional seventh argument that serves as the &#x27;function denominator&#x27;,
+    like the ioctl&#x27;s request parameter, you know&quot;.
+  score: 0
+  posted_at: '2026-11-02T11:20:20Z'
+- id: '50335448'
+  parent_id: '50335400'
+  author: adrian_b
+  text: 'That&#x27;s right.<p>Moreover, for a large number of traditional Linux syscalls
+    (including the many variants of read&#x2F;write&#x2F;send&#x2F;recv) there are
+    now better alternatives that are invoked as subcommands of a single syscall: io_uring_enter.'
+  score: 0
+  posted_at: '2026-11-02T11:22:34Z'
+- id: '50335467'
+  parent_id: '50335400'
+  author: Joker_vD
+  text: 'Yes, the ioctl has been notorious for sneaking in arbitrary amount of functionality
+    into the kernel space, and serving generally as a kitchen sink: &quot;You can
+    rarely convince Linus to make a new syscall, but making a new ioctl is much easier&quot;.
+    That&#x27;s still one syscall though.<p>And how do you even compare how the distinct
+    the syscalls are (e.g., pipe() and open() are about 70% similar)? And after that,
+    what do you do with this metrics? How do you sum it up? Again, pipe() and open()
+    are 70% similar — does that mean we have 1.3 syscalls instead of 2?'
+  score: 0
+  posted_at: '2026-11-02T11:25:04Z'
+- id: '50335580'
+  parent_id: '50335467'
+  author: adrian_b
+  text: I would count &quot;pipe&quot; and &quot;open&quot; together as 0 (useful)
+    syscalls, because both have been obsolete for a very long time (even if they occupy
+    2 slots in the syscall table and those 2 slots will remain occupied forever).<p>These
+    2 syscalls have a history typical for Linux syscalls, where frequently new syscall
+    variants make completely obsolete their predecessors, but the old syscalls must
+    still remain supported forever by the newer Linux kernels, to allow running legacy
+    programs.<p>&quot;pipe&quot; has been obsoleted by &quot;pipe2&quot; (on 2008-10-09),
+    which in turn has been obsoleted by &quot;IORING_OP_PIPE&quot;.<p>&quot;open&quot;
+    has been obsoleted by &quot;openat&quot;, which in turn has been obsoleted by
+    &quot;IORING_OP_OPENAT&quot;.<p>Most users do not invoke Linux syscalls directly,
+    but they use the standard C library, which has frequently shielded the end user
+    from the evolution of the Linux syscalls. For instance, you might use the functions
+    &quot;open()&quot; and &quot;pipe()&quot; in your C program, but the C library
+    might invoke instead of those the more modern syscalls &quot;openat&quot; and
+    &quot;pipe2&quot;, after adjusting their parameters.
+  score: 0
+  posted_at: '2026-11-02T11:44:36Z'
+- id: '50335608'
+  parent_id: '50334704'
+  author: bkallus
+  text: On x86_64 and x32, the syscall number goes in eax, not rax. The upper 32 bits
+    of rax are ignored and can be anything.
+  score: 0
+  posted_at: '2026-11-02T11:49:16Z'
+- id: '50335695'
+  parent_id: '50335608'
+  author: guitmz
+  text: Good catch, thanks! Since 5.14 (I think?) the kernel only reads eax (before
+    that it used all of rax and returned ENOSYS if the upper half wasn&#x27;t zero),
+    so I&#x27;m adding a note about it to the x64 and x32 conventions
+  score: 0
+  posted_at: '2026-11-02T12:00:45Z'
+- id: '50335708'
+  parent_id: '50335448'
+  author: ReDress
+  text: io-uring is great for this.<p>However, I am bit skeptical as to whether io-uring
+    will ever support all Linux syscalls.<p>At this point I am convinced that io-uring
+    primarily supports I&#x2F;O API &#x2F; syscalls. That would mean syscalls relating
+    to disk and network I&#x2F;O. While this covers a lot of syscalls it most definitely
+    doesn&#x27;t cover all.<p>Though, to give some credit her, it does also cover
+    to syscalls relating to kernel features like futex but yeah, for the most part
+    it doesn&#x27;t cover much that doesn&#x27;t have to do with I&#x2F;O.<p>Which
+    is obviously not a problem but raises the question of whether it ever will support
+    other kernel features.
+  score: 0
+  posted_at: '2026-11-02T12:02:55Z'
+- id: '50335762'
+  parent_id: '50335432'
+  author: ReDress
+  text: I&#x27;m obviously not going to discuss this argument further.<p>Trying to
+    counter a logical argument with a technical argument is pretty lame and doesn&#x27;t
+    make for a healthy conversation.
+  score: 0
+  posted_at: '2026-11-02T12:10:09Z'
+- id: '50335795'
+  parent_id: '50335580'
+  author: Joker_vD
+  text: I think you&#x27;re missing the point I&#x27;m trying to make. Both pipe2
+    and openat has about 70% similar functionality (and so do the IORING_OP_PIPE and
+    IORING_OP_OPENAT operations) — really, the only difference is that pipe2 returns
+    two new fds instead of just one, and that the file opened is not a regular file.
+    So, are those 2 syscalls or 1.3? What about triples or quadruples of syscalls
+    with overlapping functionality, do we go full inclusion-exclusion formula on them?
+    What about that 70% similarity estimation — how do establish that? Do you count
+    the similarity&#x2F;overlap of the underlying implementations? Only of the user-facing
+    functionality? Both, somehow? Something else entirely?<p>Or, you know, we can
+    instead <i>not</i> engage in this subjective quagmire and look at the actual,
+    factual number that undeniably exists. It may not be very useful for any practical
+    purpose except for pointless dick-measuring between OSes with radically different
+    APIs and internal architectures — but neither is this trying to measure syscall
+    similarity, really.
+  score: 0
+  posted_at: '2026-11-02T12:14:00Z'
+- id: '50335823'
+  parent_id: '50334704'
+  author: shoobiedoo
+  text: This is very handy, thank you.  Currently learning aarch64 assembly
+  score: 0
+  posted_at: '2026-11-02T12:17:18Z'
+- id: '50335876'
+  parent_id: '50335695'
+  author: bkallus
+  text: According to [1], the kernel has flip-flopped a few times on this, but the
+    original behavior was to ignore the upper 32 bits.<p>[1] <a href="https:&#x2F;&#x2F;lore.kernel.org&#x2F;all&#x2F;20210518191303.4135296-5-hpa@zytor.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;lore.kernel.org&#x2F;all&#x2F;20210518191303.4135296-5-hpa@zyt...</a>
+  score: 0
+  posted_at: '2026-11-02T12:21:57Z'
+- id: '50335890'
+  parent_id: '50335762'
+  author: Joker_vD
+  text: 'Uh, sorry, what? Trying to measure similarity between syscalls is a) impossible,
+    b) pointless, so obviously I&#x27;d really like to understand why someone would
+    want to do something like this — but I&#x27;d rather not speculate about what
+    and why you think and believe, and instead to just straight hear from you.<p>If
+    you&#x27;re interested in why I think what I think — there&#x27;s a sibling comment
+    where I tried to articulate my position. I&#x27;d like to hear about yours, if
+    you don&#x27;t mind.<p>P.S. You didn&#x27;t actually offer any argument, logical
+    (?) or technical (?!), in your original comment, and I think you&#x27;re actually
+    have the meaning of those words reversed: &quot;logical argument&quot; appeals
+    to logical relations between the abstract concepts, while &quot;technical argument&quot;
+    appeals to the underlying technology (the kernel implementation in our case) and
+    tries to deal with particularities of reality. So if anything, my argument was
+    the logical (semantical?) one, not that it really matters.'
+  score: 0
+  posted_at: '2026-11-02T12:24:15Z'
+- id: '50335902'
+  parent_id: '50334704'
+  author: wg0
+  text: This is really great resource, didn&#x27;t know about it. But one question
+    not related to the website above - why the syscalls vary per architecture if the
+    linux API is the same?<p>Or is it I am confusing it with the C standard library&#x2F;POSIX
+    and assuming that it should be the same everywhere?
+  score: 0
+  posted_at: '2026-11-02T12:24:49Z'
+- id: '50335932'
+  parent_id: '50335902'
+  author: guitmz
+  text: The Linux kernel API is the same everywhere, but the syscall ABI (numbers,
+    calling convention, entry paths) is specific to a architecture, while it&#x27;s
+    the C library that wraps those details into the portable POSIX API we code against
+  score: 0
+  posted_at: '2026-11-02T12:27:40Z'
+- id: '50335967'
+  parent_id: '50335409'
+  author: rocqua
+  text: I&#x27;d love to learn more about the syscalls that took 3 or 4 attempts.
+  score: 0
+  posted_at: '2026-11-02T12:32:00Z'
+- id: '50336126'
+  parent_id: '50334704'
+  author: guitmz
+  text: I also made a CLI for consulting the syscall API when I originally released
+    the website. I think I can tidy up the code and make it public too. It uses a
+    embedded dataset so it does not have to query the API endpoint all the time
+  score: 0
+  posted_at: '2026-11-02T12:49:43Z'
+- id: '50336169'
+  parent_id: '50335932'
+  author: weli
+  text: Also newer archs (riscv) don&#x27;t support certain syscalls (open, fork)
+    they are still functions you can call under your standard musl,glibc but they
+    inernally call openat, clone.
+  score: 0
+  posted_at: '2026-11-02T12:54:19Z'
+- id: '50336266'
+  parent_id: '50335932'
+  author: tomtomtom777
+  text: I see, but why were they numbered differently? Why not use the same numbers?
+  score: 0
+  posted_at: '2026-11-02T13:02:02Z'
+- id: '50336336'
+  parent_id: '50336266'
+  author: guitmz
+  text: As far as I know, the numbers were assigned independently by each port&#x27;s
+    developers in the 90s as they added calls in their own order. Then it became a
+    frozen ABI nobody could ever renumber, and couldn&#x27;t have been identical anyway
+    since arches need different syscall variants for things like 32bit vs 64bit types
+  score: 0
+  posted_at: '2026-11-02T13:08:11Z'
+- id: '50336433'
+  parent_id: '50335890'
+  author: ReDress
+  text: Yeah, sure, but the obvious fact that is a lot of syscalls are &#x27;family&#x27;
+    relatives.<p>And they wouldn&#x27;t ever count as distinct syscalls.
+  score: 0
+  posted_at: '2026-11-02T13:15:46Z'
+- id: '50336659'
+  parent_id: '50334704'
+  author: hmokiguess
+  text: I am not familiar with the internals, so excuse my question, but how does
+    one builds this? Separately, how often can it get stale?
+  score: 0
+  posted_at: '2026-11-02T13:38:36Z'
+- id: '50336788'
+  parent_id: '50336433'
+  author: asalahli
+  text: "&gt; they wouldn&#x27;t ever count as distinct syscalls.<p>According to whom,
+    exactly?"
+  score: 0
+  posted_at: '2026-11-02T13:50:53Z'
+- id: '50336821'
+  parent_id: '50336659'
+  author: guitmz
+  text: It was stale for many years because I had a script to generate the tables
+    for me that ran manually and then I had to convert the data into SQL so my API
+    could use it (and also convert to html for the frontend). I changed the script
+    to generate the dataset from Kernel sources as JSON instead and the API loads
+    it and makes it available.<p>Then the frontend is refreshed from the API weekly
+    via a cronjob with some simple Go templating
+  score: 0
+  posted_at: '2026-11-02T13:53:43Z'
+- id: '50337057'
+  parent_id: '50336788'
+  author: ReDress
+  text: If a syscall morphs into several slightly variant syscalls, then there&#x27;s
+    no way these are distinct syscalls.<p>If a syscall is designed to counter the
+    flaws have been observed in another syscall, then there&#x27;s no way this is
+    a distinct syscall.<p>If a syscall is designed to add feature to an another syscall,
+    then there&#x27;s no way this is distinct syscall.<p>And so on and so forth.<p>If
+    you actually look at Linux kernel code, you will quickly note that a lot of these
+    related syscall even happen to share a large amount of implementation code.<p>So,
+    yeah
+  score: 0
+  posted_at: '2026-11-02T14:11:27Z'
+- id: '50337060'
+  parent_id: '50335175'
+  author: trashb
+  text: |-
+    Yes because they have a different &quot;syscall number&quot;.<p>Doesn&#x27;t really matter if it has the same name or similar (or identical) function.
+    This website seeks to describe the syscall ABI and that means that each number should get it&#x27;s own entry.<p>And there is no identical syscalls in the list, they all have slightly different behavior.<p>It would be nice to make a banner or warning for deprecated or surpassed syscalls. For example (as mentioned in other comments) you should probably use pipe2 instead of pipe and similar other examples.
+  score: 0
+  posted_at: '2026-11-02T14:11:37Z'
+- id: '50337155'
+  parent_id: '50335284'
+  author: trashb
+  text: "<p><pre><code>  &gt; 400 distinct syscalls is a very large number of syscalls
+    \n</code></pre>\nCompared to what?\nIt seems windows has 2000+ syscalls all combined
+    (nt+win32). \nFor just ntos there are 490.<p><a href=\"https:&#x2F;&#x2F;github.com&#x2F;hfiref0x&#x2F;SyscallTables\"
+    rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;hfiref0x&#x2F;SyscallTables</a><p><a
+    href=\"https:&#x2F;&#x2F;github.com&#x2F;j00ru&#x2F;windows-syscalls\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;j00ru&#x2F;windows-syscalls</a><p>And
+    does the number matter? Why can&#x27;t it be 1000, 2000, 4000. In my opinion the
+    interface is free to be defined as long as it is documented properly."
+  score: 0
+  posted_at: '2026-11-02T14:18:54Z'
+- id: '50337334'
+  parent_id: '50334704'
+  author: DustinBrett
+  text: That website messes with my graphics for some reason.
+  score: 0
+  posted_at: '2026-11-02T14:31:39Z'
+- id: '50337485'
+  parent_id: '50334704'
+  author: ozgrakkurt
+  text: Would also recommend using commands like:<p>echo &#x27;#include &lt;sys&#x2F;syscall.h&gt;&#x27;
+    | gcc -E -dM -xc - | grep -i &quot;read&quot;<p>To get the real values on your
+    PC to make sure.<p>I had LLMs give wrong numbers or constant definitions several
+    times but getting it to generate a command like this and seeing it for myself
+    works every time.<p>Also chromium docs has a table:<p><a href="https:&#x2F;&#x2F;www.chromium.org&#x2F;chromium-os&#x2F;developer-library&#x2F;reference&#x2F;linux-constants&#x2F;syscalls&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.chromium.org&#x2F;chromium-os&#x2F;developer-library&#x2F;refer...</a><p>It
+    would be very useful to just make this website directly link to the syscall number.
+  score: 0
+  posted_at: '2026-11-02T14:43:02Z'
+- id: '50337702'
+  parent_id: '50334704'
+  author: whalesalad
+  text: Somewhat related - I am working on a dual Pentium III retro build (first retro
+    build) and completely forgot that this would be 32-bit and won&#x27;t have niceties
+    like SSE2. Having some fun going down the rabbit hole of IDE, SCSI interfaces
+    and AGP graphics. Can anyone recommend some OS installations to play with? So
+    far I am thinking Haiku, ReactOS, NetBSD and antiX or MX Linux. At some point
+    I am also going to simulate a Novell Netware deployment.
+  score: 0
+  posted_at: '2026-11-02T14:59:05Z'
+- id: '50337819'
+  parent_id: '50335795'
+  author: smj-edison
+  text: I think it&#x27;s a bit unfair to mainly focus on the API surface while ignoring
+    a lot of internal details. Linus has talked about how Linux will often have massive
+    amounts of internal code change between releases, while the API surface stays
+    the same. So yeah, the API might be old and crufty, but it&#x27;s also been around
+    for 30 years. And as long as the API is sufficient, it&#x27;s the internals that
+    are a lot more interesting. Radically redesigning the API every few years would
+    just accelerate towards XKCD 927, because of backwards compatibility.
+  score: 0
+  posted_at: '2026-11-02T15:08:39Z'
+- id: '50337876'
+  parent_id: '50334704'
+  author: w2seraph
+  text: hehehe can&#x27;t wait to get syscallin&#x27;
+  score: 0
+  posted_at: '2026-11-02T15:12:10Z'
+- id: '50337890'
+  parent_id: '50336821'
+  author: hmokiguess
+  text: How often does it break or needs changes to this job and template? I am curious
+    on how can this datasource be trusted and to what extent
+  score: 0
+  posted_at: '2026-11-02T15:13:06Z'
+- id: '50338023'
+  parent_id: '50337702'
+  author: guitmz
+  text: Good list, maybe SerenityOS too?
+  score: 0
+  posted_at: '2026-11-02T15:21:07Z'
+- id: '50338620'
+  parent_id: '50337485'
+  author: guitmz
+  text: The website content comes directly from Kernel sources so should be accurate.
+    The chromium page is what I used to use until I made this website in 2020 but
+    it&#x27;s very outdated I think
+  score: 0
+  posted_at: '2026-11-02T15:56:10Z'
+- id: '50339325'
+  parent_id: '50335708'
+  author: adrian_b
+  text: The io_uring interface is preferable to classic syscalls for any kind of syscall
+    that requires the kernel to perform a significant amount of work or to wait for
+    some external events, so a long time could pass until the completion of the work
+    or until the occurrence of the external events, and possibly for some auxiliary
+    syscalls that modify settings relevant to the previous syscalls.<p>Many of the
+    most important syscalls belong to this class, but most of them already have io_uring
+    alternatives. Many other syscalls are not of this kind, so for them there is no
+    reason to replace the traditional syscall interface.<p>For the syscalls appropriate
+    for io_uring the essential characteristic is that their completions can occur
+    in a different order than the submissions of their requests, which is why all
+    previous methods of handling them were inefficient, because they required the
+    user program to waste time with superfluous activities, instead of just picking
+    the completion messages from a queue.<p>Where this out-of-order execution is not
+    needed, invoking the syscalls in the same way as you invoke any user function
+    is fine.<p>The initial implementation of io_uring lacked the alternatives for
+    many important syscalls, but since then most of the holes have been filled.<p>Besides
+    more obvious syscalls of the read&#x2F;write type, which are used for files accessed
+    in the classic way, in order to reach maximum performance with memory-mapped files
+    the old &quot;madvise&quot; syscall must be replaced with IORING_OP_MADVISE, used
+    with Linux-specific advices (MADV_COLD, MADV_PAGEOUT, MADV_POPULATE_READ, MADV_POPULATE_WRITE).
+  score: 0
+  posted_at: '2026-11-02T16:31:13Z'
+- id: '50339376'
+  parent_id: '50334704'
+  author: db48x
+  text: It’s a side issue, but I’ve long thought that the kernel should duplicate
+    every existing syscall that takes a null–terminated string by pointer with an
+    otherwise identical syscall that takes the string by pointer, capacity, and length
+    instead. It would be a huge boon to programs written in modern languages. I keep
+    meaning to search the kernel mailing lists to see if the idea has been proposed
+    before, but I never quite find the time.
+  score: 0
+  posted_at: '2026-11-02T16:33:20Z'
+- id: '50339493'
+  parent_id: '50337890'
+  author: guitmz
+  text: It was not a problem of the template but rather that I never really &quot;finished&quot;
+    it before so it required manual intervention every time I needed to update the
+    list. I finally put some time into it and it is automated and easily extendable
+    now, so it should continue to work with minimal&#x2F;no effort.<p>The data comes
+    directly from the official Kernel source code so it is as official as it gets,
+    I don&#x27;t change anything just format it in a way my website and API understands
+  score: 0
+  posted_at: '2026-11-02T16:40:27Z'
+- id: '50340046'
+  parent_id: '50334704'
+  author: celesian
+  text: Muito foda TMZ!
+  score: 0
+  posted_at: '2026-11-02T17:13:48Z'
+- id: '50340099'
+  parent_id: '50340046'
+  author: guitmz
+  text: É nois!!! Valeu!
+  score: 0
+  posted_at: '2026-11-02T17:16:55Z'
+article:
+  url: https://syscall.sh/
+  title: Linux System Call Tables by Architecture · syscall.sh
+  fetch_status: success
+  content: |-
+    # Linux syscall tables
+
+    Every Linux syscall table in one place, grouped by architecture: system calls for 27 architectures with their numbers, arguments and registers, from Linux 3.3 to 7.3.
+
+    ## Architectures
+
+    - [**x64** x86\_64](/x64/)
+    - [**x86** i386, 32 bit x86](/x86/)
+    - [**arm64** AArch64](/arm64/)
+    - [**arm** ARM EABI, 32 bit](/arm/)
+    - [**riscv64** RISC-V, 64 bit](/riscv64/)
+    - [**ia32** IA-32 compat on x86\_64](/ia32/)
+    - [**x32** x32 ABI on x86\_64](/x32/)
+    - [**loongarch64** LoongArch, 64 bit](/loongarch64/)
+    - [**ppc64** PowerPC, 64 bit](/ppc64/)
+    - [**ppc** PowerPC, 32 bit](/ppc/)
+    - [**s390x** IBM Z](/s390x/)
+    - [**mips64** MIPS n64 ABI](/mips64/)
+    - [**mipsn32** MIPS n32 ABI](/mipsn32/)
+    - [**mipso32** MIPS o32 ABI](/mipso32/)
+    - [**alpha** DEC Alpha](/alpha/)
+    - [**arc** Synopsys ARC](/arc/)
+    - [**csky** C-SKY](/csky/)
+    - [**hexagon** Qualcomm Hexagon](/hexagon/)
+    - [**m68k** Motorola 68000](/m68k/)
+    - [**microblaze** Xilinx MicroBlaze](/microblaze/)
+    - [**nios2** Intel Nios II](/nios2/)
+    - [**openrisc** OpenRISC](/openrisc/)
+    - [**parisc** HP PA-RISC](/parisc/)
+    - [**sh** SuperH](/sh/)
+    - [**sparc** SPARC, 32 bit](/sparc/)
+    - [**sparc64** SPARC, 64 bit](/sparc64/)
+    - [**xtensa** Tensilica Xtensa](/xtensa/)
+
+    Every architecture's table, with the full history of when each syscall appeared and when it was dropped, is also a plain JSON file at `/<arch>/syscalls.json`, for example [/x64/syscalls.json](/x64/syscalls.json).
+
+    ## Calling conventions
+
+    Number in _NR_, arguments in _ARG0_ to _ARG5_, then the instruction. The result comes back in _RETURN_.
+
+    | ARCH | INSTRUCTION | NR | RETURN | ARG0 | ARG1 | ARG2 | ARG3 | ARG4 | ARG5 |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | [x64](/x64/) | `syscall` | rax | rax | rdi | rsi | rdx | r10 | r8 | r9 |
+    | [x86](/x86/) | `int 0x80` | eax | eax | ebx | ecx | edx | esi | edi | ebp |
+    | [arm64](/arm64/) | `svc #0` | x8 | x0 | x0 | x1 | x2 | x3 | x4 | x5 |
+    | [arm](/arm/) | `svc #0` | r7 | r0 | r0 | r1 | r2 | r3 | r4 | r5 |
+    | [riscv64](/riscv64/) | `ecall` | a7 | a0 | a0 | a1 | a2 | a3 | a4 | a5 |
+    | [ia32](/ia32/) | `int 0x80` | eax | eax | ebx | ecx | edx | esi | edi | ebp |
+    | [x32](/x32/) | `syscall` | rax | rax | rdi | rsi | rdx | r10 | r8 | r9 |
+    | [loongarch64](/loongarch64/) | `syscall 0` | a7 | a0 | a0 | a1 | a2 | a3 | a4 | a5 |
+    | [ppc64](/ppc64/) | `sc` | r0 | r3 | r3 | r4 | r5 | r6 | r7 | r8 |
+    | [ppc](/ppc/) | `sc` | r0 | r3 | r3 | r4 | r5 | r6 | r7 | r8 |
+    | [s390x](/s390x/) | `svc 0` | r1 | r2 | r2 | r3 | r4 | r5 | r6 | r7 |
+    | [mips64](/mips64/) | `syscall` | v0 | v0 | a0 | a1 | a2 | a3 | a4 | a5 |
+    | [mipsn32](/mipsn32/) | `syscall` | v0 | v0 | a0 | a1 | a2 | a3 | a4 | a5 |
+    | [mipso32](/mipso32/) | `syscall` | v0 | v0 | a0 | a1 | a2 | a3 | sp+16 | sp+20 |
+    | [alpha](/alpha/) | `callsys` | v0 | v0 | a0 | a1 | a2 | a3 | a4 | a5 |
+    | [arc](/arc/) | `trap0` | r8 | r0 | r0 | r1 | r2 | r3 | r4 | r5 |
+    | [csky](/csky/) | `trap 0` | r7 | a0 | a0 | a1 | a2 | a3 | r4 | r5 |
+    | [hexagon](/hexagon/) | `trap0(#1)` | r6 | r0 | r0 | r1 | r2 | r3 | r4 | r5 |
+    | [m68k](/m68k/) | `trap #0` | d0 | d0 | d1 | d2 | d3 | d4 | d5 | a0 |
+    | [microblaze](/microblaze/) | `brki r14,8` | r12 | r3 | r5 | r6 | r7 | r8 | r9 | r10 |
+    | [nios2](/nios2/) | `trap` | r2 | r2 | r4 | r5 | r6 | r7 | r8 | r9 |
+    | [openrisc](/openrisc/) | `l.sys 1` | r11 | r11 | r3 | r4 | r5 | r6 | r7 | r8 |
+    | [parisc](/parisc/) | `ble 0x100(%sr2, %r0)` | r20 | r28 | r26 | r25 | r24 | r23 | r22 | r21 |
+    | [sh](/sh/) | `trapa #31` | r3 | r0 | r4 | r5 | r6 | r7 | r0 | r1 |
+    | [sparc](/sparc/) | `t 0x10` | g1 | o0 | o0 | o1 | o2 | o3 | o4 | o5 |
+    | [sparc64](/sparc64/) | `t 0x6d` | g1 | o0 | o0 | o1 | o2 | o3 | o4 | o5 |
+    | [xtensa](/xtensa/) | `syscall` | a2 | a2 | a6 | a3 | a4 | a5 | a8 | a9 |
+
+    ## API
+
+        curl https://api.syscall.sh/v2/syscalls/x64/read
+
+    Any kernel release, diffs between releases and more in the [API docs](https://api.syscall.sh/docs).
+
+    ## Syscall tables across kernel versions
+
+    Entries get added and, rarely, removed between releases. Each architecture page has a kernel selector, and its JSON download records when each entry first appeared (`since`) and when it was dropped (`removed_in`).
+
+    Removed entries stay visible: pick "all, with removed" in the kernel selector and each dropped syscall is marked with the release that dropped it.
+
+    ## Where the data comes from
+
+    Everything on this site is read from the kernel source itself. For each architecture, the generator walks the syscall table and the `SYSCALL_DEFINE` macros of every mainline release it scans, so these are the numbers the kernel actually dispatches on.
+
+    It also records each architecture's calling convention, the instruction that enters the kernel, so every syscall table shows exactly where the number and the arguments go.
+
+    A syscall whose `since` equals the first release scanned for its architecture was already there back then, and may be much older.
+
+    ### Descriptions and full history
+
+    The short descriptions come from the [Linux man pages project](https://www.kernel.org/doc/man-pages/), and the `io_uring` ones from [liburing](https://github.com/axboe/liburing). Whenever the data changes, the site is rebuilt from the [syscall API](https://api.syscall.sh/docs).
+  error:
+  fetched_at: '2026-11-02T21:29:46Z'
+archived_at: '2026-11-02T21:29:53Z'

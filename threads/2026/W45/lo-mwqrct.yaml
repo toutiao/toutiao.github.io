@@ -1,0 +1,141 @@
+---
+post:
+  id: lo-mwqrct
+  source: lobsters
+  title: Union Types and Option Types
+  url: https://tibleiz.net/blog/2025-03-16-union-types-and-option-types.html
+  hn_url: https://lobste.rs/s/mwqrct
+  score: 10
+  author: nutmeg
+  posted_at: '2026-11-02T12:01:17Z'
+  fetched_at: '2026-11-02T21:29:53Z'
+  article_url: https://tibleiz.net/blog/2025-03-16-union-types-and-option-types.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T21:30:00Z'
+  raw_comment_count: 1
+  tags:
+  - plt
+comments:
+- id: lo-rhe2yq
+  parent_id: '0'
+  author: interlandi
+  text: |-
+    I have nothing of significance to add other than that I really like this:
+
+    var file = File.open(filename)...
+
+
+    it just picks the first type of an union, Error|File in the example above.
+
+    I wish Zig had gone with it instead of a special case magic integer machine.
+  score: 1
+  posted_at: '2026-11-02T19:35:41Z'
+article:
+  url: https://tibleiz.net/blog/2025-03-16-union-types-and-option-types.html
+  title: Union Types and Option Types - Marc Kerbiquet
+  fetch_status: success
+  content: "# Union Types and Option Types\n\n2025-03-16\n\nIn past years, I've experimented
+    union types in a low level language (Copper) and a higher level language. I got
+    very interesting results but I'm currently experimenting a trimmed down version:
+    just the option types.\n\n## What is an Union Type?\n\nAn union type is a list
+    of two or more alternative types that a value can hold. For example:\n\n    func
+    f(x: Int | String)\n        ...\n    end\n\nthe parameter `x` can be either a
+    string or an integer.\n\nSome languages accept to perform directly operations
+    that are commons to all types of the union, for instance if `Int` and `String`
+    types have a `print` method, you could just do `x.print`. But in the basic case,
+    you must first discriminate the actual type of the value before using it:\n\n
+    \   func f(x: Int | String)\n        match x\n        case Int -> i\n            //
+    do something with i as an integer\n        case String -> s\n            // do
+    something with s as a string\n        end\n    end\n\n## Adding Union Types to
+    Copper\n\nIn Copper, my own \"better C\" language, I've experimented union types.
+    I wanted to handle the general case `T1|T2|...|Tn` using a tag but also handling
+    the special case `Pointer|Nothing` without any additional tag and discrimating
+    using the `NULL` pointer value in order to be fast and integrate easily with external
+    libraries.\n\n### Limits\n\nThe feature was not very well defined and I've added
+    a lot of restrictions for an efficient compilation.\n\n#### No Nested Unions\n\n`(T1|T2)|T3`
+    is not permitted. It simplifies the implementation of the compiler since a value
+    of an union type is a pair\n\n![Option type value](/images/blog/tag-value.png
+    \"Option type value\")\n\nwhere the value part can not include tags recursively.\n\n####
+    Significant Order\n\n`T1|T2` is different from `T2|T1`. This restriction allows
+    a very useful shortcut for the common pattern:\n\n    var file = \n        match
+    File.open(filename)\n        case Error -> err\n            return err\n        else
+    -> f\n            f\n        end\n\ncan be rewritten using syntactic sugar:\n\n
+    \   var file = File.open(filename)...\n\nwithout having to make the `Error` type
+    builtin into the language: it just picks the first type of an union, `Error|File`
+    in the example above.\n\n#### No Compatibility Between Unions\n\n`T1|T2` is not
+    compatible with `T1|T2|T3`.\n\nIt would have required to assign a global unique
+    tag to each type or to implement a remapping of tags when promoting an expression
+    to a compatible union.\n\nWith such a restriction, a tag can be easily assigned
+    for each part:\n\n- `0` for the first type, \n- `1` for the second one, \n- ...\n\n###
+    Results\n\nThe feature was really useful, but it was far too much complexity in
+    the compiler for a minimalistic low level language such as Copper. The most annoying
+    part was dealing with the special optimized case `Pointer|Nothing`.\n\nMy main
+    usage was mostly for two cases:\n\n- `T|Nothing` \n- `T|Error`\n\nSo, may be just
+    handling `T|Nothing` will be good enough, and for errors I'll just go back to
+    returning an error _and_ a value.\n\n## What is an Option Type?\n\nThe option
+    type is just a special case of union type: `T|Nothing`. It represents an expression
+    that may have no value.\n\nAn option type `T?` can have any value of `T` plus
+    the special `nil` value.\n\n![T?](/images/blog/optional-t.png \"T?\")\n\n- A `T`
+    value _is a_ `T?` \n- `nil` _is a_ `T?`.\n\n## Adding Option Types in Copper\n\nThe
+    implementation will be done by reserving a value in the original type. Each type
+    can define its own `nil` value.\n\nFor pointers, the choice is obvious, the nil
+    value will just be the address `0` but it is not hard-coded in the language, any
+    other address could be used as well.\n\nFor other types, it depends. A 24 bit
+    RGB color in a 32 bit integer can reserve `0x8000_0000` for example. A signed
+    integer index data type can use `-1` since it usually indicates an invalid or
+    not-found value.\n\nThis implementation has lot of advantages:\n\n- It integrates
+    very well with native C APIs.\n- It is efficient: no tag to attach to a value.\n-
+    It is flexible: you just need one value to reserve.\n\nbut it has few drawbacks:\n\n-
+    Some types may not have a value that can be reserved for `nil`.\n- It is not possible
+    to have `T??`\n\n### Refining the Option Type\n\nThe main idea of the option type
+    is that you can't refine it to its main type without ensuring first that it is
+    not the `nil` value.\n\nI have found a simple way to do this:\n\n    expr as id\n\nIt
+    is a boolean expression that tests whether `expr` of type `T?` is nil. If the
+    expression is not nil, the value is copied in a local immutable variable `id`
+    of type `T`.\n\nThe trick is that the variable is not directly available, it is
+    created in a hidden scope that is accessible in 3 special cases:\n\n- The inner
+    block of a `if`\n- The inner block of a `while`\n- The right expression of a `and`\n\n
+    \   if expr as x\n        // x is available here\n    end\n    \n    while expr
+    as x\n        // x is available here\n    end\n    \n    var isSingleton = list.head
+    as first and first.next == nil\n    \n    \n    if list.head as first and first.next
+    == nil // first is available after 'and'\n        // first is also available here\n
+    \   end\n\n### Allowing Early Returns\n\nThe `as` operator is sufficient, but
+    it can lead to the arrow anti-pattern:\n\n    if expr1 as v1\n        if expr2
+    as v2\n            if expr3 as v3\n                // do something\n            else\n
+    \               return err3\n            end\n        else\n            return
+    err2\n        end\n    else\n        return err1\n    end\n\nIt can be solved
+    with early returns but it is not possible without a new construct, `or else`,
+    that evaluates a block if a expression is nil:\n\n    var v1 = expr1 or else\n
+    \       return err1\n    end\n    \n    var v2 = expr2 or else\n        return
+    err2\n    end\n    \n    var v3 = expr3 or else\n        return err3\n    end\n
+    \   \n    // do something\n\nThe block must terminate either with a `return`,
+    `break` or `pass`.\n\n### Refining the Option Type without Check\n\nIn theory
+    this is beautiful: you can't dereference a pointer without checking its value
+    first or the compiler will report an error. Unfortunately, in real code there
+    are many situations where you know that a value is present but the compiler can't
+    know it. For example:\n\n- Iterating over two link-lists where the number of elements
+    are equals.\n- An object with two distinct phases: an initialization phase and
+    a processing phase. In the first phase some properties are optionals but in the
+    second phase those properties are guaranteed to be defined.\n\nSure these can
+    be resolved in different ways:\n\n- Test before accessing a value even if you
+    know that it is defined.\n- Rewrite the algorithms, change the data-model, copy
+    the data into new structures where types are non-optional.\n\nBut either it is
+    inefficient and can make code confusing (why the value is tested here, shouldn't
+    it be defined at this point?) or it makes the code more complex by adding new
+    classes and code.\n\nIt's simpler and easier to just force the type refinment
+    and leave a comment to the reader on why it is safe to assume that the value is
+    defined at a particular point in code.\n\nFor this I did not add anything to Copper,
+    the language has already the `cast` operator that can change the type of an expression
+    without any verification. However I've added a convenient `notNil` method in the
+    standard library that perform a check at runtime in debug:\n\n    var value =
+    maybeValue.notNil // I know what I'm doing\n\n### Extending an Option Type\n\nAn
+    option type has very few methods by default:\n\n- comparing a value with another
+    value,\n- type conversion\n\nbut sometimes you want to write methods on the type
+    even if it can be nil. Here's a common example:\n\n    if obj as x\n        x.delete\n
+    \   end\n\nA `defopt` command allows to define methods on the optional type:\n\n
+    \   defopt delete // delete applies to T?\n        if self as x\n            //
+    'self' is of type T?\n            // 'x' is of type T\n            // invoke the
+    actual delete\n            x.delete\n        end\n    en"
+  error:
+  fetched_at: '2026-11-02T21:30:00Z'
+archived_at: '2026-11-02T21:30:01Z'

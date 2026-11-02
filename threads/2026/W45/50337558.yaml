@@ -1,0 +1,420 @@
+---
+post:
+  id: '50337558'
+  title: We halved DNS build delay and cut memory use by 85%
+  url: https://blog.cloudflare.com/dns-targeted-zone-builds/
+  hn_url: https://news.ycombinator.com/item?id=50337558
+  score: 112
+  author: wondersky
+  posted_at: '2026-11-02T14:47:28Z'
+  fetched_at: '2026-11-02T21:29:49Z'
+  article_url: https://blog.cloudflare.com/dns-targeted-zone-builds/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T21:29:49Z'
+  raw_comment_count: 33
+comments:
+- id: '50339285'
+  parent_id: '50337558'
+  author: InsidiousWombat
+  text: Isn&#x27;t 700 changes a second like... really low, considering their scale
+    and amount of domains they manage ?
+  score: 0
+  posted_at: '2026-11-02T16:29:07Z'
+- id: '50339322'
+  parent_id: '50337558'
+  author: thephyber
+  text: I have been wondering if the memory scarcity would lead to a desire to optimize
+    software to be more efficient.<p>Curious what the R&amp;D &#x2F; efficiency development
+    ROI is on reducing memory footprint. I suppose we should both consider current
+    ROI and near future ROI (as the price of memory will likely stay high for at least
+    another 1-2 years).
+  score: 0
+  posted_at: '2026-11-02T16:31:10Z'
+- id: '50339491'
+  parent_id: '50339322'
+  author: placatedmayhem
+  text: Coincidentally, I just got angry this weekend about my Mac with 64GB of RAM
+    going OOM because of poorly optimized applications. Use of web tech, especially
+    Electron, was common among basically all of the offending applications. Whether
+    Electron itself or just poor coding, I&#x27;m not sure, but there&#x27;s a pattern.
+  score: 0
+  posted_at: '2026-11-02T16:40:24Z'
+- id: '50339497'
+  parent_id: '50339285'
+  author: mvkel
+  text: 412M domains registered worldwide<p>700 changes per second implies 15% of
+    all domains are changing daily, which is almost certainly not the case.
+  score: 0
+  posted_at: '2026-11-02T16:40:46Z'
+- id: '50339568'
+  parent_id: '50339497'
+  author: enedil
+  text: It&#x27;s well possible that some people update DNS records for their own
+    domain every minute.
+  score: 0
+  posted_at: '2026-11-02T16:45:15Z'
+- id: '50339575'
+  parent_id: '50339285'
+  author: straygar
+  text: There&#x27;s about 360 million domains (according to Verisign as of March
+    31, includes inactive sites as well) and if Cloudflare manages about 1&#x2F;3
+    to 1&#x2F;2 of them, that&#x27;s like 180 million domains at most.<p>700 changes
+    per second is 1.8 billion changes per month. I guess 10 changes per top level
+    domain per month is quite low, which suggests a very long tail distribution, which
+    makes sense, given that most websites are just a static page a business sets up
+    once, with DNS changes maybe once every few years.
+  score: 0
+  posted_at: '2026-11-02T16:45:31Z'
+- id: '50339819'
+  parent_id: '50339491'
+  author: lenerdenator
+  text: 'Electron&#x27;s more-or-less just Chrome without... erm... chrome, so it
+    makes sense that it&#x27;s bloated and uses too much RAM. Even well-constructed
+    and efficient JavaScript executed through it will do so on top of a bunch of stuff
+    your application might not even need.<p>One thing that I really hope we see out
+    of the LLM revolution: a return to native applications. You could argue that Electron
+    cross-platform apps made sense when you had to pay a team to maintain two or three
+    (at least) native clients; you can&#x27;t make that argument anymore when the
+    marginal cost of a line of code is $0.00.'
+  score: 0
+  posted_at: '2026-11-02T17:00:13Z'
+- id: '50339907'
+  parent_id: '50339491'
+  author: renehsz
+  text: Electron needs to die.<p>But it&#x27;s convenient. I can&#x27;t really fault
+    people for using it.
+  score: 0
+  posted_at: '2026-11-02T17:04:53Z'
+- id: '50339973'
+  parent_id: '50339819'
+  author: floydnoel
+  text: What I don’t understand is, why not just use a platform native webview? Mac
+    has it at least, I think Windows does as well. You&#x27;d think it would be the
+    same amount of work (roughly) but use a lot less memory.<p>I guess developers
+    really prioritize velocity or ease over everything. Or maybe it&#x27;s business
+    pressure or directives?
+  score: 0
+  posted_at: '2026-11-02T17:08:41Z'
+- id: '50340000'
+  parent_id: '50339973'
+  author: lenerdenator
+  text: Business pressure. Always business pressure. Sales sold a bill of goods and
+    now you need to deliver ASAP. Hardware was cheaper than dev time. <i>Was.</i><p>Yes,
+    they&#x27;re getting their bonus. No, we can&#x27;t hire and onboard more people
+    to deal with the insane demands being made as a result. Why do you ask?
+  score: 0
+  posted_at: '2026-11-02T17:10:55Z'
+- id: '50340012'
+  parent_id: '50337558'
+  author: mhovd
+  text: Cloudflare doesn&#x27;t get enough credit for their series of overall great
+    technical blog posts.
+  score: 0
+  posted_at: '2026-11-02T17:11:40Z'
+- id: '50340027'
+  parent_id: '50339497'
+  author: zoeysmithe
+  text: I can see 15% changing daily. There&#x27;s all sorts of stuff being done with
+    dkim and other anti-spam technologies that require a txt or cname or whatever
+    change in DNS. Companies are always whitelisting vendors and mass mailers to send
+    as them, validating domain ownership, adding new sub-domains, changing things
+    for Exchange&#x2F;365&#x2F;Google&#x2F;AI stuff, changing things due to a security
+    audit, etc.<p>I imagine a renewal is a change event to, at least change the expiry,
+    and renewals are constantly happening.
+  score: 0
+  posted_at: '2026-11-02T17:12:46Z'
+- id: '50340026'
+  parent_id: '50339322'
+  author: nikanj
+  text: 'Server-side: sure<p>Client-side: lol sucks to be you'
+  score: 0
+  posted_at: '2026-11-02T17:12:46Z'
+- id: '50340129'
+  parent_id: '50339973'
+  author: Klonoar
+  text: There&#x27;s a comment somewhere on HN from a Slack dev who was the one responsible
+    for moving <i>away</i> from platform-specific webviews to Electron. The core reason
+    is that Electron is the same on all platforms it ships on, generally speaking.<p>Platform-specific
+    views simply aren&#x27;t. For simple applications they might make sense, but at
+    a certain point devs just want the shit to work. Electron solved that.<p>I do
+    agree that LLMs &amp; co should contribute to reversing this trend, though. I
+    don&#x27;t really see why you couldn&#x27;t try to ship (true) native now.
+  score: 0
+  posted_at: '2026-11-02T17:18:43Z'
+- id: '50340146'
+  parent_id: '50340012'
+  author: schainks
+  text: They also read like actual human curated content, to boot.
+  score: 0
+  posted_at: '2026-11-02T17:19:47Z'
+- id: '50340197'
+  parent_id: '50340027'
+  author: toast0
+  text: "&gt; I imagine a renewal is a change event to, at least change the expiry,
+    and renewals are constantly happening.<p>A domain renewal is an update at the
+    registry, but there&#x27;s no update in DNS at any level. If a domain expires,
+    it would be removed (or at least changed) in the TLD DNS, but the authoritative
+    DNS for the domain wouldn&#x27;t necessarily update... it would just become orphaned."
+  score: 0
+  posted_at: '2026-11-02T17:22:28Z'
+- id: '50340460'
+  parent_id: '50339491'
+  author: Aperocky
+  text: claude-code is using a suspicious amount of memory and doesn&#x27;t seem to
+    care about optimizing it nearly as much as the others.
+  score: 0
+  posted_at: '2026-11-02T17:38:34Z'
+- id: '50340544'
+  parent_id: '50337558'
+  author: JulianPaul
+  text: I&#x27;m very curious about the bugs (before vs. after relational) that come
+    from an improvement like this over time
+  score: 0
+  posted_at: '2026-11-02T17:43:02Z'
+- id: '50340622'
+  parent_id: '50340146'
+  author: LoganDark
+  text: My LLM detector started going off around here:<p>&gt; Why doesn&#x27;t the
+    Zone Builder just rebuild the setting that changed?<p>&gt; It should, and that
+    is where we ended up. However, proving when it was safe took most of the work.
+    A record event identifies what changed. A zone event can come from many Cloudflare
+    products, may not say why the zone changed, and can alter data shared by several
+    zones with the same name. Choosing too much work wastes capacity. Choosing too
+    little can leave stale or incorrect DNS data at the edge.<p>Re-reading the start
+    of the post with that in mind, I&#x27;m fairly sure the article was generated
+    by LLM.<p>With that said, curated it sure is. Aside from the smelly phrasing,
+    the actual content is fairly dense and engaging. Not all of Cloudflare&#x27;s
+    LLM-generated posts are this good, but this one is fairly alright.
+  score: 0
+  posted_at: '2026-11-02T17:47:43Z'
+- id: '50340656'
+  parent_id: '50339497'
+  author: LoganDark
+  text: It&#x27;s probably more like most domains barely change at all but some of
+    them change a lot.
+  score: 0
+  posted_at: '2026-11-02T17:49:19Z'
+- id: '50340708'
+  parent_id: '50339973'
+  author: freedomben
+  text: There&#x27;s Tauri, but (at least when I tried it last) it had bugs that made
+    building  functioning RPM packages extremely difficult.  Bug(s) had been there
+    for over a year at least with no momentum, so if you need to support rpm-based
+    distros you&#x27;re in for a rough time.
+  score: 0
+  posted_at: '2026-11-02T17:53:07Z'
+- id: '50340772'
+  parent_id: '50339322'
+  author: jgrahamc
+  text: 'Cloudflare always had a pretty strong culture around optimisation. If you
+    go back and read the blog there are a lot of blogs about reducing CPU, latency,
+    RAM, etc. through software. It&#x27;s one of the key features of how Cloudflare
+    has been successful and an important part of succeeding in today&#x27;s world.<p>Source:
+    I was Cloudflare&#x27;s CTO.'
+  score: 0
+  posted_at: '2026-11-02T17:57:40Z'
+- id: '50341291'
+  parent_id: '50339819'
+  author: jauntywundrkind
+  text: |-
+    Chrome is pretty efficient, as far as per page costs go! If your architecture isn&#x27;t trash!<p>The sin is this ridiculous era of every program shipping its own runtime. I&#x27;m headed for real down votes, but this is the same lazy culture that&#x27;s taken over everywhere: go and rust both ship these huge statically compiled binaries.<p>When you are a company, you&#x27;re only running a handful of different workloads&#x2F;apps on any given box, so the statically compiled price doesn&#x27;t bite you. But as users, going back to dynamically linking and making the incremental cost of loading an app not also have to carry the entire world with it is such an obvious return, and one that alas seems to not be in progress at all.<p>The agentic age is, I hope, going to question a lot of old assumptions &amp; needs about what we want to run. Having lots of small resident little user agencies, compiled small scripts that are attributed to a user, is something I believe will happen, but I&#x27;m less convinced we&#x27;ll recognize the face of it as it happens, that the tales will be told.<p>Tools like agent-substrate, ax, scion, are this interesting mix between agents, serverless, and kubernetes. I find it fascinating. (For hire on this.)
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;agent-substrate&#x2F;substrate" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;agent-substrate&#x2F;substrate</a>
+  score: 0
+  posted_at: '2026-11-02T18:28:20Z'
+- id: '50341625'
+  parent_id: '50341291'
+  author: saghm
+  text: "&gt; Chrome is pretty efficient, as far as per page costs go! If your architecture
+    isn&#x27;t trash!<p>&gt; The sin is this ridiculous era of every program shipping
+    its own runtime. I&#x27;m headed for real down votes, but this is the same lazy
+    culture that&#x27;s taken over everywhere: go and rust both ship these huge statically
+    compiled binaries.<p>Go and Rust are pretty efficient too, if your architecture
+    isn&#x27;t trash. If it is, they still probably are more efficient than Electron"
+  score: 0
+  posted_at: '2026-11-02T18:48:38Z'
+- id: '50341982'
+  parent_id: '50340460'
+  author: MisterMunchkin
+  text: The source for Claude code leaked and it is total slop. They don’t even look
+    at their own code.
+  score: 0
+  posted_at: '2026-11-02T19:10:40Z'
+- id: '50342092'
+  parent_id: '50339973'
+  author: skrtskrt
+  text: I mean if you look at all the frameworks that are trying to push towards native
+    support across platorms, the ones that are took a pit stop at platform-native
+    webviews, before going full native all have negative opinions of platform-native
+    webviews. Besides all the tons of effort and buggy sharp corners there are across
+    platforms, a lot of them just make really crappy UIs.<p>Most of the projects that
+    I have seen are trying to push past that and get towards actual native-native
+    (non-webview) rendering because despite being an even bigger pain and more work,
+    they come out a lot better than the webviews.
+  score: 0
+  posted_at: '2026-11-02T19:17:08Z'
+- id: '50342229'
+  parent_id: '50337558'
+  author: likoya
+  text: I used to use cloudflare dns, but the same cloudflare harassed me the entire
+    day testing if I&#x27;m a robot. The harassment ended after I switched the dns
+    server. See you never again, clouflare
+  score: 0
+  posted_at: '2026-11-02T19:24:14Z'
+- id: '50342414'
+  parent_id: '50339907'
+  author: zamadatix
+  text: I think the biggest fault in Electron is not just that it&#x27;s inefficient
+    web tech but that it has no provision for shared instances between apps, instead
+    foricing every app to be the one which only ever wants to use the EXACT locally
+    bundled copy of Chromium+Node which should launch in isolation of any others.
+    This isn&#x27;t even something Electron needs to die and be replaced for, just
+    an optional feature other similar tools have jumped on for years now.<p>I&#x27;m
+    sure exact pinning is sometimes the real intended case for certain apps, as it
+    is a value in certain ways, but I&#x27;d bet at least half the Electron apps I
+    have running now would happily be using the same shared instance of the same LTS
+    Chromium+Node if it were the out of the box behavior to be able to do so.
+  score: 0
+  posted_at: '2026-11-02T19:36:03Z'
+- id: '50342640'
+  parent_id: '50339973'
+  author: paulddraper
+  text: 1. Cross platform.<p>2. While browsers are pretty compatible nowadays, not
+    having to deal with WebKit&#x2F;Safari quirks is a plus.<p>3. The platform webview
+    isn’t necessarily that much more efficient.
+  score: 0
+  posted_at: '2026-11-02T19:49:29Z'
+- id: '50343361'
+  parent_id: '50341625'
+  author: jauntywundrkind
+  text: |-
+    If we want a system like, say, sdf, it would be so much worse to make each program have to host its own world, its own runtime.<p>Rust and go are somewhere on the continuum, between dynlibs and chrome, for how much private world they build for themselves. It&#x27;s vastly less than chrome. But it&#x27;s a lot. A lot more than what Linux distributions did for years and years and years.<p>Especially if you think if multiuser systems with multiple people using programs, then you have some scaling factor. Then it matters a lot a lot more than each lib has to be loaded distinctly for each process.<p>It&#x27;s not good. It&#x27;s not good for Electron, there are vastly better ways to run many apps taking a more dynlib path, and it&#x27;s not good for rust or go. As nice as it is to dev like that.<p>Of course it&#x27;s another <i>huge</i> problem that dependency trees are <i>rarely</i> shared. Go look at Class Data Sharing in Java: building the libs you standardize on (your orgs stdlibs) and there&#x27;s this beautiful idea here that you should just already have some common things expected to be there. That&#x27;s harder to imagine since so many programs have such different dep stacks. But imagine having a Tokio or tokio+++ that everyone can use, good foundational tools (Grand Central dispatch and the never arrived NextBSD) Some common substrate, with just like async as one example. And the size of that shared good useful library&#x2F;platform can grow, hopefully revive an interest in reuse vs bringing your own every time.
+    <a href="https:&#x2F;&#x2F;docs.oracle.com&#x2F;en&#x2F;java&#x2F;javase&#x2F;17&#x2F;vm&#x2F;class-data-sharing.html" rel="nofollow">https:&#x2F;&#x2F;docs.oracle.com&#x2F;en&#x2F;java&#x2F;javase&#x2F;17&#x2F;vm&#x2F;class-data-shar...</a>
+  score: 0
+  posted_at: '2026-11-02T20:37:14Z'
+- id: '50343385'
+  parent_id: '50340129'
+  author: jauntywundrkind
+  text: In the evergreen (and generally broadly much better) browser age this is an
+    assumption &#x2F; concern that I think could <i>really</i> use some reconsideration,
+    lol.<p>Maybe once we didn&#x27;t dare surmount the challenge, but today, the landscape
+    is a lot better (and a lot less chaotic) and while yeah it sort of sucks in some
+    annoying ongoing ways I can&#x27;t imagine every org is going to find this some
+    insurmountable difficult strenuous activity. Like, get good.<p>The anti-will against
+    doing this drives people away from the web as platform.
+  score: 0
+  posted_at: '2026-11-02T20:39:49Z'
+- id: '50343618'
+  parent_id: '50343361'
+  author: saghm
+  text: I&#x27;m not sure at all what you&#x27;re talking about at this point. The
+    most relevant thing I can find with the abbreviation &quot;sdf&quot; is <a href="https:&#x2F;&#x2F;sdf.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;sdf.org&#x2F;</a>, but I don&#x27;t understand
+    what hypothetical version of that you&#x27;re talking about where would be entirely
+    contained within a Chrome instance.
+  score: 0
+  posted_at: '2026-11-02T20:56:45Z'
+- id: '50343969'
+  parent_id: '50339322'
+  author: colechristensen
+  text: "&gt;Curious what the R&amp;D &#x2F; efficiency development ROI is on reducing
+    memory footprint. I suppose we should both consider current ROI and near future
+    ROI (as the price of memory will likely stay high for at least another 1-2 years).<p>It
+    is a pretty small niche of companies where compute resource efficiency on the
+    server side has a meaningful business bottom line impact.<p>Everybody has a few
+    tight loops here and there that would be beneficial but that is usually a very
+    small selection of hot paths and it usually isn&#x27;t about the money to run
+    the code.<p>On the client side it&#x27;s about customer delight and this is terrifically
+    hard to measure and so many companies set themselves up such that disappointed
+    customers are locked in so well it doesn&#x27;t make a huge difference how happy
+    they are unless they&#x27;re VERY unhappy.<p>(In other words, you&#x27;re not
+    Google or Cloudflare)"
+  score: 0
+  posted_at: '2026-11-02T21:23:47Z'
+article:
+  url: https://blog.cloudflare.com/dns-targeted-zone-builds/
+  title: How we halved DNS build delay and cut memory use by 85% | Cloudflare Blog
+  fetch_status: success
+  content: |-
+    ![](/_image?href=https%3A%2F%2Fblog.cloudflare.com%2F_emdash%2Fapi%2Fmedia%2Ffile%2F01M6427MMYH94N030R2BSS8Z72.01M6427NA85VEN498BC5RPEDXK.png&w=1200&h=675&f=webp&fit=cover&position=center) ![](data:image/bmp;base64,Qk32BAAAAAAAADYAAAAoAAAACAAAAAgAAAABABgAAAAAAMAAAAATCwAAEwsAAAAAAAAAAAAA//////788O7y5OLr5uTs7uzw8e/v7+zp//////7/6uv1297v29/w5unz7e7x7e3r/////v//5uv50tv00t314Oj46u/27e/v////////6O7/09750+D74uz+7fP78PP0////////8fb/3+f+4Or/7fX/9vr/9/n5/////////v//8PT/8vf//P/////////+//////////////7/////////////////////////////////////////////////)
+
+    When I , the Zone Builder received about 250 DNS record changes per second. Today it receives about 700, nearly three times as many, plus about 100 other events, such as &nbsp;setting changes. However, the number of events was never the real problem. The problem was the kind of work some of those events needed, and how that work grows with the size of a zone. Some zones now hold more than 20 million records, and we expect them to keep growing toward hundreds of millions.
+
+    Each event starts a clock that measures how long it takes us to turn that change into data our authoritative DNS servers can use. We call that work a build. A build reads the current database state, converts it into the format used at the edge, and writes any changes to .
+
+    In 2022, per-record builds were 150 times faster than full builds on average. On a test zone with one million records, per-record builds were 4,250 times faster. We ended that post with the obvious next step: do the same thing for zone settings.
+
+    _Why doesn't the Zone Builder just rebuild the setting that changed?_
+
+    It should, and that is where we ended up. However, proving when it was safe took most of the work. A record event identifies what changed. A zone event can come from many Cloudflare products, may not say why the zone changed, and can alter data shared by several zones with the same name. Choosing too much work wastes capacity. Choosing too little can leave stale or incorrect DNS data at the edge.
+
+    We built a targeted build planner that chooses the smallest build we can prove is safe, and a new scheduler that combines work for the same zone. Zone setting changes no longer rebuild zones with tens of millions of records. Together, they cut peak memory by 85%, and the extra headroom let us safely shorten waits the pipeline has always needed for resilience, halving the time from a DNS change to its data being written to Quicksilver.
+
+    ## How DNS changes reach the edge
+
+    A DNS zone is the collection of records and settings for a domain. Cloudflare uses a multi-stage pipeline to turn a change to that zone into data available across our .
+
+    1. A customer changes a DNS record through the &nbsp;or dashboard, or another Cloudflare service changes a zone setting.
+    2. The change is stored in a database.
+    3. The database change or another system produces a &nbsp;event.
+    4. The DNS Kafka Aggregator combines events from several Kafka topics and sends them to the Zone Builder.
+    5. The Zone Builder reads the required zone data and converts it into keys understood by our authoritative DNS servers.
+    6. The Zone Builder compares those keys with , our distributed key-value store. It writes only what changed, and Quicksilver propagates those changes across Cloudflare's network.
+
+    ![](data:image/bmp;base64,Qk32BAAAAAAAADYAAAAoAAAACAAAAAgAAAABABgAAAAAAMAAAAATCwAAEwsAAAAAAAAAAAAA////////9/f48PHz8/X2+Pr69/j48PHx////////+Pf48PHy8/T1+Pr7+Pn68fPz////////+fj58PDy8/T1+fr7+fr79PX1////////+/n58vDx9fT1+/v7+/v89vb3/////////vn69fHx+PX1/vz8/vz9+Pf3//////////r5+fPy/Pb1//38//39+ff2//////////v5/PTy//j2//79//38+vb1//////////v5/fXy//j2//79//38+vb1) ![image7.png](/_image?href=https%3A%2F%2Fblog.cloudflare.com%2F_emdash%2Fapi%2Fmedia%2Ffile%2F01M6429DPKR3AKSQD74XKFE1X8.01M6429ES21TZ6EVYVVTNNWWC1.png&w=715&h=730&f=webp&fit=cover&position=center)
+
+    _Diagram of the DNS propagation pipeline: the DNS Records API, zone settings, and internal services write to databases or Kafka topics, the DNS Kafka Aggregator combines them, and the DNS Zone Builder writes to Quicksilver._
+
+    This is a simplified view. The Zone Builder does not copy database rows directly to the edge. It combines records with zone settings, applies DNS serving rules, and organizes the result so our authoritative DNS servers can read it quickly.
+
+    ## Why full builds stopped scaling
+
+    The original Zone Builder had one useful property: it did not need to know why a zone changed. It rebuilt the desired state from the current database state.
+
+    1. Read the current zone and its settings.
+    2. Read every DNS record in the zone.
+    3. Convert those records into Quicksilver keys.
+    4. Compare the new keys with those already stored.
+    5. Remove stale keys, write changed keys, and update zone metadata.
+
+    The final write contains only changed keys. However, a full build still reads, encodes, and compares every record, and holds the whole zone in memory while it does so. That is cheap for a small zone. For our largest zones, with tens of millions of records, the zone does not fit in memory at all. I explain how we handle that below.
+
+    Zone settings made targeting harder. &nbsp;is one example. Enabling or disabling it updates metadata and can change Certification Authority Authorization (CAA) records at the zone apex, the bare domain, such as `example.com`. &nbsp;tell certificate authorities whether they may issue a certificate for the domain.
+
+    A full build only needed to know that the zone changed. A targeted build must answer three questions:
+
+    1. Which DNS names can change?
+    2. Can shared metadata or the list of published zones change?
+    3. What previous state must be removed from Quicksilver?
+
+    Answering those questions safely meant solving five problems, which the rest of this post covers in order:
+
+    1. Events had to say what changed.
+    2. Each change had to map to the smallest build that is still correct.
+    3. Builds had to account for data shared by every zone with the same name.
+    4. The database could change between the event and the build.
+    5. Combining work could not lose a Kafka message.
+
+    ## Making events say what changed
+
+    We changed the event producer to include changed zone fields and settings, with previous and new values when available. We then traced each setting through the code that generates DNS output and classified what it could affect.
+
+    Not every event was that specific. Some database functions only update a timestamp to say, in effect, "something about this zone changed." Sometimes that is harmless bookkeeping. Sometimes it means data changed elsewhere and must be read again.
+
+    Those cases look identical in the event. Until we can identify the caller and its purpose, a timestamp-only update still causes a full build. The same rule applies to missing details, unknown events, or any change that may affect records anywhere in the zone. The planner never turns uncertainty into less work.
+
+    ## Choosing the smallest safe build
+
+    Quicksilver output has two parts that matter here. Record keys contain the DNS answers for one zone and name. A smaller shared metadata key tells our authoritative DNS servers how to use that zone, including where to find special records such as nameservers and wildcards. Some events change only record keys; others must update both.
+
+    With that distinction, the planner can choose one of five build types:
+
+    1. **Resources only:** &nbsp;Rebuild the records at specific DNS names, which we call resources, without changing zone metadata. Ordinary A, AAAA, TXT, and CNAME changes usually take this path.
+    2. **Resources and metadata:** &nbsp;Rebuild specific names and shared metadata. Nameserver and wildcard changes use this path.
+    3. **Apex and metadata:** &nbsp;Rebuild the zone apex and metadata. Settings such as Universal SSL can use this path.
+    4. **Purge:** &nbsp;Remove a zone that should no longer be published.
+    5. **Full zone:** &nbsp;Rebuild every record when smaller work cannot be proven safe.
+
+    The rule is simple: every key a targeted build writes must be byte-for-by
+  error:
+  fetched_at: '2026-11-02T21:29:49Z'
+archived_at: '2026-11-02T21:29:53Z'

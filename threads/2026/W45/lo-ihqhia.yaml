@@ -1,0 +1,155 @@
+---
+post:
+  id: lo-ihqhia
+  source: lobsters
+  title: the lost malloc()
+  url: https://napcakes.nekoweb.org/posts/malloc/
+  hn_url: https://lobste.rs/s/ihqhia
+  score: 22
+  author: spc476
+  posted_at: '2026-11-02T08:46:48Z'
+  fetched_at: '2026-11-02T21:29:53Z'
+  article_url: https://napcakes.nekoweb.org/posts/malloc/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T21:29:59Z'
+  raw_comment_count: 3
+  tags:
+  - c
+  - historical
+  - unix
+comments:
+- id: lo-44wigp
+  parent_id: '0'
+  author: nelson
+  text: |-
+    these malloc() and mfree() work on explicit memory regions!  ... You could deallocate all its memory resources by just discarding the entire region you delegated to it.
+
+    This idea of a zone allocator keeps coming back. I've always wondered why it wasn't more popular in web servers, where it'd be natural to just bulk-free all memory after an HTTP request is done. I spent so much time tuning garbage collection in Java webapp servers and it was tempting to think it could all be trivialized.
+  score: 1
+  posted_at: '2026-11-02T16:21:33Z'
+- id: lo-hoozaa
+  parent_id: '0'
+  author: fanf
+  text: |-
+    Note that this article doesn’t make it very clear that dmr/malloc is the kernel allocator; I think all the others it discusses are userland allocators. (The early unix kernels had their source split between directories ken and dmr, a kind of charming instance of Conway’s law.)
+    (I’m mildly disappointed the article omitted the notoriously cursed Bourne shell allocator.)
+
+    I've always wondered why it wasn't more popular in web servers, where it'd be natural to just bulk-free all memory after an HTTP request is done.
+
+    Both Apache httpd and nginx work that way; it’s a common idiom in C network servers. (previously)
+    Pool allocators get a lot of their efficiency from type punning so they are hard to write in languages other than C. In C++ you have added friction from placement new, the need to explicitly bless the type of a fresh allocation, and keeping track of which objects have destructors that must be called. You can write homogeneous pool allocators in higher-level languages with an array per type (and they can be useful to control GC pressure in languages like Java) but then the per-request top level needs to know every type that might be allocated, and there are multiple pools to reset instead of just one.
+  score: 2
+  posted_at: '2026-11-02T17:19:43Z'
+- id: lo-rjtvfn
+  parent_id: '0'
+  author: aardvark179
+  text: |-
+    The other problem they have is (in languages that have manual memory management) you need to know none of your pointers have escaped. Any globally accessible cache must only ever hold data that is outside of the per request pool.
+    I’ve seen per request pools suggested on multiple projects as a way to remove deallocation overhead and possible leaks, and it has always turned out those leaks were more complex than just a missing free.
+  score: 2
+  posted_at: '2026-11-02T20:40:58Z'
+article:
+  url: https://napcakes.nekoweb.org/posts/malloc/
+  title: the lost malloc() - gardenweb
+  fetch_status: success
+  content: "(Sorry, I couldn't resist not putting a catchy title :)\n\nPrompted by
+    another project idea that popped into my mind, I did some Unix archaeology and
+    looked at the original [sources](https://www.tuhs.org/cgi-bin/utree.pl \"The Unix
+    Tree\"). This is the most fun I've ever had reading someone else's code - probably
+    due to the historical significance. But also because of how delightfully approachable
+    it was, compared to modern monstrocities.\n\nThis is a short(-ish) post regarding
+    how they handled the mundane and boring task of allocating and managing memory
+    (in C). In the future I'd like to read more about Unix the OS, its design, architecture
+    & implementation.\n\n## A long time ago...\n\nIn a PDP far, far away, our journey
+    begins with the fourth edition of Unix, released November '73, _more than half
+    a century ago_. C actually first appeared in the second edition, released the
+    year before, but wasn't extensively used. V4 is special because even the majority
+    of the kernel was written in (let's call it \"medieval\") C by that point. The
+    system had grown, however, and it was quite capable. You'll find that many Unix
+    things we have today in POSIX-land were already present in V4.\n\n**Super fun
+    fact:** A tape containing V4 was only found [last year](https://discuss.systems/@ricci/115504720054699983)!
+    Previously, it was thought to be completely lost to time.\n\n![Magnetic tape of
+    UNIX v4 from Bell Labs, circa 1973](unix-v4-tape.jpg \"Magnetic tape of UNIX v4
+    from Bell Labs, circa 1973\")\n_While cleaning a storage room, our staff found
+    this tape containing UNIX v4 from Bell Labs, circa 1973\n~ Rob Ricci_\n\n### Linear
+    allocation\n\nThe first interesting bit is found among the C \"compiler\" sources.
+    In quotes, because it wasn't a monolithic compiler as we know it today. Rather,
+    it was a set of distinct tools which you chained in order to get an object file
+    from C code.\n\nIn [`/usr/c/c20.c:814`](https://www.tuhs.org/cgi-bin/utree.pl?file=V4/usr/c/c20.c),
+    from what I can gather a very primitive optimiser, if you will (referred to as
+    \"C object code improver\" in V5; there aren't many comments in V4) you see:\n\n
+    \   alloc(an)\n    {\n        register int n;\n        register char *p;\n    \n
+    \       n = an;\n        n++;\n        n =& ~01;\n        if (lasta+n >= lastr)
+    {\n            if (sbrk(2000) == -1) {\n                write(2, \"Out of space\\n\",
+    14);\n                exit(1);\n            }\n            lastr =+ 2000;\n        }\n
+    \       p = lasta;\n        lasta =+ n;\n        return(p);\n    }\n\nIsn't that
+    fascinating? This routine is used throughout the program to allocate memory. And
+    if you squint, this is just a linear allocator. It aligns the size, checks if
+    the region is big enough, otherwise tries to extend it. On failure, it just cold-exits.
+    Which means callers don't have to check for `NULL` every single time, and indeed
+    they do not.\n\nThe \"region\" isn't named, unlike how you'd do it today with
+    arenas. However, the above does have a nice property, in that by using `sbrk()`,
+    when we extend the heap, no pointer is invalidated.\n\nAnd they don't bother freeing
+    memory, because why would they? There's no need. Everything exists for the lifetime
+    of the program.\n\n### `dmr/malloc`\n\nThis is the most interesting bit in my
+    opinion, and the reason why I chose that title.\n\nIn Dennis' directory, you find
+    a file named [`malloc.c`](https://www.tuhs.org/cgi-bin/utree.pl?file=V4/usr/sys/dmr/malloc.c).
+    And you see two functions there:\n\n    struct map {\n        char *m_size;\n
+    \       char *m_addr;\n    };\n    \n    malloc(mp, size)\n    struct map *mp;\n
+    \   \n    mfree(mp, size, aa)\n    struct map *mp;\n\nSeems familiar? Yep, it's
+    `mfree()` with an `m`. These functions obviously deal with memory (de)allocation,
+    and are the precursor to the ones we're familiar with today. _But_, the interfaces
+    are different.\n\n`malloc()` receives an additional first argument called `mp`
+    (for \"map\"), and so does `mfree()`. What is that? Well, let's see how they're
+    used:\n\n    p = malloc(coremap, sizeof foo);\n    ...\n    mfree(coremap, sizeof
+    foo, p);\n    \n    q = malloc(swapmap, sizeof bar);\n    ...\n    mfree(swapmap,
+    sizeof bar, q);\n\nSo, they pass in some objects `coremap` and `swapmap`. What
+    are those?  \nFrom [`/usr/sys/systm.h:2`](https://www.tuhs.org/cgi-bin/utree.pl?file=V4/usr/sys/systm.h):\n\n
+    \   int\tcoremap[CMAPSIZ];\n    int\tswapmap[SMAPSIZ];\n\nThey're just flat memory
+    regions! So these `malloc()` and `mfree()` work on _explicit memory regions_!
+    Not only that, `mfree()` receives the size of the object it is deallocating, _as
+    it should_. Those are just infinitely-times better interfaces than traditional
+    `malloc()`/`free()`.\n\nImagine using a library that has such an interface. You
+    could deallocate all its memory resources by just discarding the entire region
+    you delegated to it. Heap corruption bugs would be less severe because you could
+    partition memory. You could trivially limit the amount of memory third party code
+    allocates. The list goes on and on...\n\n(Side note: They slightly messed up here
+    and the regions should've been sized `CMAPSIZ/2` and `SMAPSIZ/2` respectively.
+    They did fix that later.)\n\nHowever, I don't think all these benefits were in
+    the minds of Dennis and Ken. So why did they go with that interface and why did
+    they partition memory to \"core\" and \"swap\"? The reason is, I believe, just
+    hardware constraints. These interfaces stay like that up to V6 (maybe V7 too?),
+    released the spring of '75, and thankfully there's an infamously good resource
+    about that edition.\n\n![Brian Kernighan holding a copy of Lions's Commentary](Brian_Kernighan_in_2012_at_Bell_Labs_2.jpg
+    \"Brian Kernighan holding a copy of Lions's Commentary\")\n_Brian Kernighan, from
+    Wikipedia._\n\nFrom _A Commentary on the Sixth Edition UNIX Operating System_
+    by John Lions:\n\n> These are concerned with the allocation and subsequent release
+    of two kinds of memory resources, namely:\n> \n> - **main memory** in units of
+    32 words (64 bytes);\n> - **disk swap area** in units of 256 words (512 bytes).\n>
+    \n> For each of these two kinds of resource, a list of available areas is maintained
+    within a resource \"map\" (either \"coremap\" or \"swapmap\"). A pointer to the
+    appropriate resource \"map\" is always passed to \"malloc\" and \"mfree\" so that
+    the routines themselves do not have to know the kind of resource with which they
+    are dealing.\n\nAnd it goes on to explain how the underlying allocation algorithm
+    works. These do not do linear allocation (hence the `mfree()`). Basically, it's
+    a list of blocks (`struct map`), ordered by address, where you do first-fit and
+    also coalesce neighbour blocks.\n\nThe sixth edition is also the first where the
+    term \"arena\" appears, in [`/usr/source/s4/alloc.s:17`](https://www.tuhs.org/cgi-bin/utree.pl?file=V6/usr/source/s4/alloc.s):\n\n
+    \   /char *allocs[2] { /*initial empty arena*/\n\n### Rolling back\n\n... to the
+    topic of linear allocation... In V6's [`/usr/source/s1/diff1.c:88`](https://www.tuhs.org/cgi-bin/utree.pl?file=V6/usr/source/s1/diff1.c),
+    I think the first ever version of `diff(1)`, you find:\n\n    char *area;\n    char
+    *top;\n    alloc(n)\n    {\n        register char *p;\n        p = area;\n        n
+    = (n+1) & ~1;\n        area =+ n;\n        while(area > top) {\n            if(sbrk(1024)
+    == -1) {\n                mesg(\"Out of space\\n\");\n                exit(1);\n
+    \           }\n            top =+ 1024;\n        }\n        return(p);\n    }\n\nThis
+    is not all that much different from the previous `alloc()`, but this time it handles
+    any allocation size. It uses a `while` to continue extending the region and stops
+    when enough space has been reserved. The _actual_ interesting part happens later,
+    at `unsort():143`:\n\n    unsort(f, l, b)\n    struct line *f;\n    int *b;\n
+    \   {\n        int *a;\n        int i;\n        a = alloc((l+1)*sizeof(a[0]));\n
+    \       for(i=1;i<=l;i++)\n            a[f[i].serial] = f[i].value;\n        for(i=1;i<=l;i++)\n
+    \           b[i] = a[i];\n        area = a;\n    }\n\nI'm not exactly sure what
+    that function does, but it doesn't matter. What matters is that they allocate"
+  error:
+  fetched_at: '2026-11-02T21:29:59Z'
+archived_at: '2026-11-02T21:29:59Z'
