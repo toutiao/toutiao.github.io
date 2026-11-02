@@ -5,14 +5,14 @@ post:
   title: Pratt parsing is a black box
   url: https://vinipsmaker.github.io/blog/article/pratt-parsing-is-a-black-box/
   hn_url: https://lobste.rs/s/bzazar
-  score: 10
+  score: 24
   author: vinipsmaker
   posted_at: '2026-11-01T17:41:53Z'
-  fetched_at: '2026-11-01T19:24:34Z'
+  fetched_at: '2026-11-02T00:22:33Z'
   article_url: https://vinipsmaker.github.io/blog/article/pratt-parsing-is-a-black-box/
   article_fetch_status: success
-  article_fetched_at: '2026-11-01T19:24:35Z'
-  raw_comment_count: 3
+  article_fetched_at: '2026-11-02T00:22:34Z'
+  raw_comment_count: 9
   tags:
   - compilers
   - plt
@@ -26,7 +26,7 @@ comments:
     LLMs training on my code before the public release for 0.1, but what I can say
     is that Pratt fundamentally changed the design of my language by allowing metaprogramming
     stuff that I never dreamed of.
-  score: 2
+  score: 4
   posted_at: '2026-11-01T17:44:34Z'
 - id: lo-pg9izt
   parent_id: '0'
@@ -45,7 +45,7 @@ comments:
     The lack of a dedicated lexer ensures we can modify and replace the lexical grammar at any point, and simplifies detecting and propagating whitespace. [...] Tokens also play a central role in the prattParser combinator, which selects a leading parser followed by zero or more trailing parsers based on the current token. [...] The Parser type is extended with additional metadata over the mere parsing function to propagate token information: collectTokens collects all tokens within a parser for registering. firstTokens holds information about the "FIRST" token set used to speed up parser selection in prattParser."
     The language reference also has a chapter that goes into greater detail, including on macros and elaborators, which you can roughly think of as type-directed, context-directed macros that can access the semantic environment.
     An interesting facet of so-called postponement in languages like this is that it lets you schedule elaborators to run out of syntactic order depending on their mutual dynamic data dependencies; they synchronize implicitly through so-called holes, which from an operational perspective are like dataflow variables. Because elaborators run encapsulated in a monad, you don't need to use suspend/resume scheduling or any other particular strategy. E.g. you can use abort/retry scheduling as described in the Build Systems á la Carte paper, which I believe is more or less what Lean does: you optimistically run an elaborator and if it tries to read the content of a hole then its partial execution is aborted and its re-run is postponed (until another elaborator can hopefully fill in that hole and let the postponed elaborator make progress when the scheduler gets back to it eventually).
-  score: 4
+  score: 7
   posted_at: '2026-11-01T18:22:03Z'
 - id: lo-j49tuv
   parent_id: '0'
@@ -54,6 +54,72 @@ comments:
     mode the contents of every code block are repeated four times.
   score: 1
   posted_at: '2026-11-01T19:21:22Z'
+- id: lo-7jc9pw
+  parent_id: '0'
+  author: abeyer
+  text: |-
+    There are in fact four complete copies of each code block as it looks the typst html styling in use seems to use four separate divs each containing the full text content and then do some selective display or something of them for color schemes and stuff.
+    Chrome reading mode also behaves the same rendering all four copies.
+  score: 1
+  posted_at: '2026-11-01T20:12:22Z'
+- id: lo-wh9bh4
+  parent_id: '0'
+  author: conartist6
+  text: 'Looks like something to do with Typst and its "zebraw" package: https://github.com/hongjr03/typst-zebraw'
+  score: 1
+  posted_at: '2026-11-01T20:21:54Z'
+- id: lo-1dngkp
+  parent_id: '0'
+  author: conartist6
+  text: 'I still wish to know: what would people categorize BABLR as? Is it a pratt
+    parser? https://github.com/bablr-lang/language-en-json/blob/trunk/lib/grammar.js'
+  score: 1
+  posted_at: '2026-11-01T20:24:17Z'
+- id: lo-0xjhxw
+  parent_id: '0'
+  author: andyc
+  text: |-
+    I'm glad to see more explorations of Pratt parsing :-)   And thanks for referring to previous writing, including my own!
+    In the opening code snippet, I think a VERY important point is that both nud() and led() will typically call back into expression() (after the Pratt logic dispatches to the right one).
+    There's no getting around that languages are fundamentally not just recursive, but mutually recursive, so that is where it shows up.
+
+    Another useful observation is that it's like recursive descent, in that it's both recursive and "mutating".
+    That is, Pratt parsing and recursive descent are a different style of algorithm than "recursively count the nodes in a tree" e.g. 1 + count(left) + count(right), which is functional / immutable.
+    In contrast, they advance through the token stream at the same time -- they have a side effect.  Hence the advance() in the opening code snippet.  I like writing it self.advance() or self.Next() for that reason.
+
+    There are many ways to think of the algorithm, but I sometimes think of it as "recursive descent, except you want to control the output tree with a numeric precedence table".
+    In other words, Dragon Book parsing is not as focused on the output tree.  It's focused mainly on recognition: is a string part of the (infinite)  set that a grammar specifies?  That is a boolean yes/no.
+    The Dragon book also says that you can construct a CST (concrete syntax tree) from the parsing process, i.e. with LR or LL parsing.  The CST is a tree that mirrors the structure of the grammar.
+    With Pratt, you construct a more concise tree (that's not a CST) more "directly" and efficiently.  It's NOT grammatical; it's more focused on the tree structure / traversal order.
+    A useful exercise is to join all these styles together with the SAME lexer: recursive descent, Pratt, grammars.  Oils does this, and the different algorithms all become mutually recursive with each other!
+  score: 2
+  posted_at: '2026-11-01T20:35:46Z'
+- id: lo-pz5e05
+  parent_id: '0'
+  author: vinipsmaker
+  text: I only found/stopped to read/paid attention to your blogposts on the topic
+    of Pratt parsing after my project/language was already deep on “Pratt rails”,
+    but I must say... from any person alive, I think you're the one with the parsing
+    mindset closest to my own (when it comes to parsing problems). This time I'll
+    probably copy your design on eggexes instead of going on the route of designing
+    something of my own from scratch just to find out in the end that whatever I come
+    up with would be incredibly similar to something you already designed earlier
+    anyways.
+  score: 1
+  posted_at: '2026-11-01T21:10:37Z'
+- id: lo-vgvpg1
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    I still wish to know
+
+    Isn't the onus on you to understand your own code? Anyway:
+
+    Is it a pratt parser?
+
+    No. Just looking at that file (I spent a few minutes trying to chase definitions across repos before I gave up), it looks like a conventional pull-mode recursive-descent parser, where the pull mode is implemented via generators. You could also be using generators for backtracking but I don't see any examples of that in this file. Both of these ideas, i.e. using generators for backtracking and pull-mode parsers, are standard, but neither of them have anything to do with Pratt parsing except that they're both examples of recursive descent.
+  score: 1
+  posted_at: '2026-11-02T00:19:37Z'
 article:
   url: https://vinipsmaker.github.io/blog/article/pratt-parsing-is-a-black-box/
   title: Pratt parsing is a black box
@@ -160,4 +226,4 @@ article:
     \   rule\\_c\\<token::lparen, token::led::parse\\_function\\_call\\>,\n\n "
   error:
   fetched_at: '2026-11-01T19:24:35Z'
-archived_at: '2026-11-01T19:24:35Z'
+archived_at: '2026-11-02T00:22:35Z'

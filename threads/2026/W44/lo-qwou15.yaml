@@ -5,14 +5,14 @@ post:
   title: Mystery of 60-Second Fluctuations in Power Grids Solved
   url: https://www.fz-juelich.de/en/news/archive/press-release/2026/mystery-of-60-second-fluctuations-in-power-grids-solved
   hn_url: https://lobste.rs/s/qwou15
-  score: 65
+  score: 68
   author: robalex
   posted_at: '2026-10-31T19:50:11Z'
-  fetched_at: '2026-11-01T19:24:34Z'
+  fetched_at: '2026-11-02T00:22:33Z'
   article_url: https://www.fz-juelich.de/en/news/archive/press-release/2026/mystery-of-60-second-fluctuations-in-power-grids-solved
   article_fetch_status: success
-  article_fetched_at: '2026-11-01T19:24:35Z'
-  raw_comment_count: 20
+  article_fetched_at: '2026-11-02T00:22:39Z'
+  raw_comment_count: 28
   tags:
   - science
 comments:
@@ -20,7 +20,7 @@ comments:
   parent_id: '0'
   author: rkaw92
   text: A thundering herd problem, but for power? Jitter saves the day as usual.
-  score: 27
+  score: 29
   posted_at: '2026-10-31T20:22:32Z'
 - id: lo-xw1xbc
   parent_id: '0'
@@ -28,7 +28,7 @@ comments:
   text: |-
     All I can think is software is such an unserious field that we keep repeating these mistakes.
     I habitually use the systemd random jitter setting on my timer units to prevent this exact problem, even when it’s not really clearly necessary, and you’re telling me the people building these grid scale battery systems didn’t think of this before deployment?
-  score: 23
+  score: 29
   posted_at: '2026-10-31T20:43:08Z'
 - id: lo-bc2t8r
   parent_id: '0'
@@ -55,7 +55,7 @@ comments:
     attribute but suspicious cluster of leukemia in its neighborhood and running a
     "hopefully in 40 years we'll have the tech to clean up our mess by the end of
     the century" strategy, still operates.
-  score: 2
+  score: 1
   posted_at: '2026-10-31T22:42:29Z'
 - id: lo-kroc3j
   parent_id: '0'
@@ -69,7 +69,7 @@ comments:
   author: k749gtnc9l3w
   text: If only they treated time-keeping as unseriously, the problem would be avoided
     though! Uneven unseriousness is the worst.
-  score: 19
+  score: 20
   posted_at: '2026-10-31T22:57:40Z'
 - id: lo-gwrkvm
   parent_id: '0'
@@ -138,7 +138,7 @@ comments:
     current system setup default is to connect to the Internet everything in a subnet
     once any machine of the subnet is connected — and to run NTP on every Internet-connected
     machine.
-  score: 3
+  score: 4
   posted_at: '2026-11-01T10:09:11Z'
 - id: lo-j8jf6d
   parent_id: '0'
@@ -172,14 +172,14 @@ comments:
     Almost all of these large deployments sell frequency services and do energy price arbitrage. The EU grid is mostly priced at 15-min increments, so being just a few seconds off the metered clock can put volumes on the “wrong” quarter-hour. For stability services there are variants where you get a message from the TSO saying “discharge x MW starting at <timestamp> for y minutes”..
     In short: the battery operators are highly motivated to get their clocks right, but they don’t have a system perspective, they focus on their one or two assets.
     The system perspective is the TSOs problem, and they did catch it - it’s Tennet that did the sleuthing here. One would have hoped they would have caught it when the specified the battery requirements - they do specify jitter in some places, I think they just were not aware the batteries stopped what they were doing to check SoC
-  score: 5
+  score: 6
   posted_at: '2026-11-01T17:37:33Z'
 - id: lo-bxkmkh
   parent_id: '0'
   author: moltonel
   text: Who says they were very serious about keeping time ? They probably just ticked
     a box in their system config, NTP doesn't have a "precise up to one minute" option.
-  score: 1
+  score: 2
   posted_at: '2026-11-01T18:41:23Z'
 - id: lo-t1znqr
   parent_id: '0'
@@ -194,6 +194,73 @@ comments:
   text: I wondered if the same is true for ACME certificate renewal. It is? https://devops-daily.com/posts/lets-encrypt-64-day-certificates-renewal-check
   score: 1
   posted_at: '2026-11-01T19:09:09Z'
+- id: lo-cvpnqw
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    That makes a lot of sense, thanks for the context!
+    I had been naively imagining this as some dumb battery microcontroller that would have had no business running NTP. But knowing more about their business model (having to buy/sell at precise times) made it click into place for me—duh, of course they have to be networked, coordinating with the grid is the whole point! And the tech in question is probably a lot closer to a full-fledged computer than I had been picturing.
+    Thanks again, this was exactly the context I needed.
+  score: 1
+  posted_at: '2026-11-01T19:35:26Z'
+- id: lo-9jjxa7
+  parent_id: '0'
+  author: scruss
+  text: |-
+    Yes: the NTP aspect is covered briefly in the paper, where one of the local UPSs loses NTP sync and its local frequency deviations drift away from the top of the minute.
+    Since you want to transmit power grid data securely, you need time sync at the reporting end. The measurement part of the hardware doesn't strictly need tight time sync, but it's going to be annoying as all hell making tidy reports from hardware whose own idea of minutes drifts from the rest of the world.
+  score: 1
+  posted_at: '2026-11-01T19:54:23Z'
+- id: lo-gk43ku
+  parent_id: '0'
+  author: scruss
+  text: 'The full article (not the light news release with the picture of the researchers
+    making like Sherlock Holmes) notes that the 15 minute market interval was already
+    observed to cause frequency deviations. Half of the grids shown in Fig. 1: Fourier
+    spectra of the grid frequency f(t) for 12 grids on different continents that exhibit
+    a 1-min pattern. exhibit this hourly spike.'
+  score: 2
+  posted_at: '2026-11-01T20:01:08Z'
+- id: lo-jw3pco
+  parent_id: '0'
+  author: nelson
+  text: actually.. systemd-timesyncd is pretty unserious about timekeeping. But in
+    practice it syncs to about 300ms from true time, so it doesn't give you enough
+    jitter to offset the problem. (chronyd will get you to about 1ms of true time.)
+  score: 2
+  posted_at: '2026-11-01T22:32:08Z'
+- id: lo-l0phfp
+  parent_id: '0'
+  author: nelson
+  text: |-
+    This observation sent me on a rabbit-hole of looking at systemd timers. Long story short: AccuracySec is a thing that tells systemd to randomize the start of all timers. Timers are still run at the same time though to minimize power consumption. There's also RandomizedDelaySec but that jitters each timer to run at a separate time, probably not what you want.
+    I believe the defaults allow timers to fire within 1 minute of their scheduled time, that sounds just about right. Not sure if this helps old-fashioned cron jobs or not, probably depends on the cron implementation.
+  score: 1
+  posted_at: '2026-11-01T22:34:38Z'
+- id: lo-ajzpp1
+  parent_id: '0'
+  author: nelson
+  text: Oh man now I'm feeling nostalgic for leap seconds.
+  score: 1
+  posted_at: '2026-11-01T22:35:05Z'
+- id: lo-1scugg
+  parent_id: '0'
+  author: k749gtnc9l3w
+  text: Just slightly not enough jitter to smear the peak from randomising seconds
+    but running at .000000!
+  score: 1
+  posted_at: '2026-11-01T22:37:53Z'
+- id: lo-6hrwst
+  parent_id: '0'
+  author: fanf
+  text: |-
+    One of the purposes of ARI is to “modulate” the load of certificate renewals https://letsencrypt.org/2023/03/23/improving-resliiency-and-reliability-with-ari
+    ARI has two mechanisms to avoid thundering herds:
+
+    the ACME server can add its own jitter to renewal intervals to spread them out
+    ACME clients are supposed to pick a random time to perform the renewal within the ARI interval
+  score: 1
+  posted_at: '2026-11-01T23:31:51Z'
 article:
   url: https://www.fz-juelich.de/en/news/archive/press-release/2026/mystery-of-60-second-fluctuations-in-power-grids-solved
   title: Mystery of 60-Second Fluctuations in Power Grids Solved
@@ -291,4 +358,4 @@ article:
     delivered quickly and conveni"
   error:
   fetched_at: '2026-11-01T04:52:42Z'
-archived_at: '2026-11-01T19:24:39Z'
+archived_at: '2026-11-02T00:22:40Z'

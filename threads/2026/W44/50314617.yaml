@@ -1,0 +1,555 @@
+---
+post:
+  id: '50314617'
+  title: One-minute frequency disturbances from synchronization in power systems
+  url: https://www.nature.com/articles/s41560-026-02144-0
+  hn_url: https://news.ycombinator.com/item?id=50314617
+  score: 115
+  author: croes
+  posted_at: '2026-10-31T10:14:08Z'
+  fetched_at: '2026-11-02T00:22:28Z'
+  article_url: https://www.nature.com/articles/s41560-026-02144-0
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T00:22:28Z'
+  raw_comment_count: 39
+comments:
+- id: '50325896'
+  parent_id: '50314617'
+  author: geerlingguy
+  text: I know my older APC UPSes do weekly self tests, but I guess newer equipment
+    does more frequent self testing? And of course they&#x27;re all internet-connected
+    meaning clocks are within a few hundred ms of each other.<p>It also made me think
+    about how many GitHub Actions I have that kick off on Sunday morning at a specific
+    time. I try to vary the time&#x2F;day for those jobs but I&#x27;m guessing there
+    are enough things that kick off at specific time intervals to make an impact at
+    the top of an hour, or at :15, :30, :45...
+  score: 0
+  posted_at: '2026-11-01T14:13:16Z'
+- id: '50325915'
+  parent_id: '50314617'
+  author: schiffern
+  text: 'The corresponding concept in gears is to avoid meshing two gears unless the
+    number of teeth are co-prime, because this will cause uneven wear patterns. If
+    the tooth counts are coprime, then each tooth will contact every tooth on the
+    other gear the same number of times, effectively &quot;wear leveling&quot; the
+    teeth.<p>In this instance, one fix is to fire the timer every 59.XXX seconds,
+    so it will naturally drift out of phase with the minute hand of the clock.<p>If
+    work needs to be done exactly every 60 seconds, this is fixed by having a WAIT(RAND(60e6))
+    microseconds during the first timer initialization, so if 10,000 units start simultaneously
+    they don&#x27;t try all at once. This is good practice in most (all?) systems.
+    Hint: test power and infra outage&#x2F;reconnect, which can unintentionally sync
+    timers.<p>This is why many software will do automated updates every 17 hours:
+    17 is coprime with 24.<p>Classic &quot;thundering herd&quot; mitigation tactics.<p>Edit:
+    Tempting to blame IoT, but (since this is news) I don&#x27;t think anyone knew
+    there was something to fix here. We have the tools however.'
+  score: 0
+  posted_at: '2026-11-01T14:16:15Z'
+- id: '50325952'
+  parent_id: '50325896'
+  author: rmunn
+  text: This is why systemd gives you the RandomizedDelaySec option. (Other cron-like
+    facilities may have similar features, I&#x27;m not discussing them here). Set
+    that to N and each time the timer reaches its trigger (say, once per day), its
+    <i>actual</i> start will be up to N seconds after the trigger. E.g. if a once-per-day
+    trigger is at midnight but you have RandomizedDelaySec=300 set, then it will run
+    sometime between 0:00:00 and 0:05:00, with a different actual start time each
+    day.<p>If enough people used that, with a high enough value of N (say 1800 for
+    jobs that really don&#x27;t have to start at any particular time), it would greatly
+    spread out the spikes in accidentally-coordinated usage.
+  score: 0
+  posted_at: '2026-11-01T14:20:10Z'
+- id: '50326125'
+  parent_id: '50314617'
+  author: bob1029
+  text: I&#x27;m not sure I agree with the conclusion that this is merely caused by
+    UPS system control logic. That is an extreme amount of coordination across a lot
+    of makes, models and configurations.<p>The FFT indicates this is a periodic signal,
+    not a once a day or week thing. It&#x27;s happening continuously all day every
+    day. I don&#x27;t know of any UPS systems that perform tests with this kind of
+    regularity.<p>In any case, I refuse to believe an external sync signal is causing
+    this. The more likely explanation is that the active elements are pulling each
+    other to a common mode due to being physically coupled on the same grid. This
+    is like how clocks on the same beam will synchronize.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Injection_locking"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Injection_locking</a>
+  score: 0
+  posted_at: '2026-11-01T14:36:46Z'
+- id: '50326210'
+  parent_id: '50326125'
+  author: the8472
+  text: The external sync here is NTP. Synchronized clocks + timer-scheduled actions
+    → globally synchronized behavior<p>From the article:<p>&gt; The origin of these
+    current peaks was independently confirmed by the manufacturer to be periodic self-tests
+    executed by the battery EMS, confirming our interpretation. Similar minute-scale
+    diagnostic routines are also documented for other commercial UPS systems (cf.
+    Supplementary Note 8).<p><a href="https:&#x2F;&#x2F;www.snaptec.com.au&#x2F;akkutec-4801-din-user-manual.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.snaptec.com.au&#x2F;akkutec-4801-din-user-manual.pdf</a><p>&gt;
+    battery circuit testing 1 x per minute for 1 sec<p><a href="https:&#x2F;&#x2F;adelsystem.com&#x2F;hubfs&#x2F;PDF%20DC-UPS&#x2F;Instruction%20Manual%2073_4-M.pdf?hsLang=en"
+    rel="nofollow">https:&#x2F;&#x2F;adelsystem.com&#x2F;hubfs&#x2F;PDF%20DC-UPS&#x2F;Instruction%20Manu...</a><p>&gt;
+    The battery testing is carried out automatically every 60 sec.
+  score: 0
+  posted_at: '2026-11-01T14:47:55Z'
+- id: '50326329'
+  parent_id: '50325915'
+  author: HPsquared
+  text: Coprime meaning &quot;no common factors&quot;.
+  score: 0
+  posted_at: '2026-11-01T15:03:36Z'
+- id: '50326392'
+  parent_id: '50325915'
+  author: vlovich123
+  text: 'Small nit: Wait(50+rand(10)) is probably closer to what you want to get about
+    a minute between executions. As stated your proposed execution has an average
+    about 30s execution interval with a variance of about 17s. If you’re talking about
+    a random sleep on a 1 minute interval, this actually results in a possibility
+    of 120s between tasks, also not what you want.<p>But yeah, as soon as you start
+    using Rand most people make all sorts of mistakes. And if you’re using C Rand,
+    don’t. It has other statistical problems.'
+  score: 0
+  posted_at: '2026-11-01T15:10:56Z'
+- id: '50326440'
+  parent_id: '50325915'
+  author: mkj
+  text: 59 seconds will still have second alignment. Maybe it needs to be prime milliseconds
+    or microseconds.
+  score: 0
+  posted_at: '2026-11-01T15:16:00Z'
+- id: '50326442'
+  parent_id: '50326392'
+  author: jagged-chisel
+  text: He’s still allowing for exactly 60s  between executions. He’s saying stagger
+    the startup by a random amount up to 60s. Then we get what we want every 60s,
+    but they’re all just staggered a random amount.
+  score: 0
+  posted_at: '2026-11-01T15:16:17Z'
+- id: '50326527'
+  parent_id: '50326442'
+  author: vlovich123
+  text: My bad. I misread it. Delaying the start like that does divide the thundering
+    herd peak by 60. The point about c Rand stands.<p>The other thing to watch out
+    for is you’ve still got 1&#x2F;60 of the thundering herd at the second level.
+    If the tasks are &lt;1s and you have enough of them (as you probably do at grid
+    scale), then doing it finer grained is warranted like offsetting the timer by
+    a millisecond sleep of 10 * uniform_distribution&lt;int&gt; between 0 and 6000.
+    That then gives you 10ms granularity, distributing the workload by two more orders
+    of magnitude.
+  score: 0
+  posted_at: '2026-11-01T15:25:53Z'
+- id: '50326707'
+  parent_id: '50326527'
+  author: schiffern
+  text: I almost wrote 59.999 seconds too, but I figured someone would nitpick that
+    the timing often won&#x27;t be that accurate or will get coalesced. ;)<p>I should
+    have said, you almost always want to use the randomly staggered timers on initialization,
+    not just when the exact timer interval matters! It&#x27;s also important to test
+    electricity or backend outages, which can unintentionally synchronize all the
+    timers.
+  score: 0
+  posted_at: '2026-11-01T15:42:45Z'
+- id: '50326731'
+  parent_id: '50314617'
+  author: nik282000
+  text: Cool, I thought grid stability attacks would rely on large numbers of IoT
+    devices but it looks like computing infrastructure is the better target.<p>Whether
+    it&#x27;s by buying and using a trillion tokens strategically or by inserting
+    synchronized malicious jobs it should be possible to find some resonant frequencies
+    in the line frequency control system. By loading and unloading multi-megawatts
+    of draw you could get the local supply throttling up and down enough desynchronize
+    from the larger grid. If you could get real time measurements of the line frequency
+    you could use that to tune your malicious load and do the whole &#x27;pushing
+    a kid at the peak of their swing&#x27; thing.<p>To mitigate you would have to
+    put dummy loads or some kind of minute-scale power storage onsite or nearby to
+    compute loads.
+  score: 0
+  posted_at: '2026-11-01T15:46:07Z'
+- id: '50326768'
+  parent_id: '50326707'
+  author: vlovich123
+  text: You have good advice and I missed the “on startup” for the wait.<p>A common
+    aggregation is about 10ms although most OSes can give you finer granularity accuracy
+    if you ask for it and have permissions. It really depends on how long the task
+    takes and whether there’s any non-uniformity in its processing to make finer granularity
+    helpful or harmful.<p>Unfortunately some people do read advice like it’s mana
+    from the gods instead of thinking through the implication on their specific problem.
+  score: 0
+  posted_at: '2026-11-01T15:52:10Z'
+- id: '50326823'
+  parent_id: '50326731'
+  author: idiotsecant
+  text: Multiple MW is noise level, even to a single moderately sized power production
+    facility, let alone the whole grid region. This is not a viable attack. I can
+    have an entire aluminum smelter trip off or start up and it won&#x27;t phase my
+    supply, a data center is going to be trivial unless you can spend enough to control
+    <i>all the data centers</i> in which case youve just made the least efficient
+    grid attack in history.<p>Further, there is no single resonant frequency, only
+    the particular resonance of that exact moment in time. The grid is composed of
+    many generating units, many transmission lines, many transformers. The resonant
+    frequency of the grid is changing moment to moment as those things come online,
+    get loaded partially, go offline, heat up, etc.<p>This is not a child on a swing
+    set problem.
+  score: 0
+  posted_at: '2026-11-01T15:58:54Z'
+- id: '50326864'
+  parent_id: '50326440'
+  author: vlovich123
+  text: It depends on a lot of factors, but even second granularity gives you a 60x
+    reduction in the thundering herd. Whether more is needed or even possible often
+    depends on the specific problem domain. For example, if your task takes 20ms,
+    us granularity doesn’t help. Indeed it makes it worse if you’re using randomization
+    because there’s a lot more microseconds than seconds so you can end up with a
+    lot of work that ends up in practice still getting scheduled together due to other
+    delays.<p>You want your jitter to be significantly &gt;&gt; than the time your
+    task takes as otherwise you get non intuitive degradation that can reintroduce
+    the problem you’re trying to solve. It’s a balancing act picking the jitter that
+    drops off the thundering herd enough and one that is still greater than the time
+    your work takes.
+  score: 0
+  posted_at: '2026-11-01T16:03:36Z'
+- id: '50327055'
+  parent_id: '50314617'
+  author: kens
+  text: 'A very interesting article, but it is disappointingly vague about what these
+    UPS self tests are, and exactly how they cause disruption to the power grid. Figure
+    5b shows that their building&#x27;s UPS has 20-amp spikes exactly every minute,
+    which is a pretty big spike. My guess is that a UPS performs a self test by switching
+    from line power to battery power. If most of the UPS units in a country do that
+    exactly every minute, synchronized by NNTP [edit: NTP], yeah I can see that it
+    would mess up the grid having all that load dumped at once. (Although the observed
+    frequency disturbance of 1.5 mHz is extremely small, 3&#x2F;1000 of a percent.)
+    Now that the problem is identified, it should be trivial for UPS manufacturers
+    to eliminate it.<p>(By the way, the article is in Nature Energy, not Nature which
+    the URL suggests.)'
+  score: 0
+  posted_at: '2026-11-01T16:23:05Z'
+- id: '50327173'
+  parent_id: '50327055'
+  author: toast0
+  text: "&gt; If most of the UPS units in a country do that exactly every minute,
+    synchronized by NNTP,<p>Thankfully, usenet usage is way down, so we won&#x27;t
+    need to worry about this. ;p"
+  score: 0
+  posted_at: '2026-11-01T16:35:20Z'
+- id: '50327357'
+  parent_id: '50326823'
+  author: nik282000
+  text: Ones and twos of MW are indeed tiny loads, there is a 1MW motor where I work
+    that gets flicked on and off like a light switch, but hyperscale canters are in
+    the &gt;100MW range, that&#x27;s &gt;1% of even the largest generating stations
+    in the USA.<p>And you&#x27;re not aiming for some physical resonant frequency
+    of the entire grid, just the controller on your local generator, getting it to
+    ramp up and down chasing just behind your changing load.<p>I live in Ontario and
+    in the past week the difference between our highest and lowest demand was ~4.5GW,
+    but those changes take place over hours. If you can ramp up and down a 0.1GW load
+    over minutes there is going to be a point where some control loop can&#x27;t keep
+    up. Generators have physical inertia but compute loads do not.<p>I agree that
+    it&#x27;s not trivial, not cheap, and not efficient but with the state of the
+    world it would not be a surprise if some nation thought it would be useful to
+    burn resources in order to disrupt an important event, maybe elections?
+  score: 0
+  posted_at: '2026-11-01T16:56:15Z'
+- id: '50327389'
+  parent_id: '50326210'
+  author: ButlerianJihad
+  text: So, the two devices you refer to have no time-of-day clock, no network connection,
+    no TCP&#x2F;IP stack, and certainly no NTP clients.<p>Their testing on the enterprise-class
+    equipment shows the difference that NTP makes, and with enterprise-class equipment
+    comes wider deployment and more powerful models.<p>But most of the consumer units
+    would not have this stuff. Surely, the manuals would describe how to set it up.
+  score: 0
+  posted_at: '2026-11-01T16:59:43Z'
+- id: '50327431'
+  parent_id: '50325915'
+  author: nik282000
+  text: I get a disturbing amount of equipment that does not take into account the
+    inrush current of starting many loads at the same time. While each individual
+    device is protected by a breaker that can handle the inrush of it&#x27;s load
+    the main breaker for the equipment is not sized to handle every load starting
+    at the same time. The fix is to include logic that starts things up one at a time
+    but convincing engineers, project managers, and machine owners that they didn&#x27;t
+    think of everything is an uphill battle.
+  score: 0
+  posted_at: '2026-11-01T17:02:46Z'
+- id: '50327613'
+  parent_id: '50327431'
+  author: cowlevel
+  text: what? Inrush current is well known in electronics engineering.
+  score: 0
+  posted_at: '2026-11-01T17:24:15Z'
+- id: '50327634'
+  parent_id: '50327173'
+  author: cowlevel
+  text: It&#x27;s both up and down since 500TB of binary data is posted every day
+    but nobody uses it for anything else
+  score: 0
+  posted_at: '2026-11-01T17:26:32Z'
+- id: '50327752'
+  parent_id: '50327389'
+  author: mischanix
+  text: Counting mains power cycles is an adequate clock with a 0 of whenever it was
+    last closed in. That 0 could conceivably be correlated to an hourly schedule if
+    that process is automated. Not saying it’s common, but signals don’t have to come
+    from the network.
+  score: 0
+  posted_at: '2026-11-01T17:37:53Z'
+- id: '50327846'
+  parent_id: '50314617'
+  author: mlichvar
+  text: Maybe too many things are started from crontab. Public NTP servers observe
+    large spikes in traffic on minute marks due to admins putting ntpdate in crontab
+    instead of running a proper NTP service.
+  score: 0
+  posted_at: '2026-11-01T17:47:52Z'
+- id: '50327944'
+  parent_id: '50327613'
+  author: kazinator
+  text: In other words, convincing ignorants is an uphill battle. Those who know what
+    &quot;inrush current&quot; means don&#x27;t require convincing about the value
+    of rolling starts.
+  score: 0
+  posted_at: '2026-11-01T17:57:58Z'
+- id: '50327994'
+  parent_id: '50314617'
+  author: kazinator
+  text: I&#x27;m skeptical that this one minute jitter period is solely attributable
+    to one minute timers in power inverter equipment. It&#x27;s likely the net scale
+    effect of all cron-like scheduling of actions in everything with a microprocessor.
+    All the long-term scheduling that is done with minute precision (i.e. seconds
+    field is implicitly :00) regardless of its individual period.  Like if one device
+    is scheduling at x:17 and x:47 every hour, another one is doing x:06, x:09, x:12,
+    x:15, ... and numerous other combinations, at scale, the common divisor will be
+    one minute. If wall clock time is used, all the devices that are synchronized
+    to a network time will have cron-like scheduling events firing at xx:xx:00 for
+    all values of x.<p>This type of scheduling should be randomized at the seconds
+    level, perhaps. Unfortunately, it would require a massively coordinated effort
+    across numerous operating system and application stacks.
+  score: 0
+  posted_at: '2026-11-01T18:04:08Z'
+- id: '50328020'
+  parent_id: '50327431'
+  author: wowczarek
+  text: I assume you are talking beyond what (in the DIN rail world) type B&#x2F;C&#x2F;D
+    breakers are meant to handle?<p>It&#x27;s sort of a solved problem - the ones
+    I&#x27;m aware of are things like LynTec sequenced panels built exactly for this,
+    and Siemens&#x27; SENTRON semiconductor CBs where you can control then curve to
+    your spec.<p>Convincing stakeholders though, is almost a job of its own.
+  score: 0
+  posted_at: '2026-11-01T18:06:33Z'
+- id: '50328046'
+  parent_id: '50326440'
+  author: kazinator
+  text: 'But seconds are 60X higher frequency than minutes. This is almost 6 octaves
+    higher. The grid will low-pass-filter that out much better than the minute period.
+    (You can see that trend in the diagrams given in the article: the amplitudes all
+    get lower with decreasing period to the left, where the 60 second blip is a an
+    outlier.)<p>Secondly, the amplitude drops. Events that were concentrated on the
+    xx:xx:00 times are now distributed into xx:xx:xx times. If the overall number
+    of events is the same, each :xx time slot now receives 1&#x2F;60th of the events
+    that were concentrated on the :00 time. If power decibels are relevant here (20
+    log 10 x), that&#x27;s a 35 dB reduction in amplitude of the driving signal.<p>35
+    dB less amplitude, shifted to a 6 octave higher frequency that the grid doesn&#x27;t
+    react to very well can be expected to basically make the problem vanish.<p>This
+    is much like the situation of soldiers avoiding rythmic marching when crossing
+    a bridge to randomize their footstrikes.'
+  score: 0
+  posted_at: '2026-11-01T18:09:19Z'
+- id: '50328165'
+  parent_id: '50327431'
+  author: 3eb7988a1663
+  text: We used to have a turbopump that would trip the breakers every time you turned
+    it on from cold. The pump seemingly attempted to spin up to max RPM before settling
+    down to a more sustainable load. The only way to get the thing to stay on was
+    to turn it on once, let it warm itself up on the initial attempt, trip the breakers,
+    and try it another cycle now that it had some momentum and would pull slightly
+    fewer amps. Sometimes took a few attempts to get that rolling start working.
+  score: 0
+  posted_at: '2026-11-01T18:20:51Z'
+- id: '50328377'
+  parent_id: '50326440'
+  author: jyounker
+  text: I think you should re-read the post you&#x27;re responding to. It said 59.XXX
+    seconds, and given the reasoning immediately after that, it&#x27;s clear that
+    XXX is intended to be a randomly chosen number of microseconds.
+  score: 0
+  posted_at: '2026-11-01T18:40:49Z'
+- id: '50328524'
+  parent_id: '50328165'
+  author: jacquesm
+  text: That&#x27;s a great way to lose the breaker though. If you&#x27;re lucky the
+    latch will fail. If you&#x27;re unlucky it will weld shut.
+  score: 0
+  posted_at: '2026-11-01T18:58:09Z'
+- id: '50328595'
+  parent_id: '50328524'
+  author: 3eb7988a1663
+  text: Not ideal, but it was the only thing that worked. This was attached to a million
+    dollar piece of equipment, so any remedial electrical replacement work would have
+    been slightly inconsequential. Thankfully, it was one of those machines that you
+    turned off as infrequently as possible, so we did not have to do this procedure
+    too many times.<p>The vendor did get the hint, and the second iteration of the
+    device did slowly warm up the pumps so this process would no longer be required.
+  score: 0
+  posted_at: '2026-11-01T19:04:20Z'
+- id: '50328720'
+  parent_id: '50328020'
+  author: nik282000
+  text: These were all across-the-line, 3-phase 600v starters so there was no option
+    to slowly start things up. Soft-starters would have been ideal but they are 5x
+    the cost.
+  score: 0
+  posted_at: '2026-11-01T19:16:27Z'
+- id: '50328722'
+  parent_id: '50328595'
+  author: jacquesm
+  text: 'Yes, soft start is the way to go. Also: proper industrial breakers allow
+    for temporary overload. I have a couple of pieces of gear that have inrush currents
+    well over the limit of a normal breaker so I put them on a slow one and now it
+    is fine.<p><a href="https:&#x2F;&#x2F;onccy.com&#x2F;how-to-choose-between-type-a-b-c-and-d-miniature-circuit-breakers&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;onccy.com&#x2F;how-to-choose-between-type-a-b-c-and-d-min...</a>'
+  score: 0
+  posted_at: '2026-11-01T19:16:53Z'
+- id: '50328905'
+  parent_id: '50327994'
+  author: zokier
+  text: "&gt; I&#x27;m skeptical that this one minute jitter period is solely attributable
+    to one minute timers in power inverter equipment. It&#x27;s likely the net scale
+    effect of all cron-like scheduling of actions in everything with a microprocessor<p>The
+    article says as much:<p>&gt; The identified synchronization mechanism is not specific
+    to UPSs or battery systems, but reflects a general property of digitally controlled
+    devices operating with external timing signals or periodic software routines"
+  score: 0
+  posted_at: '2026-11-01T19:35:53Z'
+- id: '50329269'
+  parent_id: '50314617'
+  author: ggm
+  text: Van Jacobsen TCP synchronisation at queue points in the Internet. Led to protocol
+    changes to de-cohere with a small random backoff.
+  score: 0
+  posted_at: '2026-11-01T20:12:05Z'
+- id: '50330240'
+  parent_id: '50327994'
+  author: rustyhancock
+  text: Perhaps easier, now it&#x27;s identified it can be anticipated.<p>Like TV
+    pickup, where advert breaks in television cause surges in power demand.<p>The
+    classic example is everyone making a cup of tea at the same time during the World
+    Cup half time break.<p>Something as common as predictable as every minute should
+    be simple to model in.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;TV_pickup"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;TV_pickup</a>
+  score: 0
+  posted_at: '2026-11-01T21:47:32Z'
+- id: '50330366'
+  parent_id: '50329269'
+  author: tejtm
+  text: That is exactly what this reminded me of.
+  score: 0
+  posted_at: '2026-11-01T21:59:21Z'
+- id: '50330932'
+  parent_id: '50328377'
+  author: mkj
+  text: That was edited in later
+  score: 0
+  posted_at: '2026-11-01T23:19:39Z'
+article:
+  url: https://www.nature.com/articles/s41560-026-02144-0?error=cookies_not_supported&code=b4b54328-ab94-457f-bcf7-15114fd9bc74
+  title: One-minute frequency disturbances from unintended synchronization in cyber–physical
+    power systems | Nature Energy
+  fetch_status: success
+  content: "## Abstract\n\nElectric power systems are evolving into cyber–physical
+    infrastructures shaped by power electronics and digital control. As inverter-based
+    generation alters system dynamics and digitalization heightens vulnerability to
+    errors and attacks, cyber–physical coupling can also introduce subtle system-level
+    effects. Here we show that grid-frequency time series worldwide exhibit a persistent
+    1-min oscillatory pattern whose origin has remained unexplained. We show that
+    clock-synchronized control software in digitally controlled energy devices, particularly
+    uninterruptible power supplies and battery energy storage systems, generates periodic
+    power-demand peaks that propagate across voltage levels and can give rise to the
+    observed pattern. The pattern amplitude has increased substantially in several
+    grids over recent years, contributing to wear and tear in hydropower systems and
+    motivating stricter frequency-control requirements. The rapid expansion of battery
+    storage, data centres and the Internet-of-Things may further amplify such cyber–physical
+    power oscillations, highlighting the need for improved control design.\n\n###
+    Similar content being viewed by others\n\n### End-to-end cyber resilience enhancement
+    for renewable-dominated power grids\n\n### Power distribution system blackstart
+    restoration using renewable energy\n\n### Resilient low-inertia power systems
+    through asynchronous energy balancing\n\n### Explore related subjects\n\n- Energy
+    grids and networks\n\n- Stability Dynamics in Power Grid Networks\n\n## Main\n\nThe
+    transition to a sustainable energy system requires advanced control methods to
+    deal with increasing complexity and uncertainty1,2. As variable renewable energy
+    sources such as wind and solar replace conventional generation, maintaining power
+    balance requires accurate forecasting and real-time control of storage, backup
+    generation and flexible demand3. At the same time, the electrification of sectors
+    such as transport and heating is introducing millions of digitally controlled
+    devices—electric vehicle chargers4, heat pumps5 and smart appliances6—into the
+    grid. Furthermore, data centres add additional software-dependent loads7. Together,
+    these trends are reshaping the power system into a cyber–physical infrastructure,
+    where physical devices and digital control are deeply intertwined. In this new
+    paradigm, system reliability increasingly depends not only on the physical properties
+    of generation and load but also on the design, timing and coordination of software-controlled
+    devices across all layers of operation8.\n\nWhile cyber–physical integration enables
+    unprecedented levels of efficiency and flexibility, it also introduces new systemic
+    risks9. Historical events underscore the stakes: inadequate situational awareness
+    contributed to the 2003 North American blackout10, and software-driven control
+    failures have played critical roles in recent major outages11,12. Beyond failures
+    and malicious attacks, however, even benign control routines can become systemically
+    relevant when many devices act coherently. Unintended synchronization can generate
+    recurrent and potentially amplified oscillatory behaviour in large-scale cyber–physical
+    energy systems.\n\nModern power systems exhibit oscillations across a broad range
+    of time scales. Oscillations with characteristic periods around 1 min have previously
+    been discussed as ultralow-frequency oscillations (ULFOs) and linked to resonance
+    phenomena in hydropower turbine-governor systems13,14,15,16. However, resonance
+    phenomena in classical control systems differ fundamentally from cyber–physical
+    synchronization effects. Oscillations without external timing signals do not naturally
+    explain patterns that remain phase-coherent over long time scales or occur reproducibly
+    across diverse power systems.\n\nIn this Article, we identify and explain a coherent
+    1-min oscillation in power systems worldwide caused by cyber–physical synchronization
+    effects. We show that the grid frequency, and thus the power balance, exhibits
+    a highly regular periodic pattern with a period of exactly 1 min. Searching for
+    potential causes of this pattern, we provide empirical evidence that clock-synchronized
+    control actions in battery-based uninterruptible power supplies (UPSs) generate
+    periodic power-demand peaks, and we demonstrate that this signal propagates across
+    multiple voltage levels up to the transmission interface. More broadly, our results
+    point to a class of cyber–physical power oscillations driven by externally synchronized
+    control software.\n\nThe identified synchronization mechanism is not specific
+    to UPSs or battery systems, but reflects a general property of digitally controlled
+    devices operating with external timing signals or periodic software routines.
+    The rapid expansion of battery storage, data-centre infrastructure and Internet-of-Things
+    (IoT) devices increases the relevance of cyber–physical risks in power-system
+    operation. At the same time, decreasing system inertia makes power systems more
+    sensitive to coherent power imbalances17. Indeed, we observe that the amplitude
+    of the 1-min pattern has increased in several grids. The oscillation contributes
+    to wear and tear, especially in hydropower turbines18, and has motivated stricter
+    load–frequency control requirements19. Our results indicate that coherent cyber–physical
+    oscillations can be mitigated directly at their source through improved control
+    design.\n\n## A universal 1-min pattern in the grid frequency\n\nThe grid frequency
+    is a key observable in power-system operation, reflecting the balance between
+    generation and load: it rises when generation exceeds demand and falls when demand
+    outpaces supply. Maintaining the nominal frequency of 50 Hz or 60 Hz therefore
+    requires continuous balancing by load–frequency control systems20.\n\nLarge frequency
+    deviations occur during contingencies and severe disturbances and can endanger
+    system stability21,22. Smaller but recurrent deviations arise continuously during
+    normal operation through both stochastic fluctuations and deterministic mechanisms23,24.\n\nTo
+    identify dominant recurrent patterns, we carry out a Fourier analysis of grid-frequency
+    time series f(t) from multiple power systems worldwide (Fig. 1). The investigated
+    grids span five continents and range in size from approximately 400,000 customers
+    in Iceland to more than 400 million customers in the Continental European synchronous
+    area.\n\nFig. 1: Fourier spectra of the grid frequency f(t) for 12 grids on different
+    continents that exhibit a 1-min pattern.\n\nMeasurements for the Continental European,
+    British, Scandinavian and Australian grids are taken at the transmission grid
+    level, whereas measurements for the other grids are taken at the distribution
+    grid level. Details on the data sources and processing are described in the Methods.
+    The Fourier spectra are computed using SciPy’s Fast Fourier Transform implementation.\n\nSource
+    data\n\nRecurrent frequency deviations occur across a broad range of time scales.
+    Figure 2 summarizes the dominant Fourier peaks and characteristic patterns observed
+    in the Continental European grid.\n\nFig. 2: Overview of recurrent frequency deviations
+    in the Continental European power grid.\n\na, The Fourier spectrum of the grid
+    frequency exhibits pronounced peaks at different time scales. b, The peak at 60 min
+    arises from electricity trading in hourly blocks26,27. Generation is rapidly adjusted
+    at the beginning of each hour, leading to characteristic power imbalances and
+    DFDs. The figure shows the resulting daily frequency profile together with load
+    and stylized stepwise generation. Trading in shorter market intervals is increasing
+    and gives rise to an additional peak at a period of 15 min (ref. 28). c, This
+    work focuses on the peak at exactly 1 min. We identify cyber–physical power oscillations
+    caused by clocked control algorithms as the root cause of this pattern. A related
+    but less stable pattern is observed at a period of approximately 100 s. The figure
+    shows the "
+  error:
+  fetched_at: '2026-11-02T00:22:28Z'
+archived_at: '2026-11-02T00:22:33Z'

@@ -1,0 +1,98 @@
+---
+post:
+  id: lo-zjjvbo
+  source: lobsters
+  title: Work on GEFS (the Good Enough File System) for OpenBSD progresses
+  url: https://www.undeadly.org/cgi?action=article;sid=20261101115637
+  hn_url: https://lobste.rs/s/zjjvbo
+  score: 18
+  author: jbauer
+  posted_at: '2026-11-01T20:13:29Z'
+  fetched_at: '2026-11-02T00:22:33Z'
+  article_url: https://www.undeadly.org/cgi?action=article;sid=20261101115637
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T00:22:37Z'
+  raw_comment_count: 1
+  tags:
+  - openbsd
+comments:
+- id: lo-ry6kus
+  parent_id: '0'
+  author: miah
+  text: This is so exciting to see! I can't wait until it reaches testing.
+  score: 1
+  posted_at: '2026-11-02T00:05:50Z'
+article:
+  url: https://www.undeadly.org/cgi?action=article;sid=20261101115637
+  title: Work on GEFS (the Good Enough File System) for OpenBSD progresses
+  fetch_status: success
+  content: "Contributed by[Peter N. M. Hansteen](https://nxdomain.no/~peter/blogposts/)on
+    from the most excellent file shredder dept.\n\nAs _[previously](cgi?action=article;sid=20260918115729)_
+    reported, Ori Bernstein is working on GEFS, the \"Good Enough File System\" imported
+    to _[OpenBSD](https://www.openbsd.org/)_, and his _[EuroBSDCon 2026](https://2026.eurobsdcon.org/)
+    [presentation](https://events.eurobsdcon.org/2026/talk/NVMSCJ/)_ was very well
+    received. In fact, the video is among the most frequently played from the conference.
+    \n\nNow Ori has followed up with more evolved code that includes several important
+    steps towards makin the new file system fit for general use. In a [message](https://marc.info/?l=openbsd-tech&m=179346643071941&w=2)
+    to `tech@`, Ori writes:\n\n> List: openbsd-tech\r\n> Subject: Re: GEFS on OpenBSD:
+    A very early preview\r\n> From: ori () eigenstate ! org\r\n> Date: 2026-10-31
+    17:08:42\r\n>     \r\n> So, it's probably time for a few updates. First\r\n> off,
+    thanks to Martijn, and everyone else who\r\n> tried it out and sent patches.\r\n>
+    \    \r\n> Everything is updated and rebased, and the diff\r\n> has been regenerated
+    with all of the lastest.\n\n> I've gone through a the error handling code. In\r\n>
+    theory the filesystem will handle errors mostly\r\n> correctly. There are probably
+    still places where\r\n> theory diverges from reality. I've also forward\r\n> ported
+    most of the important bugfixes from 9front.\r\n>     \r\n> The file system now
+    leaves the first FS block\r\n> unused by default -- we can put disklabels there,\r\n>
+    which makes it hard to put the superblock there as\r\n> well.\r\n>     \r\n> Some
+    userspace tools have been done (you can now\r\n> mkfs on openbsd!), but snapshot
+    control hasn't.\r\n> I'm thinking we have a userspace 'gefs' program\r\n> that
+    lets you handle this, trying to keep the\r\n> interface similar to the 9front
+    ctl file. The\r\n> commands below should suffice:\r\n>     \r\n> gefs debug [0|1]\r\n>
+    gefs usereserve\r\n> gefs retain snap timespec\r\n> gefs snap name newname\r\n>
+    gefs fork name newname\r\n>     \r\n> The consistency protocol is still the biggest\r\n>
+    missing piece; I've been reading the old code\r\n> for softupdates, since it had
+    the same flavor\r\n> of problem.\r\n>     \r\n> what gefs wants, in the ideal
+    case, is some way\r\n> to put ordering barriers in the commit phases,\r\n> while
+    still accepting new block i/o, something\r\n> like the following sequence of steps:\r\n>
+    \    \r\n> 0) normal use, generate dirty blocks and\r\n> write back in any order.\r\n>
+    holding mutlk {\r\n> 1) barrier(), ensure that all blocks\r\n> written before
+    the commit will be\r\n> on disk before the commit finishes\r\n> 2) enqueue free
+    list/deadlist data\r\n> 3) prepare arena header/footer + superblock\r\n> }\r\n>
+    4) enqueue arena headers\r\n> 5) barrier()\r\n> 6) enqueue superblock\r\n> 7)
+    enqueue arena footers\r\n> 8) wait for enqueued blocks to hit disk\r\n> 9) free
+    blocks no longer used by previous gen\r\n>     \r\n> on 9front, I have a priority
+    queue of blocks that\r\n> are sorted by (gen, addr) tuples, which means that\r\n>
+    writes within a generation are flushed to disk as\r\n> sequentially as they can
+    be, while not crossing\r\n> generation boundaries.\r\n>     \r\n> I'm currently
+    thinking I'll implement the same in\r\n> OpenBSD -- launch syncer kprocs that
+    do synchronous\r\n> I/O to the block device. If we kick things out of\r\n> cache
+    and write it back to disk early, that should\r\n> generally be safe -- The only
+    blocks the buffer\r\n> cache must not reorder are the arena headers and\r\n> superblocks,
+    so a flag to pin them unwritten may\r\n> be all that's needed here.\r\n>     \r\n>
+    I'm open to other ideas, though.\r\n>     \r\n> Quoth ori@eigenstate.org:\n\nFollowed
+    by a quoted part of the [previous message](https://marc.info/?l=openbsd-tech&m=178948744271633&w=2)
+    that has the links to the code and documentation.\n\nIf you are as excited as
+    we are about this new file system development and are in a position to test, please
+    do.\n\n[Reply](https://www.undeadly.org/cgi?action=reply;sid=20261101115637)\n\n*
+    * *\n\n## Latest Articles\n\n- \n  - [Work on GEFS (the Good Enough File System)
+    for OpenBSD progresses](/cgi?action=article;sid=20261101115637)(0)\n- \n  - [LibreSSL
+    4.4.0, 4.3.4, 4.2.3 released](/cgi?action=article;sid=20261025115016)(0)\n- \n
+    \ - [`emulators/wine` (re)entering OpenBSD ports](/cgi?action=article;sid=20261022052106)(1)\n-
+    \n  - [`dbupdate(8)` added to `-current`](/cgi?action=article;sid=20261021191736)(0)\n-
+    \n  - [OpenBSD 8.0 Released](/cgi?action=article;sid=20261020021401)(0)\n- \n
+    \ - [Game of Trees 0.130 released](/cgi?action=article;sid=20261019090259)(0)\n-
+    \n  - [Introducing uncm(4)](/cgi?action=article;sid=20261018200218)(0)\n- \n  -
+    [New laptops and OpenBSD: HP Envy 17-DA0013dx](/cgi?action=article;sid=20261007053155)(0)\n
+    \ - [openssh-10.6 released](/cgi?action=article;sid=20261007052827)(0)\n\n## Credits\n\nCopyright
+    ©-[Daniel Hartmeier](http://www.benzedrine.ch/dhartmei.html). All rights reserved.
+    Articles and comments are copyright their respective authors, submission implies
+    license to publish on this web site. Contents of the archive prior to as well
+    as images and HTML templates were copied from the fabulous original[deadly.org](http://web.archive.org/web/20010331150409/http://deadly.org/)
+    with[Jose](http://monkey.org/~jose)'s and[Jim](mailto:jamesp@deadly.org)'s kind
+    permission. This journal runs as with[httpd(8)](https://man.openbsd.org/httpd.8)on
+    [OpenBSD](https://www.openbsd.org/), the[source code](/src/) is[licensed](http://www.opensource.org/licenses/bsd-license.php).
+    undeadly \\Un\\*dead\"ly\\, a. Not subject to death; immortal. [Obs.]"
+  error:
+  fetched_at: '2026-11-02T00:22:37Z'
+archived_at: '2026-11-02T00:22:38Z'
