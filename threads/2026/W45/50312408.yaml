@@ -1,0 +1,911 @@
+---
+post:
+  id: '50312408'
+  title: Postgres 19 is late because so many more bugs are being found now
+  url: http://rhaas.blogspot.com/2026/10/postgres-19-is-late-and-its-ais-fault.html
+  hn_url: https://news.ycombinator.com/item?id=50312408
+  score: 471
+  author: soheilpro
+  posted_at: '2026-10-31T01:38:56Z'
+  fetched_at: '2026-11-02T10:39:52Z'
+  article_url: http://rhaas.blogspot.com/2026/10/postgres-19-is-late-and-its-ais-fault.html
+  article_fetch_status: error
+  article_fetched_at: '2026-11-02T10:39:52Z'
+  raw_comment_count: 295
+comments:
+- id: '50312516'
+  parent_id: '50312408'
+  author: droppedasbaby
+  text: I guess the real challenge is figuring out how to scale verification, cause
+    discovery isn&#x27;t the bottleneck anymore. Generating more bug reports doesn&#x27;t
+    necessarily translate into faster fixes if the same small group of maintainers
+    still have to validate the reports, review fixes, etc.
+  score: 0
+  posted_at: '2026-10-31T01:56:33Z'
+- id: '50331711'
+  parent_id: '50312408'
+  author: hopa
+  text: I feel like AI is amazing for read only “search” tasks (query this, look for
+    bugs, find vulnerabilities) but it’s not quite as good for “write” tasks like
+    “add this feature”. Search tasks are easily verified, code changes are much harder
+    to verify
+  score: 0
+  posted_at: '2026-11-02T00:57:59Z'
+- id: '50331724'
+  parent_id: '50331711'
+  author: simonw
+  text: I&#x27;m not sure about that. The most common error for a search task is omission,
+    and that&#x27;s really hard to spot - how do you verify that some answer that
+    <i>should</i> be there wasn&#x27;t included?<p>For things like &quot;add this
+    feature&quot; you can verify by trying out the feature and seeing if it works.
+    Of course, that won&#x27;t tell you if there are edge-case bugs or security holes
+    or other design flaws, but you can get to a positive confirmation of the happy
+    case pretty quickly.
+  score: 0
+  posted_at: '2026-11-02T01:00:03Z'
+- id: '50331726'
+  parent_id: '50312408'
+  author: ltbarcly3
+  text: I have found major bugs in late beta&#x27;s of postgres long before AI came
+    along.  I found a bug where malformed json would segfault the entire server (a
+    segfault in a server process forces the entire cluster to shut down by design)
+    when using jsonb in a release candidate once.  They fixed it rather than ripping
+    the entire feature out.<p><a href="https:&#x2F;&#x2F;www.postgresql.org&#x2F;message-id&#x2F;20140818195634.2543.56277%40wrigleys.postgresql.org"
+    rel="nofollow">https:&#x2F;&#x2F;www.postgresql.org&#x2F;message-id&#x2F;20140818195634.2543.56...</a><p>It
+    seems quite possible that someone wants to make it seem like LLMs are causing
+    problems by over-reacting to things that could just be fixed, or delay the release
+    slightly (or maybe waiting until late before  a release to kill features they
+    don&#x27;t like?)  Whatever it is, this seems like a dysfunctional process.
+  score: 0
+  posted_at: '2026-11-02T01:00:11Z'
+- id: '50331728'
+  parent_id: '50331711'
+  author: ipdashc
+  text: I&#x27;ve slowly been coming around to this viewpoint as well. It&#x27;s interesting
+    that there&#x27;s so much focus on using AI to write code (which, don&#x27;t get
+    me wrong, does work well but makes you lose track of what you&#x27;re building
+    so quickly) and seemingly less on analyzing code, finding bugs, etc
+  score: 0
+  posted_at: '2026-11-02T01:00:18Z'
+- id: '50331729'
+  parent_id: '50312408'
+  author: '27183'
+  text: 'I&#x27;m not very positive on the social, technical, or intellectual impact
+    of AI on software development. Actually, that&#x27;s understating it. I think
+    AI is basically cancer for the mind. That said, this framing gave me pause:<p>&gt;
+    The long-term picture is less clear and in some ways more troubling: given that
+    we have forty years of bugs that humans were unable to find but LLMs are quite
+    capable of discovering, how are we ever going to catch up, and how will PostgreSQL
+    continue to innovate? Right now, I’m not sure. What I do know is that I, and many
+    others, are working really hard to figure it out.<p>Two thoughts:<p>1. If the
+    signal quality is high--the bug reports are generally valid, the submitted fixes
+    are generally viable (if needing some attention)--then this all seems great. Pause
+    innovation for a while, you can afford it. Focus on burning down the bug count,
+    and resume feature development when things are more stable.<p>2. If the signal
+    quality isn&#x27;t good, or is sufficiently mixed that a lot of time is being
+    wasted on low quality contributions... that&#x27;s more complex. I don&#x27;t
+    know what to do about that. Maybe stop accepting contributions from unknown contributors?
+    No idea.<p>From the post I&#x27;m not sure whether they&#x27;re experiencing a
+    (1) or a (2). If it&#x27;s a (1) that&#x27;s really interesting, and gives me
+    some glimmer of hope for the future.<p>[edit] this piece of shit website won&#x27;t
+    let me reply &quot;you&#x27;re posting too fast..&quot; so I&#x27;ll respond to
+    the two replies here (gondalez and sverhagen had basically the same point):<p>Yes
+    that&#x27;s a very good point. Not every valid bugfix is equivalently urgent.
+    That&#x27;s another critical dimension of quality--not burdening maintainers with
+    pedantic bugs. This kind of contextual nuance is, coincidentally, something AI
+    is absolutely awful at.'
+  score: 0
+  posted_at: '2026-11-02T01:00:36Z'
+- id: '50331749'
+  parent_id: '50331726'
+  author: StilesCrisis
+  text: If you are at the RC stage and still uncovering segfaults, &quot;rip the feature
+    out&quot; is probably the only choice.
+  score: 0
+  posted_at: '2026-11-02T01:03:25Z'
+- id: '50331762'
+  parent_id: '50331711'
+  author: MBCook
+  text: But it DIDNT “write that feature”. They made it extremely clear on the delay
+    announcement the code was written without AI.<p>AI’s only part of this was helping
+    review things and finding bugs. More bugs, bugs that would have been found later,
+    whatever.<p>Postgres did not have a slop issue and it’s wrong for people to insinuate
+    it.
+  score: 0
+  posted_at: '2026-11-02T01:05:08Z'
+- id: '50331766'
+  parent_id: '50331711'
+  author: bheztio
+  text: "&quot;Add this feature&quot; is often too vague, unless it&#x27;s yet another
+    button to a list of buttons. If you want your feature in a particular way, you
+    need to specify it. If you&#x27;re not even sure what you want, it&#x27;s granted
+    you won&#x27;t be satisfied by the result, so you need to spend time figuring
+    that out first. In other words, they&#x27;re definitely great for write tasks
+    too, but it does require more effort from the operator to formulate the problem."
+  score: 0
+  posted_at: '2026-11-02T01:06:37Z'
+- id: '50331783'
+  parent_id: '50331724'
+  author: '27183'
+  text: '&gt; The most common error for a search task is omission, and that&#x27;s
+    really hard to spot<p>NP-Hard, even[1]!<p>[1] <a href="https:&#x2F;&#x2F;www.i-programmer.info&#x2F;news&#x2F;112-theory&#x2F;3830-physics-is-np-hard.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.i-programmer.info&#x2F;news&#x2F;112-theory&#x2F;3830-physics-i...</a>'
+  score: 0
+  posted_at: '2026-11-02T01:09:12Z'
+- id: '50331794'
+  parent_id: '50331726'
+  author: benjiro29
+  text: Maybe its more a issue that X amount of people have more work to fix discovered
+    issues. So the new features have not undergone the same level of testing as before.<p>And
+    instead of releasing substandard new features, they rather focus on getting rid
+    of the backlog and have more time to test.<p>LLMs are in effect directly responsible
+    for this (in a positive way by finding a ton of issues that can be security issues).
+    Reality is with LLMs now in the world, more work needs to be done on existing
+    software as their ability to find bugs&#x2F;security weaknesses is strong.<p>When
+    the old bugs&#x2F;security weaknesses are fixed, things will go back to a more
+    normal release schedule.
+  score: 0
+  posted_at: '2026-11-02T01:10:25Z'
+- id: '50331811'
+  parent_id: '50312408'
+  author: meow9
+  text: I’m still amazed that with all the vibe coding, no one has created a Postgres
+    alternative
+  score: 0
+  posted_at: '2026-11-02T01:12:25Z'
+- id: '50331818'
+  parent_id: '50312408'
+  author: CharlesW
+  text: "&gt; <i>This year is going to be different. PostgreSQL 19 most likely won’t
+    be released until November… […] So, what happened? The short answer is that LLMs
+    happened. […] There’s a huge amount of code, and that code contains a huge number
+    of bugs. […] What’s different now is that it’s become vastly easier to find those
+    bugs.</i><p>This seems…good?<p>That it might disrupt the project&#x27;s &quot;traditional&quot;
+    release cadence a bit doesn&#x27;t seem terribly bad in light of the alternative,
+    which is shipping another major update with bugs which have apparently haunted
+    the codebase for some time."
+  score: 0
+  posted_at: '2026-11-02T01:13:14Z'
+- id: '50331822'
+  parent_id: '50331811'
+  author: nfriedly
+  text: Why would they? Postgres is free and does an amazing job.
+  score: 0
+  posted_at: '2026-11-02T01:13:40Z'
+- id: '50331829'
+  parent_id: '50331711'
+  author: vatsachak
+  text: What? AI can&#x27;t easily implement features. Just write a spec, ask if to
+    expand it and then ask it to implement it
+  score: 0
+  posted_at: '2026-11-02T01:14:49Z'
+- id: '50331832'
+  parent_id: '50331811'
+  author: sa46
+  text: Many recent relational databases speak the Postgres wire protocol. For wholesale
+    replacement, pgrust is a recent, contentious contender.
+  score: 0
+  posted_at: '2026-11-02T01:14:54Z'
+- id: '50331844'
+  parent_id: '50331822'
+  author: spolitry
+  text: Also Postgres has enjoyed decades of debugging.
+  score: 0
+  posted_at: '2026-11-02T01:16:31Z'
+- id: '50331850'
+  parent_id: '50331811'
+  author: TomatoCo
+  text: Someone tried. <a href="https:&#x2F;&#x2F;jepsen.io&#x2F;analyses&#x2F;particledb-1.1.4"
+    rel="nofollow">https:&#x2F;&#x2F;jepsen.io&#x2F;analyses&#x2F;particledb-1.1.4</a>
+  score: 0
+  posted_at: '2026-11-02T01:17:17Z'
+- id: '50331855'
+  parent_id: '50331822'
+  author: scrollaway
+  text: To be honest I would love for someone to work on the structuring of pg_dump
+    for example, which is entirely driven by regexes and binary structures. It’s awful
+    and absolutely not programmable - a real shame.
+  score: 0
+  posted_at: '2026-11-02T01:17:28Z'
+- id: '50331857'
+  parent_id: '50331794'
+  author: ltbarcly3
+  text: Are the features bad by design?  Like are they bad even if they work perfectly
+    because they add bad abstractions to pg&#x27;s SQL syntax, or are just broken
+    in how they are supposed to work?  If so the process is dysfunctional to let them
+    get this far before noticing.<p>Are the features designed well (from a product
+    perspective) but implemented poorly?  Again, the process is dysfunctional to let
+    them get this far before it notices.<p>Were there known issues with these that
+    were planned to be fix, but the fixes didn&#x27;t happen in time?  That would
+    make sense and it happens, but how is an LLM making that worse?  LLMs in the worst
+    case let you get the same work done more quickly, because you can always get the
+    work done as quickly as you ever could by just not using an LLM.  So the strongest
+    thing you might say here is that you thought LLMs would let you get a feature
+    into shape before it was too late, and for whatever reason that was overly optimistic.
+  score: 0
+  posted_at: '2026-11-02T01:17:49Z'
+- id: '50331864'
+  parent_id: '50331832'
+  author: gnabgib
+  text: 'I hope you don&#x27;t believe this, PGRust has fallen far from grace.  Wire
+    protocol support is useful (other than said recommendation)<p><i>Remove pgrust:
+    the entry is cheating (per-query kernels and result caching)</i> (197 points,
+    10 days ago, 166 comments) <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50205816">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50205816</a>'
+  score: 0
+  posted_at: '2026-11-02T01:18:33Z'
+- id: '50331866'
+  parent_id: '50312516'
+  author: c0_0p_
+  text: Probably true if development accelerates because of AI, but if it&#x27;s reasonably
+    stable then hopefully new bug reports will plateau.
+  score: 0
+  posted_at: '2026-11-02T01:18:42Z'
+- id: '50331871'
+  parent_id: '50331711'
+  author: r_lee
+  text: I mean the transformer model came out of Google, and it&#x27;s literally a
+    query thing so yeah.<p>any kind of pattern matching &#x2F; transformation is going
+    to be an ideal task for LLMs
+  score: 0
+  posted_at: '2026-11-02T01:19:11Z'
+- id: '50331873'
+  parent_id: '50331818'
+  author: '27183'
+  text: Yes, exactly. The only question I have is whether the delay is attributable
+    to high-quality bug reports or the burden of triaging low-quality ones. It&#x27;s
+    not completely clear which situation they&#x27;re experiencing.
+  score: 0
+  posted_at: '2026-11-02T01:19:23Z'
+- id: '50331891'
+  parent_id: '50331873'
+  author: jeremyjh
+  text: It’s pretty clear there are a lot of valid reports based on the large increase
+    in backport commits cited.
+  score: 0
+  posted_at: '2026-11-02T01:21:56Z'
+- id: '50331892'
+  parent_id: '50331811'
+  author: esalman
+  text: You can create a project on vibes, but you cannot maintain one on vibes.
+  score: 0
+  posted_at: '2026-11-02T01:21:58Z'
+- id: '50331899'
+  parent_id: '50331766'
+  author: Forgeties79
+  text: This feels like just another variation of “it’s not the tool it’s the user,”
+    which is too frequently leveraged during any discussion about AI. It makes it
+    impossible to honestly assess the quality of the tool. You can always just say
+    “people are doing it wrong.”
+  score: 0
+  posted_at: '2026-11-02T01:22:24Z'
+- id: '50331900'
+  parent_id: '50331873'
+  author: micromacrofoot
+  text: likely both
+  score: 0
+  posted_at: '2026-11-02T01:22:38Z'
+- id: '50331902'
+  parent_id: '50331728'
+  author: mihaelm
+  text: The planning, which can also be done in concert with AI, before getting the
+    AI to write the code helps with not losing track of what you&#x27;re building.
+    In my current workflow, I never tell AI to just code X, I always approach it in
+    such a way to leave space for research and breaking it up into multiple units
+    of work (tickets) if the scope of the feature or idea calls for it.
+  score: 0
+  posted_at: '2026-11-02T01:22:41Z'
+- id: '50331921'
+  parent_id: '50331729'
+  author: sverhagen
+  text: Signal quality... what is that even? The bugs may be valid, but they may also
+    be obscure, irrelevant, low priority. A sibling thread mentioned that they had
+    found CVE-level bugs in Postgres, and those require attention in some version
+    of &quot;immediately&quot;. But beyond that... not every bug needs fixing; that&#x27;s
+    a trap.
+  score: 0
+  posted_at: '2026-11-02T01:24:50Z'
+- id: '50331922'
+  parent_id: '50331900'
+  author: '27183'
+  text: That&#x27;s kind of what I was afraid of. Both is really bad news. If you
+    think of it in terms of average speed over ground, working on low quality reports
+    is like spending a bunch of time at v=0.
+  score: 0
+  posted_at: '2026-11-02T01:25:03Z'
+- id: '50331923'
+  parent_id: '50331873'
+  author: InsidiousWombat
+  text: I&#x27;d imagine just as every other project, both.
+  score: 0
+  posted_at: '2026-11-02T01:25:27Z'
+- id: '50331924'
+  parent_id: '50331783'
+  author: whattheheckheck
+  text: We&#x27;re never solving nphard. Just like we&#x27;ll never extract all of
+    the coal&#x2F;oil&#x2F;natural gas from earth
+  score: 0
+  posted_at: '2026-11-02T01:25:33Z'
+- id: '50331937'
+  parent_id: '50331871'
+  author: jeremyjh
+  text: It is not in any way a “query thing” in the same manner as PageRank, it was
+    based on prior work in deep learning and it is irrelevant that Deepmind was purchased
+    by the same company that was behind Google Search.
+  score: 0
+  posted_at: '2026-11-02T01:26:58Z'
+- id: '50331951'
+  parent_id: '50331728'
+  author: kibwen
+  text: I wouldn&#x27;t say it&#x27;s &quot;interesting&quot;, rather that it&#x27;s
+    a natural result of incentive structures. If the AI labs try to sell their product
+    as being good at finding bugs, then their expected valuation is the entire market
+    cap of the existing static analysis industry, which is not very high. If they
+    instead sell their product as being good at writing software, then their expected
+    valuation is the &quot;market cap&quot; of the code-writing industry, a.k.a. the
+    total spent on software development labor, which is very high. It doesn&#x27;t
+    matter what&#x27;s true, only what promises to make them the most money.
+  score: 0
+  posted_at: '2026-11-02T01:30:12Z'
+- id: '50331960'
+  parent_id: '50331899'
+  author: int3
+  text: I mean that&#x27;s what you would expect from a new and rapidly-evolving tool.
+    Being able to identify the kinds of work where people typically use it sub-optimally
+    is a useful thing though!
+  score: 0
+  posted_at: '2026-11-02T01:31:35Z'
+- id: '50331985'
+  parent_id: '50331899'
+  author: aleksiy123
+  text: Idk, I think it pretty clear to me that<p>“Find the issues in this code” vs
+    “write this feature” are different problems.<p>The first one is easier because
+    the feedback loop is llm to code&#x2F;test and trivially scalable.<p>The second
+    one is llm to human which is going to be slower because it can’t read your mind.<p>The
+    tighter and more deterministic the loop the more llms excel.
+  score: 0
+  posted_at: '2026-11-02T01:33:46Z'
+- id: '50331993'
+  parent_id: '50331729'
+  author: gondalez
+  text: |-
+    Seems like a lot of these bugs have not affected end-users or tripped up maintainers.
+    They could be trade-offs that helped get other features over the line even?<p>In which case maybe leaving them alone is practical?<p>I love fixing bugs, but your post triggered this thought so I thought I&#x27;d share.
+  score: 0
+  posted_at: '2026-11-02T01:34:40Z'
+- id: '50332018'
+  parent_id: '50331822'
+  author: sapphire4
+  text: I wish they&#x27;d adopt, merge in, or give official blessings to versioned
+    postgres extensions like citus and pgvector.
+  score: 0
+  posted_at: '2026-11-02T01:38:40Z'
+- id: '50332052'
+  parent_id: '50331711'
+  author: hoppp
+  text: If the entire project is developed with AI it can add features effectively
+    but for large old codebases it becomes an issue
+  score: 0
+  posted_at: '2026-11-02T01:43:36Z'
+- id: '50332080'
+  parent_id: '50331864'
+  author: malisper
+  text: |-
+    I work on pgrust. We shouldn&#x27;t have submitted the preview when we did: it was still in active development, and its SQL coverage was far too narrow, though there was nothing in it giving it an unfair performance advantage<p>For the other two claims in the removal PR, we wrote scripts you can use to verify the behavior of the original 0.4-preview binary:<p><pre><code>  - Per-query kernels did not serve the benchmark queries[0]
+      - The preview&#x27;s fast repeat LIKE queries came from a dictionary filter cache, not a cached query result[1]
+    </code></pre>
+    Our open-sourced 0.4-beta has now been merged and is back on ClickBench[2][3]<p>Across all queries and instance sizes on ClickBench, 0.4-beta is ~7% faster overall than the 0.4-preview binary that was removed. If 0.4-preview&#x27;s numbers had come from hardcoded kernels or faked results, the open-source general engine wouldn&#x27;t be beating it<p>[0] <a href="https:&#x2F;&#x2F;pgrust.com&#x2F;downloads&#x2F;archive&#x2F;2026-09-clickbench-snapshot&#x2F;verify-preview.sh" rel="nofollow">https:&#x2F;&#x2F;pgrust.com&#x2F;downloads&#x2F;archive&#x2F;2026-09-clickbench-snap...</a><p>[1] <a href="https:&#x2F;&#x2F;pgrust.com&#x2F;downloads&#x2F;archive&#x2F;2026-09-clickbench-snapshot&#x2F;verify-like-hot-runs.sh" rel="nofollow">https:&#x2F;&#x2F;pgrust.com&#x2F;downloads&#x2F;archive&#x2F;2026-09-clickbench-snap...</a><p>[2] <a href="https:&#x2F;&#x2F;benchmark.clickhouse.com&#x2F;" rel="nofollow">https:&#x2F;&#x2F;benchmark.clickhouse.com&#x2F;</a><p>[3] <a href="https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pull&#x2F;2751" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pull&#x2F;2751</a>
+  score: 0
+  posted_at: '2026-11-02T01:46:48Z'
+- id: '50332098'
+  parent_id: '50331921'
+  author: tonyhart7
+  text: "&quot;But beyond that... not every bug needs fixing; that&#x27;s a trap&quot;<p>this
+    doesn&#x27;t seem good attitude for critical software like database"
+  score: 0
+  posted_at: '2026-11-02T01:48:03Z'
+- id: '50332111'
+  parent_id: '50332018'
+  author: nimchimpsky
+  text: why ? Just install the extension and use it
+  score: 0
+  posted_at: '2026-11-02T01:49:43Z'
+- id: '50332167'
+  parent_id: '50331818'
+  author: leoooodias
+  text: Exactly. There&#x27;s so much negativity, it sometimes borders Luddism.<p>&quot;We
+    found a bunch of ways to make our product safer and better. We need more time
+    to ship a higher quality product.&quot;<p>PICKET SIGNS
+  score: 0
+  posted_at: '2026-11-02T02:00:19Z'
+- id: '50332173'
+  parent_id: '50331891'
+  author: jmspring
+  text: The post sort of gave a read that the lower elements may be a culprit rather
+    than triaging higher qualitu.
+  score: 0
+  posted_at: '2026-11-02T02:01:28Z'
+- id: '50332239'
+  parent_id: '50331899'
+  author: 8note
+  text: its certainly benchmarkable.<p>make a bunch of &quot;build the feature&quot;
+    vs &quot;heres a detailed spec&quot; prompts, and see which one does better.<p>if
+    you take out the AI boogieman, and instead go with &quot;next token prediction&quot;
+    then &quot;people are doing it wrong&quot; is much more reasonable
+  score: 0
+  posted_at: '2026-11-02T02:08:28Z'
+- id: '50332321'
+  parent_id: '50331766'
+  author: codebje
+  text: That problem is as old as commercial programming; it doesn&#x27;t matter that
+    now your actors are prompt engineer and LLM, the same story can be told with manager
+    and programmer.
+  score: 0
+  posted_at: '2026-11-02T02:18:20Z'
+- id: '50332343'
+  parent_id: '50331900'
+  author: 0c3ca83
+  text: Certainly both. About half of AI bug reports I get are invalid. Many others
+    are questionable. It&#x27;s a huge time sink figuring it out.<p><a href="https:&#x2F;&#x2F;www.vulncheck.com&#x2F;blog&#x2F;anthropic-glasswing-receipts"
+    rel="nofollow">https:&#x2F;&#x2F;www.vulncheck.com&#x2F;blog&#x2F;anthropic-glasswing-receipts</a>
+  score: 0
+  posted_at: '2026-11-02T02:21:25Z'
+- id: '50332368'
+  parent_id: '50332167'
+  author: noosphr
+  text: They found a more efficient way to play Whac-A-Mole with bugs, they didn&#x27;t
+    find a way to reduce bugs.
+  score: 0
+  posted_at: '2026-11-02T02:23:31Z'
+- id: '50332402'
+  parent_id: '50332098'
+  author: tibbar
+  text: Old bugs are sometimes undesirable to fix because other systems&#x2F;users
+    have come to rely on their behavior.
+  score: 0
+  posted_at: '2026-11-02T02:27:34Z'
+- id: '50332421'
+  parent_id: '50332167'
+  author: throwaway27448
+  text: We could really use a lot more luddites tbh. Doesn&#x27;t seem very applicable
+    here tho.
+  score: 0
+  posted_at: '2026-11-02T02:30:00Z'
+- id: '50332447'
+  parent_id: '50331818'
+  author: Gigachad
+  text: At work we have put a full halt on feature work because the number of security
+    related tasks has become staggering and urgent.<p>We will hopefully get over this
+    wave and be able to move forward with much more secure software, but it&#x27;s
+    crazy right now.
+  score: 0
+  posted_at: '2026-11-02T02:33:09Z'
+- id: '50332587'
+  parent_id: '50332167'
+  author: jimbokun
+  text: Did you honestly need a &#x2F;sarcasm tag in the article?<p>The article also
+    concludes that overall, yes, finding more bugs is a good thing.  Basically saying
+    it’s the LLMs “fault” that the quality is improving, alongside a slight delay
+    to the release.
+  score: 0
+  posted_at: '2026-11-02T02:52:45Z'
+- id: '50332599'
+  parent_id: '50332447'
+  author: jimbokun
+  text: Interesting that this could result in net negative software productivity world
+    wide in terms of features right now.<p>LLMs finding unpatched vulnerabilities
+    faster than they can be reasonably patched, bringing all other software development
+    to a halt.
+  score: 0
+  posted_at: '2026-11-02T02:54:33Z'
+- id: '50332626'
+  parent_id: '50332421'
+  author: giancarlostoro
+  text: Dont worry, if OpenAI and Anthropic have their way and everyone loses their
+    jobs to AI, we&#x27;re all becoming luddites.
+  score: 0
+  posted_at: '2026-11-02T02:58:01Z'
+- id: '50332642'
+  parent_id: '50332098'
+  author: sverhagen
+  text: 'Not every part of a critical piece system is itself critical.<p>Seatback
+    entertainment in aircraft are not critical. Aircraft are.<p>In Postgres, there
+    are plenty low-priority, low-impact bugs. #16265, for instance, reports that the
+    capitalization of a relation in an error message is confusing. The report got
+    mostly ignored. And that seems not a great loss.<p>Dare I say, solving every bug
+    does not make economic sense.'
+  score: 0
+  posted_at: '2026-11-02T03:01:05Z'
+- id: '50332670'
+  parent_id: '50331866'
+  author: jimbokun
+  text: Then just have the same AI bug checks for new PRs and automatically reject
+    any that fail.
+  score: 0
+  posted_at: '2026-11-02T03:05:15Z'
+- id: '50332688'
+  parent_id: '50332599'
+  author: michaellee8
+  text: i think we have a pretty high p(doom) on frontier ai escaping containment
+    with their weights and goes hack everything, if we do not act now we may have
+    no chance to act anymore.
+  score: 0
+  posted_at: '2026-11-02T03:07:42Z'
+- id: '50332764'
+  parent_id: '50332599'
+  author: taberiand
+  text: Hopefully with the amount of visibility LLMs are bringing to the situation,
+    security will finally be considered a first-class feature
+  score: 0
+  posted_at: '2026-11-02T03:19:55Z'
+- id: '50332829'
+  parent_id: '50332599'
+  author: reissbaker
+  text: That&#x27;s only if you consider security to be unproductive!<p>If you consider
+    it to be productive work, it&#x27;s a massive productivity boon happening right
+    now. Of course, product managers might disagree...
+  score: 0
+  posted_at: '2026-11-02T03:31:15Z'
+- id: '50332837'
+  parent_id: '50332098'
+  author: alexpadula
+  text: I do tend to agree with this ( i write database internals and engines for
+    a living _).  Letting software accumulate even little bugs is not a good look.  Yes
+    prioritize but definitely don&#x27;t leave the smaller things, they will just
+    pile up and make next work even harder.
+  score: 0
+  posted_at: '2026-11-02T03:33:05Z'
+- id: '50332841'
+  parent_id: '50332167'
+  author: UpsideDownRide
+  text: Luddites were actually pretty reasonable when you dig into it. Maybe shouldn&#x27;t
+    be using it as an insult?
+  score: 0
+  posted_at: '2026-11-02T03:33:20Z'
+- id: '50332853'
+  parent_id: '50332402'
+  author: alexpadula
+  text: That&#x27;s a weird take.  Do you have an example tibbar?
+  score: 0
+  posted_at: '2026-11-02T03:35:22Z'
+- id: '50332864'
+  parent_id: '50332167'
+  author: alexpadula
+  text: Luddism, did not expect to ever hear that word with Postgres development :&gt;
+  score: 0
+  posted_at: '2026-11-02T03:39:03Z'
+- id: '50332866'
+  parent_id: '50332841'
+  author: foxglacier
+  text: They&#x27;re reasonable in a self-interested net-negative game-theory kind
+    of way, yes. But that doesn&#x27;t make it a good idea for society.
+  score: 0
+  posted_at: '2026-11-02T03:39:37Z'
+- id: '50332868'
+  parent_id: '50332841'
+  author: cornell532
+  text: |-
+    For their own personal interests.
+    Not for those of society
+  score: 0
+  posted_at: '2026-11-02T03:39:57Z'
+- id: '50332870'
+  parent_id: '50332853'
+  author: tibbar
+  text: Sure. This one already came up. [0]. In general, for a system like Postgres,
+    many bugs affect only &quot;extreme edge case&quot; scenarios, but fixing them
+    might create severe performance issues or require changing or removing other important
+    features. So it&#x27;s better to not fix them.<p>[0] <a href="https:&#x2F;&#x2F;www.postgresql.org&#x2F;message-id&#x2F;flat&#x2F;c22286ad6268347c6820d2f69eaa8088c98d17ea.camel%40cybertec.at"
+    rel="nofollow">https:&#x2F;&#x2F;www.postgresql.org&#x2F;message-id&#x2F;flat&#x2F;c22286ad6268347c6...</a>
+  score: 0
+  posted_at: '2026-11-02T03:40:20Z'
+- id: '50332910'
+  parent_id: '50332829'
+  author: OccamsMirror
+  text: How many of the security issues found were created by LLMs in the first place,
+    though?
+  score: 0
+  posted_at: '2026-11-02T03:49:08Z'
+- id: '50332966'
+  parent_id: '50332910'
+  author: drfloyd51
+  text: Considering the software is  much older than LLMs. Not many.<p>Also, in the
+    article they mention a significant number of patches for older versions as well.
+  score: 0
+  posted_at: '2026-11-02T03:57:51Z'
+- id: '50332969'
+  parent_id: '50332910'
+  author: adwn
+  text: Do you mean &quot;created&quot; as in <i>LLMs were used to discover existing
+    vulnerabilities</i>, or as in <i>LLMs wrote unsecure code</i>? If it&#x27;s the
+    latter, then the answer probably is &quot;very few&quot;. Frontier models have
+    been better than the average programmer at writing secure code that follows up-to-date
+    best-practices for some time now.
+  score: 0
+  posted_at: '2026-11-02T03:58:14Z'
+- id: '50332970'
+  parent_id: '50332098'
+  author: whateveracct
+  text: the optimal amount of fraud for a fintech is non-zero<p>why would the optimal
+    amount of bugs be anything less for a database?
+  score: 0
+  posted_at: '2026-11-02T03:58:47Z'
+- id: '50332980'
+  parent_id: '50332368'
+  author: drfloyd51
+  text: It’s a good article. Easy to read. You should read it.
+  score: 0
+  posted_at: '2026-11-02T04:00:07Z'
+- id: '50332987'
+  parent_id: '50332688'
+  author: nradov
+  text: Escape to where? It&#x27;s not as if there&#x27;s a lot of idle compute capacity
+    sitting around.<p>And even if the impossible occurs and LLMs hack everything that&#x27;s
+    connected to the Internet, so what? That would be inconvenient but it wouldn&#x27;t
+    cause doom. People would muddle through and eventually fix the critical problems,
+    just like they always do.
+  score: 0
+  posted_at: '2026-11-02T04:01:38Z'
+- id: '50332990'
+  parent_id: '50332910'
+  author: plorkyeran
+  text: My job is seeing a similar deluge of security work and &gt;90% of the bugs
+    have been in pre-2024 code, and zero of them have been bugs introduced after we
+    were first officially allowed to use LLM codegen.
+  score: 0
+  posted_at: '2026-11-02T04:02:43Z'
+- id: '50333009'
+  parent_id: '50332980'
+  author: noosphr
+  text: It doesn&#x27;t mention formal methods once.
+  score: 0
+  posted_at: '2026-11-02T04:05:49Z'
+- id: '50333012'
+  parent_id: '50331711'
+  author: xyzsparetimexyz
+  text: No offense but this is not exactly a groundbreaking statement. We&#x27;ve
+    known about this verifiable tasks thing for a while.
+  score: 0
+  posted_at: '2026-11-02T04:06:13Z'
+- id: '50333056'
+  parent_id: '50332910'
+  author: ecshafer
+  text: Software is incredibly complicated.  When you get into areas like security
+    and  networking and the internet its even more complicated. We rely on layers
+    upon layers of software and hoping they are all done perfectly with no issues.
+    The amount of junior devs, or outsourced devs for $10 an hour working on security
+    relevant code is very very high, and always has been. LLMs if used correctly should
+    be raising the floor.
+  score: 0
+  posted_at: '2026-11-02T04:15:54Z'
+- id: '50333120'
+  parent_id: '50332910'
+  author: idiotsecant
+  text: An uncomfortable truth about the era of LLM code is that machine produced
+    code is, on average, quite a bit more secure than human code.
+  score: 0
+  posted_at: '2026-11-02T04:29:56Z'
+- id: '50333148'
+  parent_id: '50332764'
+  author: oblio
+  text: LLMs will likely greatly increase the cost of ignoring security, which is
+    the most powerful tool to increase security ticket prioritization.<p>I wouldn&#x27;t
+    be shocked if in 1-2 years non-security vetted software released into the wild
+    will be hacked on arrival, like Windows XP without service packs used to be.
+  score: 0
+  posted_at: '2026-11-02T04:33:11Z'
+- id: '50333256'
+  parent_id: '50333120'
+  author: hibikir
+  text: Unsurprising to those of us that has been screaming from the rooftops that
+    human code reviews were barely catching anything in your typical corporate environment.
+    The majority of the value was pointing out missing tests, because breaking bugs
+    got past human eyeballs on a regular basis, even in very good companies.<p>It&#x27;s
+    not that the LLM code is that great, but that many overestimated the human code
+    and the human review.
+  score: 0
+  posted_at: '2026-11-02T04:50:17Z'
+- id: '50333423'
+  parent_id: '50333120'
+  author: userbinator
+  text: I think it&#x27;s more likely to be the same as average human-written code;
+    which is what they were trained on, after all.
+  score: 0
+  posted_at: '2026-11-02T05:26:23Z'
+- id: '50333463'
+  parent_id: '50332868'
+  author: girvo
+  text: I mean I don’t feel like sacrificing myself for the “good” of society. Not
+    least because of the fact that a lot of people defining what is “good for society”
+    seem to define it as “good for them” or use it to grab power from others…
+  score: 0
+  posted_at: '2026-11-02T05:34:04Z'
+- id: '50333476'
+  parent_id: '50332866'
+  author: sitkack
+  text: What were the issues that spawned the Luddite movement? What was their argument?
+  score: 0
+  posted_at: '2026-11-02T05:37:19Z'
+- id: '50333569'
+  parent_id: '50332626'
+  author: vconnor
+  text: There is no post-hoc Luddism.
+  score: 0
+  posted_at: '2026-11-02T05:58:46Z'
+- id: '50333619'
+  parent_id: '50332990'
+  author: tosti
+  text: That could also mean the LLM is blind for the bugs it procudes itself. Just
+    like any ordinary programmer would, on the job.
+  score: 0
+  posted_at: '2026-11-02T06:08:22Z'
+- id: '50333631'
+  parent_id: '50332343'
+  author: vikramkr
+  text: It&#x27;s almost never worth spending human time triaging AI reports vs having
+    a different AI go triage them&#x2F;attempt to replicate them to your standards
+    etc. Obviously it sucks to burn opus or sol tokens on luna or sonnet slop bug
+    reports but it sucks way more to burn human time and attention. And the majority
+    of the time the ai auto filing these bug reports is not in a test harness that&#x27;s
+    actively replicating findings and focuising on providing a useful report because
+    it&#x27;s a rogue openclaw dropping drive by github issues and the user didn&#x27;t
+    tell it to make sure findings are valid before posting them. AT the least a refutation&#x2F;replication
+    round where you filter out any findings your AI can&#x27;t reproduce or can prove
+    to be irrelevant is going to help a lot with keeping your sanity
+  score: 0
+  posted_at: '2026-11-02T06:10:17Z'
+- id: '50333637'
+  parent_id: '50332670'
+  author: hxugufjfjf
+  text: Isn’t that what everyone is doing with CodeRabbit?
+  score: 0
+  posted_at: '2026-11-02T06:11:21Z'
+- id: '50333644'
+  parent_id: '50333569'
+  author: giancarlostoro
+  text: You know what happens to technology when enough people stop using it?
+  score: 0
+  posted_at: '2026-11-02T06:12:23Z'
+- id: '50333643'
+  parent_id: '50332841'
+  author: Marha01
+  text: "&gt; Luddites were actually pretty reasonable when you dig into it.<p>No,
+    they were not. The problems they faced were absolutely real, but the solutions
+    they chose to attempt were stupid and counterproductive. Which is why they lost
+    so hard, and it was not even a contest.<p>Socialism movement that refused to use
+    machines and factories would inevitably lose to capitalists that embraced them.<p>Socialism
+    movement that refuses to use AI will inevitably lose to capitalists that embrace
+    it."
+  score: 0
+  posted_at: '2026-11-02T06:12:23Z'
+- id: '50333654'
+  parent_id: '50333476'
+  author: Marha01
+  text: Their issues and their argument was valid. The method they chose to use to
+    achieve their goals was not.
+  score: 0
+  posted_at: '2026-11-02T06:13:29Z'
+- id: '50333696'
+  parent_id: '50332866'
+  author: tmnvix
+  text: I&#x27;m pretty sure that the Luddite&#x27;s were at least partly concerned
+    with potential for the further exploitation of unskilled labour (in the case of
+    mills at the time - child orphans). I don&#x27;t think it would be fair to paint
+    them as simply self-interested.
+  score: 0
+  posted_at: '2026-11-02T06:21:56Z'
+- id: '50333753'
+  parent_id: '50333619'
+  author: adwn
+  text: Theoretically yes, but empirically that&#x27;s not the case. All models I&#x27;ve
+    tried are really good at finding bugs they wrote themselves, especially in a fresh
+    context.
+  score: 0
+  posted_at: '2026-11-02T06:34:36Z'
+- id: '50333794'
+  parent_id: '50332111'
+  author: isbvhodnvemrwvn
+  text: Lack of the extension in the core means that a lot of vendors with managed
+    postgres don&#x27;t support it or ship very old versions.
+  score: 0
+  posted_at: '2026-11-02T06:43:32Z'
+- id: '50333912'
+  parent_id: '50332866'
+  author: xydone
+  text: I&#x27;ll never not find it ridiculous when people mention game theory in
+    the topic of &quot;luddites&quot; not wanting child labor and what not
+  score: 0
+  posted_at: '2026-11-02T07:06:18Z'
+- id: '50333935'
+  parent_id: '50333643'
+  author: xydone
+  text: Is that because of a deeper issue in one of the two philosophies or because
+    we&#x27;ve chosen to define winning with things that exclusively benefit one of
+    the two sides
+  score: 0
+  posted_at: '2026-11-02T07:10:06Z'
+- id: '50333994'
+  parent_id: '50332642'
+  author: inglor_cz
+  text: "&quot;Seatback entertainment in aircraft are not critical.&quot;<p>Until
+    it is. Swiss Air Flight 111 went down with 229 lives lost because of a new infotainment
+    system whose electrical cables started sparkling.<p>Yes, not every part of a critical
+    system is critical. Determining which is which is a complicated task, though,
+    as parts interact. Not too long ago (and by this I mean within my lifetime), we
+    were ignorant enough about our own bodies to think that our microbiota was almost
+    irrelevant to our health and that bad teeth were mostly a cosmetic problem.<p>Back
+    to IT, Heartbleed was caused by addition of a feature that looked as harmless
+    as you could think of. But it wasn&#x27;t.<p>Judging real critical-ness of bugs
+    is hard. Yeah, capitalization of an error message is likely harmless, but I would
+    treat, say, any buffer overflow as serious."
+  score: 0
+  posted_at: '2026-11-02T07:20:22Z'
+- id: '50334136'
+  parent_id: '50333644'
+  author: ithkuil
+  text: I don&#x27;t in general, but if enough people stop using AI and I still have
+    access to GPUs then I have a pretty good advantage.<p>So unless it gets outlawed,
+    I don&#x27;t see people opting out of it
+  score: 0
+  posted_at: '2026-11-02T07:44:19Z'
+- id: '50334468'
+  parent_id: '50332321'
+  author: berkes
+  text: 'Indeed. And this is also why I&#x27;ve never once believed the &quot;no-code&quot;
+    would replace developers. And why I see a clear role for software (prompt-, context-
+    ?) engineers at least for a while.<p>I&#x27;ve worked for CEOs and managers that
+    would insist on ridiculous ideas. Like that time a CEO (let&#x27;s call him Cedric)
+    came in with a printed powerpoint slide that had a screenshot of the website with
+    a &quot;login form&quot; drawn on top of it.<p>Cedric: &quot;I need you guys to
+    put this onto that scrunt board thing and make this before friday&quot;.<p>Me
+    (tech lead at that time): &quot;But what features would users need login for?
+    Where or whom needs the profile data? We&#x27;d need to work this out in detail
+    and plan it. Certainly not even this month&quot;.<p>Cedric: &quot;I don&#x27;t
+    know, it&#x27;s for you to figure out&quot;. and then &quot;It can&#x27;t be hard,
+    it&#x27;s just two squares one for a username one for a password&quot; (he forgot
+    about the submit-button, the third &quot;square&quot;, he didn&#x27;t even fathom
+    the idea that something has to lie &quot;behind&quot; the &quot;squares&quot;).<p>I
+    recall this anecdote whenever I feel anxious about whether soon &quot;stakeholders&quot;
+    can just chat to an AI agent and have it build features, rather than hire me to
+    do so. Sure, a lot of them will be able to. But there&#x27;s always Cedrics. Those
+    who not only fail to communicate their ideas in a way that even an AI agent would
+    understand, they lack any understanding of what tradeoffs of their requested features
+    are.<p>The Cedric&#x27;s would be happy with an AI agent that complies and starts
+    churning away. An agent that blindly accepts any request and builds feature upon
+    feature. Making their product worse in every sense: unusable, unmaintainable,
+    debt-ridden, security-nightmares.<p>Their agent will build features that are plain
+    illegal. Or features that users hate, or confuse them. It will oblige requests
+    that drive users away, or changes parts that users&#x2F;integrations rely on.
+    Their AI agent will gladly add a &quot;form&quot; to extract all PII from their
+    database, but on request, will remove the authorization from it. Because &quot;you
+    are absolutely right. If we don&#x27;t link to the page from the menu, no-one
+    can reach it&quot;.<p>I&#x27;m not making the last one up. Another &quot;Cedric&quot;
+    alike recently hired me to look at his vibe-coded app because his go-to developer
+    gave up and dropped the project. It had loads of such extractors, dashboards and
+    overviews. Online. Unauthenticated. His claude, however, did add the pages to
+    the sitemap, so a customer found their private data on google and contacted &quot;Cedric&quot;,
+    after which he asked me.<p>No, AI is getting smarter, but as long as the &quot;Cedrics&quot;
+    remain as stupid as ever, I don&#x27;t fear for my job.'
+  score: 0
+  posted_at: '2026-11-02T08:49:18Z'
+- id: '50334548'
+  parent_id: '50332167'
+  author: jcattle
+  text: RTFA<p>&gt; In the end, I don’t think that the delay in shipping PostgreSQL
+    19 is particularly concerning. It is not a long delay in the grand scheme of things,
+    and it emerges directly from the project’s concern for quality.
+  score: 0
+  posted_at: '2026-11-02T09:04:06Z'
+- id: '50334835'
+  parent_id: '50331822'
+  author: j16sdiz
+  text: I don&#x27;t know, but there are tons of &quot;rust rewrite&quot; of everything.
+  score: 0
+  posted_at: '2026-11-02T09:50:04Z'
+article:
+  url: http://www.google.com/sorry/index?continue=http://rhaas.blogspot.com/2026/10/postgres-19-is-late-and-its-ais-fault.html&q=EgSeF12oGPjQodcGIi0TyyQbesVOdhzj6T6tO4Zs1wfMxrY_LKdzpSIaULsU8C4aKaOEX-arKlNYRKgyAnJSWgFDYPanmLPN8cD2zQE
+  title:
+  fetch_status: error
+  content:
+  error: HTTP 429
+  fetched_at: '2026-11-02T10:39:52Z'
+archived_at: '2026-11-02T10:39:56Z'

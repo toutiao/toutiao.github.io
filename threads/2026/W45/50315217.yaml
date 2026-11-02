@@ -1,0 +1,571 @@
+---
+post:
+  id: '50315217'
+  title: Mystery of 60-Second Fluctuations in Power Grids Solved
+  url: https://www.fz-juelich.de/en/news/archive/press-release/2026/mystery-of-60-second-fluctuations-in-power-grids-solved
+  hn_url: https://news.ycombinator.com/item?id=50315217
+  score: 127
+  author: _Microft
+  posted_at: '2026-10-31T11:53:47Z'
+  fetched_at: '2026-11-02T10:39:47Z'
+  article_url: https://www.fz-juelich.de/en/news/archive/press-release/2026/mystery-of-60-second-fluctuations-in-power-grids-solved
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T10:39:47Z'
+  raw_comment_count: 55
+comments:
+- id: '50322725'
+  parent_id: '50315217'
+  author: yummybrainz
+  text: Thanks for sharing, very cool!
+  score: 0
+  posted_at: '2026-11-01T04:32:59Z'
+- id: '50322900'
+  parent_id: '50315217'
+  author: pseudohadamard
+  text: The water-hammer effect, or in this case electron-hammer effect, is why you
+    don&#x27;t reboot every Windows server in the data center at exactly 2am, to stagger
+    the load shift over time. Surprised that the power guys didn&#x27;t realize that
+    switching a presumably multi-hundred-MW load in and out at the top of each minute
+    would cause a problem.
+  score: 0
+  posted_at: '2026-11-01T05:15:07Z'
+- id: '50323860'
+  parent_id: '50322900'
+  author: metalman
+  text: |-
+    power guys got surprised as rest of the grid load is human randomised and even huge factories will come on one chonk at a time, vs miilisecond co ordinated load switching at scale, with batteries as the load of the initial surge into even fully charged batteries can be almost infinite, and the whole calculation around grid scale turbines is that they run at very precise rpm&#x27;s for stability and longevity, but worse, and a big fail, as battery storage is supposed to help with that, not be the problem.
+    bet it gets fixed realy fast as those grid guys definitly get listened to.
+  score: 0
+  posted_at: '2026-11-01T09:16:56Z'
+- id: '50332542'
+  parent_id: '50315217'
+  author: qrios
+  text: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50314617">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50314617</a>
+  score: 0
+  posted_at: '2026-11-02T02:47:04Z'
+- id: '50332926'
+  parent_id: '50323860'
+  author: dylan604
+  text: "&gt; as the load of the initial surge into even fully charged batteries can
+    be almost infinite<p>There was an post a couple of days ago about a telco debrief
+    of an interesting outage that happened. Several things went wrong like the audible
+    bell was manually silence from being heard as a step in routine working but was
+    forgotten to put back into normal mode once work was complete. The actual loss
+    in power triggered the automatic switch to the batteries, but something else seemingly
+    benign happened at the same time so that when power was restored, the batteries
+    had been depleted to the point the charging process could not start because of
+    something similar to this. I wish I could remember the write up, as it was really
+    well written about the cascades of failures that occurred."
+  score: 0
+  posted_at: '2026-11-02T03:51:44Z'
+- id: '50332944'
+  parent_id: '50322900'
+  author: dylan604
+  text: Sounds like they&#x27;ve been set up as cron tasks. I&#x27;ve always been
+    unhappy with the 1 minute granularity of cron tasks. Only thing I could come up
+    with was putting a sleep(random()) type of line to avoid a thundering herd type
+    of issue.
+  score: 0
+  posted_at: '2026-11-02T03:54:23Z'
+- id: '50332960'
+  parent_id: '50315217'
+  author: Blackarea
+  text: "&gt; It really was years of detective work<p>Doesn&#x27;t seem that complicated
+    from the article though. They say that they immediately knew it was clock based
+    due to the strict interval. With REA etc. it might become easier to proof, but
+    I guess it&#x27;s a measurement problem that only appears in large networks?<p>Can
+    someone with more understanding explain why this was apparently so difficult to
+    find out?"
+  score: 0
+  posted_at: '2026-11-02T03:55:58Z'
+- id: '50332964'
+  parent_id: '50332926'
+  author: froindt
+  text: I believe this is what you&#x27;re referring to.<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50153229&amp;hl=en-US">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50153229&amp;hl=en-US</a>
+  score: 0
+  posted_at: '2026-11-02T03:57:07Z'
+- id: '50333039'
+  parent_id: '50332542'
+  author: _Microft
+  text: It had both ended up in the second chance pool.
+  score: 0
+  posted_at: '2026-11-02T04:12:01Z'
+- id: '50333157'
+  parent_id: '50332944'
+  author: compumike
+  text: |-
+    Yes it’s a real effect. I’ve just hardcoded offsets on various jobs:<p><pre><code>  * * * * * sleep 17 &amp;&amp; …
+    </code></pre>
+    etc.<p>That way I still maintain a per-job 60-second cadence consistently (which random would not), but don’t do it right on the top of the minute.
+  score: 0
+  posted_at: '2026-11-02T04:34:05Z'
+- id: '50333158'
+  parent_id: '50332964'
+  author: dylan604
+  text: Yes, thanks for allowing me to offload my RAM to yours!
+  score: 0
+  posted_at: '2026-11-02T04:34:11Z'
+- id: '50333172'
+  parent_id: '50333157'
+  author: dylan604
+  text: That&#x27;s interesting as it is also visible with a crontab -l so that new
+    scripts can avoid using the same second. However, if you have a farm of machines
+    with the same hardcoded value, they will all still stampede at the same time just
+    not at the top of the minute. By allowing a random value, their start times are
+    slightly offset with in the minute. Is the precise 60s consistent interval really
+    that critical or just that each machine checks once per minute-ish?
+  score: 0
+  posted_at: '2026-11-02T04:37:42Z'
+- id: '50333213'
+  parent_id: '50333157'
+  author: Magniquick
+  text: |-
+    Systemd timers do this natively btw, no need to hardcode
+    And imho are also friendlier.
+  score: 0
+  posted_at: '2026-11-02T04:43:12Z'
+- id: '50333277'
+  parent_id: '50333213'
+  author: Cyph0n
+  text: But systemd bad :[
+  score: 0
+  posted_at: '2026-11-02T04:52:38Z'
+- id: '50333297'
+  parent_id: '50315217'
+  author: SV_BubbleTime
+  text: "&gt;unusually regular<p>Oh I’m sure there is a German phrase for this."
+  score: 0
+  posted_at: '2026-11-02T04:56:24Z'
+- id: '50333319'
+  parent_id: '50322900'
+  author: '0xbadcafebee'
+  text: 'In computer&#x2F;systems&#x2F;distributed engineering this is called request
+    smoothing or traffic shaping, and it&#x27;s implemented by adding jitter, which
+    is a random time offset&#x2F;pad added to the interval.<p>The funny thing is,
+    modern electrical codes already account for this phenomenon. In order to implement
+    Net Metering (selling your power to the grid), modern standards implement two
+    kinds of jitter:<p>- <i>Sandia Frequency Shift</i>: a minute shift in the power
+    frequency generated by inverters. If the grid is connected, this is effectively
+    eliminated; if the inverter is disconnected from the grid, it detects the frequency
+    has shifted and disconnects the inverter from the grid.<p>- <i>Slip-Mode Frequency
+    Shift</i>: basically the same thing, but phase shift (which I don&#x27;t understand).<p>Both
+    of these are used for anti-islanding (don&#x27;t create an island of power). When
+    the inverter detects it&#x27;s isolated and stops outputting current, it then
+    has to check every 5 minutes, <i>with jitter</i>, for whether the grid is restored
+    or not. It has to add random jitter, because otherwise all the mini battery&#x2F;solar
+    installs will come online at the same time and swamp the grid, causing another
+    outage.'
+  score: 0
+  posted_at: '2026-11-02T05:01:30Z'
+- id: '50333391'
+  parent_id: '50333213'
+  author: stonogo
+  text: BSD cron has supported jitter for decades.  This is strictly a linux problem.
+  score: 0
+  posted_at: '2026-11-02T05:19:28Z'
+- id: '50333458'
+  parent_id: '50332944'
+  author: nlehuen
+  text: 'The Google internal equivalent to cron has a ? placeholder in the scheduling
+    spec syntax letting the scheduler deterministically pick an arbitrary valid value
+    within the field range. So ? 2 ... will pick any minute between 02:00 and 02:59
+    (and I suspect any second within that minute). The value is derived from a hash
+    of the job definition, so overall this spreads the cron load within the hour.<p>Obviously
+    cron jobs are not all equal in terms of load and duration, and hours are not all
+    equal in terms of usage, but that still helps prevent trivial spikes similar to
+    the one mentioned in the article (disclaimer: I&#x27;m not aware of a recent counterfactual
+    experiment proving this, but that seems a fair assumption).'
+  score: 0
+  posted_at: '2026-11-02T05:33:20Z'
+- id: '50333523'
+  parent_id: '50333297'
+  author: jgilias
+  text: uhrwerksmäßig
+  score: 0
+  posted_at: '2026-11-02T05:48:03Z'
+- id: '50333525'
+  parent_id: '50333297'
+  author: quink
+  text: Thinking about it tactically, I’ll go with taktisch. :) Takt-isch.
+  score: 0
+  posted_at: '2026-11-02T05:48:48Z'
+- id: '50333560'
+  parent_id: '50315217'
+  author: vachina
+  text: "&gt; turbines slow down momentarily before accelerating back to their original
+    rotational speed. This increases wear and tear.<p>Why though? Due to increased
+    torque?"
+  score: 0
+  posted_at: '2026-11-02T05:56:53Z'
+- id: '50333564'
+  parent_id: '50333458'
+  author: sdenton4
+  text: I suppose one would end up with checks happening on a random second instead
+    of a random minute - reducing the size of the spike by a factor of 60, but still
+    spiky.
+  score: 0
+  posted_at: '2026-11-02T05:58:13Z'
+- id: '50333590'
+  parent_id: '50333525'
+  author: moi2388
+  text: Surely you mean Tick-Tacktisch?
+  score: 0
+  posted_at: '2026-11-02T06:01:29Z'
+- id: '50333617'
+  parent_id: '50315217'
+  author: peesem
+  text: i&#x27;m confused, why would a system simply checking its own power state
+    be taking so much electricity as to show up on grid measurements? unless they
+    mean that the systems are choosing to start charging the batteries, but then it&#x27;s
+    a continuous load and not a spike at the start of the minute, right?
+  score: 0
+  posted_at: '2026-11-02T06:07:41Z'
+- id: '50333628'
+  parent_id: '50315217'
+  author: snthpy
+  text: You&#x27;d think they&#x27;d randomise offsets to avoid a thundering herd
+    effect, like anyone scheduling multiple processes does?
+  score: 0
+  posted_at: '2026-11-02T06:09:55Z'
+- id: '50333645'
+  parent_id: '50333628'
+  author: Black616Angel
+  text: Apparently not everyone does ;)
+  score: 0
+  posted_at: '2026-11-02T06:12:27Z'
+- id: '50333658'
+  parent_id: '50333617'
+  author: theo939eirn
+  text: It can be that part of battery is disconnected, to estimate cells voltage.
+    You can not measure voltage while another source is chsrging battery. Or capacitors
+    are charging.
+  score: 0
+  posted_at: '2026-11-02T06:14:39Z'
+- id: '50333698'
+  parent_id: '50332960'
+  author: nomel
+  text: There are many millions of devices connected that draw power, and increasingly
+    so, supply power.
+  score: 0
+  posted_at: '2026-11-02T06:22:20Z'
+- id: '50333709'
+  parent_id: '50333658'
+  author: deepsun
+  text: I think you can. RC toys do that all the time. Maybe the measurement is less
+    precise, but you usually don&#x27;t need super precise voltage, especially if
+    you know your capacitance and measure current.
+  score: 0
+  posted_at: '2026-11-02T06:24:36Z'
+- id: '50333734'
+  parent_id: '50332960'
+  author: iofiiiiiiiii
+  text: If it were not a substantial research effort spanning years, it would not
+    get funded. This motivates academic researchers to ensure that every topic is
+    explored thoroughly and at great length.
+  score: 0
+  posted_at: '2026-11-02T06:30:33Z'
+- id: '50333765'
+  parent_id: '50315217'
+  author: schobi
+  text: The press release is rather light on details. They found that it is every
+    60seconds (duh!) and generators (or such). So what exactly is it? (Make and model?)<p>Seems
+    like they did not find the exact manufacturer or the exact devices and were not
+    able to change firmware then?
+  score: 0
+  posted_at: '2026-11-02T06:37:27Z'
+- id: '50333767'
+  parent_id: '50333628'
+  author: heisenbit
+  text: To anyone herding a herd this is obvious. To people crafting animals less
+    so.
+  score: 0
+  posted_at: '2026-11-02T06:37:59Z'
+- id: '50333835'
+  parent_id: '50333560'
+  author: toomuchtodo
+  text: When the battery storage systems all temporarily pause providing grid inertia
+    due to the state of charge check they’re performing, grid synchronized spinning
+    mass has to compensate, which slows it down (transferring the kinetic energy to
+    electrical energy), and then is sped back up as battery storage resumes inertia
+    support.<p>Broadly speaking, it’s a collective momentum problem. If part of the
+    system inertia sags, another part needs to step in to compensate for the inertia
+    loss, otherwise you have brownouts and eventually, a blackout.<p><a href="https:&#x2F;&#x2F;neutrino-energy.com&#x2F;technology&#x2F;grid-inertia&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;neutrino-energy.com&#x2F;technology&#x2F;grid-inertia&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-02T06:50:19Z'
+- id: '50333863'
+  parent_id: '50323860'
+  author: rswail
+  text: '&gt; grid scale turbines is that they run at very precise rpm&#x27;s for
+    stability and longevity<p>The turbines&#x2F;generators set the grid frequency
+    itself.<p>Having the batteries disconnect&#x2F;connect would cause the generators
+    to slow down and then speed up (or vice versa) which makes the rest of the grid
+    frequency fluctuate as well.<p>It may also trigger the FCAS part of the grid that
+    is paid to keep the frequency within the required range which is +&#x2F;- 10mHz-200mHz.<p><a
+    href="https:&#x2F;&#x2F;mainsfrequency.com&#x2F;frequ_info_en.php" rel="nofollow">https:&#x2F;&#x2F;mainsfrequency.com&#x2F;frequ_info_en.php</a>'
+  score: 0
+  posted_at: '2026-11-02T06:56:40Z'
+- id: '50333946'
+  parent_id: '50333523'
+  author: Someone
+  text: That doesn’t capture the “unusually” in “unusually regular”
+  score: 0
+  posted_at: '2026-11-02T07:12:30Z'
+- id: '50333976'
+  parent_id: '50315217'
+  author: manarth
+  text: 'The paper has more details: <a href="https:&#x2F;&#x2F;www.nature.com&#x2F;articles&#x2F;s41560-026-02144-0"
+    rel="nofollow">https:&#x2F;&#x2F;www.nature.com&#x2F;articles&#x2F;s41560-026-02144-0</a>'
+  score: 0
+  posted_at: '2026-11-02T07:17:43Z'
+- id: '50333997'
+  parent_id: '50333765'
+  author: manarth
+  text: |-
+    The paper has a little more details:<p><pre><code>  &quot;following our communication with the manufacturer, a software update was issued that removed the strict periodicity of the current peaks in one battery block of the investigated UPS system&quot;
+    </code></pre>
+    <a href="https:&#x2F;&#x2F;www.nature.com&#x2F;articles&#x2F;s41560-026-02144-0" rel="nofollow">https:&#x2F;&#x2F;www.nature.com&#x2F;articles&#x2F;s41560-026-02144-0</a><p>Given the issue is so widespread (international, affecting pretty much every grid), it&#x27;s likely that multiple manufacturers use similar approaches.
+  score: 0
+  posted_at: '2026-11-02T07:20:35Z'
+- id: '50334000'
+  parent_id: '50322900'
+  author: hobofan
+  text: It seems more like one or multiple suppliers of battery systems not taking
+    into account that the decentralized deployments of their system could have that
+    effect. If it&#x27;s not regulated and an open market, this was bound to happen
+    sooner or later.
+  score: 0
+  posted_at: '2026-11-02T07:21:43Z'
+- id: '50334087'
+  parent_id: '50332960'
+  author: Animats
+  text: The effect is apparently small enough that they had to use Fourier analysis
+    over many minutes to see it in the noise.
+  score: 0
+  posted_at: '2026-11-02T07:35:59Z'
+- id: '50334090'
+  parent_id: '50333560'
+  author: bajard
+  text: Because a variation in force is a cycle of stress, which is more destructive
+    than constant force. It&#x27;s called hysteresis, leading to material fatigue.
+  score: 0
+  posted_at: '2026-11-02T07:36:51Z'
+- id: '50334268'
+  parent_id: '50333297'
+  author: Jakob
+  text: I would go with “allzuregelmäßig”.<p>Similar to “allzuschön um wahr zu sein”,
+    “allzugroß” etc.
+  score: 0
+  posted_at: '2026-11-02T08:11:30Z'
+- id: '50334388'
+  parent_id: '50334268'
+  author: donutdonot
+  text: However this is not a single word, but would be split as &quot;allzu regelmäßig&quot;
+    cf. <a href="https:&#x2F;&#x2F;www.korrekturen.de&#x2F;wortliste&#x2F;allzuoft.shtml"
+    rel="nofollow">https:&#x2F;&#x2F;www.korrekturen.de&#x2F;wortliste&#x2F;allzuoft.shtml</a>
+  score: 0
+  posted_at: '2026-11-02T08:35:34Z'
+- id: '50334398'
+  parent_id: '50333560'
+  author: lnx01
+  text: Stuxnet damaged gas centrifuges by introducing a subtle change in rotational
+    speed over time, eventually the motors failed mechanically.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Stuxnet"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Stuxnet</a>
+  score: 0
+  posted_at: '2026-11-02T08:38:02Z'
+- id: '50334469'
+  parent_id: '50333709'
+  author: LoganDark
+  text: Current doesn&#x27;t tell you if the battery is leaking charge, or otherwise
+    failing to store it though. Vastly increased losses could be a sign of failure,
+    for example. In any case it&#x27;s important to be sure.
+  score: 0
+  posted_at: '2026-11-02T08:49:18Z'
+- id: '50334488'
+  parent_id: '50333277'
+  author: falserum
+  text: People slowly are getting used to it. (Less so with journalctl)
+  score: 0
+  posted_at: '2026-11-02T08:52:29Z'
+- id: '50334535'
+  parent_id: '50333525'
+  author: speakspokespok
+  text: verdächtig !
+  score: 0
+  posted_at: '2026-11-02T09:00:21Z'
+- id: '50334544'
+  parent_id: '50333297'
+  author: loehnsberg
+  text: Not a scholar of languages, but maybe something like &quot;mit unheimlicher
+    Regelmäßigkeit&quot; (with un-home-ly regular-like-ness, read &quot;home&quot;
+    like in &quot;family&quot; -&gt; &quot;familiar&quot;).
+  score: 0
+  posted_at: '2026-11-02T09:02:38Z'
+- id: '50334651'
+  parent_id: '50333835'
+  author: EdwardDiego
+  text: I wish that article wasn&#x27;t written entirely in Claude speak, it has some
+    useful information, but the obvious AI voice will repel readers.
+  score: 0
+  posted_at: '2026-11-02T09:20:32Z'
+- id: '50334737'
+  parent_id: '50333997'
+  author: hyperman1
+  text: You see the same thing with e.g. cron jobs, where everyone schedules on xx:00
+    or xx:30.  No communication needed, it&#x27;s just natural.  More senior people
+    recognize this and add randomness to their start times or skew a bit.
+  score: 0
+  posted_at: '2026-11-02T09:34:36Z'
+- id: '50334836'
+  parent_id: '50334737'
+  author: truekonrads
+  text: You ought to use RandomizedDelaySec=xxx
+  score: 0
+  posted_at: '2026-11-02T09:50:08Z'
+- id: '50334857'
+  parent_id: '50333946'
+  author: aa-jv
+  text: Ungewöhnlichregelmäßig or Hyperregelmäßig works for me, but then there is
+    Regelmäßigkeitsmonsterhaft.<p>Still, I think we can push the limits to Bürokratieapokalyptischhyperregelmäßigkeitsgötterungeheuerhaft
+    and feel pretty comfortable with it.
+  score: 0
+  posted_at: '2026-11-02T09:53:14Z'
+- id: '50334923'
+  parent_id: '50334469'
+  author: wolfi1
+  text: temperature is also a problem
+  score: 0
+  posted_at: '2026-11-02T10:04:14Z'
+- id: '50334934'
+  parent_id: '50333525'
+  author: wolfi1
+  text: rather tak-tisch if we are talking hyphenation
+  score: 0
+  posted_at: '2026-11-02T10:05:39Z'
+- id: '50335034'
+  parent_id: '50333560'
+  author: rocqua
+  text: The grid frequency is set directly by 3 phase generators. So if the grid frequency
+    drops, there is indeed a very strong torque trying to decelerate the turbines.<p>To
+    some extent, this is a good thing. Because it means the spinning mass of all turbines
+    in the grid actually provide a buffer for sub-second mismatches in demand and
+    supply. But it does mean that big demand spikes (or drops) put some wear on the
+    systems. They are made for this, but if it gets very periodic it might be more
+    than designed for.<p>Note that this means that all turbines in a power network
+    are perfectly synchronized. And if they are not, they are subject to massive torques.
+    This is why a cold start is so hard. You need to bring on generators from one
+    central point to keep everything in sync. And as you bring on new generation capacity
+    you also need to bring on new consumption, that electricity has to go somewhere.<p>The
+    reason for this synchronization is because the generators are spinning a magnet
+    past 3 coils, and those coils are directly wired into the power network. If your
+    magnets are out of phase then effectively the entire power network will use those
+    coils to generate a field to get that magnet back in sync. All of those coils
+    on all those generators really are all hard-wired together, it still kind of blows
+    my mind.
+  score: 0
+  posted_at: '2026-11-02T10:20:43Z'
+- id: '50335052'
+  parent_id: '50333157'
+  author: ahoka
+  text: Yes, using prime numbers are a good way to reduce the risk of multiple timers
+    coinciding, for example a 10s, 30s, 60s period on a freshly restarted node &#x2F;
+    process.
+  score: 0
+  posted_at: '2026-11-02T10:23:00Z'
+article:
+  url: https://www.fz-juelich.de/en/news/archive/press-release/2026/mystery-of-60-second-fluctuations-in-power-grids-solved
+  title: Mystery of 60-Second Fluctuations in Power Grids Solved
+  fetch_status: success
+  content: "# Mystery of 60-Second Fluctuations in Power Grids Solved\n\n_30 October
+    2026_\n\n**Why do our grids show a brief spike in electricity demand every minute?
+    A team led by Dirk Witthaut from Forschungszentrum Jülich has now demonstrated
+    that this is due to regular power checks carried out by large-scale battery storage
+    systems. These findings could help to make our electricity supply more robust,
+    as the team reports in an article published in _Nature Energy_.**\n\n![](/de/aktuelles/news/pressemitteilungen/2026/60-sekunden-schwankung-in-stromnetzen/img_20180428_154430-buehne.jpg/@@images/image/great)\n_Copyright:
+    Regine Panknin_\n\nTennet Germany, the largest transmission system operator in
+    Germany, has observed over several years that the frequency in the European power
+    grid dips briefly every 60 seconds. While these deviations were not critical to
+    grid security, they were clearly measurable and unusually regular. The cause of
+    this phenomenon was initially unclear.\n\nA team at Forschungszentrum Jülich led
+    by Dirk Witthaut—who is also a professor at the Institute for Theoretical Physics
+    at the University of Cologne—joined forces with other researchers from the University
+    of Cologne and the Karlsruhe Institute of Technology to search for an answer—and
+    they found it: the cause appears to be the many large-scale battery storage systems
+    that check their state of charge every minute. This leads to measurable fluctuations
+    in electricity consumption, which can contribute to turbine wear and tear, for
+    example. The battery storage systems ensure an uninterrupted power supply, and
+    their numbers have increased significantly worldwide in recent years. The researchers
+    found that this was not a European phenomenon, but a global one.\n\n### Many devices,
+    a common rhythm\n\n“It really was years of detective work,” says Witthaut. The
+    grid frequency pattern is shaped by many different factors. For example, it reveals
+    the influence of electricity trading, with power stations being switched on and
+    off abruptly, as well as the fluctuating feed-in from renewable energy sources,
+    and various other disturbances.\n\n ![](/de/aktuelles/news/pressemitteilungen/2026/60-sekunden-schwankung-in-stromnetzen/witthaut.jpeg/@@images/image/preview)\n\n>
+    Uns war schnell klar, dass es sich bei der Ursache um etwas handeln muss, das
+    von der Uhr gesteuert wird\n\n“It quickly became clear to us that the cause must
+    be something controlled by the clock,” says Witthaut. There was no other way to
+    explain the precise 60-second cycle. It was also clear that: “The observed effect
+    can only be produced if many devices are consuming electricity at the same time.”
+    A single consumer or generator could therefore be ruled out.\n\n### Measurements
+    on campus provide the clue\n\nBut how do all these devices synchronize their consumption?
+    The researchers finally found the crucial clues with the help of the Living Lab
+    Energy Campus. This research infrastructure on the Jülich campus is primarily
+    used to develop and test highly integrated energy supply systems. The team installed
+    measuring points on end devices at a total of 80 locations – and sure enough,
+    the same periodic pattern in electricity consumption was observed precisely at
+    the locations where large-scale battery storage systems are designed to ensure
+    an uninterrupted power supply. “We took a closer look at one of them and found
+    a spike in electricity consumption at the start of every minute due to the power
+    check,” explains Witthaut.\n\n![](/de/aktuelles/news/pressemitteilungen/2026/60-sekunden-schwankung-in-stromnetzen/img_5015.jpeg/@@images/image/teaser)\n_Detektive
+    work from Carsten Hartmann and Dirk Witthaut of the Jülich Institute for Energy
+    systems engineering_\n\n_Copyright: Forschungszentrum Jülich / Dirk Witthaut_\n\nAs
+    there are no binding standards for such power checks, Witthaut suspects that most
+    battery manufacturers assumed that a 60-second interval would be sensible. The
+    start of every minute was simply chosen as the test time. “It is entirely possible,
+    however, that battery storage systems are only part of the problem here,” says
+    Witthaut. “It cannot be ruled out that other digitally controlled appliances –
+    such as air-conditioning systems, heat pumps, washing machines, and dishwashers
+    – may also exhibit similar patterns.”\n\n### Less synchronization, less wear and
+    tear\n\nThe periodic fluctuations in electricity demand are already having an
+    impact on hydroelectric power stations. The brief spikes in demand mean that the
+    turbines slow down momentarily before accelerating back to their original rotational
+    speed. This increases wear and tear. With the expansion of storage technologies,
+    such problems could become even more prevalent. In Ireland, for example, where
+    data centres with large-scale battery storage systems currently account for around
+    a fifth of the country’s electricity demand, the amplitude of the 1-minute signal
+    quadrupled between 2016 and 2021. The solution, however, would be simple: “You
+    would simply have to distribute the checks randomly, rather than always starting
+    them at the same time,” says Witthaut.\n\n**Original publication:**'One-minute
+    frequency disturbances from unintended synchronization in cyber–physical power
+    systems', Nature Energy 2026, DOI: [10.1038/s41560-026-02144-0](https://www.nature.com/articles/s41560-026-02144-0)\n\n##
+    Contact\n\n[![](/profile/witthaut_d/@@images/image/preview)](/profile/witthaut_d)\n\n[\n###
+    Prof. Dr. Dirk Witthaut\n](/profile/witthaut_d)\n\nHead of Department\n\n- Institute
+    of Climate and Energy Systems (ICE)\n- Energy Systems Engineering (ICE-1)\n\nBuilding
+    10.21 /   \nRoom 4014\n\n+49 2461/61-6178\n\nE-Mail\n\n[![](/profile/benigni_a/@@images/image/preview)](/profile/benigni_a)\n\n[\n###
+    Prof. Andrea Benigni\n](/profile/benigni_a)\n\nDirector\n\n- Institute of Climate
+    and Energy Systems (ICE)\n- Energy Systems Engineering (ICE-1)\n\nBuilding 10.21
+    /   \nRoom 4011\n\n+49 2461/61-85523\n\nE-Mail\n\n## Media contact\n\n[![](/profile/panknin_r/@@images/image/preview)](/profile/panknin_r)\n\n[\n###
+    Dr. Regine Panknin\n](/profile/panknin_r)\n\nPressereferentin\n\nBuilding 15.3
+    /   \nRoom R 3028\n\n+49 2461/61-9054\n\nE-Mail\n\n## More on the topic\n\n[\n\n
+    ![](/en/news/effzett/2024/build-up-more-energy-reserves/@@images/preview_image-1500-9634b7ec9a86797e61f026fc85e1f3bd.jpeg)\n\nEnergy
+    transition\n\n### Build Up More Energy Reserves\n\nWith each percent more electricity
+    generated from wind and solar power, it is becoming increasingly clear: more storage
+    is required for the energy transition. In particular, different storage systems
+    are needed – not just different types of batteries, but also hydrogen. This is
+    the only way to offset fluctuations, cope with periods in which little to no energy
+    is generated, and keep the network stable.\n\n](/en/news/effzett/2024/build-up-more-energy-reserves)\n\n[\n\n
+    ![](/en/news/effzett/2023/the_blackout_fairy_tale/@@images/preview_image-1000-560bac1e950734c61b4fd2d6acaa53d0.jpeg)\n\nEnergy
+    supply\n\n### The blackout fairy tale\n\nAre nationwide power cuts in Germany
+    due to supply shortages something we have to fear? No, says Jülich grid expert
+    Prof. Dirk Witthaut. He also explains why, in some cases, legal regulations are
+    a much bigger problem for the stability of electricity grids than renewable energies.\n\n](/en/news/effzett/2023/the_blackout_fairy_tale)\n\n[\n\n
+    ![](/de/aktuelles/news/highlights/2021/2021-10-08-black-box-stromnetz/@@images/preview_image-380-41291ace5a8f68d595183a08c8f10f40.jpeg)\n\nEnergy
+    System\n\n### Die Black-Box öffnen: Wie findet KI Schwachstellen im Stromnetz?\n\nIn
+    unserem Stromsystem verursachen alltägliche Schwankungen hohe Kosten für die Verbraucher
+    und Risiken für die Betreiber. Doch was verursacht diese alltäglichen Schwankungen?
+    Drei Jülicher, Kölner und Norweger Wissenschaftler sind dieser Frage auf den Grund
+    gegangen – und fanden dabei große Unterschiede zwischen den Stromnetzen.\n\n](/de/aktuelles/news/highlights/2021/2021-10-08-black-box-stromnetz)\n\n[\n\n
+    ![](/de/icons/mail-icon-xs-5_3.png/@@images/image-1000-fdb2f614046c13fc8a31ea877957555f."
+  error:
+  fetched_at: '2026-11-02T10:39:47Z'
+archived_at: '2026-11-02T10:39:56Z'

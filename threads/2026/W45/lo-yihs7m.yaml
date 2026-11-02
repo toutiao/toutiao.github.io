@@ -1,0 +1,123 @@
+---
+post:
+  id: lo-yihs7m
+  source: lobsters
+  title: Understanding Org's LaTeX previews
+  url: https://karthinks.com/software/understanding-org-latex-preview/
+  hn_url: https://lobste.rs/s/yihs7m
+  score: 11
+  author: ehamberg
+  posted_at: '2026-11-01T22:19:51Z'
+  fetched_at: '2026-11-02T10:39:57Z'
+  article_url: https://karthinks.com/software/understanding-org-latex-preview/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T10:40:05Z'
+  raw_comment_count: 0
+  tags:
+  - emacs
+comments: []
+article:
+  url: https://karthinks.com/software/understanding-org-latex-preview/
+  title: Understanding Org's LaTeX previews | Karthinks
+  fetch_status: success
+  content: "- [Home](/)\n- [About](/about)\n- [Misc](/blog)\n- [Coding](/software)\n
+    \ \n\n- \n- \n- \nPrevious postNext postBack to topShare post  \n\n- \n- \n- \n-
+    \n\n**TL;DR** : LaTeX in Org mode now go **whoosh** , all pretty like. Install
+    the development branch of Org mode to use it.\n\nAfter grumbling about the inadequacy
+    of LaTeX previews in Emacs – and specifically Org mode – for over a decade, [Tecosaur](https://tecosaur.net/)
+    and I decided to take the leap and rewrite the feature from the ground up. The
+    result is a preview system for LaTeX math that can provide near-WYSIWYG feedback
+    but retains the properties we expect in the Emacs environment: text-first, extensible
+    and composable.\n\nIt’s not much code, but it contains many moving pieces and
+    makes contact with several corners of Emacs. Now that the feature is part of Org
+    mode, I thought I would take this opportunity to document how it works from the
+    ground up, and use it as a launchpad to explain relevant aspects of Emacs’ event
+    loop and its unofficial package API.\n\nThis article is not an exhaustive demo
+    of all the shiny new features, although there are a few videos peppered throughout.
+    It’s also not the user manual (not yet updated on orgmode.org) or a tutorial (see
+    Tecosaur’s [This Month in Org](https://blog.tecosaur.net/tmio/2026-11-01-preview.html)
+    writeup).\n\nInstead, it aims to provide an overview of the goals and design of
+    the library, along with some explainers of relevant aspects of the Emacs API and
+    tips to write your own features. This write-up is for you if you are interested
+    in\n\n- a broad understanding of LaTeX preview generation (how and why),\n- learning
+    about Emacs’ event loop, subprocess interaction, overlay-based display and UI,
+    or\n- a case study on building a non-trivial Emacs “application” from scratch.\n\n*
+    * *\n\n## What is `org-latex-preview`?\n\nThis is a feature included with Org
+    mode to preview LaTeX math snippets as images in Emacs buffers. The contents of
+    LaTeX fragments and environments in Org mode are replaced with rendered images.\n\n[![](/img/olp-before-1.png)](/img/olp-before-1.png)\n\n[![](/img/olp-after-1.png)](/img/olp-after-1.png)\n\nIt
+    has existed for decades at this point, but in a form that I consider barely usable;
+    this rewrite overhauls the code base and adds a number of quality-of-life features.
+    There is a 13 minute demo that can give you a good idea of the new capabilities
+    of Org mode:\n\n* * *\n\n* * *\n\nThe bullet points, if you prefer:\n\n- Preview
+    generation is fully asynchronous, with images placed continuously as they are
+    generated\n- Bulk generation: Preview 200 to 800 snippets per second\n- Previews
+    blend in correctly with surrounding colors\n- Automatically match the current
+    Emacs theme (even through theme changes)\n- Previews are aligned with and scaled
+    to match the font baseline and size\n- Previews auto-generate for newly inserted
+    LaTeX\n- Previews auto-update as you change the underlying LaTeX\n- Preview as
+    you type: Live-previews of LaTeX fragments\n- Consistent (correct) equation numbering
+    across the document\n- LaTeX compilation error reporting for previews\n\nAnd a
+    couple more quick demos:\n\nThe rest of this article is mostly about how it works,
+    and briefly why. As such, it has a “fractal” level of detail. There is information
+    intended\n\n- to give the casual reader a bird’s eye view of LaTeX preview generation,\n-
+    to give the motivated reader a detailed look at its many pieces,\n- for the potential
+    new Emacs package author looking for pointers on aspects of Emacs’ API,\n- for
+    folks wanting to develop a similar feature for applications _other_ than Emacs,\n-
+    and information that is of no use whatsoever except to the future maintainers
+    of the `org-latex-preview` library.\n\nTo that end, many details are tucked away
+    in blocks like the following. You can safely ignore them in favor of the top-level
+    headings, images and video demos.\n\n ![](/img/lisp-icon.png) Implementation details\n\nBlocks
+    like this describe the concrete implementation of aspects of the code.\n\nThis
+    is probably only interesting if you are looking to dive into the code itself,
+    or if you are looking to write a similar package.\n\n ![](/img/emacs-icon.png)
+    Emacs API notes\n\nBlocks like this are for additional notes on aspects of Emacs’
+    API, including the odd code snippets.\n\nWarning: Here be idiosyncratic takes.\n\n
+    ![](/img/org-mode-icon.png) Org Mode notes\n\nBlocks like this describe other
+    Org features relevant to LaTeX preview generation.\n\n ![](/img/term-logo.png)
+    Command output\n\nBlocks like this describe CLI commands associated with this
+    process, or their output.\n\n* * *\n\n## Isn’t this a narrow feature to spend
+    so much time on?\n\nIndeed, this feature\n\n- requires a LaTeX distribution installed,\n-
+    works only with Org mode (for now),\n- and is glued together from several processes
+    and grossly inefficient in the larger scheme of things.\n- It’s also finicky,
+    as all hyper-configurable software is.\n\nLaTeX was not built with the aim of
+    minimizing latency. Having to start multiple new processes even for a one-character
+    change places a hard cap on what’s possible in terms of real-time feedback. Implementing
+    an equivalent preview feature for a system designed for modern computers, like
+    Typst, is trivial in comparison.\n\nMoreover, as popular as Org mode is, it’s
+    a small player in the space of markup languages. The fraction of Org and LaTeX
+    users who would prefer to use Org mode to write LaTeX is smaller still. And while
+    Org attempts to integrate well with LaTeX, navigating the mishmash of Org and
+    LaTeX syntax presents an extra learning curve on top of learning to use the two
+    markup languages individually.\n\nBut it also has a few things going for it.\n\nFirst,
+    LaTeX is ubiquitous, and Org mode is a far more convenient format for writing
+    than raw LaTeX. There is significantly less visual noise (think Markdown vs HTML),
+    and Org provides an escape hatch for adding LaTeX verbatim. Org’s simple interface
+    for shuffling text around, monitoring task progress and executing code blocks
+    makes it easy for eventual LaTeX documents to begin as Org files. Since everything
+    in Emacs composes with everything else, your system for (say) [fast LaTeX input](/software/latex-input-for-impatient-scholars/)
+    transfers over to Org mode seamlessly.\n\nSecond, the fact that Org is versatile
+    as a publishing tool implies that some benefits of better LaTeX support transfer
+    over to other formats too, like equations in HTML or ODT exports.\n\nThere is
+    a wide swath of applications built on Org mode that benefit from LaTeX math input,
+    such as Org Roam and Org Noter. For these applications converting Org documents
+    to LaTeX is not the goal, as they are not primarily publication tools: they stick
+    around as private digital archives, and better LaTeX support is a bonus to the
+    user’s expressivity.\n\nReal-time feedback when editing LaTeX snippets is a categorical
+    improvement to the user’s experience. I did not realize this when I started work
+    on `org-latex-preview`, but now I wouldn’t want to LaTeX without it..\n\nFinally,
+    we _can_ keep Org mode out of the picture: `org-latex-preview` can technically
+    work anywhere in Emacs, and in every major-mode. it’s just not there yet.\n\nBut
+    perhaps the most germane reason is that Emacs users don’t shy away from settling
+    comfortably into tiny, cramped and poorly insulated niches. Comes with the territory!\n\n##
+    The Objectives\n\n### Never Block Emacs\n\nEmacs users are closely acquainted
+    with its frequent unresponsiveness. You’re never more than one minor-mode or mode
+    line indicator away from causing Emacs to block or lag. While it’s not a big ask
+    to wait a second for the result of an action _you_ initiate, the unresponsiveness
+    often manifests as short random freezes, which is unacceptable. But there’s more.
+    Beyond the annoyance and inconvenience, poor responsiveness denies us an entire
+    class of uses: real-time feedback is everything for interactive applications.\n\nOwing
+    to both its design and age, Emacs is not very well suited for asynchronous applications.
+    Certain patterns of asyn"
+  error:
+  fetched_at: '2026-11-02T10:40:05Z'
+archived_at: '2026-11-02T10:40:05Z'

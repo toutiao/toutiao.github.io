@@ -5,14 +5,14 @@ post:
   title: Avoid Public Functions Calling Other Public Functions
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   hn_url: https://lobste.rs/s/k508we
-  score: 87
+  score: 100
   author: telemachus
   posted_at: '2026-10-31T18:05:03Z'
-  fetched_at: '2026-11-02T00:22:33Z'
+  fetched_at: '2026-11-02T10:39:57Z'
   article_url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-02T00:22:40Z'
-  raw_comment_count: 20
+  article_fetched_at: '2026-11-02T10:40:05Z'
+  raw_comment_count: 22
   tags:
   - api
   - programming
@@ -51,7 +51,7 @@ comments:
   text: |-
     A concrete thing related to this I just ran into yesterday, is that when reporting certain kinds of errors, I collect a stack trace for later rendering to indicate which public function call was responsible for the creation of a particular artifact.
     You can make the first stack frame be the callsite of the public function by capturing the return address there, and then passing that to all the private functions. If you called another public function, it would break this pattern because the call stack would contain 2 of the public functions. Not a big deal but it falls neatly into the pattern described by the article.
-  score: 19
+  score: 21
   posted_at: '2026-10-31T21:08:12Z'
 - id: lo-pzdunp
   parent_id: '0'
@@ -63,7 +63,7 @@ comments:
     Though, if using the avoid public->public rule works as a mechanism to help where
     there might be ambiguity or a lack of discipline then, sure, could be a good best
     practice.
-  score: 18
+  score: 22
   posted_at: '2026-10-31T22:09:31Z'
 - id: lo-srfixy
   parent_id: '0'
@@ -83,7 +83,7 @@ comments:
     Which is, imo, a natural, but horrible consequence of misguided approach to testing. You shouldn’t be mocking your methods, you should mock your IO
 
     Is mocking a MyCustomResourceStore “mocking your IO”, or does “mock your IO” refer to some lower layer of the I/O stack? Where does I/O begin?
-  score: 5
+  score: 6
   posted_at: '2026-10-31T22:27:21Z'
 - id: lo-1ikynx
   parent_id: '0'
@@ -101,7 +101,7 @@ comments:
   text: Or you could do whatever makes the most sense at a given moment and then when
     the circumstances change, refactor your code so it keeps making the most sense
     under the new circumstances
-  score: 1
+  score: 2
   posted_at: '2026-11-01T08:03:17Z'
 - id: lo-fwu0ct
   parent_id: '0'
@@ -109,7 +109,7 @@ comments:
   text: 'It depends: for example, in Rust''s Vec there are a lot of pub methods that
     call other pub methods for a bunch of different reasons (safety, reuse, allocator
     API, ..).'
-  score: 3
+  score: 5
   posted_at: '2026-11-01T11:07:26Z'
 - id: lo-xaztk2
   parent_id: '0'
@@ -130,7 +130,7 @@ comments:
     so trivial that it hardly needs testing -- it doesn't do IO, and it doesn't do
     logic -- it just threads the data from the MCRS call to the logic function, which
     is something the typechecker can check for you."
-  score: 5
+  score: 10
   posted_at: '2026-11-01T12:01:15Z'
 - id: lo-t1aipx
   parent_id: '0'
@@ -143,7 +143,7 @@ comments:
     Build public APIs to meet requirements and be stable.
     Understand the layering in your system and don’t have lower layers depend on higher layers (except via explicit dependency injection).
     Design your APIs to be composable.
-  score: 25
+  score: 34
   posted_at: '2026-11-01T12:03:17Z'
 - id: lo-yxlnky
   parent_id: '0'
@@ -155,7 +155,7 @@ comments:
     But then, to test implementation of the thin waist itself, you want to cut at the layer of syscalls. This second cut is significantly messier, and gives relatively less bang for buck, but is still a good idea to have.
 
     The first layer tests logical, the second layer tests physical.
-  score: 4
+  score: 6
   posted_at: '2026-11-01T12:58:40Z'
 - id: lo-xcmwkb
   parent_id: '0'
@@ -163,7 +163,7 @@ comments:
   text: |-
     My tuppence worth: if foo() can be implemented in terms of bar(), then that suggests the API isn’t well factored. Maybe one of them is at a different level of abstraction?
     I note that features like Java’s default methods on interfaces encourage public methods to depend on other public methods, because that is all that is visible.
-  score: 1
+  score: 2
   posted_at: '2026-11-01T13:22:01Z'
 - id: lo-tfmvdm
   parent_id: '0'
@@ -200,7 +200,7 @@ comments:
   parent_id: '0'
   author: snej
   text: OP did say it’s OK to have helper functions that call only other public functions.
-  score: 7
+  score: 10
   posted_at: '2026-11-01T15:20:01Z'
 - id: lo-rj84mv
   parent_id: '0'
@@ -210,7 +210,7 @@ comments:
     function that acquires the mutex, causing deadlock. If you have a rule that public
     functions grab the mutex and internal functions can assume the mutex is held,
     and the class never calls its own public methods, you avoid the problem.
-  score: 2
+  score: 4
   posted_at: '2026-11-01T15:27:57Z'
 - id: lo-ojoyf8
   parent_id: '0'
@@ -219,8 +219,34 @@ comments:
     else is wrong with your design. Maybe you shouldn't have public member functions
     for this at all. Maybe you should be using a more functional design. Maybe you
     should be using a less OO and more procedural design. Something is wrong.
-  score: 1
+  score: 2
   posted_at: '2026-11-01T20:43:13Z'
+- id: lo-azi0i6
+  parent_id: '0'
+  author: david_chisnall
+  text: That actually addresses the problem. The way that you capture a source location
+    in C++ is to have a source location as a default-initialised parameter. If you
+    have two public functions that do this, the one that calls the other just passes
+    the source location rather than relying on the implicit value, so the reported
+    source location will be the outer public call site.
+  score: 1
+  posted_at: '2026-11-02T08:33:10Z'
+- id: lo-odkqt4
+  parent_id: '0'
+  author: david_chisnall
+  text: 'Recursive mutexes exist for pretty much exactly this reason. They are the
+    easiest way to make a non-thread-safe library thread safe: every public API call
+    grabs the mutex and releases it on return. They’re not quite as efficient as non-recursive
+    ones, but they’re not that expensive: typically the recursion check is done on
+    the failure case: try to acquire the lock. If you succeeded then continue. If
+    you failed, check if the current owner is you and increment the counter if so.
+    On release, check if the counter is 0, drop the lock if so and decrement the counter
+    if not. Once you move to fine-grained locking, lock acquisition tends to be further
+    away from the public API entry points, the problems arise if you call a public
+    API in the middle of something that is transaction shapes, and then you can get
+    lock-order reversal.'
+  score: 2
+  posted_at: '2026-11-02T08:38:52Z'
 article:
   url: https://matklad.github.io/2026/10/29/pub-calls-pub.html
   title: Avoid Public Functions Calling Other Public Functions
@@ -269,4 +295,4 @@ article:
     they don’t absolve you from thinking!"
   error:
   fetched_at: '2026-10-31T21:08:24Z'
-archived_at: '2026-11-02T00:22:40Z'
+archived_at: '2026-11-02T10:40:05Z'

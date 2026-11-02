@@ -1,0 +1,147 @@
+---
+post:
+  id: lo-8o9wus
+  source: lobsters
+  title: A Specialised Haskell Processor on FPGA
+  url: https://bathtub-01.github.io/technical/ouros-demo/
+  hn_url: https://lobste.rs/s/8o9wus
+  score: 17
+  author: veqq
+  posted_at: '2026-11-01T16:13:20Z'
+  fetched_at: '2026-11-02T10:39:57Z'
+  article_url: https://bathtub-01.github.io/technical/ouros-demo/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-02T10:40:04Z'
+  raw_comment_count: 3
+  tags:
+  - hardware
+  - haskell
+comments:
+- id: lo-mswxgo
+  parent_id: '0'
+  author: confusomu
+  text: |-
+    Great PhD research topic. I love seeing these non-conventional processors.
+    Apparently, Scala can be used as an HDL with Chisel, which then compiles it down to SystemVerilog, as per the Vivado project creation script.
+  score: 1
+  posted_at: '2026-11-01T20:09:02Z'
+- id: lo-k0dofq
+  parent_id: '0'
+  author: Shorden
+  text: |-
+    Haskell (well, technically a different language that shares syntax and semantics with Haskell) can also be used for HDL!
+    I'm not talking about BlueSpec, I'm talking about Clash! Really cool to be able to run most of your design just like a regular program (not to be confused with simulating your design, although Clash can also do that).
+  score: 5
+  posted_at: '2026-11-02T02:28:38Z'
+- id: lo-npfqwz
+  parent_id: '0'
+  author: confusomu
+  text: |-
+    Never heard of Clash. Thanks for sharing!
+    I don't have any experience with pure functional languages, so the syntax is somewhat daunting, even for a UART example, but this is just a question of practice. In contrast to VHDL, the language seems much less explicit with regards to type annotations, kind of like Amaranth.
+  score: 1
+  posted_at: '2026-11-02T05:09:19Z'
+article:
+  url: https://bathtub-01.github.io/technical/ouros-demo/
+  title: A Specialised Haskell Processor on FPGA | Yukang Xie
+  fetch_status: success
+  content: "_I follow Lennart Augustsson’s approach when he was presenting [MicroHs](https://github.com/augustss/MicroHs)
+    — give the demo first._\n\n_This is a Haskell program running on a specialised
+    processor, which is hosted on an FPGA and talks through a UART port:_\n\n ![fig1](/technical/ouros-demo/demo.gif)\n\n_There
+    is no software runtime or “kernel trap” underneath, everything is handled by the
+    hardware processor._\n\n_There is a more detailed [demo video](https://youtu.be/cafTcH-DuZM).
+    If you want to reproduce this demo, either by running it on your FPGA or using
+    our simulator, see the [guidance](#guidance)._\n\n## Introduction\n\nMy PhD study
+    topic is about specialised hardware design for non-strict functional languages.
+    This post talks about my recent work on adding IO capability into our Haskell
+    processor and putting it on an FPGA, with a goal of convincing people that a Haskell
+    processor is a cute idea.\n\nSpecialised hardware for functional languages actually
+    has a lot of interesting [history](https://haflang.github.io/history.html#event-functional-hardwarebr-1924-2024),
+    especially in the 80s. This idea was largely abandoned during the 90s, because
+    of better software implementation and the evolving speed of standard CPUs at the
+    time.\n\nFor reasons well known, domain-specific architectures are becoming interesting
+    again. We try to investigate the possibility of this old idea in today’s context.
+    I will present the hardware architecture, IO handling, FPGA implementation results,
+    and some limitations of this work.\n\n## Architecture Overview\n\nOur processor
+    is called **Ouros** , a combinator-based graph reduction machine. Many design
+    details, including representation of combinators, thread management (Ouros can
+    do automatic multi-threading!) and garbage collection, can be found in our paper.
+    The figure below is an overview of the processor architecture.\n\n ![fig2](/technical/ouros-demo/full-arch.svg)\n\nUnlike
+    a conventional processor, Ouros does not execute a sequence of instructions. Instead,
+    a Haskell program is compiled into _combinator graphs_, and execution is a process
+    of repeatedly reducing function applications. Each application (we call it an
+    _App_) is represented by a fixed-size word containing a function and its arguments.
+    Larger expressions are stored in the heap as multiple Apps connected by pointers.\n\nThe
+    main components are the **Dereference Heap** , which follows pointers and manages
+    threads; the **Reducer** , which performs combinator reduction; and the **ALU**
+    , which handles arithmetic. Apps move between these components as data tokens,
+    and each component processes them whenever its input is ready. This is why we
+    call Ouros _dataflow-driven_, rather than instruction-driven. Ouros also supports
+    relatively large combinators, which can save quite a few reduction steps. Readers
+    interested in the combinators and how we compile Haskell into them can refer to
+    our earlier paper on structured combinators and our [MicroHs fork](https://github.com/bathtub-01/MicroHs).\n\nAnother
+    interesting feature is automatic fine-grained multi-threading. For example, when
+    an arithmetic operation needs two independent values, Ouros can evaluate them
+    in separate threads without any explicit threading code in the Haskell program.
+    These threads share the same hardware pipeline. There is also a concurrent hardware
+    garbage collector, which reclaims unused heap cells alongside normal execution.\n\n##
+    Handling IO in Ouros\n\nAdding IO allows the Ouros processor to become a standalone
+    computer, rather than just a machine for evaluating pure expressions. The question
+    is how to introduce side effects without hurting the graph reduction model.\n\nWe
+    use the familiar state-passing representation of the `IO` monad:\n\n    type World
+    = Int\n    newtype IO a = IO (World -> (a, World))\n    \n    runIO :: IO a ->
+    World -> (a, World)\n    runIO (IO f) = f\n    \n    instance Monad IO where\n
+    \     return a = IO (\\w -> (a, w))\n    \n      (IO m) >>= k = IO (\\w ->\n        case
+    m w of\n          (a, w') -> runIO (k a) w')\n\nHere `World` is just a dummy `Int`,
+    not a representation of the actual world. The important part is the dependency:
+    each IO operation consumes a World token and produces one for the next operation.
+    This gives the operations an order, even though the processor evaluates Haskell
+    lazily.\n\nThe low-level primitive IO interface is intentionally kept simple:\n\n
+    \   writeAXIReg :: Int -> Int -> IO ()\n    writeAXIReg = primitive \"IO.Write\"\n
+    \   \n    readAXIReg :: Int -> IO Int\n    readAXIReg = primitive \"IO.Read\"\n\nThey
+    allow a Haskell program to read and write a set of registers. The compiler turns
+    these primitives into special IO operations understood by the hardware. When an
+    IO operation is ready, a dedicated IO unit performs the corresponding **AXI4-Lite**
+    transaction, and the result goes back into the normal graph reduction pipeline.
+    The operation only finishes after the bus transaction completes.\n\nThe AXI4-Lite
+    details are hidden from the Haskell program. From the programmer’s point of view,
+    it is simply reading and writing registers, some of which are connected to the
+    outside world. This is how we get actual side effects without a software runtime.\n\nCurrently
+    the FPGA demo only uses a UART, with the Haskell program polling its registers.
+    The same interface could also be connected to GPIOs, timers, a hardware random
+    number generator, etc.\n\n## Some FPGA Implementation Results\n\nThe FPGA board
+    I am using is [AUP-ZU3](https://www.realdigital.org/hardware/aup-zu3), which was
+    kindly donated by people from AMD.\n\nThe current design runs at **100 MHz** on
+    this board. Its resource usage is approximately **27% of LUTs, 7% of registers
+    and 40% of BRAM**. The BRAM usage is mainly determined by the heap and code memories,
+    so it can be adjusted by changing their sizes.\n\nWhat I find quite encouraging
+    is that the logic footprint is roughly in the range of a small pipelined RISC-V
+    core. Of course, this is not a like-for-like comparison, and Ouros has many limitations
+    (see below). Still, it is nice to see that we can have direct hardware support
+    for graph reduction, automatic threading and garbage collection within a fairly
+    small circuit budget.\n\n## Limitations and Discussion\n\n- **Limited primitives:**
+    Currently Ouros doesn’t support `Float` or `Double`; its ALU also doesn’t support
+    division on `Int` yet. It wouldn’t be very hard to add `Float` and more arithmetic
+    operations, but `Double` can be harder due to encoding.\n- **Missing Haskell features:**
+    I am totally relying on the MicroHs frontend to handle Haskell source, and haven’t
+    done any serious tests to check what language features are missing — my experience
+    suggests that basic features such as ADTs, list comprehensions and type classes
+    do work well (but I am not a decent Haskell programmer).\n- **No memory hierarchy:**
+    A heap memory of 8K×288-bit words and a code memory of 4K×288-bit words seems
+    to fit on the AUP-ZU3 board. A Haskell program with 1-2k lines can likely be hosted
+    in the code memory — but a more serious design to utilise the big off-chip memories
+    for programs with bigger heap footprint and code size might need considerable
+    engineering effort to build.\n- **No dynamic program loading:** Currently a Haskell
+    program needs to be compiled into a memory image before generating the FPGA hardware.
+    Dynamic loading might be achieved by adding some state machines for reset and
+    program injection.\n- **No interrupt in hardware:** We only have polling-based
+    IO; how to properly add interrupt to the system can be an interesting question,
+    but currently I don’t have an answer to it.\n\nAn immediate question someone might
+    ask is: _how does this machine compare to a PC running GHC-compiled code?_ This
+    is not easy to answer. If we only care about wall-clock speed, the FPGA demo is
+    likely to be several times slower than a modern laptop. However, the implementation
+    technology, circuit size, and power consumption model are all very different,
+    making a fair comparison difficult. Als"
+  error:
+  fetched_at: '2026-11-02T10:40:04Z'
+archived_at: '2026-11-02T10:40:04Z'
