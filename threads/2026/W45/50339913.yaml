@@ -4,14 +4,14 @@ post:
   title: 'Launch HN: Momentic (YC W24) – Agents that catch bugs by using your app'
   url: https://momentic.ai/
   hn_url: https://news.ycombinator.com/item?id=50339913
-  score: 137
+  score: 151
   author: wuweiweiwu
   posted_at: '2026-11-02T17:05:25Z'
-  fetched_at: '2026-11-03T05:42:54Z'
+  fetched_at: '2026-11-03T13:46:19Z'
   article_url: https://momentic.ai/
   article_fetch_status: success
   article_fetched_at: '2026-11-02T21:29:50Z'
-  raw_comment_count: 91
+  raw_comment_count: 98
 comments:
 - id: '50340196'
   parent_id: '50339913'
@@ -833,6 +833,17 @@ comments:
     and add new coverage upon your request.
   score: 0
   posted_at: '2026-11-03T01:58:49Z'
+- id: '50347052'
+  parent_id: '50339913'
+  author: karinago
+  text: 'Congrats on the launch. One thing I kept coming back to while reading: your
+    own pitch is that LLMs are bad at testing because they reinforce their own assumptions.
+    But Mo is built on millions of test traces from your own product. How do you keep
+    the harness from developing its own blind spots the same way, just at the harness
+    level instead of the model level? Is the DAG exploration enough to push agents
+    toward flows your training data underrepresents, or do you do something more deliberate?'
+  score: 0
+  posted_at: '2026-11-03T02:03:02Z'
 - id: '50347072'
   parent_id: '50339913'
   author: AgentMasterRace
@@ -917,6 +928,107 @@ comments:
   text: LLM bot account.
   score: 0
   posted_at: '2026-11-03T05:07:04Z'
+- id: '50348584'
+  parent_id: '50339913'
+  author: throwaway7783
+  text: I&#x27;m curious to see benchmarks when you have access to source code. While
+    traditional QA does not get access to the codebase, with LLMs being primary authors
+    of the code, there are no real practical barriers to giving code access to the
+    testing agents.<p>At my last job, we did this - gave access to codebase to codex&#x2F;CC,
+    allowed it to drive the app via browser (+ playwright). It not only found bugs
+    but also correlated them to relevant UI and backend code. We didn&#x27;t benchmark
+    against anything else, but it was amazing to see it in action.
+  score: 0
+  posted_at: '2026-11-03T05:57:24Z'
+- id: '50348687'
+  parent_id: '50339913'
+  author: reverseblade2
+  text: |-
+    For this I created a concept called Guide coding and created a vs code extension that still keeps you in then loop.
+     Have a look<p><a href="https:&#x2F;&#x2F;marketplace.visualstudio.com&#x2F;items?itemName=novian.guide-coding" rel="nofollow">https:&#x2F;&#x2F;marketplace.visualstudio.com&#x2F;items?itemName=novian.g...</a>
+  score: 0
+  posted_at: '2026-11-03T06:16:34Z'
+- id: '50348907'
+  parent_id: '50339913'
+  author: serifsadi
+  text: 'Most of the thread is about web, so a mobile question: do the agents run
+    on real devices, or only simulators and emulators? A lot of the bugs I chase only
+    show up on specific Android OEM builds or mid-range phones.'
+  score: 0
+  posted_at: '2026-11-03T06:55:27Z'
+- id: '50349515'
+  parent_id: '50339913'
+  author: bshafiq
+  text: How are you handling the failure modes when the agent gets stuck in a retry
+    loop? For example, if an element doesn&#x27;t load and the agent just keeps trying
+    to click it over and over. Are you using a hard max-steps limit, or do you have
+    a smarter way to detect when the agent&#x27;s state has stopped changing and kill
+    the run?
+  score: 0
+  posted_at: '2026-11-03T08:34:11Z'
+- id: '50350141'
+  parent_id: '50339913'
+  author: maxdo
+  text: So you compare a naked “find a bug” with real harness build of tears , know
+    how to test , lol . Is that an assumption that people stop building harness ?
+  score: 0
+  posted_at: '2026-11-03T10:19:43Z'
+- id: '50350626'
+  parent_id: '50345227'
+  author: staudtIT
+  text: 'Agreed, and the silent ones hide in the tooling too. This week we found that
+    Playwright&#x27;s element boxes are wrong inside an iframe with CSS zoom on it:
+    it put a heading at x=1427 in a 1280 px window. Seven of our e2e tests failed
+    loudly on that, which was fine. But our screenshot script used the same boxes
+    to decide whether a page fit the pane, concluded it never did, and quietly zoomed
+    every preview down to 40 %. It passed and produced pictures, and only a person
+    looking at them noticed. It now measures inside the frame instead (getBoundingClientRect
+    against the frame&#x27;s own innerWidth).'
+  score: 0
+  posted_at: '2026-11-03T11:24:09Z'
+- id: '50351057'
+  parent_id: '50339913'
+  author: moon0917
+  text: Funny seeing Saleor in your benchmarks. I was digging through that codebase
+    recently for something else and ran into a nasty bug along those same lines.<p>They
+    have a price recalculation task meant to only run on dirty listings, except someone
+    forgot to assign the filtered queryset back to the variable. So it just recomputed
+    every single listing on every run. The unit test still greenlit it for completely
+    unrelated reasons, meaning it probably sat there burning cycles in prod for ages
+    because the final output was technically valid. Does Mo catch that kind of silent
+    no-op where the external state looks fine, or does it mostly hook into visible
+    state diffs?
+  score: 0
+  posted_at: '2026-11-03T12:16:16Z'
+- id: '50351413'
+  parent_id: '50339913'
+  author: gophigure
+  text: When a user marks a finding as &quot;not a bug,&quot; does Mo learn from that
+    for the next run or does it report the same one again?
+  score: 0
+  posted_at: '2026-11-03T12:52:20Z'
+- id: '50351711'
+  parent_id: '50343788'
+  author: khasan222
+  text: I used playwright aria snapshots mainly, and less on screenshots because there
+    is a lot of unnecessary info in the screenshot, but the aria snapshots do really
+    well. Have you tried using aria snapshots for exploration too?<p>Also wow I have
+    been building something similar to that 2 year endeavor. But I didn’t think to
+    store the tests in the actual codebase because the idea was to never look at the
+    codebase for the vibecoders and such. But reading all of this I’m rethinking my
+    technique there, why have the artificial constraint?
+  score: 0
+  posted_at: '2026-11-03T13:26:32Z'
+- id: '50351710'
+  parent_id: '50339913'
+  author: bsp580
+  text: 'When an agent finds a bug in a mobile app, how much does it see below the
+    UI? A lot of the failures I run into aren&#x27;t visible on screen: a request
+    that returns a 200 with an error body, a retry loop, a call that quietly fails.
+    Do the agents get the network traffic for a failed flow, or only screenshots and
+    the view hierarchy?'
+  score: 0
+  posted_at: '2026-11-03T13:26:32Z'
 article:
   url: https://momentic.ai/
   title: AI QA Engineer & AI Testing Platform | Momentic
@@ -1189,4 +1301,4 @@ article:
     Mo is out of beta. Start a session from your coding agen
   error:
   fetched_at: '2026-11-02T21:29:50Z'
-archived_at: '2026-11-03T05:42:57Z'
+archived_at: '2026-11-03T13:46:22Z'
