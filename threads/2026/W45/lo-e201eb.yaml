@@ -1,0 +1,240 @@
+---
+post:
+  id: lo-e201eb
+  source: lobsters
+  title: The Ubuntu 26.04 Rust sudo is not compatible with standard sudo
+  url: https://utcc.utoronto.ca/~cks/space/blog/linux/Ubuntu2604RustSudoNotCompatible
+  hn_url: https://lobste.rs/s/e201eb
+  score: 36
+  author: twp
+  posted_at: '2026-11-03T15:23:21Z'
+  fetched_at: '2026-11-03T20:48:24Z'
+  article_url: https://utcc.utoronto.ca/~cks/space/blog/linux/Ubuntu2604RustSudoNotCompatible
+  article_fetch_status: success
+  article_fetched_at: '2026-11-03T20:48:25Z'
+  raw_comment_count: 20
+  tags:
+  - linux
+  - rust
+comments:
+- id: lo-6r8x5m
+  parent_id: '0'
+  author: JulianSildenLanglo
+  text: Of all the possible binaries you can choose to break compatibility with, sudo
+    has got to be one of the most important to lamppost the breaking changes on.
+  score: 9
+  posted_at: '2026-11-03T15:35:27Z'
+- id: lo-dxzkhe
+  parent_id: '0'
+  author: lilac
+  text: |-
+    this feels like conflating two goals of why you might want to rewrite something like this in rust.
+
+    memory safety (good motivator for rust specifically here)
+    cleaning up tech debt, learning lessons (not as rust specific)
+
+    if you’re naming yourself after an existing project and then tagging that language onto the name as the key differentiator, I feel like you’re implicitly promising not to go too crazy with that second goal. otherwise, why not pick a new name? there are people who might find a new thing that isn’t compatible interesting, but there are way more who will be tolerant of a thing that is just drop in compatible.
+    I wonder how this could’ve gone if ubuntu had waited until 26.10 to swap in these rust equivalents and then used some of the newer models that we didn’t have last year to do more compatibility testing up front long before an lts release..
+  score: 15
+  posted_at: '2026-11-03T16:08:28Z'
+- id: lo-azeiox
+  parent_id: '0'
+  author: hunger
+  text: |-
+    To be fair: The sudo-rs project pretty clearly states that it does not aim to cover every feature that sudo has. Their README says so right in the first few lines.
+    Sudo is under a permissive license, just like the rust port. I fail to see what the license problem is in this case.
+  score: 14
+  posted_at: '2026-11-03T16:09:21Z'
+- id: lo-iqoung
+  parent_id: '0'
+  author: hoistbypetard
+  text: |-
+    My fully patched vivaldi is apparently suspicious.
+    https://l.e42.us/0bcsSWBF
+    It seems likely that there's a better approach than this.
+  score: 2
+  posted_at: '2026-11-03T16:30:25Z'
+- id: lo-xeki8r
+  parent_id: '0'
+  author: ekuber
+  text: "https://github.com/trifectatechfoundation/sudo-rs/\nThe first sentence:\n\nSudo-rs
+    is being actively maintained; features you might expect from original sudo may
+    still be unimplemented or not planned.\n\nFurther down, in the section \"Differences
+    from original sudo\":\n\n• To prevent a common configuration mistake in the sudoers
+    file, wildcards are only supported in argument positions for a command as the
+    final argument. E.g., %sudoers ALL = /sbin/fsck* will allow sudo fsck and sudo
+    fsck_exfat as expected, and %sudoers ALL = /sbin/service ntp * will allow a user
+    to control the ntp service. but %sudoers ALL = /bin/rm *.txt will not allow an
+    operator to run sudo rm README.txt|, nor |sudo rm -rf /home .txt, as with original
+    sudo.\nIf you find a common use case for original sudo missing, please create
+    a feature request for it in our issue tracker.\n\nTo me it reads that there's
+    a bug report for only supporting * as the trailing pattern. Just that change would
+    have made the original use case work:\n%corestaff ALL=NOPASSWD: /usr/bin/mailq
+    \"\", \\\r\n                     /usr/sbin/exim -bp, \\\r\n                     /usr/sbin/exim
+    -bp[acru]\n\nBut\n\nI haven't filed a bug because we aren't Canonical's free debugging
+    resource\n\nWhich feels to me always as \"I want to vent my frustration, not a
+    solution\". I encounter a lot of people on that frame of mind, because I seek
+    them out to file tickets to the toolchain I maintain. They are generally not receptive
+    to trying to find a fix with their involvement or requests to file tickets, but
+    often enough they are that it is worth it to remind people that filing tickets
+    is how developers find out about things that don't work. Many people have been
+    burned by bad issue trackers and worse reception to filing tickets, so it is an
+    attempt to fight that. Since starting that I have changed a lot of how I deal
+    with my own frustration. I'd like to think that I am now more constructive.\nThese
+    is an open source project. If filing a ticket is as easy as posting on social
+    media, and you don't, you're not sticking it to the man, you're sticking it to
+    the other users of that software."
+  score: 10
+  posted_at: '2026-11-03T16:33:36Z'
+- id: lo-uocttx
+  parent_id: '0'
+  author: mort
+  text: It annoys me so much that they removed -E. I used that all the time. By far
+    the easiest way to run a graphical tool as root is with sudo -E. I don't know
+    what the replacement is even meant to be; are you meant to type out the list of
+    DISPLAY, WAYLAND_DISPLAY, XDG_RUNTIME_DIR, and whatever else I'm forgetting?
+  score: 7
+  posted_at: '2026-11-03T16:33:47Z'
+- id: lo-yojwbv
+  parent_id: '0'
+  author: ekuber
+  text: |-
+    It seems like the intended workflow is to allow list env vars using env_keep in your sudoers file. I tend to agree that allow listing is a much saner default than deny listing.
+    https://github.com/trifectatechfoundation/sudo-rs/issues/1299#issuecomment-3421511084
+  score: 1
+  posted_at: '2026-11-03T17:00:30Z'
+- id: lo-cjtmzd
+  parent_id: '0'
+  author: mort
+  text: |-
+    Does that then mean that the sudo-rs's official position is that Ubuntu should've provided a list of env vars with env_keep?
+    Because normal users shouldn't be expected to know the ins and out of which exact env vars they need to use to run a program as root. It differs between distros and between desktop environments, and there are many environment variables which you should expose to graphical applications but which many applications will happen to work without. And telling non-technical users that they ought to edit their sudoers file seems like a recipe for disaster in general.
+  score: 3
+  posted_at: '2026-11-03T17:07:18Z'
+- id: lo-60w24i
+  parent_id: '0'
+  author: ekuber
+  text: I don't know if there is an official position (yet?), but that point was raised
+    in the thread as one of the ways to go.
+  score: 1
+  posted_at: '2026-11-03T17:16:32Z'
+- id: lo-1ncimy
+  parent_id: '0'
+  author: dvogel
+  text: |-
+    The issue I have with the project is that they do nothing to ease transition. e.g. They don't support requiretty and that is good IMHO because that option was never dependable. However instead of parsing it and ignoring it (perhaps with a warning) they instead break on it. If the critique of the option is that it wasn't really doing much then ignoring it won't do much harm. But, much worse, is that they also break on !requiretty. So I'm specifically trying to turn off a feature they don't support and they still break.
+    Maybe that's not something the upstream project wants to take on but it seems like the kind of patch I want from a vendor like Canonical who are supposed to help me transition between releases smoothly.
+  score: 7
+  posted_at: '2026-11-03T17:28:45Z'
+- id: lo-fshmso
+  parent_id: '0'
+  author: mjec
+  text: "If you really want the whole environment, you can do the following. You could
+    even use an alias for it:\nsudo --preserve-env=\"$(printf \"%s\" \"$(env | cut
+    -d= -f1)\" | tr '\\n' ',')\"\r\n\n(The printf bit is ugly, but the easiest way
+    for me to remove a trailing \\n.)"
+  score: 1
+  posted_at: '2026-11-03T17:41:53Z'
+- id: lo-sys06q
+  parent_id: '0'
+  author: accelbread
+  text: Same. https://docs.aws.amazon.com/greengrass/v2/developerguide/greengrass-nucleus-component.html#:~:text=On%20Ubuntu%2025.10%20and%20later%2C%20the%20default
+  score: 1
+  posted_at: '2026-11-03T17:49:05Z'
+- id: lo-vgrdsx
+  parent_id: '0'
+  author: hunger
+  text: |-
+    My point was sudo-rs works as designed. It might not be a great idea to use it in ubuntu, but the project can probably not do too much about that:-)
+    I guess I am a bit extreme here, but IMHO a systemd-based distribution should not ship sudo at all anymore -- or only as a wrapper script around run0 and without any promise of compatibility. But then I am just a user/dev on Linux systems and do not need to admin a ton of machines, so I understand that this is probably not going to happen anytime soon :-)
+  score: 4
+  posted_at: '2026-11-03T17:52:02Z'
+- id: lo-x0ic5i
+  parent_id: '0'
+  author: invlpg
+  text: |-
+    I want to vent my frustration, not a solution
+
+    He provides one: switching away from sudo-rs.
+  score: 4
+  posted_at: '2026-11-03T18:05:37Z'
+- id: lo-nfdm6z
+  parent_id: '0'
+  author: jfloren
+  text: If they don't actually intend to make it feature complete with sudo, they
+    should name it something else, like sudont, so we know.
+  score: 10
+  posted_at: '2026-11-03T18:22:49Z'
+- id: lo-roppw0
+  parent_id: '0'
+  author: nytpu
+  text: As is my qt-webengine based browser that uses the Qt release from eight days
+    ago. As is my Firefox 158.0 that released twenty-one days ago (I'll have to see
+    if it works on 159.0 from seven days ago, or if that's still too out-of-date and
+    suspicious).
+  score: 0
+  posted_at: '2026-11-03T18:30:27Z'
+- id: lo-r0mean
+  parent_id: '0'
+  author: nytpu
+  text: |-
+    It does block Firefox on Android 159.0 but not desktop Firefox 159.0, what a brilliantly written website.
+    EDIT: also blocks the latest Chromium 156.0, released fourteen days ago
+  score: 0
+  posted_at: '2026-11-03T18:40:02Z'
+- id: lo-qaztmn
+  parent_id: '0'
+  author: ThinkChaos
+  text: |-
+    Look into Systemd's run0, the motivation for it is basically that exact use case!
+
+    [run0] is very useful when you need to run something with privileges but still want all created files and directories to be owned by your current user.
+    [further down the thread...]
+    Instead of changing to root, we keep the current uid/gid and instead give it full ambient capabilities
+
+    https://mastodon.social/@daandemeyer/115565105032166177
+  score: 2
+  posted_at: '2026-11-03T18:56:11Z'
+- id: lo-21cyng
+  parent_id: '0'
+  author: johnklos
+  text: |-
+    They treat everyone as though we're all too dumb to know what's good for us, and they're taking proactive measures to protect us from ourselves.
+    What other huge company does that remind us of?
+  score: 2
+  posted_at: '2026-11-03T19:54:03Z'
+- id: lo-sgghcj
+  parent_id: '0'
+  author: thasso
+  text: With this in mind, it's puzzling to me why Canonical would replace standard
+    sudo with sudo-rs. My understanding of the change is that Ubuntu's "sudo" command
+    now behaves in meaningfully different ways that it did in the past. This kind
+    of silent changes does not seem desirable, especially not for a program like sudo.
+  score: 7
+  posted_at: '2026-11-03T19:54:43Z'
+article:
+  url: https://utcc.utoronto.ca/~cks/cspace-bad/cspace-generic-ua.html
+  title: You're using a tool with a too-generic User-Agent
+  fetch_status: success
+  content: "# You're using a tool with a too-generic User-Agent \n\nYou're probably
+    reading this page because you've attempted to access some part of [my blog (Wandering
+    Thoughts)](../space/blog/) or [CSpace](../space/), the wiki thing it's part of.
+    Unfortunately whatever you're using to do so has a HTTP User-Agent header value
+    that is too generic or otherwise excessively suspicious. Unfortunately, as of
+    early 2025 there's a plague of high volume crawlers (apparently in part to gather
+    data for LLM training) that behave like this. To reduce the load on [Wandering
+    Thoughts](../space/blog/) I'm experimenting with (attempting to) block all of
+    them, and you've run into this.\n\nAll HTTP User-Agent headers should clearly
+    identify what they are, and for non-browser user agents, they should identify
+    not just the software involved but also who specifically is using that software.
+    An extremely generic value such as \"`Go-http-client/1.1`\" is not something that
+    I consider acceptable any more.\n\nOne specific thing is that if your HTTP User-Agent
+    header contains an explicit marker that you are only 'compatible' with what your
+    User-Agent suggests, you must include an explicit, real URL that describes your
+    activities or the software. A minimal HTTP User-Agent such as 'Mozilla/5.0 (compatible;
+    mysoftware)' is not acceptable. The same is true if your HTTP User-Agent says
+    that you are a 'bot' of some sort; your bot needs a working URL explaining itself.
+    An email address is not sufficient in either case."
+  error:
+  fetched_at: '2026-11-03T20:48:25Z'
+archived_at: '2026-11-03T20:48:26Z'

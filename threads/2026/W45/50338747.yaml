@@ -4,14 +4,14 @@ post:
   title: Moving our warehouse off DuckDB
   url: https://posthog.com/blog/moving-off-duckdb
   hn_url: https://news.ycombinator.com/item?id=50338747
-  score: 181
+  score: 183
   author: emschwartz
   posted_at: '2026-11-02T16:02:26Z'
-  fetched_at: '2026-11-03T13:46:17Z'
+  fetched_at: '2026-11-03T20:48:19Z'
   article_url: https://posthog.com/blog/moving-off-duckdb
   article_fetch_status: success
-  article_fetched_at: '2026-11-02T21:29:48Z'
-  raw_comment_count: 117
+  article_fetched_at: '2026-11-03T20:48:19Z'
+  raw_comment_count: 119
 comments:
 - id: '50338958'
   parent_id: '50338747'
@@ -1048,44 +1048,65 @@ comments:
     more than anything else.<p>Failure to plan can’t be repaired with even more tokens.
   score: 0
   posted_at: '2026-11-03T13:31:30Z'
+- id: '50354770'
+  parent_id: '50347697'
+  author: roboben
+  text: Its not Trino, its the catalog you use in the back.
+  score: 0
+  posted_at: '2026-11-03T17:11:36Z'
+- id: '50356141'
+  parent_id: '50341562'
+  author: valyala
+  text: Try VictoriaLogs for your warehouse product next time. It provides efficient
+    storing and querying petabytes of wide events with hundreds of fields - see <a
+    href="https:&#x2F;&#x2F;docs.victoriametrics.com&#x2F;victorialogs&#x2F;keyconcepts&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;docs.victoriametrics.com&#x2F;victorialogs&#x2F;keyconcepts&#x2F;</a>
+    , and it provides very easy scaling path from single-node setup to cluster setup,
+    so you can start with an instance per customer and then gradually scale to many
+    storage nodes as workload grows - <a href="https:&#x2F;&#x2F;docs.victoriametrics.com&#x2F;victorialogs&#x2F;cluster&#x2F;#single-node-and-cluster-mode-duality"
+    rel="nofollow">https:&#x2F;&#x2F;docs.victoriametrics.com&#x2F;victorialogs&#x2F;cluster&#x2F;#singl...</a>
+    .
+  score: 0
+  posted_at: '2026-11-03T18:34:11Z'
 article:
   url: https://posthog.com/blog/moving-off-duckdb
-  title: Why we're moving our warehouse off DuckDB
+  title: Why we're moving our warehouse product off DuckDB
   fetch_status: success
   content: "![](data:image/svg+xml;charset=utf-8,%3Csvg%20height='1080'%20width='1920'%20xmlns='http://www.w3.org/2000/svg'%20version='1.1'%3E%3C/svg%3E)\n\n#
-    Why we're moving our warehouse off DuckDB\n\n- [\n ![](https://res.cloudinary.com/dmukukwp6/image/upload/c_scale,w_50/Property_1_ben_k_40ace61c8e)\nBenjamin
+    Why we're moving our warehouse product off DuckDB\n\n- [\n ![](https://res.cloudinary.com/dmukukwp6/image/upload/c_scale,w_50/Property_1_ben_k_40ace61c8e)\nBenjamin
     Knofe-Vider](/community/profiles/43006)\n\nNov 02, 2026\n\n- [Data warehouse](/blog/data-warehouse),
     \n- [Infrastructure](/blog/infrastructure), \n- [Engineering](/blog/engineering)\n\n####
-    Contents\n\n- \n- \n- \n- \n- \n\nFive months ago, [we rebuilt our warehouse on
-    DuckDB](/blog/why-we-rebuilt-our-data-warehouse) instead of ClickHouse. We did
-    it because a shared ClickHouse cluster couldn't handle hours-long modeling queries,
-    and it lacked a cost-based query optimizer. DuckDB gave every customer their own
-    instance, and tools like dbt could connect over Postgres. We're still fans.\n\nBut
-    we underestimated how big and complex our customers' workloads would get. We didn't
-    want them to have just a good experience, we wanted the best experience you can
-    get when you pay someone else to run your warehouse. It should work at any scale,
-    at a fair price.\n\nSo we spent the last three months re-architecting it, this
-    time without DuckDB.\n\n## DuckDB is brilliant on one machine\n\nWe love DuckDB.
-    It's probably the best single-node tool for analyzing heaps of data, and that
-    node can be your laptop. It's robust and reliable. It almost always finishes your
-    query, and if it runs out of memory, it spills to disk.\n\nThe same features that
-    are great locally gave us problems in the cloud. Customers ran more complex queries
-    than we expected, so we had to add huge instances. Adding disks was an option,
-    but queries would have been too slow and expensive to be viable.\n\nTo run a single-node
-    engine safely in the cloud, we have to size the worker before the query arrives.
-    The ergonomics here are wonky. We couldn't find a good way to tell customers what
-    resources their queries would need. Predicting CPU and memory for a specific query
-    was even harder.\n\nUsers shouldn't have to worry about this. They should be able
-    to run whatever they need to get their work done. Our job is to handle the rest
-    and make it as predictable as possible.\n\nWe hit other bottlenecks too, like
-    fetching lots of data from S3 without async fetching. DuckDB only added that recently.\n\n##
-    DuckLake is built for compatibility, not scale\n\nTo use DuckDB as a fully-fledged
-    data warehouse, we installed the [DuckLake](https://ducklake.select/2025/05/27/ducklake-01/)
-    extension by default. It is a new lakehouse format from the same creators and
-    follows the same principles as DuckDB: keep things simple and run on almost any
-    setup. That works well up to a point, but at PostHog's scale, we needed something
-    designed for distributed scale from the start.\n\nDuckLake's catalog schema has
-    to stay portable across many SQL databases, which limits engine-specific optimizations.
+    Contents\n\n- \n- \n- \n- \n- \n\nFive months ago, we rebuilt [PostHog's warehouse
+    product](/warehouse) on DuckDB instead of ClickHouse, as [we explained at the
+    time](/blog/why-we-rebuilt-our-data-warehouse). We did it because a shared ClickHouse
+    cluster couldn't handle hours-long modeling queries, and it lacked a cost-based
+    query optimizer. DuckDB gave every customer their own instance, and tools like
+    dbt could connect over Postgres. We're still fans.\n\nBut we underestimated how
+    big and complex our customers' workloads would get. We didn't want them to have
+    just a good experience, we wanted the best experience you can get when you pay
+    someone else to run your warehouse. It should work at any scale, at a fair price.\n\nSo
+    we spent the last three months re-architecting it, this time without DuckDB.\n\n##
+    DuckDB is brilliant on one machine\n\nWe love DuckDB. It's probably the best single-node
+    tool for analyzing heaps of data, and that node can be your laptop. It's robust
+    and reliable. It almost always finishes your query, and if it runs out of memory,
+    it spills to disk.\n\nThe same features that are great locally gave us problems
+    in the cloud. Customers ran more complex queries than we expected, so we had to
+    add huge instances. Adding disks was an option, but queries would have been too
+    slow and expensive to be viable.\n\nTo run a single-node engine safely in the
+    cloud, we have to size the worker before the query arrives. The ergonomics here
+    are wonky. We couldn't find a good way to tell customers what resources their
+    queries would need. Predicting CPU and memory for a specific query was even harder.\n\nUsers
+    shouldn't have to worry about this. They should be able to run whatever they need
+    to get their work done. Our job is to handle the rest and make it as predictable
+    as possible.\n\nWe hit other bottlenecks too, like fetching lots of data from
+    S3 without async fetching. DuckDB only added that recently.\n\n## DuckLake is
+    built for compatibility, not scale\n\nTo use DuckDB as a fully-fledged data warehouse,
+    we installed the [DuckLake](https://ducklake.select/2025/05/27/ducklake-01/) extension
+    by default. It is a new lakehouse format from the same creators and follows the
+    same principles as DuckDB: keep things simple and run on almost any setup. That
+    works well up to a point, but at PostHog's scale, we needed something designed
+    for distributed scale from the start.\n\nDuckLake's catalog schema has to stay
+    portable across many SQL databases, which limits engine-specific optimizations.
     At our scale, a single-table write could take more than three minutes because
     every commit re-read the statistics for the entire catalog.\n\nWe tuned DuckLake
     with table indexes and similar tweaks. But to keep offering DuckLake, we had to
@@ -1112,10 +1133,10 @@ article:
     an endless list of Postgres clients, and each expects its own niche Postgres behavior.
     Customers kept asking us to fix their client or library. We spent a lot of time
     shipping many of those fixes, but coverage never got good enough. We'd rather
-    spend our time building an excellent warehouse than chasing the long tail of Postgres
-    compatibility.\n\n## We're rebuilding on Trino with HogLake\n\nWe've learned not
-    to hype the tech behind a warehouse so much. What counts is the experience it
-    gives you.\n\nStill, we're happy to share what we're cooking next. We rebuilt
+    spend our time building an excellent warehouse product than chasing the long tail
+    of Postgres compatibility.\n\n## We're rebuilding on Trino with HogLake\n\nWe've
+    learned not to hype the tech behind a warehouse so much. What counts is the experience
+    it gives you.\n\nStill, we're happy to share what we're cooking next. We rebuilt
     everything around our own flavor of [Trino](https://trino.io/) and created our
     own open table format, HogLake. And yes, we're testing it at PostHog's petabyte
     scale first. We made it solid before handing it to design partners.\n\nIf your
@@ -1131,5 +1152,5 @@ article:
     steer it all from [Slack](/slack), [the web app](/ai), the desktop ([PostHog Desktop](/desktop)),
     or your own editor via [the MCP](/mcp).\n\n### Community questions"
   error:
-  fetched_at: '2026-11-02T21:29:48Z'
-archived_at: '2026-11-03T13:46:22Z'
+  fetched_at: '2026-11-03T20:48:19Z'
+archived_at: '2026-11-03T20:48:24Z'

