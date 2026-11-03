@@ -1,0 +1,166 @@
+---
+post:
+  id: lo-wgoato
+  source: lobsters
+  title: A Decade of Kill Bugs
+  url: https://alangrow.com/blog/a-decade-of-kill-bugs
+  hn_url: https://lobste.rs/s/wgoato
+  score: 35
+  author: acg
+  posted_at: '2026-11-02T21:23:24Z'
+  fetched_at: '2026-11-03T05:42:58Z'
+  article_url: https://alangrow.com/blog/a-decade-of-kill-bugs
+  article_fetch_status: success
+  article_fetched_at: '2026-11-03T05:42:58Z'
+  raw_comment_count: 3
+  tags:
+  - historical
+  - linux
+  - unix
+comments:
+- id: lo-p6rayh
+  parent_id: '0'
+  author: fanf
+  text: |-
+    Oh dear, this is the kind of slapstick that’s so painfully cringe it’s just sad.
+    I was a bit surprised by the early history: my guess would have been that killing a negative PID was introduced with the rest of the process group / job control features in BSD in the early 1980s. So I had a look in the CSRG archives:
+
+
+    userland kill(1) gained support in 1986 (same year as mentioned in the article) with a terse note that the kernel already supported it https://svnweb.freebsd.org/csrg/bin/kill/kill.c?r1=22692&r2=27200
+
+
+    the kernel code was provided by Sun the previous year https://svnweb.freebsd.org/csrg?view=revision&revision=18336
+
+
+    the man page (also 1985) says the feature was added for compatibility with System V https://svnweb.freebsd.org/csrg/lib/libc/sys/kill.2?r1=20034&r2=20999
+
+
+    I don’t know of an archive of System V source code from the 1980s so that’s as far as I’ll look.
+  score: 11
+  posted_at: '2026-11-02T22:44:01Z'
+- id: lo-kvc15b
+  parent_id: '0'
+  author: fanf
+  text: Comment removed by its author
+  score: 1
+  posted_at: '2026-11-02T23:18:00Z'
+- id: lo-kxxyyo
+  parent_id: '0'
+  author: acg
+  text: Yeah the historical question still interests me. Did V9 really originate negative
+    pid killing via /bin/kill, or did System V or SunOS already have it? If the main
+    use case was shell job control, maybe there wasn't yet a good reason to expose
+    it. The extent of my spelunking for the post was TUHS, the unix-history-repo,
+    and playing around with kill on old unixes in the browser via v86.
+  score: 3
+  posted_at: '2026-11-02T23:37:23Z'
+- id: lo-om8nes
+  parent_id: '0'
+  author: wonk
+  text: |-
+    I thought this was a great article. I appreciate the length they went to digging into the topic and contextualized it with historical facts. Like I didn’t know process groups were a thing and have been a thing since 1986. So much more to learn about.
+    Thanks for sharing.
+  score: 3
+  posted_at: '2026-11-03T04:24:58Z'
+article:
+  url: https://alangrow.com/blog/a-decade-of-kill-bugs
+  title: A Decade of Kill Bugs
+  fetch_status: success
+  content: "# A Decade of Kill Bugs\n\n* * *\n\nOn the morning of September 24th 2026,
+    [Endcrawl](https://endcrawl.com) had a brief outage. I'd just typed:\n\n    sudokill-TERM
+    -1490947\n\nAnd instantly all services went down.\n\nRight away I blamed myself.
+    Maybe I mistyped that number! Maybe my code had a signal handling bug. Maybe I
+    don't understand Unix as well as I think I do. Maybe I'm an idiot!\n\nAs it turned
+    out, the outage was caused by a bug in [`kill(1)`](https://man7.org/linux/man-pages/man1/kill.1.html).\n\nThis
+    is really surprising. The `kill` program is 50 years old. Its [spec](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/kill.html)
+    is simple and stable. It's probably exercised a billion times a day.\n\nA bug
+    in `kill` was so surprising that, once I'd found it, I couldn't stop there. I
+    needed to know how this bug came to be, and what had led the programmers so badly
+    astray. When I eventually found the root cause, there was an even bigger surprise.
+    It had led to not just one bug, but a whole series of `kill` bugs that shipped
+    in Ubuntu 14, 16, 18, 22 and 24 LTS.\n\nThis post documents a decade of `kill`
+    bugs, then makes some recommendations.\n\n## [An Outage Not Understood Happens
+    Again](#an-outage-not-understood-happens-again)\n\nBack to the outage. I scrambled
+    to put the fire out. After that came a surprise second fire. By the end of all
+    this I was pretty demoralized. I was ready to accept that I'd made a dumb mistake
+    and ready to get on with the work day. There was this nagging feeling though…\n\nRemember
+    that [final scene](https://www.youtube.com/watch?v=kCXTq-fWWio) in Burn After
+    Reading?\n\n> \"What did we learn Palmer?\"\n> \n> \"I don't know sir.\"\n> \n>
+    \"I don't f\\*\\*king know either. I guess we learned not to do it again.\"\n>
+    \n> \"Yes sir.\"\n> \n> \"Although I'm f\\*\\*ked if I know what we did...\"\n\nWhat
+    had just happened? Was I about to be hit with a third outage? How could I be sure?\n\nAn
+    outage not understood is an outage that happens again. That nagging feeling I
+    had was a call to understand. With a sigh, I put all my other work on hold and
+    started a proper post mortem.\n\n## [The Proximate Cause](#the-proximate-cause)\n\nLet's
+    examine the command that caused the outage:\n\n    sudokill-TERM -1490947\n\nThe
+    negative number here is a [process group identifier](https://en.wikipedia.org/wiki/Process_group),
+    or pgid for short. A pgid is like a pid, but identifies a group of related processes.
+    By convention, killing a positive number sends a signal to a single process, while
+    killing a negative number signals all processes in that process group.\n\nI was
+    attempting to cancel a big Endcrawl 7k test render. A normal person would have
+    killed one of the processes involved and let failures cascade to the others. But
+    killing the whole group simultaneously strikes me as cleaner.\n\nProcess group
+    signaling isn't some exotic operation. You use it all the time. Every time you
+    `^C` a command, the tty sends `SIGINT` to the foreground process group. Interactive
+    shells run all but the simplest commands in a new process group, which among other
+    things makes [job control](https://en.wikipedia.org/wiki/Job_control_(Unix)) possible.\n\nProcess
+    group signaling is in fact an awesome Unix innovation. I love it so much I [added
+    it to daemontools](https://github.com/bruceg/daemontools-encore/pull/16), where
+    `svc -+h` now avoids orphans in a multiprocess service bounce.\n\nAt any rate,
+    imagine my surprise when the command didn't just kill those render processes,
+    but killed _all processes on the machine_ save one!\n\n## [The Bug](#the-bug)\n\nHere's
+    the relevant snippet from [procps 4.0.4](https://gitlab.com/procps-ng/procps/-/releases/v4.0.4),
+    the provider of `/bin/kill` in Ubuntu 24.04 LTS. Can you spot the bug?\n\n    opterr=0;/\\*
+    suppress errors on -123 \\*/while((i=getopt\\_long(argc,argv,\"l::Ls:hVq:\",longopts,&optindex))!=-1)switch(i){/\\*
+    ... \\*/case'?':if(!isdigit(optopt)){xwarnx(\\_(\"invalid argument %c\"),optopt);print\\_usage(stderr);}else{/\\*
+    Special case for signal digit negative \\* PIDs \\*/pid=(long)('0'-optopt);if(!execute\\_kill((pid\\_t)pid,signo,use\\_sigqueue,sigval))exitvalue=EXIT\\_FAILURE;exit(exitvalue);}/\\*
+    ... \\*/}\n\nMy initial guess was wrong. There's no underflow or overflow bug
+    with `-1490947`.\n\nNotice we're in the unrecognized option switch case. Here's
+    what [`getopt(3)`](https://man7.org/linux/man-pages/man3/getopt.3.html) says about
+    unrecognized options:\n\n> By default, `getopt()` prints an error message on standard
+    error, places the erroneous option character in optopt, and returns `'?'` as the
+    function result.\n\nAha. The `optopt` variable only holds the first character
+    after the dash, not the whole negative pid. When character `1` is subtracted from
+    character `0` we get a pid of `-1`. What happens when you kill pid `-1`? [Bad
+    things](https://man7.org/linux/man-pages/man2/kill.2.html):\n\n> If pid equals
+    -1, then sig is sent to every process for which the calling process has permission
+    to send signals, except for process 1 (init).\n\nThis ran as root, so the misparsing
+    of `-1490947` as `-1` killed every process but init. Bug found, mystery solved.\n\n##
+    [Wait But Why](#wait-but-why)\n\nExcept for me this just raised more questions.
+    Why is the code assuming the unrecognized option is a \"signal [sic] digit negative
+    PID\"? Why is the single digit negative pid case special, and what handles the
+    general case of a multidigit negative pid?\n\nMoreover, how could a bug like this
+    exist in 2026, and in a Ubuntu LTS release no less? Has it always been there?\n\nNo,
+    that couldn't be. I've killed process groups in the past. And the `kill -TERM
+    -12345` thing is an ancient Unix incantation. This used to work dammit!\n\nThinking
+    back, I could vaguely remember some negative pid kills gone awry. Never in an
+    \"oops this killed everything in sight\" way. More in a \"weird, nothing happened\"
+    way, or a \"poof there goes my shell\" way. Minor ways more easily shrugged off
+    as user error.\n\nIt turns out I wasn't imagining these. The last decade has been
+    a rough one for negative pid killers. There have been no less than **FOUR** distinct
+    bugs around negative pids. And they all shipped in Ubuntu LTS versions.\n\n##
+    [The History](#the-history)\n\nBefore I tell the tale of four bugs, let's go even
+    farther back in Unix history.\n\nIn the beginning Unix had processes. By 1973
+    it had the `kill(1)` program. But it took a decade to evolve process groups as
+    we now know them. It wasn't until [Unix V9 in 1986](https://www.tuhs.org/cgi-bin/utree.pl?file=V9/cmd/kill.c)
+    that you could kill a process group via negative pid. Near as I can tell, negative
+    pid killing has worked fine in the BSDs all these years.\n\nIn the early 90s this
+    thing called Linux came along. Although Linux initially borrowed a lot of BSD
+    code for its userland, by the late 90s this approach was in legal jeopardy. Everything
+    had to be rewritten, every wheel reinvented. And quickly. It was an exciting time
+    to be a unix programmer.\n\nAnd so it came to pass that Linux's `kill` was reinvented
+    written by [Albert Calahan](https://lwn.net/Articles/851716/). After Albert DoSed
+    himself by forking 5 children, Debian downstream maintainer [Craig Small](https://dropbear.xyz/software/)
+    took over poor old neglected [procps](https://gitlab.com/procps-ng/procps).\n\nNegative
+    pid killing seems to have worked fine until 2013. Then the trouble began.\n\n###
+    [Bug 1: Ubuntu 14 Can't Kill -1](#bug-1-ubuntu-14-cant-kill-1)\n\nUbuntu 14.04
+    LTS included procps 3.3.9. Prior to this, the `kill` code did what the BSDs do
+    and used pointer arithmetic to walk and parse `argv`.\n\nPersonally I'm fond of
+    that approach. Stallman isn't so fond of it though. In GNU world, you're supposed
+    to standardize command line parsing via `getopt`. This is probably a good idea
+    in the general case, but as we'll see, it was probably the wrong choice in the
+    specific case of `kill(1)`.\n\nHere's the relevant code after the conversion to
+    `getopt`:\n\n    opterr=0;/\\* suppress errors on -123 \\*/while(loop==1&&(i=getopt\\_long(argc,argv,\"l::Ls:hV\",longopts,NU"
+  error:
+  fetched_at: '2026-11-03T05:42:58Z'
+archived_at: '2026-11-03T05:42:59Z'
