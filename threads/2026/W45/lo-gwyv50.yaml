@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-gwyv50
+  source: lobsters
+  title: kitty 0.50.0
+  url: https://sw.kovidgoyal.net/kitty/changelog/#id1
+  hn_url: https://lobste.rs/s/gwyv50
+  score: 16
+  author: fuzzypixelz
+  posted_at: '2026-11-03T17:43:09Z'
+  fetched_at: '2026-11-04T01:05:32Z'
+  article_url: https://sw.kovidgoyal.net/kitty/changelog/#id1
+  article_fetch_status: success
+  article_fetched_at: '2026-11-04T01:05:35Z'
+  raw_comment_count: 0
+  tags:
+  - release
+  - unix
+comments: []
+article:
+  url: https://sw.kovidgoyal.net/kitty/changelog/#id1
+  title: Changelog - kitty
+  fetch_status: success
+  content: |-
+    # Changelog¶
+
+    kitty is a feature-rich, cross-platform, fast, GPU based terminal. To update kitty, follow the instructions.
+
+    ## Recent major new features¶
+
+    ### Choose an edge when resizing [unreleased]¶
+
+    The resize page now offers two strategies: Window retains the usual width/height controls, while Edge lets you choose an internal pane edge in the Splits layout and move its divider in a physical direction.
+
+    Press H to select the middle pane’s left edge. Gray edges are outside the layout and cannot be selected.¶
+
+    Press H to select the middle pane’s left edge. Gray edges are outside the layout and cannot be selected.¶
+
+    After selecting H, Alt+H moves the left divider by one third of the remaining resize steps. The right divider stays in place.¶
+
+    After selecting H, Alt+H moves the left divider by one third of the remaining resize steps. The right divider stays in place.¶
+
+    Switch strategies with 1/2 inside the page. Each strategy remembers its own Alt/Shift modifier and fraction, configurable with M and F. A sole internal edge is selected automatically. In Splits, either strategy uses R to restore the proportions saved when resize mode opened. See Resizing windows for the controls and configuration options.
+
+    ### Custom shaders [0.49]¶
+
+    kitty now has official support for Custom Shaders. These can be used for all manner of graphical effects, from animated backgrounds to focus highlighting to animations that change how cursor movements or mouse clicks are visualised.
+
+    See the documentation for a video gallery showcasing various custom shaders that ship with kitty.
+
+    ### Performance improvements [0.49]¶
+
+    This release saw tons of performance work focused on improving throughput making kitty even faster than it already is. Real world effective throughput should see a 15-35% improvement depending on workload. Some details:
+
+    - Improve throughput when processing large amounts of text with a scrollback buffer much larger than the CPU cache by ~35% by prefetching scrollback memory before it is written to
+
+    Improve throughput when processing large amounts of text with a scrollback buffer much larger than the CPU cache by ~35% by prefetching scrollback memory before it is written to
+
+    - Improve throughput when processing large amounts of text by ~50% for ASCII and ~15% for Unicode by writing runs of plain ASCII chars to the screen in batches and skipping unnecessary bookkeeping in the scrolling and tab handling hot paths
+
+    Improve throughput when processing large amounts of text by ~50% for ASCII and ~15% for Unicode by writing runs of plain ASCII chars to the screen in batches and skipping unnecessary bookkeeping in the scrolling and tab handling hot paths
+
+    - Speed up SIMD UTF-8 decoding: ~20% faster for ASCII and ~50% faster for multi-byte text on both x86 and ARM, by processing pairs of vectors of plain ASCII text at a time and compacting decoded codepoints within 128-bit lanes, avoiding expensive cross-lane operations. Also add an AVX-512 based decoder, another ~75% faster for multi-byte text, used automatically on CPUs that support it (Intel Ice Lake+, AMD Zen 4+).
+
+    Speed up SIMD UTF-8 decoding: ~20% faster for ASCII and ~50% faster for multi-byte text on both x86 and ARM, by processing pairs of vectors of plain ASCII text at a time and compacting decoded codepoints within 128-bit lanes, avoiding expensive cross-lane operations. Also add an AVX-512 based decoder, another ~75% faster for multi-byte text, used automatically on CPUs that support it (Intel Ice Lake+, AMD Zen 4+).
+
+    - Improve throughput when processing escape code heavy input by ~30% by taking the input buffer lock once per buffer of input rather than once per escape code and using cheaper arithmetic to parse CSI parameters
+
+    Improve throughput when processing escape code heavy input by ~30% by taking the input buffer lock once per buffer of input rather than once per escape code and using cheaper arithmetic to parse CSI parameters
+
+    - Improve throughput when processing large amounts of plain text by another ~10% by finding runs of printable ASCII chars with SIMD, filling cells using wide stores and skipping unnecessary work in the scrolling hot path when there are no images
+
+    Improve throughput when processing large amounts of plain text by another ~10% by finding runs of printable ASCII chars with SIMD, filling cells using wide stores and skipping unnecessary work in the scrolling hot path when there are no images
+
+    - Speed up pixel compositing with SIMD vectorization: alpha blending of graphics protocol images and animation frames is 2-3.5x faster and glyph alpha masks are composited onto canvases using the same vectorized primitives.
+
+    Speed up pixel compositing with SIMD vectorization: alpha blending of graphics protocol images and animation frames is 2-3.5x faster and glyph alpha masks are composited onto canvases using the same vectorized primitives.
+
+    - Cache HarfBuzz results for repeated short runs (≤32 cells) so redraws of the same on-screen text are not reshaped
+
+    Cache HarfBuzz results for repeated short runs (≤32 cells) so redraws of the same on-screen text are not reshaped
+
+    ### Vertical tabs [0.48]¶
+
+    kitty now has support for vertical tabs along the left or right edge of the OS Window. Useful for people that have wide aspect ratio windows.
+
+    ### Drag and drop for terminal programs [0.47]¶
+
+    kitty now has a new Drag and Drop kitten that allows you to seamlessly drag and drop files between kitty and any GUI program like the OS file manager or a webapp. It even works over SSH! It is powered by a new protocol allowing the use of drag and drop from any TUI program.
+
+    ### Mousing [0.46]¶
+
+    kitty already had excellent mouse support, but now it is taking it to the next level. The kitty scrollback buffer grew support for smooth scrolling and momentum based scrolling for a natural, smooth and kinetic scrolling experience.
+
+    Additionally, you can now drag kitty tabs around with the mouse to re-order them, move them to another kitty OS Window or even detach them into their own OS Window.
+
+    Finally, a long requested feature, the ability to resize kitty windows (aka splits) with the mouse was implemented.
+
+    ### Choose files, fast [0.45]¶
+
+    A new kitten to select files at the speed of thought with a keyboard first interface and support for content previews of text files with syntax highlighting, images, videos, e-books and more. Allows you to select files for use at the shell prompt or other terminal workflows with just a few keystrokes, similar to how fuzzy finders like fzf operate, but designed for files in particular, leveraging the various innovations of kitty such as image display and variable sized text.
+
+    On Linux, it can even be used as a drop in replacement for the File Open/Save dialog boxes in GUI programs.
+
+    ### Sessions [0.43]¶
+
+    kitty has long had support for Sessions, aka simple text files where you can define what tabs, windows and programs you wish to run in kitty. Now in addition to that kitty has the ability to create and switch between sessions with a single keypress and also to manually setup some tabs/windows in kitty and save it as a session file, for seamless and intuitive session file creation.
+
+    ### A scrollbar for the kitty scrollback [0.43]¶
+
+    A long requested feature, kitty has finally gotten a scrollbar that can be used with the mouse for browsing its scrollback. The bar appear automatically when you start scrolling backwards and is extensively configurable in kitty.conf. Note that the old scrollback_indicator_opacity option is deprecated.
+
+    ### Multiple cursors [0.43]¶
+
+    kitty has pioneered a new escape code protocol that allows terminal applications to use multiple cursors, rendered natively. These are typically used in editors to make the same edit at multiple locations. Now terminal based editors can use properly rendered native cursors, just like their GUI cousins, at last.
+
+    ### Access kitty with a single keypress [0.42]¶
+
+    kitty now has a Quake like floating, translucent terminal window, so y
+  error:
+  fetched_at: '2026-11-04T01:05:35Z'
+archived_at: '2026-11-04T01:05:35Z'

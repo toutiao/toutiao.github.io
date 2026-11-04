@@ -1,0 +1,123 @@
+---
+post:
+  id: lo-siqsg7
+  source: lobsters
+  title: Announcing NetBSD 11.1
+  url: https://www.netbsd.org/releases/formal-11/NetBSD-11.1.html
+  hn_url: https://lobste.rs/s/siqsg7
+  score: 13
+  author: FedericoSchonborn
+  posted_at: '2026-11-03T22:00:17Z'
+  fetched_at: '2026-11-04T01:05:32Z'
+  article_url: https://www.netbsd.org/releases/formal-11/NetBSD-11.1.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-04T01:05:33Z'
+  raw_comment_count: 0
+  tags:
+  - netbsd
+  - release
+comments:
+- id: lo-qnxkpw
+  parent_id: '0'
+  author: johnklos
+  text: It's not surprising how quickly NetBSD 11.1 follows NetBSD 11.0, considering
+    how many components have had security issues in the last several months.
+  score: 1
+  posted_at: '2026-11-04T01:04:24Z'
+article:
+  url: https://www.netbsd.org/releases/formal-11/NetBSD-11.1.html
+  title: Announcing NetBSD 11.1 (November 2, 2026)
+  fetch_status: success
+  content: |-
+    # Announcing NetBSD 11.1 (November 2, 2026)
+
+    ### Quick links for the impatient:
+
+    Download 11.1 from our CDN:[amd64 USB](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-amd64-install.img.gz),[amd64 DVD](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-amd64-dvd.iso),[i386 USB](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-i386-install.img.gz),[i386 CD-ROM](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-i386.iso),[sparc64 DVD](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-sparc64-dvd.iso),[sparc64 CD-ROM](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-sparc64.iso),[macppc CD-ROM](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/images/NetBSD-11.1-macppc.iso),[RISC-V devices](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/riscv-riscv64/binary/gzimg/riscv64.img.gz),[Cavium Octeon MIPS devices](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/evbmips-mips64eb/binary/gzimg/octeon.img.gz),[Nintendo Wii](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/evbppc/binary/gzimg/wii.img.gz),[various Arm devices](//armbsd.org/),[full release dir with everything else](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/).
+
+    [Hashes](//cdn.NetBSD.org/pub/NetBSD/security/hashes/NetBSD-11.1_hashes.asc), signed with the [NetBSD Security Officer's PGP key](//cdn.NetBSD.org/pub/NetBSD/security/PGP/security-officer@netbsd.org.asc), of all files in the distribution.
+
+    ## Introduction
+
+    The NetBSD Project is pleased to announce NetBSD 11.1, the first point release of the NetBSD 11 stable branch.
+
+    ## Upgrade instructions
+
+    An existing installation can be upgraded by booting an installation image and selecting the Upgrade option.
+
+    If you are using other update methods, update the kernel and modules _first_, then reboot and update your userspace.
+
+    ## Changes since NetBSD 11.0
+
+    This release primarily focuses on security and bug fixes, since our aim was to get it released as soon as possible to address certain security issues.
+
+    ## Ports
+
+    - alpha: Fixed a boot hang occurring on unpatched QEMU.
+    - alpha: Fixed kernel stack pointer alignment leading to panics during test suite runs. ([PR 60865](https://gnats.NetBSD.org/60865))
+    - amd64, i386: Reduced the strictness of the "WARNING: no TOD clock present" check.
+    - amd64, i386: Fixed a panic on the Zhaoxin KX-7000 and other late-model CPUs from VIA/Zhaoxin.
+    - amd64: Fixed libc behaviour when calling [memchr(3)](//man.NetBSD.org/NetBSD-11.1/memchr.3) with certain unusual arguments. ([PR 60744](https://gnats.NetBSD.org/60744))
+    - atari: Fixed ATARITT kernels failing to boot on Atari TT030.
+    - evbarm: Fixed stability problems with certain USB devices on Raspberry Pi.
+    - evbarm: Fixed thread local storage on ARMv5 with soft floats. ([PR 57638](https://gnats.NetBSD.org/57638))
+    - evbarm: Fixed "am335x omaptimer fails to attach". ([PR 60910](https://gnats.NetBSD.org/60910))
+    - hppa: Added support for eager FPU switching. Currently enabled only for QEMU to work around an emulation bug, may eventually become the default for improved safety.
+    - mac68k: Honour requested keyboard bell volume for akbd(4) devices. ([PR 60691](https://gnats.NetBSD.org/60691))
+    - mips: Fixed problems with MIPS Malta platform code found running under QEMU.
+    - mips: Fixed various problems discovered with the Kernel Undefined Behaviour Sanitizer. ([PR 60780](https://gnats.NetBSD.org/60780))
+    - sparc64: Enhanced support for sensors on Sun Ultra 25/45 and Sun Fire V215/V245, including front panel temperatures, fan speeds, and disk presence indicators. LEDs on Sun Fire machines can now be controlled via sysctl.
+    - sparc64: Added support for the i2c controller found in Pyro-based machines (e.g. Sun Ultra 45, Sun Fire V245).
+    - sparc64: Added support for the real-time clock used in the Sun Ultra 45.
+    - sun68k: Fixed booting from SCSI disks with certain PROM revisions.
+
+    ## Kernel and MI device drivers
+
+    - ffs: Fixed an `uvm_fault` occurring during snapshot dump/restore. ([PR 59663](https://gnats.NetBSD.org/59663))
+    - ipfilter: Fixed a `NULL` pointer dereference leading to potential DoS while parsing ICMP6 packets. ([PR 60484](https://gnats.NetBSD.org/60484))
+    - net: Fixed an off-by-error in a bounds check in `bsd_decompress()`.
+    - uvm: Fixed a race condition in the page daemon.
+    - vfs: Limit snapshot-related `vflushbuf: dirty: vnode [...]` console spew under heavy load.
+    - [acpibat(4)](//man.NetBSD.org/NetBSD-11.1/acpibat.4): Added support for battery monitoring on the Microsoft Surface Go 3.
+    - [hdaudio(4)](//man.NetBSD.org/NetBSD-11.1/hdaudio.4): Apply access checks to configuration operations on `/dev/hdaudioX`. ([PR 60492](https://gnats.NetBSD.org/60492))
+    - [ixl(4)](//man.NetBSD.org/NetBSD-11.1/ixl.4): Fixed driver hang, then failure on ifconfig, if SFP module present at boot time and media connected. ([PR 60736](https://gnats.NetBSD.org/60736))
+    - [mpii(4)](//man.NetBSD.org/NetBSD-11.1/mpii.4): Fixed stability of Symbios Logic SAS3008 RAID controllers. ([PR 58684](https://gnats.NetBSD.org/58684))
+    - [raid(4)](//man.NetBSD.org/NetBSD-11.1/raid.4): Fixed an incorrect assertion during reconstruction. ([PR 60477](https://gnats.NetBSD.org/60477))
+    - [run(4)](//man.NetBSD.org/NetBSD-11.1/run.4), [rum(4)](//man.NetBSD.org/NetBSD-11.1/rum.4), various other USB Wi-Fi drivers: Fixed a kernel panic seen when hotplugging a device with [wpa\_supplicant(8)](//man.NetBSD.org/NetBSD-11.1/wpa_supplicant.8) running. ([PR 60665](https://gnats.NetBSD.org/60665))
+    - [virtio(4)](//man.NetBSD.org/NetBSD-11.1/virtio.4): Improve documentation.
+    - [vr(4)](//man.NetBSD.org/NetBSD-11.1/vr.4): Fixed stability problems observed after warm reboots. ([PR 60848](https://gnats.NetBSD.org/60848))
+    - [wdc(4)](//man.NetBSD.org/NetBSD-11.1/wdc.4): Avoid a three-second delay during boot with PCI IDE controllers.
+    - [compat\_linux(8)](//man.NetBSD.org/NetBSD-11.1/compat_linux.8): Fixed an edge-case panic in Linux’s `copy_file_range` system call.
+
+    ## Userspace and build system
+
+    - build.sh: Fixed building certain legacy GPLv2 GNU tools with modern compilers; used for GCC compiler bootstrapping.
+    - build.sh: Fixed building with `MKBINUTILS=no` set.
+    - build.sh: Fixed cross-builds from MacOS on Apple Silicon. ([PR 60904](https://gnats.NetBSD.org/60904))
+    - build.sh: Fixed parallel builds of debug data.
+    - build.sh: Generate hashes for bootable images in the gzimg directory. ([PR 59195](https://gnats.NetBSD.org/59195), [PR 60302](https://gnats.NetBSD.org/60302))
+    - libc: Fixed issues with [printf(3)](//man.NetBSD.org/NetBSD-11.1/printf.3) thousands separators and positional arguments. ([PR 60708](https://gnats.NetBSD.org/60708), [PR 60496](https://gnats.NetBSD.org/60496))
+    - [ld.elf\_so(1)](//man.NetBSD.org/NetBSD-11.1/ld.elf_so.1): Fixed incorrect thread-local storage alignment assertions with `DEBUG` enabled.
+    - [wgetscrreg(3)](//man.NetBSD.org/NetBSD-11.1/wgetscrreg.3): Added a manual page.
+    - [httpd(8)](//man.NetBSD.org/NetBSD-11.1/httpd.8): Clarified documentation of CGI options.
+    - [syslogd(8)](//man.NetBSD.org/NetBSD-11.1/syslogd.8): Fixed buffering of incomplete lines from `/dev/klog`.
+
+    ## Third-party components
+
+    - brotli: Sync with -current to fix CVE 2026-111497.
+    - libXfont2: Updated to 2.0.9, fixes CVE-2026-44950 and CVE-2026-59679.
+    - libX11: Updated to 1.8.14.
+    - libXi: Updated to 1.8.4.
+    - libXpm: Updated to 3.5.20.
+    - libXrender: Updated to 1.9.13.
+    - libXtst: Updated to 1.2.6.
+    - mozilla-rootcerts: Update for compromised certificate authorities. ([PR 60908](https://gnats.NetBSD.org/60908))
+    - xf86-video-intel: Sync version with pkgsrc.
+    - [Xorg(1)](//man.NetBSD.org/NetBSD-11.1/Xorg.1): Updated to xorg-server 21.1.25.
+    - [ssh(1)](//man.NetBSD.org/NetBSD-11.1/ssh.1), [sshd(8)](//man.NetBSD.org/NetBSD-11.1/sshd.8): Updated to OpenSSH 10.6.
+    - [unbound(8)](//man.NetBSD.org/NetBSD-11.1/unbound.8): Updated to 1.26.1.
+
+    The complete list of changes can be found in the [CHANGES](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/CHANGES) and [CHANGES-11.1](//cdn.NetBSD.org/pub/NetBSD/NetBSD-11.1/CHANGES-11.1) files in the top level directory o
+  error:
+  fetched_at: '2026-11-04T01:05:33Z'
+archived_at: '2026-11-04T01:05:34Z'
