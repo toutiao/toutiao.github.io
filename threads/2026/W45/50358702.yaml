@@ -4,14 +4,14 @@ post:
   title: The Internals of PostgreSQL
   url: https://www.interdb.jp/pg/index.html
   hn_url: https://news.ycombinator.com/item?id=50358702
-  score: 83
+  score: 357
   author: ibobev
   posted_at: '2026-11-03T21:51:06Z'
-  fetched_at: '2026-11-04T01:05:28Z'
+  fetched_at: '2026-11-04T19:28:38Z'
   article_url: https://www.interdb.jp/pg/index.html
   article_fetch_status: success
   article_fetched_at: '2026-11-04T01:05:28Z'
-  raw_comment_count: 2
+  raw_comment_count: 31
 comments:
 - id: '50359266'
   parent_id: '50358702'
@@ -30,6 +30,315 @@ comments:
     in the SSI implementation [0]<p>[0] <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=41560556">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=41560556</a>
   score: 0
   posted_at: '2026-11-03T23:49:55Z'
+- id: '50360706'
+  parent_id: '50359845'
+  author: hmartin
+  text: The had a safe super intelligence bug dating back to 2011?<p>Wow so ahead
+    of their time.<p>(And since I&#x27;m bad at sarcasm and don&#x27;t wish to mislead,
+    SSI = Serializable Snapshot Isolation in this context.)
+  score: 0
+  posted_at: '2026-11-04T01:59:16Z'
+- id: '50360879'
+  parent_id: '50358702'
+  author: getbrew
+  text: 'The HOT chapter is the one with the most direct practical payoff. Two things
+    worth knowing from it: HOT only kicks in when no indexed column changes and the
+    new tuple fits on the same page, so an index on a frequently-updated column (status,
+    updated_at) quietly disables it for every update to that table. And lowering fillfactor
+    (say 80-90) on update-heavy tables leaves free space on each page so HOT can actually
+    happen. Comparing n_tup_hot_upd to n_tup_upd in pg_stat_user_tables is a cheap
+    way to see whether you&#x27;re getting HOT updates before tuning anything.'
+  score: 0
+  posted_at: '2026-11-04T02:33:28Z'
+- id: '50361046'
+  parent_id: '50358702'
+  author: jon128
+  text: Didn&#x27;t find the new MVCC in there.<p><pre><code>  https:&#x2F;&#x2F;www.orioledb.com&#x2F;</code></pre>
+  score: 0
+  posted_at: '2026-11-04T02:59:45Z'
+- id: '50361063'
+  parent_id: '50358702'
+  author: dang
+  text: Related:<p><i>The Internals of PostgreSQL</i> - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=43241404">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=43241404</a>
+    - March 2025 (40 comments)<p><i>The Internals of PostgreSQL</i> - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=30372750">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=30372750</a>
+    - Feb 2022 (19 comments)<p><i>The Internals of PostgreSQL</i> - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=30086374">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=30086374</a>
+    - Jan 2022 (39 comments)<p><i>Internals of PostgreSQL</i> - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=18950460">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=18950460</a>
+    - Jan 2019 (25 comments)<p><i>The internals of PostgreSQL</i> - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=13488315">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=13488315</a>
+    - Jan 2017 (53 comments)<p><i>The Internals of PostgreSQL</i> - <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=12142364">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=12142364</a>
+    - July 2016 (1 comment)<p>(Reposts are fine after a year or so; links to past
+    threads are just to satisfy extra-curious readers)
+  score: 0
+  posted_at: '2026-11-04T03:03:16Z'
+- id: '50361076'
+  parent_id: '50358702'
+  author: favori995749721
+  text: 'Chapter 12 (full-text search) quietly changed under this book in Postgres
+    18: FTS now reads its dictionaries and config through the cluster&#x27;s default
+    collation provider instead of always libc, so clusters on ICU or the new builtin
+    PG_UNICODE_FAST can see different behavior in FTS and pg_trgm — the release notes
+    explicitly tell you to reindex those indexes after pg_upgrade. Also in 18, LIKE
+    with nondeterministic collations stopped being an error, which was the main reason
+    people avoided case-insensitive ICU collations on searchable columns.'
+  score: 0
+  posted_at: '2026-11-04T03:05:37Z'
+- id: '50361148'
+  parent_id: '50360879'
+  author: hmokiguess
+  text: I’ll be real, I use Postgres every day and I have no clue what you’re talking
+    about
+  score: 0
+  posted_at: '2026-11-04T03:19:47Z'
+- id: '50361225'
+  parent_id: '50360879'
+  author: ComputerGuru
+  text: Depends on how wide your columns are and how often your records are modified.
+    Past a certain width and I’m not sure lowering fillfactor is a good idea.
+  score: 0
+  posted_at: '2026-11-04T03:33:19Z'
+- id: '50361423'
+  parent_id: '50361046'
+  author: amw-zero
+  text: Because Postgres hasn&#x27;t adopted that yet, and I&#x27;m not aware of any
+    actual plan to adopt it? Tom Lane just did an interview where he said he doesn&#x27;t
+    see any world where they move away from dead tuples and vacuuming.
+  score: 0
+  posted_at: '2026-11-04T04:11:15Z'
+- id: '50361655'
+  parent_id: '50361423'
+  author: jon128
+  text: Users of software often do not blindly do, or not do, whatever the upstream
+    open source project does.<p>OrioleDB is friendlier to SSDs and is de facto &quot;the
+    other&quot; MVCC of Postgres. OrioleDB may be still be &quot;beta&quot; but that
+    hasn&#x27;t stopped operators&#x2F;users.<p>MariaDB has some alternative MVCC,
+    one of them is particularly outstanding.<p>SSD endurance at scale has on and off
+    been a major concern for me, so I empathize with that. Others deserve to know
+    of OrioleDB, and Postgres more broadly is probably better off for it too.<p><pre><code>  https:&#x2F;&#x2F;www.uber.com&#x2F;us&#x2F;en&#x2F;blog&#x2F;postgres-to-mysql-migration&#x2F;</code></pre>
+  score: 0
+  posted_at: '2026-11-04T04:59:21Z'
+- id: '50361724'
+  parent_id: '50360879'
+  author: ak39
+  text: Why does this comment sound AI generated?
+  score: 0
+  posted_at: '2026-11-04T05:15:50Z'
+- id: '50362154'
+  parent_id: '50358702'
+  author: hubertzhang
+  text: |-
+    Back in 2018, when I was at Greenplum, my team worked through The Internals of PostgreSQL together alongside Andy Pavlo’s CMU database courses. It was invaluable for anyone working on the database kernel. Today, a beginner can get that same interactive learning experience simply by chatting with AI, much like the discussions our team had back then.<p>Now I’m building Lavik, a new cache service for PostgreSQL. Traditional caches like Redis are DRAM-based, so they can only hold a small slice of hot data. Once your data outgrows memory, you’re exposed to cache miss storms, where a flood of requests falls through to PostgreSQL all at once. Nobody likes those. (OpenAI encounter the similar cache miss storms problem: <a href="https:&#x2F;&#x2F;openai.com&#x2F;index&#x2F;scaling-postgresql&#x2F;" rel="nofollow">https:&#x2F;&#x2F;openai.com&#x2F;index&#x2F;scaling-postgresql&#x2F;</a>)<p>Lavik takes a different path: it runs on NVMe SSDs, and it’s still faster than Redis running on DRAM. That’s not what most people expect. Conventional wisdom says SSD-based systems trade speed for capacity, but Lavik gives you both. You can keep TB-scale data in cache while getting 1M QPS and sub-millisecond P99 latency.<p>Lavik is open source under the Apache License.
+    GitHub: <a href="https:&#x2F;&#x2F;github.com&#x2F;eloqdata&#x2F;lavik" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;eloqdata&#x2F;lavik</a>
+    Website: <a href="https:&#x2F;&#x2F;lavik.dev" rel="nofollow">https:&#x2F;&#x2F;lavik.dev</a>
+  score: 0
+  posted_at: '2026-11-04T06:38:42Z'
+- id: '50362332'
+  parent_id: '50361655'
+  author: hans_castorp
+  text: All of the problems Uber had, could have been solved back then, had they actually
+    asked for help on the mailing list. Several of the issues they had have also been
+    fixed&#x2F;changed in Postgres itself as a reaction to that discussion.
+  score: 0
+  posted_at: '2026-11-04T07:11:38Z'
+- id: '50362352'
+  parent_id: '50361423'
+  author: hans_castorp
+  text: 'For anyone interested, this is the interview with Tom Lane: <a href="https:&#x2F;&#x2F;www.snowflake.com&#x2F;en&#x2F;blog&#x2F;engineering&#x2F;30-years-of-postgres-architecture-tom-lane&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.snowflake.com&#x2F;en&#x2F;blog&#x2F;engineering&#x2F;30-years-of-po...</a><p>This
+    article about MVCC is also quite interesting: <a href="https:&#x2F;&#x2F;boringsql.com&#x2F;posts&#x2F;mvcc-bad-bad&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;boringsql.com&#x2F;posts&#x2F;mvcc-bad-bad&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-04T07:15:22Z'
+- id: '50362685'
+  parent_id: '50362352'
+  author: matharmin
+  text: Thanks, that MVCC article was a great read.
+  score: 0
+  posted_at: '2026-11-04T08:14:39Z'
+- id: '50362861'
+  parent_id: '50361724'
+  author: mike_hearn
+  text: Because it probably was. Pangram say it&#x27;s too short to be certain but
+    they think 100% of the text is possibly AI.<p>That doesn&#x27;t mean the comment
+    is useless, though. There&#x27;s a whole philosophical discussion to be had here
+    about whether what matters is the comment or the identity of the speaker.
+  score: 0
+  posted_at: '2026-11-04T08:38:08Z'
+- id: '50363040'
+  parent_id: '50358702'
+  author: CEOatMindfries
+  text: I have been developer since 2 years, from noob to beginner but I have used
+    only two databases, one in MongoDB and second is pgsql. I have used others as
+    well like firebase and redis and all but I am talking about in wide range. And
+    it become super exciting for me to know internals of the pgsql.
+  score: 0
+  posted_at: '2026-11-04T09:06:20Z'
+- id: '50363059'
+  parent_id: '50362352'
+  author: mike_hearn
+  text: 'The MVCC article is good but feels like it&#x27;s trying too hard to be a
+    &quot;on one hand, on the other hand&quot; kind of analysis. Postgres is the only
+    database that uses its design because, as the article admits at the end, it has
+    &quot;operationally loud failure modes&quot;.<p>Compare Postgres and Oracle (block
+    undo based) for what happens when the database is underprovisioned:<p>• Postgres:
+    bottlenecks on CPU. The database falls behind on vacuuming and dies.<p>• Oracle:
+    bottlenecks on free disk space. Individual long running statements, SNAPSHOT and
+    READ ONLY transactions get cancelled with a &quot;snapshot too old&quot; error.<p>In
+    Oracle the database continues running and the blast radius is limited to a single
+    statement. Because it&#x27;s the longest running statements that die first, that
+    almost certainly means an asynchronous business report and not live user traffic
+    - which is exactly what you&#x27;d hope for. Most businesses can tolerate a missing
+    day in a report much better than customer-facing outages, and fixing it is just
+    a single SQL statement if you have free disk space (adding more storage is easy
+    due to the SAN).<p>That&#x27;s much preferable! How many post mortems do we see
+    on HN from some startup bemoaning a multi-hour outage caused by Postgres&#x27;
+    MVCC choices? Quite a lot. Now think about how often do you recall reading a post
+    mortem of an outage at some big bank, hospital, shipping port etc that traces
+    back to Oracle&#x27;s MVCC engine? I don&#x27;t think I ever read one. The startup
+    world likes to make fun of Big Enterprise, but they have a much better track record
+    of database uptime because they stay away from vacuum-based MVCC.<p>Disclosure:
+    I have a part time role in the Oracle DB group. Unapproved opinions may be found
+    above, caveat emptor.'
+  score: 0
+  posted_at: '2026-11-04T09:10:14Z'
+- id: '50363079'
+  parent_id: '50361423'
+  author: ksec
+  text: Damn this is sad. I just wish mySQL development isn&#x27;t stalled as it is.
+  score: 0
+  posted_at: '2026-11-04T09:14:37Z'
+- id: '50363362'
+  parent_id: '50362352'
+  author: akoboldfrying
+  text: 'The boringsql article was very informative, if you can get past some flourishes
+    typical of a coauthor we all know:<p>&gt; That&#x27;s the honest shape of the
+    mitigation: HOT is opportunistic, arrives in steady state rather than on demand,
+    and quietly costs you 30% of your table size in reserved space.'
+  score: 0
+  posted_at: '2026-11-04T09:58:42Z'
+- id: '50363781'
+  parent_id: '50362685'
+  author: guenthert
+  text: Yeah, I love those time-travellers&#x27; blogs.  Wished only he&#x27;d tell
+    us about next years&#x27; market movements instead of issues in Oracle&#x27;s
+    DB.
+  score: 0
+  posted_at: '2026-11-04T10:52:43Z'
+- id: '50364672'
+  parent_id: '50358702'
+  author: weitendorf
+  text: |-
+    Didn&#x27;t see alignment padding mentioned anywhere so I&#x27;ll drop it here: did you know that the order of a table&#x27;s columns affects how much space a record uses?<p><pre><code>  bigint, bigint, bool, bool: 18 bytes (8+8+1+1), aligned up to 24
+      bool, bigint, bool, bigint: 32 bytes (1 + 7 (alignment padding) + 8 + 1 + 7 + 8)
+    </code></pre>
+    But wait! There is the per-row overhead of ~30bytes. Your 18 byte row actually takes 54bytes of space. Well, multiples of 54 depending on how often you update&#x2F;vacuum it. But don&#x27;t make your rows too big either or you&#x27;re TOAST
+  score: 0
+  posted_at: '2026-11-04T12:29:44Z'
+- id: '50366506'
+  parent_id: '50364672'
+  author: podocarp
+  text: This happens in most systems programming languages by default, but it&#x27;s
+    cool to know it happens in postgres too. Iirc wasn&#x27;t it zig or some compiler
+    that had some speedup or optimization just by arranging fields around? I may be
+    wrong
+  score: 0
+  posted_at: '2026-11-04T15:00:56Z'
+- id: '50368450'
+  parent_id: '50362332'
+  author: Sesse__
+  text: It&#x27;s also hard to even claim they migrated from “PostgreSQL” to “MySQL”;
+    they surely run MySQL underneath in their new system, but it&#x27;s a really weird
+    hybrid where it&#x27;s basically only the storage engine. Even secondary indexes,
+    on of their main points of contention in the article, is managed as a separate
+    system on top of the database.
+  score: 0
+  posted_at: '2026-11-04T17:02:40Z'
+- id: '50368633'
+  parent_id: '50363059'
+  author: senderista
+  text: The Postgres approach to MVCC (&quot;append-only storage&quot; in the jargon
+    of <a href="https:&#x2F;&#x2F;www.cs.cmu.edu&#x2F;~pavlo&#x2F;blog&#x2F;2023&#x2F;04&#x2F;the-part-of-postgresql-we-hate-the-most.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.cs.cmu.edu&#x2F;~pavlo&#x2F;blog&#x2F;2023&#x2F;04&#x2F;the-part-of-postg...</a>)
+    is mandatory if you actually return object addresses to the client and thus need
+    pointer stability (I&#x27;ve implemented such a DB). However, Postgres doesn&#x27;t
+    actually have this requirement so it makes little sense in that context. The beauty
+    of undo log-based MVCC is that all versions superseded by a committed transaction
+    are freed at the same time and from the same contiguous region of memory or disk,
+    which makes it both memory- and SSD-friendly (&quot;grouping by death time&quot;
+    in the jargon of <a href="https:&#x2F;&#x2F;research.cs.wisc.edu&#x2F;wind&#x2F;Publications&#x2F;nvmw18-he.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;research.cs.wisc.edu&#x2F;wind&#x2F;Publications&#x2F;nvmw18-he.pdf</a>).
+  score: 0
+  posted_at: '2026-11-04T17:18:18Z'
+- id: '50368658'
+  parent_id: '50363362'
+  author: senderista
+  text: Claude, please remove all Claudisms from this article.
+  score: 0
+  posted_at: '2026-11-04T17:20:41Z'
+- id: '50369127'
+  parent_id: '50368633'
+  author: xyzzy_plugh
+  text: Yes. This is the thing that tripped me the most when learning postgres internals.
+    It was obvious that append-only enabled stable addressing but then it just never
+    materializes. I was incredibly perplexed. Surely I&#x27;m missing something right?
+    Nope!
+  score: 0
+  posted_at: '2026-11-04T17:53:42Z'
+- id: '50369386'
+  parent_id: '50369127'
+  author: senderista
+  text: Postgres folks will need to correct me but I believe the append-only MVCC
+    design originated from the original &quot;time-travel&quot; requirement (which
+    IIRC was soon dropped). There are better approaches to time-travel anyway such
+    as time-split B-trees (<a href="https:&#x2F;&#x2F;www.microsoft.com&#x2F;en-us&#x2F;research&#x2F;wp-content&#x2F;uploads&#x2F;2005&#x2F;01&#x2F;p939-lomet.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.microsoft.com&#x2F;en-us&#x2F;research&#x2F;wp-content&#x2F;uploads&#x2F;...</a>).
+  score: 0
+  posted_at: '2026-11-04T18:13:51Z'
+- id: '50369491'
+  parent_id: '50369386'
+  author: xyzzy_plugh
+  text: Yes and that would make sense, and what I would expect, if it were available.
+    I understand it is load-bearing but it is nonetheless surprising that it hasn&#x27;t
+    been revisited. It is surprising, at least to me, that time-travel never shipped
+    given its feasibility.
+  score: 0
+  posted_at: '2026-11-04T18:21:55Z'
+- id: '50369747'
+  parent_id: '50366506'
+  author: weitendorf
+  text: 'TANGENT WARNING: What bothers me is that unless you are directly plumbing
+    data on disk to the wire, there is literally no benefit to serializing data this
+    way. (I originally realized all this when trying to add varint and byte types
+    to postgres to make storage more efficient, and then finding it was almost impossible
+    to actually serialize them in a way that saved space)<p>At runtime, if you&#x27;ve
+    allocated a boolean or want to store a byte somewhere, you&#x27;ve either done
+    it on the stack (it&#x27;s temporary and you know it will need to be accessed
+    at least once as an independent unit of data, and packing it together with other
+    small data structures will make you use an extra instruction to extract it into
+    its own register anyway, so there is not really any benefit to packing them tighter)
+    or heap (you might actually gain something by reducing memory usage here, but
+    packing data together binds the lifecycle and structure of everything at the same
+    address and either requires additional lookups to check the interior structure,
+    or a fancy compiler&#x2F;build process to bake in the instruction to extract packed
+    data without knowing what other data is packed with it).<p>When you read serialized
+    data for a record from the disk, while running a typed database, the lifecycle&#x2F;structure
+    within the record is already shared. Most times you load the record you probably
+    won&#x27;t be accessing any particular packed data structure (eg if you have 5
+    bool columns in a table, most queries won&#x27;t use all or any of them). You
+    already have a global way to handle internal types&#x2F;optimized reads, because
+    that&#x27;s what databases do.<p>So it would actually be feasible to load packed
+    data and efficiently access or calculate with it eg XOR against  0x00..&lt;single
+    bit flipped to match bool index in word&gt;00 to use a bool, or bit shift to load
+    a subword into a register. It would be at worst 1 instruction per read slower
+    if implemented efficiently (the query planner can handle the type lookup&#x2F;deciding
+    how to do the optimized read, which amortizes and isn&#x27;t the query bottleneck
+    or even on the critical path).<p>BUT denser data = more cache coherency and higher
+    read throughput (more rows&#x2F;s). And if you&#x27;re doing fancy bit operations
+    and arithmetic to extract and perform calculations on the packed data, it might
+    actually be easier to batch operations with SIMD. So you could get arguably higher
+    performance + much less passive disk usage (saving actual money) by packing data
+    better probably. I&#x27;m about 30% of the way towards convincing myself to try
+    this'
+  score: 0
+  posted_at: '2026-11-04T18:40:27Z'
 article:
   url: https://www.interdb.jp/pg/index.html
   title: ''
@@ -135,4 +444,4 @@ article:
     to this docum"
   error:
   fetched_at: '2026-11-04T01:05:28Z'
-archived_at: '2026-11-04T01:05:31Z'
+archived_at: '2026-11-04T19:28:49Z'

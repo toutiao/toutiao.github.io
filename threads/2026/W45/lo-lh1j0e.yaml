@@ -1,0 +1,114 @@
+---
+post:
+  id: lo-lh1j0e
+  source: lobsters
+  title: 'Shlemiel the Painter Is Back: How Zig’s libc Rewrite Made SQLite Slower'
+  url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
+  hn_url: https://lobste.rs/s/lh1j0e
+  score: 32
+  author: ohrv
+  posted_at: '2026-11-04T15:23:09Z'
+  fetched_at: '2026-11-04T19:28:50Z'
+  article_url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-04T19:28:51Z'
+  raw_comment_count: 5
+  tags:
+  - performance
+  - rust
+  - zig
+comments:
+- id: lo-th39z3
+  parent_id: '0'
+  author: Student
+  text: That’s a lovely way of explaining quadratic time operations. I took a quick
+    look at the linked zig code, and presumably it’s like this because it’s mapping
+    c strings into nice safe zig arrays rather than treating them as unsafe streams
+    of memory locations containing chars.
+  score: 7
+  posted_at: '2026-11-04T16:51:12Z'
+- id: lo-vsj8xx
+  parent_id: '0'
+  author: refi64
+  text: |-
+    From one build and deploy script on my Mac I can target all of my platforms without containers or build machines. Zig’s elegant libzigc re-implements the standard library so you can static link the necessary functionality.
+    Zig uses musl (the standard library rewrite), but they have been rewriting it piece by piece in pure Zig (via libzigc), removing the C dependencies one at a time.
+
+    Hmm, was this using the musl triple when invoking zigbuild? I'd be a bit surprised if that didn't use musl, but I'm not sure what other libc values can be used in the triple other than glibc.
+  score: 2
+  posted_at: '2026-11-04T17:03:45Z'
+- id: lo-pw3u64
+  parent_id: '0'
+  author: squeek502
+  text: |-
+    Relevant issue: https://codeberg.org/ziglang/zig/issues/37402
+    Pending PR: https://codeberg.org/ziglang/zig/pulls/37417
+  score: 4
+  posted_at: '2026-11-04T18:38:58Z'
+- id: lo-tnymyv
+  parent_id: '0'
+  author: squeek502
+  text: |-
+    The quoted text is correct, you can follow the link to the commit and see that musl sources are deleted as libzigc symbols are added. This is also done for symbols provided by compiler_rt.
+    Relevant issues: https://github.com/ziglang/zig/issues/2879 -> https://codeberg.org/ziglang/zig/issues/30978
+  score: 1
+  posted_at: '2026-11-04T19:04:59Z'
+- id: lo-cnnbwa
+  parent_id: '0'
+  author: tobin_baker
+  text: Hate to say it, but LLM code review certainly would have caught such an obvious
+    "accidentally quadratic" bug.
+  score: 1
+  posted_at: '2026-11-04T19:14:18Z'
+article:
+  url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
+  title: 'Shlemiel the Painter Is Back: How Zig’s libc Rewrite Made SQLite 12,000×
+    Slower - Dennis Forbes'
+  fetch_status: success
+  content: |-
+    ## Spolsky Wisdom
+
+    Back in 2001, Joel Spolsky – whose writings had a big influence my career – wrote a great piece titled [Back to Basics](https://www.joelonsoftware.com/2001/12/11/back-to-basics/). The premise of the piece is that practitioners should understand the basics: However abstract and remote we may seem from the basic algorithms that drive computing, they can unexpectedly have enormous consequences on our projects.
+
+    One of his examples is the “Shlemiel the Painter” trap, where a seemingly simple choice leads to quadratic runtime complexity. In that parable, a street line painter never moves his can of paint. As he gets further and further along in the line, increasingly more of his time is spent walking to and from his can of paint.
+
+    It is astonishing how often this Shlemiel the Painter pattern recurs, including now in 2026.
+
+    ## My Chess Analysis Service Staggers Under Load
+
+    A few days ago I posted about a [chess analysis service I put online](/blog/microblog/2026/10/chess_analysis_service "Improving My Chess Abilities"). This is primarily a Rust service backed by sqlite that dishes out analysis tasks to runners. Each runner processes upwards of hundreds of chess games and return a large set of JSON bundles back to the main service, where they are processed and then stuffed into sqlite.
+
+    While the analysis pegs two dozen cores on a runner for minutes on end, the process of storing the data should take milliseconds. Sub-milliseconds.
+
+    Imagine my surprise when on the first really large set of games, the simple process of inserting the JSON data – maybe about 40,000 records – into the data store took _minutes_. During all of my testing this never really appeared as a critical path, but with a large set of records it suddenly was a breaking problem.
+
+    What made this more perplexing was that it completely saturated a core, being a CPU-bound operation. How could inserting simple JSON into SQLite yield minutes of CPU time?
+
+    Shlemiel the painter has made an appearance. To drop a spoiler, he was introduced to the project via Zig’s cc compiler and its replacement for standard library functions.
+
+    ## A Minor Issue In Zig Becomes A Major Performance Issue
+
+    The project isn’t built in Zig, but instead uses Rust. The sqlx sqlite crate needs to be compiled for the target environment – sqlite is of course a C project – so to facilitate cross-platform building, generating both Mac ARM64 and Linux ARM64 / x86-64 binaries from this machine in a convenient build and deploy workflow, zig cc is used to compile sqlite when targeting Linux, generously offering up cross-platform targeting via cargo-zigbuild.
+
+    From one build and deploy script on my Mac I can target all of my platforms without containers or build machines. Zig’s elegant libzigc re-implements the standard library so you can static link the necessary functionality.
+
+    Zig uses musl (the standard library rewrite), but they have been rewriting it piece by piece in pure Zig (via libzigc), removing the C dependencies one at a time.
+
+    And that’s where the performance issue was introduced.
+
+    In the [rewrite of strspn](https://codeberg.org/ziglang/zig/src/commit/ae9a8acc7f232cb78a131b6dc05633f34d0990ad/lib/c/string.zig#L154-L157), [replacing the musl version with the pure zig variant](https://codeberg.org/ziglang/zig/commit/f0649dd9782780f5b608af338b6d4add19ce2730)), the first step measures the entire length of the string. This is also seen in the rewrites of strcspn, strpbrk and strstr.
+
+    This is a problem for tokenizers. A tokenizer takes a giant string and a common iterating step is to skip whitespace, getting the new string location and then repeating this pattern repeatedly. With this shlemiel the painter pattern introduced with these rewrites, as it steps through the text it is tokenizing it is remeasuring the entire length of the string endlessly.
+
+    This is what caused my performance issue, and it’s why it appeared on Linux but was never seen on my Mac (where zig wasn’t used for compiling sqlite).
+
+    Tokenizing a 1.2MB file, which was seen passing json to sqlite, is approximately 12,000x slower with this pattern. As the file gets larger, the slowdown is quadratic.
+
+    ## The Classic Issues Recur
+
+    I mean no malice or disrespect to anyone involved with these great tools that enable so much. But it’s interesting that in the year 2026, these same old issues can recur, and we all need to be vigilant for them. Something so trivial was grinding a process to a halt, in the most unexpectedly trivial of places.
+
+    My original fix for this issue, at least in my own code, was to pre-prune whitespace from JSON, which greatly reduced the cost when tokenizing in sqlite3, but not knowing where else it might bite I moved my Linux builds over to Linux containers.
+  error:
+  fetched_at: '2026-11-04T19:28:51Z'
+archived_at: '2026-11-04T19:28:51Z'

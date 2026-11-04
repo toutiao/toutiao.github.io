@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-fgucra
+  source: lobsters
+  title: Observations from Running stealmybitcoin.com
+  url: https://pavursec.com/blog/stealmybitcoin/
+  hn_url: https://lobste.rs/s/fgucra
+  score: 99
+  author: wezm
+  posted_at: '2026-11-03T23:45:21Z'
+  fetched_at: '2026-11-04T19:28:50Z'
+  article_url: https://pavursec.com/blog/stealmybitcoin/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-04T19:28:53Z'
+  raw_comment_count: 2
+  tags:
+  - php
+  - security
+comments:
+- id: lo-7iexb4
+  parent_id: '0'
+  author: isuffix
+  text: |-
+    It's unfortunate that this vulnerability led to so many people losing their Wednesdays, but showing that the CVE can be exploited gives some solace.
+    Maybe there's a silver lining to PHP2Shell being hard but still exploitable? Perhaps that combination helped evoke enough worry to spread awareness—and reminded some people of how to update their backends for next time—while not quite leaving us vulnerable to a Tom Scott Single Point of Failure scenario or worse.
+  score: 6
+  posted_at: '2026-11-04T16:44:36Z'
+- id: lo-2lngwx
+  parent_id: '0'
+  author: mxey
+  text: |-
+    First, I added a php-version.php page, which was served alongside the already PHP-hosted index.html page, in case the active participation of the PHP interpreter was necessary for the exploit. While some of the early reporting on PHP2Shell suggested this maybe wasn’t a strict requirement of exploitation (e.g. https://www.wiz.io/blog/php2shell-php-rce : “Exploitation does not depend on a flaw in the application’s code: even a simple “Hello World” application running on an affected PHP version can be vulnerable.”), it seems plausible to me that the part of the PHP SAPI server that serves .html files could be immune to these tasks.
+
+    Do I not understand this part or does the author? Unless you configure your web server to handle .html files through PHP, there is no PHP SAPI for serving html. Or does he mean he used the PHP included dev HTTP server?
+  score: 1
+  posted_at: '2026-11-04T17:36:10Z'
+article:
+  url: https://pavursec.com/blog/stealmybitcoin/
+  title: Observations from Running stealmybitcoin.com | Pavursec
+  fetch_status: success
+  content: |-
+    # Observations from Running stealmybitcoin.com
+
+     Oct 30, 2026 [Security](/category/security/)
+
+    Table of Contents
+
+    Last week, I saw an article on the front page of the New York Times [website](https://www.nytimes.com/2026/10/21/us/politics/php-vulnerability-ai-openai-cybersecurity.html) reporting that a critical vulnerability in PHP had been found. The article, and [others](https://www.theguardian.com/technology/2026/oct/22/websites-across-world-hit-by-millions-of-attempts-to-exploit-php-code-flaw) [like](https://www.cbsnews.com/news/php2shell-vulnerability-ai-security-flaw/) [it](https://apnews.com/article/php-vulnerabilities-security-threat-38d37c4c18bf8355b02d85b5a73ed642), claimed any attacker could achieve arbitrary remote code execution on any of the millions of running PHP services worldwide simply by sending a few unauthenticated web requests that exploited the PHP2Shell vulnerability.
+
+    My office Slack was buzzing, as were several of my Signal chats with colleagues and friends across the security community.
+
+    Rumors swirled about how in-the-wild exploitation caused one tech company to break embargo and leak news of the vulnerability hours before the rest of the community could coordinate disclosure. That hackers were _already_ hacking websites, in the wild, with this exploit and that every hour mattered to get the patches rolled out across 70% of the internet.
+
+    ## The Question
+
+    Was PHP2Shell the hallmark of a new era whereby uplifted randos could hack any website with a few well-crafted prompts to an AI model?
+
+    I looked out my window, expecting perhaps to see the dull apocalyptic glow of fires on the horizon as society collapsed in real time. Nothing.
+
+    While online articles and tweets made the rounds about the eleven alarm cyberapocalypse upon us, I struggled to find any reference to a specific website that had been hacked.
+
+    Over the following days, a few iconoclasts had pointed out that the vulnerability was rather fiddly in practice ([Elias Taylor](https://eliastaylor.com/noexploit/); [Lucas Luitjes](https://blog.luitjes.it/posts/i-want-my-wednesday-back/)) and that hacker groups, while initially quite excited by the exploit’s potential, had started to view it as impractical or difficult ([KELA](https://www.kelacyber.com/blog/php2shell-underground-response/)).
+
+    Yet at the same time, the national and international press continued to cover a herculean emergency effort to hunt down and patch PHP-based websites across the internet.
+
+    Rather than wait around and wonder, I decided to try to figure things out for myself. I had two fundamental questions:
+
+    1. Was PHP2Shell actually exploitable outside of a lab environment?
+    2. Would relatively unskilled attackers with access to AI and the PHP source code be able to exploit this class of vulnerability?
+
+    ## The Results
+
+    Directly, the answers to the questions are:
+
+    ### 1) Was PHP2Shell actually exploitable outside of a lab environment?
+
+    **Yes.** Absolutely. The challenge winner, who has posted a [writeup](https://github.com/KillaBoi/StealMyBitcoin-PoC), exploited my server directly over an open internet connection and did so using the PHP2Shell vulnerability (e.g. he did not exploit some other vulnerability in my setup). He did this through a specially crafted exploit which targeted the specific configuration of my PHP installation and the ways in which it was set up on the server.
+
+    ### 2) Would relatively unskilled attackers with access to AI and the PHP source code be able to exploit this class of vulnerability?
+
+    **Not yet.** Of tens of thousands of people who attempted the exploit - including in a 9 hour period when the challenge was active after the first successful solve (more on that below…) - only two managed to trigger the `print-flag` binary and only one, the winner of the challenge, managed to do so in such a way as to extract useful content from the application.
+
+    ## The Experiment
+
+    The core idea was pretty simple. I’d rent a cheap VPS for a few weeks, slap a PHP website on it along with the key to a bitcoin wallet, and then wait and see if anyone managed to drain the wallet. Miraculously, the domain name “stealmybitcoin.com” was available, so I took this as a sign from the fates themselves that this experiment had the mandate of heaven.
+
+    I slapped $500 of bitcoin into a clean wallet, rented a $2.50/month Debian VPS from a web hosting provider, and told Codex to make me a basic webpage and stick it on the internet with PHP. I configured the server such that a single executable binary `print-flag` had permissions to read a `flag` file containing the WIF, took down my firewall, and posted the link to Hacker News to see if anyone would give the challenge a shot.
+
+    ![Screenshot of the challenge landing page](/blog/stealmybitcoin/challenge-landing-page_hu7c355689413d8c2ac11ec25fb3ef8e8b_520195_45574f297f8bdb2334fbcf9ee809dc52.webp)
+
+    Things got a little crazy from there. Within the first hour of posting, the link had climbed to the front page of Hacker News (where it stayed for essentially an entire day) and my $2.50/month VPS was under so much load I couldn’t maintain an SSH session.
+
+    I eventually scaled my VPS up from 1 vCPU, 500 MB RAM and 10GB of disk space all the way to 2 vCPU, 4096 MB RAM, and 80 GB of SSD. Over the course of the challenge my VPS host temporarily took my site down once because they suspected it was subject to a Distributed Denial of Service attack and once because “we have determined your CPU resource utilization profile is excessive.”
+
+    Additionally, due to the nature of the exploit, people were pretty continuously taking down individual PHP workers from high request load, partially successful memory exploitation attempts, and general shenanigans.
+
+    Eventually I managed to get things into a relatively steady state (e.g. most people could connect to the website most of the time), with regular resets and health checks standing in for true high-availability hosting. Once the link dropped off the front page of Hacker News, traffic quieted down quite a bit as well.
+
+    ### Some Stats
+
+    Due to flaky monitoring, it’s hard to get representative statistics regarding visitor count and traffic patterns. I had set up some pretty reliable logging so I could know if/when the `print-flag` binary was called and some best-effort logging of web request headers and payloads so I could hopefully understand what happened around that time; for the first few hours of virality, I was blowing through my logrotate configuration (for ~80MB of storage) roughly every 4 minutes thanks to the attention on the site.
+
+    As a result, logs of certain PHP crashes and activity around the `print-flag` file were essentially complete over the duration of the challenge. Broader web request logging only covered 600-ish of the challenge’s 1,600-ish minute duration.
+
+    During the 10 hours when I had reliable web request logging:
+
+    - Around **20,000** unique IP addresses engaged with the challenge in some substantive way (rather than just visiting the home page).
+    - Around **120,000** distinct source IPs visited the site.
+    - The server recieved more than **13 million** HTTP requests.
+    - At peak load, the server received over **18,000** requests a minute.
+
+    There’s no statistically credible way to extrapolate over the missing netflow data, but I can confidently say that tens of thousands of players attempted to steal my bitcoin.
+
+    I had much more reliable logs of PHP server errors and `print-flag` executions since they were not rotated under heavy load and were relatively low volume. In these logs, over 26-ish hours, I observed:
+
+    - Approximately _2,075_ distinct PHP `SIGSEGV `events. While these could be caused by other bugs in PHP, they are not something you’d typically expect to see and may roughly correlate with attempts that were closer to triggering the exploit.
+    - Only _two_ IPs managed to trigger the `print-flag` executable and only _one_ person did so in such a way that data was exfiltrated successfully from the server.
+
+    ## Timeli
+  error:
+  fetched_at: '2026-11-04T19:28:53Z'
+archived_at: '2026-11-04T19:28:53Z'
