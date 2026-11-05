@@ -5,14 +5,14 @@ post:
   title: So my ISP was hijacking my DNS
   url: https://karthihegde.dev/posts/dns_tampering
   hn_url: https://lobste.rs/s/cozhtg
-  score: 70
+  score: 89
   author: dracarys_18
   posted_at: '2026-11-04T12:06:23Z'
-  fetched_at: '2026-11-05T01:21:24Z'
+  fetched_at: '2026-11-05T10:27:41Z'
   article_url: https://karthihegde.dev/posts/dns_tampering
   article_fetch_status: success
-  article_fetched_at: '2026-11-05T01:21:24Z'
-  raw_comment_count: 7
+  article_fetched_at: '2026-11-05T10:27:42Z'
+  raw_comment_count: 13
   tags:
   - networking
 comments:
@@ -24,7 +24,7 @@ comments:
     If you want to test your own connection for this sort of interference, you can run OONI: https://ooni.org/install/. The project is building more capabilities, like improved middlebox detection, which should make it easier to identify who exactly is tampering with your network.
     I'm currently using the platform to assess tampering in the email ecosystem (MTA-STS censorship) and I'm looking for volunteers to run a custom test list I maintain to detect tampering in the wild: https://run.ooni.org/v2/10371.
     Edit: thanks for running the test list! Anomalies are getting reported here: https://explorer.ooni.org/search?since=2026-10-28&until=2026-11-30&failure=false&ooni_run_link_id=10371&only=anomalies
-  score: 21
+  score: 25
   posted_at: '2026-11-04T14:35:35Z'
 - id: lo-tovzxe
   parent_id: '0'
@@ -32,7 +32,7 @@ comments:
   text: |-
     OP says they self-host unbound, but this still happened, then discusses why everything local isn't using self-hosted DNS. It's not clear whether self-hosted unbound resolved to the ISP's IP. If not, there's the solution there. If you're worried about your containers and whatever else not getting DNS, then it's a good opportunity to set up something more resilient.
     If unbound was tricked in to also giving incorrect answers in spite of being a fully recursive resolver, then the ISP needs to be outed, the methods need to be examined, and a much bigger deal should be made about this.
-  score: 4
+  score: 5
   posted_at: '2026-11-04T16:31:19Z'
 - id: lo-j4sgpt
   parent_id: '0'
@@ -40,7 +40,7 @@ comments:
   text: I feel like I cleared that up in the first paragraph. But if not, YES, they
     tamper with that traffic too. They monitor and tamper with all DNS traffic over
     port 53.
-  score: 11
+  score: 14
   posted_at: '2026-11-04T16:48:18Z'
 - id: lo-qqrlmu
   parent_id: '0'
@@ -49,7 +49,7 @@ comments:
     I found that my ISP (Virgin Media in the UK) was tampering with port 53, blocked DoT entirely, and block DoH to some (not all) well known servers. It took me a while to work around this - also with unbound.
     Mostly this doesn't bother me because at work I use a vpn; but that has drawbacks too. Recently I figured out why firefox would often fail to connect to our vercel sites, when chrome worked. It turned out that firefox will try to use DoH via mozilla/cloudflare's default server, making a TYPE65 request that returns (among other things) 'alpn=h3'. That causes firefox to try to use QUIC to reach vercel...which the vpn blocks!
     It works when DoH is off, because then firefox uses a "happy eyeballs" approach, making both the http/2 and http/3 requests and just using the first response (always /2 because QUIC was blocked). I couldn't test exactly what was doing this off vpn because... Virgin were blocking DoH as above, so firefox always used the fallback behaviour and managed to connect.
-  score: 9
+  score: 11
   posted_at: '2026-11-04T17:24:58Z'
 - id: lo-os0rk1
   parent_id: '0'
@@ -65,7 +65,7 @@ comments:
     Even tech people tend to have a poor understanding of how DNS actually works. I still hear people to this day say "DNS record propagation" as if that is a real thing.
 
     I could go on...
-  score: 12
+  score: 15
   posted_at: '2026-11-04T18:04:56Z'
 - id: lo-kqku24
   parent_id: '0'
@@ -83,6 +83,59 @@ comments:
     I wouldn't have spotted it but when I accessed some low TTL sites off vpn they didn't resolve, tho I could switch to my phone hotspot and everything worked. A plausible, and forgivable, reason for that would be caching - but then blocking DoT made it inexcusable.
   score: 1
   posted_at: '2026-11-04T23:46:41Z'
+- id: lo-6j9gdz
+  parent_id: '0'
+  author: xetera
+  text: I'd say DoH is what specifically subverts security protocols since DoT on
+    port 853 is trivial to block and most clients are identifiable through the ALPN
+    on the TLS handshake regardless
+  score: 1
+  posted_at: '2026-11-05T01:34:55Z'
+- id: lo-u54zxs
+  parent_id: '0'
+  author: riking
+  text: Overly restrictive work VPNs strike again. Should just allow UDP 443.
+  score: 1
+  posted_at: '2026-11-05T03:13:41Z'
+- id: lo-qznqbi
+  parent_id: '0'
+  author: vpr
+  text: |-
+    Not a single mention of ODoH [RFC 9230]?
+    I've been using it with dnscrypt-proxy on most boxes without any trouble for years.
+  score: 1
+  posted_at: '2026-11-05T04:36:56Z'
+- id: lo-35nedq
+  parent_id: '0'
+  author: dracarys_18
+  text: I use Anonymized DNSCrypt, which works in a similar way to ODoH. I'm a little
+    skeptical of ODoH, though. It was started by multi-billion-dollar companies like
+    Apple and Cloudflare, and the privacy policies of some relay providers, like Surf,
+    makes me more skeptical about it.
+  score: 1
+  posted_at: '2026-11-05T04:54:41Z'
+- id: lo-wtcuhh
+  parent_id: '0'
+  author: rfmoz
+  text: I've seen different behavior inside the same ISP between IPv6 and IPv4. It
+    seems that they deploy their "solutions" only in one side.
+  score: 1
+  posted_at: '2026-11-05T07:12:01Z'
+- id: lo-2darmm
+  parent_id: '0'
+  author: Psentee
+  text: |-
+    Generalizing a bit, one could say that:
+
+    plain UDP DNS is bad, because it can be easily intercepted by the local ISP (who is evil and implements censorship)
+    DoT/DoH is bad, because it cannot be easily intercepted by the local ISP (who is good and implements security controls)
+
+    I don't think it's possible to reconcile these two problems – you fix one, you break the other. I feel that current state of things isn't such a bad balance: your ISP can mess with your traffic (as they can mess with all traffic; if they couldn't rewrite DNS responses, they could simply route traffic to the resulting IP to their own box), but you as a LAN administrator can mess with it too. There's a hobby forum that has blocked access from my entire country – I can configure my home network's DNS to point it at a tun2proxy instance connected to a VPN.
+    If a service needs tamper resistance, it can be provided on the transport layer, which will protect not just from DNS tampering, but also from tampering on a routing level or (to some degree) OS level. TLS/https certificates provide a minimal level of protection here, most ISPs can't easily mint certs for any domain; depending on your threat model, you can add more mechanisms on top of that, all the way to mutually authenticated end–to–end encryption.
+    DNS is so complex because name resolution is a complex problem: it has to work on all levels, from localhost and VMs running on one physical host, through LAN and local services, intranet level, to worldwide Internet. If it malfunctions, everything breaks ("It's always DNS"). If it's slow, it slows everything down – hence multiple layers of caching. As we all know, "there are only two hard things in Computer Science: cache invalidation and naming things" – DNS is both.
+    It's amazing that it works at all.
+  score: 3
+  posted_at: '2026-11-05T09:16:39Z'
 article:
   url: https://www.karthihegde.dev/posts/dns_tampering
   title: So my ISP was hijacking my DNS - Karthikey Hegde
@@ -145,4 +198,4 @@ article:
     I also run NixOS on my servers, and my [dotfiles](https://github.com/dracarys18/dotfiles) are open source if you're interested
   error:
   fetched_at: '2026-11-04T19:28:50Z'
-archived_at: '2026-11-05T01:21:25Z'
+archived_at: '2026-11-05T10:27:42Z'

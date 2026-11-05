@@ -5,14 +5,14 @@ post:
   title: 'Shlemiel the Painter Is Back: How Zig’s libc Rewrite Made SQLite Slower'
   url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
   hn_url: https://lobste.rs/s/lh1j0e
-  score: 58
+  score: 81
   author: ohrv
   posted_at: '2026-11-04T15:23:09Z'
-  fetched_at: '2026-11-05T01:21:24Z'
+  fetched_at: '2026-11-05T10:27:41Z'
   article_url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
   article_fetch_status: success
-  article_fetched_at: '2026-11-05T01:21:25Z'
-  raw_comment_count: 8
+  article_fetched_at: '2026-11-05T10:27:42Z'
+  raw_comment_count: 9
   tags:
   - performance
   - rust
@@ -25,7 +25,7 @@ comments:
     look at the linked zig code, and presumably it’s like this because it’s mapping
     c strings into nice safe zig arrays rather than treating them as unsafe streams
     of memory locations containing chars.
-  score: 11
+  score: 15
   posted_at: '2026-11-04T16:51:12Z'
 - id: lo-vsj8xx
   parent_id: '0'
@@ -35,7 +35,7 @@ comments:
     Zig uses musl (the standard library rewrite), but they have been rewriting it piece by piece in pure Zig (via libzigc), removing the C dependencies one at a time.
 
     Hmm, was this using the musl triple when invoking zigbuild? I'd be a bit surprised if that didn't use musl, but I'm not sure what other libc values can be used in the triple other than glibc.
-  score: 2
+  score: 4
   posted_at: '2026-11-04T17:03:45Z'
 - id: lo-pw3u64
   parent_id: '0'
@@ -43,7 +43,7 @@ comments:
   text: |-
     Relevant issue: https://codeberg.org/ziglang/zig/issues/37402
     Pending PR: https://codeberg.org/ziglang/zig/pulls/37417
-  score: 20
+  score: 31
   posted_at: '2026-11-04T18:38:58Z'
 - id: lo-tnymyv
   parent_id: '0'
@@ -51,14 +51,14 @@ comments:
   text: |-
     The quoted text is correct, you can follow the link to the commit and see that musl sources are deleted as libzigc symbols are added. This is also done for symbols provided by compiler_rt.
     Relevant issues: https://github.com/ziglang/zig/issues/2879 -> https://codeberg.org/ziglang/zig/issues/30978
-  score: 1
+  score: 2
   posted_at: '2026-11-04T19:04:59Z'
 - id: lo-cnnbwa
   parent_id: '0'
   author: tobin_baker
   text: Hate to say it, but LLM code review certainly would have caught such an obvious
     "accidentally quadratic" bug.
-  score: 8
+  score: 9
   posted_at: '2026-11-04T19:14:18Z'
 - id: lo-ggsc86
   parent_id: '0'
@@ -66,14 +66,14 @@ comments:
   text: |-
     And we would have missed the community showing up, and having fun working together on a fix.
     I think this is acceptable in a pre-1.0 language.
-  score: 25
+  score: 50
   posted_at: '2026-11-04T19:38:34Z'
 - id: lo-ix44yi
   parent_id: '0'
   author: jdpage
   text: Zig treats triples as requesting an ABI, rather than an implementation. A
     member of the core team discussed the rationale behind it in this Lobsters comment.
-  score: 2
+  score: 6
   posted_at: '2026-11-04T22:18:57Z'
 - id: lo-pt4clz
   parent_id: '0'
@@ -82,15 +82,22 @@ comments:
     You don't even need that. You just need a ratio gate.
 
 
-    Measure the time it takes for a function to process 10x an input, 100x an input, and 1000x an input.
+    Measure the time it takes for a function to process 1x an input (which is basically "setup time"), 10x an input, 100x an input, and 1000x an input. If you want to get fancy, warm it up first with 10000x input to get to steady-state performance.
 
 
     Measure the ratios between those times. (This should be somewhat cpu-details-orthogonal and somewhat immune to load effects.) Is it linear? n log n? n squared? Derive a complexity score from that (within a bit of tolerance). Force it to be under a certain score.
 
 
     Done.
-  score: 1
+  score: 10
   posted_at: '2026-11-05T01:19:06Z'
+- id: lo-fzk9bh
+  parent_id: '0'
+  author: mitsuhiko
+  text: But that is a lot more work than having an AI code reviewer run. And it only
+    solves for a very narrow thing.
+  score: 1
+  posted_at: '2026-11-05T10:08:27Z'
 article:
   url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
   title: 'Shlemiel the Painter Is Back: How Zig’s libc Rewrite Made SQLite 12,000×
@@ -142,4 +149,4 @@ article:
     My original fix for this issue, at least in my own code, was to pre-prune whitespace from JSON, which greatly reduced the cost when tokenizing in sqlite3, but not knowing where else it might bite I moved my Linux builds over to Linux containers.
   error:
   fetched_at: '2026-11-04T19:28:51Z'
-archived_at: '2026-11-05T01:21:25Z'
+archived_at: '2026-11-05T10:27:42Z'
