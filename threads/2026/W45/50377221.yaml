@@ -1,0 +1,661 @@
+---
+post:
+  id: '50377221'
+  title: OpenSSH 10.6p2 has been released with a workaround for a critical vulnerability
+  url: https://hachyderm.io/@damienmiller/117563026759098135
+  hn_url: https://news.ycombinator.com/item?id=50377221
+  score: 165
+  author: Animux
+  posted_at: '2026-11-05T09:46:17Z'
+  fetched_at: '2026-11-05T19:38:09Z'
+  article_url: https://hachyderm.io/@damienmiller/117563026759098135
+  article_fetch_status: error
+  article_fetched_at: '2026-11-05T19:38:09Z'
+  raw_comment_count: 78
+comments:
+- id: '50377406'
+  parent_id: '50377221'
+  author: throwa356262
+  text: |-
+    musl only, the quick fix:<p><pre><code>     PasswordAuthentication=no
+
+    </code></pre>
+    Which is a good advice in general.
+  score: 0
+  posted_at: '2026-11-05T10:14:22Z'
+- id: '50377590'
+  parent_id: '50377221'
+  author: phoronixrly
+  text: I presume Dropbear, thus musl-based OpenWrt routers are also not affected?
+    Not that Dropbear has been an example in that regard.
+  score: 0
+  posted_at: '2026-11-05T10:41:59Z'
+- id: '50377596'
+  parent_id: '50377221'
+  author: crest
+  text: I&#x27;m sure some people running lightweight containers just had a heart
+    attack.
+  score: 0
+  posted_at: '2026-11-05T10:42:48Z'
+- id: '50377645'
+  parent_id: '50377590'
+  author: manwe150
+  text: Since after you posted, various people in the thread have reported dropbear
+    is not affected
+  score: 0
+  posted_at: '2026-11-05T10:49:54Z'
+- id: '50377731'
+  parent_id: '50377221'
+  author: jordiburgos
+  text: Workaround? Why not a fix?
+  score: 0
+  posted_at: '2026-11-05T11:03:02Z'
+- id: '50377767'
+  parent_id: '50377731'
+  author: ale42
+  text: AFAIU because the bug is in musl and not in OpenSSH
+  score: 0
+  posted_at: '2026-11-05T11:08:12Z'
+- id: '50378008'
+  parent_id: '50377596'
+  author: smw
+  text: I would imagine the vast majority of lightweight containers don&#x27;t contain
+    an ssh server?
+  score: 0
+  posted_at: '2026-11-05T11:44:38Z'
+- id: '50378061'
+  parent_id: '50377221'
+  author: entuno
+  text: Seems slightly confusing that the OpenSSH release notes page says:<p>&gt;
+    This release contains a critical security workaround that affects Linux systems
+    that use the musl libc and PAM disabled.<p>But that there&#x27;s nothing about
+    it on their security page.<p>Even if it&#x27;s not technically a bug in their
+    code, the fact that they&#x27;ve made a &quot;critical&quot; release to address
+    it suggests that it should probably be listed on the security page as well. But
+    maybe (hopefully) they just haven&#x27;t updated the security page yet.
+  score: 0
+  posted_at: '2026-11-05T11:51:23Z'
+- id: '50378097'
+  parent_id: '50377221'
+  author: asdfsa32
+  text: Who does PasswordAuthentication=yes in this day and age anyway.
+  score: 0
+  posted_at: '2026-11-05T11:56:29Z'
+- id: '50378099'
+  parent_id: '50377221'
+  author: amluto
+  text: Wow, what a bug. I expect the exploit is literally as simple as trying to
+    ssh in as a user with the password has ‘*’ in &#x2F;etc&#x2F;shadow and typing
+    anything as the password.<p>To the extent that systems that are configured in
+    the vulnerable manner exist in the wild, I’m surprised they weren’t exploited
+    years ago by trivial ssh bots.<p>P.S. Wow, I’m reminded of just how awful traditional
+    UNIX-y C APIs and code are.<p>P.P.S. The musl code in question is <i>nuts</i>.  The
+    API it implements is <i>awful</i>.  Seriously, here’s the manpage:<p><a href="https:&#x2F;&#x2F;man.archlinux.org&#x2F;man&#x2F;crypt.3.en"
+    rel="nofollow">https:&#x2F;&#x2F;man.archlinux.org&#x2F;man&#x2F;crypt.3.en</a><p>You
+    can’t call this function correctly.  sshd’s “fix” is basically to assume that
+    a too-short return is an error return instead of a success return.<p>PAM is also
+    awful, but this is worse.
+  score: 0
+  posted_at: '2026-11-05T11:56:32Z'
+- id: '50378101'
+  parent_id: '50377406'
+  author: solyin
+  text: How do you break back into your digital life? You wake up in a strange place.
+    Something happened. Everything&#x27;s gone. No wallet&#x2F;keys&#x2F;smartphone&#x2F;tablet&#x2F;laptop.
+    How would you get back into your digital life given only a laptop with access
+    to the Internet, unless something, somewhere is passwordauthenticate=yes.
+  score: 0
+  posted_at: '2026-11-05T11:56:53Z'
+- id: '50378168'
+  parent_id: '50378101'
+  author: INTPenis
+  text: Yeah your vault has password authentication. Your password manager in other
+    words. Your vault is where you store your private ssh keys, and or the passwords
+    for the keys.
+  score: 0
+  posted_at: '2026-11-05T12:06:42Z'
+- id: '50378222'
+  parent_id: '50378097'
+  author: ectospheno
+  text: People who use AuthenticationMethods &quot;publickey,password&quot;<p>You
+    must present a key first after which you must enter a password.
+  score: 0
+  posted_at: '2026-11-05T12:17:51Z'
+- id: '50378254'
+  parent_id: '50378101'
+  author: viraptor
+  text: 'Remotely: An encrypted file with a seed &#x2F; master passwords to all the
+    other data, published under a public url you can remember, but not linked anywhere
+    and not listed.<p>Locally: Same, but printed out, laminated, in a safe place with
+    other documents.'
+  score: 0
+  posted_at: '2026-11-05T12:22:31Z'
+- id: '50378258'
+  parent_id: '50378101'
+  author: denkmoon
+  text: I walk to my pc and type ssh-keygen. If i can’t do that I’ve got bigger problems.
+    “I must be able to recover remotely using a memorised credential” is a terrible
+    requirement.
+  score: 0
+  posted_at: '2026-11-05T12:23:02Z'
+- id: '50378274'
+  parent_id: '50378101'
+  author: jareklupinski
+  text: "&gt; You wake up in a strange place. Something happened. Everything&#x27;s
+    gone. No wallet&#x2F;keys&#x2F;smartphone&#x2F;tablet&#x2F;laptop.<p>at this point
+    the _last_ thing i care about is my email.<p>where am i? am i ok? how are my friends&#x2F;loved
+    ones?<p>once those are in place, it becomes clearer how to get back to &quot;normal&quot;"
+  score: 0
+  posted_at: '2026-11-05T12:25:09Z'
+- id: '50378332'
+  parent_id: '50377406'
+  author: patadura
+  text: imo this is a good advice only if the devices that connect to the server have
+    their home encrypted and ssh private key protected.
+  score: 0
+  posted_at: '2026-11-05T12:32:27Z'
+- id: '50378337'
+  parent_id: '50378222'
+  author: rvz
+  text: Just do no password at all.
+  score: 0
+  posted_at: '2026-11-05T12:33:22Z'
+- id: '50378339'
+  parent_id: '50377221'
+  author: jmclnx
+  text: "&gt;We consider the root cause of this bug to be outside OpenSSH itself,
+    but we&#x27;re in a good position to deliver a mitigation quickly.<p>So not a
+    ssh issue but an issue specific to Linux using &quot;musl libc without PAM&quot;."
+  score: 0
+  posted_at: '2026-11-05T12:33:31Z'
+- id: '50378363'
+  parent_id: '50378101'
+  author: petesergeant
+  text: 1Password subscription and the memorized key. 1Password is the only place
+    my ssh private keys are stored.
+  score: 0
+  posted_at: '2026-11-05T12:35:45Z'
+- id: '50378370'
+  parent_id: '50378101'
+  author: fn-mote
+  text: The somewhere for password authentication is a place you have physical access.
+    Not ssh.
+  score: 0
+  posted_at: '2026-11-05T12:36:21Z'
+- id: '50378389'
+  parent_id: '50377221'
+  author: K0nserv
+  text: This looks terrible for musl, what a collection of terrible decisions on their
+    part. I guess I&#x27;m staying away from it.
+  score: 0
+  posted_at: '2026-11-05T12:38:27Z'
+- id: '50378406'
+  parent_id: '50378337'
+  author: ectospheno
+  text: Putting the one in 1fa? No thanks.
+  score: 0
+  posted_at: '2026-11-05T12:40:15Z'
+- id: '50378411'
+  parent_id: '50378097'
+  author: walrus01
+  text: As this is apparently affecting openwrt, probably a fair number of openwrt
+    users, if I had to guess
+  score: 0
+  posted_at: '2026-11-05T12:41:16Z'
+- id: '50378414'
+  parent_id: '50377590'
+  author: mijoharas
+  text: There is this write-up&#x2F;fancy page from the person who found the vulnerability[0]
+    (HN discussion[1], how I found this thread).<p>At the bottom of that it says dropbear
+    is unaffected.<p>&gt; on debian, ubuntu, fedora or anything else with glibc? going
+    through pam? dropbear? openbsd? you&#x27;re fine<p>[0] <a href="https:&#x2F;&#x2F;sshhole.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;sshhole.com&#x2F;</a><p>[1] <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50378228">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50378228</a>
+  score: 0
+  posted_at: '2026-11-05T12:41:25Z'
+- id: '50378484'
+  parent_id: '50378101'
+  author: mr_mitm
+  text: I log in via console, either physical or virtual (the latter requires MFA
+    though)
+  score: 0
+  posted_at: '2026-11-05T12:50:01Z'
+- id: '50378491'
+  parent_id: '50378389'
+  author: sheepscreek
+  text: To err is human. There’s no escaping it, I’m afraid.
+  score: 0
+  posted_at: '2026-11-05T12:50:34Z'
+- id: '50378517'
+  parent_id: '50378097'
+  author: mhitza
+  text: If you run a cockpit service on your server you will need password authentication
+    enabled, unfortunately.
+  score: 0
+  posted_at: '2026-11-05T12:52:42Z'
+- id: '50378519'
+  parent_id: '50378097'
+  author: krystalgamer
+  text: it&#x27;s the default for most systems. I can&#x27;t remember a time I had
+    to not turn it off.
+  score: 0
+  posted_at: '2026-11-05T12:53:38Z'
+- id: '50378669'
+  parent_id: '50378101'
+  author: worksonmine
+  text: A scenario where all the backups are gone and the server is somehow the only
+    thing that survived is not a very plausible one.
+  score: 0
+  posted_at: '2026-11-05T13:10:30Z'
+- id: '50378682'
+  parent_id: '50377221'
+  author: dust42
+  text: "&gt; We are making this release as fast as possible (we learned of the problem
+    yesterday) because we have recently observed multiple cases of rapid bug rediscovery
+    by AI agents, sometimes within hours, and so now consider long embargo periods
+    to be a dangerous practice that primarily benefits attackers.<p>I think this will
+    likely become standard. Nevertheless, a few stormy months are ahead."
+  score: 0
+  posted_at: '2026-11-05T13:11:44Z'
+- id: '50378694'
+  parent_id: '50378101'
+  author: MPSimmons
+  text: Does this happen to you a lot? You may have other issues
+  score: 0
+  posted_at: '2026-11-05T13:13:50Z'
+- id: '50378732'
+  parent_id: '50378491'
+  author: K0nserv
+  text: I agree entirely, but I&#x27;m not sure changing `crypt` to return `&quot;*&quot;`
+    instead of `NULL` on failure qualifies. It&#x27;s much more of a considered decision,
+    which happens to be very wrong.
+  score: 0
+  posted_at: '2026-11-05T13:17:43Z'
+- id: '50378747'
+  parent_id: '50377221'
+  author: MPSimmons
+  text: Is this actually effective against Alpine? The default install seems to use
+    ! as the placeholder in &#x2F;etc&#x2F;shadow instead of * and trying the attack
+    doesn&#x27;t seem to work.
+  score: 0
+  posted_at: '2026-11-05T13:19:29Z'
+- id: '50378753'
+  parent_id: '50378101'
+  author: gfv
+  text: PasswordAuthentication=no usually means that ssh stops directly reading &#x2F;etc&#x2F;passwd
+    to authenticate, not that it stops accepting passwords completely. You&#x27;ll
+    still be able to log in with a correct password, provided KbdInteractiveAuthentication
+    is still on, PAM is available, and the PAM policy allows for it.
+  score: 0
+  posted_at: '2026-11-05T13:19:59Z'
+- id: '50378825'
+  parent_id: '50377221'
+  author: zajio1am
+  text: I would say that PasswordAuthentication=yes is by itself a vulnerability.
+  score: 0
+  posted_at: '2026-11-05T13:28:48Z'
+- id: '50378870'
+  parent_id: '50378097'
+  author: dspillett
+  text: We have clients (regulated banks and insurers of various sizes) that send
+    us feeds via SFTP. You might be surprised what proportion of them ignore our “we
+    strongly recommend key based authentication” and ask for password auth instead.
+  score: 0
+  posted_at: '2026-11-05T13:32:37Z'
+- id: '50378919'
+  parent_id: '50377221'
+  author: tiffanyh
+  text: Since OpenSSH is included in the base install, and enabled on OpenBSD - is
+    it correct that they will need to update the famous:<p>“<i>Only two remote holes
+    in the default install, in a heck of a long time!</i>”<p><a href="https:&#x2F;&#x2F;www.openbsd.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.openbsd.org&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-05T13:38:21Z'
+- id: '50378991'
+  parent_id: '50378008'
+  author: dormento
+  text: You&#x27;d be surprised by the amount of people using containers that don&#x27;t
+    know&#x2F;care what is inside.
+  score: 0
+  posted_at: '2026-11-05T13:46:24Z'
+- id: '50379006'
+  parent_id: '50378919'
+  author: rpicard
+  text: This vulnerability doesn’t exist on non-Linux systems, so not yet!
+  score: 0
+  posted_at: '2026-11-05T13:47:30Z'
+- id: '50379061'
+  parent_id: '50378919'
+  author: mldbk
+  text: OpenBSD doesn&#x27;t provide musl-linked OpenSSH by default, so not yet[x2]
+  score: 0
+  posted_at: '2026-11-05T13:52:17Z'
+- id: '50379075'
+  parent_id: '50378101'
+  author: nucleardog
+  text: The email at the root of my identity is tied to a country code domain in my
+    country. There are robust legal processes for enforcing my status as the registrant
+    and regaining control of it. Once I have access to that, I can use that to gain
+    access to everything downstream.<p>Is it fast? No, but that&#x27;s a feature.<p>But
+    it does mean I get to lean on the existing processes and identity verification
+    already part of the government bureaucracy and the courts as my backdoor.
+  score: 0
+  posted_at: '2026-11-05T13:53:25Z'
+- id: '50379084'
+  parent_id: '50378919'
+  author: heavensteeth
+  text: No, the bug is in musl but manifests in OpenSSH when compiled against it.
+  score: 0
+  posted_at: '2026-11-05T13:54:16Z'
+- id: '50379447'
+  parent_id: '50378339'
+  author: mpyne
+  text: Well, OpenSSH contributes to this by mixing hashes from the shadow file. The
+    musl code would be correct if OpenSSH passed in the hash from the user account
+    that is being logged-in.<p>They instead pass in a different user’s hash (to avoid
+    timing attacks) but end up comparing the result from musl against the actual user
+    account, defeating musl’s simplistic safeguard to avoid this very issue.<p>I’d
+    probably still call this a musl thing. Errors should result in a NULL return even
+    if the application crashes from there, but at the very least a return value intended
+    to not match any actual hash in &#x2F;etc&#x2F;shadow should be a random string
+    or predefined UUID or <i>something</i> other than *.
+  score: 0
+  posted_at: '2026-11-05T14:25:19Z'
+- id: '50379489'
+  parent_id: '50378411'
+  author: drdexebtjl
+  text: I thought OpenWrt used Dropbear by default?
+  score: 0
+  posted_at: '2026-11-05T14:28:18Z'
+- id: '50379649'
+  parent_id: '50378919'
+  author: somat
+  text: OpenBSD is not affected, so apparently they are doing something right. But
+    also glibc linux is not affected and pam linux is not affected, so it is only
+    musl linux with the remote hole.
+  score: 0
+  posted_at: '2026-11-05T14:40:16Z'
+- id: '50379688'
+  parent_id: '50377406'
+  author: sva_
+  text: Another thing I would recommend is having your servers in a wireguard net
+    and only allowing ssh from inside that virtual network. There is no need to publicly
+    expose ssh.
+  score: 0
+  posted_at: '2026-11-05T14:43:00Z'
+- id: '50379721'
+  parent_id: '50378517'
+  author: Curufir
+  text: I went and checked this. I can admin my server with Cockpit using either the
+    web service (using my username&#x2F;password) or the desktop client (via private
+    key) without issue even with SSH password authentication disabled. I do usually
+    disable the web service so had to reconfigure to check.
+  score: 0
+  posted_at: '2026-11-05T14:45:40Z'
+- id: '50379804'
+  parent_id: '50378870'
+  author: dns_snek
+  text: If you refused, would you get overruled internally?
+  score: 0
+  posted_at: '2026-11-05T14:52:00Z'
+- id: '50379862'
+  parent_id: '50379688'
+  author: somat
+  text: Why is wireguards auth better than openssh auth?
+  score: 0
+  posted_at: '2026-11-05T14:56:31Z'
+- id: '50380104'
+  parent_id: '50379862'
+  author: praash
+  text: Layered security is better (as long as their weaknesses don&#x27;t overlap).
+  score: 0
+  posted_at: '2026-11-05T15:12:58Z'
+- id: '50380137'
+  parent_id: '50380104'
+  author: INTPenis
+  text: Yeah until they discover a vuln in wireguard.
+  score: 0
+  posted_at: '2026-11-05T15:15:34Z'
+- id: '50380174'
+  parent_id: '50378870'
+  author: somat
+  text: When I set up a client sftp drop I had the luxury of saying &quot;key based
+    access only&quot;<p>Then it was a surprisingly customer service intensive process
+    to get the keys from the customers. I never did manage to automate it fully. Weird
+    enterprise systems I have never heard of with strange key formats. ssh1 keys,
+    email mangling them. Their internal processes requiring a password.<p>And way
+    to many &quot;I am sorry but that was the private key you sent me, That key is
+    now compromised and you will need to remove it and generate new keys anywhere
+    it was used&quot;<p>I almost regret not allowing passwords, almost, despite the
+    headaches key based is still much better.
+  score: 0
+  posted_at: '2026-11-05T15:17:44Z'
+- id: '50380189'
+  parent_id: '50378099'
+  author: dpoloncsak
+  text: |-
+    Maybe I&#x27;m misunderstanding, but u&#x2F;tonnydourado pointed out on another thread
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50378228#50380029">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50378228#50380029</a><p>&quot;It starts with a bold claim: &quot;ssh accounts that should not accept a password will accept any password between 256 and 1024 characters&quot;. But then it keeps adding qualifiers:<p>- sshd compiled with musl<p>- not using PAM<p>- password logins enabled<p>- at least one account with &#x27;*&#x27; as the password &quot;hash&quot;<p>- at least one OTHER account with a valid password<p>The conditions are all ANDed, miss a single one and you&#x27;re fine.&quot;<p>This doesn&#x27;t seem to be nearly as big as an issue as they&#x27;re making it out to be
+  score: 0
+  posted_at: '2026-11-05T15:18:32Z'
+- id: '50380194'
+  parent_id: '50378669'
+  author: pixl97
+  text: Depends if you&#x27;re backing up somewhere else online (also is that protected
+    by 2FA?). You must not be in a place with many huge natural disasters.<p>And this
+    is assuming the server is somewhere else on the cloud.
+  score: 0
+  posted_at: '2026-11-05T15:19:07Z'
+- id: '50380199'
+  parent_id: '50378061'
+  author: SAI_Peregrinus
+  text: musl libc violates the POSIX documented behavior of `crypt()`¹<p>&gt; Upon
+    successful completion, crypt() shall return a pointer to the hashed password;
+    the first two bytes of the returned value shall be those of the salt argument.
+    Otherwise, it shall return a null pointer and set errno to indicate the error.<p>Musl
+    returns &#x27;!&#x27; or &#x27;*&#x27;, not null.<p>¹<a href="https:&#x2F;&#x2F;pubs.opengroup.org&#x2F;onlinepubs&#x2F;9799919799&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;pubs.opengroup.org&#x2F;onlinepubs&#x2F;9799919799&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-05T15:19:21Z'
+- id: '50380219'
+  parent_id: '50380174'
+  author: pixl97
+  text: About to say, users just drop the key on their desktop and then download random
+    exe&#x27;s from the internet and run them.<p>Still safter in general, but not
+    bulletproof.
+  score: 0
+  posted_at: '2026-11-05T15:20:36Z'
+- id: '50380234'
+  parent_id: '50379862'
+  author: TheDong
+  text: 'Wireguard allows effectively no configuration around auth, and so it&#x27;s
+    more likely that it is configured in a secure manner.<p>Openssh allows: password
+    auth with weak passwords, PAM with potentially insecure PAM modules, gssappi,
+    configurable ciphers, etc. Wireguard has none of those.<p>Each of those auth methods
+    adds more possible vulnerable code paths and accidentally insecure configurations.
+    It&#x27;s very reasonable to believe that wireguard auth, since it has far fewer
+    moving parts and configuration knobs, is likely to have fewer ways it can be insecure.'
+  score: 0
+  posted_at: '2026-11-05T15:21:31Z'
+- id: '50380286'
+  parent_id: '50380104'
+  author: vadansky
+  text: Not only that, wireguard doesn&#x27;t even reply if they don&#x27;t have the
+    right key, while SSH does so the attacker knows there is at least a target.
+  score: 0
+  posted_at: '2026-11-05T15:26:34Z'
+- id: '50380322'
+  parent_id: '50377406'
+  author: vadansky
+  text: I was always uncomfortable that it&#x27;s on by default and surprised anyone
+    uses it it. It&#x27;s also more cumbersome compared to just using a key. I feel
+    like using keys is the password manager analogue for SSH.
+  score: 0
+  posted_at: '2026-11-05T15:29:06Z'
+- id: '50380335'
+  parent_id: '50380189'
+  author: bombcar
+  text: Alpine matches the first.<p>Disabling PAM has been &quot;generally good security
+    advice&quot; for decades; I remember suggestions to not use it in the 2000s.<p>Password
+    logins are often enabled, especially on multi-user and default setups.<p>If alpine
+    uses the * feature, it&#x27;s going to be pretty common. Gentoo has it, as does
+    Ubuntu.<p>If password logins are enabled, you&#x27;re almost guaranteed to have
+    at least one user with a password (root on all my boxes has one, even if I never
+    use it and it&#x27;s random garbage).<p>So the cheese lines up pretty well, this
+    affects quite a bit.<p>If password logins are enabled, someone almost certainly
+    has a password.
+  score: 0
+  posted_at: '2026-11-05T15:30:01Z'
+- id: '50380339'
+  parent_id: '50380189'
+  author: ferngodfather
+  text: No, no don&#x27;t let all of that distract you. We gotta hype this. This is
+    the new SSH2SHELL dude. Have we registered the domain yet? I&#x27;m scheduled
+    on Fox News tomorrow.
+  score: 0
+  posted_at: '2026-11-05T15:30:14Z'
+- id: '50380370'
+  parent_id: '50378097'
+  author: bombcar
+  text: Don&#x27;t most cloud providers default to that? I know I had to force some
+    to deploy with a key and even then PasswordAuth was often on and had to be disabled.
+  score: 0
+  posted_at: '2026-11-05T15:31:54Z'
+- id: '50380404'
+  parent_id: '50379447'
+  author: bombcar
+  text: Randomly using a different users&#x27;s hash seems <i>so wrong</i> to me,
+    but maybe I&#x27;ve just been too deep in PII stuff for too long.
+  score: 0
+  posted_at: '2026-11-05T15:33:30Z'
+- id: '50380513'
+  parent_id: '50380335'
+  author: dpoloncsak
+  text: So it&#x27;s essentially one of the &#x27;recommended configurations&#x27;?<p>I&#x27;m
+    seeing people I generally trust in the scene memeing on twitter, while others
+    are freaking out. Its hard for me to tell how fucked we are, I guess
+  score: 0
+  posted_at: '2026-11-05T15:41:40Z'
+- id: '50380824'
+  parent_id: '50379804'
+  author: dspillett
+  text: 'Previous company: probably. It could be a dealbreaker for the client, and
+    we bent over quite readily on a number of issues considered minor (keys are best
+    practise, but passwords are so common it is difficult to argue that they are so
+    bad they should be refused).<p>Current state (now we have been bought and are
+    effectively more than an order of magnitude bigger): I definitely don&#x27;t have
+    opportunity to make a unilateral decision like that. Even though the larger company
+    has a more “fair enough, feel free to go elsewhere” attitude when a small client
+    says “if you can support × that is a dealbreaker for us” then we could previously
+    afford to take as our stance, some of the bigger clients are definitely paying
+    us enough, and do use passwords, that someone above me would overrule a keys-only
+    decision.'
+  score: 0
+  posted_at: '2026-11-05T16:02:43Z'
+- id: '50380889'
+  parent_id: '50380194'
+  author: worksonmine
+  text: "&gt; You must not be in a place with many huge natural disasters.<p>Or I
+    have proper backups synced across the world on different providers. The likelihood
+    of everything failing is not a vector I worry about. If that happens I have bigger
+    problems to worry about."
+  score: 0
+  posted_at: '2026-11-05T16:07:47Z'
+- id: '50380907'
+  parent_id: '50380219'
+  author: dspillett
+  text: At least in that case, if the account is compromised we definitely didn&#x27;t
+    leak the credentials. That we don&#x27;t have them to leak is one of the advantages
+    of key-based auth.<p>[of course not having the credentials to leak does not protect
+    us from this sort of bug, it is just one factor in a multipart security stance]
+  score: 0
+  posted_at: '2026-11-05T16:09:57Z'
+- id: '50381116'
+  parent_id: '50377221'
+  author: TZubiri
+  text: Here&#x27;s an unrelated security issue I opened with Alpine earlier this
+    year<p><a href="https:&#x2F;&#x2F;gitlab.alpinelinux.org&#x2F;alpine&#x2F;aports&#x2F;-&#x2F;work_items&#x2F;16561"
+    rel="nofollow">https:&#x2F;&#x2F;gitlab.alpinelinux.org&#x2F;alpine&#x2F;aports&#x2F;-&#x2F;work_items&#x2F;16...</a><p>It
+    didn&#x27;t give me the impression that I was dealing with a secure piece of software,
+    it seemed like they were dealing with very complex issues while laughably failing
+    at the industry basics that were settled years ago.<p>Similarly Ubuntu was also
+    the only other distro that fucked this simple permissions config up, and lately
+    with the latency to fix the TCP vuln, it seems to confirm that these are not reliable
+    distros for the coming security era.
+  score: 0
+  posted_at: '2026-11-05T16:27:07Z'
+- id: '50381194'
+  parent_id: '50377221'
+  author: aborsy
+  text: I often use &quot;AuthenticationMethods publickey&quot; which would disable
+    all authentications except public key.<p>Isn&#x27;t this safer than &quot;PasswordAuthentication
+    no&quot;, even if it&#x27;s a different setting?
+  score: 0
+  posted_at: '2026-11-05T16:34:32Z'
+- id: '50381491'
+  parent_id: '50378274'
+  author: solyin
+  text: With nothing, how do you reach them? Your friends and loved ones are what&#x27;s
+    at the other end of the email&#x2F;Internet access.
+  score: 0
+  posted_at: '2026-11-05T16:59:57Z'
+- id: '50381558'
+  parent_id: '50378099'
+  author: amluto
+  text: 'FWIW, I made a bit of an error in my very quick analysis.  See: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50380581">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50380581</a>'
+  score: 0
+  posted_at: '2026-11-05T17:05:27Z'
+- id: '50382256'
+  parent_id: '50378258'
+  author: solyin
+  text: You go travelling in a foreign country and get mugged. You have no phone no
+    wallet no keys, just something you know and the goodwill of strangers.
+  score: 0
+  posted_at: '2026-11-05T18:07:09Z'
+- id: '50382288'
+  parent_id: '50378919'
+  author: bigbadfeline
+  text: You became a victim of a very misleading post title. This isn&#x27;t an OpenSSH
+    problem at all, it&#x27;s a musl problem.<p>I&#x27;m pretty sure the misleading
+    wording is deliberate, OpenSSH is an excellent but non-commercial project which
+    a bunch of entities would love to gain control of, in order to bug it with their
+    spyware - thus the constant nagging on the bot-infested web.<p>The OP should be
+    flagged.
+  score: 0
+  posted_at: '2026-11-05T18:09:43Z'
+- id: '50382309'
+  parent_id: '50378370'
+  author: solyin
+  text: There&#x27;s been a natural disaster and your home is now inaccessible. With
+    global warming going the way it has, that&#x27;s looking more and more likely
+    each day. Fires, hurricanes, earthquakes, war, tsunami, etc.
+  score: 0
+  posted_at: '2026-11-05T18:11:13Z'
+- id: '50382371'
+  parent_id: '50382256'
+  author: BigTTYGothGF
+  text: "&gt; goodwill of strangers<p>Who can presumably get you in touch with the
+    relevant embassy or consulate or, failing that, local authorities."
+  score: 0
+  posted_at: '2026-11-05T18:15:54Z'
+- id: '50382659'
+  parent_id: '50381491'
+  author: jareklupinski
+  text: i guess if i have some sort of internet access (otherwise why would i be worrying
+    about passwords), i&#x27;d set up a new account(s) and message those friends
+  score: 0
+  posted_at: '2026-11-05T18:33:51Z'
+- id: '50382855'
+  parent_id: '50377406'
+  author: XorNot
+  text: It&#x27;s irrelevant. There&#x27;s no reason this should be any more effective
+    in the face of software bugs then anything else.
+  score: 0
+  posted_at: '2026-11-05T18:51:35Z'
+article:
+  url: https://hachyderm.io/@damienmiller/117563026759098135
+  title:
+  fetch_status: error
+  content:
+  error: 'gate: too_short'
+  fetched_at: '2026-11-05T19:38:09Z'
+archived_at: '2026-11-05T19:38:15Z'

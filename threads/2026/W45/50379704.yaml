@@ -1,0 +1,734 @@
+---
+post:
+  id: '50379704'
+  title: 'Alpine Linux Security Advisory: OpenSSH-server password authentication bypass'
+  url: https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/
+  hn_url: https://news.ycombinator.com/item?id=50379704
+  score: 399
+  author: pantalaimon
+  posted_at: '2026-11-05T14:44:20Z'
+  fetched_at: '2026-11-05T19:38:02Z'
+  article_url: https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T19:38:02Z'
+  raw_comment_count: 66
+comments:
+- id: '50380071'
+  parent_id: '50379704'
+  author: throwa356262
+  text: Discussion from a few hours ago:<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50377221">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50377221</a>
+  score: 0
+  posted_at: '2026-11-05T15:10:38Z'
+- id: '50380253'
+  parent_id: '50379704'
+  author: NewJazz
+  text: <i>musl’s crypt() returns the string * as an error indicator when the key
+    is over 256 bytes long. * is also exactly what the stored field contains for every
+    account with no password, so the “hash” matches and the login succeeds.</i><p>Does
+    anyone know why musl does this? Are they the only C library that behaves this
+    way?<p>For a C library that famously tries to adhere to POSIX as much as possible,
+    this seems like a crazy choice. From POSIX standard:<p><i>Upon successful completion,
+    crypt() shall return a pointer to the encoded string. The first two bytes of the
+    returned value shall be those of the salt argument. Otherwise, it shall return
+    a null pointer and set errno to indicate the error.</i><p><a href="https:&#x2F;&#x2F;pubs.opengroup.org&#x2F;onlinepubs&#x2F;9699919799&#x2F;functions&#x2F;crypt.html"
+    rel="nofollow">https:&#x2F;&#x2F;pubs.opengroup.org&#x2F;onlinepubs&#x2F;9699919799&#x2F;functions&#x2F;c...</a>
+  score: 0
+  posted_at: '2026-11-05T15:23:34Z'
+- id: '50380490'
+  parent_id: '50380253'
+  author: hnfong
+  text: There&#x27;s a very detailed trace of how the bug was developed over decades
+    at sshhole.com and the relevant discussion in <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50378228">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50378228</a>
+  score: 0
+  posted_at: '2026-11-05T15:39:46Z'
+- id: '50380622'
+  parent_id: '50380253'
+  author: api
+  text: TBH that sounds like a straight up bug in that it deviates dangerously from
+    the spec.
+  score: 0
+  posted_at: '2026-11-05T15:49:43Z'
+- id: '50380733'
+  parent_id: '50380490'
+  author: NewJazz
+  text: Thanks yeah just woke up, finished making my way through the single-article
+    website and still unclear if other libcs do the same thing (the article says libxcrypt
+    picked it up, but only after musl did it).
+  score: 0
+  posted_at: '2026-11-05T15:56:25Z'
+- id: '50380822'
+  parent_id: '50380253'
+  author: worksonmine
+  text: Apparently because some devs didn&#x27;t check for NULL which resulted in
+    crashes. Weird choice to fix other peoples&#x27; bad programming by deviating
+    from the spec.
+  score: 0
+  posted_at: '2026-11-05T16:02:34Z'
+- id: '50381179'
+  parent_id: '50380822'
+  author: cyphar
+  text: To be fair (as the sshole site mentions) it is also necessary to fake a password
+    hash check to avoid timing side channels revealing to remote clients whether users
+    exist, so returning a sentinel value is not a horrifically unreasonable solution
+    to make sure even naive code does approximately the right thing.<p>Though I am
+    surprised that all of the code examples do not use constant-time strcmp(). Actually,
+    I wonder if even constant-time strncmp() would still leak information about whether
+    the account is disabled because in that case both arguments are much shorter?
+    Food for thought.<p>But yeah, the crypt(3) API is very 80s C, the man page even
+    features a lengthy description of a long-deprecated and utterly broken hashing
+    algorithm using <i>DES</i> that is even implied to be broken in the text itself
+    (and the warning message is so old it refers to &quot;parallel computers&quot;
+    as though they were a new concept). Given that the default mode is to use a broken
+    hashing algorithm, I&#x27;m shocked anyone actually uses the libc crypt(3) --
+    surely it&#x27;s trivial to just write your own that isn&#x27;t awful...?
+  score: 0
+  posted_at: '2026-11-05T16:33:07Z'
+- id: '50381447'
+  parent_id: '50379704'
+  author: slopinthebag
+  text: i think it&#x27;s just unbelievable there isn&#x27;t a bigger push to move
+    away from c to languages that can prevent stuff like this from happening. this
+    and just the pure unsafety. it&#x27;s 2026. it&#x27;s like pure negligence at
+    this point, the equivalent of building a bridge with matchsticks because you like
+    using it more.
+  score: 0
+  posted_at: '2026-11-05T16:56:23Z'
+- id: '50381453'
+  parent_id: '50380622'
+  author: NewJazz
+  text: Which is notable because musl is more known for adhering to the spec to the
+    point where they break programs that assume nonstandard behavior.
+  score: 0
+  posted_at: '2026-11-05T16:57:22Z'
+- id: '50381630'
+  parent_id: '50381447'
+  author: my-huge-pony
+  text: How would using a language different than C help here? At it&#x27;s core this
+    bug is a logic bug, where &quot;*&quot; == crypt(x), because crypt in musl started
+    returning &quot;*&quot; in some cases some years ago. This could be Rust. This
+    could be Go.<p>Not every C vuln is a memory safety problem.
+  score: 0
+  posted_at: '2026-11-05T17:12:10Z'
+- id: '50381650'
+  parent_id: '50381447'
+  author: anonreplier
+  text: guess what, this kind of sentinel value mistake could even be made in rust
+  score: 0
+  posted_at: '2026-11-05T17:14:20Z'
+- id: '50381653'
+  parent_id: '50381447'
+  author: oguz-ismail2
+  text: What exactly do you mean &quot;push&quot;? What do you think is going to make
+    musl developers switch languages?
+  score: 0
+  posted_at: '2026-11-05T17:14:25Z'
+- id: '50381660'
+  parent_id: '50381447'
+  author: rpdillon
+  text: musl&#x27;s crypt function could be written in Rust, Python, or JavaScript,
+    and still return * when the key is too long.
+  score: 0
+  posted_at: '2026-11-05T17:15:27Z'
+- id: '50381667'
+  parent_id: '50381630'
+  author: realharo
+  text: "<i>&gt;because crypt in musl started returning &quot;*&quot; in some cases
+    some years ago</i><p>In Rust, the type of the return value would be a `Result&lt;T,
+    E&gt;`, which means the chain of events that led to this would never have started
+    in the first place."
+  score: 0
+  posted_at: '2026-11-05T17:16:00Z'
+- id: '50381679'
+  parent_id: '50381630'
+  author: rhdjebejdbd
+  text: Another comment said that returning a * was to avoid returning null which
+    would crash users of the library who didn&#x27;t check for null. That seems like
+    a C smell to me
+  score: 0
+  posted_at: '2026-11-05T17:17:07Z'
+- id: '50381680'
+  parent_id: '50381630'
+  author: slopinthebag
+  text: why does this logic bug exist? why are they returning a string, why not a
+    result type, (nil, err), or something else?<p>oh right, because c is a crusty
+    old language with barely any features.
+  score: 0
+  posted_at: '2026-11-05T17:17:11Z'
+- id: '50381694'
+  parent_id: '50381650'
+  author: slopinthebag
+  text: no rust programmer would ever return a sentinel string like this.
+  score: 0
+  posted_at: '2026-11-05T17:18:10Z'
+- id: '50381696'
+  parent_id: '50381667'
+  author: my-huge-pony
+  text: 'In C the return value would be NULL, except it was changed by musl at some
+    point.<p>Edit: at the beginning, crypt always returned a value. So hypothetical
+    Rust return type would be a String, and then it would be retained for backward
+    compatibility. Or something else would happen, this is a complex logic bug triggered
+    by a 25 year old chain of events.'
+  score: 0
+  posted_at: '2026-11-05T17:18:17Z'
+- id: '50381729'
+  parent_id: '50381653'
+  author: slopinthebag
+  text: it&#x27;s unbelievable to me that there isn&#x27;t a larger movement of developers
+    to move away from c towards better &amp; safer languages. look at how much pushback
+    the rust4linux folks get, primarily from c developers who are simply afraid of
+    change. imagine engineers not adopting safer building practices because &quot;they
+    prefer the old way&quot;....it&#x27;s disgusting honestly.<p>what will it take
+    to move away from c? older devs retiring. Planck said that &quot;science advances
+    one funeral at a time&quot; and i fear it will be the same for software.
+  score: 0
+  posted_at: '2026-11-05T17:21:22Z'
+- id: '50381802'
+  parent_id: '50381179'
+  author: mik1998
+  text: "Constant time strcmp doesn&#x27;t fix it. The problem is that the user doesn&#x27;t
+    have a password at all (the hash is *). But which hashing algorithm is used is
+    encoded in the password. So they pick a different user&#x27;s hash to not leak
+    the information that there is no password. \nAlternate solution would be to hardcode
+    a specific algorithm, but that could also leak info in many cases, I guess."
+  score: 0
+  posted_at: '2026-11-05T17:26:58Z'
+- id: '50381826'
+  parent_id: '50381696'
+  author: realharo
+  text: The type of the value in C is `char*`.<p>That&#x27;s what led some people
+    to write code where it crashes without checks. Which is still their mistake. But
+    if the type was something that can&#x27;t be implicitly used like an always-present
+    value, that <i>would</i> have prevented the situation, even with those same people.
+  score: 0
+  posted_at: '2026-11-05T17:28:32Z'
+- id: '50381994'
+  parent_id: '50381650'
+  author: woah
+  text: Cars without seatbelts and airbags chopping off driver&#x27;s heads in relatively
+    slow collisions? Well guess what, that could happen in a modern car as well if
+    the driver sticks their head out the window while going through a very tight tunnel!
+  score: 0
+  posted_at: '2026-11-05T17:44:08Z'
+- id: '50382006'
+  parent_id: '50379704'
+  author: '0x457'
+  text: I keep saying that no one should be using alpine or musl, but people keep
+    replying that static linking is totally worth it.
+  score: 0
+  posted_at: '2026-11-05T17:45:17Z'
+- id: '50382057'
+  parent_id: '50379704'
+  author: drob518
+  text: Given Alpine’s broad use in the Docker ecosystem, this is going to hit a lot
+    of folks, I think.
+  score: 0
+  posted_at: '2026-11-05T17:49:45Z'
+- id: '50382100'
+  parent_id: '50379704'
+  author: '0127'
+  text: IMO this is where languages like Rust shine. The design patterns built into
+    the language for handling errors (Result) - force you to handle errors &#x2F;
+    function results with sentinels, null pointers, or errnos are so much more error
+    prone than handling a Result&lt;T,E&gt; using a match statement.<p>crypt() returning
+    `*` is insane especially since these kinds of sentinels are all over &#x2F;etc&#x2F;passwd
+  score: 0
+  posted_at: '2026-11-05T17:53:25Z'
+- id: '50382102'
+  parent_id: '50382006'
+  author: Muromec
+  text: Docker is a static binary and HTTP is a new command line. I don&#x27;t care
+    what&#x27;s inside, nothing good anyway.
+  score: 0
+  posted_at: '2026-11-05T17:53:31Z'
+- id: '50382110'
+  parent_id: '50381453'
+  author: silisili
+  text: "&gt; adhering to the spec<p>Pedantic, but more &quot;author&#x27;s understanding
+    of the spec&quot; which isn&#x27;t always correct.<p>&gt; assume nonstandard behavior<p>I
+    go back and forth on this one (spec vs standard behavior).  It feels like at some
+    point the most widely used impl -is- the spec, as we&#x27;ve seen in other places
+    (web standards)."
+  score: 0
+  posted_at: '2026-11-05T17:54:21Z'
+- id: '50382144'
+  parent_id: '50381729'
+  author: bigbadfeline
+  text: "&gt; what will it take to move away from c? older devs retiring.<p>I&#x27;ll
+    take forking and porting, thank goodness for LLMs."
+  score: 0
+  posted_at: '2026-11-05T17:57:18Z'
+- id: '50382153'
+  parent_id: '50381630'
+  author: bmacho
+  text: "&gt; How would using a language different than C help here?<p>Easier to formulate
+    invariants and check&#x2F;prove them. Better language correlates with safer software."
+  score: 0
+  posted_at: '2026-11-05T17:58:02Z'
+- id: '50382167'
+  parent_id: '50382100'
+  author: Lt_Riza_Hawkeye
+  text: It seems it used to return NULL, but they changed it for &quot;convenience&quot;
+  score: 0
+  posted_at: '2026-11-05T17:58:50Z'
+- id: '50382202'
+  parent_id: '50382100'
+  author: adrianN
+  text: I guess this is where the culture around rust shines. You can write crypt
+    that returns a string in rust just fine, just like you can write crypt that returns
+    a tagged union in C. Cultural differences and syntactic sugar change which version
+    is idiomatic.<p>I suppose if people started writing lots of code that crashed
+    on error in Rust some enterprising developer might improve the function to always
+    return a non-error value and set it to ‘*’ in error cases.
+  score: 0
+  posted_at: '2026-11-05T18:02:11Z'
+- id: '50382228'
+  parent_id: '50382006'
+  author: pheggs
+  text: both alpine and musl are great in my opinion, and as far as I know theres
+    no empirical evidence that it is more or less secure overall than alternatives.
+    would you like to elaborate your opinion?
+  score: 0
+  posted_at: '2026-11-05T18:04:53Z'
+- id: '50382291'
+  parent_id: '50382057'
+  author: NewJazz
+  text: Eh, most folks aren&#x27;t hosting ssh servers with alpine containers and
+    password auth enabled.
+  score: 0
+  posted_at: '2026-11-05T18:09:55Z'
+- id: '50382334'
+  parent_id: '50382057'
+  author: apexalpha
+  text: People generally don&#x27;t expose SSH from within a Docker container I think.
+  score: 0
+  posted_at: '2026-11-05T18:13:18Z'
+- id: '50382337'
+  parent_id: '50382228'
+  author: thewillowcat
+  text: More evidence than allowing root to log in with any long password?
+  score: 0
+  posted_at: '2026-11-05T18:13:27Z'
+- id: '50382413'
+  parent_id: '50381447'
+  author: ethin
+  text: 'Rust would not save you here as this is a logic bug. Nor would, well, really
+    any other language. I suppose someone might claim that Rust&#x27;s result type
+    would save you but it really wouldn&#x27;t: I can easily make the error type a
+    String or pretty much any other type with little consequence.'
+  score: 0
+  posted_at: '2026-11-05T18:18:15Z'
+- id: '50382432'
+  parent_id: '50382202'
+  author: mort96
+  text: The culture is downstream of the design IMO. In general, people write the
+    API that is obvious. In C, returning a string is obvious, while defining a custom
+    OptionalString type is high friction. In Rust, returning Option&lt;String&gt;
+    is as easy and obvious as returning a String.
+  score: 0
+  posted_at: '2026-11-05T18:19:26Z'
+- id: '50382441'
+  parent_id: '50381679'
+  author: ethin
+  text: Not really. This is like if the char* were an Option&lt;String&gt; but you
+    had programs which stupidly didn&#x27;t check if the Option had something and
+    assumed it always did. As others have said, Rust would not prevent this.
+  score: 0
+  posted_at: '2026-11-05T18:19:46Z'
+- id: '50382459'
+  parent_id: '50381694'
+  author: ethin
+  text: Are you sure about that? When backwards compatibility comes into the picture
+    people tend to bend over backwards.
+  score: 0
+  posted_at: '2026-11-05T18:21:02Z'
+- id: '50382481'
+  parent_id: '50382100'
+  author: spullara
+  text: always has amazed me that there was so much hate for java checked exceptions
+    where handling errors ought to be the norm.
+  score: 0
+  posted_at: '2026-11-05T18:22:26Z'
+- id: '50382519'
+  parent_id: '50382413'
+  author: iknowstuff
+  text: 'It would, due to Result&lt;T&gt; and #[must_use] on it. Nobody would return
+    “*” as a sentinel in Rust.'
+  score: 0
+  posted_at: '2026-11-05T18:24:07Z'
+- id: '50382569'
+  parent_id: '50382110'
+  author: mort96
+  text: 'The spec is pretty unambiguous here: <a href="https:&#x2F;&#x2F;pubs.opengroup.org&#x2F;onlinepubs&#x2F;9799919799&#x2F;functions&#x2F;crypt.html"
+    rel="nofollow">https:&#x2F;&#x2F;pubs.opengroup.org&#x2F;onlinepubs&#x2F;9799919799&#x2F;functions&#x2F;c...</a><p>&gt;
+    Upon successful completion, crypt() shall return a pointer to the hashed password
+    [...]. Otherwise, it shall return a null pointer and set errno to indicate the
+    error.'
+  score: 0
+  posted_at: '2026-11-05T18:27:38Z'
+- id: '50382599'
+  parent_id: '50382481'
+  author: kaoD
+  text: I agree but I think was also because Java didn&#x27;t have sum types (or still
+    doesn&#x27;t? years I haven&#x27;t read Java) and rethrowing is super easy, while
+    Rust kinda nudges you into the right direction (if you need to rethrow at all,
+    think if you want to rethrow verbatim or wrap with a semantic error type).<p>Right
+    idea at the wrong time.
+  score: 0
+  posted_at: '2026-11-05T18:29:51Z'
+- id: '50382610'
+  parent_id: '50382413'
+  author: K0nserv
+  text: |-
+    Rust would absolutely have saved you here. Even with `Result&lt;String, String&gt;`, which is pretty poor design, there&#x27;s no confusing `Ok(s)` with `Err(s)`. Sure you can go out of your way to write something like<p><pre><code>    let hash = match result {
+            OK(s) =&gt; s,
+            Err(s) =&gt; s,
+        };
+    </code></pre>
+    but at that point I feel like the library is forgiven (except for the poor error design).<p>@my-huge-pony does make a good point elsewhere in the thread: if the potential error was not foreseen and the code was written originally to return `String` instead of `Result&lt;String, Error&gt;` then even Rust would be in a pickle.
+  score: 0
+  posted_at: '2026-11-05T18:30:41Z'
+- id: '50382627'
+  parent_id: '50382337'
+  author: ceejayoz
+  text: This particular flaw sat latent for a decade.<p>There&#x27;s a good chance
+    similar flaws will be discovered elsewhere.
+  score: 0
+  posted_at: '2026-11-05T18:31:51Z'
+- id: '50382667'
+  parent_id: '50382441'
+  author: K0nserv
+  text: "`Option&lt;String&gt;` or `Result&lt;String&gt;` forces the check at the
+    callsite. Unlike C, you cannot forget that the function can error. This absolutely
+    helps prevent issues like this.<p>Now, the decision to return `&quot;*&quot;`
+    instead of letting poorly written code crash on `NULL` is not good either."
+  score: 0
+  posted_at: '2026-11-05T18:34:08Z'
+- id: '50382678'
+  parent_id: '50382481'
+  author: groestl
+  text: The question is _where_ the error needs to be handled. It&#x27;s almost never
+    directly at the call site. And then there&#x27;s a few issues with checked exceptions
+    and Java language things (RMI, closures, etc) which make checked exceptions cumbersome.
+    An exception (checked or not) might be worse than sum types, but they&#x27;re
+    still a thousand times better then returning an error in-band.
+  score: 0
+  posted_at: '2026-11-05T18:35:06Z'
+- id: '50382701'
+  parent_id: '50382481'
+  author: javier2
+  text: They were overused, but some actually make sense, such as the IOException
+    and SQLException
+  score: 0
+  posted_at: '2026-11-05T18:36:48Z'
+- id: '50382837'
+  parent_id: '50379704'
+  author: j45
+  text: It&#x27;s nice to see how quickly this is being addressed, and likely monitored
+    for any unintended side effects.<p>Looking at the unpatched Ubuntu things in my
+    life, and I&#x27;m pretty close to asking Claude to update things to see how quickly
+    Alpine can get close, assuming responsiveness can stay this fast and quality.
+  score: 0
+  posted_at: '2026-11-05T18:50:08Z'
+- id: '50382863'
+  parent_id: '50379704'
+  author: nodesocket
+  text: This is brutal because a lot of docker containerized apps are very slow to
+    update the base image if at all.
+  score: 0
+  posted_at: '2026-11-05T18:52:16Z'
+- id: '50382871'
+  parent_id: '50381729'
+  author: anonymous908213
+  text: It will indeed take everyone dying, but it&#x27;s not because of developers
+    being afraid of change. In large part, it&#x27;s because of people like you who
+    make Rust insufferable. Rust is the only language I have antipathy for, because
+    of its community. No other programming language broadly has people who make it
+    their life&#x27;s mission to tell other programmers they&#x27;re programming wrong
+    because of their choice of language. When your arguments for why they&#x27;re
+    wrong are also vapid, eg. &quot;C is bad because an insane developer committed
+    a logic bug that blatantly violates the spec&quot; when an insane developer could
+    just as easily write Rust code that violates the spec in the same way, it reinforces
+    that there is no reason to switch, or at least not to switch to Rust.<p>Rust is
+    a fad among HN-types. It is not used in the real world. You see logic errors reported
+    in C&#x2F;++ because 99.99% of the world&#x27;s system code is written in it.
+    The only reason you don&#x27;t see headlines about logic errors in Rust is because
+    nobody, rounding to the nearest whole percent, uses Rust in production code. Rust
+    certainly does not prevent you from producing the most dogshit software imaginable,
+    eg. <a href="https:&#x2F;&#x2F;jepsen.io&#x2F;analyses&#x2F;particledb-1.1.4"
+    rel="nofollow">https:&#x2F;&#x2F;jepsen.io&#x2F;analyses&#x2F;particledb-1.1.4</a>
+    , which is far worse than any C&#x2F;++ database anybody uses.
+  score: 0
+  posted_at: '2026-11-05T18:53:03Z'
+- id: '50382925'
+  parent_id: '50382481'
+  author: Terr_
+  text: 'Amen, people saw the symptoms of &quot;needs more syntactic sugar&quot; and
+    misinterpreted it into &quot;error handling is bad&quot;.<p>The same way that
+    layered code should wrap&#x2F;translate return types, it should also be wrapping&#x2F;translating
+    exceptions. They&#x27;re both results of computation.<p>Past rant&#x2F;discussion:
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=42946597">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=42946597</a>'
+  score: 0
+  posted_at: '2026-11-05T18:56:53Z'
+- id: '50382964'
+  parent_id: '50382481'
+  author: sieve
+  text: |-
+    In the vast majority of programs, errors and non-results are irrelevant at the call site. You want to program for the happy path and not wrap every single call with error checking code or `try&#x2F;catch&#x2F;finally`.<p><pre><code>    h = file_open(path)
+        data = file_read(h)
+        file_close(h)
+        return data
+    </code></pre>
+    is the code you want to read. This essentially is:<p><pre><code>    return file_open(path).success(h -&gt; h, file_read(h)).success(h, data -&gt; file_close(h); data)
+    </code></pre>
+    A language with thoughtful error handling primitives will support such code.
+  score: 0
+  posted_at: '2026-11-05T19:00:13Z'
+- id: '50382986'
+  parent_id: '50379704'
+  author: feearent
+  text: 'Not really related to the topic, but AI-popular sentences and language structure
+    stand out to people right away these days right? I noticed some.<p>&quot;If you
+    cannot update yet, at least disable password logins: set PasswordAuthentication
+    no in your sshd configuration and restart sshd. <i>Either one closes the hole.</i>&quot;
+    (only AI would characterize a critical SSH implementation vulnerability as a hole
+    closing game)<p>An attacker who can reach your SSH port can log in without knowing
+    any password. <i>It takes one connection, works every time, and needs no retries.</i>
+    (It sounds like the writer is bragging about the exploit instead of describing
+    it. AI does this)<p>The attacker needs the name of an account whose password field
+    is * (an account with no password set, which is normal for key-only accounts),
+    and needs the machine to have at least one other account with a $5$ or $6$ password
+    hash. The attacker then sends a very long password (257 to 1024 bytes). <i>One
+    user with a password is enough: it makes every account without one reachable.</i>
+    (same as above made stronger with the &#x27;statement: statement2&#x27; format)<p>&quot;Users
+    coming from a directory service through musl-nscd (nslcd, winbind, sssd), <i>since
+    they have no shadow entry.</i>&quot; (a human would be more clear about what a
+    shadow entry is and give more context, I think)<p>Hmm the rest of the article
+    (the remaining 70-80%) seems quite human.<p>Anyway, not sure why I spent 10+ minutes
+    on this. It just jumps at me right away.'
+  score: 0
+  posted_at: '2026-11-05T19:02:16Z'
+- id: '50382995'
+  parent_id: '50382337'
+  author: pheggs
+  text: I have to admit that I am a bit disappointed in this kind of thinking. There&#x27;s
+    vulnerabilities everywhere as especially the past few weeks have shown.<p>One
+    occurrence is not a statistic and should not be used as evidence - it&#x27;s just
+    an example of a vulnerability that due to various bad circumstances lead to a
+    particularity bad outcome. This logic is in my opinion equally flawed as calling
+    alpine safe now because this particular vulnerability has been fixed.<p>I&#x27;m
+    not a big fan of blaming and I think it&#x27;s just a result of bad circumstances,
+    but it&#x27;s interesting to see how some seem to blame musl, but one could argue
+    further that musl documented the behavior of their API which was ignored by openssh
+    and so on
+  score: 0
+  posted_at: '2026-11-05T19:02:51Z'
+- id: '50383014'
+  parent_id: '50381667'
+  author: atomicUpdate
+  text: You mean <i>could</i> be a `Result&lt;T, E&gt;`. There’s nothing in Rust that
+    forces that.
+  score: 0
+  posted_at: '2026-11-05T19:04:51Z'
+- id: '50383023'
+  parent_id: '50381729'
+  author: hollowonepl
+  text: Moving away from C in any POSIX system is in fact stop being POSIX system
+    as POSIX and linux being unix like system is built on standard that is defined
+    as C library specification.<p>Rewriting it to Rust is fine attempt, just hard
+    to call it is unix&#x2F;posix anymore. It may not matter but semantically true.
+  score: 0
+  posted_at: '2026-11-05T19:05:49Z'
+- id: '50383071'
+  parent_id: '50382667'
+  author: pheggs
+  text: I don&#x27;t think it&#x27;s that people forget it while writing the code,
+    it&#x27;s that people want their program to work with as little effort as possible
+    and decide to ignore it &quot;for now&quot;. And that definitely can happen with
+    Option and Result as well. There&#x27;s no protection for not checking return
+    values, and it&#x27;s probably not even possible to protect against (in entirety)
+  score: 0
+  posted_at: '2026-11-05T19:09:24Z'
+- id: '50383219'
+  parent_id: '50382481'
+  author: _flux
+  text: I always thought the ideas was great, but type system was holding it back.
+    If you could have expressed that your thrown exceptions are the same as some other
+    method&#x27;s (e.g. a method of a class given as a parameter), and some other
+    classes, then it could have been a lot less annoying. Powerful, even! But Java
+    did take its sweet time to get even type parameters.<p>I have written very little
+    Java, though, so this is more of an armchair analyst position.
+  score: 0
+  posted_at: '2026-11-05T19:21:39Z'
+- id: '50383248'
+  parent_id: '50383071'
+  author: _flux
+  text: Well they would use `unwrap` if they were lazy, but at least that would be
+    quite visible in the code and would not result in undefined behavior due to operating
+    on a null value. And there might be a group of developers who first choose to
+    use .unwrap. I hope it is the minority.<p>Given how easy it is to just forward
+    that error to the caller, I think most Rust developers would just choose to do
+    that.
+  score: 0
+  posted_at: '2026-11-05T19:24:34Z'
+- id: '50383268'
+  parent_id: '50382459'
+  author: _flux
+  text: Backwards compatibility with what? Rust has always has had enum also for this
+    exact case, to avoid encoding sentinels as strings or pointers.
+  score: 0
+  posted_at: '2026-11-05T19:25:58Z'
+- id: '50383274'
+  parent_id: '50383071'
+  author: K0nserv
+  text: "&gt; There&#x27;s no protection for not checking return values, and it&#x27;s
+    probably not even possible to protect against (in entirety)<p>That&#x27;s exactly
+    what you get with Result and Option, it&#x27;s impossible to forget.<p>Compare:<p><pre><code>
+    \   char* hash = crypt(key, salt);\n\n    &#x2F;&#x2F; We crash here on the hash
+    derefence, it&#x27;s no clear from the code\n    &#x2F;&#x2F; that we were supposed
+    to check for NULL or that we forgot. \n    if (!strcmp(hash, expected)) {\n    }\n</code></pre>\nTo:<p><pre><code>
+    \   let result: Result&lt;Vec&lt;u8&gt;, Error&gt; = crypt(key, salt);\n    &#x2F;&#x2F;
+    We MUST write this line, which is a very clear signal\n    &#x2F;&#x2F; that we
+    can panic here.\n    &#x2F;&#x2F; This can be grepped for or forbidden.\n    let
+    hash: String = result.unwrap();\n\n    &#x2F;&#x2F; if result == expected { would
+    type error\n    if hash == expected {\n    }</code></pre>"
+  score: 0
+  posted_at: '2026-11-05T19:26:38Z'
+- id: '50383310'
+  parent_id: '50382334'
+  author: AtNightWeCode
+  text: Considering how much people whined about the MinIO images I would expect that
+    it is not that uncommon.
+  score: 0
+  posted_at: '2026-11-05T19:29:12Z'
+- id: '50383334'
+  parent_id: '50379704'
+  author: AtNightWeCode
+  text: I always use certificates with SSH. Saved me this time.
+  score: 0
+  posted_at: '2026-11-05T19:31:54Z'
+- id: '50383347'
+  parent_id: '50383274'
+  author: pheggs
+  text: That&#x27;s exactly what I mean. And I have seen a huge amount of unchecked
+    unwraps in production code in the past years
+  score: 0
+  posted_at: '2026-11-05T19:32:43Z'
+- id: '50383386'
+  parent_id: '50383347'
+  author: K0nserv
+  text: Sure, but it&#x27;s far better than the C code and I don&#x27;t think in Rust
+    a library would start returning `Ok` with sentinel values to &quot;fix&quot; shit
+    calling code. Maintainers would, rightfully, tell people to fix their code.
+  score: 0
+  posted_at: '2026-11-05T19:35:34Z'
+article:
+  url: https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/
+  title: 'Security advisory: openssh-server password authentication bypass | Alpine
+    Linux'
+  fetch_status: success
+  content: |-
+    # Security advisory: openssh-server password authentication bypass
+
+    **If you run `sshd` on Alpine Linux, update `openssh` now and restart `sshd`.** Upgrading the package alone does not replace the running daemon.
+
+    If you cannot update yet, at least disable password logins: set`PasswordAuthentication no` in your sshd configuration and restart `sshd`. Either one closes the hole.
+
+    ## What is the problem?
+
+    An attacker who can reach your SSH port can log in without knowing any password. It takes one connection, works every time, and needs no retries.
+
+    The attacker needs the name of an account whose password field is `*`(an account with no password set, which is normal for key-only accounts), and needs the machine to have at least one other account with a `$5$` or `$6$`password hash. The attacker then sends a very long password (257 to 1024 bytes). One user with a password is enough: it makes every account without one reachable.
+
+    Details are in the [OpenSSH 10.6p2 release notes](https://www.openssh.com/releasenotes.html). No CVE identifier had been assigned at the time of writing.
+
+    ## Who is affected?
+
+    You are affected if all of the following are true:
+
+    - You run the Alpine `openssh-server` package, which is built without PAM, or you run `openssh-server-pam` with `UsePAM no`. (`openssh-server-pam` with`UsePAM yes` is not affected.)
+    - `PasswordAuthentication` is `yes` (the OpenSSH default, unless you changed it).
+    - The machine has an account whose password field is `*`. This includes:
+      - `root`, which ships as `root:*` in the base image since about Alpine 3.16. OpenSSH’s default `PermitRootLogin prohibit-password` protects root, so root is only reachable if `PermitRootLogin yes` is set. That does not help if another account that can log in is able to become root, for example through `doas`.
+      - Any key-only user created with `adduser` without a password, or with`usermod -p '*'`.
+      - Users coming from a directory service through musl-nscd (nslcd, winbind, sssd), since they have no shadow entry.
+      - The `alpine` user in the official **tiny-cloud** images (see below).
+    - At least one local account has a `$5$` or `$6$` password hash.
+
+    Affected releases: every Alpine release we checked, 3.21 through 3.24 and edge, and the older releases that no longer receive regular updates (3.16 to 3.20).
+
+    ### Who is not affected?
+
+    - **Docker and other container users** that do not run `sshd` in the container.
+    - Systems with `PasswordAuthentication no`.
+    - Systems using `openssh-server-pam` with `UsePAM yes` (with `UsePAM no`you are affected).
+    - Locked accounts: those with `!` as the password field in `/etc/shadow`(a line starting `user:!:`). They cannot log in with a password or a key.
+    - Systems where no account has a `$`-style password hash.
+    - Cloud images configured through cloud-init, which writes`PasswordAuthentication no`.
+
+    ## How can I fix it?
+
+    ### 1. Update
+
+        apk upgrade -U -a
+
+    Alpine 3.21.10, 3.22.8, 3.23.8 and 3.24.4 contain the fixed package (see the[release announcement](/posts/alpine-3.21.10-3.22.8-3.23.8-3.24.4-released/)). The fixed package versions are:
+
+    | Branch | Fixed `openssh` version |
+    | --- | --- |
+    | edge | 10.6\_p2-r0 |
+    | 3.24 | 10.3\_p1-r2 |
+    | 3.23 | 10.2\_p1-r1 |
+    | 3.22 | 10.0\_p1-r11 |
+    | 3.21 | 9.9\_p2-r1 |
+    | 3.20 | 9.7\_p1-r6 |
+    | 3.19 | 9.6\_p1-r3 |
+    | 3.18 | 9.3\_p2-r4 |
+    | 3.17 | 9.1\_p1-r7 |
+    | 3.16 | 9.0\_p1-r6 |
+
+    **Restart `sshd` after upgrading** (`rc-service sshd restart`). Upgrading the package does not restart a running `sshd`, so you must do it after.
+
+    ### 2. If you cannot update: disable password authentication
+
+    Before you start, make sure your SSH key login works, and keep your current session open until you have tested a new login.
+
+    Run these as root. The first two commands create a drop-in file. Alpine’s default `sshd_config` reads that directory from 3.19 onward; older releases ignore it. The `sed` command changes `yes` to `no` on every`PasswordAuthentication` line in `/etc/ssh/sshd_config`, whatever the spacing, including lines inside a `Match` block. It also adds `PasswordAuthentication no` at the top of the file, for the case where there was no such line, and saves the original as `/etc/ssh/sshd_config.bak`. The last two commands check the configuration, restart the daemon, and show the result:
+
+        mkdir -p /etc/ssh/sshd_config.d
+        echo 'PasswordAuthentication no' > /etc/ssh/sshd_config.d/00-no-passwords.conf
+        sed -i.bak -e '1i PasswordAuthentication no' \
+          -e 's/^\(\s*PasswordAuthentication[^y#]*\)yes/\1no/i' \
+          /etc/ssh/sshd_config
+        sshd -t && rc-service sshd restart
+        sshd -T | grep -i passwordauthentication
+
+    The last command should print `passwordauthentication no`. To undo, delete`/etc/ssh/sshd_config.d/00-no-passwords.conf` and copy`/etc/ssh/sshd_config.bak` back over `/etc/ssh/sshd_config`.
+
+    ## Cloud images (tiny-cloud)
+
+    The official tiny-cloud images (the qcow2, VHD and AMI artifacts) from **3.18.11 through 3.24.3** ship an `alpine` user with a `*` password field and passwordless `doas`. They are safe on first boot. They become exploitable as soon as any `$6$` hash exists on the machine, for example when an admin sets a console password, or user-data adds a user with `hashed_passwd`. An attacker then gets a shell as `alpine` and can use `doas` to become root.
+
+    Images built from 3.21.10, 3.22.8, 3.23.8, 3.24.4 and later include the fixed package. Images from earlier point releases do not, so on every running instance, update `openssh` or disable password authentication.
+
+    ## Releases that are no longer supported (3.21 and older)
+
+    These releases have the same bug. 3.21 reached its end of support on 2026-11-01, but we have published fixed packages for each release all the way back to 3.16.
+
+    ## How do I know if I was attacked?
+
+    Look in `/var/log/messages` for `sshd` lines reading `Accepted password for`an account that has no password (`alpine`, `root`, or any key-only user). Review `doas` use and recently created users, files and authorized keys on exposed machines. If you cannot rule out a login, treat the machine as compromised.
+
+    ## How could this happen?
+
+    When sshd is built without PAM, it checks a password by hashing the attempt with `crypt()` (the C library function that turns a password into its stored hash) and comparing the result to the stored password field. For an account whose stored field is too short to contain a salt (the random prefix of a hash), sshd borrows the salt of another account.
+
+    musl’s `crypt()` returns the string `*` as an error indicator when the key is over 256 bytes long. `*` is also exactly what the stored field contains for every account with no password, so the “hash” matches and the login succeeds.
+
+    OpenSSH 10.6p2 avoids the problem in sshd. The stable-branch packages above carry a patch for the same problem.
+
+    ## Credits
+
+    Reported by Özgün Kültekin of [Wakefield](https://wakefield.co). Thanks to Damien Miller and Darren Tucker of the OpenSSH project for the fix and the 10.6p2 release, to Timo Teräs for help analyzing the issue, and to Natanael Copa, who built and uploaded the updated packages.
+  error:
+  fetched_at: '2026-11-05T19:38:02Z'
+archived_at: '2026-11-05T19:38:15Z'

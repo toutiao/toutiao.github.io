@@ -1,0 +1,452 @@
+---
+post:
+  id: lo-oq5pem
+  source: lobsters
+  title: sshhole
+  url: https://sshhole.com/
+  hn_url: https://lobste.rs/s/oq5pem
+  score: 99
+  author: serce
+  posted_at: '2026-11-05T12:24:42Z'
+  fetched_at: '2026-11-05T19:38:16Z'
+  article_url: https://sshhole.com/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T19:38:16Z'
+  raw_comment_count: 28
+  tags:
+  - linux
+  - security
+comments:
+- id: lo-x4mzoc
+  parent_id: '0'
+  author: siru
+  text: |-
+    Am I right in understanding that this is fully mitigated by disabling password login and using ssh keys instead? Because that should be the norm nowadays anyway for other reasons as well, right?
+    (Not trying to say this shouldn't be fixed and isn't a good find though.)
+  score: 22
+  posted_at: '2026-11-05T12:56:55Z'
+- id: lo-wxax64
+  parent_id: '0'
+  author: sjamaan
+  text: Why did musl even decide to "fix" an API that always returns NULL on failure
+    elsewhere? The correct solution would be to fix the program that uses the API,
+    IMO.
+  score: 16
+  posted_at: '2026-11-05T12:58:37Z'
+- id: lo-d3akjg
+  parent_id: '0'
+  author: sjamaan
+  text: Yes, disabling password logins mitigates it fully, but AFAICT ssh ships with
+    password logins enabled by default.
+  score: 8
+  posted_at: '2026-11-05T13:02:08Z'
+- id: lo-z30i4q
+  parent_id: '0'
+  author: ramones
+  text: 'Comment removed by moderator pushcx: Meme/joke.'
+  score: -3
+  posted_at: '2026-11-05T13:03:13Z'
+- id: lo-hybwiv
+  parent_id: '0'
+  author: Johz
+  text: |-
+    I suspect because this is a fairly rare thing to happen that most people don't think about it when testing their programs, and so don't handle that case correctly.  And if you have a large number of real-world programs running that already do the wrong thing and crash, then it's probably easier to fix it at the API level rather than fix all those programs (even if technically those programs are wrong).
+    Ideally, they could have used ADTs to force users to handle the error cases or crash explicitly (Ok(String) | Err(UnknownAlgorithm)) but that's not really viable for a C API unfortunately.
+  score: 2
+  posted_at: '2026-11-05T13:18:18Z'
+- id: lo-ltbber
+  parent_id: '0'
+  author: sjamaan
+  text: Yeah but those programs are more likely used on glibc in the vast majority
+    of systems, which will also return NULL. So musl fixing it unilaterally isn't
+    going to make as much of an impact as trying to fix the programs.
+  score: 6
+  posted_at: '2026-11-05T13:22:54Z'
+- id: lo-5aaszl
+  parent_id: '0'
+  author: siru
+  text: '"Fixing" it in musl doesn''t cause incompatibility with programs that would
+    correctly check for null though. So in theory it can be "fixed" from both sides
+    of the API. Musl fixing it in their version is just a step in the right direction.
+    Sadly it caused a bug that now also needs to be fixed.'
+  score: 2
+  posted_at: '2026-11-05T13:32:47Z'
+- id: lo-48xbmg
+  parent_id: '0'
+  author: dullmirror
+  text: Password logins are enabled by default, yes, but not for root. Having only
+    an asterisk in the password-field in /etc/shadow is hopefully rare for other users.
+  score: 4
+  posted_at: '2026-11-05T13:36:23Z'
+- id: lo-mcc8dd
+  parent_id: '0'
+  author: sjamaan
+  text: I don't know how Alpine does it, but my Debian machine's /etc/shadow is full
+    of "system" users with an asterisk in the password field...
+  score: 3
+  posted_at: '2026-11-05T13:47:21Z'
+- id: lo-lvpbqm
+  parent_id: '0'
+  author: dullmirror
+  text: |-
+    That was a fun read!
+    Luckily PermitRootLogin hasn't allowed logins with passwords for root since 2015. I'm guessing that's at least part of why this went undiscovered for so long.
+    For this to hit root I believe you'd have to actively allow password-logins for a root-account that doesn't have a password, which seems like a weird thing to do. But people are forgetful, so it's entirely possible to end up in this situation. I'm glad OpenSSH decided to patch even though they "consider the root cause of this bug to be outside sshd".
+  score: 3
+  posted_at: '2026-11-05T13:47:50Z'
+- id: lo-oqg4zf
+  parent_id: '0'
+  author: BenjaminRi
+  text: Imagine C has proper sum types that force you to unwrap an Ok(value) or Error.
+    It's easy if you try.
+  score: 21
+  posted_at: '2026-11-05T13:49:53Z'
+- id: lo-2rrzfv
+  parent_id: '0'
+  author: eest
+  text: https://hachyderm.io/@damienmiller/117563026759098135
+  score: 5
+  posted_at: '2026-11-05T13:51:41Z'
+- id: lo-k4qgda
+  parent_id: '0'
+  author: runxiyu
+  text: This reminds me of PAM's Segmentation fault when receiving "*" from musl's
+    crypt(3)
+  score: 11
+  posted_at: '2026-11-05T13:54:27Z'
+- id: lo-ikiod6
+  parent_id: '0'
+  author: thedward
+  text: On Debian, those users are assigned the login shell /usr/sbin/nologin.
+  score: 6
+  posted_at: '2026-11-05T13:58:08Z'
+- id: lo-lqy9b8
+  parent_id: '0'
+  author: sjamaan
+  text: Ah, good point!
+  score: 1
+  posted_at: '2026-11-05T14:00:14Z'
+- id: lo-rrfd4a
+  parent_id: '0'
+  author: dullmirror
+  text: |-
+    Also, the bug is specific to musl-based linuxes. Debian uses glibc, and is not affected :)
+    It seems ! is default for users (other than root) without a password on Alpine. Hopefully the other musl-distros doesn't follow Debian in using *.
+  score: 7
+  posted_at: '2026-11-05T14:25:39Z'
+- id: lo-shn9ef
+  parent_id: '0'
+  author: regalialong
+  text: |-
+    It's an interesting vuln, but this glossy website presentation style that buries the lede (am i affected, what to do), is really annoying to read through.
+    I know that named-vuln-site itself is a cliche that some people roll their eyes on, but in comparison:
+
+    https://heartbleed.com/
+    https://spectreattack.com/
+
+    https://tldr.fail/ (not a vuln but still a nice "fix your stuff" writeup)
+
+    feel much more grounded and immediately useful than this, but I guess the LLM graphics stuff gets more clicks or something :/
+    That checklist at the end is also like...... Maybe I'm old-fashioned but I thought it's not a good UI/UX thing to have things randomly pop-in or blink.
+  score: 29
+  posted_at: '2026-11-05T14:46:37Z'
+- id: lo-or5lmc
+  parent_id: '0'
+  author: gspr
+  text: Comment removed by its author
+  score: 2
+  posted_at: '2026-11-05T14:50:51Z'
+- id: lo-qfocpc
+  parent_id: '0'
+  author: hjvt
+  text: Barely coherent animations every three sentences make this a really unfun
+    read. And, is it just me, or do none of the very overly verbose explanations actually
+    ever explain how those behaviors come together to produce a vulnerability? I had
+    to ignore the prose and put the code snippets together to get what actually happened.
+  score: 53
+  posted_at: '2026-11-05T14:51:03Z'
+- id: lo-1blq6t
+  parent_id: '0'
+  author: gcupc
+  text: First thing I do on any server is turn off password authentication, for years,
+    just because of all the automated brute force attempts. I fail2ban them, of course,
+    but there are always more. It can be a pretty big inconvenience when I have a
+    new device, but I'm just living with it.
+  score: 2
+  posted_at: '2026-11-05T14:56:24Z'
+- id: lo-1qjdnf
+  parent_id: '0'
+  author: nytpu
+  text: Also the most generic slop design ever, really. You'd think they'd at least
+    prompt "don't make it look like every single other website ever generated by an
+    LLM"
+  score: 16
+  posted_at: '2026-11-05T15:01:48Z'
+- id: lo-pzq5ho
+  parent_id: '0'
+  author: srcrip
+  text: Yes the design is a little slop-y, but interesting vulnerability… does this
+    have a CVE then? Not sure how that works. Does this effect anyone running default
+    alpine docker up on the internet then? If you run a docker container with alpine
+    that has ssh installed, are we saying it’s possible to log into the ‘alpine’ user
+    that way by default?
+  score: 2
+  posted_at: '2026-11-05T15:24:24Z'
+- id: lo-iafosu
+  parent_id: '0'
+  author: ariaaaa
+  text: |-
+    I guess responsible disclosure is out the window.
+    Here is alpine's security advisory, which has the pertinent information rather than a publicity stunt.
+  score: 20
+  posted_at: '2026-11-05T15:25:40Z'
+- id: lo-1b92ik
+  parent_id: '0'
+  author: tchebb
+  text: |-
+    This is a bad writeup IMO. It never bothers to explain how the different changes combined to produce the vulnerability, nor does it explain the changes with enough fidelity for a reader to piece it together themselves:
+
+    If the first 2012 change did what the prose claims, users with * shadow entries on musl non-PAM distros would have been vulnerable as soon as the second 2012 change landed. So why does the intro claim 2016? The answer is in one of the screenshots, but the page doesn't explain it: crypt() takes the hashed password (or, at least, the algorithm and salt at the beginning of the hashed password) as its second argument, and the first 2012 change made sure not to return a hash of * when the hashed password starts with *, presumably to avoid this exact bug.
+    Because that wasn't explained, it's unclear from the page why the 2016 change affected anything. (Knowing the above, it's clear that passing a different user's algorithm and salt as crypt()'s second argument is what broke musl's safety check from 2012.)
+    I'm confused by the 2022 change. As described, it seems like Alpine's root user wasn't actually vulnerable until 2022, so why does the writeup say 2016? I guess because it's about the underlying bug in OpenSSH/musl rather than exploitability in a specific distro, but that's misleading at best given that Alpine seems to be one of the few distros with a vulnerable configuration. It also doesn't bother to explain why a hash of ! broke key login, which seems relevant in reconstructing how the vulnerability came to be.
+
+    The animations are also pretty useless. By showing the arguments and return value of crypt() in different scenarios, they could have illustrated the bug even without clear text. Alas, the 2012 one omits the arguments and the 2016 one omits the return value.
+  score: 33
+  posted_at: '2026-11-05T15:54:26Z'
+- id: lo-nmwntw
+  parent_id: '0'
+  author: pja
+  text: The month of security awareness that never ends is upon us!
+  score: 2
+  posted_at: '2026-11-05T16:48:34Z'
+- id: lo-izytfo
+  parent_id: '0'
+  author: gcollazo
+  text: 'Comment removed by moderator pushcx: Don''t insult projects.'
+  score: 0
+  posted_at: '2026-11-05T16:50:43Z'
+- id: lo-xpt9sj
+  parent_id: '0'
+  author: pyfisch
+  text: |-
+    I agree its not explained well, but I disagree that a reader can't piece it together themselves. A coworker and I read and (we think) understood it.
+
+    I'm confused by the 2022 change. As described, it seems like Alpine's root user wasn't actually vulnerable until 2022, so why does the writeup say 2016?
+
+    The root account was locked with ! between 2016 and 2022. OpenSSH checks for locked accounts and doesn't allow you to login even with a key. However other user accounts configured with * as a placeholder in /etc/shadow were vulnerable in this time.
+    The 2022 change made it so that the root account is no longer locked, but merely has * as the password hash placeholder, which should match no password ever but did in the musl crypt implementation.
+  score: 4
+  posted_at: '2026-11-05T17:54:19Z'
+- id: lo-l5kpdv
+  parent_id: '0'
+  author: an_origamian
+  text: Eternal October?
+  score: 2
+  posted_at: '2026-11-05T18:31:50Z'
+- id: lo-qpzx2l
+  parent_id: '0'
+  author: mort
+  text: It really reads a lot like someone had Claude code up fancy graphics and never
+    considered whether those graphics have any explanatory value or not. I agree they're
+    distracting and, well, sloppy.
+  score: 5
+  posted_at: '2026-11-05T18:42:03Z'
+- id: lo-yjblqp
+  parent_id: '0'
+  author: maurycy
+  text: |-
+    Blog post appears to be LLM written, has awkward layout and is full of annoying animations. The actual important information (requirements for the exploit) is very low contrast text.
+    The Alpine security advisory is a much better source, and includes detailed mitigation instructions and indicators of compromise:
+    https://www.alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/
+  score: 3
+  posted_at: '2026-11-05T18:53:31Z'
+- id: lo-rlt7cz
+  parent_id: '0'
+  author: pja
+  text: It works for any user with a password set to * & a valid login shell. Not
+    just Root.
+  score: 1
+  posted_at: '2026-11-05T19:31:21Z'
+article:
+  url: https://sshhole.com/
+  title: "*sshole · sshhole.com"
+  fetch_status: success
+  content: |-
+    1980
+
+    ## the first star
+
+    back in old unix your password hash just sat in `/etc/passwd`, right next to your username. in a file everyone could read.
+
+    in 1980 bill joy put a `*` there for an account called `daemon`. nobody's supposed to ever log in as it.
+
+    a `*` isn't a hash, so no password can match it. unix still does this today
+
+    [
+    3bsd · /etc/passwd · 1980
+
+    **Address** github.com/dspinellis/unix-history-repo/blob/BSD-3/etc/passwd
+     ![daemon:*:1:1:The devil himself:/:](receipts/3bsd-passwd.png)](https://github.com/dspinellis/unix-history-repo/blob/BSD-3/etc/passwd)
+
+    the next field is the real name. he wrote "the devil himself"
+
+    1990s
+
+    ## how sshd checks your password
+
+    ok so these days the hash lives in `/etc/shadow` and looks like `$6$abc$k2P9…`. the `$6$` means sha512, `abc` is the salt, the rest is the actual hash
+
+    you type your password, sshd hashes it with that same salt and checks if it comes out identical. same = you're in. that's it
+
+    and if the field is just `*`? there's nothing to match. type whatever you want, it's never getting you in
+
+    1990s
+
+    ## the fine print
+
+    one more rule. if `crypt()` can't do its job, it returns NULL. like if the salt asks for some algorithm the system doesn't have, there's nothing to compute, so you get NULL instead of a hash
+
+    [
+    the single unix spec · crypt() · 1997
+
+    **Address** pubs.opengroup.org/onlinepubs/7908799/xsh/crypt.html
+     ![RETURN VALUE: Upon successful completion, crypt() returns a pointer to the encoded string. Otherwise it returns a null pointer and sets errno to indicate the error.](receipts/posix-crypt.png)](https://pubs.opengroup.org/onlinepubs/7908799/xsh/crypt.html)
+
+    pretty clear.
+
+    except a lot of programs never check for NULL. they just compare whatever `crypt()` gives back with the stored field, hit the NULL, and crash
+
+    2012
+
+    ## crypt stops saying NULL
+
+    so musl (the libc under alpine) goes ok fine, `crypt()` just won't return NULL anymore. if it fails, it returns a single character instead. that character can never match a real password, so programs don't crash, they just see a wrong password
+
+    now guess which character they picked for that
+
+    "?"
+
+    yep. the star. again.
+
+    [
+    musl · b3c4cc12 · aug 2012
+
+    **Address** git.musl-libc.org/cgit/musl/commit/?id=b3c4cc12
+     ![make crypt return an unmatchable hash rather than NULL on failure. always "succeeding" but giving an unmatchable hash is reportedly a better behavior than failing on error.](receipts/musl-b3c4cc12.png)](https://git.musl-libc.org/cgit/musl/commit/?id=b3c4cc121f70faea45389fe7ddc1127ed5cbd8bb)
+
+    "reportedly."
+
+    [
+    musl · b3c4cc12 · the diff
+
+    **Address** git.musl-libc.org/cgit/musl/commit/?id=b3c4cc12
+     ![diff of crypt_des.c: removed the comment 'Should not happen.' and 'return NULL;', added: return (setting[0]=='*') ? "x" : "*";](receipts/musl-b3c4cc12-diff.png)](https://git.musl-libc.org/cgit/musl/commit/?id=b3c4cc121f70faea45389fe7ddc1127ed5cbd8bb)
+
+    "should not happen" gone, NULL gone, `"*"` in
+
+    2012
+
+    ## three weeks later
+
+    then musl adds sha512 crypt. the thing is, sha512crypt gets slower the longer the password is, so someone could send one giant password and keep your server busy for a long time. so musl just caps it at 256 bytes and refuses anything longer
+
+    [
+    musl · 88bf5a8a · aug 29 2012
+
+    **Address** git.musl-libc.org/cgit/musl/commit/?id=88bf5a8a
+     ![add sha256/sha512 crypt. Rich Felker, 2012-08-29.](receipts/musl-88bf5a8a.png)](https://git.musl-libc.org/cgit/musl/commit/?id=88bf5a8a8d7d796f63cca8589f4de67aa8345f1a)
+
+    twenty days after the "\*" commit btw
+
+    [
+    musl · crypt\_sha512.c @ 88bf5a8a
+
+    **Address** git.musl-libc.org/cgit/musl/tree/src/misc/crypt\_sha512.c?id=88bf5a8a
+     ![key limit is not part of the original design, added for DoS protection. #define KEY_MAX 256. if (i > KEY_MAX) return 0;](receipts/musl-keymax.png)](https://git.musl-libc.org/cgit/musl/tree/src/misc/crypt_sha512.c?id=88bf5a8a8d7d796f63cca8589f4de67aa8345f1a#n189)
+
+    so past 256 bytes crypt fails. and when crypt fails… it says `"*"`.
+
+    [
+    musl · crypt\_sha512.c
+
+    **Address** git.musl-libc.org/cgit/musl/tree/src/crypt/crypt\_sha512.c
+     ![on error "*" is returned.](receipts/musl-sha512-header.png)](https://git.musl-libc.org/cgit/musl/tree/src/crypt/crypt_sha512.c#n8)
+
+    literally in the comment the whole time
+
+    2016
+
+    ## sshd borrows bob's salt
+
+    CVE-2016-6210. ask sshd about a user that doesn't exist and it says no instantly, cause there's nothing to hash. real users take a few ms longer. so just time it and you know who exists
+
+    the fix is kinda funny. no real hash to check? sshd grabs some other account's salt and hashes your password anyway, just to waste the same amount of time. still a no, just a slower no
+
+    [
+    openssh-commits · jul 2016
+
+    **Address** lists.mindrot.org/pipermail/openssh-commits/2016-July/005428.html
+     ![Determine appropriate salt for invalid users.](receipts/openssh-9286875a7.png)](http://lists.mindrot.org/pipermail/openssh-commits/2016-July/005428.html)
+
+    "for invalid users." and also, it turns out, real users with a `*`.
+
+    2019 → 2022
+
+    ## the fix for the fix
+
+    **2019.** turns out alpine's docker images had no root password. at all. CVE-2019-5021. alpine fixes it by locking root with `!`
+
+    but without pam, `!` also kills ssh keys. and cloud images log in with keys.
+
+    **2022.** alpine 3.16 switches root to `*`. still locked, keys work again
+
+    [
+    alpine aports · fbe926af · shipped in 3.16, 2022
+
+    **Address** gitlab.alpinelinux.org/alpine/aports/-/commit/fbe926af.patch
+     ![this still forbids password login but allows logins via ssh keys with pam disabled. # make sure root login is disabled. root:! becomes root:*](receipts/alpine-fbe926af.png)](https://gitlab.alpinelinux.org/alpine/aports/-/commit/fbe926afc76de76e07d078f266badc4144dde8e3)
+
+    narrator: it did not.
+
+    2016 → 2026
+
+    ## ten quiet years
+
+    why did nobody notice? well, maybe someone did. maybe someone pasted the wrong thing into a password prompt, half a slack message or a whole ssh key, and it just let them in. you've never pasted the wrong thing into a password prompt?? amazing. a fresh box with no passwords set isn't affected. a `*` in shadow needs a wrong try first. openssh tests on openbsd and glibc, musl doesn't test sshd, and most distros go through pam, which never even calls crypt for a `*`.
+
+    so as far as anyone knows, nobody noticed. as far as anyone knows.
+
+    some people got really close though
+
+    [
+    libc-alpha · debian #714219 · 2013
+
+    **Address** sourceware.org/legacy-ml/libc-alpha/2013-07/msg00046.html
+     ![The scheme of returning * or x, which are never valid matches, comes from dalias from musl, and I think it is the best compromise/solution.](receipts/libc-alpha-2013.png)](https://bugs.debian.org/714219)
+
+    a debian dev asks glibc to copy musl's `"*"`. six years later debian moves to libxcrypt, which says `"*0"`, and closes the bug. one character away.
+
+    [
+    musl mailing list · dec 2024
+
+    **Address** openwall.com/lists/musl/2024/12/31/2
+     ![Sure there's no reason it couldn't have been 257 or 300 or whatever, but either way you'd get things like this when software has bugs in handling the condition.](receipts/musl-list-2024.png)](https://www.openwall.com/lists/musl/2024/12/31/2)
+
+    this thread is about busybox `passwd` breaking on a 257 character password. same `"*"`, same limit. nobody says "sshd"
+
+    [
+    openssh-commits · 30 oct 2026
+
+    **Address** lists.mindrot.org/pipermail/openssh-commits/2026-October/013271.html
+     ![fix fake password salt generation for bcrypt hashes](receipts/openssh-84f8f4666.png)](http://lists.mindrot.org/pipermail/openssh-commits/2026-October/013271.html)
+
+    a security review fixes `pick_salt()`. the bug is four lines below it. four days before i found it.
+
+    nov 2026
+
+    ## how i ran into it
+
+    i was messing around with openssh, mostly the boring parts where it talks to libc, like the password code. people don't really look at that stuff, they look at the crypto. so i built sshd every way i could think of (glibc, musl, pam, no pam, shadow, no shadow) and threw like 17,600 weird logins at it. weird hashes, broken accou
+  error:
+  fetched_at: '2026-11-05T19:38:16Z'
+archived_at: '2026-11-05T19:38:16Z'

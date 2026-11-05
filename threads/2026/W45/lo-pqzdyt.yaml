@@ -1,0 +1,124 @@
+---
+post:
+  id: lo-pqzdyt
+  source: lobsters
+  title: GNU Mes and the 0.28 release
+  url: https://ekaitz.elenq.tech/fasterMes10.html
+  hn_url: https://lobste.rs/s/pqzdyt
+  score: 10
+  author: FedericoSchonborn
+  posted_at: '2026-11-05T13:30:50Z'
+  fetched_at: '2026-11-05T19:38:16Z'
+  article_url: https://ekaitz.elenq.tech/fasterMes10.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T19:38:19Z'
+  raw_comment_count: 0
+  tags:
+  - lisp
+  - release
+comments: []
+article:
+  url: https://ekaitz.elenq.tech/fasterMes10.html
+  title: Ekaitz's tech blog
+  fetch_status: success
+  content: |-
+    # Ekaitz's tech blog:I make stuff at ElenQ Technology and I talk about it
+
+    It’s been a while since the latest blog post in the series but we have been working very hard behind the scenes 1. This means I’ll probably forget a few things from all we did, but there’s a good reason for that: we were making a release.
+
+    ### Background
+
+    This is the first official and serious release I make as a (co-)maintainer, and the whole thing makes me uncomfortable. Even though people treat me as an expert programmer sometimes, there are many things in programming that I struggle a lot with. The first one, that I think I improved on in the last few years, is writing software from scratch. The second is delivering things to people.
+
+    This is normal, as all my career has been focused on R&D and that’s the way I’ve been trained to work. In the case of this specific release, something inside me still thinks my most valuable contribution was that: the idea and demonstration that this attempt could work.
+
+    Most of my career has been based on learning in a short time period the right amount of information so I can achieve a reasonable result. Then I normally move on to the next project.
+
+    Thinking about that, trying to read through my feelings, I started to realize more and more that whatever that drives me is pushing me to somewhere else, maybe to those parts I struggle more with…
+
+    #### Releases
+
+    Releasing code is important. It’s the only way to make people actually enjoy the result of your work. I have no problem to admit I struggle with this.
+
+    As an R&D guy I’ve always considered myself an “enabler”. I do something, I show how it is done and let people learn from it and actually implement it. That’s fine in some contexts but it has been driving me to some level of frustration recently, as the size of the projects I take part in grow.
+
+    An example of this is the RISC-V bootstrap on Guix. I spent a couple of years of my life working on it. We made a working bootstrap for live-bootstrap. But it’s not yet included in Guix because I delegated the final step. Now, even after the years I spent on that, all the sleepless nights and everything, it’s something I cannot enjoy fully2, and you cannot enjoy at all.
+
+    This “my job here is done” mentality is not enough for me anymore.
+
+    The kind of projects I do now deserve something else. I deserve better.
+
+    You deserve better.
+
+    ### GNU Mes
+
+    In Mes I had like 300 commits in a branch, pretty ugly, doing, undoing and redoing some stuff over and over again. The whole codebase was upside down, the commit messages were sometimes good and sometimes lacking, I had fixup commits that fixed things that were changed so much the amount of conflicts the reordering produced was overwhelming… It was a mess. It was me trying new things, learning and cleaning things up as I went. My arborescent thought process at its fullest.
+
+    In my usual way of doing things, I decided to promise NlNet a release, something I’ve never done before 3.
+
+    Once the bytecode adventure was done, showing some good performance improvement was possible and that Janneke made me a co-maintainer, it was the only acceptable thing to do.4
+
+    But, if I wanted to do it, I would need to slow down.
+
+    #### Thankfully, Tim is with me
+
+    In the last part of the bytecode adventures, you remember how we included Popsyntax, and we reworked the whole macro expansion game. That wasn’t me, but Tim Sample.
+
+    I don’t remember very well how he joined my efforts here but I guess I bothered him with questions because he’s a long term Mes contributor and he’s also the author of Popsyntax, the Germ scheme implementation and many interesting things more.
+
+    He decided to start over. Chose a Mes release and walked through my steps. Removed the macro expander from the internals and wrote one in Scheme. From there, the direction was set.
+
+    I worked through the huge branch that I had, removing the stuff that turned out to be unnecessary, and he took over the git history, and made sure that every single commit was working.
+
+    I cannot imagine how many conflicts the guy has been resolving. But damn this looks good now.
+
+    ### GNU Mes 0.28
+
+    This week, I released GNU Mes 0.28. The first release that I do as a GNU maintainer.
+
+    Janneke has been guiding me through the whole process — including the part of publishing the website to GNU using CVS5. I’m sure I would’ve never been able to figure out everything on my own. What a ride it has been!
+
+    But after more than a year of work, I’m very happy that most of the comments on the release have been positive, specially the ones from people that I worked with and I have a huge respect for.6
+
+    But, what’s will you find in GNU Mes 0.28 that we didn’t mention in the blog yet?
+
+    ### M2-Planet, MesCC and GCC
+
+    First of all, the main difference from the earlier blogpost is now Mes can be compiled with both M2-Planet and MesCC, and also with GCC as before.
+
+    It’s a tricky process, because the error reporting is very limited (I’m being benevolent here), and I was being a very nasty boy with some gotos inside switch statements. After some wrestling with allowed C sintax, I figured it out.
+
+    M2-Planet is limited, and we had to leave some things out. When Mes is compiled with M2-Planet it doesn’t have support for errors (aka exceptions) and those abort the interpreter, this is because M2-Planet’s C library doesn’t include setjmp. The stack operations had also to be rewritten as functions for M2-Planet, as the macros with array access were too complex for it. With that, Mes is a little bit slower when compiled with M2-Planet.
+
+    None of those are a big deal because that’s only the starting point of the bootstrap process and Mes is rebuilt with MesCC right after it.
+
+    ##### Mes C lib
+
+    The 0.28 release has been tested on real RISC-V hardware that I have access to,7 uncovering a few issues here and there in the Mes C Library.
+
+    First, the assembly parts that take care of program initialization in RISC-V (written by myself a few years ago, when I was working on the bootstrap) were broken.
+
+    setjmp and longjmp that we use for error handling in Mes, and were not used before, are also faulty. Because of this, the RISC-V version of Mes in the bootstrap, when built with MesCC that is, does not support errors until the issue is fixed.
+
+    I also found some extra stuff because GCC 14 decided that implicit function declaration warnings should become errors, breaking the bootstrap that we didn’t test in a very long time in RISC-V, first, because hardware unavailability and, second, because Qemu is also faulty for RISC-V.
+
+    There is still a known issue with M2-Planet-built Mes that explodes when it calls strcpy, this can be triggered running (procedure-disassemble map) in the REPL. We didn’t manage to fix this yet.
+
+    #### Macro expansion
+
+    Tim reworked the macro expansion and made a simple and understandable initial macro expander in Scheme.
+
+    With that ready, many things started to fall off naturally.
+
+    Most of our driving issues simply disappeared. The macro expander takes the steering wheel from the start, giving us zero garbage collection issues during boot.
+
+    The earlier macro expander I wrote in C had to also drive execution, which could possibly call the garbage collector, killing all the C pointers that we had. The new macro expander does everything from Scheme, so no pointers are lost: gc_preserve and gc_release are gone. The boot-done! mark is gone, too.
+
+    As Tim started from scratch, all the API is way cleaner, and our initial driver is as simple as:
+
+    /* Kickstart the initial boot file doing the bare minimum: eval one by one. * It will evaluate the bootstrapping macro expander and drive from there. */ struct scm *result; struct scm *cur; for (cur = program; cur != cell_nil; cur = cur->cdr) { stack_push (cur); /* Preserve from garbage collection */ result = apply (compile_top_level_exp (cur->car, current_module ()), cell_nil); cur = stack_pop (); /* Recover pointer just in case it was moved */ }
+
+    We can now use the stack for pres
+  error:
+  fetched_at: '2026-11-05T19:38:19Z'
+archived_at: '2026-11-05T19:38:19Z'

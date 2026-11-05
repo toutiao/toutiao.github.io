@@ -1,0 +1,130 @@
+---
+post:
+  id: lo-vbx0g4
+  source: lobsters
+  title: A Look at Datastar
+  url: https://noteflakes.com/articles/2026-11-04-datastar
+  hn_url: https://lobste.rs/s/vbx0g4
+  score: 10
+  author: noteflakes
+  posted_at: '2026-11-05T10:44:57Z'
+  fetched_at: '2026-11-05T19:38:16Z'
+  article_url: https://noteflakes.com/articles/2026-11-04-datastar
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T19:38:18Z'
+  raw_comment_count: 1
+  tags:
+  - ruby
+  - web
+comments:
+- id: lo-g4kb8d
+  parent_id: '0'
+  author: zem
+  text: I'm using datastar and django for a project, and it's been a pretty great
+    experience. using claude but also paying close attention to the generated code,
+    and it's been fine, for people who are still worried that LLMs have trouble straying
+    off the react path.
+  score: 1
+  posted_at: '2026-11-05T19:20:26Z'
+article:
+  url: https://noteflakes.com/articles/2026-11-04-datastar
+  title: A Look at Datastar - Noteflakes
+  fetch_status: success
+  content: "# A Look at Datastar\n\n### 04·11·2026\n\nI have always been interested
+    in frontend solutions for building web applications. Even though I’m more of a
+    backend programmer, I really dig all the different techniques people come up with
+    for creating browser-based apps that are both _reactive_ (reflecting remote state
+    in real-time) and _interactive_(responding to user actions).\n\nOver the last
+    few years, I’ve been looking at different frontend frameworks and libraries, to
+    see how they work, and what I can learn from them. I adore[Svelte](https://svelte.dev/),
+    which is really smart and efficient. Its sister framework [SvelteKit](https://svelte.dev/docs/kit/introduction)
+    inspired the file-based routing in my own web framework for Ruby,[Syntropy](https://github.com/noteflakes/syntropy/).
+    I also really like the approach of the [Phoenix](https://www.phoenixframework.org/)
+    framework to building reactive apps using[LiveView](https://phoenix-live-view.hexdocs.pm/welcome.html),
+    which is an amazing technology that builds on the solid concurrency foundation
+    of Elixir/Erlang.\n\nMany people have tried to recreate the same functionality
+    for other languages or frameworks, with varying degrees of success. Recently,
+    [Marco Roth](https://marcoroth.dev/) came up with[ReActionView](https://reactionview.dev/),
+    which promises to bring reactive views to Rails apps, building on his previous
+    work on[Herb](https://herb-tools.dev/), a set of tools that improve on the developer
+    experience of writing ERB templates for Rails apps.\n\nAll those different technologies
+    are certainly impressive, but they all are tied to specific languages/frameworks:
+    Svelte/SvelteKit is a JS framework, LiveView is for Phoenix/Elixir, ReActionView
+    is for Ruby on Rails, LiveWire is for Laravel/PHP, etc.\n\nAnd then there’s [Datastar](https://data-star.dev/),
+    which dubs itself “the Hypermedia framework”. It is somewhat similar to other
+    frontend declarative frameworks/libraries such as [HTMX](https://htmx.org/) or[Alpine.js](https://alpinejs.dev/),
+    in that interactivity/reactivity is done declaratively by adding attributes to
+    HTML tags. But what is different about Datastar is that it insists on keeping
+    state where it should be, such that it doesn’t try to _copy_ server state to the
+    client and keep it in sync with the server. Instead, the server continuously sends
+    updates (in the form of HTML patches, or [signal](https://data-star.dev/guide/reactive_signals)
+    patches) to the client. In that respect, Datastar is more like LiveView, but without
+    the coupling to Phoenix/Elixir. In fact, Datastar offers SDKs for different languages
+    and frameworks, including Ruby (the Ruby SDK is maintained by [Ismael Celis](https://ismaelcelis.com/)).\n\nI
+    find this approach so refereshing! With Datastar, you can use any backend technology
+    in order to build reactive web apps. Furthermore, Datastar relies on[SSE](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)(server-sent
+    events) for streaming updates from the server to the client, instead of the somewhat
+    older approach of using a WebSocket connection used in technologies such as LiveView,
+    or HotWire (the current go-to solution for Rails apps).\n\nWhile SSE does not
+    provide a full-duplex connection to the server (meaning, you can’t use an SSE
+    request/connection to send data from the client to the server), it provides two
+    important advantages over WebSocket: A WebSocket connection normally requires
+    establishing a separate HTTP/1.1 connection to the server (there’s partial support
+    for WebSocket over HTTP/2, but that depends on the browser and the server/reverse
+    proxy used. HTTP/3 support is very limited as far as I could tell). In contrast,
+    SSE requests can be multiplexed on top of an HTTP/2 or HTTP/3 connection, along
+    with any number of other concurrent requests. Secondly, because SSE requests are
+    just normal (streaming) HTTP requests, the server can use standard HTTP compression
+    in order to achieve significant reduction in bandwidth.\n\nLet’s look at a simple
+    example of working with Datastar. Here’s the markup for a simple reactive app
+    that displays the current time on the server:\n\n    <html>\n      <head>\n        <script
+    type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.4/bundles/datastar.js\">\n
+    \       </script>\n      </head>\n      <body>\n        <p data-init=\"@get('/ds/time_stream')\">\n
+    \         <span>Time:</span> <span data-text=\"$time\" />\n        </p>\n      </body>\n
+    \   </html>\n\nThis example does three things: load the datastar library (BTW
+    it’s only about 15KB!), set up a connection to an SSE stream at `/ds/time_stream`
+    using the`@get` action, and binds a span to a signal named `$time`. On the server
+    side, the controller looks as follows (using Syntropy):\n\n    # /ds/time_stream.rb\n
+    \   export ->(req) {\n      req.respond_sse {\n        send_time_update(req)\n
+    \       @machine.periodically(1) { send_time_update(req) }\n      }\n    }\n    \n
+    \   def send_time_update(req)\n      json = JSON.dump(time: Time.now.to_s)\n      req.send_event('datastar-patch-signals'
+    => \"signals #{json}\")\n    end\n\nThe controller code is quite simple: after
+    calling `respond_sse`, which sends some HTTP response headers, we send a first
+    update, then we send further updates once per second. What actually gets sent
+    over the wire looks as follows:\n\n    HTTP/1.1 200 \n    Content-Type: text/event-stream\n
+    \   \n    event: datastar-patch-signals\n    data: signals { \"time\": \"2026-11-04
+    11:54:55 +0200\" }\n    \n    event: datastar-patch-signals\n    data: signals
+    { \"time\": \"2026-11-04 11:54:56 +0200\" }\n    \n    event: datastar-patch-signals\n
+    \   data: signals { \"time\": \"2026-11-04 11:54:57 +0200\" }\n    ...\n\nThe
+    Datastar wire protocol is based on the SSE response format, where each event contains
+    an (optional) `event:` entry and one or more `data:` entries. Distinct events
+    are separated by double newline characters (`\\n\\n`). In this case, we’re sending
+    a `datastar-patch-signals` event that tells the browser to update signal values.
+    The patched values are expressed as a JSON object where the keys correspond to
+    signal names and the values correspond to the signal values.\n\nYou can look at
+    this example on a [separate page](/ds/time), but for the sake of convenience I’ll
+    go ahead and embed it right here:\n\nAlthough this is a very simple example, look
+    at all the things we’re not doing \U0001F61C: we don’t need to set up an `EventSource`
+    object, or use `fetch` to start the SSE connection on the client side, we don’t
+    need to go through the DOM and update anything that’s bound to the `$time` signal.
+    On the server side we just stream changes to the server state to the client (eventually
+    though, we might want to introduce some abstractions for sending a `datastar-patch-signals`
+    event or other types of events, but this is pretty trivial…)\n\n## Exploring Signals
+    in Datastar\n\nLet’s look at how signals are handled in Datastar a bit more closely.
+    I’ve been playing with Datastar in the last few days and have observed the some
+    peculiarities:\n\nIn Datastar, signals are global to the page. They can’t be scoped
+    to a part of the DOM, but they can be namespaced by[nesting](https://data-star.dev/guide/backend_requests#nesting-signals)
+    them inside objects:\n\n    <span data-text:foo.bar.baz />\n\nAlternatively, you
+    can use the following notation, handy when you have key values that contain slashes,
+    or other special characters:\n\n    <span data-text=\"$foo['/bar']\" />\n\nBy
+    default, Datastar will send all signal values back to the server on every user
+    action, which may be problematic if you have lots of signals on your page. In
+    order to prevent signal values from being sent to the server on each request,
+    the signal name must begin with an underscore.\n\nFinally, an important aspect
+    of Datastar signals (and indeed, Datastar in general,) is that Datastar doesn’t
+    really have a Javascript API. You can’t just access signal values from Javascript
+    (this is by[design](https://github.com/starfederation/datastar/issues/1233)),
+    which may make it harder to integr"
+  error:
+  fetched_at: '2026-11-05T19:38:18Z'
+archived_at: '2026-11-05T19:38:18Z'

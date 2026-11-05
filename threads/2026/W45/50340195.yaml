@@ -1,0 +1,648 @@
+---
+post:
+  id: '50340195'
+  title: Partial Operator Precedence
+  url: https://ziglang.org/devlog/2026/#2026-10-24
+  hn_url: https://news.ycombinator.com/item?id=50340195
+  score: 96
+  author: tosh
+  posted_at: '2026-11-02T17:22:20Z'
+  fetched_at: '2026-11-05T19:38:14Z'
+  article_url: https://ziglang.org/devlog/2026/#2026-10-24
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T19:38:14Z'
+  raw_comment_count: 54
+comments:
+- id: '50376377'
+  parent_id: '50340195'
+  author: boxed
+  text: I like the compromise, although I still think operator precedence in itself
+    is evil :P Lisp kinda made the right call by mistake.
+  score: 0
+  posted_at: '2026-11-05T07:54:15Z'
+- id: '50376407'
+  parent_id: '50340195'
+  author: Scaevolus
+  text: 'C&#x2F;C++ obviously have far too many precedence levels, but you can easily
+    have a more readable tower without forcing parentheses, like Go&#x27;s 5 levels:
+    <a href="https:&#x2F;&#x2F;go.dev&#x2F;ref&#x2F;spec#Operator_precedence" rel="nofollow">https:&#x2F;&#x2F;go.dev&#x2F;ref&#x2F;spec#Operator_precedence</a>'
+  score: 0
+  posted_at: '2026-11-05T07:58:42Z'
+- id: '50376441'
+  parent_id: '50340195'
+  author: skrebbel
+  text: I never realized that languages have so many strict precedence levels because
+    that’s easier to implement than not having them.<p>This here seems like a very
+    good idea and I hope other languages in active development take note. And als
+    JS’ Prettier, which actively <i>removes</i> parentheses like these.
+  score: 0
+  posted_at: '2026-11-05T08:03:29Z'
+- id: '50376481'
+  parent_id: '50340195'
+  author: raphlinus
+  text: 'Worth noting, WGSL does this too, and is mostly a bit stricter than Zig:
+    `a + b &amp; c` and `a &lt;&lt; b &amp; c` are errors in WGSL but accepted by
+    Zig. (Quick: off the top of your head, how do those parse)?<p>I&#x27;m thinking
+    of doing this for symbolasm also.'
+  score: 0
+  posted_at: '2026-11-05T08:08:46Z'
+- id: '50376597'
+  parent_id: '50340195'
+  author: sheept
+  text: |-
+    JavaScript does something similar for the exponentiation operator. This is a syntax error:<p><pre><code>    -a ** b
+    </code></pre>
+    Someone who learned PEMDAS in school may argue it should be equivalent to -(a * b), while a programmer may be used to unary operators binding tightest, so (-a) * b.
+  score: 0
+  posted_at: '2026-11-05T08:23:49Z'
+- id: '50376666'
+  parent_id: '50376377'
+  author: jraph
+  text: Made the right call, yes, but at the right time and with the right parameters
+    above all!
+  score: 0
+  posted_at: '2026-11-05T08:32:56Z'
+- id: '50376792'
+  parent_id: '50376377'
+  author: tgv
+  text: So did Forth, but that&#x27;s no guarantee for readability. APL got the worst
+    of both worlds, IMO.
+  score: 0
+  posted_at: '2026-11-05T08:47:45Z'
+- id: '50376843'
+  parent_id: '50376441'
+  author: pasc1878
+  text: |-
+    No you can have no precedence at all see Lisp and APL for examples.<p>Lisp because everything is explicit and only the form just inside an opening parenthesis does anything.
+    APL as all is scanned right to left.
+  score: 0
+  posted_at: '2026-11-05T08:55:18Z'
+- id: '50376909'
+  parent_id: '50340195'
+  author: IshKebab
+  text: This is very clearly the best design for operator precedence IMO and it&#x27;s
+    nice that Zig has converged on it. It would be good to get it as a linting&#x2F;formatting
+    rule in Rust too (maybe that already exists?).
+  score: 0
+  posted_at: '2026-11-05T09:04:44Z'
+- id: '50377132'
+  parent_id: '50340195'
+  author: Someone
+  text: |-
+    I don’t find the article clear on how it fixes things, but I guess that, now<p><pre><code>  a op1 b op2 c
+    </code></pre>
+    is an error if <i>op1</i> is unequal to <i>op2</i> and they have the same precedence. Do I see that right?<p>Also, it seems each operator will have to have a associativity to handle a future operator for exponentiation or (also potential future) custom operators.<p>Finally, the “What you need to know” section doesn’t mention <i>orelse</i>. Where does that fit in?
+  score: 0
+  posted_at: '2026-11-05T09:35:29Z'
+- id: '50377146'
+  parent_id: '50340195'
+  author: ozgrakkurt
+  text: Here is a crazy idea, don’t use operators, just use functions.<p>Operators
+    cause issues because it is not possible to cleanly express error output from an
+    operator, it is not possible to express the bit-width of the operation, have to
+    understand precedence.<p>All of these issues cause other downstream issues.<p>Why
+    not add_u64()?
+  score: 0
+  posted_at: '2026-11-05T09:37:33Z'
+- id: '50377179'
+  parent_id: '50376441'
+  author: qalmakka
+  text: If you use the shunting yard algorithm or similar for infix binary operators
+    it&#x27;s trivial to define a table with operator precedence values and use that.
+    You can have a bunch of operators all at the same priority but it is the same
+    complexity really, the algorithm is pretty trivial
+  score: 0
+  posted_at: '2026-11-05T09:40:53Z'
+- id: '50377277'
+  parent_id: '50340195'
+  author: elegios
+  text: This is one of those ideas that is very weird if you’re approaching it from
+    more or less traditional parsing techniques, but makes a lot of sense when you
+    think about it.<p>I ended up doing a bunch of work on it in a slightly broader
+    and more formal setting during my phd (<a href="https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;abs&#x2F;10.1145&#x2F;3571251"
+    rel="nofollow">https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;abs&#x2F;10.1145&#x2F;3571251</a>)
+    with the expectation that it probably wouldn’t be relevant for more mainstream
+    languages any time soon, very happy to be wrong on that.
+  score: 0
+  posted_at: '2026-11-05T09:55:24Z'
+- id: '50377303'
+  parent_id: '50377146'
+  author: anonymous908213
+  text: Because it&#x27;s ridiculously verbose. Abbreviating extremely common operations
+    makes code far easier to read and understand than not.<p>&gt; have to understand
+    precedence<p>Precedence is not in any way an argument against using operators;
+    you could disallow precedence at all (eg. each expression must have at most one
+    operator, or rather two counting the assignment operator) while still having operators.
+    That said, precedence is also very beneficial to readability when not abused.<p>&gt;
+    Operators cause issues because it is not possible to cleanly express error output
+    from an operator<p>Incorrect. An operator can simply desugar to functions, and
+    therefore has the exact same error semantic possibilities. If you take issue with
+    a language not returning errors from operators, that is a language design issue,
+    not something inherent to the existence of operators.
+  score: 0
+  posted_at: '2026-11-05T09:58:24Z'
+- id: '50377337'
+  parent_id: '50377146'
+  author: solatic
+  text: Zig sometimes gives you this, for example there are @divCeil, @divTrunc, @divExact,
+    and @divFloor built-ins so that you can be more precise in your intent compared
+    to using &quot;&#x2F;&quot;. It&#x27;s rather simple to then write a linting rule
+    that fails if you ever have a literal &quot;&#x2F;&quot; in your codebase.
+  score: 0
+  posted_at: '2026-11-05T10:03:23Z'
+- id: '50377353'
+  parent_id: '50377303'
+  author: epolanski
+  text: The amount of times I&#x27;ve been sad that multiply or sum are longer than
+    + or * is limited to long formulas and even then it&#x27;s a non issue.<p>Also,
+    functions can be used as callbacks, and offer overloads to handle partial applications
+    with ease, pipe(2, sum(3), multiply(2)), e.g.
+  score: 0
+  posted_at: '2026-11-05T10:06:02Z'
+- id: '50377379'
+  parent_id: '50340195'
+  author: v9v
+  text: Something very similar was in Fortress, see 16.2 here <a href="https:&#x2F;&#x2F;www.ccs.neu.edu&#x2F;home&#x2F;samth&#x2F;fortress-spec.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.ccs.neu.edu&#x2F;home&#x2F;samth&#x2F;fortress-spec.pdf</a>
+  score: 0
+  posted_at: '2026-11-05T10:09:32Z'
+- id: '50377395'
+  parent_id: '50377353'
+  author: anonymous908213
+  text: Operators can also support those things. Operators are just syntax sugar for
+    functions, or at least they&#x27;re capable of being such. If a language chooses
+    not to support the full range of what functions can do for operators, that is
+    a thing you can criticise the language for (and I do!), but it is not a reason
+    to suggest operators should be disposed with in language design altogether.
+  score: 0
+  posted_at: '2026-11-05T10:13:14Z'
+- id: '50377457'
+  parent_id: '50377353'
+  author: OskarS
+  text: 'I don&#x27;t think your experience is particularly universal, it vastly differs
+    depending on what kind of programming you do. If you&#x27;re doing games stuff
+    or graphics or signal processing or any other number of subfields of programming
+    that require a lot of math, operators are a god-send for readability.<p>This Zig
+    change is the best of both worlds: avoid the ambiguity, but keep the readability.'
+  score: 0
+  posted_at: '2026-11-05T10:22:24Z'
+- id: '50377458'
+  parent_id: '50377353'
+  author: bennettnate5
+  text: I don&#x27;t think character length of an expression is the issue. Reading
+    chained operators is explicitly easier than reading nested functions by virtue
+    of operators having infix notation and not explicitly requiring parantheses where
+    they are not necessary to disambiguate order of operations. The prefix notation
+    of functions moves the operation farther from the eye from operands and introduces
+    the issue of parantheses-miscounting bugs. I&#x27;d hardly say the difference
+    in readability of these is a non issue:<p>(a + b + c + d) * e<p>mult(add(a, add(b,
+    add(c, d))), e)
+  score: 0
+  posted_at: '2026-11-05T10:22:30Z'
+- id: '50377464'
+  parent_id: '50377458'
+  author: epolanski
+  text: Hence I said that operators are more readable for longer formulas.
+  score: 0
+  posted_at: '2026-11-05T10:23:14Z'
+- id: '50377478'
+  parent_id: '50377458'
+  author: Zambyte
+  text: mult(add(a, b, c, d), e)<p>:)
+  score: 0
+  posted_at: '2026-11-05T10:26:33Z'
+- id: '50377494'
+  parent_id: '50377353'
+  author: vidarh
+  text: There are plenty of languages, like e.g. Ruby, where operators are just sugar
+    for functions or methods. Meaning they can still be partially applied, have their
+    value taken, and&#x2F;or passed as callbacks.<p>If your language doesn&#x27;t
+    allow you to do the same thing with operators as you can do with functions, that&#x27;s
+    a language design issue and has nothing to do with operators as a concept.
+  score: 0
+  posted_at: '2026-11-05T10:29:26Z'
+- id: '50377504'
+  parent_id: '50377146'
+  author: flohofwoe
+  text: |-
+    ...and while at why not also dump the assignment and indexing operators!<p><pre><code>    assign(result, add(b, mul(c, sub(d, e)), add(add(f, g), array_get(arr, i)));
+    </code></pre>
+    (I bet I messed up the parentheses somewhere).<p>At that point, even assembly code is more readable. Also there&#x27;s a reason why Lisp and Forth haven&#x27;t exactly taken the world by storm ;)
+  score: 0
+  posted_at: '2026-11-05T10:30:41Z'
+- id: '50377567'
+  parent_id: '50377353'
+  author: flohofwoe
+  text: "&gt; The amount of times I&#x27;ve been sad that multiply or sum are longer
+    than + or * is limited to long formulas and even then it&#x27;s a non issue.<p>It
+    depends on what things you work on. When I&#x27;m writing &#x27;math-y&#x27; code
+    (GPU shaders for renderng etc) then I want the expressions to look close to the
+    reference paper and not artificially split them up into multiple lines of code
+    with function calls instead of operators."
+  score: 0
+  posted_at: '2026-11-05T10:40:00Z'
+- id: '50377589'
+  parent_id: '50377458'
+  author: Mawr
+  text: |-
+    &gt; (a + b + c + d) * e<p><pre><code>   a
+       |&gt; add(b)
+       |&gt; add(c)
+       |&gt; add(d)
+       |&gt; mult(e)
+    </code></pre>
+    &gt; mult(add(a, add(b, add(c, d))), e)<p><pre><code>    c
+        |&gt; add(d)
+        |&gt; add(b, _)
+        |&gt; add(a, _)
+        |&gt; mult(e)</code></pre>
+  score: 0
+  posted_at: '2026-11-05T10:41:56Z'
+- id: '50377609'
+  parent_id: '50377146'
+  author: shiandow
+  text: Personally I think the meaning of + and * should be context dependent.<p>Though
+    the main reason for infix notation is to signal associativity. Which a lot of
+    these don&#x27;t satisfy.<p>A lot of these are just trying to mimic natural language,
+    which can be useful but as lisp demonstrates is not that important if the grammar
+    is clear enough.
+  score: 0
+  posted_at: '2026-11-05T10:44:59Z'
+- id: '50377622'
+  parent_id: '50377132'
+  author: dan-robertson
+  text: The point is that there is no longer a global ‘precedence number’ where the
+    operator with the higher precedence binds tighter. Instead, it is only valid to
+    write your example for some combinations of op1 and op2; other combinations will
+    require explicit parentheses.<p>Presumably orelse is not in the table because
+    it requires parentheses for any other operator.
+  score: 0
+  posted_at: '2026-11-05T10:47:01Z'
+- id: '50377671'
+  parent_id: '50340195'
+  author: Luke2642
+  text: Saturating vs wrapping operators are so nice! Apparently compiles to 3 or
+    4 branchless ops on most architectures.
+  score: 0
+  posted_at: '2026-11-05T10:54:05Z'
+- id: '50377931'
+  parent_id: '50376441'
+  author: amenghra
+  text: |-
+    Things become error prone once you realize that the precedence rules are different across languages!<p><pre><code>    E.g. 1 &amp; 2 == 0:
+        Python =&gt; True
+        C =&gt; 0 (False)</code></pre>
+  score: 0
+  posted_at: '2026-11-05T11:34:51Z'
+- id: '50378087'
+  parent_id: '50377478'
+  author: mtklein
+  text: At that point,<p><pre><code>    (* (+ a b c d) e)</code></pre>
+  score: 0
+  posted_at: '2026-11-05T11:55:09Z'
+- id: '50378185'
+  parent_id: '50340195'
+  author: nitnelave
+  text: A bit over 10 years ago, I remember implementing partial operator precedence
+    in Bison, for an internship. I think it was merged, but I&#x27;m not sure anyone
+    ever used it for anything :) The age of Bison for new parsers was already mostly
+    over
+  score: 0
+  posted_at: '2026-11-05T12:09:34Z'
+- id: '50378364'
+  parent_id: '50377609'
+  author: layer8
+  text: People disagree about that characterization of Lisp.
+  score: 0
+  posted_at: '2026-11-05T12:35:51Z'
+- id: '50378386'
+  parent_id: '50377146'
+  author: layer8
+  text: For even cleaner expression, let’s just draw the whole program as a syntax
+    tree.
+  score: 0
+  posted_at: '2026-11-05T12:37:49Z'
+- id: '50378418'
+  parent_id: '50376407'
+  author: layer8
+  text: "`a + b | c + d` is still confusing and prone to misinterpretation in that
+    scheme."
+  score: 0
+  posted_at: '2026-11-05T12:42:30Z'
+- id: '50378617'
+  parent_id: '50340195'
+  author: rwoerz
+  text: Funny that they named it &quot;orelse&quot; which sounds like a conditional
+    threat to me :)
+  score: 0
+  posted_at: '2026-11-05T13:04:35Z'
+- id: '50378711'
+  parent_id: '50377622'
+  author: Someone
+  text: |-
+    I would hope they implemented it with precedence numbers, as any other way is likely to be harder to write and lead to inconsistencies.<p>It’s harder to write because users will want to use expressions with more than one operator such as<p><pre><code>   b * b - 4 * a * c
+       a * b + c * d &gt; e * f and g &lt; h</code></pre>
+  score: 0
+  posted_at: '2026-11-05T13:15:33Z'
+- id: '50378773'
+  parent_id: '50378617'
+  author: zorobo
+  text: Yes, felt this way when I was learning Ada. Semantics differ.<p>Also, no zig
+    `andthen` :)
+  score: 0
+  posted_at: '2026-11-05T13:21:34Z'
+- id: '50378915'
+  parent_id: '50377589'
+  author: bennettnate5
+  text: What a lovely pipe <i>operator</i> you have there to chain the functions and
+    contribute to code readability :)
+  score: 0
+  posted_at: '2026-11-05T13:38:05Z'
+- id: '50379124'
+  parent_id: '50376909'
+  author: kibwen
+  text: |-
+    <i>&gt; It would be good to get it as a linting&#x2F;formatting rule in Rust too (maybe that already exists?).</i><p>Yes, Clippy has a &quot;precedence&quot; lint that&#x27;s enabled by default: <a href="https:&#x2F;&#x2F;clippy.rust-lang.org&#x2F;master&#x2F;index.html?search=precedence" rel="nofollow">https:&#x2F;&#x2F;clippy.rust-lang.org&#x2F;master&#x2F;index.html?search=preced...</a><p>Here&#x27;s what it looks like:<p><pre><code>    warning: operator precedence might not be obvious
+         --&gt; src&#x2F;main.rs:2:5
+          |
+        2 |     1 &lt;&lt; 2 + 3;
+          |     ^^^^^^^^^^ help: consider parenthesizing your expression: `1 &lt;&lt; (2 + 3)`
+          |
+          = help: for further information visit https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rust-clippy&#x2F;rust-1.99.0&#x2F;index.html#precedence
+          = note: `#[warn(clippy::precedence)]` on by default</code></pre>
+  score: 0
+  posted_at: '2026-11-05T13:58:24Z'
+- id: '50379156'
+  parent_id: '50340195'
+  author: kibwen
+  text: I would like to see languages go even further. Make like Smalltalk did in
+    1972 and evaluate operators left-to-right with parentheses for grouping.
+  score: 0
+  posted_at: '2026-11-05T14:00:38Z'
+- id: '50379222'
+  parent_id: '50379156'
+  author: adrian_b
+  text: In reality it is much better to evaluate all operators from right to left,
+    as APL does since 1962 (with parentheses when you want another order).<p>Only
+    in this direction the rule is always consistent, inclusively with assignment and
+    with McCarthy logical operators (i.e. what the C language writes as &amp;&amp;
+    and ||).<p>Moreover, only with this evaluation direction the non-commutative operators
+    lead to useful operations when applied to arrays.<p>In order to make evaluation
+    from left to right always consistent, far more changes would have to be done to
+    the syntax of a programming language, than with the APL evaluation rule.
+  score: 0
+  posted_at: '2026-11-05T14:06:34Z'
+- id: '50379374'
+  parent_id: '50340195'
+  author: andrewla
+  text: I personally have been increasingly in favor of eliminating operator precedence,
+    even including associativity. It so rarely adds value and is so easy to misunderstand.
+    The SmallTalk and APL models are at least consistent and operator agnostic, but
+    they are unintuitive to read to inexperienced coders.<p>Heavy nesting of complex
+    expressions is also not easy to comprehend immediately, but it&#x27;s better than
+    trying to unwind the precedence.<p>That said, maybe this approach is best; just
+    take the small set of operators where we have all internalized the precedence
+    and require it everywhere else.
+  score: 0
+  posted_at: '2026-11-05T14:19:09Z'
+- id: '50379980'
+  parent_id: '50379222'
+  author: kibwen
+  text: There&#x27;s no need to switch evaluation direction, as RPN and concatenative
+    languages like Forth demonstrate. And if one really wants a C-style language with
+    bindings on the LHS, leaving the assignment operator as a special case would still
+    be better than the precedence mess we currently have.
+  score: 0
+  posted_at: '2026-11-05T15:03:42Z'
+- id: '50380004'
+  parent_id: '50378617'
+  author: hansvm
+  text: It is a threat! You&#x27;re going to give me the data I asked for orelse I&#x27;m
+    going to pull some BS out of thin air.
+  score: 0
+  posted_at: '2026-11-05T15:05:48Z'
+- id: '50380328'
+  parent_id: '50377179'
+  author: tsimionescu
+  text: The point here is that not all operators should have a concept of precedence.
+    Expressions like &quot;a &amp; b + c &gt;&gt; d&quot; should be invalid, as no
+    human actually understands them unless they spend a lot of careful focus. Instead,
+    such an expression must be written as &quot;((a &amp; b) + c) &gt;&gt; d&quot;
+    explicitly. On the other hand, &quot;a + b + c&quot; and even &quot;a + b * c&quot;  are
+    fine, as addition and multiplication (and subtraction and division) are so drilled
+    into everyone in early education.
+  score: 0
+  posted_at: '2026-11-05T15:29:21Z'
+- id: '50380375'
+  parent_id: '50378711'
+  author: tsimionescu
+  text: |-
+    The first expression is fine, as it uses extremely commonly known precedence rules. The second is more arguable.<p>However, the following expressions should be invalid in any language, and no one should write them even in languages where they are unfortunately allowed:<p><pre><code>  a + b &gt;&gt; c &amp; d &amp;&amp; 0 % 9
+
+      a &gt;&gt; 4 ? b : c &amp; d ^ 7</code></pre>
+  score: 0
+  posted_at: '2026-11-05T15:32:13Z'
+- id: '50380421'
+  parent_id: '50377132'
+  author: kmill
+  text: '&gt; is an error if op1 is unequal to op2 and they have the same precedence.
+    Do I see that right?<p>It doesn&#x27;t look like it works that way; only some
+    operator classes are &quot;unchainable&quot;.<p>An older PR description gives
+    more information: <a href="https:&#x2F;&#x2F;github.com&#x2F;ziglang&#x2F;zig&#x2F;pull&#x2F;25275"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ziglang&#x2F;zig&#x2F;pull&#x2F;25275</a>
+    (There&#x27;s also a small mention of keyword operators, which I presume `orelse`
+    is. There&#x27;s a nice diagram showing the precedence classes here: <a href="https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;pulls&#x2F;30160#issuecomment-20193034"
+    rel="nofollow">https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;pulls&#x2F;30160#issuecomment-20...</a>)'
+  score: 0
+  posted_at: '2026-11-05T15:34:34Z'
+- id: '50380435'
+  parent_id: '50379222'
+  author: childintime
+  text: A procedural language is read top-down and left-to-right, so left-to-right
+    is naturally favored. Without an example I don&#x27;t get how right-to-left avoids
+    the gotchas with non-commutative operators you hint at.
+  score: 0
+  posted_at: '2026-11-05T15:35:33Z'
+- id: '50380785'
+  parent_id: '50376441'
+  author: foldr
+  text: Extra precedence levels don&#x27;t really make parsing any easier. You have
+    to handle precedence level ties anyway (for expressions involving multiple instances
+    of the same operator, like 1 + 2 + 3 + 4 ...). All you have to do is decide whether
+    any given binary operator is right or left associative.
+  score: 0
+  posted_at: '2026-11-05T15:59:54Z'
+- id: '50380865'
+  parent_id: '50376597'
+  author: marcosdumay
+  text: The unary minus isn&#x27;t in PEMDAS. Besides, I have never seen anybody that
+    interprets -2^2 as -4 instead of 4.
+  score: 0
+  posted_at: '2026-11-05T16:05:07Z'
+- id: '50381173'
+  parent_id: '50377931'
+  author: nayuki
+  text: Similarly, I don&#x27;t like people who write code like `if 0`, because 0
+    is false in C and JavaScript and Python, but 0 is considered true in Ruby!
+  score: 0
+  posted_at: '2026-11-05T16:32:30Z'
+- id: '50381523'
+  parent_id: '50380328'
+  author: childintime
+  text: "&gt; Expressions like &quot;a &amp; b + c &gt;&gt; d&quot; should be invalid<p>When
+    read procedurally (left to right) it is quite okay though, and no parens are needed
+    (but could be added).<p>The catch is that `1 + 2 * 3` becomes 9 instead of 7 as
+    math eyes expect. I guess there are things to unlearn and unlearning is always
+    hard. But consider the rules other languages have, like C regarding signed and
+    unsigned, and Javascript regarding comparisons, compared to them this is almost
+    trivial."
+  score: 0
+  posted_at: '2026-11-05T17:02:24Z'
+- id: '50383250'
+  parent_id: '50379980'
+  author: adrian_b
+  text: RPN and concatenative languages is what I meant when I said that for a consistent
+    left-to-right evaluation you must make much more significant changes to the syntax
+    of most programming languages (which are ALGOL-like) than with the APL evaluation
+    rule.<p>You are right that RPN&#x2F;concatenative languages is the alternative
+    to the APL-like syntax, but they are even more distant from the traditional mathematical
+    notation.
+  score: 0
+  posted_at: '2026-11-05T19:24:39Z'
+article:
+  url: https://ziglang.org/devlog/2026/#2026-10-24
+  title: |-
+    Devlog
+          ⚡
+          Zig Programming Language
+  fetch_status: success
+  content: |-
+    # Devlog
+
+    This page contains a curated list of recent changes to main branch Zig.
+
+    Also available as an [RSS feed](/devlog/index.xml).
+
+    This page contains entries for the year 2026. Other years are available in [the Devlog archive page](/devlog/).
+
+    October 24, 2026
+    # [Partial Operator Precedence](#2026-10-24)
+
+    Author: Ryan Liptak
+
+    As of yesterday, the second oldest open proposal for the Zig language was [issue #114: require parentheses sometimes to disambiguate confusing operator precedence](https://github.com/ziglang/zig/issues/114), opened February 8, 2016. Ten years later, that proposal [has been implemented](https://codeberg.org/ziglang/zig/pulls/30160) in the master branch version of Zig thanks to contributor [CMDRZero](https://cmdrzero.github.io/).
+
+    This means that some combinations of operators no longer have a defined precedence, and for those that don’t, the compiler will now require parentheses:
+
+        const a = x orelse y == z;
+
+        test.zig:1:22: error: ambiguous operator precedence with operators ... orelse ... == ...; use parentheses to disambiguate
+        const a = x orelse y == z;
+                             ^~
+        test.zig:1:13: note: previous ambiguous operator here
+        const a = x orelse y == z;
+                    ^ ~~~~~
+        test.zig:1:22: note: in zig 0.17.x, this was evaluated as (... orelse ...) == ...
+
+    However, common cases can remain parenthesis-free:
+
+        const a = x + y * z;
+
+    The idea behind this is to reduce the number of rules a programmer needs to know when reading and writing Zig code. For example, no matter how experienced you are with Zig, it’s unlikely that you’d be able to explain the evaluation order of the following expression without looking up the precedence rules:
+
+        a & b + c * d >> e | f orelse g() catch h + i == j or k and l
+
+    With the now-required parentheses added (while maintaining the same evaluation order as the Zig 0.17.x precedence rules), that expression would look like this:
+
+        ((((a & ((b + c * d) >> e)) | f) orelse g()) catch (h + i)) == j or (k and l);
+
+    Still quite hairy, and not something I’d like to see in the wild, but nonetheless it’s understandable without knowing any precedence rules beyond arithmetic and comparison. Outside of this contrived example, though, the expressions that will now require parentheses are relatively rare (353 lines needed changes out of the million+ lines of code in the Zig codebase).
+
+    ## What you need to know
+
+    In practice, going forward, you will only need to remember the rules around operator combinations that _still have_ a defined/unambiguous precedence. For example, when reading or writing code involving arithmetic operators, you’ll only need to remember the following precedence table:
+
+        * / *% *| %
+        + - +% -% +| -|
+        == != < > <= >=
+        and or
+
+    You might notice that there isn’t anything too surprising there, and that lack of surprise was a (subjective) guiding principle for what should and should not require parentheses. As an example, while `%` has unambiguous precedence with regards to addition/subtraction operators, parentheses must be used when mixing `%` with multiplication/division operators, and with itself. However, this, and other ambiguous operator combinations, aren’t something you’ll need to commit to memory. Any (future) code you read will already have parentheses to disambiguate, and for any code you write, the compiler will let you know when you need parentheses.
+
+    For the full explanation, and to see the relevant precedence tables pertaining to other operators, see [the updated Precedence section of the language reference](https://ziglang.org/documentation/master/#Precedence).
+
+    ## Upgrading existing code
+
+    There are two possible approaches here:
+
+    1. Manually fix each “ambiguous operator precedence” error as they are surfaced by the compiler (this might be a good opportunity to try out [incremental compilation](https://ziglang.org/download/0.17.0/release-notes.html#Incremental-Compilation) if it’s supported on your platform)
+    2. Use `zig fmt --upgrade` (the `--upgrade` flag was added for this purpose). This will cause `zig fmt` to add parentheses automatically, maintaining the evaluation order from the previous precedence rules (note: the `--upgrade` flag will be removed after one release cycle)
+
+    My personal recommendation would be option 1, as the process of redetermining the intended evaluation order for these uncommon precedence scenarios can occasionally serve to uncover bugs ([here’s an example of that](https://github.com/Vexu/arocc/pull/1117)).
+
+    If you go with option 2, I’d still recommend perusing the diff afterwards to ensure that nothing looks unusual, or is different than you expected/intended. A potentially common example of that is something like `a orelse b() catch c` which previously evaluated to `(a orelse b()) catch c`, but changing that to `a orelse (b() catch c)` likely makes more sense, even if the end result is unaffected. Also worth noting that in some scenarios, redundant parentheses will be added by `zig fmt --upgrade` (e.g. you might see something like `a orelse ((b + c) - d)` where the parentheses around `b + c` are unnecessary), so avoiding that will take a bit of manual cleanup.
+
+    That’s about it. I’m hopeful that this change will make bugs stemming from misremembered precedence rules much less likely, and that it will put some attention onto any of those bugs that may currently exist.
+
+    Thanks again to CMDRZero for the implementation, and to Isaac Freund for help with the corresponding grammar changes.
+
+    October 20, 2026
+    # [Naked Package Metadata](#2026-10-20)
+
+    Naked packages are ones that do not include a build manifest (build.zig.zon file). This is typically due to them being maintained by third parties outside the Zig ecosystem.
+
+    Until now, those package hashes looked like: `N-V-__8AAA7lSAA6p7eRmPGVeA9uHmeiJ2DX-ISiPliRJ8Y7`
+
+    This is because, without a build.zig.zon file, there was no `name` and `version` to use in the package hash. Furthermore, those packages have brittle hashes because they included all fetched files without any filter, which may accidentally have included unwanted hidden files that nonetheless cause the package hash to change. Or, the package might have contained symlinks that cannot be created on a particular OS. Without a filter, such files, even if they were unneeded, caused fetching to fail.
+
+    Now, Zig supports specifying `version` and `paths` for naked packages next to the URL. The dependency name will also be factored into the package hash, but **only when `version` is provided.** This allows users to opt in, as opposed to having the package hash change suddenly when updating Zig.
+
+    Here’s an updated zlib for example:
+
+        .dependencies = .{
+                .zlib = .{
+                    .url = "https://github.com/madler/zlib/archive/refs/tags/v1.3.2.tar.gz",
+                    .hash = "zlib-1.3.2-__8AANXpEADvBXGMSfhczMTZVAA-TkkE4ecoohAR7s3p",
+                    .version = "1.3.2",
+                    .paths = .{
+                        "LICENSE",
+                        "adler32.c",
+                        "compress.c",
+                        "crc32.c",
+                        "crc32.h",
+                        "deflate.c",
+                        "deflate.h",
+                        "gzclose.c",
+                        "gzguts.h",
+                        "gzlib.c",
+                        "gzread.c",
+                        "gzwrite.c",
+                        "infback.c",
+                        "inffast.c",
+                        "inffast.h",
+                        "inffixed.h",
+                        "inflate.c",
+                        "inflate.h",
+                        "inftrees.c",
+                        "inftrees.h",
+                        "trees.c",
+                        "trees.h",
+                        "uncompr.c",
+                        "zconf.h",
+                        "zlib.h",
+                        "zutil.c",
+                        "zutil.h",
+                    },
+                },
+            },
+
+    Before:
+
+        4.3M zig-pkg/N-V-__8AAI4ANwDM8MWhHTUFLKfvLE_n2NQk6mh0sFDzhTqO
+
+    After:
+
+        1.2M zig-pkg/zl
+  error:
+  fetched_at: '2026-11-05T19:38:14Z'
+archived_at: '2026-11-05T19:38:15Z'
