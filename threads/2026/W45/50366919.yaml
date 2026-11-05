@@ -1,0 +1,871 @@
+---
+post:
+  id: '50366919'
+  title: 'Evergreen: A Provably Safe Systems Language'
+  url: https://evergreenlang.net
+  hn_url: https://news.ycombinator.com/item?id=50366919
+  score: 100
+  author: jordan_bonecut
+  posted_at: '2026-11-04T15:25:04Z'
+  fetched_at: '2026-11-05T01:21:23Z'
+  article_url: https://evergreenlang.net
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T01:21:23Z'
+  raw_comment_count: 83
+comments:
+- id: '50366920'
+  parent_id: '50366919'
+  author: jordan_bonecut
+  text: This language has been something I&#x27;ve wanted to build for years. For
+    a while I thought I&#x27;d get my PhD and build it there. But now it&#x27;s very
+    possible to have Claude build it while I&#x27;m at work and give it intense code
+    review every day. It&#x27;s still not in a &quot;useful&quot; place yet, but I&#x27;m
+    curious what fellow programmers think of a language like this. If I continue work
+    is this something anyone thinks they&#x27;d enjoy using? Would love some feedback,
+    thanks!
+  score: 0
+  posted_at: '2026-11-04T15:25:04Z'
+- id: '50367366'
+  parent_id: '50366920'
+  author: sblom
+  text: It&#x27;s a really great concept. What guarantees are made by the prover?<p>Success
+    in programming languages is not simply if-you-build-it-they-will-come. Bootstrapping
+    a community that loves programming in it is the hard part. You&#x27;ll either
+    need a killer interop story with an already built ecosystem, or you&#x27;ll need
+    your own HTTP server, JSON parser, etc. etc. etc.<p>Best of luck! I&#x27;ll watch
+    this space.
+  score: 0
+  posted_at: '2026-11-04T15:53:13Z'
+- id: '50367444'
+  parent_id: '50367366'
+  author: jordan_bonecut
+  text: Thanks! The guarantee is that, without the use of trustme (which can prove
+    any fact), you cannot address memory as the wrong type. The compiler also ensures
+    that a pointer&#x2F;reference to a value is live at compile time, so it’s not
+    possible to create an invalid pointer (without the use of trustme). You can also
+    claim any fact which the compiler must prove in order to continue compilation.<p>That
+    is good advice, I’m definitely planning on including some batteries soon, once
+    I’m very happy with where the compiler is at.
+  score: 0
+  posted_at: '2026-11-04T15:57:45Z'
+- id: '50367519'
+  parent_id: '50366919'
+  author: TofuLover
+  text: Is this just &quot;Rust with dependent types&quot;? Not saying that as a criticism,
+    I think this is genuinely useful.
+  score: 0
+  posted_at: '2026-11-04T16:02:48Z'
+- id: '50367601'
+  parent_id: '50366919'
+  author: gtutino
+  text: That&#x27;s basically SPARK (the Ada subset) but with c-like syntax (more
+    or less).
+  score: 0
+  posted_at: '2026-11-04T16:08:08Z'
+- id: '50367634'
+  parent_id: '50367519'
+  author: jordan_bonecut
+  text: |-
+    Dependent types are part of it, yeah! There are definitely some things I dislike about Rust which I am not planning on including, mainly lifetimes and some ways they handle pointer mutability. One thing I particularly dislike about Rust is:<p>let x = vec![1,2,3];
+    let a = &amp;mut x[0];
+    let b = &amp;mut x[1];
+    swap(a, b);<p>This is not allowed. And actually in the compiler’s mind it’s for the same reason as this:<p>let x = vec![1,2];
+    let a = &amp;mut x[0];
+    x.push(3);
+    <i>a = </i>a + 1;<p>Which is definitely not safe and should be rejected. But the compiler cannot reason that the above case is actually safe, because they both fail to compile for lifetime reasons.<p>Another thing I’m working on are “patterns” which are like enums on steroids. In Rust you cannot define how an enum is laid out, thus requiring optimizations for types like Option&lt;&amp;T&gt; to be in the compiler. In evergreen this will be in the language via a similar process to trait implementation.
+  score: 0
+  posted_at: '2026-11-04T16:10:22Z'
+- id: '50367692'
+  parent_id: '50367634'
+  author: nicce
+  text: "&gt;  not planning on including, mainly lifetimes and some ways they handle
+    pointer mutability<p>How are you going to solve the problem with other means?
+    Lifetimes basically guarantee, that there are no use-after-free bugs."
+  score: 0
+  posted_at: '2026-11-04T16:14:03Z'
+- id: '50367750'
+  parent_id: '50366919'
+  author: skybrian
+  text: It sounds like you know what you’re doing but the documentation seems rather
+    shallow and I don’t quite get it. I think you’re going to need a real language
+    specification. I like how Go does it.<p>There is some apparently AI-generated
+    prose that needs rewriting for clarity. For example, in the tutorial:<p>&gt; The
+    caller proves where; the implementation proves ensures. A precondition failure
+    stops compilation before any program runs.<p>Fron the readme:<p>&gt; I think you
+    get it now.<p>Nope, I skimmed, because the syntax is unfamiliar.<p>&gt; Memory
+    model is in a tree of &quot;planes&quot;. The stack is a tree. Each function is
+    a node. Each variable is another node. If it&#x27;s a struct then it&#x27;s also
+    a node. Down to the most atomic types, which are just the integers.<p>Meaning
+    what? This needs to be explained better.
+  score: 0
+  posted_at: '2026-11-04T16:17:07Z'
+- id: '50367790'
+  parent_id: '50367519'
+  author: throwaway17_17
+  text: The introductory examples look more like refinement type (or Liquid types)
+    which are  limited to those operations and restrictions one’s that are provable
+    by the compiler utilizing a restricted subset of operations and computational
+    constructs subject to deterministic proving via SAT solving. I’m going to look
+    closer at the docs so I could be mistaken on that point. It certainly seems to
+    have taken the ownership and ‘borrowing’ concepts for memory semantics from Rust
+    at a quick glance at the first few pages.
+  score: 0
+  posted_at: '2026-11-04T16:19:22Z'
+- id: '50367823'
+  parent_id: '50367750'
+  author: jordan_bonecut
+  text: Yeah the repo&#x2F;documentation is pretty rough right now. TBH I am not quite
+    ready to spend a ton of time on docs yet as some of these things are changing
+    on the fly. But the core concept&#x2F;syntax should remain the same. The code
+    is not super interesting yet, though
+  score: 0
+  posted_at: '2026-11-04T16:21:21Z'
+- id: '50367851'
+  parent_id: '50367790'
+  author: jordan_bonecut
+  text: Dependent types can be achieved via “ideal Generics”. Very undocumented and
+    not ready to commit to how they work yet, but the basic idea is that a type can
+    be generic on a value.
+  score: 0
+  posted_at: '2026-11-04T16:22:36Z'
+- id: '50367872'
+  parent_id: '50367790'
+  author: ch4s3
+  text: Yeah it definitely looks like refinement vs actual dependent types. I do the
+    same thing here[1] in my language (pardon the mess). Adding liquid types to basically
+    rust is IMHO a good idea.<p>[1] <a href="https:&#x2F;&#x2F;march-lang.org&#x2F;docs&#x2F;refinement-types&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;march-lang.org&#x2F;docs&#x2F;refinement-types&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-04T16:24:10Z'
+- id: '50367885'
+  parent_id: '50367851'
+  author: ch4s3
+  text: How long have you been working on this?
+  score: 0
+  posted_at: '2026-11-04T16:24:38Z'
+- id: '50367905'
+  parent_id: '50367634'
+  author: throwaway17_17
+  text: Since you are replying, I’ll go ahead and you answer…<p>In a sibling comment
+    I said the types seem more likely to be refinement (or Liquid) types instead of
+    being full-spectrum dependent types. Is this correct? I certainly haven’t been
+    through enough of the docs to be confident, but I took a swing when I posted my
+    comment.
+  score: 0
+  posted_at: '2026-11-04T16:25:44Z'
+- id: '50367936'
+  parent_id: '50367692'
+  author: jordan_bonecut
+  text: |-
+    The compiler statically tracks “where” everything lives. It also knows “when” the “where” is valid.<p>Each “where” is called a plane, which is a tree. The stack plane contains all your function calls memory, a structure allocated on the stack has a child plane for each field. The compiler tags which plane something is from at compile time and tracks when it dies.<p>Things do get complicated in scenarios like:<p>fn max(a: &amp;usize, b: &amp;usize) -&gt; &amp;usize {<p><pre><code>  if *a &gt; *b { a } else { b }
+    </code></pre>
+    }<p>In such a scenario the compiler tags the result with both of the input planes. However, you cannot define add a postcondition ensures clause to make it more precise
+  score: 0
+  posted_at: '2026-11-04T16:27:54Z'
+- id: '50367990'
+  parent_id: '50367885'
+  author: jordan_bonecut
+  text: I have been building little prototype languages for years. This iteration
+    which is heavily AI powered is a couple weeks old
+  score: 0
+  posted_at: '2026-11-04T16:31:27Z'
+- id: '50368036'
+  parent_id: '50367823'
+  author: skybrian
+  text: Yeah, if I were motivated I’m sure I could figure it out from the tutorial.
+  score: 0
+  posted_at: '2026-11-04T16:34:00Z'
+- id: '50368138'
+  parent_id: '50367990'
+  author: ch4s3
+  text: Oh cool, it&#x27;s amazing how quickly you can stand up a language now, I
+    love it. I&#x27;d love to exchange ideas, I really like what you&#x27;re doing.<p>How
+    are you doing resolution of your dependent(refined?) types? I&#x27;ve been using
+    Z3, but you&#x27;re clearly doing something else here.
+  score: 0
+  posted_at: '2026-11-04T16:40:32Z'
+- id: '50368338'
+  parent_id: '50368036'
+  author: jordan_bonecut
+  text: And, to be clear, the README was mostly an initial prompt for the AI. I’ll
+    prioritize making a much clearer and legible README soon
+  score: 0
+  posted_at: '2026-11-04T16:54:18Z'
+- id: '50368400'
+  parent_id: '50366920'
+  author: 0c3ca83
+  text: It&#x27;s so strange how much effort goes into producing a language that people
+    don&#x27;t even intend to write.
+  score: 0
+  posted_at: '2026-11-04T16:58:41Z'
+- id: '50368424'
+  parent_id: '50367936'
+  author: 0c3ca83
+  text: And what about allocations and threads?
+  score: 0
+  posted_at: '2026-11-04T17:00:21Z'
+- id: '50368464'
+  parent_id: '50367936'
+  author: tancop
+  text: Sounds a lot like group borrowing from Valen, but that one still has annotations
+    like `entity in world.entities[] mut`. Are you tracking the same things implicitly
+    with post conditions?
+  score: 0
+  posted_at: '2026-11-04T17:03:17Z'
+- id: '50368490'
+  parent_id: '50368400'
+  author: gchamonlive
+  text: What&#x27;s strange is only seeing value in manually writing code when clearly
+    AI is very useful to produce quality code here.
+  score: 0
+  posted_at: '2026-11-04T17:05:50Z'
+- id: '50368494'
+  parent_id: '50368424'
+  author: jordan_bonecut
+  text: Allocations live in their own plane, the root allocated typed being the root
+    node of that plane. For threads, I’m still working on that, don’t have a super
+    cool answer yet
+  score: 0
+  posted_at: '2026-11-04T17:06:04Z'
+- id: '50368497'
+  parent_id: '50368400'
+  author: jeremyloy_wt
+  text: To me it’s about determinism and feedback. Agents will make mistakes but if
+    they get clear feedback from the tools they use, they will produce a good result.<p>There
+    are a shrinking number of reasons to geenfield projects with non-strict or unsafe
+    languages now.
+  score: 0
+  posted_at: '2026-11-04T17:06:23Z'
+- id: '50368516'
+  parent_id: '50367601'
+  author: LiamPowell
+  text: 'I see minor differences; however, the author does nothing to highlight them.
+    That&#x27;s the number one thing that any new language should show when it&#x27;s
+    trying to fit into a niche that a language already exists for: What makes this
+    language different?'
+  score: 0
+  posted_at: '2026-11-04T17:08:19Z'
+- id: '50368591'
+  parent_id: '50366919'
+  author: kreco
+  text: 'Sorry for the non constructive comment:<p>I wish we would stop xxx::yyy::zzz
+    for namespace.<p>It was horrible in C++ from day one, and is still horrible in
+    Rust.<p>It had some reason to be this way in C++ but not in any other newer language.<p>Real
+    negative part: it looks to me that the authors of those languages are parroting
+    other languages rather than understanding the reason of those language choice.<p>This
+    simply worries me because I judge the level of expertise and makes me not consider
+    the language in the first place.<p>(I know C++ and Rust are alive but they share
+    their fair share of poor design choice)'
+  score: 0
+  posted_at: '2026-11-04T17:15:11Z'
+- id: '50368656'
+  parent_id: '50368494'
+  author: 0c3ca83
+  text: how does that prevent use after free? pretty sure your algorithm is either
+    very poorly explained or doesnt&#x27; actually work.
+  score: 0
+  posted_at: '2026-11-04T17:20:22Z'
+- id: '50368657'
+  parent_id: '50368591'
+  author: aeve890
+  text: Hard agree. PHP did it right with backslashes.
+  score: 0
+  posted_at: '2026-11-04T17:20:23Z'
+- id: '50368661'
+  parent_id: '50368490'
+  author: 0c3ca83
+  text: you can ask ai to write code in existing languages with large training sets,
+    and it&#x27;ll do better because of the large volume of training data.<p>if you&#x27;re
+    all-in on ai, you want to prioritize familiarity for agents.
+  score: 0
+  posted_at: '2026-11-04T17:20:57Z'
+- id: '50368693'
+  parent_id: '50368661'
+  author: gchamonlive
+  text: The objective of this project isn&#x27;t to make a language fit for AI to
+    write but to make a &quot;probably safe system language&quot; regardless of who&#x27;s
+    doing the coding.
+  score: 0
+  posted_at: '2026-11-04T17:24:24Z'
+- id: '50368808'
+  parent_id: '50368656'
+  author: jordan_bonecut
+  text: The compiler tracks all of the currently living planes. The compiler tracks
+    from which plane each borrow is borrowed. Once the plane it is borrowed from dies
+    that borrow is no longer valid
+  score: 0
+  posted_at: '2026-11-04T17:32:05Z'
+- id: '50368824'
+  parent_id: '50368591'
+  author: edf13
+  text: Any links to the historical reason for C++ using ::?
+  score: 0
+  posted_at: '2026-11-04T17:32:57Z'
+- id: '50368851'
+  parent_id: '50367905'
+  author: jordan_bonecut
+  text: What I’ve showcased is definitely not full fledged dependent types. Support
+    is planned via ideal generics but it’s lower on the priority list to nail down
+  score: 0
+  posted_at: '2026-11-04T17:34:51Z'
+- id: '50368904'
+  parent_id: '50368591'
+  author: jordan_bonecut
+  text: This is good feedback. I will chew on this…
+  score: 0
+  posted_at: '2026-11-04T17:38:28Z'
+- id: '50368919'
+  parent_id: '50368338'
+  author: assumed_throwaw
+  text: A good tip is to actually polish your README before sharing it with everyone.
+  score: 0
+  posted_at: '2026-11-04T17:39:36Z'
+- id: '50368929'
+  parent_id: '50368656'
+  author: jordan_bonecut
+  text: Another thing - when a value is moved or dropped the plane’s type changes
+    from T to shape(T). shape(T) contains unspecified data but has the size and alignment
+    of a T. So you couldn’t safely prove that a moved out&#x2F;dropped shape(T) is
+    a T
+  score: 0
+  posted_at: '2026-11-04T17:40:11Z'
+- id: '50368947'
+  parent_id: '50366920'
+  author: empath75
+  text: This isn&#x27;t so much directed at you, as other people that get inspired
+    by this.  I have been working on my own Rust like language with claude for a few
+    months and there are a _lot_ of projects like that out there.<p>Mine has a formally
+    proven borrow checker built on linear types, along with algebraic effects, with
+    an LLVM compiler written in lean -- the type checker uses exactly the proven calculus.<p>If
+    you are going to build a language with claude, I highly, highly recommend writing
+    it in Lean or Coq and starting by formalizing a pre-existing paper or system that
+    has the properties you want.<p>Claude gets confused and takes shortcuts constantly,
+    and if you don&#x27;t have a proven base, you are really going ot struggle.  I
+    had to throw away months of work as i got bogged down trying to resolve special
+    cases and bugs that just evaporated when i switched to a proven calculus.
+  score: 0
+  posted_at: '2026-11-04T17:41:58Z'
+- id: '50368961'
+  parent_id: '50366919'
+  author: solatic
+  text: I didn&#x27;t delve too deeply, but I don&#x27;t get it. How do you get provable
+    <i>runtime</i> safety (in a dependent types sense) in a system which gives you
+    direct control over memory, and without introducing the kind of overhead that
+    would be inappropriate for a systems language?<p>Your &quot;overflow, then inspect&quot;
+    example illustrates this incoherency. If overflow is allowed, and you try to fit
+    250 + 10 into a u8, so the value should be 4, which <i>is</i> less than 10, so
+    it should fit your precondition, not violate it. And this is a simple example
+    where 250+10 is known at compile-time - what happens when a user provides the
+    number at run-time? Does the compiler attempt to provide the proof anyway? How?<p>I
+    mean.... I have a lot of respect for Haskell and Idris and the goals they set
+    out. But they&#x27;re not <i>systems</i> languages.
+  score: 0
+  posted_at: '2026-11-04T17:42:47Z'
+- id: '50368981'
+  parent_id: '50368516'
+  author: jordan_bonecut
+  text: A compare and contrast is good feedback, will work on this
+  score: 0
+  posted_at: '2026-11-04T17:44:12Z'
+- id: '50369000'
+  parent_id: '50368824'
+  author: kreco
+  text: |-
+    I don&#x27;t have a link but you can search on the web. I have the .pdf on my computer.<p>From &quot;A History of C++: 1979− 1991&quot;.<p>&gt; In C with Classes, a dot was used to express membership of a class as well as expressing
+    selection of a member of a particular object. This had been the cause of some minor confusion and could also be used to construct ambiguous examples. To alleviate this, :: was introduced to mean membership of class and . was retained exclusively for membership of object.<p>It was taken from Algol68.<p>Then, this was reused for namespaces for consistency reason.
+  score: 0
+  posted_at: '2026-11-04T17:45:15Z'
+- id: '50369020'
+  parent_id: '50368591'
+  author: mantomat
+  text: "&gt; It was horrible in C++ from day one, and is still horrible in Rust.<p>I
+    don&#x27;t get it. Is it <i>syntactically</i> horrible or are there real reasons
+    that I&#x27;m missing?"
+  score: 0
+  posted_at: '2026-11-04T17:46:27Z'
+- id: '50369033'
+  parent_id: '50368657'
+  author: jordan_bonecut
+  text: That, sir, is a hot take
+  score: 0
+  posted_at: '2026-11-04T17:47:44Z'
+- id: '50369107'
+  parent_id: '50368591'
+  author: packetlost
+  text: 'My favorite namespacing syntax is ironically Clojures. module&#x2F;func or
+    fully.qualified.module&#x2F;func or just func if you explicitly import the symbol.
+    I vastly prefer shallow namespacing (module&#x2F;func) most of the time.<p>I write
+    Rust mostly for my day job (and it&#x27;s also my preferred language on the side
+    these days), so I usually end up explicitly importing all the symbols I actually
+    use because module::func is just additional noise in an already pretty verbose
+    language and is what&#x27;s considered &#x27;idiomatic&#x27;.<p>I don&#x27;t really
+    get the issue with :: being the separator used here. It&#x27;s slightly ugly,
+    but it&#x27;s visually distinct from . for field access, which I do appreciate.'
+  score: 0
+  posted_at: '2026-11-04T17:52:15Z'
+- id: '50369147'
+  parent_id: '50368961'
+  author: jordan_bonecut
+  text: Overflow is allowed. Overflow behavior is unspecified, like C++
+  score: 0
+  posted_at: '2026-11-04T17:55:34Z'
+- id: '50369177'
+  parent_id: '50369147'
+  author: jordan_bonecut
+  text: |-
+    If you want to assume that overflow wraps either:<p>Your hardware does this OR
+    You implement it in software
+  score: 0
+  posted_at: '2026-11-04T17:57:58Z'
+- id: '50369228'
+  parent_id: '50368591'
+  author: roarcher
+  text: "&gt; it looks to me that the authors of those languages are parroting other
+    languages rather than understanding the reason of those language choice.<p>I don&#x27;t
+    mean this to sound combative, but I think you are the one who doesn&#x27;t understand
+    the reason for the language choice. I assume you&#x27;re objecting to the fact
+    that these languages use different operators for module&#x2F;namespace paths (`::`)
+    and object member&#x2F;method access (`.`), not the `::` symbol specifically.<p>You
+    seem to assume that Rust blindly imitated C++, but that&#x27;s not the case. The
+    `::` syntax allows the compiler to identify and resolve all the static paths before
+    any type inference or other analysis. This is important because macros are expanded
+    between these stages, and can in turn introduce more static names which must also
+    be resolved before any further compilation.<p>You might be able to introduce a
+    rule that any `.`-path that <i>can</i> be resolved statically will be, trumping
+    any non-static members (or maybe not, it might cause ambiguities I&#x27;m not
+    thinking of), but Rust&#x27;s stated design philosophy favors explicitness.<p>I
+    don&#x27;t know what this language&#x27;s reason for using it was, as I don&#x27;t
+    see any mention of macros. But in general it simplifies compiler design. If you
+    can resolve all the static names up front, the following compiler stages can ignore
+    the concept of namespaces altogether."
+  score: 0
+  posted_at: '2026-11-04T18:02:27Z'
+- id: '50369275'
+  parent_id: '50369020'
+  author: ModernMech
+  text: For me, I guess it’s just that foo&#x2F;bar is standard and fewer characters
+    so it’s the obvious and ergonomic choice. But we can’t use that because of infix
+    math, which is also a choice. So why are the choices made that way? “We made it
+    easier to write mathematical notation at the expense of making it worse to talk
+    about every namespace” isn’t the best trade off all the time.
+  score: 0
+  posted_at: '2026-11-04T18:05:32Z'
+- id: '50369389'
+  parent_id: '50368661'
+  author: ModernMech
+  text: That would imply the AI should write every program in Python from now until
+    the end of time; but just because the AI is most familiar with Python doesn’t
+    mean we have to throw everything we know about system design and using the right
+    tools for the job out of the window.
+  score: 0
+  posted_at: '2026-11-04T18:14:20Z'
+- id: '50369638'
+  parent_id: '50367823'
+  author: bigbadfeline
+  text: "&gt; TBH I am not quite ready to spend a ton of time on docs yet as some
+    of these things are changing on the fly.<p>I&#x27;d assume, what you do is based
+    on some research, with articles and other projects like yours - these references
+    are what&#x27;s missing from your project, you don&#x27;t have to write them yourself.<p>The
+    most important missing explanation, that only you can provide, is this: Why a
+    new language? There are projects that attach proof obligations to standard Rust
+    in order to reuse its vast ecosystem and existing LLM skills. That would be a
+    far easier and more productive approach to take."
+  score: 0
+  posted_at: '2026-11-04T18:32:14Z'
+- id: '50369649'
+  parent_id: '50369033'
+  author: bigbuppo
+  text: I&#x27;m assuming it was a joke. I&#x27;m hoping it was a joke. Please assure
+    me it was a joke.
+  score: 0
+  posted_at: '2026-11-04T18:33:31Z'
+- id: '50369670'
+  parent_id: '50369228'
+  author: kreco
+  text: 'I <i>assumed</i> Evergreen blindly imitated Rust.<p>However, I <i>believe</i>
+    Rust purposely imitated C++, for reasons. And I still don&#x27;t like it.<p>A
+    lot of language are doing fine using dots. And if you are going to use &#x27;::&#x27;
+    you can have your reasons. I would still find it annoying to type and read.<p>Just
+    to add precision: I critic the syntax (which is very subjective), and I critic
+    the parroting, as two separated arguments.'
+  score: 0
+  posted_at: '2026-11-04T18:34:40Z'
+- id: '50369771'
+  parent_id: '50368947'
+  author: amccollum
+  text: Is your language available anywhere? I&#x27;d be curious to check it out.
+    I strongly believe that there will eventually be a new language created with agents
+    in mind as the primary consumers, and making the foundations provable &#x2F; safe
+    are key cornerstones in my mind. The other property that I think is very important
+    is fast tooling &#x2F; compilation. Compilation speed is not generally the bottleneck
+    right now in agent loops, but models can get faster, and as software scales up
+    and is written by swarms of agents in concert, making the tools run really fast
+    will be an important way to decrease cycle time and increase speed.
+  score: 0
+  posted_at: '2026-11-04T18:42:25Z'
+- id: '50369787'
+  parent_id: '50368904'
+  author: kreco
+  text: Don&#x27;t think too much about it though, it was to express a personal opinion.<p>I
+    just like &quot;dots&quot; for everything, and there are some reasons to distinguish
+    package&#x2F;module qualification, struct&#x2F;class member access (.), or static
+    member access (::).
+  score: 0
+  posted_at: '2026-11-04T18:43:24Z'
+- id: '50369806'
+  parent_id: '50369020'
+  author: kreco
+  text: No it&#x27;s just a personal opinion. I like the UX of using dots for everything.
+  score: 0
+  posted_at: '2026-11-04T18:44:49Z'
+- id: '50369818'
+  parent_id: '50369670'
+  author: roarcher
+  text: "&gt; A lot of language are doing fine using dots.<p>I have implemented one
+    such language, and while it is indeed doing fine, the dots-everywhere syntax really
+    does complicate name resolution. It only uses it because the distinction between
+    two different operators would be lost on its intended less-technical audience.
+    It is a (in my opinion unfortunate) tradeoff made for a specific reason.<p>And
+    one thing those languages all (as far as I know) have in common is that they do
+    not have Rust&#x27;s macro system. It may well be impossible to implement that
+    without a distinct operator.<p>I have no opinion as to whether that operator should
+    be `::` or some other arbitrary symbol, but I believe that no matter what symbol
+    they chose, someone would complain that it doesn&#x27;t fit their personal taste.
+    Can&#x27;t please everybody."
+  score: 0
+  posted_at: '2026-11-04T18:45:20Z'
+- id: '50369856'
+  parent_id: '50368919'
+  author: jordan_bonecut
+  text: I considered waiting longer to share more but felt feedback early was better
+    than waiting for more polish. Will focus on this with high priority though, good
+    feedback
+  score: 0
+  posted_at: '2026-11-04T18:49:00Z'
+- id: '50369910'
+  parent_id: '50367823'
+  author: yubblegum
+  text: congrats &amp; just fyi, you should put a &quot;Show HN&quot; if you are posting
+    and presenting your own handiwork. Better optics.
+  score: 0
+  posted_at: '2026-11-04T18:52:45Z'
+- id: '50369919'
+  parent_id: '50369638'
+  author: jordan_bonecut
+  text: For me part of the fun of such a side project is complete control. I’m willing
+    to risk this over starting from something existing, which may be the wrong call!
+  score: 0
+  posted_at: '2026-11-04T18:53:17Z'
+- id: '50369953'
+  parent_id: '50368338'
+  author: roarcher
+  text: |-
+    If you want to have an LLM write your README (and other docs), I&#x27;ve found it useful to add a DOCS-GUIDE.md to your project and write your conventions and expectations there.<p>Google has a two-part technical writing crash course:<p><pre><code>  - https:&#x2F;&#x2F;developers.google.com&#x2F;tech-writing&#x2F;one
+      - https:&#x2F;&#x2F;developers.google.com&#x2F;tech-writing&#x2F;two
+    </code></pre>
+    I&#x27;ve had good success with adding a directive to the guide that points to those two URLs and tells the agent to adhere to them in all of its documentation.
+  score: 0
+  posted_at: '2026-11-04T18:55:42Z'
+- id: '50369998'
+  parent_id: '50366919'
+  author: RemingtonDavies
+  text: |-
+    So it&#x27;s Rust with compile-time checks? So its just Rust? What can be done in this language that can&#x27;t be done in Rust with a macro?<p>```<p>macro_rules! nonzero {<p>($n:expr) =&gt; {{<p><pre><code>  const {
+
+       assert!($n != 0, &quot;Non Zero Condition could not be verified&quot;);
+
+      }
+
+      $n as i64
+
+     }};
+    </code></pre>
+    }<p>fn main() {<p><pre><code>  let x: i64 = nonzero!(0); &#x2F;&#x2F; Throws verification error
+    </code></pre>
+    };<p>```<p>If you need something to be provably mathematically correct you should write it in Lean, or Coq, some kind of dedicated verification program, if you merely need to guarantee certain conditions at runtime, you can just write some macros! I understand that they want certain facilities like proof by induction, and the ability to prove arbitrary theorems but why would you do that when you can write it in a dedicated language (Lean&#x2F;Coq) that has been around for a long time, with far more tooling?<p>That aside, I think Evergreen is still a nice language, and can have applications, its just the ecosystem around it that needs development.
+  score: 0
+  posted_at: '2026-11-04T18:58:36Z'
+- id: '50370074'
+  parent_id: '50366920'
+  author: ChickeNES
+  text: Why optimize for old fashioned manual programming, especially since you are
+    vibe coding the language to begin with? Unless you think Claude and friends will
+    “enjoy” using it more.
+  score: 0
+  posted_at: '2026-11-04T19:05:30Z'
+- id: '50370092'
+  parent_id: '50369771'
+  author: empath75
+  text: "&gt; I strongly believe that there will eventually be a new language created
+    with agents in mind as the primary consumers<p>That is exactly my motivation.
+    \ The purpose of adding effects to my language, for example, was at least partially
+    so you can track changes to things like IO usage in PRs.  I also plan on adding
+    a simple proof DSL that surfaces some lean functionality directly into the surface,
+    so you can prove invariants about code as in this language, or surface exactly
+    what is being trusted when writing the equivalent of unsafe code.<p>The main thing
+    I am trying to solve is the LLM code review problem, really."
+  score: 0
+  posted_at: '2026-11-04T19:06:59Z'
+- id: '50370206'
+  parent_id: '50368929'
+  author: 0c3ca83
+  text: This only works if you make every allocation its own plane, and scope all
+    borrows to the lifetime of the plane, with a move terminating all borrows, at
+    which point this is equivalent to rust, just with confusing jargon.
+  score: 0
+  posted_at: '2026-11-04T19:15:55Z'
+- id: '50370431'
+  parent_id: '50366919'
+  author: irq-1
+  text: |-
+    Note on example of UTF-8 strings. It&#x27;s counting &quot; has &quot; in the length. You can change it to:<p><pre><code>    let l = text.len();
+        text.push_str(&quot; has &quot;);
+        text.push_usize(l);</code></pre>
+  score: 0
+  posted_at: '2026-11-04T19:32:56Z'
+- id: '50370639'
+  parent_id: '50369856'
+  author: DonaldPShimoda
+  text: 'I think you might want to more deeply consider the impact it has on people
+    when you ask them to read a bunch of LLM-generated code and documentation that
+    you haven&#x27;t even taken the time to &quot;polish&quot; yet. Some (myself included)
+    might consider it a violation of an implicit social contract to expect such disproportionate
+    effort from your audience than you are willing to spend yourself upfront.<p>Maybe,
+    to put it another way: Why should people want to spend time developing feedback
+    for you when you were not willing to spend commensurate time on the things you
+    want to show them first? You&#x27;re putting the cart before the horse.'
+  score: 0
+  posted_at: '2026-11-04T19:53:51Z'
+- id: '50370657'
+  parent_id: '50369389'
+  author: 0c3ca83
+  text: Yes, Python or Rust would make sense to use as long as you&#x27;re planning
+    on sticking with LLMs.
+  score: 0
+  posted_at: '2026-11-04T19:55:21Z'
+- id: '50370768'
+  parent_id: '50366919'
+  author: sharifhsn
+  text: I took a skim and I like the ideas, but you should go further with proving
+    elements of real systems. For example, drivers for Linux, if your whole goal is
+    to prove these things while being a systems language. Although I confess that
+    I don&#x27;t understand its output, are you using a compiler backend like LLVM?
+    Should be in README.
+  score: 0
+  posted_at: '2026-11-04T20:04:14Z'
+- id: '50370807'
+  parent_id: '50366919'
+  author: rsrsrs86
+  text: Landing page says a lot of vibecoding involved…
+  score: 0
+  posted_at: '2026-11-04T20:08:00Z'
+- id: '50370824'
+  parent_id: '50366919'
+  author: LoganDark
+  text: Hm, you should really adopt more types of documentation. I find the tutorial
+    very hard to follow, a language reference would be much more usable.<p><a href="https:&#x2F;&#x2F;diataxis.fr&#x2F;compass&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;diataxis.fr&#x2F;compass&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-04T20:09:34Z'
+- id: '50371113'
+  parent_id: '50366919'
+  author: MichaelNolan
+  text: Broadly speaking, does Evergreen allow me to prove&#x2F;enforce more invariants
+    than what Verus&#x2F;rust allows? Evergreen certainly looks cleaner since its
+    built in rather than bolted on.
+  score: 0
+  posted_at: '2026-11-04T20:32:54Z'
+- id: '50371280'
+  parent_id: '50370206'
+  author: jordan_bonecut
+  text: |-
+    Correct, every allocation is its own plane. The nice thing about this model is that you don&#x27;t need to explicitly call out lifetimes. I also believe that lifetimes aren&#x27;t really a good model of what actually happens in memory. This model is more powerful because it understands relationships between planes in memory, which Rust&#x27;s model doesn&#x27;t. This is why it requires mutable borrows to be unique which is oftentimes overly restrictive. For instance this is not valid Rust:<p>let x = vec![1, 2, 3];
+    let a = &amp;mut x[0];
+    let b = &amp;mut x[1];
+    swap(a, b);<p>Because Rust doesn&#x27;t really know the difference between the whole Vec an element within the vec. Therefore it treats any mutation as one that could potentially invalidate anything with the same lifetime and doesn&#x27;t compile. So I believe the plane model to be strictly better because it allows for this and still prevents the real scary thing:<p>let x = vec![1, 2];
+    let a = &amp;mut x[0];
+    x.push(3);
+    <i>a = </i>a + 1;
+  score: 0
+  posted_at: '2026-11-04T20:48:00Z'
+- id: '50371337'
+  parent_id: '50369998'
+  author: jordan_bonecut
+  text: |-
+    It is different because for many cases you may need to prove your assertions. Consider:<p>fn foo(x: usize) -&gt; NonZero where x != 5 {
+      NonZero::new(x - 5)
+    }<p>I do not believe this is achievable in Rust.
+  score: 0
+  posted_at: '2026-11-04T20:52:02Z'
+- id: '50371402'
+  parent_id: '50370657'
+  author: ModernMech
+  text: Not in every situation for all time, that&#x27;s my point. Which language
+    the AI should use will evolve over time as use cases and computing hardware evolve.
+    It isn&#x27;t the case that language design is now ossified at whatever existed
+    in 2023.<p>Also, what you&#x27;re saying implies Python and Rust should stop evolving
+    as languages, as changing the language would invalidate the vast quantity of work
+    the AI has been trained on.
+  score: 0
+  posted_at: '2026-11-04T20:57:02Z'
+- id: '50371405'
+  parent_id: '50370074'
+  author: jordan_bonecut
+  text: Because good tools are good
+  score: 0
+  posted_at: '2026-11-04T20:57:05Z'
+- id: '50371550'
+  parent_id: '50370639'
+  author: jordan_bonecut
+  text: I agree with you, if I were asking for a code review. I&#x27;m mostly interested
+    in what people think of the language features. A code review in its current state
+    is not interesting, but I believe the site has some ideas that can be food-for-thought
+  score: 0
+  posted_at: '2026-11-04T21:08:53Z'
+- id: '50371650'
+  parent_id: '50366920'
+  author: n_u
+  text: This is cool! Thanks for sharing. I&#x27;ve been wanting something like this
+    for a while<p>1. I&#x27;m curious how this handles I&#x2F;O? Proving stuff is
+    often really useful for distributed systems where we would like to prove our system
+    behaves correctly under any ordering of I&#x2F;O operations.<p>2. How does this
+    compare to just using Rust and some proof tool like Kani or Verus?
+  score: 0
+  posted_at: '2026-11-04T21:16:24Z'
+- id: '50371695'
+  parent_id: '50371402'
+  author: 0c3ca83
+  text: "&gt; <i>Not in every situation for all time, that&#x27;s my point.</i><p>I
+    disagree. It&#x27;s not worth changing languages for new ones if you want to use
+    AI, unless you can manage to create so much training data that it ends up baked
+    into the models.<p>&gt; Also, what you&#x27;re saying implies Python and Rust
+    should stop evolving as languages<p>Yes, much the way x86 assembly has stopped
+    evolving for the user, outside of smallish additions like wider vector ops. Adding
+    small, high value extensions extensions can be worth paying the token cost and
+    increased failure rates if they add strong new capabilities.<p>If it&#x27;s just
+    ergonomic, it&#x27;s a mistake, unless you want to target hand coders."
+  score: 0
+  posted_at: '2026-11-04T21:19:24Z'
+- id: '50371844'
+  parent_id: '50366919'
+  author: ModernMech
+  text: 'AI has really lowered the bar to allow people to create new languages from
+    scratch. I&#x27;m not repulsed by AI generated output as others are, so my critique
+    does not fall along those lines. Actually, I think that more people can do this
+    now means the bar has risen for what we should expect from these languages and
+    their authors. Before a spec and a prototype implementation, and a willingness
+    to learn was enough, but today I don&#x27;t think that&#x27;s the baseline, not
+    anymore.<p>I understand the author has posted this, and explicitly several times
+    in the README and here on HN has said this is a sketch and is for learning purposes
+    and experimentation. That&#x27;s great and I support such efforts wholeheartedly.
+    So my criticism is given in the spirit that this project can be significantly
+    improved.<p>However, the LLM presentation means the author has cosigned statements
+    I don&#x27;t think they should be cosigning.<p>For example, your homepage makes
+    some pretty outrageous claims: for a language that didn&#x27;t exist before last
+    week, you&#x27;re claiming it is &quot;more powerful than C&quot; and &quot;safer
+    than Rust&quot;. There is <i>very</i> little here to support these claims, and
+    I think they should be retracted.<p>First, how is this language more powerful
+    than C and why can&#x27;t C adopt what this language does? Why can&#x27;t C use
+    your technique as a framework &#x2F; preprocessor and do exactly what Evergreen
+    does? If it&#x27;s <i>technically</i> possible for C to do all this I don&#x27;t
+    think you can claim Evergreen is more powerful.<p>Also, I don&#x27;t see any benchmarks,
+    maybe I missed them. How can you claim the proofs don&#x27;t affect performance?
+    You say that the proofs are erased after they&#x27;re checked but that doesn&#x27;t
+    necessarily mean there&#x27;s no performance cost for having to write the code
+    a particular way. To credibly make this claim you&#x27;ll have to show proof.<p>And
+    please when you do the benchmarks, make sure the AI actually optimizes the baseline
+    version. There was another AI-authored language posted here recently which also
+    made similar grand performance claims, but they didn&#x27;t make sure they were
+    being fair in what they were comparing: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50238979">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50238979</a>.
+    The AI will show your language is faster than Rust or C or whatever by writing
+    suboptimal Rust &#x2F; C.<p>When you say it&#x27;s safer than Rust, you&#x27;re
+    leaving out that your system is incomplete and can&#x27;t handle some things that
+    Rust already handles, like sync + send. Moreover, the claim seems to be the existence
+    of the features in your language defacto make it safer than Rust, but again that&#x27;s
+    not proven. Do they really? Also, several times in the Readme you claim Rust can&#x27;t
+    do particular things, when it actually can, just not statically e.g. using Rc
+    and Refcell. In another case I don&#x27;t think you&#x27;re aware of <a href="https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;std&#x2F;num&#x2F;type.NonZeroU64.html"
+    rel="nofollow">https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;std&#x2F;num&#x2F;type.NonZeroU64.html</a>.<p>Is
+    the claim you can do those things where Rust can&#x27;t, or that you can do them
+    statically where Rust can only do it dynamically?<p>Finally, for some of these
+    examples they seem to take a very long time to check, despite being so small.
+    The overflow example takes almost 10 seconds on my machine, it&#x27;s only 9 lines
+    of code. How does this scale to an entire program? What&#x27;s the largest program
+    you&#x27;ve written to test this?<p>Anyway, I&#x27;m not saying any of this to
+    discourage you, just to say that you really can&#x27;t make the claims you&#x27;re
+    making without proof, and it&#x27;s not enough to say &quot;well the AI made the
+    website and it&#x27;s prone to making overblown claims without proof&quot; --
+    no, when you publish them, the AI&#x27;s words are your words. You can stand by
+    what you can prove but otherwise you should be careful making grand claims.'
+  score: 0
+  posted_at: '2026-11-04T21:30:24Z'
+- id: '50372046'
+  parent_id: '50367750'
+  author: danieljohnsxd
+  text: Just want to say that you did a great job giving critique. Felt encouraging
+    even though it&#x27;s not even my project
+  score: 0
+  posted_at: '2026-11-04T21:50:12Z'
+- id: '50372649'
+  parent_id: '50371280'
+  author: 0c3ca83
+  text: How about `x[i] = 7`? What if x is a vector of values that contain allocations?
+  score: 0
+  posted_at: '2026-11-04T23:00:02Z'
+- id: '50372719'
+  parent_id: '50366919'
+  author: Magicrafter13
+  text: "&gt; More Powerful Than C. Safer than Rust.<p>This is an INSANE claim."
+  score: 0
+  posted_at: '2026-11-04T23:07:35Z'
+- id: '50372969'
+  parent_id: '50372649'
+  author: jordan_bonecut
+  text: I’m not quite sure I understand your question. But if x is a vector of things
+    that contain allocations, the compiler will track a plane for them and represent
+    them sparsely as needed be.
+  score: 0
+  posted_at: '2026-11-04T23:39:06Z'
+article:
+  url: https://evergreenlang.net
+  title: Evergreen — Provably Safe Systems Code
+  fetch_status: success
+  content: |-
+    # Provably SafeSystems Code
+
+    Evergreen brings explicit contracts, checked invariants, and control over memory into one language. Write down what must hold. Let the compiler check that it does.
+
+    type NonZero = usize where self != 0; impl NonZero { fn new(x: usize) -> Self where x != 0 { NonZero(x) } } fn main() -> usize { let my_nonzero = NonZero::new(10); 0 }
+
+    The constructor requires a nonzero input.The compiler checks the invariant when the value is built.
+
+    ## More Powerful Than C.Safer than Rust.
+
+    ### Invariants live in your code.
+
+    Put preconditions, postconditions, and data invariants beside the code they describe. They become obligations the compiler checks.
+
+    fn increment(n: usize) -> usize where n < usize::MAX ensures result > n { n + 1 }
+
+    ### A compiler that understands memory.
+
+    Work with explicit layouts, ownership, and borrowed references. Evergreen tracks when a memory plane is live and which uses remain valid.
+
+    let value: usize = 1; let cell = &mut value; *cell = 10; fact same = value == 10;
+
+    ### Powerful proofs that don't affect performance.
+
+    Proofs, lemmas by induction, and ideal computations are erased after checking. Executable code keeps the work it needs to do.
+
+    ideal let expected = integer::from(42); let value: usize = 42; fact matches = integer::from(value) == expected;
+
+    ## Playground
+
+    1
+
+    Ready when you are. Run the example to see its output here.
+
+    External console behavior is provided by the host. Evergreen records this boundary as an explicit trustme assumption.
+  error:
+  fetched_at: '2026-11-05T01:21:23Z'
+archived_at: '2026-11-05T01:21:23Z'

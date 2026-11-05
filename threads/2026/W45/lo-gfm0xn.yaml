@@ -1,0 +1,161 @@
+---
+post:
+  id: lo-gfm0xn
+  source: lobsters
+  title: A new Go API for JSON
+  url: https://go.dev/blog/jsonv2
+  hn_url: https://lobste.rs/s/gfm0xn
+  score: 16
+  author: binjip978
+  posted_at: '2026-11-04T17:52:32Z'
+  fetched_at: '2026-11-05T01:21:24Z'
+  article_url: https://go.dev/blog/jsonv2
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T01:21:26Z'
+  raw_comment_count: 4
+  tags:
+  - go
+comments:
+- id: lo-5r96t2
+  parent_id: '0'
+  author: fanf
+  text: This has been in the works for over a year so there have been articles about
+    it previously (25 comments), previously, previously; from a quick skim of this
+    article I can’t see a summary of what has changed since last year.
+  score: 1
+  posted_at: '2026-11-04T18:35:38Z'
+- id: lo-m8dfco
+  parent_id: '0'
+  author: prattmic
+  text: |-
+    There aren’t any major changes from the original GOEXPERIMENT.
+    This post is actually an updated version of last year’s experiment post at https://go.dev/blog/jsonv2-exp. From what’s described there literally the only update I had to make from that post is that the “inline” struct tag was renamed to “embed”.
+    Other minor changes to functionality from the original GOEXPERIMENT:
+
+    The “string” tag no longer applies recursively (for consistency with other tags).
+    The “format” tag is removed (we hope to bring this back with better syntax using something like https://go.dev/issue/74472).
+    Small adjustments to encoding/json/jsontext helper functions (e.g., jsontext.Token.Int and friends can now return an error).
+    Probably a few other minor changes I’m forgetting at the moment.
+  score: 7
+  posted_at: '2026-11-04T19:52:21Z'
+- id: lo-iohpul
+  parent_id: '0'
+  author: xilef
+  text: I recently migrated a reasonably JSON-heavy set of services to the V2 and
+    it went very smoothly. The one thing that caught us was the lack of newlines in
+    generated JSON, but that forced us to inspect our tests again so not a bad thing.
+  score: 1
+  posted_at: '2026-11-04T21:57:22Z'
+- id: lo-55oe4q
+  parent_id: '0'
+  author: thiht
+  text: |-
+    I really love that Go figured a way to version the stdlib without making breaking changes and in a way that’s natural with Go modules major versions. Just having /v2 paths feels really simple and elegant to me
+    Anyway to stay on topic, my favorite change about json/v2 is definitely how it makes it possible (and even defaults) to serialize nil slices / maps as empty JSON arrays / objects instead of null. This was long overdue and makes it much easier when working with Typescript on the consumer end of an API
+  score: 2
+  posted_at: '2026-11-05T00:07:20Z'
+article:
+  url: https://go.dev/blog/jsonv2
+  title: A new Go API for JSON - The Go Programming Language
+  fetch_status: success
+  content: "# [The Go Blog](/blog/)\n\n# A new Go API for JSON\n\nMichael Pratt, Joe
+    Tsai, Daniel Martí, Johan Brandhorst-Satzkorn, Roger Peppe, Chris Hines, and Damien
+    Neil  \n 4 November 2026\n\n## Introduction\n\n[JavaScript Object Notation (JSON)](https://datatracker.ietf.org/doc/html/rfc8259)
+    is a simple data interchange format, the most popular data format used on the
+    internet, and widely read and written by Go programs. Go has included support
+    for JSON in the standard library since well before Go 1.0. We first we wrote about
+    [support for JSON in Go](/blog/json) more than 15 years ago!\n\nOver time, packages
+    evolve with the needs of their users, and `encoding/json` is no exception. Last
+    year, we wrote about a [new experimental API for JSON](/blog/jsonv2-exp) designed
+    to bring long-awaited improvements and fixes.\n\nAfter additional feedback and
+    refinement, the new `encoding/json/v2` and `encoding/json/jsontext` packages are
+    stable and generally available in Go 1.27! This post is an updated version of
+    the [article introducing the experiment](/blog/jsonv2-exp), describing the problems
+    with `encoding/json`, and an introduction to the new packages.\n\n## Problems
+    with `encoding/json`\n\nOverall, `encoding/json` has held up well. The idea of
+    marshaling and unmarshaling arbitrary Go types with some default representation
+    in JSON, combined with the ability to customize the representation, has proven
+    to be highly flexible. However, in the years since its introduction, various users
+    have identified numerous shortcomings.\n\n### Behavior flaws\n\nThere are various
+    behavioral flaws in `encoding/json`:\n\n- **Imprecise handling of JSON syntax**
+    : Over the years, JSON has seen increased standardization in order for programs
+    to properly communicate. Generally, decoders have become stricter at rejecting
+    ambiguous inputs, to reduce the chance that two implementations will have different
+    (successful) interpretations of a particular JSON value.\n\n- **Leaking nilness
+    of slices and maps** : JSON is often used to communicate with programs using JSON
+    implementations that do not allow `null` to be unmarshaled into a data type expected
+    to be a JSON array or object. Since `encoding/json` marshals a nil slice or map
+    as a JSON `null`, this may lead to errors when unmarshaling by other implementations.[A
+    survey](/issue/63397#discussioncomment-7201222)indicated that most Go users prefer
+    that nil slices and maps are marshaled as an empty JSON array or object by default.\n\n-
+    **Case-insensitive unmarshaling** : When unmarshaling, a JSON object member name
+    is resolved to a Go struct field name using a case-insensitive match. This is
+    a surprising default, a potential security vulnerability, and a performance limitation.\n\n-
+    **Inconsistent calling of methods** : Due to an implementation detail,`MarshalJSON`
+    methods declared on a pointer receiver are [inconsistently called by `encoding/json`](/issue/22967).
+    While regarded as a bug, this cannot be fixed as too many applications depend
+    on the current behavior.\n\n### API deficiencies\n\nThe API of `encoding/json`
+    can be tricky or restrictive:\n\n- It is difficult to correctly unmarshal from
+    an `io.Reader`. Users often write `json.NewDecoder(r).Decode(v)`, which fails
+    to reject trailing junk at the end of the input.\n\n- Options can be set on the
+    `Encoder` and `Decoder` types, but cannot be used with the `Marshal` and `Unmarshal`
+    functions. Similarly, types implementing the `Marshaler` and `Unmarshaler` interfaces
+    cannot make use of the options and there is no way to plumb options down the call
+    stack. For example, the `Decoder.DisallowUnknownFields` option loses its effect
+    when calling a custom `UnmarshalJSON` method.\n\n- The `Compact`, `Indent`, and
+    `HTMLEscape` functions write to a `bytes.Buffer`instead of something more flexible
+    like a `[]byte` or `io.Writer`. This limits the usability of those functions.\n\n###
+    Performance limitations\n\nSetting aside internal implementation details, the
+    public API commits it to certain performance limitations:\n\n- **MarshalJSON**
+    : The `MarshalJSON` interface method forces the implementation to allocate the
+    returned `[]byte`. Also, the semantics require that`encoding/json` verify that
+    the result is valid JSON and also to reformat it to match the specified indentation.\n\n-
+    **UnmarshalJSON** : The `UnmarshalJSON` interface method requires that a complete
+    JSON value be provided (without any trailing data). This forces `encoding/json`
+    to parse the JSON value to be unmarshaled in its entirety to determine where it
+    ends before it can call `UnmarshalJSON`. Afterwards, the `UnmarshalJSON` method
+    itself must parse the provided JSON value again.\n\n- **Lack of streaming** :
+    Even though the `Encoder` and `Decoder` types operate on an `io.Writer` or `io.Reader`,
+    they buffer the entire JSON value in memory. The `Decoder.Token` method for reading
+    individual tokens is allocation-heavy and there is no corresponding API for writing
+    tokens.\n\nFurthermore, if the implementation of a `MarshalJSON` or `UnmarshalJSON`
+    method recursively calls the `Marshal` or `Unmarshal` function, then the performance
+    becomes quadratic.\n\n## Trying to fix `encoding/json` directly\n\nIntroducing
+    a new, incompatible major version of a package is a heavy consideration. If possible,
+    we should try to fix the existing package.\n\nWhile it is relatively easy to add
+    new features, it is difficult to change existing features. Unfortunately, these
+    problems are inherent consequences of the existing API, making them practically
+    impossible to fix within the [Go 1 compatibility promise](/doc/go1compat).\n\nWe
+    could in principle declare separate names, such as `MarshalV2` or `UnmarshalV2`,
+    but that is tantamount to creating a parallel namespace within the same package.
+    This leads us to `encoding/json/v2` (henceforth called `v2`), where we can make
+    these changes within a separate `v2` namespace in contrast to `encoding/json`
+    (henceforth called `v1`).\n\n## Building on `encoding/json/jsontext`\n\nBefore
+    discussing the `v2` API, we first introduce the[`encoding/json/jsontext`](/pkg/encoding/json/jsontext)
+    package that lays the foundation for improvements to JSON in Go.\n\nJSON serialization
+    in Go can be broken down into two primary components:\n\n- _syntactic functionality_
+    that is concerned with processing JSON based on its grammar, and\n- _semantic
+    functionality_ that defines the relationship between JSON values and Go values.\n\nWe
+    use the terms “encode” and “decode” to describe syntactic functionality and the
+    terms “marshal” and “unmarshal” to describe semantic functionality. We aim to
+    provide a clear distinction between functionality that is purely concerned with
+    encoding versus that of marshaling.\n\n ![](jsonv2/api.png)\n\nThis diagram provides
+    an overview of this separation. Purple blocks represent types, while blue blocks
+    represent functions or methods. The direction of the arrows approximately represents
+    the flow of data. The bottom half of the diagram, implemented by the `jsontext`
+    package, contains functionality that is only concerned with syntax, while the
+    upper half, implemented by the `json/v2` package, contains functionality that
+    assigns semantic meaning to syntactic data handled by the bottom half.\n\nThe
+    basic API of `jsontext` is the following:\n\n    package jsontext\n    \n    type
+    Encoder struct { ... }\n    func NewEncoder(io.Writer, ...Options) *Encoder\n
+    \   func (*Encoder) WriteValue(Value) error\n    func (*Encoder) WriteToken(Token)
+    error\n    \n    type Decoder struct { ... }\n    func NewDecoder(io.Reader, ...Options)
+    *Decoder\n    func (*Decoder) ReadValue() (Value, error)\n    func (*Decoder)
+    ReadToken() (Token, error)\n    \n    type Kind byte\n    type Value []byte\n
+    \   func (Value) Kind() Kind\n    type Token struct { ... }\n    func (Token)
+    Kind() Kind\n\nThe `jsontext` package provides functionality for interacting with
+    JSON at a syntactic level and derives its name from[RFC 8259, section 2](https://datatracker.ietf.org/doc/html/rfc8259#section-2)where
+    the grammar for JSON data is literally called `JSON-text`. S"
+  error:
+  fetched_at: '2026-11-05T01:21:26Z'
+archived_at: '2026-11-05T01:21:26Z'

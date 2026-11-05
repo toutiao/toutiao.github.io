@@ -1,0 +1,137 @@
+---
+post:
+  id: lo-dmpdid
+  source: lobsters
+  title: Burnt TOAST
+  url: https://www.pgedge.com/blog/burnt-toast
+  hn_url: https://lobste.rs/s/dmpdid
+  score: 10
+  author: fanf
+  posted_at: '2026-11-04T18:00:32Z'
+  fetched_at: '2026-11-05T01:21:24Z'
+  article_url: https://www.pgedge.com/blog/burnt-toast
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T01:21:29Z'
+  raw_comment_count: 2
+  tags:
+  - databases
+comments:
+- id: lo-dgwcqm
+  parent_id: '0'
+  author: singpolyma
+  text: Several million rows is pretty small. And I'm not sure why the big text in
+    each row was a problem at this size either?
+  score: 1
+  posted_at: '2026-11-05T00:21:35Z'
+- id: lo-cmak0q
+  parent_id: '0'
+  author: fanf
+  text: |-
+    Yeah I wondered the same when reading it. I gathered that problems arise when there isn’t a clear idea in the schema or the queries of when the large TOASTy columns are needed, so they get pulled in unnecessarily. If the TOASTy column is moved to a separate table, such that queries must do a join to touch the TOAST, then it’s less likely for a query to accidentally pull in large amounts of wasted data. (Heh, I guess an ORM could easily undermine this trick.)
+    In the past I was planning a schema design in which I made a mistake very similar to this; sadly it never got to production so I didn’t get the opportunity to learn from my own fuckup, but it’s good to belatedly learn from someone else’s experience.
+  score: 1
+  posted_at: '2026-11-05T01:05:04Z'
+article:
+  url: https://www.pgedge.com/blog/burnt-toast
+  title: 'PG Phriday: Burnt TOAST'
+  fetch_status: success
+  content: "\\< [Blog Home](/blog)\n\n# PG Phriday: Burnt TOAST\n\n## \n\n[Shaun Thomas](/author/shaun-thomas)|October
+    30, 2026\n\nA financial firm hired me in 2010 to revise their Postgres cluster
+    architecture. During my stint there, I learned a healthy respect for their event\\_log
+    table. But perhaps “respect” is the wrong word here, as it was more of a deep
+    loathing. This table, you see, was the canonical ledger of system events and consisted
+    of several million rows.\n\nThe high row count wasn’t a problem by itself. We
+    kept a tight visibility window and archived frequently. Unfortunately for us,
+    one of the columns was an unconstrained TEXT type that commonly held a large blob
+    of XML. Thus any fetch from this table was inordinately slow. Writing was equally
+    painful. We went through great pains to shape the application itself to avoid
+    touching it except when absolutely necessary. It was evil incarnate.\n\nThe performance
+    of this table initially confused and enraged me—until I remembered about [TOAST](https://www.postgresql.org/docs/current/storage-toast.html).
+    Postgres likes to innocuously dub this [backronym](https://en.wikipedia.org/wiki/Backronym)
+    “The Oversized-Attribute Storage Technique” but DBAs in the field maintain a love/hate
+    relationship with the system. Whether that’s justified is a different question.\n\nOn
+    the surface, it’s a way to store huge blocks of data elsewhere to keep tuples
+    small and avoid exceeding the relatively petite 8KB data page size. Postgres creates
+    a shadow table for the bulky content, splits it up into chunks, and stores a pointer
+    in the original row. It’s an elegant solution to a pressing issue, but there are
+    deep performance implications.\n\nSo let’s dig into precisely why DBAs secretly
+    dread large text-based columns, shall we?\n\n## Getting TOASTy\n\nTo really understand
+    what happened in my event\\_log case, it’s good to reconstruct some semblance
+    of it.\n\n    CREATE TABLE event_log\n    (\n      event_id BIGINT GENERATED ALWAYS
+    AS IDENTITY PRIMARY KEY,\n      ticker VARCHAR(4) NOT NULL,\n      strike INT
+    NOT NULL,\n      shares INT NOT NULL,\n      event_data JSON NOT NULL -- Ours
+    was XML, but modern times...\n      --- More columns went here\n    );\n\nAnd
+    then we can bootstrap the table with 100k rows. Just enough to make it annoying!
+    The data column needs to be big, but not absolutely gigantic. Let’s start with
+    up to 1000 data points:\n\n    INSERT INTO event_log (ticker, strike, shares,
+    event_data)\n    SELECT left(md5((a.id % 100)::TEXT), 4), a.id % 100, a.id % 100
+    * 10,\n           (SELECT jsonb_object_agg('field_' || f, random(1, 1000))\n              FROM
+    generate_series(1, id % 1000 + 1 ) f)\n      FROM generate_series(1, 100000) a
+    (id);\n\nGreat! Now where did all of that data go? If you thought, “Into the event\\_log
+    table of course!” you’re wrong. Instead, Postgres helpfully created a TOAST table
+    for most of it. Let’s check the [pg\\_class](https://www.postgresql.org/docs/current/catalog-pg-class.html)
+    catalog for the other objects:\n\n    SELECT c.relname, t.relname AS toast_table,
+    i.relname AS toast_index\n      FROM pg_class c\n      JOIN pg_class t ON t.oid
+    = c.reltoastrelid\n      JOIN pg_index x ON x.indrelid = t.oid\n      JOIN pg_class
+    i ON i.oid = x.indexrelid\n     WHERE c.relname = 'event_log';\n    \n      relname
+    | toast_table | toast_index      \n    -----------+----------------+----------------------\n
+    \    event_log | pg_toast_16401 | pg_toast_16401_index\n\nThat’s three objects
+    for the price of one: the original table, a toast table, and a toast table index.
+    This doesn’t always happen, but if your table has a text-like column without a
+    maximum length, it probably did. In this case, it’s because an unbounded JSON
+    column can contain anything, so Postgres preemptively initialized a TOAST table
+    to store the “anything”.\n\nWhat goes in is a bit more subtle, and is where the
+    trouble starts brewing.\n\n## Compounded Butter\n\nThere’s a kind of inherent
+    hierarchy that determines how data gets managed. The typstorage column in the
+    [pg\\_type](https://www.postgresql.org/docs/current/catalog-pg-type.html) catalog
+    explains how this works for each type Postgres understands. There are four valid
+    storage methods:\n\n- PLAIN (p): The value stays inline and uncompressed. This
+    is the default for fixed-width types like INT and TIMESTAMPTZ.\n\n- MAIN (m):
+    Compression is allowed, with TOAST only as the last resort. The default for NUMERIC.\n\n-
+    EXTERNAL (e): TOAST is allowed, but compression is not.\n\n- EXTENDED (x): Anything
+    is fair game. This is the default for TEXT, BYTEA, JSONB, and most other variable-length
+    types.\n\nPostgres imposes a loop on all text-based column types in a tuple that
+    it applies until the entire row is under the standard 8KB page threshold (minus
+    overhead). It looks something like this:\n\n![PostgreSQL TOAST storage flowchart](https://a.storyblok.com/f/187930/1920x1640/dd341fb6ac/burnt-toast-diagram.png)\n\nBeing
+    the default for JSON, all of our data follows the rules for EXTENDED. We can see
+    it in action by checking a few rows:\n\n    SELECT ctid, event_id, length(event_data::TEXT)
+    AS chars,\n           pg_column_size(event_data) AS stored_bytes,\n           pg_column_toast_chunk_id(event_data)
+    AS toast_id\n      FROM event_log\n     WHERE event_id BETWEEN 335 AND 340\n     ORDER
+    BY event_id;\n    \n      ctid | event_id | chars | stored_bytes | toast_id \n
+    \   --------+----------+-------+--------------+----------\n     (57,2) | 335 |
+    5907 | 1981 |         \n     (57,3) | 336 | 5930 | 2004 | 16414\n     (57,4) |
+    337 | 5942 | 1987 | 16415\n     (57,5) | 338 | 5953 | 2005 | 16416\n     (57,6)
+    | 339 | 5978 | 1996 | 16417\n     (57,7) | 340 | 5988 | 2034 | 16418\n\nThe toast\\_tuple\\_target
+    storage setting tells Postgres when to toast column contents. The default is around
+    2KB of compressed data, and anything after that is moved into TOAST automatically.
+    The example above has a row that compresses right under that limit, and as a result,
+    never gets moved.\n\nIf we examine page 57 specifically, this becomes even more
+    clear:\n\n    CREATE EXTENSION IF NOT EXISTS pageinspect;\n    \n    SELECT lp,
+    lp_len\n      FROM heap_page_items(get_raw_page('event_log', 57))\n     LIMIT
+    5;\n    \n     lp | lp_len \n    ----+--------\n      1 | 2022\n      2 | 2029\n
+    \     3 | 66\n      4 | 66\n      5 | 66\n\nThe tuple size of the rows that didn’t
+    get toasted is much larger than those that did. That’s thanks to a pointer replacing
+    the toasted values. And that’s not all. Toasted data is also broken into chunks.
+    Every toasted value gets broken into 1996-byte blocks and stored in sequential
+    order as rows in the toast table.\n\nNow consider what this means for reads:\n\n-
+    Any toasted value implies at least one fetch from the toast table. That’s a read
+    on the toast index and a read on the toast table itself per chunk.\n\n- Chunks
+    must be re-assembled. That’s extra memory usage and can be significant depending
+    on chunk count.\n\n- Compressed data must also be decompressed. That’s both memory
+    and CPU overhead.\n\nThe intuitive read of this is that TOAST is always worse.
+    But is it?\n\n## Turning Up the Heat\n\nLet’s run an experiment! We already have
+    a table where some of the data is toasted. What happens if we force Postgres to
+    select all of it?\n\nThis requires some setup. To begin, we create a non-toasted
+    table by setting the event\\_data column to use MAIN storage. That allows it to
+    be compressed, but not toasted unless the full tuple exceeds a Postgres page size.
+    Like so:\n\n    CREATE TABLE non_toast (LIKE event_log INCLUDING INDEXES);\n    ALTER
+    TABLE non_toast ALTER event_data SET STORAGE MAIN;\n    INSERT INTO non_toast
+    SELECT * FROM event_log;\n\nThen we can directly compare the costs of pulling
+    out field 999 from the data:\n\n    EXPLAIN (ANALYZE, BUFFERS, COSTS OFF, SUMMARY
+    OFF)\n    SELECT count(event_data->>'field_999') FROM event_log;\n    \n     Aggregate
+    (actual time=6589.068..6589.070 rows=1.00 loops=1)\n       Buffers: shared hit=246472
+    read=41655\n       -> Seq Scan on event_log (actual time=0.221..17.022 rows=100000.00
+    loops=1)\n            "
+  error:
+  fetched_at: '2026-11-05T01:21:29Z'
+archived_at: '2026-11-05T01:21:29Z'

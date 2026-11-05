@@ -4,14 +4,14 @@ post:
   title: The lost malloc()
   url: https://napcakes.nekoweb.org/posts/malloc/
   hn_url: https://news.ycombinator.com/item?id=50362466
-  score: 137
+  score: 150
   author: matt_d
   posted_at: '2026-11-04T07:37:30Z'
-  fetched_at: '2026-11-04T19:28:45Z'
+  fetched_at: '2026-11-05T01:21:20Z'
   article_url: https://napcakes.nekoweb.org/posts/malloc/
   article_fetch_status: success
   article_fetched_at: '2026-11-04T19:28:45Z'
-  raw_comment_count: 53
+  raw_comment_count: 64
 comments:
 - id: '50362669'
   parent_id: '50362466'
@@ -548,7 +548,7 @@ comments:
     beliefs), that&#x27;s better than vocational instruction, but definitely falls
     short of the idealized liberal education. Ideally you survey the entire historical
     progression of a field, like St John&#x27;s College does where, e.g., you start
-    learning geometry by reading Pythagoras, or Calculus by reading Newton, and then
+    learning geometry by reading Pythagoras, or calculus by reading Newton, and then
     having vigorous discussion to suss how how thinking changed or didn&#x27;t change
     between eras and how that might inform today&#x27;s thinking. Not sure how much
     marginal benefit is had by going all-in like that, though, as a practical matter,
@@ -618,6 +618,120 @@ comments:
     instance.
   score: 0
   posted_at: '2026-11-04T18:26:12Z'
+- id: '50370390'
+  parent_id: '50363752'
+  author: mkehrt
+  text: This is just 100% wrong.  The API should be designed to prevent mistakes.  You&#x27;re
+    arguing in favor have <i>having more memory safety bugs</i>.
+  score: 0
+  posted_at: '2026-11-04T19:29:57Z'
+- id: '50370578'
+  parent_id: '50363752'
+  author: wahern
+  text: C2y has already added free_sized, FWIW, which is symmetrical with malloc.
+    See 7.25.4.7 in the latest draft at <a href="https:&#x2F;&#x2F;www.open-std.org&#x2F;jtc1&#x2F;sc22&#x2F;wg14&#x2F;www&#x2F;docs&#x2F;n3998.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.open-std.org&#x2F;jtc1&#x2F;sc22&#x2F;wg14&#x2F;www&#x2F;docs&#x2F;n3998.pdf</a><p>It
+    also adds free_aligned_sized as the counterpart to C11&#x27;s aligned_alloc. Though
+    while you can pass memory from aligned_alloc to free, you can&#x27;t use free_sized
+    or free_aligned_sized with aligned_alloc&#x27;d or malloc&#x27;d memory respectively,
+    a potential (and unavoidable?) foot gun.
+  score: 0
+  posted_at: '2026-11-04T19:47:35Z'
+- id: '50370594'
+  parent_id: '50366682'
+  author: ajasmin
+  text: No. Arena really is what a pool allocatable memory is called.<p>The article
+    claims the term first appear in V6 Unix though I couldn&#x27;t tell you why it&#x27;s
+    called that.<p>It does help prevent confusion, though, a memory &quot;arena&quot;
+    and a memory &quot;area&quot; don&#x27;t both mean the same thing.
+  score: 0
+  posted_at: '2026-11-04T19:48:59Z'
+- id: '50370689'
+  parent_id: '50370578'
+  author: dooglius
+  text: But if you still have to support the plain free functions it doesn&#x27;t
+    help because you&#x27;d still have to track the information anyway.
+  score: 0
+  posted_at: '2026-11-04T19:57:43Z'
+- id: '50370937'
+  parent_id: '50370689'
+  author: wahern
+  text: The degree to which it helps or not depends on the implementation. For example,
+    free could be a slow path that does extra bookkeeping lookups the sized variants
+    wouldn&#x27;t need to. Large allocations and non-default aligned allocations often
+    use different bookkeeping data structures from how most allocations are handled
+    internally anyhow. In such cases that check needs to be done up front, and at
+    least on virtual memory systems (where it&#x27;s relatively easy to segregate
+    allocations types by VM range) it doesn&#x27;t much matter whether you&#x27;re
+    indexing that first level directory based on pointer or size.<p>But, yeah, it&#x27;s
+    not an ideal situation from the perspective of free_aligned advocates.
+  score: 0
+  posted_at: '2026-11-04T20:20:30Z'
+- id: '50370987'
+  parent_id: '50363752'
+  author: dark-star
+  text: "&gt; you&#x27;re forcing the memory allocator to keep track of these sizes
+    when it shouldn&#x27;t have to<p>Sounds much safer to me than have every single
+    developer, program or library keep track of those sizes properly... I mean that
+    way it&#x27;s at least only done in 1 place and done correctly, instead of forcing
+    every developer to suddenly keep track of yet another value"
+  score: 0
+  posted_at: '2026-11-04T20:23:54Z'
+- id: '50371761'
+  parent_id: '50366185'
+  author: saidnooneever
+  text: i recognise this. i do pen and paper still but i do also write bugs. when
+    i do i try to make test programs to learn why, and ideally recognise where my
+    pen and paper whent wrong, because those are gaps in my real understanding of
+    how my language, the program or interactions with its environment and platform
+    really work. Needless to say i always find myself having lots to learn still :).
+    i think in reality only once or twice i wrote a program truly free of bugs. relatively
+    trivial programs ofc (simple socket client&#x2F;server with basic binary protocol
+    or so. easy to reason about, no complex sync or threading requirements).<p>i never
+    use syntax highlighting. one day someone told me it was very distracting, i turned
+    it off and suddenly things were calm. Maybe its just taste but i do find it helpful.
+    you really read stuff rather than assuming some color happening means its correct
+    or incorrect subconsciously
+  score: 0
+  posted_at: '2026-11-04T21:23:26Z'
+- id: '50371915'
+  parent_id: '50369554'
+  author: Mikhail_Edoshin
+  text: Malloc itself is not boring. What is boring and distracting is the need to
+    think about managing memory when doing something else. (And we normally do something
+    else.) Here the memory management part must be reduced to a mere technicality,
+    some standard prologue&#x2F;epilogue. It&#x27;s not yet there, I think.
+  score: 0
+  posted_at: '2026-11-04T21:37:41Z'
+- id: '50372068'
+  parent_id: '50370689'
+  author: '1718627440'
+  text: At load time, you do know whether a program is going to use plain free, so
+    you can select the implementation then.
+  score: 0
+  posted_at: '2026-11-04T21:52:32Z'
+- id: '50372160'
+  parent_id: '50369204'
+  author: '1718627440'
+  text: Of course there is always a depth below, which to explore is entirely voluntary.  But
+    university courses don&#x27;t train you directly on the layer you are going to
+    solve the actual problems on your job, they test always at least on layer deeper
+    and then maybe test for one specific algorithm&#x2F;approach&#x2F;problem as an
+    example.<p>&gt; you start learning geometry by reading Pythagoras, or calculus
+    by reading Newton<p>You can do that, if you actually care about the history of
+    mathematics, but normally it&#x27;s enough if someone introduces you to a combined
+    theory of e.g. Pythagoras and Newton.<p>So in a way you are saying, university
+    is often not actually teaching temporal genesis, which I agree with, but my point
+    is that it does teach causal genesis, with citations on the temporal aspect.
+  score: 0
+  posted_at: '2026-11-04T22:01:24Z'
+- id: '50373409'
+  parent_id: '50363752'
+  author: teo_zero
+  text: "&gt; I can&#x27;t think of a single time where you DON&#x27;T know what `count`
+    is<p>A string created by strdup()."
+  score: 0
+  posted_at: '2026-11-05T00:32:18Z'
 article:
   url: https://napcakes.nekoweb.org/posts/malloc/
   title: the lost malloc() - gardenweb
@@ -722,4 +836,4 @@ article:
     that function does, but it doesn't matter. What matters is that they allocate"
   error:
   fetched_at: '2026-11-04T19:28:45Z'
-archived_at: '2026-11-04T19:28:49Z'
+archived_at: '2026-11-05T01:21:23Z'

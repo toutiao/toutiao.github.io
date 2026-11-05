@@ -1,0 +1,1003 @@
+---
+post:
+  id: '50369106'
+  title: A new Go API for JSON
+  url: https://go.dev/blog/jsonv2
+  hn_url: https://news.ycombinator.com/item?id=50369106
+  score: 222
+  author: olexsmir
+  posted_at: '2026-11-04T17:52:11Z'
+  fetched_at: '2026-11-05T01:21:17Z'
+  article_url: https://go.dev/blog/jsonv2
+  article_fetch_status: success
+  article_fetched_at: '2026-11-05T01:21:17Z'
+  raw_comment_count: 93
+comments:
+- id: '50369779'
+  parent_id: '50369106'
+  author: lolpanda
+  text: the marshal api has been very annoying. why does marshal return an error?
+    the only reason the marshal can return an error is that the input type is not
+    marshalable. it&#x27;s certainly a code bug. to me it&#x27;s like int+str returning
+    an error instead of compiler error
+  score: 0
+  posted_at: '2026-11-04T18:42:48Z'
+- id: '50369853'
+  parent_id: '50369106'
+  author: CamouflagedKiwi
+  text: I generally like `encoding&#x2F;json&#x2F;v2` and I&#x27;m glad they did it.<p>I
+    wish they&#x27;d left `MarshalIndent` in there though. The equivalent code is
+    super complicated and non-obvious, so it&#x27;s a pain to migrate, and it&#x27;s
+    a pain when you&#x27;re banging out some quick code and want to dump some readable
+    JSON. I suppose these days the LLMs can write the complicated version for us,
+    of course.
+  score: 0
+  posted_at: '2026-11-04T18:48:43Z'
+- id: '50369855'
+  parent_id: '50369779'
+  author: hnlmorg
+  text: I wouldn’t class unmarshallable data as a compile time error.<p>Plus the point
+    of the marshal interface is that it’s reusable.
+  score: 0
+  posted_at: '2026-11-04T18:48:44Z'
+- id: '50369879'
+  parent_id: '50369779'
+  author: leetrout
+  text: JSON is a runtime input of unknown type but in your example those are known
+    types so the compiler can catch them.
+  score: 0
+  posted_at: '2026-11-04T18:50:18Z'
+- id: '50370004'
+  parent_id: '50369853'
+  author: athorax
+  text: |-
+    I&#x27;m not sure if I&#x27;m missing something, but isn&#x27;t this functionality just moved into jsontext? <a href="https:&#x2F;&#x2F;pkg.go.dev&#x2F;encoding&#x2F;json&#x2F;jsontext#Value.Indent" rel="nofollow">https:&#x2F;&#x2F;pkg.go.dev&#x2F;encoding&#x2F;json&#x2F;jsontext#Value.Indent</a><p><pre><code>  v := jsontext.Value(b)
+      v.Indent()
+      fmt.Println(string(v))</code></pre>
+  score: 0
+  posted_at: '2026-11-04T18:59:14Z'
+- id: '50370170'
+  parent_id: '50369779'
+  author: NoDodgeQuestion
+  text: do not know at compile time that input is not marshalable, every language
+    marshal must return error for this reason, not only golang
+  score: 0
+  posted_at: '2026-11-04T19:13:06Z'
+- id: '50370186'
+  parent_id: '50369855'
+  author: thayne
+  text: It could be if go had a more powerful type system.
+  score: 0
+  posted_at: '2026-11-04T19:14:26Z'
+- id: '50370265'
+  parent_id: '50370186'
+  author: hnlmorg
+  text: This isn’t a type system problem. It’s a data origin problem. Ie it could
+    be any random JSON blob a user entered. The compiler doesn’t know this ahead of
+    time.<p>If you wanted type safety with JSON in Go then don’t use the marshal interface.
+    Period.
+  score: 0
+  posted_at: '2026-11-04T19:19:42Z'
+- id: '50370310'
+  parent_id: '50369853'
+  author: arccy
+  text: |-
+    <p><pre><code>    json.Marshal(v, jsontext.WithIndent(&quot;  &quot;))
+
+    ?</code></pre>
+  score: 0
+  posted_at: '2026-11-04T19:23:16Z'
+- id: '50370319'
+  parent_id: '50369779'
+  author: iaaan
+  text: It is trivial to ignore an error in Go if you know your use case cannot result
+    in one. But at the end of the day, json.Marshal takes an `any` as a parameter,
+    so it must return an error.
+  score: 0
+  posted_at: '2026-11-04T19:24:13Z'
+- id: '50370457'
+  parent_id: '50369779'
+  author: sgsjchs
+  text: Types may be mostly marshallabble, have a subset of values that are unmarshallable.
+    E.g. non-finite floats.
+  score: 0
+  posted_at: '2026-11-04T19:36:21Z'
+- id: '50370463'
+  parent_id: '50369106'
+  author: modulovalue
+  text: I&#x27;m working on better SIMD support in Dart and one of the motivations
+    for that work is specializing parser specifications based on schema specifications
+    of that language.<p>Or more concretely, if we had a parser generator + json parser
+    specification that can generate efficient simdjson style parsers, then we should
+    be able to parse json restricted to a subset of json based on a schema at least
+    as efficiently as simdjson can parse general purpose json.<p>That way we could
+    have the best of both worlds, a (potentially lazy) statically type-safe model
+    and simdjson performance!<p>I still think that this is definitely doable, it&#x27;s
+    just that a lot of infrastructure needs to be built for it.<p>I remember reading
+    that Meta is doing something similar with binary formats. I find it weird that
+    there&#x27;s nothing like that for json yet.
+  score: 0
+  posted_at: '2026-11-04T19:37:08Z'
+- id: '50370471'
+  parent_id: '50369779'
+  author: lolpanda
+  text: i meant i hoped it&#x27;s panic as opposed to return an error. if there was
+    an error, how am i supposed to handle it? can i tell the user hey sorry my bad
+    it&#x27;s likely a code error? crash is better than possible eating the error
+    siliently
+  score: 0
+  posted_at: '2026-11-04T19:37:47Z'
+- id: '50370480'
+  parent_id: '50369779'
+  author: '0x696C6961'
+  text: Then write yourself a MustMarshal wrapper that panics.
+  score: 0
+  posted_at: '2026-11-04T19:38:48Z'
+- id: '50370500'
+  parent_id: '50369106'
+  author: asim
+  text: At this stage to me Go is the new C compiler. Quite honestly I spent 10 years
+    or more writing Go code. At times 18 hours a day. And now with AI, I get models
+    to write my Go code. I STILL want it to be Go code. Is that strange? No because
+    I understand the performance and safety of Go. But I rarely write it directly
+    anymore. Probably not at all in 6-9 months. Yet I still occasionally look at the
+    code to see what the output looks like.<p>So yea hopefully a nice new addition
+    but only my prompts now matter. So need to make sure they pickup on the new API.
+  score: 0
+  posted_at: '2026-11-04T19:40:24Z'
+- id: '50370505'
+  parent_id: '50369106'
+  author: dofm
+  text: I… think this is good?<p>I&#x27;m just getting the neuron-band back together
+    where Golang is concerned. I have done some in the past for little system tasks,
+    but I am switching away from interpreted languages entirely for web stuff, and
+    initially to Go, as I switch away from hand-coding to at least LLM-supported coding.<p>So
+    I am a bit out of date on the pain points (I never really felt pain points when
+    I last used it, because the jobs I was doing had very small, quite Go-friendly
+    shapes).
+  score: 0
+  posted_at: '2026-11-04T19:41:07Z'
+- id: '50370511'
+  parent_id: '50370480'
+  author: jeremyloy_wt
+  text: A generic Must[T] you mean ;)
+  score: 0
+  posted_at: '2026-11-04T19:41:22Z'
+- id: '50370517'
+  parent_id: '50370500'
+  author: dofm
+  text: This is mostly why I have come back to Go.<p>I am using local LLMs and Go
+    has a bunch of strengths where smaller contexts are concerned; less complicated
+    flow of control being one of them.
+  score: 0
+  posted_at: '2026-11-04T19:42:02Z'
+- id: '50370539'
+  parent_id: '50369779'
+  author: duskwuff
+  text: "&gt; why does marshal return an error? the only reason the marshal can return
+    an error is that the input type is not marshalable<p>Not necessarily. Among other
+    things, MarshalJSON methods called during marshaling can return an error for whatever
+    reason the developer sees fit - one possibility that comes to mind is that part
+    of the object tree being marshalled is lazily loaded, and failed to do so.<p>And,
+    as others have mentioned, there are types like &quot;any&quot; whose marshalability
+    can&#x27;t be determined at compile time. Those types aren&#x27;t necessarily
+    at the top level, either; they could appear anywhere in the object tree."
+  score: 0
+  posted_at: '2026-11-04T19:44:26Z'
+- id: '50370605'
+  parent_id: '50370463'
+  author: lightandlight
+  text: This approach is called &quot;staged parsing&quot;:<p><a href="https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;pdf&#x2F;10.1145&#x2F;2714064.2660241"
+    rel="nofollow">https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;pdf&#x2F;10.1145&#x2F;2714064.2660241</a><p><a
+    href="https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;pdf&#x2F;10.1145&#x2F;3314221.3314625"
+    rel="nofollow">https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;pdf&#x2F;10.1145&#x2F;3314221.3314625</a>
+  score: 0
+  posted_at: '2026-11-04T19:49:43Z'
+- id: '50370622'
+  parent_id: '50370265'
+  author: thayne
+  text: For unmarshalling, but the original complaint was about marshalling. And for
+    that the type system could help if the marshal API only allowed you to marshal
+    objects of types that supported marshalling.<p>And even for unmarshalling you
+    could get a compile time error if you try to unmarshall to a type that doesn&#x27;t
+    support it.
+  score: 0
+  posted_at: '2026-11-04T19:51:49Z'
+- id: '50370631'
+  parent_id: '50369106'
+  author: cbarrick
+  text: The fact that this took 6 years to land stood out to me.<p>I&#x27;m not entirely
+    surprised, and I&#x27;m glad the Go team is carefully considering their interfaces
+    before launching. But 6 years seems like a lot of work to land a JSON API.
+  score: 0
+  posted_at: '2026-11-04T19:52:42Z'
+- id: '50370735'
+  parent_id: '50369106'
+  author: troupo
+  text: "&gt; in any, out any<p>Completely unrelated: can anyone tell me why language
+    authors introduce in&#x2F;out&#x2F;inout function parameters (see also C#).<p>It
+    feels like this is some rather bad workaround for something that breaks assumptions
+    about parameters being passed into the function."
+  score: 0
+  posted_at: '2026-11-04T20:01:57Z'
+- id: '50370767'
+  parent_id: '50370631'
+  author: awesome_dude
+  text: Sometimes I wonder about Go&#x27;s velocity - generics (something that I still
+    haven&#x27;t used beyond the tutorials) took an age as well<p>JSON processing,
+    quite markedly, is renown in Go for being slow, so I don&#x27;t really understand
+    why it took so long
+  score: 0
+  posted_at: '2026-11-04T20:04:02Z'
+- id: '50370779'
+  parent_id: '50370622'
+  author: hnlmorg
+  text: I’d already addressed that when I said the marshal API is an interface that’s
+    meant to be reusable across generalise use cases. it can be used for a variety
+    of data formats and not just JSON.<p>Go has this concept baked into the language.
+    For example read and write interfaces so you can write data to an endpoint without
+    having to worry about whether it’s a file system object, TCP&#x2F;UDP socket,
+    gzip achieve, and a plethora of other options too.<p>It’s a nice convenience feature
+    and makes up considerably for the restrictions that the Go type system places.<p>And
+    if you need higher performance code, or compile time safety, or have any other
+    constraints that limit your ability to use these generalised interfaces, then
+    you can use different APIs from the Go standard library to achieve the same thing.<p>You
+    don’t need to call json.Marshal() if you don’t want to. It’s an option, but it’s
+    just one API into the JSON toolbox.
+  score: 0
+  posted_at: '2026-11-04T20:05:00Z'
+- id: '50370783'
+  parent_id: '50370463'
+  author: weitendorf
+  text: 'I was working on metaparsing earlier this year (specifically over grpc because
+    of its better support for types and better serialization format).<p>I think most
+    people who use JSON don&#x27;t want strong typing or to use schemas. If you do,
+    you just use a different serialization format: JSON is designed to be a generic,
+    human-readable way to basically represent any kind of data structure (since it
+    deserializes to JS objects). So everything about JSON is working against you if
+    you do try to enforce type&#x2F;schemas on it.<p>A grpc-like protocol with more
+    prescriptive type registries&#x2F;discovery (over the network) and better interop
+    with http (like grpc-gateway) would be the best approach IMO. Definitely not JSON
+    schema'
+  score: 0
+  posted_at: '2026-11-04T20:05:16Z'
+- id: '50370812'
+  parent_id: '50369106'
+  author: wiseowise
+  text: This is how you roll out features, C++. Congrats to Go team and users.
+  score: 0
+  posted_at: '2026-11-04T20:08:35Z'
+- id: '50370883'
+  parent_id: '50370767'
+  author: hnlmorg
+  text: I think in the case of JSON, it was “good enough”. People who found this to
+    be a problem would use one of the many 3rd party options.<p>I kind of like that
+    the standard library doesn’t move fast. It makes it easier to fit the ecosystem
+    into my head (unlike, for example, the JavaScript ecosystem where I find code
+    doesn’t survive 2 years before failing to compile).<p>But I do agree that slow
+    and steady produces its own problems. Your example of generics is a good one.
+    But think the example of Go modules is another, perhaps even better, example of
+    how sometimes the Go team really should have accelerated their efforts on.
+  score: 0
+  posted_at: '2026-11-04T20:14:31Z'
+- id: '50370890'
+  parent_id: '50370480'
+  author: hnlmorg
+  text: The GP is talking about compile time errors. You’re discussing exceptions,
+    which is still a runtime check
+  score: 0
+  posted_at: '2026-11-04T20:15:43Z'
+- id: '50370940'
+  parent_id: '50369779'
+  author: bicarbonato
+  text: AFAIK it&#x27;s mostly because of floats. JSON doesn&#x27;t support `NaN`
+    and `infinity` for example.<p>Because they are common types, makes sense to precautionary
+    have the error return.
+  score: 0
+  posted_at: '2026-11-04T20:20:43Z'
+- id: '50370964'
+  parent_id: '50370004'
+  author: irq-1
+  text: |-
+    <p><pre><code>    func WithIndent(indent string) Options
+    </code></pre>
+    <a href="https:&#x2F;&#x2F;pkg.go.dev&#x2F;encoding&#x2F;json&#x2F;jsontext#WithIndent" rel="nofollow">https:&#x2F;&#x2F;pkg.go.dev&#x2F;encoding&#x2F;json&#x2F;jsontext#WithIndent</a>
+  score: 0
+  posted_at: '2026-11-04T20:22:20Z'
+- id: '50370976'
+  parent_id: '50370517'
+  author: calvinmorrison
+  text: not a lot of overloading complexity, very verbose with a small total language
+    structure too helps.
+  score: 0
+  posted_at: '2026-11-04T20:23:05Z'
+- id: '50371017'
+  parent_id: '50370500'
+  author: citizenpaul
+  text: People are sleeping on Go as a LLM language of choice.  Everyone trying to
+    rewrite in rust which is fine and rust is fine.  However its compile times are
+    several orders of magnitude greater than Go.  You can have LLMs write and compile
+    20 apps in the time one rust app compiles.  I&#x27;ve got a Go personal project
+    that would take hours for rust to compile, I can&#x27;t imagine making the same
+    velocity in Rust.  Though I do see the workplace appeal of bringing back the xkcd
+    &quot;compiling&quot; meme.<p>However it kind of makes me feel like my professional
+    life was wasted and I don&#x27;t really know what kind of future I have.  One
+    of Go&#x27;s main points was you can pick it up in a weekend.  What career moat
+    do people like us have?
+  score: 0
+  posted_at: '2026-11-04T20:26:01Z'
+- id: '50371060'
+  parent_id: '50370767'
+  author: win311fwg
+  text: "<i>&gt; generics (something that I still haven&#x27;t used beyond the tutorials)
+    took an age as well</i><p>Only about a year from when the Haskell guys lent their
+    expertise in designing it and it landing in a release. That&#x27;s actually fairly
+    quick given that it was a pretty significant change under the hood and constrained
+    by only two releases annually.<p>The Go team was always clear that they didn&#x27;t
+    have the necessary capabilities internally, despite a lot of failed efforts trying
+    anyway, and were relying on the open source community to lend a hand. Unfortunately,
+    open source doesn&#x27;t mean open willingness to contribute. It turns out that
+    for all the experts on HN, posting &quot;go doesn&#x27;t have generics lol&quot;
+    was preferable to helping out."
+  score: 0
+  posted_at: '2026-11-04T20:28:34Z'
+- id: '50371174'
+  parent_id: '50370976'
+  author: dofm
+  text: Yes. It&#x27;s that thing — the fact that a language helps you read what a
+    single function does really easily, but in so doing makes the entire codebase
+    quite dense, is not optimal for us, but is good for them.<p>And the things that
+    we do to manage this, that are symbolic or based on visceral real-world analogy,
+    are good for us and bad for them.<p>Go is kind of in the middle, in the way that
+    many vaguely Wirth-like and CSP-like languages possibly are, I guess.
+  score: 0
+  posted_at: '2026-11-04T20:38:46Z'
+- id: '50371316'
+  parent_id: '50371017'
+  author: pjmlp
+  text: I would rather have LLM directly generate machine code, and best of all, macro
+    Assemblers are blazing fast for decades.
+  score: 0
+  posted_at: '2026-11-04T20:50:40Z'
+- id: '50371317'
+  parent_id: '50371060'
+  author: enneff
+  text: Haskell guys? Got a reference to this? That’s news to me.
+  score: 0
+  posted_at: '2026-11-04T20:50:41Z'
+- id: '50371323'
+  parent_id: '50370735'
+  author: duskwuff
+  text: "&quot;in&quot; and &quot;out&quot; are the names of the parameters, not qualifiers."
+  score: 0
+  posted_at: '2026-11-04T20:51:16Z'
+- id: '50371342'
+  parent_id: '50370500'
+  author: egnehots
+  text: |-
+    Truly the argument can be made either way.<p>If you code in Go, the code is more high level, prettier, simpler.<p>If you code in Rust, the code is more robust, efficient, faster.<p>Both are important for LLM,
+    why can&#x27;t we have a high level, simple language that is also robust, efficient and fast? =)
+  score: 0
+  posted_at: '2026-11-04T20:52:20Z'
+- id: '50371362'
+  parent_id: '50370500'
+  author: biztos
+  text: As I do more agentic coding, I am starting to feel strongly that I need to
+    set aside a project -- and time -- for strictly hand-coding, using AI (if at all)
+    only to explain things, never to write any code.<p>First, I like programming and
+    don&#x27;t want to stop doing it just because a machine can do it too. Second,
+    I&#x27;m pretty sure atrophied coding skills will make me worse at directing the
+    machines, thus worse at what seems to be &quot;the job&quot; these days.
+  score: 0
+  posted_at: '2026-11-04T20:54:00Z'
+- id: '50371368'
+  parent_id: '50371342'
+  author: TheChaplain
+  text: Goose?
+  score: 0
+  posted_at: '2026-11-04T20:54:21Z'
+- id: '50371415'
+  parent_id: '50370500'
+  author: jacobgold
+  text: I still prefer Go over the alternatives because I&#x27;m reviewing the code
+    carefully and trying to make it all look as good as if I&#x27;d written it very
+    carefully by hand.<p>The few times I&#x27;ve needed a language without a GC and
+    used Rust and C as target languages, I&#x27;ve reviewed the code less and enjoyed
+    it less.
+  score: 0
+  posted_at: '2026-11-04T20:57:51Z'
+- id: '50371489'
+  parent_id: '50371316'
+  author: bayindirh
+  text: You can&#x27;t PGO that code, though. Also, I&#x27;m not sure it can generate
+    architecture specific optimized (-march, -mtune) code as well.<p>Considering it
+    just pulls and remixes blocks, this is a very tall order for today&#x27;s LLMs,
+    and maybe a couple of generations as well.<p>Calling GCC&#x2F;clang at the back
+    and emitting ASM is both cheating and has no advantages whatsoever as well.
+  score: 0
+  posted_at: '2026-11-04T21:03:35Z'
+- id: '50371506'
+  parent_id: '50371342'
+  author: andriy_koval
+  text: "&gt; Both are important for LLM, why can&#x27;t we have a high level, simple
+    language that is also robust, efficient and fast? =)<p>I think many variants from
+    Rust can be stripped to make it simple, especially in type system, which is way
+    more complicated than go."
+  score: 0
+  posted_at: '2026-11-04T21:05:11Z'
+- id: '50371540'
+  parent_id: '50370779'
+  author: thayne
+  text: First of all, the json2 Marshall API is json specific.<p>Secondly, other languages
+    like rust, haskell, scala, etc. Have json APIs that are typesafe and give you
+    compile time errors if you try to use a type that doesn&#x27;t support (de) serialization
+    . In the case of rust at least, the API is also general and can be used for other
+    data types as well.<p>Even in go, you could have some more type safety if Marshall
+    took an interface (such as MarshallerTo) rather than `any`. Although then you
+    have the problem of how you implement that interface. So I guess you probably
+    want some kind of &quot;derive&quot; functionality, or macros that can approximate
+    it for a convenient and type-safe API.<p>P.S. gophers like to talk about how explicit
+    being better than implicit, but using reflection for marshalling is <i>very</i>
+    implicit.
+  score: 0
+  posted_at: '2026-11-04T21:07:38Z'
+- id: '50371552'
+  parent_id: '50371362'
+  author: nonethewiser
+  text: "&gt;First, I like programming and don&#x27;t want to stop doing it just because
+    a machine can do it too. Second, I&#x27;m pretty sure atrophied coding skills
+    will make me worse at directing the machines, thus worse at what seems to be &quot;the
+    job&quot; these days.<p>In theory wouldn’t atrophied coding skills not matter
+    if models are sufficiently good at coding? I mean isn’t whats left just design
+    and architecture and testing?<p>Sure, if LLMs are producing shit code you need
+    to have an understanding of what it should do instead. But I think that day is
+    already gone.<p>Its hard to think of a skill that you’d need to build with an
+    LLM that requires writing meaningful amounts of code by oneself. From my end all
+    the complexity is business logic and system design."
+  score: 0
+  posted_at: '2026-11-04T21:09:07Z'
+- id: '50371560'
+  parent_id: '50370735'
+  author: CharlieDigital
+  text: C# `out` is kinda nice because it can be `var`d and used directly.
+  score: 0
+  posted_at: '2026-11-04T21:09:41Z'
+- id: '50371583'
+  parent_id: '50371317'
+  author: '0x696C6961'
+  text: I&#x27;m not sure about the haskell association, but search for &quot;Featherweight
+    Go&quot;
+  score: 0
+  posted_at: '2026-11-04T21:11:26Z'
+- id: '50371596'
+  parent_id: '50371506'
+  author: nonethewiser
+  text: I dont think we need simpler types for agentic coding though. We need compiler
+    speed. I guess those are probably related to some degree though.
+  score: 0
+  posted_at: '2026-11-04T21:12:29Z'
+- id: '50371653'
+  parent_id: '50371489'
+  author: pjmlp
+  text: That is fighting the last war on the early days of 5 GLs, and taken care by
+    agentic runtimes.<p>This isn&#x27;t futurology, besides a few projects that already
+    came up on Phoronix and around here, with Assembly generation, there are enough
+    SIGPLAN papers on ML driven compilers already.
+  score: 0
+  posted_at: '2026-11-04T21:16:37Z'
+- id: '50371672'
+  parent_id: '50371017'
+  author: simlevesque
+  text: My only issue with it is that you can&#x27;t ship a wasm go app in under 2mb.
+    With rust you can make it under 100kb.
+  score: 0
+  posted_at: '2026-11-04T21:17:43Z'
+- id: '50371745'
+  parent_id: '50369106'
+  author: SkiFire13
+  text: "&gt; nil slices and maps are marshaled as an empty JSON array or object by
+    default<p>I feel that is the kind of broken default that will come back and bite
+    a bunch of people, and will eventually need to be fixed in a v3."
+  score: 0
+  posted_at: '2026-11-04T21:22:36Z'
+- id: '50371778'
+  parent_id: '50371745'
+  author: devmor
+  text: Can you explain why? This seems like the appropriate expectation to me, given
+    how JSON is constructed and consumed.
+  score: 0
+  posted_at: '2026-11-04T21:24:29Z'
+- id: '50371803'
+  parent_id: '50371552'
+  author: xgulfie
+  text: "&gt; In theory wouldn’t atrophied coding skills not matter if models are
+    sufficiently good at coding?<p>I am begging HN users to understand that some people
+    enjoy writing software themselves"
+  score: 0
+  posted_at: '2026-11-04T21:26:39Z'
+- id: '50371845'
+  parent_id: '50371745'
+  author: travisd
+  text: |-
+    I think it&#x27;ll bite some people, but probably is the better default for JSON specifically. Most of the nil-maps-become-null thing is just an extension of Go defaulting to nil for empty arrays and maps, which is usually not what you expect when you&#x27;re writing a JSON schema like<p><pre><code>    type ListUsersResponse struct {
+            Users []User `json:&quot;users&quot;`
+        }
+    </code></pre>
+    in Go. It&#x27;s pretty common have code like<p><pre><code>    userRows := db.Query(...)
+        var users []api.User
+        for _, user := range userRows {
+            users = append(users, api.User{...})
+        }
+    </code></pre>
+    where you don&#x27;t _really_ intend for the default nil-ness to leak out. (Apologies for any broken syntax, I&#x27;m realizing in real time that it&#x27;s been a while since I&#x27;ve written Go)
+  score: 0
+  posted_at: '2026-11-04T21:30:32Z'
+- id: '50371862'
+  parent_id: '50369106'
+  author: slopnt
+  text: Now guess what will happen when they add monadic error handling. Yes, correct,
+    there will be another JSON Go API
+  score: 0
+  posted_at: '2026-11-04T21:32:05Z'
+- id: '50371898'
+  parent_id: '50370735'
+  author: hxtk
+  text: In Go, it’s a question of who owns the allocation. If you return a pointer
+    type allocated within the function, the answer is “no one,” so the pointer escapes
+    and has to be managed by the garbage collector.<p>If the allocation is owned by
+    the calling function which uses it internally and then doesn’t return it, it can
+    be a stack variable. Or the same allocation can be reused many times in a loop.
+    Or an array of allocations can be made all at once with foreknowledge of the total
+    number.
+  score: 0
+  posted_at: '2026-11-04T21:36:02Z'
+- id: '50371995'
+  parent_id: '50369106'
+  author: brunoborges
+  text: "&gt; &quot;JavaScript Object Notation (JSON) is a simple data interchange
+    format [...]&quot;<p>Clearly it isn&#x27;t, otherwise every language would have
+    sorted it out by... a long time ago."
+  score: 0
+  posted_at: '2026-11-04T21:45:22Z'
+- id: '50371997'
+  parent_id: '50370783'
+  author: thayne
+  text: "&gt; I think most people who use JSON don&#x27;t want strong typing or to
+    use schemas.<p>Not necessarily. It&#x27;s biggest advantage is probably that it
+    has very good interoperability. Basically every language has a readily accessible
+    library for json, and even if you don&#x27;t, it isn&#x27;t that hard to write
+    a parser and&#x2F;or generator for it. And being human readable isn&#x27;t something
+    to sneeze at either."
+  score: 0
+  posted_at: '2026-11-04T21:45:45Z'
+- id: '50372017'
+  parent_id: '50371362'
+  author: nilamo
+  text: I haven&#x27;t actually tried it yet, but I think it&#x27;d be good to write
+    a dsl for whatever you&#x27;re doing. Then have ai make an interpreter to run
+    it. Sort of as a way to stay... interested? Engaged?
+  score: 0
+  posted_at: '2026-11-04T21:47:13Z'
+- id: '50372022'
+  parent_id: '50371583'
+  author: enneff
+  text: Thanks for the pointer. The reference makes sense now, as Philip Wadler is
+    a coauthor of that paper.
+  score: 0
+  posted_at: '2026-11-04T21:47:47Z'
+- id: '50372050'
+  parent_id: '50371596'
+  author: andriy_koval
+  text: It depends if you are full vibe-coding mode or still try to understand your
+    codebase.<p>LLM can generate very cryptic rust code.
+  score: 0
+  posted_at: '2026-11-04T21:50:31Z'
+- id: '50372103'
+  parent_id: '50369106'
+  author: gosen
+  text: |-
+    wohoo, good news indeed
+    better later than never :D as an active Golong user I&#x27;m very happy
+  score: 0
+  posted_at: '2026-11-04T21:55:34Z'
+- id: '50372133'
+  parent_id: '50371552'
+  author: swatcoder
+  text: If it helps, imagine they were talking about something like drawing or painting
+    or stitching or sculpting instead of coding.<p>You don&#x27;t expect everyone
+    to stop wanting to do those just because they can be automated more or less effectively,
+    right?
+  score: 0
+  posted_at: '2026-11-04T21:59:01Z'
+- id: '50372154'
+  parent_id: '50371342'
+  author: jimbob45
+  text: If I want simplicity and maintainability, I’d pick Kotlin over Go. If I want
+    speed, I’m picking Rust over Go. Why would I ever pick Go? It’s the best at nothing.
+  score: 0
+  posted_at: '2026-11-04T22:00:25Z'
+- id: '50372195'
+  parent_id: '50372133'
+  author: nonethewiser
+  text: "&gt; You don&#x27;t expect everyone to stop wanting to do those just because
+    they can be automated more or less effectively, right?<p>Please reread my comment
+    and the one im replying to. That’s not what I’m addressing."
+  score: 0
+  posted_at: '2026-11-04T22:06:12Z'
+- id: '50372205'
+  parent_id: '50371803'
+  author: nonethewiser
+  text: Read my comment again. And the one I replied to. He claimed that his ability
+    to code through LLMs has decreased as his coding ability atrophied. That is what
+    im questioning. Im not questioning coding for the love of the game.
+  score: 0
+  posted_at: '2026-11-04T22:07:30Z'
+- id: '50372246'
+  parent_id: '50372154'
+  author: procaryote
+  text: What if you want a single language that&#x27;s pretty fast while simple and
+    maintainable?
+  score: 0
+  posted_at: '2026-11-04T22:12:23Z'
+- id: '50372279'
+  parent_id: '50371560'
+  author: troupo
+  text: Erm... what do you mean?
+  score: 0
+  posted_at: '2026-11-04T22:16:44Z'
+- id: '50372329'
+  parent_id: '50371995'
+  author: jayd16
+  text: Ok so nothing is simple then?
+  score: 0
+  posted_at: '2026-11-04T22:23:04Z'
+- id: '50372400'
+  parent_id: '50370883'
+  author: awesome_dude
+  text: lol, I don&#x27;t mean to be contrary, but I looked into dependency management
+    (partly because of the modules implementation, partly because of early teething
+    issues, and partly out of pure curiousity.<p>Dependency management is a freaking
+    nightmare, nobody has managed to create something that is bulletproof, not cargo,
+    npm, apt, yum, nix, homebrew, nothing.<p>The key issue is that you&#x27;re managing
+    3rd party software that may or may not adhere to the prescribed lifecycle&#x2F;versioning<p>The
+    Linux variants do it by each having dedicated teams watching upstream sources,
+    taking what they believe to be whatever they feel is right, building for their
+    nominated target(s), then testing, before deploying (on top of that, all of these
+    steps vary in importance and rigor depending on numerous variables)<p>For programming
+    libraries (which is what depmod, goose, vgo, and modules are managing) it&#x27;s
+    just as bad, if not harder, because their very nature is to provide a base upon
+    which other developers can turn into whatever their imagination.<p>Add to that,
+    modules was (initially) written by people who were dealing with a slightly different
+    ecosystem; Google rather famously has a monorepo, making their lives a little
+    easier when it comes to managing dependencies.<p>So, with those things in mind,
+    dependency management is always going to be a hard problem that is opinionated
+    (eg. I have a firm opinion that there should be an easier way to &quot;pin&quot;
+    a dependency, other than vendoring - note that this isn&#x27;t an invitation to
+    every junior Go developer to come and claim go.sum does that. It doesn&#x27;t.
+    go.sum is a log of what dependencies were used for the last build by whomever
+    wrote to it)
+  score: 0
+  posted_at: '2026-11-04T22:31:09Z'
+- id: '50372431'
+  parent_id: '50371552'
+  author: cyphar
+  text: "<i>&gt; In theory wouldn’t atrophied coding skills not matter if models are
+    sufficiently good at coding? I mean isn’t whats left just design and architecture
+    and testing?</i><p>No, because good understanding of design comes from programming
+    experience. Atrophied skills mean you lose touch with the actual nuts and bolts
+    of what you are building.<p>This is also the worst kind of lock-in you can imagine,
+    by outsourcing all of your understanding of a codebase and your skills you are
+    now completely at the mercy of LLM providers. Even if you switch to open weight
+    models you&#x27;re at the mercy of graphics cards producers and scalpers.<p><i>&gt;
+    Sure, if LLMs are producing shit code you need to have an understanding of what
+    it should do instead. But I think that day is already gone.</i><p>Maybe your standards
+    are too low. By my standard, they still produce shit code and require lots of
+    iterations to get reasonable designs (I often end up just rewriting the bits that
+    are obviously wrong rather than trying to figure out how to &quot;prompt engineer&quot;
+    the right output).<p>They do often produce <i>passable</i> code but my experience
+    is the longer you spend reading the code the more things you find wrong with it,
+    almost like an uncanny valley.<p>At least that&#x27;s my experience with Opus
+    and Fable. Maybe it&#x27;s too old-fashioned at this point to complain about code
+    quality, but I find it very strange how many people have started proclaiming that
+    their code quality is good."
+  score: 0
+  posted_at: '2026-11-04T22:34:35Z'
+- id: '50372436'
+  parent_id: '50370735'
+  author: ahmedtd
+  text: The parameters named &quot;out&quot; here are not &quot;output parameters&quot;
+    in the way you seem to be thinking.  They are &quot;input parameters&quot; named
+    &quot;out&quot;, because they are the buffer or pipe you want the data written
+    to.
+  score: 0
+  posted_at: '2026-11-04T22:34:57Z'
+- id: '50372493'
+  parent_id: '50370735'
+  author: jayd16
+  text: "`out` params in C# are params that must be set within the function.  They
+    are way to implement multiple return values and tell the caller &quot;this is
+    written to, not read from.&quot;<p>But you might be conflating that with in&#x2F;out
+    for Contra&#x2F;Co-variance when specifying a generic."
+  score: 0
+  posted_at: '2026-11-04T22:40:08Z'
+- id: '50372503'
+  parent_id: '50372246'
+  author: jimbob45
+  text: Then you pick C# which is both faster and simpler than Go.
+  score: 0
+  posted_at: '2026-11-04T22:41:59Z'
+- id: '50372538'
+  parent_id: '50369106'
+  author: txomon
+  text: I used the jsontext package at my company when we needed to make a parser
+    for challenging clients (specific errors for each kind of mistake) while still
+    keeping performance, and it works like a charm.<p>There is no introspection and
+    speed is superb. I would definitely recommend jsontext as a parser for anything
+    non-straightforward.
+  score: 0
+  posted_at: '2026-11-04T22:45:32Z'
+- id: '50372575'
+  parent_id: '50371995'
+  author: kccqzy
+  text: Some languages have a culture of doing things correctly and conforming <i>strictly</i>
+    to the spec. These languages have indeed sorted it out years ago. Haskell for
+    example. Any language that doesn’t have a special number type for JSON is a half-assed
+    implementation, because 1e1000 is a perfectly valid JSON number that is beyond
+    the typical IEEE754 double precision floating point numbers; does your language
+    handle that correctly? Haskell does. This is but a small example of a strong culture
+    bias towards correctness.
+  score: 0
+  posted_at: '2026-11-04T22:51:00Z'
+- id: '50372702'
+  parent_id: '50370767'
+  author: Philip-J-Fry
+  text: For like 99% of use cases encoding&#x2F;json was fine. Of course improvements
+    are welcomed. But personally I&#x27;ve lead development of the backend of part
+    one of the biggest sites of its kind in the world, and we just used encoding&#x2F;json
+    and net&#x2F;http. Most of our use cases are just building APIs, client facing
+    ones, internal ones, trusted third-parties. These systems have pretty high throughput,
+    more than most people will ever work on.<p>Within our company I saw people in
+    other teams writing their own optimised JSON libraries for whatever hellish reason.
+    I always reiterated the point that as soon as that app made a single IO request
+    all those nanosecond savings are invisible. Yes, it affects your total CPU time
+    for processing a request but compute was never ever a limitation for us and it&#x27;s
+    likely not a limitation for most people. And if the trade off is your app needs
+    scale slightly larger versus writing custom JSON code or pulling in a third party
+    dependency, then I&#x27;m accepting the larger scaling.<p>The biggest benefit
+    of encoding&#x2F;json&#x2F;v2 isn&#x27;t the speed, it&#x27;s the improved API.
+  score: 0
+  posted_at: '2026-11-04T23:06:06Z'
+- id: '50372741'
+  parent_id: '50372575'
+  author: ncruces
+  text: 'Ironically Go has(d) json.Number which almost no one used, so it got dropped
+    from v2: <a href="https:&#x2F;&#x2F;pkg.go.dev&#x2F;encoding&#x2F;json#Number"
+    rel="nofollow">https:&#x2F;&#x2F;pkg.go.dev&#x2F;encoding&#x2F;json#Number</a><p>You
+    can still use it though, and I built my tiny decimal library around it: <a href="https:&#x2F;&#x2F;github.com&#x2F;ncruces&#x2F;decimal"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ncruces&#x2F;decimal</a>'
+  score: 0
+  posted_at: '2026-11-04T23:09:49Z'
+- id: '50372863'
+  parent_id: '50372575'
+  author: layer8
+  text: The spec (RFC 8259) leaves significant leeway to implementations:<p><i>A JSON
+    parser MAY accept non-JSON forms or extensions.<p>An implementation may set limits
+    on the size of texts that it accepts.  An implementation may set limits on the
+    maximum depth of nesting.  An implementation may set limits on the range and precision
+    of numbers.  An implementation may set limits on the length and character contents
+    of strings.</i><p>Add to that things like duplicate keys being allowed by the
+    spec. There’s a lot of implementation choices to decide on.<p>And then things
+    can get really complex with JSON Schema.
+  score: 0
+  posted_at: '2026-11-04T23:24:56Z'
+- id: '50372973'
+  parent_id: '50369106'
+  author: hoppp
+  text: I like it. I never really liked marshalling anyways, It was weird.<p>I&#x27;m
+    happy it&#x27;s getting fixed!
+  score: 0
+  posted_at: '2026-11-04T23:39:27Z'
+- id: '50372978'
+  parent_id: '50369106'
+  author: 0xmattclark
+  text: I think I can build a new web tools serving for this new API
+  score: 0
+  posted_at: '2026-11-04T23:39:42Z'
+- id: '50372999'
+  parent_id: '50372431'
+  author: nonethewiser
+  text: "&gt;No, because good understanding of design comes from programming experience.<p>“Programming”
+    is a bit loaded. Do you mean thinking through and typing everything out yourself?<p>What
+    design skills specifically can you only develop from continually programming in
+    this way? I fully grant that you need to know how to code yourself to build things
+    with models but what specific ability to use models atrophies alongside your no
+    AI coding abilities?<p>Personally I’ve found the opposite to be true. As writing
+    out code myself has shrank to nearly 0, I now do way more designing. There is
+    a much shorter feedback loop on design now. You get a lot better at design when
+    thats basically all you are doing, and seeing feedback on your design in minutes
+    rather than weeks or even months."
+  score: 0
+  posted_at: '2026-11-04T23:42:31Z'
+- id: '50373043'
+  parent_id: '50370500'
+  author: da02
+  text: Which are your favorite models for writing Go?  Any models for editing&#x2F;improving
+    written documentation?
+  score: 0
+  posted_at: '2026-11-04T23:48:23Z'
+- id: '50373044'
+  parent_id: '50370622'
+  author: awesome_dude
+  text: I&#x27;m confused by this - you&#x27;re saying that a &quot;type system&quot;
+    would address this, even though there are two (incompatible) type systems at play
+    here - Go&#x27;s and JSON&#x27;s<p>Compile time cannot check for runtime values
+    (not even in Rust) - is your position that fields can only be populated at compile
+    time?
+  score: 0
+  posted_at: '2026-11-04T23:48:31Z'
+- id: '50373131'
+  parent_id: '50371995'
+  author: yubblegum
+  text: 'Meet the &quot;<i>Simple</i> Object Access Protocol&quot;: <a href="https:&#x2F;&#x2F;www.w3.org&#x2F;TR&#x2F;2000&#x2F;NOTE-SOAP-20000508&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.w3.org&#x2F;TR&#x2F;2000&#x2F;NOTE-SOAP-20000508&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-04T23:59:58Z'
+- id: '50373146'
+  parent_id: '50370500'
+  author: hoppp
+  text: Go is lovely. Best language to generate backend services with.
+  score: 0
+  posted_at: '2026-11-05T00:01:11Z'
+- id: '50373182'
+  parent_id: '50371995'
+  author: ivanjermakov
+  text: Simple data format does not imply that API to work with it is easy to get
+    right.
+  score: 0
+  posted_at: '2026-11-05T00:05:18Z'
+- id: '50373482'
+  parent_id: '50371342'
+  author: rTX5CMRXIfFG
+  text: Swift
+  score: 0
+  posted_at: '2026-11-05T00:40:55Z'
+- id: '50373491'
+  parent_id: '50372863'
+  author: kccqzy
+  text: Yeah that’s what I mean by strictly. Does your implementation take shortcuts
+    or does it hold itself to a higher standard and not do that? Does it only use
+    available memory as the ultimate limit?<p>A lot of specs contain these optional
+    limitations. The C standard allowed implementations to truncate variable names
+    to 31 characters if they have external linkage and 63 if internal linkage. Would
+    you be happy if your implementation actually does that? Of course not. Neither
+    LLVM nor GCC does that. That’s because people writing compilers also hold themselves
+    to a higher standard. Now imagine this kind of attitude being pervasive.
+  score: 0
+  posted_at: '2026-11-05T00:42:04Z'
+- id: '50373563'
+  parent_id: '50372503'
+  author: metaltyphoon
+  text: I like C# but simpler? I don’t believe so.
+  score: 0
+  posted_at: '2026-11-05T00:48:52Z'
+- id: '50373600'
+  parent_id: '50372493'
+  author: metaltyphoon
+  text: "&gt; They are way to implement multiple return values<p>They are one way
+    to implement multiple return values. For multiple returns, tuples can be used.
+    In fact, async methods can’t declare out params"
+  score: 0
+  posted_at: '2026-11-05T00:54:30Z'
+- id: '50373617'
+  parent_id: '50372279'
+  author: metaltyphoon
+  text: "<p><pre><code>  if (int.TryParse(str, out var value) &amp;&amp; value ==
+    5)\n  {\n      &#x2F;&#x2F; value is available \n  }\n\n   &#x2F;&#x2F; value
+    also available</code></pre>"
+  score: 0
+  posted_at: '2026-11-05T00:56:34Z'
+article:
+  url: https://go.dev/blog/jsonv2
+  title: A new Go API for JSON - The Go Programming Language
+  fetch_status: success
+  content: "# [The Go Blog](/blog/)\n\n# A new Go API for JSON\n\nMichael Pratt, Joe
+    Tsai, Daniel Martí, Johan Brandhorst-Satzkorn, Roger Peppe, Chris Hines, and Damien
+    Neil  \n 4 November 2026\n\n## Introduction\n\n[JavaScript Object Notation (JSON)](https://datatracker.ietf.org/doc/html/rfc8259)
+    is a simple data interchange format, the most popular data format used on the
+    internet, and widely read and written by Go programs. Go has included support
+    for JSON in the standard library since well before Go 1.0. We first we wrote about
+    [support for JSON in Go](/blog/json) more than 15 years ago!\n\nOver time, packages
+    evolve with the needs of their users, and `encoding/json` is no exception. Last
+    year, we wrote about a [new experimental API for JSON](/blog/jsonv2-exp) designed
+    to bring long-awaited improvements and fixes.\n\nAfter additional feedback and
+    refinement, the new `encoding/json/v2` and `encoding/json/jsontext` packages are
+    stable and generally available in Go 1.27! This post is an updated version of
+    the [article introducing the experiment](/blog/jsonv2-exp), describing the problems
+    with `encoding/json`, and an introduction to the new packages.\n\n## Problems
+    with `encoding/json`\n\nOverall, `encoding/json` has held up well. The idea of
+    marshaling and unmarshaling arbitrary Go types with some default representation
+    in JSON, combined with the ability to customize the representation, has proven
+    to be highly flexible. However, in the years since its introduction, various users
+    have identified numerous shortcomings.\n\n### Behavior flaws\n\nThere are various
+    behavioral flaws in `encoding/json`:\n\n- **Imprecise handling of JSON syntax**
+    : Over the years, JSON has seen increased standardization in order for programs
+    to properly communicate. Generally, decoders have become stricter at rejecting
+    ambiguous inputs, to reduce the chance that two implementations will have different
+    (successful) interpretations of a particular JSON value.\n\n- **Leaking nilness
+    of slices and maps** : JSON is often used to communicate with programs using JSON
+    implementations that do not allow `null` to be unmarshaled into a data type expected
+    to be a JSON array or object. Since `encoding/json` marshals a nil slice or map
+    as a JSON `null`, this may lead to errors when unmarshaling by other implementations.[A
+    survey](/issue/63397#discussioncomment-7201222)indicated that most Go users prefer
+    that nil slices and maps are marshaled as an empty JSON array or object by default.\n\n-
+    **Case-insensitive unmarshaling** : When unmarshaling, a JSON object member name
+    is resolved to a Go struct field name using a case-insensitive match. This is
+    a surprising default, a potential security vulnerability, and a performance limitation.\n\n-
+    **Inconsistent calling of methods** : Due to an implementation detail,`MarshalJSON`
+    methods declared on a pointer receiver are [inconsistently called by `encoding/json`](/issue/22967).
+    While regarded as a bug, this cannot be fixed as too many applications depend
+    on the current behavior.\n\n### API deficiencies\n\nThe API of `encoding/json`
+    can be tricky or restrictive:\n\n- It is difficult to correctly unmarshal from
+    an `io.Reader`. Users often write `json.NewDecoder(r).Decode(v)`, which fails
+    to reject trailing junk at the end of the input.\n\n- Options can be set on the
+    `Encoder` and `Decoder` types, but cannot be used with the `Marshal` and `Unmarshal`
+    functions. Similarly, types implementing the `Marshaler` and `Unmarshaler` interfaces
+    cannot make use of the options and there is no way to plumb options down the call
+    stack. For example, the `Decoder.DisallowUnknownFields` option loses its effect
+    when calling a custom `UnmarshalJSON` method.\n\n- The `Compact`, `Indent`, and
+    `HTMLEscape` functions write to a `bytes.Buffer`instead of something more flexible
+    like a `[]byte` or `io.Writer`. This limits the usability of those functions.\n\n###
+    Performance limitations\n\nSetting aside internal implementation details, the
+    public API commits it to certain performance limitations:\n\n- **MarshalJSON**
+    : The `MarshalJSON` interface method forces the implementation to allocate the
+    returned `[]byte`. Also, the semantics require that`encoding/json` verify that
+    the result is valid JSON and also to reformat it to match the specified indentation.\n\n-
+    **UnmarshalJSON** : The `UnmarshalJSON` interface method requires that a complete
+    JSON value be provided (without any trailing data). This forces `encoding/json`
+    to parse the JSON value to be unmarshaled in its entirety to determine where it
+    ends before it can call `UnmarshalJSON`. Afterwards, the `UnmarshalJSON` method
+    itself must parse the provided JSON value again.\n\n- **Lack of streaming** :
+    Even though the `Encoder` and `Decoder` types operate on an `io.Writer` or `io.Reader`,
+    they buffer the entire JSON value in memory. The `Decoder.Token` method for reading
+    individual tokens is allocation-heavy and there is no corresponding API for writing
+    tokens.\n\nFurthermore, if the implementation of a `MarshalJSON` or `UnmarshalJSON`
+    method recursively calls the `Marshal` or `Unmarshal` function, then the performance
+    becomes quadratic.\n\n## Trying to fix `encoding/json` directly\n\nIntroducing
+    a new, incompatible major version of a package is a heavy consideration. If possible,
+    we should try to fix the existing package.\n\nWhile it is relatively easy to add
+    new features, it is difficult to change existing features. Unfortunately, these
+    problems are inherent consequences of the existing API, making them practically
+    impossible to fix within the [Go 1 compatibility promise](/doc/go1compat).\n\nWe
+    could in principle declare separate names, such as `MarshalV2` or `UnmarshalV2`,
+    but that is tantamount to creating a parallel namespace within the same package.
+    This leads us to `encoding/json/v2` (henceforth called `v2`), where we can make
+    these changes within a separate `v2` namespace in contrast to `encoding/json`
+    (henceforth called `v1`).\n\n## Building on `encoding/json/jsontext`\n\nBefore
+    discussing the `v2` API, we first introduce the[`encoding/json/jsontext`](/pkg/encoding/json/jsontext)
+    package that lays the foundation for improvements to JSON in Go.\n\nJSON serialization
+    in Go can be broken down into two primary components:\n\n- _syntactic functionality_
+    that is concerned with processing JSON based on its grammar, and\n- _semantic
+    functionality_ that defines the relationship between JSON values and Go values.\n\nWe
+    use the terms “encode” and “decode” to describe syntactic functionality and the
+    terms “marshal” and “unmarshal” to describe semantic functionality. We aim to
+    provide a clear distinction between functionality that is purely concerned with
+    encoding versus that of marshaling.\n\n ![](jsonv2/api.png)\n\nThis diagram provides
+    an overview of this separation. Purple blocks represent types, while blue blocks
+    represent functions or methods. The direction of the arrows approximately represents
+    the flow of data. The bottom half of the diagram, implemented by the `jsontext`
+    package, contains functionality that is only concerned with syntax, while the
+    upper half, implemented by the `json/v2` package, contains functionality that
+    assigns semantic meaning to syntactic data handled by the bottom half.\n\nThe
+    basic API of `jsontext` is the following:\n\n    package jsontext\n    \n    type
+    Encoder struct { ... }\n    func NewEncoder(io.Writer, ...Options) *Encoder\n
+    \   func (*Encoder) WriteValue(Value) error\n    func (*Encoder) WriteToken(Token)
+    error\n    \n    type Decoder struct { ... }\n    func NewDecoder(io.Reader, ...Options)
+    *Decoder\n    func (*Decoder) ReadValue() (Value, error)\n    func (*Decoder)
+    ReadToken() (Token, error)\n    \n    type Kind byte\n    type Value []byte\n
+    \   func (Value) Kind() Kind\n    type Token struct { ... }\n    func (Token)
+    Kind() Kind\n\nThe `jsontext` package provides functionality for interacting with
+    JSON at a syntactic level and derives its name from[RFC 8259, section 2](https://datatracker.ietf.org/doc/html/rfc8259#section-2)where
+    the grammar for JSON data is literally called `JSON-text`. S"
+  error:
+  fetched_at: '2026-11-05T01:21:17Z'
+archived_at: '2026-11-05T01:21:23Z'
