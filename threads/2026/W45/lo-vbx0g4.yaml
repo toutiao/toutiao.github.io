@@ -5,14 +5,14 @@ post:
   title: A Look at Datastar
   url: https://noteflakes.com/articles/2026-11-04-datastar
   hn_url: https://lobste.rs/s/vbx0g4
-  score: 21
+  score: 22
   author: noteflakes
   posted_at: '2026-11-05T10:44:57Z'
-  fetched_at: '2026-11-06T10:29:14Z'
+  fetched_at: '2026-11-06T19:00:21Z'
   article_url: https://noteflakes.com/articles/2026-11-04-datastar
   article_fetch_status: success
-  article_fetched_at: '2026-11-06T10:29:18Z'
-  raw_comment_count: 8
+  article_fetched_at: '2026-11-06T19:00:24Z'
+  raw_comment_count: 9
   tags:
   - ruby
   - web
@@ -24,7 +24,7 @@ comments:
     experience. using claude but also paying close attention to the generated code,
     and it's been fine, for people who are still worried that LLMs have trouble straying
     off the react path.
-  score: 3
+  score: 4
   posted_at: '2026-11-05T19:20:26Z'
 - id: lo-jeuoys
   parent_id: '0'
@@ -33,7 +33,7 @@ comments:
     I struggle a bit with the datastar philosophy compare to htmx. A stream of DOM patches seems like you're writing jquery, just on your server instead of in the browser.
     I suppose that because it lets you get rid of most of your JS, you have less state machines to worry about. But at one point you start getting into "client's page state is unknown, so how do I recover" territory.
     HTMX's kinda-sorta-declarative flow makes a lot more sense to me. Obviously both libs can exist and have their stronger points (like I think datastar's model works way better for "reactive stream of events" models).
-  score: 3
+  score: 4
   posted_at: '2026-11-06T01:34:19Z'
 - id: lo-8fpbvs
   parent_id: '0'
@@ -102,8 +102,20 @@ comments:
     Architecting our app as an SPA may help us achieve this goal of persisting client state, at the possible cost of not being able to correctly handle navigation history.
 
     Please don't break navigation. It's not your browser, it belongs to the user.
-  score: 2
+  score: 6
   posted_at: '2026-11-06T09:38:01Z'
+- id: lo-xqegx4
+  parent_id: '0'
+  author: andersmurphy
+  text: |-
+    What happens when that template changes? What happens when that template is removed from the view etc. That all needs to be tracked, if it's not diffing it's dirty tracking.
+    As for shared caching it's server side and simple enough. You have a tinyLFU cache keyed on the backend/component/template + arguments (the bits that change), values are html fragments stored as bytes. That cache can be shared across all users and turns any shared component between users and or frames into cheap byte concatenation. There's no invalidation as the cache is effectively content addressed. It can also nest recursively. tinyLFU admission policy prevents cache thrash by high churn items.
+    I cover it a bit more in this post (though it's been refined a bit since):
+    https://andersmurphy.com/2026/09/29/faster-streaming-html-with-batches-and-aggregates.html
+    The win is mostly ergonomics. You get to write your views as simple v = f(state) and it's immediate mode rendering + compression. There's no state other than the compressors context window. Missed events etc don't matter, because you always get the whole next frame, which also opens up simple batching of writes and reads (which is the real performance win).
+    The irony of the talk you linked, is sending the whole frame on every change can be viable without the complexity of LiveView. He gave up on immediate mode too soon. Streaming compression over SSE (brotli/zstd) and batching (you don't even need the shared cache) get's you there (cheap on the server and network).
+  score: 1
+  posted_at: '2026-11-06T11:48:15Z'
 article:
   url: https://noteflakes.com/articles/2026-11-04-datastar
   title: A Look at Datastar - Noteflakes
@@ -205,4 +217,4 @@ article:
     which may make it harder to integr"
   error:
   fetched_at: '2026-11-05T19:38:18Z'
-archived_at: '2026-11-06T10:29:18Z'
+archived_at: '2026-11-06T19:00:25Z'

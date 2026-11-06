@@ -1,0 +1,125 @@
+---
+post:
+  id: lo-o0e2wj
+  source: lobsters
+  title: A Quick Guide to Go's Assembler
+  url: https://go.dev/doc/asm
+  hn_url: https://lobste.rs/s/o0e2wj
+  score: 10
+  author: juliethefoxcoon
+  posted_at: '2026-11-05T22:07:32Z'
+  fetched_at: '2026-11-06T19:00:21Z'
+  article_url: https://go.dev/doc/asm
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T19:00:26Z'
+  raw_comment_count: 0
+  tags:
+  - assembly
+  - compilers
+  - go
+comments: []
+article:
+  url: https://go.dev/doc/asm
+  title: A Quick Guide to Go's Assembler - The Go Programming Language
+  fetch_status: success
+  content: "# A Quick Guide to Go's Assembler\n\n## A Quick Guide to Go's Assembler\n\nThis
+    document is a quick outline of the unusual form of assembly language used by the
+    `gc` Go compiler. The document is not comprehensive.\n\nThe assembler is based
+    on the input style of the Plan 9 assemblers, which is documented in detail[elsewhere](https://9p.io/sys/doc/asm.html).
+    If you plan to write assembly language, you should read that document although
+    much of it is Plan 9-specific. The current document provides a summary of the
+    syntax and the differences with what is explained in that document, and describes
+    the peculiarities that apply when writing assembly code to interact with Go.\n\nThe
+    most important thing to know about Go's assembler is that it is not a direct representation
+    of the underlying machine. Some of the details map precisely to the machine, but
+    some do not. This is because the compiler suite (see[this description](https://9p.io/sys/doc/compiler.html))
+    needs no assembler pass in the usual pipeline. Instead, the compiler operates
+    on a kind of semi-abstract instruction set, and instruction selection occurs partly
+    after code generation. The assembler works on the semi-abstract form, so when
+    you see an instruction like `MOV`what the toolchain actually generates for that
+    operation might not be a move instruction at all, perhaps a clear or load. Or
+    it might correspond exactly to the machine instruction with that name. In general,
+    machine-specific operations tend to appear as themselves, while more general concepts
+    like memory move and subroutine call and return are more abstract. The details
+    vary with architecture, and we apologize for the imprecision; the situation is
+    not well-defined.\n\nThe assembler program is a way to parse a description of
+    that semi-abstract instruction set and turn it into instructions to be input to
+    the linker. If you want to see what the instructions look like in assembly for
+    a given architecture, say amd64, there are many examples in the sources of the
+    standard library, in packages such as[`runtime`](/pkg/runtime/) and[`math/big`](/pkg/math/big/).
+    You can also examine what the compiler emits as assembly code (the actual output
+    may differ from what you see here):\n\n    $ cat x.go\n    package main\n    \n
+    \   func main() {\n    \tprintln(3)\n    }\n    $ GOOS=linux GOARCH=amd64 go tool
+    compile -S x.go # or: go build -gcflags -S x.go\n    \"\".main STEXT size=74 args=0x0
+    locals=0x10\n    \t0x0000 00000 (x.go:3)\tTEXT\t\"\".main(SB), $16-0\n    \t0x0000
+    00000 (x.go:3)\tMOVQ\t(TLS), CX\n    \t0x0009 00009 (x.go:3)\tCMPQ\tSP, 16(CX)\n
+    \   \t0x000d 00013 (x.go:3)\tJLS\t67\n    \t0x000f 00015 (x.go:3)\tSUBQ\t$16,
+    SP\n    \t0x0013 00019 (x.go:3)\tMOVQ\tBP, 8(SP)\n    \t0x0018 00024 (x.go:3)\tLEAQ\t8(SP),
+    BP\n    \t0x001d 00029 (x.go:3)\tFUNCDATA\t$0, gclocals·33cdeccccebe80329f1fdbee7f5874cb(SB)\n
+    \   \t0x001d 00029 (x.go:3)\tFUNCDATA\t$1, gclocals·33cdeccccebe80329f1fdbee7f5874cb(SB)\n
+    \   \t0x001d 00029 (x.go:3)\tFUNCDATA\t$2, gclocals·33cdeccccebe80329f1fdbee7f5874cb(SB)\n
+    \   \t0x001d 00029 (x.go:4)\tPCDATA\t$0, $0\n    \t0x001d 00029 (x.go:4)\tPCDATA\t$1,
+    $0\n    \t0x001d 00029 (x.go:4)\tCALL\truntime.printlock(SB)\n    \t0x0022 00034
+    (x.go:4)\tMOVQ\t$3, (SP)\n    \t0x002a 00042 (x.go:4)\tCALL\truntime.printint(SB)\n
+    \   \t0x002f 00047 (x.go:4)\tCALL\truntime.printnl(SB)\n    \t0x0034 00052 (x.go:4)\tCALL\truntime.printunlock(SB)\n
+    \   \t0x0039 00057 (x.go:5)\tMOVQ\t8(SP), BP\n    \t0x003e 00062 (x.go:5)\tADDQ\t$16,
+    SP\n    \t0x0042 00066 (x.go:5)\tRET\n    \t0x0043 00067 (x.go:5)\tNOP\n    \t0x0043
+    00067 (x.go:3)\tPCDATA\t$1, $-1\n    \t0x0043 00067 (x.go:3)\tPCDATA\t$0, $-1\n
+    \   \t0x0043 00067 (x.go:3)\tCALL\truntime.morestack_noctxt(SB)\n    \t0x0048
+    00072 (x.go:3)\tJMP\t0\n    ...\n\nThe `FUNCDATA` and `PCDATA` directives contain
+    information for use by the garbage collector; they are introduced by the compiler.\n\nTo
+    see what gets put in the binary after linking, use `go tool objdump`:\n\n    $
+    go build -o x.exe x.go\n    $ go tool objdump -s main.main x.exe\n    TEXT main.main(SB)
+    /tmp/x.go\n      x.go:3 0x10501c0 65488b0c2530000000\tMOVQ GS:0x30, CX\n      x.go:3
+    0x10501c9 483b6110 CMPQ 0x10(CX), SP\n      x.go:3 0x10501cd 7634 JBE 0x1050203\n
+    \     x.go:3 0x10501cf 4883ec10 SUBQ $0x10, SP\n      x.go:3 0x10501d3 48896c2408
+    MOVQ BP, 0x8(SP)\n      x.go:3 0x10501d8 488d6c2408 LEAQ 0x8(SP), BP\n      x.go:4
+    0x10501dd e86e45fdff CALL runtime.printlock(SB)\n      x.go:4 0x10501e2 48c7042403000000\tMOVQ
+    $0x3, 0(SP)\n      x.go:4 0x10501ea e8e14cfdff CALL runtime.printint(SB)\n      x.go:4
+    0x10501ef e8ec47fdff CALL runtime.printnl(SB)\n      x.go:4 0x10501f4 e8d745fdff
+    CALL runtime.printunlock(SB)\n      x.go:5 0x10501f9 488b6c2408 MOVQ 0x8(SP),
+    BP\n      x.go:5 0x10501fe 4883c410 ADDQ $0x10, SP\n      x.go:5 0x1050202 c3
+    RET\n      x.go:3 0x1050203 e83882ffff CALL runtime.morestack_noctxt(SB)\n      x.go:3
+    0x1050208 ebb6 JMP main.main(SB)\n\n### Constants\n\nAlthough the assembler takes
+    its guidance from the Plan 9 assemblers, it is a distinct program, so there are
+    some differences. One is in constant evaluation. Constant expressions in the assembler
+    are parsed using Go's operator precedence, not the C-like precedence of the original.
+    Thus `3&1<<2` is 4, not 0—it parses as `(3&1)<<2`not `3&(1<<2)`. Also, constants
+    are always evaluated as 64-bit unsigned integers. Thus `-2` is not the integer
+    value minus two, but the unsigned 64-bit integer with the same bit pattern. The
+    distinction rarely matters but to avoid ambiguity, division or right shift where
+    the right operand's high bit is set is rejected.\n\n### Symbols\n\nSome symbols,
+    such as `R1` or `LR`, are predefined and refer to registers. The exact set depends
+    on the architecture.\n\nThere are four predeclared symbols that refer to pseudo-registers.
+    These are not real registers, but rather virtual registers maintained by the toolchain,
+    such as a frame pointer. The set of pseudo-registers is the same for all architectures:\n\n-
+    `FP`: Frame pointer: arguments and locals.\n- `PC`: Program counter: jumps and
+    branches.\n- `SB`: Static base pointer: global symbols.\n- `SP`: Stack pointer:
+    the highest address within the local stack frame.\n\nAll user-defined symbols
+    are written as offsets to the pseudo-registers`FP` (arguments and locals) and
+    `SB` (globals).\n\nThe `SB` pseudo-register can be thought of as the origin of
+    memory, so the symbol `foo(SB)`is the name `foo` as an address in memory. This
+    form is used to name global functions and data. Adding `<>` to the name, as in
+    `foo<>(SB)`, makes the name visible only in the current source file, like a top-level
+    `static` declaration in a C file. Adding an offset to the name refers to that
+    offset from the symbol's address, so`foo+4(SB)` is four bytes past the start of
+    `foo`.\n\nThe `FP` pseudo-register is a virtual frame pointer used to refer to
+    function arguments. The compilers maintain a virtual frame pointer and refer to
+    the arguments on the stack as offsets from that pseudo-register. Thus `0(FP)`
+    is the first argument to the function,`8(FP)` is the second (on a 64-bit machine),
+    and so on. However, when referring to a function argument this way, it is necessary
+    to place a name at the beginning, as in `first_arg+0(FP)` and `second_arg+8(FP)`.
+    (The meaning of the offset—offset from the frame pointer—distinct from its use
+    with `SB`, where it is an offset from the symbol.) The assembler enforces this
+    convention, rejecting plain `0(FP)` and `8(FP)`. The actual name is semantically
+    irrelevant but should be used to document the argument's name. It is worth stressing
+    that `FP` is always a pseudo-register, not a hardware register, even on architectures
+    with a hardware frame pointer.\n\nFor assembly functions with Go prototypes, `go`
+    `vet` will check that the argument names and offsets match. On 32-bit systems,
+    the low and high 32 bits of a 64-bit value are distinguished by adding a `_lo`
+    or `_hi` suffix to the name, as in `arg_lo+0(FP)` or `arg_hi+4(FP)`. If a Go prototype
+    does not name its result, the expected assembly name is `ret`.\n\nThe `SP` pseudo-register
+    is a virtual stack pointer used to refer to frame-local variables"
+  error:
+  fetched_at: '2026-11-06T19:00:26Z'
+archived_at: '2026-11-06T19:00:26Z'

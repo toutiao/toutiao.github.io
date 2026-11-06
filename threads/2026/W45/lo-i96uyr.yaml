@@ -1,0 +1,191 @@
+---
+post:
+  id: lo-i96uyr
+  source: lobsters
+  title: The MustCreate Pattern for Go Tests
+  url: https://mtlynch.io/notes/go-must-create-pattern/
+  hn_url: https://lobste.rs/s/i96uyr
+  score: 10
+  author: mtlynch
+  posted_at: '2026-11-06T15:37:00Z'
+  fetched_at: '2026-11-06T19:00:21Z'
+  article_url: https://mtlynch.io/notes/go-must-create-pattern/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T19:00:22Z'
+  raw_comment_count: 11
+  tags:
+  - go
+  - testing
+comments:
+- id: lo-plkgjm
+  parent_id: '0'
+  author: nickmonad
+  text: |-
+    I think in these cases, I would either ignore the error (username, _ := ...) or write a simple assert(t, err == nil) that makes the if check just one line. Then, fuzz NewUsername separately to handle the cases where the requested username could be invalid and those errors matter.
+    But hey, decent application of generics and I wouldn't necessarily change this if I saw it in the wild.
+  score: 5
+  posted_at: '2026-11-06T17:09:34Z'
+- id: lo-ly039b
+  parent_id: '0'
+  author: bilinguliar
+  text: This is a place where generics actually look nice.
+  score: 2
+  posted_at: '2026-11-06T17:14:15Z'
+- id: lo-vb6toh
+  parent_id: '0'
+  author: telemachus
+  text: |-
+    I think in these cases, I would either ignore the error (username, _ := ...)
+
+    Agreed. I usually test the error case and the non-error case separately, so that neither has to call t.Fatal. Each type can go through its whole set of cases without worrying about the other return value.
+  score: 2
+  posted_at: '2026-11-06T17:20:06Z'
+- id: lo-hwwdkf
+  parent_id: '0'
+  author: bilinguliar
+  text: Go's FAQ says assertions aren't encouraged in production or testing code.
+    Go wants users to handle errors properly at all times.
+  score: 1
+  posted_at: '2026-11-06T17:26:00Z'
+- id: lo-oomcp8
+  parent_id: '0'
+  author: nickmonad
+  text: |-
+    Sure, and I disagree! Assertions are useful in production code to downgrade correctness bugs to liveness bugs. There are also many, many cases where error handling that doesn't crash the system makes complete sense. Totally fine if Go doesn't want to support it in the language, it's trivial to write.
+    For the issue of testing in this specific context, doing an assert(t, err == nil), or doing the if err != nil dance has the same result. t.Fatal crashes the test in effectively the same way.
+  score: 2
+  posted_at: '2026-11-06T17:39:22Z'
+- id: lo-arenhm
+  parent_id: '0'
+  author: telemachus
+  text: |-
+    Go's FAQ says assertions aren't encouraged in production or testing code.
+
+    I think you're taking this too literally. As I understand it, the FAQ discourages assertion libraries that use a DSL and obscure the Go code in your tests.
+
+    Go wants users to handle errors properly at all times.
+
+    Again, I think you're being overly strict here. The original article says this:
+
+    When I write tests for ReadUser, I call NewUsername with a value I know is valid, but I still have to include a lot of verbose error-checking code to convince the compiler that everything is okay.
+
+    nickmonad is right to point out that you simply don't have to write a lot of code to convince the compiler. _ is completely idiomatic Go for this situation.
+  score: 4
+  posted_at: '2026-11-06T17:41:47Z'
+- id: lo-bvzqzz
+  parent_id: '0'
+  author: oliverpool
+  text: "Simpler, but with panic (\"with a value I know is valid\"):\nfunc Must[T
+    any](t T, err error) T {\n\tif err != nil {\n\t\tpanic(err)\n\t}\n\treturn t\n}\n\nThen
+    it is a normal function call: user := Must(NewUsername(\"john\"))\nhttps://go.dev/play/p/XEx083CU9EJ\n\nIf
+    you are really allergic to panic:\nfunc Must[V any](v V, err error) func(t testing.TB)
+    V {\n\tif err != nil {\n\t\treturn func(t testing.TB) V {\n\t\t\tt.Helper()\n\t\t\tt.Fatal(err)\n\t\t\treturn
+    v\n\t\t}\n\t}\n\treturn func(testing.TB) V {\n\t\treturn v\n\t}\n}\n\nCalled as
+    user := Must(NewUsername(\"john\"))(t)\nhttps://go.dev/play/p/ngHSA4lTBhq\n\nUnfortunately
+    multiple return values cannot be combined with other values, so Must(t, NewUsername(\"john\"))
+    is not possible."
+  score: 4
+  posted_at: '2026-11-06T17:51:25Z'
+- id: lo-eteiym
+  parent_id: '0'
+  author: amw-zero
+  text: I really hate to be like this, because this is a moderately useful pattern.
+    But this is exactly why leaving out generics from Go for so long was such a joke.
+    This is the type of code that you could (and did) write in any serious language
+    20 years ago.
+  score: 2
+  posted_at: '2026-11-06T18:07:36Z'
+- id: lo-myz5qx
+  parent_id: '0'
+  author: jo3_l
+  text: |-
+    Related (declined) Go proposal: https://github.com/golang/go/issues/54297, with some variations and discussion of this pattern.
+    Personally I prefer the simpler variant (mentioned in a sibling comment here already) that reads as testutil.Must(NewUsername("joe123")). The implementation in the OP separates the function and the argument, which I don't personally like.
+  score: 2
+  posted_at: '2026-11-06T18:29:17Z'
+- id: lo-biwndf
+  parent_id: '0'
+  author: tentacloids
+  text: Maybe I'm side-stepping the point of the article but I would instead reach
+    for a Username constructor that the compiler knows can't fail, maybe even whatever
+    Go's QuickCheck is in the extreme case. Presumably NewUsername is tested elsewhere;
+    I don't want its failures bleeding over into other tests.
+  score: 2
+  posted_at: '2026-11-06T18:29:29Z'
+- id: lo-yzlxpv
+  parent_id: '0'
+  author: telemachus
+  text: |-
+    Simpler, but with panic ("with a value I know is valid")
+
+    Isn't panic almost always the wrong thing to do in tests? It causes the entire run to bail out messily. t.Fatal is better for cases where a test case can't continue because it doesn't blow up the entire test suite.
+  score: 1
+  posted_at: '2026-11-06T18:44:00Z'
+article:
+  url: https://mtlynch.io/notes/go-must-create-pattern/
+  title: |-
+    The MustCreate Pattern for Go Tests ·
+    mtlynch.io
+  fetch_status: success
+  content: "I recently discovered a handy way to make Go tests more readable and less
+    repetitive.\n\nSuppose I have a constructor that can fail:\n\nfunc NewUsername(raw
+    string) (Username, error) { ... }\n\nAnd I have another function that takes a
+    Username as an argument:\n\nfunc (ds Datastore) ReadUser(username Username) (User,
+    error) { ... }\n\nWhen I write tests for ReadUser, I call NewUsername with a value
+    I know is valid, but I still have to include a lot of verbose error-checking code
+    to convince the compiler that everything is okay:\n\nusername, err := NewUsername(\"joe123\")
+    // This is silly because *I* know joe123 is a valid username, so this should //
+    never happen. if err != nil { t.Fatalf(\"failed to create username: %v\", err)
+    } // Perform the test assertion I actually care about. user, err := store.ReadUser(username)
+    if got, want := user.Name.String(), \"joe123\"; got != want { t.Errorf(\"username=%v,
+    want=%v\", got, want) }\n\n## My old solution: one new helper function per type
+    \U0001F517︎\n\nUntil a few months ago, I avoided the verbose error checking by
+    writing a helper function like MustCreateUsername that wraps NewUsername with
+    the expectation that it never returns a non-nil error value:\n\nuser, err := store.ReadUser(MustCreateUsername(t,
+    \"joe123\")) if got, want := user.Name.String(), \"joe123\"; got != want { t.Errorf(\"username=%v,
+    want=%v\", got, want) }\n\nThe implementation of MustCreateUsername looks how
+    you’d expect:\n\nfunc MustCreateUsername(t testing.TB, raw string) Username {
+    t.Helper() username, err := NewUsername(raw) if err != nil { t.Fatalf(\"invalid
+    username: %s\", raw) } }\n\nThe helper function strategy worked fine, but it scales
+    poorly. Eventually, my repos become littered with MustCreateFoo and MustCreateBar
+    for every type in my app.\n\n## New solution: A single, generic MustCreate helper
+    \U0001F517︎\n\nIn 2022, Go 1.18 added support for generics. I like the idea of
+    generics, but I rarely encounter problems where generics are the solution.\n\nI
+    recently realized that generics are the better way to solve my sprawling MustCreateX
+    problem. Instead of defining a helper MustCreateX for every type, I defined a
+    single, generic MustCreate test helper, so my test becomes:\n\nuser, err := store.ReadUser(testutil.MustCreate(t,
+    NewUsername, \"joe123\")) if got, want := user.Name.String(), \"joe123\"; got
+    != want { t.Errorf(\"username=%v, want=%v\", got, want) }\n\nThe magic is the
+    generic MustCreate function:\n\nfunc MustCreate[RawInput, CreatedValue any]( t
+    testing.TB, create func(RawInput) (CreatedValue, error), rawInput RawInput, )
+    CreatedValue { t.Helper() createdValue, err := create(rawInput) if err != nil
+    { t.Fatalf(\"failed to create test value: %v\", err) } return createdValue }\n\nI
+    have trouble reasoning about generics, so I’ll walk through the function implementation.
+    I invoke MustCreate like this in my tests:\n\ntestutil.MustCreate(t, NewUsername,
+    \"joe123\")\n\nThe above call is equivalent to this more explicit version:\n\ntestutil.MustCreate[string,
+    Username](t, NewUsername, \"joe123\")\n\nWhen I call MustCreate here, RawInput
+    is string (the type of the raw username value), and CreatedValue is Username (the
+    return type). It’s equivalent to an implementation that looks like this:\n\nfunc
+    MustCreate( t testing.TB, create func(string) (Username, error), rawInput string,
+    ) CreatedValue { t.Helper() createdValue, err := create(rawInput) if err != nil
+    { t.Fatalf(\"failed to create test value: %v\", err) } return createdValue }\n\n###
+    Extending to multi-param constructors \U0001F517︎\n\nWhat about constructors that
+    have more than one parameter?\n\nfunc NewRange(start int, end int) (Range, error)
+    { ... }\n\nIn those cases, I write an additional helper called MustCreate2:\n\nrange
+    := testutil.MustCreate2(t, models.NewRange, 0, 5)\n\nThe implementation of MustCreate2
+    looks just like MustCreate but with an additional type for the second parameter:\n\nfunc
+    MustCreate2[RawInput1, RawInput2, CreatedValue any]( t testing.TB, create func(RawInput1,
+    RawInput2) (CreatedValue, error), rawInput1 RawInput1, rawInput2 RawInput2, )
+    CreatedValue { t.Helper() createdValue, err := create(rawInput1, rawInput2) if
+    err != nil { t.Fatalf(\"failed to create test value: %v\", err) } return createdValue
+    }\n\n## Conclusion \U0001F517︎\n\nThe MustCreate pattern is nothing revolutionary,
+    but it’s a technique that improved my Go tests and reduced some mindless toil
+    from my dev work.\n\n## Read My Book\n\nI wrote a book about simple techniques
+    to help developers improve their writing.\n\nMy book will teach you how to:\n\n-
+    Create clear and pleasant software tutorials\n\n- Attract readers and customers
+    through blogging\n\n- Write effective emails\n\n- Minimize pain in writing design
+    documents\n\n### Be the first to know when I post cool stuff\n\nSubscribe to get
+    my latest posts by email."
+  error:
+  fetched_at: '2026-11-06T19:00:22Z'
+archived_at: '2026-11-06T19:00:22Z'

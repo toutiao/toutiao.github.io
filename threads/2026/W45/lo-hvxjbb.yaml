@@ -1,0 +1,177 @@
+---
+post:
+  id: lo-hvxjbb
+  source: lobsters
+  title: Making musl and proprietary NVIDIA drivers work together
+  url: https://chimera-linux.org/news/2026/11/musl-nvidia.html
+  hn_url: https://lobste.rs/s/hvxjbb
+  score: 33
+  author: q66
+  posted_at: '2026-11-06T13:23:14Z'
+  fetched_at: '2026-11-06T19:00:21Z'
+  article_url: https://chimera-linux.org/news/2026/11/musl-nvidia.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T19:00:21Z'
+  raw_comment_count: 7
+  tags:
+  - linux
+comments:
+- id: lo-ce21sa
+  parent_id: '0'
+  author: gignico
+  text: Sure merging musl and Nvidia drivers is easier than making a web page responsive
+    on mobile (I’m on iOS)
+  score: 2
+  posted_at: '2026-11-06T15:29:37Z'
+- id: lo-uzu0oe
+  parent_id: '0'
+  author: 5d22b
+  text: Someone might find it easy to paint realistic portraits but have no idea where
+    to start to write a "Hello, world" program, while an expert programmer might find
+    it impossible to paint a lifelike portrait. Certainly someone might understand
+    musl and GPU drivers and be knowledgeable about Web development too, but it's
+    not something I would expect.
+  score: 7
+  posted_at: '2026-11-06T15:37:21Z'
+- id: lo-lf8y7z
+  parent_id: '0'
+  author: q66
+  text: |-
+    the page is responsive, but for some reason the code elements stop scrolling when it enters the narrow mode, which then prevents the page from shrinking
+    i have no idea why, CSS PRs welcome :P
+  score: 4
+  posted_at: '2026-11-06T15:42:28Z'
+- id: lo-oi1xzp
+  parent_id: '0'
+  author: easrng
+  text: 'put overflow-x: auto on the code samples?'
+  score: 2
+  posted_at: '2026-11-06T16:13:45Z'
+- id: lo-urqmpm
+  parent_id: '0'
+  author: trousers
+  text: Impressive work!
+  score: 2
+  posted_at: '2026-11-06T16:49:15Z'
+- id: lo-lspj4e
+  parent_id: '0'
+  author: q66
+  text: already done (it scrolls fine when not in mobile size)
+  score: 1
+  posted_at: '2026-11-06T17:04:46Z'
+- id: lo-xepx0s
+  parent_id: '0'
+  author: mburesh
+  text: |-
+    I think the issue is the way grid-template-columns is defined for smaller screens.
+    #container {
+     grid-template-columns: minmax(var(--side-padding), 1fr) auto minmax(var(--side-padding), 1fr);
+     }
+    'auto' lets the grid-template-area grow too much. It should probably also be a minmax value capped at --content-width?
+  score: 1
+  posted_at: '2026-11-06T17:52:11Z'
+article:
+  url: https://chimera-linux.org/news/2026/11/musl-nvidia.html
+  title: Making musl and proprietary NVIDIA drivers work together
+  fetch_status: success
+  content: "06.11.2026\n\nAs you may be aware, one of the limitations of musl-based
+    distributions is that they will not function to their proper extent when used
+    in computers with various NVIDIA graphics cards.\n\nThis is due to the proprietary
+    nature of the driver, being built for glibc. I have been experimenting with trying
+    to make this work, and this post is the summary of that effort.\n\n## Context\n\nThe
+    NVIDIA graphics cards are tricky on Linux. While most other GPU vendors by default
+    use free software graphics drivers (with kernel drivers in-tree in Linux, and
+    userspace supplied by the Mesa project), NVIDIA in general does not, relying on
+    an out of tree kernel driver and proprietary userland libraries that are supplied
+    by the vendor.\n\nA free software driver does exist, called Nouveau (kernel and
+    OpenGL Mesa driver) and NVK (Vulkan driver). This allows the cards to work, but
+    usually with significantly reduced performance, due to various reasons.\n\nCurrently
+    the state depends significantly on what generation of NVIDIA card you have.\n\nIn
+    short:\n\n- Anything older than Maxwell (GTX 700 series) is unsupported by the
+    proprietary driver on modern systems, and supported to some extent by Nouveau,
+    but may have issues due to poor maintenance nowadays; performance should be okay
+    when it works.\n- Maxwell (GTX 700 and 900 series) and Pascal (GTX 1000 series)
+    is supported fully by the legacy 580 branch of the proprietary driver, which also
+    supports newer hardware. It works with Nouveau, but with very poor performance,
+    as the cards can never reclock from their very low boot clocks (which would require
+    firwmare that NVIDIA never released).\n- Turing (GTX 1600 series and RTX 2000
+    series) and anything newer is supported by the current main proprietary driver
+    branch (at the time of writing, 620) as well as the legacy (580) branch, and by
+    Nouveau, as these cards use the GSP firmware that is included in `linux-firmware`.
+    However, using the FOSS driver means only getting 40-80% of the proprietary driver’s
+    performance. Other than that, the experience is often okay, particularly with
+    NVK.\n\nIn even shorter, if you have RTX 2000 and above you are mostly okay with
+    FOSS but lose performance, if you have newer than GTX 600 but older than GTX 1600
+    you are screwed and need the proprietary driver, if your card is really old it
+    may or may not work well and you may not be able to use it at all.\n\n## Proprietary
+    drivers and musl\n\nWe now have a [pull request](https://github.com/chimera-linux/cports/pull/6531)open
+    for both the 580 and 620 branch. It is not yet entirely ready but works, and is
+    available for `x86_64` and `aarch64` architectures as NVIDIA supplies it.\n\nTo
+    get there, there were multiple things to take care of. Particularly, using stock
+    musl is out of the question and will likely never work. I will elaborate on each
+    thing.\n\n## GLVND\n\nThe GLVND library was created by NVIDIA to allow for vendor-neutral
+    OpenGL dispatch. It provides the libraries that applications link and exposes
+    the OpenGL (and other) API. It then dispatches the calls to the implementations,
+    which may be e.g. Mesa or the proprietary driver.\n\nMost distributions nowadays
+    use GLVND. Mesa comes with its own builtin dispatch code and does not necessarily
+    require GLVND if you don’t build it with it. Musl distributions in general use
+    this. Chimera at this point does not, and Void Linux on musl does not as it shares
+    packaging with the glibc branch.\n\nChimera switched to GLVND on [November 5 2026](https://github.com/chimera-linux/cports/commit/61a25fb28f3d70f0226e730c76a65983b791c660).
+    Switching is rather straightforward and does not need much documentation. One
+    just has to package GLVND, rebuild Mesa with it (to avoid using its builtin dispatch
+    libraries) and take care of packages that have dependencies on `mesa-devel`.\n\nGLVND
+    is not only useful for NVIDIA drivers, but in general it is the primary thing
+    users will find useful. There are also some vendor drivers on ARM and elsewhere
+    but those are niche. The proprietary drivers mandate GLVND since many years back
+    (this is also very useful on laptops with hybrid graphics, because then you may
+    still want to keep Mesa for the iGPU).\n\n## Gcompat\n\nThe [gcompat](https://git.adelielinux.org/adelie/gcompat)
+    project provides a compatibility shim to allow for limited usage of programs linked
+    with `glibc`.\n\nIt consists of two components:\n\n- the loader, which acts as
+    the dynamic linker (`ldso`) for the programs. For example, on `x86_64`, `glibc`
+    programs expect `ld-linux-x86_64.so.2`as their dynamic linker. The loader does
+    not do much, as it only sets up a library preload for the below, and execs into
+    the real `musl` one.\n- the shim library, `libgcompat.so.0`, which implements
+    various symbols that are in `glibc` and used by programs, but not in `musl`. It
+    does not implement everything. It is what provides the bulk of the functionality,
+    and is useed by the means of `LD_PRELOAD`, automatically by the loader.\n\nUnfortunately
+    for us, the latest tagged release of `gcompat` does not provide all the symbols
+    the proprietary drivers require to resolve. Fortunately for us, the latest Git
+    branch does. The development nowadays is very slow so we just bumped it up to
+    the latest revision.\n\n## Patchelf and initial packaging\n\nYou can see how the
+    packaging works in the pull request, and that part is rather unimportant for now,
+    and does not require elaboration. It works in a similar way to other distros,
+    downloading the `.run` archive from NVIDIA and installing everything to the correct
+    places.\n\nOf course, in our case, we cannot install it directly, because it depends
+    on `glibc` and other stuff. We also can’t just pull in `gcompat` as is, because
+    most of the driver is libraries that have no interpreter.\n\nLet’s see what happens
+    if we run `ldd` on `libnvidia-glcore.so.580.196.07`, which is the core OpenGL
+    library.\n\n    $ ldd libnvidia-glcore.so.580.196.07\n    \tldd (0x739c4a8b1000)\n
+    \   \tlibm.so.6 => ldd (0x739c4a8b1000)\n    \tlibc.so.6 => ldd (0x739c4a8b1000)\n
+    \   \tlibdl.so.2 => ldd (0x739c4a8b1000)\n    \tlibnvidia-tls.so.580.196.07 =>
+    /lib/libnvidia-tls.so.580.196.07 (0x739c4a8a3000)\n    \tlibnvidia-gpucomp.so.580.196.07
+    => /lib/libnvidia-gpucomp.so.580.196.07 (0x739c3fa00000)\n    \tlibpthread.so.0
+    => ldd (0x739c4a8b1000)\n    \tlibrt.so.1 => ldd (0x739c4a8b1000)\n    Error loading
+    shared library ld-linux-x86-64.so.2: No such file or directory (needed by ...)\n
+    \   Error relocating /lib/libnvidia-gpucomp.so.580.196.07: mallinfo: symbol not
+    found\n    Error relocating /lib/libnvidia-gpucomp.so.580.196.07: __strftime_l:
+    symbol not found\n    Error relocating libnvidia-glcore.so.580.196.07: dladdr1:
+    symbol not found\n    Error relocating libnvidia-glcore.so.580.196.07: gnu_get_libc_version:
+    symbol not found\n    Error relocating libnvidia-glcore.so.580.196.07: dlvsym:
+    symbol not found\n    Error relocating libnvidia-glcore.so.580.196.07: backtrace:
+    symbol not found\n    Error relocating libnvidia-glcore.so.580.196.07: unsupported
+    relocation type 37\n\nThere is a bunch of stuff here. So the `libm.so.6`, `libc.so.6`,
+    `libdl.so.2`etc resolve to `ldd` as they are reserved in the `musl` `ldso`:\n\n
+    \   static const char reserved[] = \"c.pthread.rt.m.dl.util.xnet.\";\n\nThe dynamic
+    linker will ignore the suffixes.\n\nFor some reason, some of the libraries also
+    have `DT_NEEDED` on `ld-linux-x86-64.so.2`which is the `glibc` dynamic linker.
+    There are also some relocation failures that we’ll get to later, for now we take
+    out `patchelf`.\n\nSo, `patchelf` is a tool that lets you dynamically patch ELF
+    files for things like library dependencies (`DT_NEEDED`), dynamic linker (`DT_INTERP`),
+    RPATH, and even some funky dynamic symbol remapping.\n\nWe use this to sanitize
+    every library and executable being installed. Let’s begin with something like
+    the following:\n\n    $ patchelf --remove-needed ld-linux-x86-64.so.2 \\\n        --remove-needed
+    libdl.so.2 --remove-needed libm.so.6 \\\n        --remove-needed libpthread.so.0
+    --remove-needed librt.so.1 \\\n        --replace-need"
+  error:
+  fetched_at: '2026-11-06T19:00:21Z'
+archived_at: '2026-11-06T19:00:22Z'
