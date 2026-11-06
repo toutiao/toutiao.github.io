@@ -1,0 +1,125 @@
+---
+post:
+  id: lo-dxno99
+  source: lobsters
+  title: Clojure Distilled
+  url: https://yogthos.net/ClojureDistilled.html
+  hn_url: https://lobste.rs/s/dxno99
+  score: 13
+  author: veqq
+  posted_at: '2026-11-06T04:20:58Z'
+  fetched_at: '2026-11-06T10:29:14Z'
+  article_url: https://yogthos.net/ClojureDistilled.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T10:29:18Z'
+  raw_comment_count: 0
+  tags:
+  - lisp
+comments: []
+article:
+  url: https://yogthos.net/ClojureDistilled.html
+  title: Clojure Distilled
+  fetch_status: success
+  content: "# Clojure Distilled\n\nThe difficulty in learning Clojure does not stem
+    from its syntax, which happens to be extremely simple, but from having to learn
+    new methods for solving problems. As such, we'll focus on understanding the core
+    concepts and how they can be combined to solve problems the functional way.\n\nAll
+    the mainstream languages belong to the same family. Once you learn one of these
+    languages there is very little effort involved in learning another. Generally,
+    all you have to do is learn some syntax sugar and the useful functions in the
+    standard library to become productive. There might be a new concept here and there,
+    but most of your existing skills are easily transferable.\n\nThis is not the case
+    with Clojure. Being a Lisp dialect, it comes from a different family of languages
+    and requires learning new concepts in order to use effectively. There is no reason
+    to be discouraged if the code appears hard to read at first. I assure you that
+    the syntax is not inherently difficult to understand, and that with a bit of practice
+    you might find it to be quite the opposite.\n\nThe goal of this guide is to provide
+    an overview of the core concepts necessary to become productive with Clojure.
+    Let's start by examining some of the key advantages of the functional style and
+    why you would want to learn a functional language in the first place.\n\n## Immutable\n\nClojure
+    is a functional language. This makes it extremely well positioned for writing
+    large applications. As the application grows it's imperative to be able to reason
+    about its constituent parts in isolation. Conversely, there is a lot of value
+    in building code out of components that are testable and reusable by nature. Let's
+    take a look at why the functional approach is such a good fit here.\n\nFunctional
+    languages are ideal for writing large applications because they eschew global
+    state and favor immutability as the default. Having immutable shared state allows
+    us to safely reason about parts of the application in isolation. At first glance,
+    the idea of using immutable data structures sounds unnecessarily restrictive.
+    However, as we'll soon see, many of the benefits associated with the functional
+    style stem directly from it.\n\nMutable data can either be passed around by value
+    or by reference. The safe approach would be to pass the data by value as it guarantees
+    that any changes to the data will remain in the local scope. Unfortunately, this
+    approach is extremely inefficient, so most languages pass data by reference instead.\n\nPassing
+    data by reference is fast, but it makes the code difficult to reason about. In
+    order to safely work with the data you have to know all the places where it might
+    be referenced. The complexity grows with the size of the application. The more
+    code has access to a piece of data the more proverbial balls you end up having
+    to juggle in your head.\n\nImmutable data structures provide us with an ingenious
+    alternative to the above dilemma. Every time a change is made to the data structure
+    a revision is created. We now have the same guarantees offered by naive copying
+    of the data, but we only pay the price proportional to the size of the change.\n\nJust
+    like garbage collection frees us from having to manually track data allocation
+    and deallocation, immutable data structures free us from having to manage data
+    references by hand. From the user perspective we simply \"copy\" the data any
+    time we make a change. The language will take care of figuring out what parts
+    of it can be cleaned up when they're no longer used.\n\nHaving such data structures
+    facilitates writing pure functions. A pure function is simply a function without
+    side effects. These functions do not rely on any state outside their inputs and
+    they do not modify any external state when they run. Given the same parameters,
+    the function will always produce the same result, regardless of the global state
+    of the application.\n\nSuch functions can be safely reasoned about in isolation
+    because we can guarantee that they're only able to modify their local scope. They
+    provide us with self-contained components that can be composed to create complex
+    behaviors. This type of code is referred to as being referentially transparent.\n\n##
+    Reusable\n\nObject-oriented languages use classes for composition. The data in
+    each class is tightly coupled to the logic associated with it. Each class represents
+    a specific domain and the methods written in it are not easily reusable outside
+    that domain. When we wish to reuse the existing code we often have to resort to
+    patterns such as adapters and wrappers.\n\nThe focus, in such a language, is primarily
+    on modeling the state using classes. The data is seen as being incidental to the
+    whole process. Functional programming brings data to the forefront and it encourages
+    us to think about our problems in terms of data transformations.\n\nIn a functional
+    language, the logic and the data are kept separate. Clojure provides a small set
+    of common data structures such as lists, vectors, maps, and sets. All the functions
+    in the language operate on the same data structures allowing us to combine them
+    without any additional ceremony. With this approach the function becomes the core
+    reusable component.\n\nEach function represents a certain transformation that
+    we wish to apply to our data. When we need to solve a problem we simply have to
+    break it up into a sequence of transformations and map those to the appropriate
+    functions. The functions capture how the tasks are accomplished, while their composition
+    states what is being accomplished. Code that separates what is being done from
+    how it is done is referred to as being declarative.\n\nLet's take iteration as
+    an example. With the imperative style we would write a loop and put the logic
+    that's invoked during each step inside it. By contrast, the functional approach
+    is to use an iterator function and pass the logic that we want to execute during
+    the iteration as a parameter.\n\nAn iterator function can be written once and
+    it encapsulates all the logic required for iteration, edge cases, and boundary
+    checks. We can now reuse this function without having to worry about remembering
+    to do these checks each time we need to iterate.\n\n## Scalable\n\nThe focus on
+    immutability makes it much easier to tackle the difficult problems of parallelism
+    and concurrency. While there is no silver bullet for addressing either problem,
+    the language can go a long way in helping us reason about them.\n\nAs you'll recall,
+    pure functions rely solely on their arguments and do not modify any state outside
+    their scope. These properties make it possible to safely run them in parallel
+    allowing us to easily take advantage of the extra cores.\n\nAn example of this
+    is mapping a function over the items in a collection. We can start by using the
+    `map` function. This function will iterate over a collection and apply a transformer
+    function to each element inside it. Should we discover that each operation takes
+    a significant amount of time, we can then simply switch to using the `pmap` function
+    to run these operations in parallel.\n\nFinally, it turns out that the immutable
+    data structures are also an excellent tool for managing shared mutable state.
+    Clojure provides a Software Transactional Memory (STM) library based on these
+    data structures. With transactional memory we no longer have to worry about manual
+    locking when dealing with threads. Better still, shared state backed by immutable
+    data only needs to be locked for writing since the current revision can be safely
+    read while the new revision is being generated.\n\n# Clojure In Action\n\nNow
+    that we've discussed some of the reasons to start using the functional style,
+    let's see how to apply these ideas in practice with Clojure.\n\n## The Core\n\n###
+    Data Types\n\nClojure provides a number of standard data types, most of which
+    should look familiar:\n\n- Vars provide mutable storage locations. These can be
+    bound and rebound on a per-thread basis.\n- Booleans can have a value of true
+    or false; nil values "
+  error:
+  fetched_at: '2026-11-06T10:29:18Z'
+archived_at: '2026-11-06T10:29:18Z'

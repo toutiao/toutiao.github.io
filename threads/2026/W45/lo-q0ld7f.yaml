@@ -1,0 +1,126 @@
+---
+post:
+  id: lo-q0ld7f
+  source: lobsters
+  title: X-87 - DOS 256 bytes
+  url: https://www.onirom.fr/wiki/codegolf/x-87/
+  hn_url: https://lobste.rs/s/q0ld7f
+  score: 24
+  author: dzwdz
+  posted_at: '2026-11-06T00:16:07Z'
+  fetched_at: '2026-11-06T10:29:14Z'
+  article_url: https://www.onirom.fr/wiki/codegolf/x-87/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T10:29:15Z'
+  raw_comment_count: 0
+  tags:
+  - art
+  - assembly
+  - concatenative
+comments: []
+article:
+  url: https://www.onirom.fr/wiki/codegolf/x-87/
+  title: X-87 - DOS 256 bytes
+  fetch_status: success
+  content: "# X-87 - DOS 256 bytes \n\n ![](images/0.png)\n\n[link](http://onirom.fr/get/X-87_The_Orz_256b_proc_gfx.zip)\n\n
+    \ \n\n256 bytes x86 + x87 (386+) / DOS real mode procedural graphics for [Outline
+    2026](https://www.outlinedemoparty.nl/),&nbsp;[VESA 2](https://en.wikipedia.org/wiki/VESA_BIOS_Extensions)&nbsp;(1994)
+    640x400 32 bpp showing a stylized landscape drawn with oscillators. No escape
+    support.\n\n  \n\nThis started in early 2024 from p5js sketches i&nbsp;initially
+    made in mid 2021, first sketch was&nbsp;a different idea showing some flow like
+    patterns that i directed towards a ground / sky division later on, i kind of stopped
+    tinkering with it for a year but took it back in early 2025 and directed it into
+    this barren landscape&nbsp;which was mostly found by accident through iterative
+    tweaking of oscillator parameters + transforms. (particularly scale)&nbsp;I liked
+    the moody feel and the accidental “moon”.\n\n  \n\nOne year later i decided to
+    try to fit this into 256 bytes, the code was pretty small but i was unsure about
+    some parts (32 bpp, colors) especially after a semi failed&nbsp;x87&nbsp;learning
+    experiment. (was still successful as i learned bits of x87 but also a lot of things
+    about high colors / high resolution DOS graphics, all documented [here](https://www.onirom.fr/wiki/codegolf/dos/))\n\n
+    \ \n\nTook ~13 minutes (!) to render with default&nbsp;(3000; [286](https://en.wikipedia.org/wiki/Intel_80286)era)&nbsp;DOSBox
+    cycles.&nbsp;~2m30 at 20000 cycles (late [486](https://en.wikipedia.org/wiki/I486)
+    era) and 2m10 at max cycles. (running on a i7 7700 CPU)\n\n  \n\nTook ~6m10 on
+    [Bochs](https://en.wikipedia.org/wiki/Bochs) + [Freedos](https://en.wikipedia.org/wiki/FreeDOS)
+    at [10MIPS](https://bochs.sourceforge.io/doc/docbook/user/bochsrc.html). ~8m at
+    800x600.\n\n#### The 256 bytes effort in two weeks\n\nFirst step was porting the
+    [p5.js](https://p5js.org/) code to something akin to x87 (stack based) and as
+    i fiddled with [Forth](https://en.wikipedia.org/wiki/Forth_(programming_language))...
+    it felt like the perfect opportunity to tinker a bit more with&nbsp;[Gforth](https://en.wikipedia.org/wiki/Gforth),
+    resulting code was pretty small which further convinced me that shrinking it down
+    to 256 bytes was possible.\n\n  \n\nSecond step was a crude (greyscale) DOS port
+    (~320 bytes), learned a bit of x87 in the process, it was kinda fun to see how
+    Forth map so well to x87 but also how it differ on some stuff (x87 is way more
+    flexible sometimes), Forth made the x87 port straightforward and fun.\n\n  \n\nThird
+    step was an early&nbsp;optimization&nbsp;phase (FPU code, constants) to free rooms
+    for the colors, the landscape was kind of dull at that moment.\n\n  \n\nFinal
+    step was to integrate the dither like colorization (colors increment depends on
+    averaged pixels brightness) then try to make it less dull by tweaking constants,
+    this last part added some more weight which required further optimizations : overlapped
+    / truncated floating points (got the idea from [balrog](https://www.pouet.net/prod.php?which=96014)),
+    packed colors increments, less FPU instructions etc.\n\n#### The last bytes +
+    compat\n\nProgram was considered finished at this point but there was many compat
+    issues left (no _fninit_, uninitialized mem etc.) and tiny black squares artifacts
+    (almost imperceptible on DOSBox but very large on Bochs !) which was related to&nbsp;the[tricky
+    segment initialization](http://www.sizecoding.org/wiki/Graphics#LES_segment_initialisation_trick)&nbsp;and
+    VESA paging / banking, last goal was to fix them.\n\n  \n\nIt was rather simple
+    to get few bytes to fix the artifacts by reusing palette data for a float constant
+    (overlapping) and further optimizing the init code and_px\\_sat_ loop code by
+    reusing _bx_ state for the loop.\n\n  \n\nMaking a compatible version (one that
+    run on Bochs + Freedos at least, didn't test on real HW) at 256 bytes was slightly
+    harder and took me a few days, biggest win was to pack the two main loops into
+    a single one and using the upper / lower half of ECX as a frame counter / osc.
+    index, FPU code was again optimized. (trying hard to avoid&nbsp;[_fcomi_instruction](https://en.wikipedia.org/wiki/Pentium_Pro)
+    to stay at 386 era)\n\n#### Conclusion\n\nSatisfied of the final result overall
+    as it is quite close to the prototype,&nbsp;not entirely convinced that 32 bpp
+    is justified... could perhaps be done in 256 colors. (in a smaller way ?)\n\n
+    \ \n\nThe image can be scaled to any resolutions (require a constant&nbsp;+ bank
+    check constant&nbsp;change) but convergence happen faster at moderate resolution
+    + artifacts&nbsp;are less visible.&nbsp;(see below; has artifacts when vertical
+    axis is extended)\n\n  \n\nResolution also affect brightness / density although
+    this can be fixed with colors increment / oscillators adjustments.\n\n  \n\n  \n\n
+    ![](images/1.png)\n\nwith more time (note : earlier artifacts version !)\n\n####
+    p5js implementation\n\n`let x = []\nlet y = []\nlet n = 256\n\nlet pal = [\n 
+    [3, 3, 3], [1, 2, 3], [3, 2, 2], [1, 1, 1]\n]\n\nfunction setup() {\n  createCanvas(800,
+    480)\n  background(0)\n  for (let i = 0; i < 256; i += 1) {\n    x[i] = i\n   
+    y[i] = 0\n  }\n}\n\nfunction draw() {\n  loadPixels()\n  for (let k = 0; k < n
+    * 256; k += 1) {\n    let ki = k & 255\n    let fr = frameCount\n    let sx =
+    x[ki] + 1\n    let t0 = x[ki]\n    let t1 = y[ki]\n\n    x[ki] = t1 * -0.99609375
+    + (0.009277344 / cos(t0 -\ncos(fr / 128 + t1 / (1 + t0 / 32))) - 5.141592653)\n 
+      y[ki] = t0 + 1 + tan(x[ki] * t1 * 32) / fr\n\n    sx = (x[ki] + 14) / 32\n 
+      let sy = 0.36 + 0.85546875 / (y[ki] + 3)\n\n    if (sy > 0.36) {\n      sx *=
+    4\n      sy *= 0.981592\n    } else {\n      sx -= sy / 2\n    }\n\n    let px
+    = floor(sx * width)\n    let py = floor(sy * width)\n    let index = (px + py
+    * width) * 4\n\n    let p = (79 + pixels[index + 0] + pixels[index + 1] +\npixels[index
+    + 2]) / 192\n    let c = pal[p & 3]\n\n    if (index >= 0 && index < width * height
+    *\n4) {\n      pixels[index + 0] += c[0]\n      pixels[index + 1] += c[1]\n   
+      pixels[index + 2] += c[2]\n    }\n  }\n  updatePixels()\n}`\n\n#### Gforth implementation
+    (write to a file; 7s render)\n\n`640 constant width\n400 constant height\n  3
+    constant bpp\n\ncreate x 256 floats allot\ncreate y 256 floats allot\ncreate b
+    width height * bpp * allot\ncreate pal 3 c, 3 c, 3 c,\n           3 c, 1 c, 2
+    c,\n           2 c, 3 c, 2 c,\n           1 c, 1 c, 1 c,\n\n: setup\n    255 0
+    do\n        i s>f i floats x + f!\n        0e i floats y + f!\n    loop ;\n\n:
+    draw\n    366 1 do \\ frames\n        65535 0 do \\ iterations\n            i
+    255 and { ib }\n\n            ib floats x + f@\n            j s>f\n           
+    ib floats y + f@ fdup\n            -0.995683e f*\n0.009429633e 4 fpick 4 fpick
+    128e f/ 4 fpick 2 fpick 32e f/ 1e f+\nf/ f+ fcos f- fcos f/ 5.1594524e f- f+ fdup
+    ib floats x + f!\n            32e f* f* ftan fswap f/\n1e f+ fswap f+ fdup ib
+    floats y + f!\n\n            ib floats x + f@ 14.0e f+\n32e f/ \\ sx\n       
+        fswap 3.141592653e f+\n0.8561283e fswap f/ 0.36063576e f+ fdup \\ sy\n   
+            0.36063576e f> if\n                0.98328006e\nf* \\ sy\n           
+        fswap 4e f*\n\\ sx\n            else\n                fswap fover\n2e f/ f-
+    \\ sx\n            then\n\n            width s>f f* f>s \\\npx\n            width
+    s>f f* f>s \\\npy\n            width * swap + bpp * {\nindex }\n\n           
+    index 0 width height *\nbpp * within if\n                index b +\nc@ index 1
+    + b + c@ index 2 + b + c@ + + 79 + 192 / 3 and \\ p\n                3 * pal +\ndup
+    dup \\ c\n                1 + c@\nindex b + c@ + 255 min index b + c!\n       
+            2 + c@\nindex 1 + b + c@ + 255 min index 1 + b + c!\n                c@
+    index 2\n+ b + c@ + 255 min index 2 + b + c!\n            then\n        loop\n 
+      loop ;\n\n: write \\ write 640x400 RGB8 buffer (raw) to a file\n    s\" landscape.data\"
+    w/o create-file throw >r\n    b width height * bpp * r@ write-file throw\n   
+    r> close-file throw ;\n\nsetup draw write\nbye`\n\n#### Iterations\n\n ![](images/2.png)\n\nfirst
+    result of the port without bounds checking (speckles) nor saturation\n\n  \n\n
+    ![](images/3.png)\n\nless dull sky\n\n  \n\n ![](images/4.png)\n\nbounds check\n\n
+    \ \n"
+  error:
+  fetched_at: '2026-11-06T10:29:15Z'
+archived_at: '2026-11-06T10:29:16Z'

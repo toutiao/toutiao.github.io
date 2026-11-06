@@ -5,14 +5,14 @@ post:
   title: A Look at Datastar
   url: https://noteflakes.com/articles/2026-11-04-datastar
   hn_url: https://lobste.rs/s/vbx0g4
-  score: 10
+  score: 21
   author: noteflakes
   posted_at: '2026-11-05T10:44:57Z'
-  fetched_at: '2026-11-05T19:38:16Z'
+  fetched_at: '2026-11-06T10:29:14Z'
   article_url: https://noteflakes.com/articles/2026-11-04-datastar
   article_fetch_status: success
-  article_fetched_at: '2026-11-05T19:38:18Z'
-  raw_comment_count: 1
+  article_fetched_at: '2026-11-06T10:29:18Z'
+  raw_comment_count: 8
   tags:
   - ruby
   - web
@@ -24,8 +24,86 @@ comments:
     experience. using claude but also paying close attention to the generated code,
     and it's been fine, for people who are still worried that LLMs have trouble straying
     off the react path.
-  score: 1
+  score: 3
   posted_at: '2026-11-05T19:20:26Z'
+- id: lo-jeuoys
+  parent_id: '0'
+  author: rtpg
+  text: |-
+    I struggle a bit with the datastar philosophy compare to htmx. A stream of DOM patches seems like you're writing jquery, just on your server instead of in the browser.
+    I suppose that because it lets you get rid of most of your JS, you have less state machines to worry about. But at one point you start getting into "client's page state is unknown, so how do I recover" territory.
+    HTMX's kinda-sorta-declarative flow makes a lot more sense to me. Obviously both libs can exist and have their stronger points (like I think datastar's model works way better for "reactive stream of events" models).
+  score: 3
+  posted_at: '2026-11-06T01:34:19Z'
+- id: lo-8fpbvs
+  parent_id: '0'
+  author: coby
+  text: |-
+    In many web apps there’s going to be some state that pertains to the client (for example, is the sidebar collapsed or not, are menu groups inside the sidebar collapsed or not, etc.), and some state that’s coming from the server. In many web apps, we’d like to retain the client state (the sidebar again), even if we move between different resources in our app.
+
+    I don't see a problem with tracking some truly client-side state on the client and using Datastar's selector targeting to replace only the page-specific content. A nav menu is not really a resource in the REST sense, it is specific to the browser window—the client—of the person opening or closing the menu. I have only dabbled with Datastar, but it seems like this should be possible?
+    Side note: simple nav menu state can also be achieved with pure CSS. :)
+  score: 1
+  posted_at: '2026-11-06T06:01:45Z'
+- id: lo-j2isc7
+  parent_id: '0'
+  author: AviKav
+  text: |-
+    The obvious drawback to this way of doing things is that the server now needs to do a lot more work, since it needs to render an entire page’s worth of HTML on each user interaction.
+
+    If you let the templater tell you what can be re-used and what needs to be changed, you can avoid re-sending the same static parts (and dynamic parts that aren't changed) within an SSE-session.
+    https://phoenix-live-view.hexdocs.pm/1.2.13/assigns-eex.html#change-tracking
+    https://youtu.be/FADQAnq0RpA?t=12m6s (Keynote: The Road To LiveView 1.0 - Chapter: Optimizing with LiveEEx)
+  score: 1
+  posted_at: '2026-11-06T08:01:10Z'
+- id: lo-i29lyl
+  parent_id: '0'
+  author: andersmurphy
+  text: |-
+    But it's simpler the that you just stream the next frame. I.e the whole html or main body and let morph sort out the rest.
+    That's what this demo does. 200-300kb of html every 100ms to every connected user (if something has changed in your view).
+    https://checkboxes.andersmurphy.com/
+    I think that's where people get mixed up. The model is v = f(state). You don't need to stream patches or noodle with diffing. The irony is you end up with something way more declarative than HTMX.
+  score: 1
+  posted_at: '2026-11-06T08:11:11Z'
+- id: lo-rinwpn
+  parent_id: '0'
+  author: andersmurphy
+  text: |-
+    Diffing is quite expensive (you always pay the diffing cost in addition to template generation). In practice you can scale further and have a simpler system if you lean on brolti/zstd and some shared fragment caching. The compression is for the duration of the users connection so if only a small dive changes that can be as little as 13bytes on the wire. Shared caching gives you something diffing doesn't. Fragments between users, fragments on fresh connection (after reconnect), fragments between frames that are not straight after each other. In all those cases diffing doesn't help you.
+    My demos (one linked in the comment above) scale to 1000 concurrent users at 10FPS (3gb of html a second uncompressed) and that's the adversarial case (i.e assuming every frame has a change in all the users views and none of the users views are fully shared). With quick frame skipping (i.e don't render if nothing has changed between this frame and the last frame), it scales much further (not the same as a diff as it's a fast equality check that shortcuts).
+    On a 10$ VPS.
+  score: 1
+  posted_at: '2026-11-06T08:24:19Z'
+- id: lo-sqitvo
+  parent_id: '0'
+  author: AviKav
+  text: |-
+    You don't diff. Liveview turns a templates that basically says "a" + $x + "b" + $y + "c" + $z + "d" into {0: $x, 1: $y, 2: $z, static: ["a", "b", "c", d"]}. An update to $y will result in {1: $y_prime} being sent. You can see an example in the linked talk (that I forgot to annotate...).
+    I'd say it's better to factor out the redundant parts by construction, but there's no harm in using brolti after the fact.
+
+    Fragments between users
+
+    How are you sharing caching. Are you not talking about a client-side cache?
+
+    My demos (one linked in the comment above) scale to 1000 concurrent users at 10FPS (3gb of html a second uncompressed).
+
+    Yeah, but my point is you don't always have to do that.
+
+    Comprehensions in templates are optimized so the static parts of a comprehension are only sent once, regardless of the number of items. Furthermore, LiveView tracks changes within the collection given to the comprehension. [1]
+
+    [1] https://phoenix-live-view.hexdocs.pm/1.2.13/assigns-eex.html#comprehensions
+  score: 1
+  posted_at: '2026-11-06T09:05:47Z'
+- id: lo-smi96n
+  parent_id: '0'
+  author: Sietsebb
+  text: |-
+    Architecting our app as an SPA may help us achieve this goal of persisting client state, at the possible cost of not being able to correctly handle navigation history.
+
+    Please don't break navigation. It's not your browser, it belongs to the user.
+  score: 2
+  posted_at: '2026-11-06T09:38:01Z'
 article:
   url: https://noteflakes.com/articles/2026-11-04-datastar
   title: A Look at Datastar - Noteflakes
@@ -127,4 +205,4 @@ article:
     which may make it harder to integr"
   error:
   fetched_at: '2026-11-05T19:38:18Z'
-archived_at: '2026-11-05T19:38:18Z'
+archived_at: '2026-11-06T10:29:18Z'

@@ -1,0 +1,675 @@
+---
+post:
+  id: '50381687'
+  title: 'Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3'
+  url: https://github.com/rivet-dev/rivet
+  hn_url: https://news.ycombinator.com/item?id=50381687
+  score: 97
+  author: NathanFlurry
+  posted_at: '2026-11-05T17:17:42Z'
+  fetched_at: '2026-11-06T10:29:11Z'
+  article_url: https://github.com/rivet-dev/rivet
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T10:29:11Z'
+  raw_comment_count: 51
+comments:
+- id: '50381808'
+  parent_id: '50381687'
+  author: fastball
+  text: Rivet is very cool. Switched a Cloudflare Durable Object piece of our infrastructure
+    that lived in its own little fairy tale land to our own infra within the rest
+    of our VPC. Was a very pleasant experience.<p>Haven&#x27;t had the chance to try
+    Rivet v3 yet but hoping to get to it soon.
+  score: 0
+  posted_at: '2026-11-05T17:27:24Z'
+- id: '50381949'
+  parent_id: '50381808'
+  author: NathanFlurry
+  text: Appreciate the kind words, would love to hear feedback on v3 in our Discord
+    when you upgrade!
+  score: 0
+  posted_at: '2026-11-05T17:40:19Z'
+- id: '50381999'
+  parent_id: '50381687'
+  author: apsurd
+  text: Wouldn&#x27;t an agent in any capacity need a sandbox runtime to do agentic
+    work? When you say &quot;sandboxes are too slow&quot; do you mean needing to boot
+    the sandbox to get back Agent state? Is the idea that state&#x2F;memory&#x2F;context
+    and runtime env are separate concepts in rivet?<p><i>(I&#x27;m a professional
+    developer but don&#x27;t do any orchestration so trying to understand from basic
+    mental model pov)</i>
+  score: 0
+  posted_at: '2026-11-05T17:44:42Z'
+- id: '50382128'
+  parent_id: '50381687'
+  author: realty_geek
+  text: Ah, another rivet.  I initially thought it was a pivot of:<p><a href="https:&#x2F;&#x2F;rivet.ironcladapp.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;rivet.ironcladapp.com&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-05T17:55:56Z'
+- id: '50382183'
+  parent_id: '50382128'
+  author: NathanFlurry
+  text: "&lt;insert spiderman meme here&gt;"
+  score: 0
+  posted_at: '2026-11-05T18:00:21Z'
+- id: '50382195'
+  parent_id: '50381999'
+  author: k9294
+  text: There is a notion right now of decoupling the agent loop from the sandbox,
+    so the sandbox isn&#x27;t waiting for request-response from the agent. This would
+    probably be 90+% of all the agent work.<p>If you combine this with products like
+    Sprites from Fly.io (or OSS version - agent substrate), where you pay only per
+    execution request in a sandbox, you can have huge savings compare to the event
+    loop inside the sanbdox. You will be billed only for request executions (tens
+    of milliseconds per read&#x2F;write, hundreds of milliseconds per search, etc.)
+    and zero for all the waiting time during the the inference phase.<p>Also, if you
+    don&#x27;t require a real Linux sandbox — you might actually emulate the environment,
+    e.g. just-bash idea with linux-like environment to give agents something that
+    looks like their native habitat, but under the hood, it can be just CF Durable
+    Objects SQLite or whatever else.<p>Probably(?) almost all knowledge work doesn&#x27;t
+    require a Linux sandbox. You can just build a document reading and editing agent
+    that does tool calls and connects to other products via MCPs, APIs, etc. And lightweight
+    actors make a lot of sense to me in these cases.
+  score: 0
+  posted_at: '2026-11-05T18:01:35Z'
+- id: '50382233'
+  parent_id: '50381687'
+  author: minraws
+  text: Interesting idea, horrible ux atm though, my codex&#x2F;claude whatever is
+    just as confused as me what and how are we supposed to use it exactly and all
+    the edge cases. Hope you folks can figure out some interesting ideas to improve
+    it though.
+  score: 0
+  posted_at: '2026-11-05T18:05:23Z'
+- id: '50382259'
+  parent_id: '50381687'
+  author: stiiv
+  text: What if I just want self-hostable TypeScript actors _without agents_? I&#x27;m
+    a long-time fan of Akka et. al., but to my knowledge Node never got a proper framework.
+  score: 0
+  posted_at: '2026-11-05T18:07:25Z'
+- id: '50382348'
+  parent_id: '50381999'
+  author: NathanFlurry
+  text: 'Hey!<p>&gt; Wouldn&#x27;t an agent in any capacity need a sandbox runtime
+    to do agentic work?<p>Developers on Rivet use 3 different patterns:<p>- Just agents:
+    many agents just need tools, such as customer support or personal agents<p>- Agents
+    with lightweight sandbox: Rivet provides a V8 &#x2F; WebAssembly sandboxing library
+    for running JS &amp; Python with a filesystem, which covers most workloads like
+    data analysis, file processing, evals, and code mode (<a href="https:&#x2F;&#x2F;rivet.dev&#x2F;agentos&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;agentos&#x2F;</a>)<p>-
+    Agent outside of the sandbox: expose the sandbox to the agent as tools, which
+    is better for blast radius, trust boundary, and orchestration (see below)<p>&gt;
+    Is the idea that state&#x2F;memory&#x2F;context and runtime env are separate concepts
+    in rivet?<p>Exactly, Rivet Actors support running the harness outside of the sandbox.
+    It&#x27;s often referred to &quot;separation of head from the hands.&quot;<p>I
+    wrote a bit about why a while back: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;blog&#x2F;2026-07-27-run-your-harness-outside-the-sandbox&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;blog&#x2F;2026-07-27-run-your-harness-outside-t...</a><p>&gt;
+    When you say &quot;sandboxes are too slow&quot; do you mean needing to boot the
+    sandbox to get back Agent state?<p>Specifically coldstarts. As LLMs are getting
+    faster and have more realtime use cases, sandboxes are become the bottleneck on
+    time to interactive for an agent.'
+  score: 0
+  posted_at: '2026-11-05T18:14:21Z'
+- id: '50382398'
+  parent_id: '50382259'
+  author: NathanFlurry
+  text: Hey! Rivet is pure actors at its core, there&#x27;s nothing inherently specific
+    to agents.<p>Instead, we provide an optional agent library that runs Pi Durable
+    on top of actors (<a href="https:&#x2F;&#x2F;rivet.dev&#x2F;agents&#x2F;docs&#x2F;quickstart&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;agents&#x2F;docs&#x2F;quickstart&#x2F;</a>)
+    or you can write your agent from scratch if you choose.
+  score: 0
+  posted_at: '2026-11-05T18:17:39Z'
+- id: '50382421'
+  parent_id: '50382233'
+  author: NathanFlurry
+  text: 'Hey! Can you share a bit more about what your agent is saying so we can fix
+    this? Would love to chat with you in Discord too: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;discord">https:&#x2F;&#x2F;rivet.dev&#x2F;discord</a>'
+  score: 0
+  posted_at: '2026-11-05T18:18:31Z'
+- id: '50382444'
+  parent_id: '50382195'
+  author: NathanFlurry
+  text: 'Exactly this.<p>&gt; Also, if you don&#x27;t require a real Linux sandbox
+    — you might actually emulate the environment<p>We built agentOS for this: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;agentos&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;agentos&#x2F;</a><p>It
+    provides Linux-compatible sandboxing using V8 &#x2F; WebAssembly. Supports full
+    POSIX filesystems, networking stacks, and process trees.'
+  score: 0
+  posted_at: '2026-11-05T18:20:00Z'
+- id: '50382488'
+  parent_id: '50381687'
+  author: bigbuppo
+  text: Ooh, so mod_rivet is getting funding? That&#x27;s great. Tcl does not get
+    enough love these days.
+  score: 0
+  posted_at: '2026-11-05T18:22:42Z'
+- id: '50382692'
+  parent_id: '50382195'
+  author: apsurd
+  text: This is a very helpful explanation, thank you. The part about basically duck-typing
+    an Agent&#x27;s environment and tool access is particularly insightful.
+  score: 0
+  posted_at: '2026-11-05T18:36:24Z'
+- id: '50382750'
+  parent_id: '50381687'
+  author: haseebws94
+  text: Hey Nathan! I remember Rivet from Playflow, back when you guys did game server
+    orchestration. Great to see you guys grow!<p>Have you had agents like claude code
+    , codex etc all fully running in agent-os? Trying to understand the use case a
+    bit better here. For context, I&#x27;ve recently built our own pipeline which
+    spins up ephemeral linux vms for claude code, codex, etc which do their work &amp;
+    the state always persists but frees up resources when finished. Is the idea pretty
+    much similar for agent-os here?<p>Also with the s3 backing changes, it reminds
+    me a lot of the work done on celld, good to see more self-hostable durable objects
+    out there.
+  score: 0
+  posted_at: '2026-11-05T18:40:51Z'
+- id: '50382786'
+  parent_id: '50381687'
+  author: esafak
+  text: 'My first reaction: this is weird; agentic workloads have many problems but
+    orchestration speed ain&#x27;t one of them. You spend most of the time waiting
+    for the model! Is this for small models?<p>I would have lead with the durability
+    aspect.'
+  score: 0
+  posted_at: '2026-11-05T18:44:45Z'
+- id: '50382929'
+  parent_id: '50381687'
+  author: chicagobuss
+  text: looks cool - I&#x27;m curious how this is similar &#x2F; different from celld<p>..and
+    how you&#x27;re doing anything with s3-backing durably and safely with latency
+    numbers less than several hundred ms
+  score: 0
+  posted_at: '2026-11-05T18:57:03Z'
+- id: '50382982'
+  parent_id: '50382750'
+  author: NathanFlurry
+  text: 'Been a minute since the gaming days, thanks for reaching out!<p>&gt; Have
+    you had agents like claude code , codex etc all fully running in agent-os?<p>We
+    have gotten them all working inside of agentOS. However, we found it&#x27;s a
+    better architecture to run the agent loop outside of agentOS and expose it as
+    tools. The trust boundary &amp; blast radius of running the agent inside the sandbox
+    makes it difficult.<p>Also, the memory overhead of running individual Claude Code
+    instances is nuts, it&#x27;s better to run the agents in a single process using
+    tools.<p>I wrote a bit more on it here: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;blog&#x2F;2026-07-27-run-your-harness-outside-the-sandbox&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;blog&#x2F;2026-07-27-run-your-harness-outside-t...</a><p>&gt;
+    Also with the s3 backing changes, it reminds me a lot of the work done on celld,
+    good to see more self-hostable durable objects out there.<p>Appreciate it!<p>Rivet
+    has a much different architecture than most S3-backed databases. Having an object-per-actor
+    doesn&#x27;t scale well with cost and performance, so we built a SSD tiered storage
+    engine instead: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;changelog&#x2F;2026-10-26-introducing-rivet-3-0-preview&#x2F;#warp-drive-bottomless-storage-with-the-speed-of-an-ssd">https:&#x2F;&#x2F;rivet.dev&#x2F;changelog&#x2F;2026-10-26-introducing-rivet-3-0...</a><p>Ping
+    me on Discord if you give it a try, would be fun to catch up: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;discord">https:&#x2F;&#x2F;rivet.dev&#x2F;discord</a>'
+  score: 0
+  posted_at: '2026-11-05T19:02:01Z'
+- id: '50383599'
+  parent_id: '50381808'
+  author: keeganpoppen
+  text: fairy tale land?
+  score: 0
+  posted_at: '2026-11-05T19:52:36Z'
+- id: '50383609'
+  parent_id: '50382786'
+  author: feifan
+  text: this is for people&#x2F;products that run dozens&#x2F;hundreds of agents concurrently.
+  score: 0
+  posted_at: '2026-11-05T19:53:19Z'
+- id: '50383756'
+  parent_id: '50381687'
+  author: dragonkhoi
+  text: Been running Rivet v3 self-hosted on AWS and it&#x27;s dope!
+  score: 0
+  posted_at: '2026-11-05T20:04:54Z'
+- id: '50383787'
+  parent_id: '50381687'
+  author: SriniK
+  text: Congrats! How is the security posture? Without really comparing isolation
+    and sandboxing etc.. comparing with E2B is not the same.
+  score: 0
+  posted_at: '2026-11-05T20:07:08Z'
+- id: '50383803'
+  parent_id: '50382929'
+  author: Tanjreeve
+  text: In OP<p>&gt; It’s not as simple as writing data straight to S3. Lots of PUTs
+    for tiny blobs of data are slow and expensive. Instead, we use an SSD tier to
+    optimize speed and cost:<p>&gt; When you write data to an actor’s SQLite database,
+    the write is acknowledged once SSDs in 2 of 3 availability zones have it. Then,
+    the data is batched to S3 in the background. This means that S3 is never on the
+    write path, which lowers latency and cost. When reading data or waking an actor,
+    Rivet reads from SSDs if already cached and falls back to S3 if not. SSD caches
+    can be tuned to meet your needs, giving you configurable tiered storage for your
+    actors.
+  score: 0
+  posted_at: '2026-11-05T20:08:23Z'
+- id: '50384035'
+  parent_id: '50383787'
+  author: NathanFlurry
+  text: 'Hey! Rivet includes a library for running untrusted user code called agentOS:
+    <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;agentos&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;agentos&#x2F;</a><p>It
+    provides Linux-compatible sandboxing using V8 &#x2F; WebAssembly. Supports full
+    POSIX filesystems, networking stacks, and process trees. Security-wise, it&#x27;s
+    the same model as Cloudflare Workers &amp; Chromium.<p>Rivet is frequently used
+    for running the harness outside of the sandbox. Wrote a bit about why here: <a
+    href="https:&#x2F;&#x2F;rivet.dev&#x2F;blog&#x2F;2026-07-27-run-your-harness-outside-the-sandbox&#x2F;">https:&#x2F;&#x2F;rivet.dev&#x2F;blog&#x2F;2026-07-27-run-your-harness-outside-t...</a>'
+  score: 0
+  posted_at: '2026-11-05T20:27:18Z'
+- id: '50384037'
+  parent_id: '50381687'
+  author: ATechGuy2
+  text: Congrats on the launch! Rivet seems neat; will definitely give it a spin.<p>&gt;
+    Sandboxes are expensive, mostly idle, and slow to start.<p>Many sandboxing startups
+    would disagree. Do you have any numbers to support?
+  score: 0
+  posted_at: '2026-11-05T20:27:27Z'
+- id: '50384042'
+  parent_id: '50383756'
+  author: NathanFlurry
+  text: 'Love to hear it! Don&#x27;t hesitate to share feedback in our Discord: <a
+    href="https:&#x2F;&#x2F;rivet.dev&#x2F;discord">https:&#x2F;&#x2F;rivet.dev&#x2F;discord</a>'
+  score: 0
+  posted_at: '2026-11-05T20:27:54Z'
+- id: '50384106'
+  parent_id: '50384037'
+  author: NathanFlurry
+  text: "Appreciate it! Would love to hear feedback when you do: <a href=\"https:&#x2F;&#x2F;rivet.dev&#x2F;discord\">https:&#x2F;&#x2F;rivet.dev&#x2F;discord</a><p>&gt;
+    Many sandboxing startups would disagree. Do you have any numbers to support?<p>There
+    is no one-size-fits-all, but we&#x27;re finding Rivet&#x27;s benefits fit well
+    for most agent workloads. I don&#x27;t believe sandboxes are going away, but I
+    think different workloads will move to specialized architectures.<p>Regarding
+    cost, there are F500 companies using Rivet&#x27;s tools for saving cost for use
+    cases like RL.<p>Regarding coldstarts, it depends heavily on the use case, and
+    there&#x27;s not a one-size-fits-all. \nBenchmarks are pulled from Compute SDK
+    sandbox benchmarks, more here: <a href=\"https:&#x2F;&#x2F;rivet.dev&#x2F;docs&#x2F;benchmarking&#x2F;\">https:&#x2F;&#x2F;rivet.dev&#x2F;docs&#x2F;benchmarking&#x2F;</a>"
+  score: 0
+  posted_at: '2026-11-05T20:32:59Z'
+- id: '50384833'
+  parent_id: '50381687'
+  author: wsxiaoys
+  text: |-
+    Same problem here. Internally we simulated it with just-bash plus whatever
+    filesystem was handy. For production we went with DO
+    after surveying their agent ecosystem, but it has since split into two paths
+    (@cloudflare&#x2F;agents or think vs. @cloudflare&#x2F;computer) with real trade-offs. Rivet&#x27;s s3 setup looks like a much closer fit for us — I&#x27;d want to try it on the
+    next project.
+  score: 0
+  posted_at: '2026-11-05T21:40:19Z'
+- id: '50385013'
+  parent_id: '50384833'
+  author: NathanFlurry
+  text: 'Let us know how it goes! We&#x27;re active in our Discord: <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;discord">https:&#x2F;&#x2F;rivet.dev&#x2F;discord</a><p>We&#x27;re
+    big believers in lightweight sandboxing approachs akin to Durable Objects in addition
+    to existing x86 sandboxes.'
+  score: 0
+  posted_at: '2026-11-05T21:55:01Z'
+- id: '50385324'
+  parent_id: '50381687'
+  author: timsuchanek
+  text: |-
+    Congratz on the launch! I love how efficient this is - I&#x27;m pretty sure more agents will be built this way than having the heavy sandbox.
+    Quick note, in the README on GH there&#x27;s a link to <a href="https:&#x2F;&#x2F;github.com&#x2F;rivet-dev&#x2F;rivet&#x2F;blob&#x2F;main&#x2F;engine&#x2F;packages&#x2F;gasoline" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rivet-dev&#x2F;rivet&#x2F;blob&#x2F;main&#x2F;engine&#x2F;packages...</a> which doesn&#x27;t lead anywhere.
+  score: 0
+  posted_at: '2026-11-05T22:22:03Z'
+- id: '50385480'
+  parent_id: '50385324'
+  author: NathanFlurry
+  text: Thanks Tim! Will get that fixed.
+  score: 0
+  posted_at: '2026-11-05T22:35:26Z'
+- id: '50385491'
+  parent_id: '50381687'
+  author: kianN
+  text: "&gt; When you write data to an actor’s SQLite database, the write is acknowledged
+    once SSDs in 2 of 3 availability zones have it. Then, the data is batched to S3
+    in the background. This means that S3 is never on the write path, which lowers
+    latency and cost. When reading data or waking an actor, Rivet reads from SSDs
+    if already cached and falls back to S3 if not. SSD caches can be tuned to meet
+    your needs, giving you configurable tiered storage for your actors.<p>As someone
+    who is not incredibly deep in the agent space, but works a lot on scientific and
+    distributed computing, this really caught my eye. Seems like this is primarily
+    part of the cloud offering, but a true posix compatible filesystem that interops
+    cleanly with S3 on the backend would be an incredibly interesting product (especially
+    if it were open-sourced).<p>A brief sidenote: I did a triple take when I saw the
+    name because Rivet is the internal name of our long-running job queue service.
+    You all have great taste."
+  score: 0
+  posted_at: '2026-11-05T22:36:30Z'
+- id: '50385578'
+  parent_id: '50381687'
+  author: Upbiddr
+  text: Congrats on the launch! The explanation of keeping S3 off the write path made
+    the storage model much easier to understand. For someone starting with a small
+    self-hosted deployment, what tends to be the first operational challenge as usage
+    grows?
+  score: 0
+  posted_at: '2026-11-05T22:44:24Z'
+- id: '50385668'
+  parent_id: '50385491'
+  author: patcon
+  text: I hate to be that guy, but celld does essentially the same thing, no? It waits
+    until persisted to another node OR stored in S3, but unless something has gone
+    horribly wrong, this will essentially always be replicating to the other node
+    first. (Admittedly, I recall it used to be just replicating to 1 node was considered
+    stored, and if that went down it could be lost. I think it&#x27;s two now, or
+    at least the bug is filed. Prob how the write time was so low in celld, but perhaps
+    wasn&#x27;t sustainable)<p>Regardless, glad for more stateful serverless options,
+    even if I am partial to what CloudFlare folks build :)
+  score: 0
+  posted_at: '2026-11-05T22:51:49Z'
+- id: '50385816'
+  parent_id: '50385668'
+  author: kianN
+  text: I&#x27;m not super familiar with celld, but my understanding is that its not
+    a full posix filesystem. We work with lots of dynamically created and queried
+    duckdb and netcdf files. My impression of celld is its meant for more lightweight
+    storage and that objects live in SQLite files.<p>I could be totally mistaken but
+    that&#x27;s my current understanding.
+  score: 0
+  posted_at: '2026-11-05T23:06:08Z'
+- id: '50385884'
+  parent_id: '50383599'
+  author: fastball
+  text: The rest of our infra is AWS + Vercel, so the CF DO stuff was in its own weird
+    isolated space that had to be maintained and cared about separately.
+  score: 0
+  posted_at: '2026-11-05T23:11:23Z'
+- id: '50386238'
+  parent_id: '50385578'
+  author: NathanFlurry
+  text: Hey! We’ve invested heavily in making self-hosting simple compared to the
+    standard. Scaling up is just a matter of adding nodes.<p>We also provide guides
+    for every major cloud, and no special tuning is required as you add nodes.<p>If
+    you’re self hosting and have questions, please let us know on Discord or GitHub!
+    <a href="https:&#x2F;&#x2F;rivet.dev&#x2F;discord">https:&#x2F;&#x2F;rivet.dev&#x2F;discord</a>
+  score: 0
+  posted_at: '2026-11-05T23:47:07Z'
+- id: '50386496'
+  parent_id: '50381687'
+  author: serjester
+  text: Even as someone who’s very involved in the space, I don’t understand what
+    you guys do. It’d be helpful if your website led with the problem you’re solving
+    instead of technical benchmarks.<p>I also don’t really understand the distinction
+    between an actor and an agent. I’ve never heard anyone call them actors, and I
+    doubt you’ll win that mindshare as a small startup.
+  score: 0
+  posted_at: '2026-11-06T00:18:46Z'
+- id: '50386706'
+  parent_id: '50386496'
+  author: throwaway-blaze
+  text: Man I was just coming here to say the same thing.  I have a Ph.D. in CS and
+    should be the target audience for this as a guy doing startup stuff that could
+    easily try out a new architecture or tool.<p>I read &quot;Rivet (<a href="https:&#x2F;&#x2F;rivet.dev">https:&#x2F;&#x2F;rivet.dev</a>)
+    – a fast, high-density, and scalable orchestrator for agentic workloads using
+    the actor model&quot; and I think &quot;I have no idea what this means, except
+    it&#x27;s a new way to make a backend service of some kind??&quot;<p>I&#x27;ve
+    reached an age where, if I don&#x27;t understand what it is from your description,
+    I&#x27;m not the problem.
+  score: 0
+  posted_at: '2026-11-06T00:44:07Z'
+- id: '50386878'
+  parent_id: '50381687'
+  author: madisonmay
+  text: Hey Nathan!  You build a fantastic product and your tech seems rock solid.  I
+    think you would benefit from more use-case specific tutorials and how-to guides
+    so that people find and use your product for the applications that it&#x27;s a
+    great fit for.  Multi-agent systems, code review agents, software factories, etc.<p>More
+    so than ever, folks are choosing to build rather than buy -- you should emphasize
+    that your product lets teams avoid having to choose by handling the &quot;boring&quot;
+    parts for them and letting them focus on the parts that are unique to their business.
+  score: 0
+  posted_at: '2026-11-06T01:06:19Z'
+- id: '50387064'
+  parent_id: '50381687'
+  author: xms17189
+  text: Fascinating architecture—treating agent turns as persistent lightweight actors
+    backed by tiered SQLite&#x2F;S3 rather than spinning up dedicated VMs makes a
+    lot of sense for latency and cost.<p>For workflows that inevitably require arbitrary
+    shell execution or local compiler tools (like coding agents running tests), do
+    you envision delegating just the side-effect execution out to ephemeral runners
+    while keeping the stateful actor long-lived, or is Rivet primarily focused on
+    API&#x2F;tool-calling agents?
+  score: 0
+  posted_at: '2026-11-06T01:37:34Z'
+- id: '50387349'
+  parent_id: '50383803'
+  author: chicagobuss
+  text: Got it. This is the og confluent cloud architecture, then.  That much data
+    crossing availability zones might surprise people people on AWS since that will
+    add at least $0.04 for every gb sent in
+  score: 0
+  posted_at: '2026-11-06T02:24:00Z'
+- id: '50387610'
+  parent_id: '50381687'
+  author: looplilt
+  text: 'Keeping S3 off the write path is the design choice that makes the whole pitch
+    click for me: acknowledging a write once two of three availability zones have
+    it on SSD, then batching to object storage in the background, gets durability
+    without paying object-storage latency on every turn. That also explains why separating
+    the agent loop from the sandbox matters, since a long-running turn shouldn&#x27;t
+    have to keep a heavyweight environment warm just to hold its state. My main question
+    is how that tiering behaves when an actor wakes after a long idle period and its
+    data has fully cooled to S3: is that 138 ms read the typical cost, or does it
+    get worse with larger session transcripts and filesystems?'
+  score: 0
+  posted_at: '2026-11-06T02:57:37Z'
+- id: '50387868'
+  parent_id: '50382128'
+  author: tonyoconnell
+  text: Me too... the Rivet from Ironclad was amazing for its time (when GPT3 came
+    out). I don&#x27;t think the developer realised how huge it could have been.
+  score: 0
+  posted_at: '2026-11-06T03:39:29Z'
+- id: '50388235'
+  parent_id: '50381687'
+  author: adsharma
+  text: Distributed actors are also good platforms to run graph algorithms. We&#x27;re
+    evaluating Rivet as a potential substrate to run page rank and clustering algorithms
+    on large graphs, while supporting cypher queries over the result.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;orgs&#x2F;Latentpedia&#x2F;discussions&#x2F;4"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;orgs&#x2F;Latentpedia&#x2F;discussions&#x2F;4</a><p>Related
+    work:<p><a href="https:&#x2F;&#x2F;sigmodrecord.org&#x2F;publications&#x2F;sigmodRecord&#x2F;1712&#x2F;pdfs&#x2F;05_systems_Spyropoulos.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;sigmodrecord.org&#x2F;publications&#x2F;sigmodRecord&#x2F;1712&#x2F;pdfs...</a><p><a
+    href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2301.01395" rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2301.01395</a>
+  score: 0
+  posted_at: '2026-11-06T04:33:28Z'
+- id: '50388500'
+  parent_id: '50385491'
+  author: whalesalad
+  text: Lots of ways to use S3 as a filesystem. FUSE is one. AWS even offers it as
+    a service now.
+  score: 0
+  posted_at: '2026-11-06T05:17:29Z'
+- id: '50388852'
+  parent_id: '50386496'
+  author: ggsp
+  text: I’m likely not much farther ahead than you are in understanding exactly what
+    Rivet does, as I learn by banging my head against the thing I’m trying to use,
+    and so far all I’ve done is read.<p>“Actor” comes from established CS terminology
+    [1], and agents-in-actors make sense in principle.<p>Agree with others in this
+    thread that a few use-cases in the README would help me decide whether this is
+    worth banging my head against or not.<p>[1] <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Actor_model"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Actor_model</a>
+  score: 0
+  posted_at: '2026-11-06T06:22:06Z'
+- id: '50388868'
+  parent_id: '50388500'
+  author: sharts
+  text: Those don’t actually give you things like fsevents&#x2F;inotify. If say you
+    needed to run git or build something, it would not work.
+  score: 0
+  posted_at: '2026-11-06T06:25:16Z'
+- id: '50388994'
+  parent_id: '50381687'
+  author: sebastienburel
+  text: How does hibernation decide an actor is idle? In my agent runtime actors run
+    in XS. Messages are queued and only handled once the current handler returns,
+    so a synchronous handler is never cut in half. But while a handler waits on an
+    async call, an HTTP request say, other messages still get handled. So “no message
+    being processed” isn’t the same as “nothing in flight”. Does Rivet hibernate an
+    actor with an outstanding request, and if so, what happens when the response comes
+    back?
+  score: 0
+  posted_at: '2026-11-06T06:43:26Z'
+- id: '50389198'
+  parent_id: '50381687'
+  author: bshafiq
+  text: Love the actor model approach here. Hibernating idle agents while keeping
+    state durable in S3 is a huge win for cost.<p>Curious how Rivet handles the runaway
+    loop problem though. When you have long-lived actors passing messages to each
+    other, a simple state bug can cause them to ping-pong the exact same payload indefinitely.<p>Because
+    the actors stay alive and keep responding (returning 200s), your infra looks perfectly
+    healthy, but the developer&#x27;s OpenAI bill just exploded in the background.<p>Are
+    you leaving loop detection entirely to the devs building on top of Rivet, or is
+    there any native circuit breaker at the orchestrator level to kill an actor that&#x27;s
+    stuck in a cyclic state?
+  score: 0
+  posted_at: '2026-11-06T07:19:00Z'
+- id: '50390248'
+  parent_id: '50381687'
+  author: alexey_anshakov
+  text: Moving state persistence to write-ahead SQLite tiered into S3 is a very clean
+    answer to the latency-cost trap of raw object storage. The big operational win
+    with decoupled actor state like this is avoiding zombie locks when an agent execution
+    times out mid-turn. Curious how you handle split-brain fencing if an actor network
+    partition occurs while a batched write is still draining to S3.
+  score: 0
+  posted_at: '2026-11-06T09:41:46Z'
+article:
+  url: https://github.com/rivet-dev/rivet
+  title: 'GitHub - rivet-dev/rivet: The orchestrator for agentic workloads. A fast,
+    high-density and scalable orchestrator for every workload an agent needs. · GitHub'
+  fetch_status: success
+  content: |-
+    ## Latest commit
+
+    ## History
+
+    ## Folders and files
+
+    ## Repository files navigation
+
+    ### Fast, high-density, scalable orchestration with Rivet Actors.Built on S3 at SSD speeds.
+
+    4.99 ms p99 cold starts, 72 KB RAM per Actor, scales to billions
+
+    Quickstart • Documentation • Blog • Discord • X
+
+    ## What is Rivet?
+
+    Rivet Actors are long-lived processes with in-memory state, a SQLite database, WebSockets, and scheduling. You can create one for each agent, user, session, or tenant.
+
+    - 72 KB per Actor: Actors share a node process instead of each booting a sandbox, so one server holds hundreds of thousands.
+
+    - 4.99 ms p99 cold starts: No image pull and no VM boot.
+
+    - Built for scale: All data lives in S3, so a cluster scales to billions of Actors.
+
+    - Hibernates when idle, wakes on demand: Idle Actors cost nothing and wake on the next request with nothing lost.
+
+    - SQLite backed by S3, at SSD speeds: 1.07 ms durable writes and 1.36 ms reads at p99, for about 10.4× less than replicated SSD storage.
+
+    ### Use cases
+
+    - Durable & multiplayer AI agents: memory that survives restarts, shared live with every client
+
+    - Workflows: multi-step operations that replay instead of starting over
+
+    - AI-generated apps: run the apps and Actors your agent generates
+
+    - Collaborative editing: one Actor per document, synced to every editor
+
+    ### Example
+
+    A minimal agent written from scratch. For a ready-made agent, use Pi Durable.
+
+    // server.ts import { actor, setup } from "rivetkit"; import { db } from "rivetkit/db"; import { streamText } from "ai"; import { openai } from "@ai-sdk/openai"; // One Actor per agent, created on first use: agent.getOrCreate(["agent-123"]) export const agent = actor({ // 1. SQLite: every agent has its own database, so history survives restarts db: db({ onMigrate: async (db) => { await db.execute("CREATE TABLE IF NOT EXISTS messages (role TEXT, content TEXT)"); }, }), // 2. In-memory state: plain variables that live with the Actor, with no database round trip createVars: () => ({ online: new Map<string, string>() }), // 3. WebSockets: each client holds a live connection, and the Actor pushes to all of them onDisconnect: (c, conn) => { c.vars.online.delete(conn.id); c.broadcast("online", [...c.vars.online.values()]); }, actions: { join: (c, user: string) => { c.vars.online.set(c.conn.id, user); c.broadcast("online", [...c.vars.online.values()]); }, sendMessage: async (c, text: string) => { // Save the message await c.db.execute("INSERT INTO messages VALUES (?, ?)", "user", text); const messages = await c.db.execute("SELECT role, content FROM messages"); // Stream tokens to every connected client const response = streamText({ model: openai("gpt-5"), messages }); for await (const delta of response.textStream) { c.broadcast("token", delta); } // Save the response await c.db.execute("INSERT INTO messages VALUES (?, ?)", "assistant", await response.text); }, }, }); export const registry = setup({ use: { agent } });
+
+    // client.ts (frontend or backend) import { createClient } from "rivetkit/client"; import type { registry } from "./server"; const client = createClient<typeof registry>(); // Open a WebSocket connection to the agent const agent = client.agent.getOrCreate(["agent-123"]).connect(); // Listen for realtime events agent.on("online", users => console.log("online:", users)); agent.on("token", delta => process.stdout.write(delta)); // Call actions on the Actor await agent.join("nathan"); await agent.sendMessage("how many r's in strawberry?");
+
+    ### Why run agents on Rivet Actors?
+
+    Each Actor gives the agent a long-lived process for long agent turns, in-memory state for context, a WebSocket server for multiplayer, durable SQLite storage for session transcripts and agent artifacts, and hibernation when idle.
+
+    Most of an agent's time is spent waiting on inference. When the agent loop runs inside a sandbox, you pay for a whole VM that sits mostly idle with low CPU usage.
+
+    Rivet Actors run the agent loop outside of the sandbox instead, often called "separating the head from the hands." The agent's state, memory, and context live in the Actor, and it reaches the sandbox through tools only when it needs to run code. This uses a fraction of the memory and limits the blast radius and trust boundary of the code it runs. Read more about running the harness outside of the sandbox.
+
+    ### Do I need a sandbox with a Rivet Actor?
+
+    Often not. An agent needs a sandbox only to run code it writes. Developers on Rivet use three patterns:
+
+    - Agents with tools: Many agents only need tool calls, MCP, and APIs, such as customer support or personal agents. No sandbox needed.
+
+    - Agents with a lightweight sandbox: agentOS provides Linux-compatible sandboxing for JS and Python using V8 and WebAssembly, with full POSIX filesystems, networking stacks, and process trees. It covers most workloads, like data analysis, file processing, evals, and code mode.
+
+    - Agents with a full sandbox: Keep your existing sandbox provider and expose its shell and filesystem to the agent as tools, such as a bash tool that runs commands in the sandbox. The Actor reattaches to it across sleeps and restarts. See the sandbox coding agent example.
+
+    ## Getting Started
+
+    ### Use with your coding agent
+
+    Paste this prompt into Claude Code, Cursor, Codex, or any coding agent:
+
+    Run npx skills add rivet-dev/skills, then ask me what to build and run it locally.
+
+    ### Start from scratch
+
+    Rivet ships libraries built on top of Actors for common use cases.
+
+    - Actors: Long-lived processes with state, realtime, and scheduling built in.
+
+    - Agents: Durable agents built on Actors, with memory that survives restarts.
+
+    - Workflows: Multi-step operations built on Actors that replay instead of starting over.
+
+    - agentOS: Run the code your agent writes, securely, with granular control over network access, filesystem access, and resource limits.
+
+    - Dynamic Apps (preview): A backend per user, deployed the moment it is generated.
+
+    ## How Actors compare to sandboxes
+
+    - Rivet numbers come from the published Rivet Actors vs Cloudflare Durable Objects benchmark, run on Rivet 3.0.3. Its repository has the raw samples and the scripts to reproduce them.
+
+    - Sandbox numbers are for E2B: 512 MiB is its default memory allocation from E2B's billing documentation as of November 4, 2026, and 1.70 s is the p99 cold start from ComputeSDK's October 30, 2026 sandbox benchmark.
+
+    - Storage cost compares S3 Standard with three Amazon EBS gp3 copies at AWS list prices.
+
+    - Sources, dates, and the full method are at rivet.dev/docs/benchmarking.
+
+    ## Features
+
+    - Fault tolerance: If a node goes down, its Actors move elsewhere with their state intact.
+
+    - HTTP & WebSocket networking: Call an Actor over HTTP or hold a live WebSocket to it.
+
+    - End-to-end type safety: Typed clients for your backend and React hooks for your frontend.
+
+    - Cron & scheduling: Wake an Actor on a schedule or at a time it sets for itself.
+
+    - Actor-to-Actor calls: Actors call each other by key across the cluster.
+
+    - Scoped JWTs: Give each client a JWT scoped to the Actors it may reach.
+
+    - OpenTelemetry: Traces, metrics, and logs in OTel format.
+
+    ## Deployment Options
+
+    Every option runs the same control plane, from local dev to production. Talk to an engineer →
+
+    ## Works with the tools you already use
+
+    Typed SDKs for your backend and React hooks for your frontend. Rivet runs on native Node.js and Bun with no custom runtime, so your existing packages, tooling, and tests work unchanged.
+
+    Deploy nodes on: Docker Compose • Kubernetes • VM & bare metal • Hetzner • AWS ECS • Railway • Render
+
+    Frameworks: React • Effect
+
+    Runtimes: Node.js • Bun • Rust
+
+    Tools: Vitest • OpenTelemetry • Pino • AI SDK • OpenAPI • AsyncAPI
+
+    Request an integration →
+
+    ## FAQ
+
+    Yes. Rivet deploys into your own cloud account, including air-gapped environments: the control plane and storage run inside your VPC while Rivet operates them. See the BYOC docs.
+
+    Yes. Rivet Cloud runs fully managed, dedicated clusters on AWS or GCP in any reg
+  error:
+  fetched_at: '2026-11-06T10:29:11Z'
+archived_at: '2026-11-06T10:29:14Z'
