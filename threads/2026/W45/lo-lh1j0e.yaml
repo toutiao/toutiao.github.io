@@ -5,14 +5,14 @@ post:
   title: 'Shlemiel the Painter Is Back: How Zig’s libc Rewrite Made SQLite Slower'
   url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
   hn_url: https://lobste.rs/s/lh1j0e
-  score: 94
+  score: 100
   author: ohrv
   posted_at: '2026-11-04T15:23:09Z'
-  fetched_at: '2026-11-05T19:38:16Z'
+  fetched_at: '2026-11-06T01:24:31Z'
   article_url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
   article_fetch_status: success
-  article_fetched_at: '2026-11-05T19:38:18Z'
-  raw_comment_count: 19
+  article_fetched_at: '2026-11-06T01:24:35Z'
+  raw_comment_count: 23
   tags:
   - performance
   - rust
@@ -25,7 +25,7 @@ comments:
     look at the linked zig code, and presumably it’s like this because it’s mapping
     c strings into nice safe zig arrays rather than treating them as unsafe streams
     of memory locations containing chars.
-  score: 18
+  score: 19
   posted_at: '2026-11-04T16:51:12Z'
 - id: lo-vsj8xx
   parent_id: '0'
@@ -43,7 +43,7 @@ comments:
   text: |-
     Relevant issue: https://codeberg.org/ziglang/zig/issues/37402
     Pending PR: https://codeberg.org/ziglang/zig/pulls/37417
-  score: 37
+  score: 38
   posted_at: '2026-11-04T18:38:58Z'
 - id: lo-tnymyv
   parent_id: '0'
@@ -58,7 +58,7 @@ comments:
   author: tobin_baker
   text: Hate to say it, but LLM code review certainly would have caught such an obvious
     "accidentally quadratic" bug.
-  score: 11
+  score: 10
   posted_at: '2026-11-04T19:14:18Z'
 - id: lo-ggsc86
   parent_id: '0'
@@ -66,14 +66,14 @@ comments:
   text: |-
     And we would have missed the community showing up, and having fun working together on a fix.
     I think this is acceptable in a pre-1.0 language.
-  score: 67
+  score: 68
   posted_at: '2026-11-04T19:38:34Z'
 - id: lo-ix44yi
   parent_id: '0'
   author: jdpage
   text: Zig treats triples as requesting an ABI, rather than an implementation. A
     member of the core team discussed the rationale behind it in this Lobsters comment.
-  score: 8
+  score: 11
   posted_at: '2026-11-04T22:18:57Z'
 - id: lo-pt4clz
   parent_id: '0'
@@ -89,7 +89,7 @@ comments:
 
 
     Done.
-  score: 11
+  score: 12
   posted_at: '2026-11-05T01:19:06Z'
 - id: lo-fzk9bh
   parent_id: '0'
@@ -105,7 +105,7 @@ comments:
     Most of the people working on zig libc project has been young, new contributors. It's been a fantastic way to grow the community, to introduce people to systems programming, and to give them a sense of empowerment - the idea that you actually can implement a libc yourself.
     Sometimes, a crucial part of the lesson is seeing the consequences of one's mistakes in the wild.
     I made the judgement call to let this slide in the review. I'm still not sure whether it was the right or wrong call.
-  score: 29
+  score: 36
   posted_at: '2026-11-05T12:15:29Z'
 - id: lo-6ynoe2
   parent_id: '0'
@@ -114,7 +114,7 @@ comments:
     This is the kind of thing that an LLM is very bad at.
     For very small strings, any vectorisation is unlikely to give a win because all of the futzing with the unaligned starts and ends will cause problems.  For large strings, it's a big win but reading past the end of the buffer may cause problems (most architectures won't trap, but some will even for aligned reads).  If the string fits nicely in the cache then the strlen is warming the cache for you and the vectorised match will be incredibly fast.  For very large strings, the cost of the strlen will dominate.
     The LLM will tell you that your code looks like an antipattern.  But did you actually want to optimise for those very long strings?  Most of the data I've seen says that strings passed to standard-library string functions tend to be between 0 bytes and 1 KiB.  0 bytes is much more common than I'd expect, things above about 128 bytes are increasingly infrequent.  So what should you be optimising for?  The LLM advice that I've seen for this kind of thing will let you avoid a pathological case at the expense of making the common case slower.  Is that the tradeoff that you wanted to make?
-  score: 8
+  score: 10
   posted_at: '2026-11-05T12:51:43Z'
 - id: lo-byrnd9
   parent_id: '0'
@@ -134,7 +134,7 @@ comments:
 
     I think those are completely accurate findings. But worse, it immediately found three behavior bugs in memccpy, strncmp and strchr. memccpy(dst, "abc", 'b', 4) for instance gives the wrong results in the new zig implementation and it noticed that strncmp reads one extra byte beyond n.
     (And it also confirmed that all three bugs are still in the latest version on git)
-  score: 3
+  score: 5
   posted_at: '2026-11-05T13:09:18Z'
 - id: lo-osw6th
   parent_id: '0'
@@ -143,7 +143,7 @@ comments:
     I feel like rather than guessing what the LLM will say, we can just ask it
 
     And then you did, and it does exactly what I said it would.  It tells you about the worst case, but it doesn't tell you what this does to the average case.  What should this function be optimising for?  There's no discussion of that and it sends you down a path of changing it in a way that may make it worse for most users.
-  score: 3
+  score: 5
   posted_at: '2026-11-05T13:18:11Z'
 - id: lo-q5kzze
   parent_id: '0'
@@ -154,7 +154,7 @@ comments:
     It kind of does:
 
     A common loop like while ((p = strchr(p, ','))) becomes quadratic.
-  score: 7
+  score: 10
   posted_at: '2026-11-05T13:31:06Z'
 - id: lo-ziuzuj
   parent_id: '0'
@@ -162,7 +162,7 @@ comments:
   text: |-
     Giving people the space to make a mistake and then fix it with a community that encourages them in that is I think more valuable than a work that is clearly in progress have a performance regression but otherwise be safe.
     Other's might disagree with me but I for one think it was fine.
-  score: 14
+  score: 16
   posted_at: '2026-11-05T13:43:20Z'
 - id: lo-lvhbsl
   parent_id: '0'
@@ -171,7 +171,7 @@ comments:
     And then you did, and it does exactly what I said it would. It tells you about the worst case, but it doesn't tell you what this does to the average case. What should this function be optimising for?
 
     It does. It gives you an example of how that function is typically called and why that behavior is bad for that case.
-  score: 8
+  score: 10
   posted_at: '2026-11-05T13:45:46Z'
 - id: lo-ob9jbb
   parent_id: '0'
@@ -179,7 +179,7 @@ comments:
   text: |-
     Thanks for this! I got into systems programming thanks to people like you. Back when the Rust project was small and had a similarly welcoming attitude, one of the maintainers taught me basic git fu instead of telling me to RTFM. Fast-forward 12 years and now I'm paid to work on Firefox's networking stack.
     Keep going :)
-  score: 6
+  score: 8
   posted_at: '2026-11-05T14:23:58Z'
 - id: lo-3zdydm
   parent_id: '0'
@@ -188,7 +188,7 @@ comments:
     to give them a sense of empowerment - the idea that you actually can implement a libc yourself
 
     I think this is worth a lot. I still have this mental barrier regarding such things. Something something high bar to pass and why reinvent the wheel. Even though it could be fun. If no one writes crypto then "don't write cryptography code" will become "no one knows how to write it".
-  score: 2
+  score: 4
   posted_at: '2026-11-05T17:48:24Z'
 - id: lo-4tnuba
   parent_id: '0'
@@ -197,8 +197,51 @@ comments:
     sure whether it was the right or wrong call.\n\nGoing by the replies below and
     by how often we've not only learned but internalized something because we worked
     through our mistakes, we're ready to say it was the right call. \U0001F49C"
-  score: 1
+  score: 3
   posted_at: '2026-11-05T18:55:30Z'
+- id: lo-v50e7s
+  parent_id: '0'
+  author: kneeawn
+  text: |-
+    Tl;dr LLMs make inexperienced analyses, but do not, IMO, help create experienced programmers who can do better analyses.
+    Saying a common loop becomes quadratic is exactly the point being made. It’s arguing about theoretical performance and no mention is made of any trade-off at all. I, being an inexperienced developer with some exposure to computation complexity theory, can point out and say “n squared bad”. What I, and the LLM here, lack is the deeper knowledge that there are even trade-offs present. As far as I understand, the best way we know to take people like me and take them to a deeper level of knowledge is through experience and mentorship.
+    I think that @david_chisnall’s point still stands. The LLM did not point to any trade-offs and instead focused on the immediate quadratic nature of the code.
+    I’m reminded of the countless examples of the XY problem regarding people asking for help with code. Someone asks how to make a linked list in Rust and are either given the surface-level information about Rc or someone takes the time to figure out the actual problem trying to be solved. It takes more experience and understanding to do the second approach and I agree that LLMs do not take it by default. In my experience, as someone who doesn’t understand a lot, using an LLM to try and paper over my lack of experience and knowledge bites me in the butt because of the nuances of the domain that I don’t understand, that the LLM does not surface to me.
+  score: 2
+  posted_at: '2026-11-05T20:49:47Z'
+- id: lo-vzpxj6
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    I feel like you're arguing a strawman here. The commit that landed has numerous issues that an experienced developer would also spot, but as demonstrated an agent also spots it and flags them accurately. More importantly, if you want to have some "nuanced discussion" that is just a short moment away. Remember that the report came not from an LLM recalling nonsense, it actually disassembled both functions. It correctly figured out from the context that this is supposed to be drop in replacement for musl. If you ask it why it proposes it, here is what it says:
+
+
+    The "measure first" design loses in every case I tested, even 16-byte strings with a one-character set. The NUL check per byte costs less than reading the rest of the string.
+    This is a drop-in replacement for musl. Programs were written and tuned against musl's and glibc's behaviour. Reading a 1 MB buffer this way takes 2,000× longer, and nobody will suspect strcspn. The spec doesn't promise  speed, but users rely on it anyway.
+    The fix is about 15 lines of code that musl has shipped for years. It's cheap to adopt.
+
+
+    And I do want to point out that three of the functions are not even matching behavior of C yet, one of which can cause a segfault when the string aligns to the end of a page.
+  score: 4
+  posted_at: '2026-11-05T20:59:05Z'
+- id: lo-vujtsb
+  parent_id: '0'
+  author: kneeawn
+  text: |-
+    Going on my own LLM-guided tour (agy, Gemini 3.8 Flash High), I was presented with essentially the same response you were, though it did find TFA and reference it which is funny.
+    Prompting it about tradeoffs with regards to potential string sizes, it gave me more information that I have to assume is useful.
+    I still stand by the statement that the LLM did not surface the idea of asking which case we should optimize for until prompted to do so. In this and many other situations, I believe the nuanced discussion requires me to know ahead of time what nuance there is to be had. If the LLM won’t guide me down that path, then I rely on humans to pass that knowledge to me, so that I can ask the right questions in the first place.
+  score: 1
+  posted_at: '2026-11-05T21:25:46Z'
+- id: lo-miid7o
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    I still stand by the statement that the LLM did not surface the idea of asking
+
+    Gemini flash might not have, Opus 5.5 absolutely did.
+  score: 0
+  posted_at: '2026-11-05T21:31:50Z'
 article:
   url: https://dennisforbes.ca/blog/microblog/2026/10/the_accidental_12000x_sqlite_slowdown/
   title: 'Shlemiel the Painter Is Back: How Zig’s libc Rewrite Made SQLite 12,000×
@@ -250,4 +293,4 @@ article:
     My original fix for this issue, at least in my own code, was to pre-prune whitespace from JSON, which greatly reduced the cost when tokenizing in sqlite3, but not knowing where else it might bite I moved my Linux builds over to Linux containers.
   error:
   fetched_at: '2026-11-05T19:38:18Z'
-archived_at: '2026-11-05T19:38:18Z'
+archived_at: '2026-11-06T01:24:35Z'

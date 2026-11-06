@@ -1,0 +1,191 @@
+---
+post:
+  id: '50380268'
+  title: We can do better than line-buffered output
+  url: https://nullprogram.com/blog/2026/11/05/
+  hn_url: https://news.ycombinator.com/item?id=50380268
+  score: 91
+  author: zdw
+  posted_at: '2026-11-05T15:25:22Z'
+  fetched_at: '2026-11-06T01:24:28Z'
+  article_url: https://nullprogram.com/blog/2026/11/05/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T01:24:28Z'
+  raw_comment_count: 10
+comments:
+- id: '50381988'
+  parent_id: '50380268'
+  author: wpollock
+  text: In C, you can use setvbuf to control buffering on stdout.  There are also
+    Linux command line utilities you can use to control buffering, unbuffer and stdbuf.
+  score: 0
+  posted_at: '2026-11-05T17:43:35Z'
+- id: '50382322'
+  parent_id: '50381988'
+  author: usefulcat
+  text: This is true, although neither of those by them selves will achieve what the
+    author is aiming for.
+  score: 0
+  posted_at: '2026-11-05T18:12:38Z'
+- id: '50382462'
+  parent_id: '50380268'
+  author: abecedarius
+  text: "&gt; flush the buffer if it’s been idle a short time<p>I&#x27;ve thought
+    this was the right default for a good while. 50 years ago when Unix was designed,
+    maybe not."
+  score: 0
+  posted_at: '2026-11-05T18:21:05Z'
+- id: '50382808'
+  parent_id: '50380268'
+  author: Veserv
+  text: Yes, basically all buffering should use work-or-time based flushing.<p>Work-based
+    flushing exists to batch work to amortize overhead. It allows you to tune how
+    much time you spend in overhead in a work period. However, this can result in
+    unbounded delay.<p>Time-based flushing targets a worst-case latency in low throughput
+    environments. This ensures you do not get unbounded delays. Interestingly, this
+    also allows you to tune how much time you spend in overhead in a work period.<p>So,
+    with work-or-time based flushing what you are really tuning is how much time you
+    are willing to spend in overhead in a work period and balancing that against latency.<p>As
+    a nit, the article calls this a derivative of Nagle’s algorithm, but it is basically
+    the opposite. Nagle’s algorithm is about batching until acknowledgement with no
+    mention of time. In fact, the lack of time-based flushing in Nagle’s algorithm
+    is why it interacts so poorly with TCP Delayed Ack.
+  score: 0
+  posted_at: '2026-11-05T18:47:06Z'
+- id: '50384124'
+  parent_id: '50380268'
+  author: cowlevel
+  text: This would withhold a line if the writer paused for a while without calling
+    into buffer code. Another case for Golang supremacy?<p>We can also do better than
+    <i>terminals</i>. 7-Zip was the GOAT.
+  score: 0
+  posted_at: '2026-11-05T20:34:11Z'
+- id: '50384754'
+  parent_id: '50381988'
+  author: cassepipe
+  text: |-
+    If you want to learn more, I liked this blog post:
+    <a href="https:&#x2F;&#x2F;hmarr.com&#x2F;blog&#x2F;how-stdbuf-works&#x2F;" rel="nofollow">https:&#x2F;&#x2F;hmarr.com&#x2F;blog&#x2F;how-stdbuf-works&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-05T21:33:11Z'
+- id: '50385046'
+  parent_id: '50380268'
+  author: edpenz
+  text: One more thing to consider is atomicity of write interleaving to the same
+    pipe. Say you fork two unzips in the terminal like `unzip a &amp; unzip b`. With
+    naive line buffering the outputs mix cleanly, but if aggregating multiple lines
+    per write the chunk size needs to stay below PIPE_BUF for this to stay true.
+  score: 0
+  posted_at: '2026-11-05T21:57:19Z'
+- id: '50385200'
+  parent_id: '50380268'
+  author: chuliomartinez
+  text: |-
+    I have seen versions of this many times in my life. Unfortunately, that progress report can hurt a lot, is something we devs often miss.<p>From my horror cabinet:
+    1. Running count * on all sqlite tables 4x per second to show sync progress.<p>2. Progress bounce animation eating 80% of cpu (windows phone bizarro silverlight)<p>3. Sending myself 800 emails in 10 minutes…<p>The rule is quite simple, we are just bad at it. Computer to human communication should run at human speed.
+  score: 0
+  posted_at: '2026-11-05T22:10:41Z'
+- id: '50386102'
+  parent_id: '50380268'
+  author: JdeBP
+  text: It&#x27;s worth noting that there are more that two kinds of buffering, contrary
+    to the introduction here, and the one that&#x27;s actually used in several C libraries
+    is so-called <i>smart buffering</i>.  This <i>also</i> flushes standard output
+    when standard input needs to do an underlying read and it is reading the beginning
+    of a line.<p>And since musl libc is in the news, it is worth nothing that musl&#x27;s
+    fwrite() is another of those that looks for the <i>last</i> linefeed in the buffer,
+    rather than the first, and so should emit multiple lines in one underlying write().  Although
+    this is only done in fwrite() specifically.<p>* <a href="https:&#x2F;&#x2F;git.musl-libc.org&#x2F;cgit&#x2F;musl&#x2F;tree&#x2F;src&#x2F;stdio&#x2F;fwrite.c#n14"
+    rel="nofollow">https:&#x2F;&#x2F;git.musl-libc.org&#x2F;cgit&#x2F;musl&#x2F;tree&#x2F;src&#x2F;stdio&#x2F;fwrite.c#...</a>
+  score: 0
+  posted_at: '2026-11-05T23:32:33Z'
+- id: '50386133'
+  parent_id: '50380268'
+  author: phyzome
+  text: The number of times I&#x27;ve thought a Python process was broken because
+    it wasn&#x27;t printing anything...
+  score: 0
+  posted_at: '2026-11-05T23:35:00Z'
+article:
+  url: https://nullprogram.com/blog/2026/11/05/
+  title: We can do better than line-buffered output
+  fetch_status: success
+  content: "## [We can do better than line-buffered output](/blog/2026/11/05/)\n\n
+    nullprogram.com/blog/2026/11/05/ \n\n[Buffered output](/blog/2023/02/13/) typically
+    comes in two flavors: fully buffered and line buffered. If output goes to a terminal
+    then the implementation automatically selects line buffering, flushing its buffer
+    when a line is completed so that it reaches the user immediately. Otherwise it
+    fully buffers, holding output until the buffer is full or an explicit flush event
+    at some arbitrary point in the future. Line buffering is a common bottleneck in
+    non-interactive terminal applications such that it’s worth redirecting output
+    to a file or pipe in order to avoid it. _It doesn’t have to be this way_. We can
+    have our cake and eat it, too: promptly delivering lines to a terminal at fully-buffered
+    speeds.\n\nFor example, Info-ZIP `unzip` prints file names as it extract them
+    from an archive. This printout dominates extraction time of archives with many
+    small files. Sometimes I run `unzip` without options, then my terminal floods
+    with file names and I know that my extraction is bottlenecked. So I cancel and
+    restart with `-q` (quiet) to avoid the bottleneck, because it’s faster to start
+    over than wait. Conscious of this experience, I avoided the problem in [tugz](/blog/2026/10/13/)
+    `unzip` without changing the user interface. You get a listing but you don’t have
+    to pay for it.\n\n    $ unzip example.zip\n    Archive: example.zip\n      inflating:
+    example.bmp\n      inflating: example.svg\n      inflating: example.txt\n\nConsider
+    this C program that prints three lines:\n\n    #include <stdio.h>\n    \n    int
+    main()\n    {\n        puts(\"a\\nb\");\n        puts(\"c\");\n    }\n\nIf we
+    examine the writes with, say, [strace](/blog/2018/06/23/):\n\n    $ strace -o
+    log -e write ./a.out\n    a\n    b\n    c\n\nWe might see (here glibc):\n\n    write(1,
+    \"a\\n\", 2) = 2\n    write(1, \"b\\n\", 2) = 2\n    write(1, \"c\\n\", 2) = 2\n\nYes,
+    glibc takes line buffering _quite literally_, even splitting writes on a string.
+    Some implementations are a little more sophisticated:\n\n    write(1, \"a\\nb\\n\",
+    2) = 4\n    write(1, \"c\\n\", 2) = 2\n\nCPython makes exactly those writes for
+    this program:\n\n    import sys\n    \n    sys.stdout.write(\"a\\nb\\n\")\n    sys.stdout.write(\"c\\n\")\n\nIts
+    rule is to flush if its buffer contains a newline after appending the new output,
+    with the consequence of possibly outputting partial lines. Building on [the previous
+    example](/blog/2023/02/13/):\n\n    enum {\n        BUF_ERR = 1 << 0,\n        BUF_LINE
+    = 1 << 1,\n    };\n    \n    typedef struct {\n        uint8_t *buf;\n        ptrdiff_t
+    cap;\n        ptrdiff_t len;\n        int fd;\n        int flags;\n    } Buf;\n
+    \   \n    bool os_write(int fd, void *, ptrdiff_t);\n    \n    void flush(Buf
+    *b)\n    {\n        if (!(b->flags & BUF_ERR) && b->len) {\n            if (!os_write(b->fd,
+    b->buf, b->len)) {\n                b->flags |= BUF_ERR;\n            }\n            b->len
+    = 0;\n        }\n    }\n\nSuch line buffering might be achieved with a test-then-flush:\n\n
+    \   bool has_newline(Buf *b)\n    {\n        int r = 0;\n        for (ptrdiff_t
+    i = 0; i < b->len; i++) {\n            r |= b->buf[i] == '\\n';\n        }\n        return
+    r;\n    }\n    \n    void append(Buf *b, uint8_t *src, ptrdiff_t len)\n    {\n
+    \       uint8_t *end = src + len;\n    \n        while (!(b->flags & BUF_ERR)
+    && src<end) {\n            ptrdiff_t left = end - src;\n            ptrdiff_t
+    avail = b->cap - b->len;\n            ptrdiff_t amount = avail<left ? avail :
+    left;\n    \n            memcpy(b->buf+b->len, src, amount);\n            b->len
+    += amount;\n            src += amount;\n    \n            if (amount < left) {\n
+    \               flush(b); // make room\n            }\n        }\n    \n        //
+    test-then-flush if line buffered\n        if ((b->flags & BUF_LINE) && has_newline(b))
+    {\n            flush(b);\n        }\n    }\n\nIf we’ve got a bunch of lines to
+    print and append them one after another into the buffer, that’s a lot of writes
+    which could have been one.\n\n### Eat all the cake\n\nLet’s think about our goal:
+    If the output is a terminal then we don’t want to hold back lines indefinitely.
+    That’s not the same as a write on every newline. There’s already a solution for
+    the problem where we’re in a hurry to send out data, but the underlying, _buffer-oblivious_
+    caller makes lots of small writes: [Nagle’s algorithm](https://en.wikipedia.org/wiki/Nagle%27s_algorithm).\n\nThat
+    is, **flush the buffer if it’s been idle a short time**. We don’t actually care
+    about newlines in particular. The catch is that it requires tweaking the interface.
+    Add a deadline to the buffer:\n\n    typedef struct {\n        int64_t deadline;\n
+    \       // ...\n    } Buf;\n    \n    int64_t os_monotonic_clock();\n    \n    void
+    deadline_flush(Buf *b)\n    {\n        if ((b->flags & BUF_LINE) && b->len) {\n
+    \           int64_t now = os_monotonic_clock();\n            if (b->deadline &&
+    now>b->deadline) {\n                flush(b);\n                b->deadline = 0;\n
+    \           } else {\n                b->deadline = now + DEADLINE;\n            }\n
+    \       }\n    }\n\nWhere `DEADLINE` is something appropriate for human perception,
+    like 100ms or so. We could poke this concurrently in a thread, awoken via futex
+    when data is written to the buffer. But better to poke it between short stints
+    of work, which is how tugz works. For example (using [my strings](/blog/2025/01/19/#strings)):\n\n
+    \   for (/* filename in filenames */) {\n            Str pre = S(\" inflating:
+    \");\n            Str suf = S(\"\\n\");\n            append(&stdout, pre.data,
+    pre.len);\n            append(&stdout, filename.data, filename.len);\n            append(&stdout,
+    suf.data, suf.len);\n    \n            while (/* not done inflating */) {\n                //
+    1. inflate block\n                // 2. write block\n                deadline_flush(&stdout);\n
+    \           }\n        }\n\nIf it processes multiple files within the deadline,
+    their names write out together. No threads. The behavior difference compared to
+    traditional flush-on-newlines is imperceptible to a humans, aside from the fact
+    their program runs faster. One more reason not to bother with [crummy C stdio](/blog/2023/02/11/).\n\n-
+    [c](/tags/c/)"
+  error:
+  fetched_at: '2026-11-06T01:24:28Z'
+archived_at: '2026-11-06T01:24:31Z'

