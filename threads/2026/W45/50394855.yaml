@@ -4,14 +4,14 @@ post:
   title: First steps in bare-metal programming using UEFI
   url: https://kevinboone.me/efitest_index.html
   hn_url: https://news.ycombinator.com/item?id=50394855
-  score: 84
+  score: 175
   author: LaSombra
   posted_at: '2026-11-06T16:50:29Z'
-  fetched_at: '2026-11-06T18:59:59Z'
+  fetched_at: '2026-11-07T00:40:53Z'
   article_url: https://kevinboone.me/efitest_index.html
   article_fetch_status: success
   article_fetched_at: '2026-11-06T18:59:59Z'
-  raw_comment_count: 5
+  raw_comment_count: 29
 comments:
 - id: '50395644'
   parent_id: '50394855'
@@ -66,6 +66,293 @@ comments:
   text: Begone, demon!
   score: 0
   posted_at: '2026-11-06T18:47:05Z'
+- id: '50396790'
+  parent_id: '50394855'
+  author: edoceo
+  text: This guide is fantastic for getting rolling in the UEFI space. I used this
+    as one of the references when building a bootloader with Zig. Has its own set
+    of issue, especially that 16bit character situation.<p>Once you dig into those
+    there are a bunch of sharp edges, or maybe it&#x27;s just that that EFI environment
+    is so weird compared to typical Linux system or application development.
+  score: 0
+  posted_at: '2026-11-06T19:02:41Z'
+- id: '50396963'
+  parent_id: '50394855'
+  author: kragen
+  text: '(Although this comment discusses an AI-written project, the comment itself
+    is entirely human-written.)<p>It&#x27;s probably worth pointing out that, unless
+    you&#x27;re writing a replacement for GRUB, Multiboot2 is a reasonable alternative
+    to building a UEFI PE32+ image, and it permits you to still call UEFI services:
+    <a href="https:&#x2F;&#x2F;www.gnu.org&#x2F;software&#x2F;grub&#x2F;manual&#x2F;multiboot2&#x2F;multiboot.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.gnu.org&#x2F;software&#x2F;grub&#x2F;manual&#x2F;multiboot2&#x2F;multiboo...</a>
+    <a href="https:&#x2F;&#x2F;wiki.osdev.org&#x2F;Multiboot" rel="nofollow">https:&#x2F;&#x2F;wiki.osdev.org&#x2F;Multiboot</a><p>I
+    was pleased last week that I could elicit enough of a UEFI environment from Opus
+    5.5 to be able to build an UEFI application without enormous, un-auditable dependencies
+    like gnu-efi.  Claude distilled the relevant parts of the UEFI interface into
+    a 289-line header file.  The example application just displays the keyboard and
+    mouse events on a UEFI framebuffer using a vendored pixel font, thus the name
+    &quot;inputmon&quot;: <a href="http:&#x2F;&#x2F;canonical.org&#x2F;~kragen&#x2F;sw&#x2F;inputmon-3.tar.gz"
+    rel="nofollow">http:&#x2F;&#x2F;canonical.org&#x2F;~kragen&#x2F;sw&#x2F;inputmon-3.tar.gz</a><p>The
+    Makefile includes a &quot;run&quot; target to boot it under QEMU with the OVMF
+    implementation of UEFI.<p>(One fairly surprising feature of all this is that,
+    not counting the time Claude was waiting for me, it took the model a total of
+    about 7 minutes to write and test this.  These 7 minutes were spread over almost
+    15 hours because I ran out of tokens and spent time thinking.  This might be a
+    good example of a case where an LLM is literally a million times more productive
+    than a human programmer: the task is algorithmically trivial, and it doesn&#x27;t
+    involve difficult engineering tradeoffs, but involves deep knowledge of a pile
+    of obfuscated recondite interfaces that are publicly documented and widely used
+    by published open-source software.  It is something I&#x27;ve <i>wanted</i> to
+    do for 7 million minutes.)<p>I&#x27;m hoping I can get an in-browser demo of inputmon
+    working next week, but that&#x27;s probably going to involve doing some surgery
+    on Bochs in order to get an amd64-compatible virtual machine that doesn&#x27;t
+    require multithreading the way QEMU does.<p>Inputmon <i>does</i> have the enormous,
+    un-auditable dependency of LLVM and Clang, but that&#x27;s a horror I&#x27;m already
+    resigned to.  But with clang, lld, and make, you can build the image from source,
+    and with QEMU and OVMF you can run it in a virtual machine.<p>I think it&#x27;s
+    a little bit debatable to call UEFI &quot;bare metal&quot; (Boone responds: &quot;this
+    is a fair criticism&quot;), and I&#x27;m particularly skeptical of Boone&#x27;s
+    claim that you can guarantee microsecond response times in the face of SMM, but
+    whatever.'
+  score: 0
+  posted_at: '2026-11-06T19:15:43Z'
+- id: '50397097'
+  parent_id: '50396513'
+  author: kragen
+  text: I think &quot;leveraged this coding methodology&quot; is an unjustifiably
+    positive way to describe the results of the process.  I think &quot;spread this
+    disease&quot; would be more accurate.  UTF-16 strings, really?  VFAT?  PE32+ is
+    maybe justifiable (I&#x27;d prefer ELF, but that&#x27;s because it&#x27;s more
+    familiar, not because it&#x27;s actually better), but VFAT?  And even in 01998
+    it should have been apparent that UTF-16 was not a sane format for strings, much
+    less in 02005 when the EFI → UEFI transition happened.<p>To me, UEFI is like &quot;leveraging
+    the waste disposal methodology&quot; of dumping your toxic waste in a lake.  Yes,
+    it&#x27;s more convenient for you, but it does lasting damage and causes years
+    of suffering for millions of people; and eventually somebody else has to clean
+    up your mess, at far greater cost than if you&#x27;d just done something sensible
+    to begin with.<p>I could probably say the same thing about X-Windows.
+  score: 0
+  posted_at: '2026-11-06T19:24:03Z'
+- id: '50397705'
+  parent_id: '50394855'
+  author: kevin_thibedeau
+  text: "&gt; The linker won’t complain if your code calls functions that don’t exist
+    – it will just mark them as external, expecting them to be provided by some other
+    code. But they won’t be, and the program will just crash when it calls one of
+    these missing functions.<p>You can verify no external symbols remain after linkage
+    with: nm -D --undefined-only. This can be incorporated into a build script to
+    verify the binary is valid."
+  score: 0
+  posted_at: '2026-11-06T20:08:32Z'
+- id: '50397771'
+  parent_id: '50397097'
+  author: hmry
+  text: In the eternal words of the Microsoft Game Development Kit docs[0], &quot;Windows
+    operates natively in UTF-16 [...]. This is a unique burden that Windows places
+    on code that targets multiple platforms.&quot;<p>I wonder when Microsoft will
+    stop being a &quot;UTF-16 house&quot; adding UTF-16 to new projects... They did
+    it again to LSP, and that was in <i>2016</i>. Maybe by 2045 Microsoft will use
+    UTF-8 for new projects, and then by 2100 we can switch to UTF-8 by default.<p>[0]
+    <a href="https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;gaming&#x2F;gdk&#x2F;docs&#x2F;gdk-dev&#x2F;overviews&#x2F;utf-8?view=gdk-2610"
+    rel="nofollow">https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;gaming&#x2F;gdk&#x2F;docs&#x2F;gdk-dev&#x2F;ov...</a>
+  score: 0
+  posted_at: '2026-11-06T20:12:55Z'
+- id: '50397826'
+  parent_id: '50396513'
+  author: FuriouslyAdrift
+  text: Be aware EDK II has a recent severe CVE to watch out for.<p><a href="https:&#x2F;&#x2F;app.opencve.io&#x2F;cve&#x2F;CVE-2026-97631"
+    rel="nofollow">https:&#x2F;&#x2F;app.opencve.io&#x2F;cve&#x2F;CVE-2026-97631</a>
+  score: 0
+  posted_at: '2026-11-06T20:16:44Z'
+- id: '50398059'
+  parent_id: '50397771'
+  author: tredre3
+  text: "&gt; They did it again to LSP, and that was in 2016.<p>That one is explainable
+    by the fact that it was developed for VS Code, a typescript&#x2F;javascript project.
+    Javascript uses UTF-16 for strings (for historical reasons unrelated to Microsoft,
+    though they are the same reasons that made MS use UCS-2 during the same time period)."
+  score: 0
+  posted_at: '2026-11-06T20:31:33Z'
+- id: '50398103'
+  parent_id: '50397097'
+  author: doublepg23
+  text: I&#x27;ve never _actually_ implemented a filesystem, but when researching
+    OS dev it seemed like FAT32 was pretty close to what you&#x27;d write as a minimum
+    viable filesystem while being a very well known quantity.
+  score: 0
+  posted_at: '2026-11-06T20:34:36Z'
+- id: '50398141'
+  parent_id: '50394855'
+  author: SilentM68
+  text: Wish there was a noobie-friendly book e.g.,pdf, epub showing how to do this
+    as is and assembly.
+  score: 0
+  posted_at: '2026-11-06T20:37:44Z'
+- id: '50398147'
+  parent_id: '50397826'
+  author: ktm5j
+  text: That&#x27;s just in the PXE driver AFAIK.. shouldn&#x27;t be an issue here.
+  score: 0
+  posted_at: '2026-11-06T20:38:03Z'
+- id: '50398316'
+  parent_id: '50394855'
+  author: brcmthrowaway
+  text: Does anyone still use UEFI?<p>If I start looking into the latest and greatest
+    Qualcomm Nuvia ARM Windows laptops, does it use UEFI? Or regular BIOS?
+  score: 0
+  posted_at: '2026-11-06T20:49:38Z'
+- id: '50398424'
+  parent_id: '50398059'
+  author: genxy
+  text: <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;UTF-16" rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;UTF-16</a><p>&gt;
+    UTF-16 is used by the Windows API, and by many programming environments such as
+    Java and Qt. The variable-length character of UTF-16, combined with the fact that
+    most characters are not variable-length (so variable length is rarely tested),
+    has led to many bugs in software, including in Windows itself.
+  score: 0
+  posted_at: '2026-11-06T20:57:22Z'
+- id: '50398437'
+  parent_id: '50398316'
+  author: vel0city
+  text: "&gt; Does anyone still use UEFI?<p>Yes. It&#x27;s <i>extremely</i> common.<p>&gt;
+    If I start looking into the latest and greatest Qualcomm Nuvia ARM Windows laptops,
+    does it use UEFI?<p>Yes, those use UEFI.<p>&gt; Or regular BIOS?<p>Almost nothing
+    widely produced today uses old &quot;regular BIOS&quot;. Even those which seem
+    to use &quot;regular BIOS&quot; are largely UEFI systems acting like a legacy
+    BIOS. Even things like Apple MacBooks which don&#x27;t use EFI use an Apple custom
+    similar firmware concept <i>far</i> removed from legacy BIOS."
+  score: 0
+  posted_at: '2026-11-06T20:58:54Z'
+- id: '50398507'
+  parent_id: '50398103'
+  author: kragen
+  text: 'Yes, I think that&#x27;s a fair assessment, although the fractal of stupid
+    runs deep in FAT32: a separate 5-bit field for seconds within a minute?  Separate
+    fixed-width fields for filename and extension?  A 4 GiB file size limit?<p>But,
+    although FAT32 does indeed have the virtue of relative simplicity, that&#x27;s
+    no excuse for VFAT.'
+  score: 0
+  posted_at: '2026-11-06T21:03:35Z'
+- id: '50398558'
+  parent_id: '50398507'
+  author: doublepg23
+  text: I might be unfamiliar with the terms - is there a distinction between FAT32
+    and VFAT?
+  score: 0
+  posted_at: '2026-11-06T21:07:29Z'
+- id: '50398594'
+  parent_id: '50394855'
+  author: tremon
+  text: Is it real bare-metal if you&#x27;re using UEFI, though?
+  score: 0
+  posted_at: '2026-11-06T21:10:37Z'
+- id: '50398744'
+  parent_id: '50398424'
+  author: tredre3
+  text: 'Absolutely, UTF-16 is bad and inexcusable in most contexts. Perhaps you misinterpreted
+    my comment or I wasn&#x27;t expressing myself properly.<p>I was trying to say:
+    If all the components in your stack are javascript-based, it makes sense that
+    your RPC-API would also use UTF-16. It wasn&#x27;t Microsoft pushing it for historical
+    Windows reasons as GP implied, it was dictated by a JS stack they chose but didn&#x27;t
+    create.'
+  score: 0
+  posted_at: '2026-11-06T21:25:54Z'
+- id: '50398751'
+  parent_id: '50394855'
+  author: erminpour
+  text: More posts and projects like this please!
+  score: 0
+  posted_at: '2026-11-06T21:26:42Z'
+- id: '50398906'
+  parent_id: '50394855'
+  author: 0c3ca83
+  text: It&#x27;s like programming an overengineered DOS.
+  score: 0
+  posted_at: '2026-11-06T21:42:49Z'
+- id: '50398926'
+  parent_id: '50398594'
+  author: RetroTechie
+  text: "&gt; Is it real bare-metal if you&#x27;re using UEFI, though?<p>If I&#x27;m
+    not mistaken, the &quot;bare metal&quot; part refers to how directly you can touch
+    it once control passes to your code. So definitely qualifies imho.<p>Not whether
+    a &#x27;glorified bootloader&#x27; burned some CPU cycles before that.<p>The &quot;bare
+    metal&quot; qualifier goes away if underlying OS prevents your code from touching
+    the hardware directly."
+  score: 0
+  posted_at: '2026-11-06T21:44:42Z'
+- id: '50398967'
+  parent_id: '50394855'
+  author: mrlonglong
+  text: Yikes. UEFI is way worse than I thought it was.<p>Best thing to do with it
+    is treat it as a bootloader and use something else a lot more sane than UEFI.<p>Dare
+    I live in hope that a newer revision will use 8 bit UTF and better conventions.
+  score: 0
+  posted_at: '2026-11-06T21:48:54Z'
+- id: '50399136'
+  parent_id: '50396963'
+  author: RetroTechie
+  text: "&gt; Inputmon does have the enormous, un-auditable dependency of LLVM and
+    Clang<p>You mean build-time dependency? Not a run-time one.<p>If that bothers
+    you, there&#x27;s simpler&#x2F;smaller compilers out there (TinyCC and the Portable
+    C Compiler come to mind, but there&#x27;s others). Or drop down to assembly?"
+  score: 0
+  posted_at: '2026-11-06T22:07:12Z'
+- id: '50399199'
+  parent_id: '50394855'
+  author: hocusPokeUs
+  text: 'Other cool uefi programming resources:<p>Irc client in uefi: <a href="https:&#x2F;&#x2F;github.com&#x2F;codyd51&#x2F;uefirc"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;codyd51&#x2F;uefirc</a><p>UEFI
+    library the irc client relies on: <a href="https:&#x2F;&#x2F;github.com&#x2F;rust-osdev&#x2F;uefi-rs"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rust-osdev&#x2F;uefi-rs</a><p>No
+    more separate GRUB&#x2F;boot loader code paths needed; boot Linux from UEFI by
+    loading a kernel: <a href="https:&#x2F;&#x2F;pretalx.com&#x2F;devconf-cz-2024&#x2F;talk&#x2F;W3AVCT&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;pretalx.com&#x2F;devconf-cz-2024&#x2F;talk&#x2F;W3AVCT&#x2F;</a><p>Have
+    noodled around with a side-project generating an entire system from boot loader
+    via LLMs but haven&#x27;t had energy for it given job is the same headspace that
+    needs to be ignored once in a while to not burnout; ultimately want to boot a
+    model of my Linux use (am using bpf to plan and model everything possible and
+    convert it to a compute schedule for sched_ext) and just have a kernel &lt;&gt;
+    model architecture<p>For security am considering how to embed in the model various
+    authentication obligations to block access to certain blocks of memory without
+    confirmation via webcam and key or something'
+  score: 0
+  posted_at: '2026-11-06T22:13:15Z'
+- id: '50399334'
+  parent_id: '50398744'
+  author: genxy
+  text: I understood, I was just providing context. Windows, JavaScript, Java are
+    all UTF-16. 65k characters is all you need.
+  score: 0
+  posted_at: '2026-11-06T22:27:03Z'
+- id: '50399368'
+  parent_id: '50398558'
+  author: duskwuff
+  text: VFAT is the way that some operating systems implement long filenames in FAT
+    - PROGRA~1 and whatnot. It&#x27;s pretty messy.
+  score: 0
+  posted_at: '2026-11-06T22:30:36Z'
+- id: '50399854'
+  parent_id: '50396513'
+  author: PerryStyle
+  text: There&#x27;s also <a href="https:&#x2F;&#x2F;libc.llvm.org&#x2F;uefi&#x2F;index.html"
+    rel="nofollow">https:&#x2F;&#x2F;libc.llvm.org&#x2F;uefi&#x2F;index.html</a>,
+    but not sure if it&#x27;s still receiving updates.
+  score: 0
+  posted_at: '2026-11-06T23:19:54Z'
+- id: '50400105'
+  parent_id: '50398316'
+  author: ranger207
+  text: BIOS was always heavily tied to x86 PCs, as it was a de facto standard in
+    the first place by the fact that it was reverse engineered from the IBM PC. Of
+    course, PC-compatible firmwares were never required for x86 PCs, but it made it
+    convenient in the era when people would bring their own OS. When ARM started becoming
+    popular, it was generally in embedded applications where the manufacturer was
+    going to produce a single firmware to do a single task. It&#x27;s only lately,
+    since UEFI became the standard on x86-type computers, that anyone&#x27;s bothered
+    making a general-purpose enough ARM device where you might want to bring your
+    own OS and that UEFI has been something that would be useful there
+  score: 0
+  posted_at: '2026-11-06T23:50:17Z'
 article:
   url: https://kevinboone.me/efitest_index.html
   title: |-
@@ -88,4 +375,4 @@ article:
     that refers to this one._"
   error:
   fetched_at: '2026-11-06T18:59:59Z'
-archived_at: '2026-11-06T19:00:20Z'
+archived_at: '2026-11-07T00:41:16Z'

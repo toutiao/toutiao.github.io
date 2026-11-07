@@ -5,14 +5,14 @@ post:
   title: The MustCreate Pattern for Go Tests
   url: https://mtlynch.io/notes/go-must-create-pattern/
   hn_url: https://lobste.rs/s/i96uyr
-  score: 10
+  score: 14
   author: mtlynch
   posted_at: '2026-11-06T15:37:00Z'
-  fetched_at: '2026-11-06T19:00:21Z'
+  fetched_at: '2026-11-07T00:41:17Z'
   article_url: https://mtlynch.io/notes/go-must-create-pattern/
   article_fetch_status: success
-  article_fetched_at: '2026-11-06T19:00:22Z'
-  raw_comment_count: 11
+  article_fetched_at: '2026-11-07T00:41:18Z'
+  raw_comment_count: 21
   tags:
   - go
   - testing
@@ -23,13 +23,13 @@ comments:
   text: |-
     I think in these cases, I would either ignore the error (username, _ := ...) or write a simple assert(t, err == nil) that makes the if check just one line. Then, fuzz NewUsername separately to handle the cases where the requested username could be invalid and those errors matter.
     But hey, decent application of generics and I wouldn't necessarily change this if I saw it in the wild.
-  score: 5
+  score: 8
   posted_at: '2026-11-06T17:09:34Z'
 - id: lo-ly039b
   parent_id: '0'
   author: bilinguliar
   text: This is a place where generics actually look nice.
-  score: 2
+  score: 3
   posted_at: '2026-11-06T17:14:15Z'
 - id: lo-vb6toh
   parent_id: '0'
@@ -53,7 +53,7 @@ comments:
   text: |-
     Sure, and I disagree! Assertions are useful in production code to downgrade correctness bugs to liveness bugs. There are also many, many cases where error handling that doesn't crash the system makes complete sense. Totally fine if Go doesn't want to support it in the language, it's trivial to write.
     For the issue of testing in this specific context, doing an assert(t, err == nil), or doing the if err != nil dance has the same result. t.Fatal crashes the test in effectively the same way.
-  score: 2
+  score: 3
   posted_at: '2026-11-06T17:39:22Z'
 - id: lo-arenhm
   parent_id: '0'
@@ -84,7 +84,7 @@ comments:
     user := Must(NewUsername(\"john\"))(t)\nhttps://go.dev/play/p/ngHSA4lTBhq\n\nUnfortunately
     multiple return values cannot be combined with other values, so Must(t, NewUsername(\"john\"))
     is not possible."
-  score: 4
+  score: 6
   posted_at: '2026-11-06T17:51:25Z'
 - id: lo-eteiym
   parent_id: '0'
@@ -93,7 +93,7 @@ comments:
     But this is exactly why leaving out generics from Go for so long was such a joke.
     This is the type of code that you could (and did) write in any serious language
     20 years ago.
-  score: 2
+  score: 1
   posted_at: '2026-11-06T18:07:36Z'
 - id: lo-myz5qx
   parent_id: '0'
@@ -110,7 +110,7 @@ comments:
     for a Username constructor that the compiler knows can't fail, maybe even whatever
     Go's QuickCheck is in the extreme case. Presumably NewUsername is tested elsewhere;
     I don't want its failures bleeding over into other tests.
-  score: 2
+  score: 3
   posted_at: '2026-11-06T18:29:29Z'
 - id: lo-yzlxpv
   parent_id: '0'
@@ -119,8 +119,107 @@ comments:
     Simpler, but with panic ("with a value I know is valid")
 
     Isn't panic almost always the wrong thing to do in tests? It causes the entire run to bail out messily. t.Fatal is better for cases where a test case can't continue because it doesn't blow up the entire test suite.
-  score: 1
+  score: 3
   posted_at: '2026-11-06T18:44:00Z'
+- id: lo-zo7hev
+  parent_id: '0'
+  author: mtlynch
+  text: |-
+    Can you elaborate? I'm interested in improving this pattern, but I'm not sure what you mean.
+    Imagine the codebase has to enforce a rule that usernames can't contain uppercase letters, so it looks like this:
+    func NewUsername(raw string) (Username, error) {
+      if containsUppercaseCharacters(raw) {
+        return Username{}, errors.New("username must be lowercase")
+      }
+      return Username{ value: raw }
+    }
+
+    How would you turn that into a constructor that can't fail? You could add a "test-only" constructor that skips lowercase letter validation, but then you have to worry about clients accidentally calling it in production. And then you'd further have to create extra test-only constructors for each type.
+  score: 1
+  posted_at: '2026-11-06T19:24:16Z'
+- id: lo-osj08v
+  parent_id: '0'
+  author: mtlynch
+  text: |-
+    Thanks for reading!
+    I similarly don't think I'd object to yours in the wild, but I do find it less expressive.
+    The advantage of MustCreate is that it communicates to the reader that this is logic that's unrelated to the system under test.
+    If you do assert(t, err == nil), then it looks like any other assertion in the test and makes it seem like the test is meant to exercise Username, when it's actually incidental.
+    If I see (username, _ := ...), it always makes me stop and ask, "Did they mean to swallow this error? Why are they swallowing this error?" The other issue is that if you tighten the rules of NewUsername such that  the username in your store.ReadUser test is no longer valid, then the ReadUser test will have confusing behavior.
+  score: 2
+  posted_at: '2026-11-06T19:30:47Z'
+- id: lo-vsykwq
+  parent_id: '0'
+  author: oliverpool
+  text: |-
+    It depends how sure you are this will not fail.
+    Yes, t.Fatal is cleaner, but also a bit more cumbersome to use (the ))(t) suffix is subtle).
+  score: 2
+  posted_at: '2026-11-06T20:31:49Z'
+- id: lo-00ug8x
+  parent_id: '0'
+  author: bilinguliar
+  text: I agree, so isn’t it just an indication that Zig would work better for you?
+  score: 1
+  posted_at: '2026-11-06T20:33:39Z'
+- id: lo-zmz4bp
+  parent_id: '0'
+  author: oliverpool
+  text: |-
+    Nitpick: if you don't check the error, then you might trigger a panic down the line ;-)
+    panic: runtime error: invalid memory address or nil pointer dereference [recovered, repanicked]
+  score: 1
+  posted_at: '2026-11-06T20:34:00Z'
+- id: lo-tvf4jk
+  parent_id: '0'
+  author: tentacloids
+  text: |-
+    Hmm. My Go-less-ness may be on full show here, but yeah, test-only constructors, or simply exposing the Username struct, would be an easy one if you have "only compile for test" or inline testing or like "friend" visibility. Otherwise maybe a global the_known_working_test_username would reduce both textual and semantic repetition. Or get the test to skip instead of giving a redundant failure. Or, what I was thinking from QuickCheck would be similar to if every type that could be tested also came with a list of known good examples built-in, I suppose. (Sorry I can't really give specifics, I don't really know what Go actually lets you do).
+    There's also the thing where there's multiple "levels": there's the plain-old-data constructors and their tests that are disjoint, then ReadUser is part of a different disjoint set that depends on those. I bet there's something insightful you could do with that, like test suites predicated on other suites or a GiveMeTheTestExamples() or something. Basically where each level doesn't have to repeat the same assertions all the time, which is the only real problem I see that's still going on with MustCreate.
+
+    And then you'd further have to create extra test-only constructors for each type.
+
+    Aha, but then you'd easily see which types don't have tests!
+  score: 1
+  posted_at: '2026-11-06T20:34:59Z'
+- id: lo-bwccnq
+  parent_id: '0'
+  author: jo3_l
+  text: I may be misunderstanding your suggestion, but it seems like a rather poor
+    idea to have separate test-only constructors or allowing the type to be constructed
+    directly. The primary point of having a separate Username type in this case is
+    to provide some guarantee on what usernames can be, and both options would allow
+    to break such invariants. (Perhaps you're suggesting that the separate constructor
+    should perform the necessary checks at compile time when the input is statically
+    known, a la C++ constexpr, but I think this gets rather gnarly in practice.)
+  score: 2
+  posted_at: '2026-11-06T20:56:25Z'
+- id: lo-paeqtl
+  parent_id: '0'
+  author: tentacloids
+  text: Aye, it is, but I'm trying to spitball compromises that aren't full property-based
+    testing (where "something" constructs a Username from principles and hands it
+    to the tests). Also, in this case specifically, at least ReadUser needs unchecked
+    construction in case an invalid username gets into the database some other way.
+  score: 1
+  posted_at: '2026-11-06T21:11:45Z'
+- id: lo-gfkzv2
+  parent_id: '0'
+  author: weberc2
+  text: What is a bounds check if not an assertion? It definitely seems like the Go
+    authors are fine with assertions, considering they panic all over the place (e.g.,
+    the reflect library, nil pointer access, etc).
+  score: 2
+  posted_at: '2026-11-06T21:22:28Z'
+- id: lo-nanql5
+  parent_id: '0'
+  author: telemachus
+  text: |-
+    Nitpick: if you don't check the error, then you might trigger a panic down the line ;-)
+
+    Yup, that's true. As you say in reply to my other comment, it depends on how sure you are that something won't fail. I was taking the OP at his word: "When I write tests for ReadUser, I call NewUsername with a value I know is valid, but I still have to include a lot of verbose error-checking code to convince the compiler that everything is okay." In reply to that, my point was that if you genuinely know that the values under test are valid, and you are testing other things, then ignore the error. But you're right: that leaves open a potential problem.
+  score: 1
+  posted_at: '2026-11-06T23:47:57Z'
 article:
   url: https://mtlynch.io/notes/go-must-create-pattern/
   title: |-
@@ -188,4 +287,4 @@ article:
     my latest posts by email."
   error:
   fetched_at: '2026-11-06T19:00:22Z'
-archived_at: '2026-11-06T19:00:22Z'
+archived_at: '2026-11-07T00:41:18Z'

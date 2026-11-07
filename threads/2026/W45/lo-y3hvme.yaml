@@ -1,0 +1,118 @@
+---
+post:
+  id: lo-y3hvme
+  source: lobsters
+  title: Inside GitHub's new Git storage architecture
+  url: https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/
+  hn_url: https://lobste.rs/s/y3hvme
+  score: 14
+  author: ndr
+  posted_at: '2026-11-06T17:50:09Z'
+  fetched_at: '2026-11-07T00:41:17Z'
+  article_url: https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T00:41:18Z'
+  raw_comment_count: 3
+  tags:
+  - distributed
+  - vcs
+comments:
+- id: lo-onehj7
+  parent_id: '0'
+  author: ondreian
+  text: |-
+    maybe GitHub can manage 2 9s of uptime now...
+    https://isgithubcooked.com/ has become a valuable resource since Github's status page is often inaccurate
+  score: 11
+  posted_at: '2026-11-06T19:20:59Z'
+- id: lo-c9ctfu
+  parent_id: '0'
+  author: priime
+  text: |-
+    GitHub has been continuously writing about scaling up their infrastructure to accommodate the demand from agents. I think Cursor's report on how they're scaling their version control infrastructure is also pretty insightful; particularly the differences in design decisions they've chosen.
+    Part of what I've been wondering is how attached we should be to Git. Indeed, Facebook and Google had their own version control systems or forks (Mercurial/Sapling and Piper/Jujutsu respectively) to accommodate their monorepo style of development. OpenAI and Anthropic have both developed their own version control systems, along with infrastructure for hosting code.
+    New startups have also been thinking about this problem: Pierre Computer Company (recently acquired by OpenAI) has code.storage and I recently saw a YC company borrow ideas from OpenAI and Cursor in implementing their own Git server.
+    I'm pretty optimistic on Jujutsu being a potential next step in VCS. It's more intuitive for humans and reasonable for agents with parallelising work (through workspaces) and merging work (first-class conflicts mean you can defer handling them until you've rebased the workspaces onto your mainline). ESRC seems to be building around Jujutsu, and Tangled accommodates Jujutsu.
+  score: 3
+  posted_at: '2026-11-06T20:48:48Z'
+- id: lo-gsc0bx
+  parent_id: '0'
+  author: koreth
+  text: |-
+    Agreed on the Jujutsu optimism. I've had excellent luck telling agents to use jj if they detect that a repo is jj-enabled; all the major agents seem pretty adept at using it.
+    It's especially great when I'm telling the agent to make a stack of PRs. With plain git, all the coding tools I've tried seem to get themselves twisted in a knot with rebases and conflict resolution.
+  score: 1
+  posted_at: '2026-11-06T21:28:53Z'
+article:
+  url: https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/
+  title: Inside GitHub's new Git storage architecture - The GitHub Blog
+  fetch_status: success
+  content: |-
+    - Share:
+
+    Last week at GitHub Universe, we announced our new Git storage architecture, capable of handling thousands of writes per second with reads that scale on demand. Through internal testing, we’ve demonstrated the ability to support 5,000 concurrent agents working on a repository, sending 7,200 pushes per second to a repo, all while serving read traffic with consistently low latency. This new architecture is the foundation for GitHub to support agentic development for hundreds of millions of developers, and we’ve been building it underneath GitHub while it keeps running.
+
+    Over the past year, agents changed what a busy repository looks like on GitHub. In our first post in this series, we laid out the two principles behind our next-generation Git storage architecture: minimize coordination, and decouple storage from compute. In our last post, we covered the bridge: moving 99.99999% of repositories into Azure, scoping the write quorum to individual references, and standing up virtual replicas backed by Azure Blob Storage.
+
+    We also left off with an observation: very little of a write needs to be ordered. Git objects are immutable and named by their contents, meaning two writers can store them at the same time without agreeing on anything. The part of a push that needs agreement is the reference update, and a reference update is tiny in comparison. Virtual replicas were the first step toward building around that, and the means by which we onboard repositories to the new architecture.
+
+    The rest of the architecture builds on that observation. Only reference updates need agreement. That lets the parts of Git infrastructure that used to be tightly coupled (storing data, serving requests, and maintaining repositories) scale independently. For developers, Git stays Git: they push, fetch, and branch the same way, with the same protections in place. Below, we walk through the requirements behind the design, follow a request through the system, and dive deep into two of its components.
+
+    ## Building for agent scale
+
+    We think about the scale of the GitHub platform along two axes:
+
+    - Horizontal scale is how many developers and agents can work across many repositories. Many of GitHub’s current approaches on this axis have been battle-tested over the years and are carried forward to the new architecture: partitioning of tenants across infrastructure, isolation and/or fairness enforcement of tenant traffic, and load-aware routing, to name a few.
+
+    - Vertical scale is how many developers and agents can work on one repository. As agents write more code, we expect individual repositories to get larger and busier, so most of our requirements came from the vertical axis.
+
+    Today, the busiest repositories on GitHub.com receive at most dozens of writes in a single second, typically in short bursts. As more of that work shifts to agents running in parallel and around the clock, we expect those bursts to become a sustained rate within the next year. Each push leads to more reads: CI runs, deployment systems pull the new commit, and other agents fetch it for context. This read fan-out results in a large amplification effect on overall traffic that scales with writes.
+
+    We’re already seeing this trend play out on repositories at the top of the curve. The chart below shows daily requests to one repository on GitHub from March to May, when its traffic grew about 4x. Its growth has continued on an exponential trajectory since then.
+
+    We have to plan for a world where agent-driven development keeps accelerating at this speed. Instead of planning for the next increment, we set a target of at least two orders of magnitude more scale. For a single repository, that meant the new architecture needed to:
+
+    - Accept thousands of writes per second.
+
+    - Support multiple writer nodes. There are two reasons for this: Experience has taught us that indexing incoming packs and checking object connectivity are the most CPU-expensive parts of a write, and that cost scales with the size of the write, so a single node will become compute-bound quickly. Spreading that work across many nodes improves fault tolerance and shortens recovery when a node fails.
+
+    - Experience has taught us that indexing incoming packs and checking object connectivity are the most CPU-expensive parts of a write, and that cost scales with the size of the write, so a single node will become compute-bound quickly.
+
+    - Spreading that work across many nodes improves fault tolerance and shortens recovery when a node fails.
+
+    - Minimize commit latency. An agent waits on each push before it moves to its next step.
+
+    - Record changes in order for each reference with the ability to quickly linearize across references. A virtual replica that falls behind needs to catch up by downloading only the data it needs to serve the incoming request.
+
+    - Keep reads cheap when nothing has changed, which is the common case given the read-to-write ratio.
+
+    - Let each component scale independently.
+
+    On top of that, the system had to be able to improve overall reliability and scale globally.
+
+    ## Introducing “Project Rubicon”
+
+    In May of 2026, hot on the heels of the initial Azure migration, we started working on a design that could meet those demands. We tried several approaches. In all of them, pack data lived in Azure Blob Storage, and in some we experimented with keeping reference state there too. We’ll cover some of the trade-offs we found below, but we settled on a design we felt maximized throughput while preserving the correctness, durability, availability, and latency guarantees a platform like GitHub requires. We called it “Rubicon,” a nod to the point of no return the industry crossed with agentic development.
+
+    Let’s walk through Rubicon from the top down. Many things stay the same: requests from Git clients, the API, and the web UI arrive at Spokes, which still handles routing and load balancing, and serves the internal API that the rest of GitHub uses to read and write repository data. Spokes also maintains its role as a placement and balancing service, maintaining the partitioning, isolation, and tenant fairness required for horizontal scale. The data plane underneath Spokes, in contrast, is new.
+
+    Spokes routes each request to one of a small group of virtual replicas assigned to that repository. Virtual replicas are a single fleet of disposable compute that serves reads, writes, or both. A virtual replica’s local disk is a cache that can be rebuilt at any time.
+
+    Spokes routes a repository’s traffic to the same virtual replicas when it can, which keeps their caches warm and latency low, but nothing about correctness depends on a request landing on any particular virtual replica. When a virtual replica goes away, the repository’s other virtual replicas keep serving, and a replacement fills its cache as traffic arrives.
+
+    When a repository gets busy, we add more virtual replicas. Separately, a fleet of compaction nodes works in the background, directly against Blob Storage and Ref-CAS, to merge each repository’s packs and remove unreachable objects. That work never runs on a virtual replica, meaning their CPU and memory can be almost entirely dedicated to serving requests.
+
+    Durable state lives in two places:
+
+    - Git objects, in the form of packs and auxiliary read acceleration data, live in Azure Blob Storage.
+
+    - References and the list of packs that make up the repository (the pack manifest) live in a separate replicated log service we call Ref-CAS (for “Reference Compare-and-Swap”).
+
+    Let’s walk the architecture from the perspective of a write and a read:
+
+    - Write: a virtual replica indexes the incoming pack and uploads it to Blob Storage, then commits one transaction to Ref-CAS that lists the pack in the manifest and updates the references. Later, a compaction node merges that pack with others to keep reads fast.
+
+    - Read: a virtual replica checks its reference version with Ref-CAS, pulls the packs it needs from Blob Storage into its cache, and serv
+  error:
+  fetched_at: '2026-11-07T00:41:18Z'
+archived_at: '2026-11-07T00:41:19Z'

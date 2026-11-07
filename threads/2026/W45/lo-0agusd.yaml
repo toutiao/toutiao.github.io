@@ -1,0 +1,75 @@
+---
+post:
+  id: lo-0agusd
+  source: lobsters
+  title: Upgrading NetBSD from 11.0 to 11.1
+  url: https://www.dwarmstrong.org/netbsd-upgrade/
+  hn_url: https://lobste.rs/s/0agusd
+  score: 14
+  author: jaypatelani
+  posted_at: '2026-11-06T15:22:55Z'
+  fetched_at: '2026-11-07T00:41:17Z'
+  article_url: https://www.dwarmstrong.org/netbsd-upgrade/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T00:41:19Z'
+  raw_comment_count: 3
+  tags:
+  - netbsd
+comments:
+- id: lo-2lo7p0
+  parent_id: '0'
+  author: jaredkrinke
+  text: |-
+    I just went through this for my first time and my biggest complaint is that going through all the /etc/ diffs was tedious and seemed error-prone. I kind of can't imagine repeating that process on a bunch of servers, so maybe there's a batch/ahead-of-time way to deal with those diffs?
+    Also, it appeared to only show the diff between my (usually modified) config files and the "new" files, but I'd actually like to see the diff between the old (unmodified) and the new, so that I can discern which changes are "mine" versus "recommended as part of the upgrade". Anyone know if that's possible?
+  score: 4
+  posted_at: '2026-11-06T18:00:32Z'
+- id: lo-xyczud
+  parent_id: '0'
+  author: jmmv
+  text: Glad to see that the sysupgrade script I wrote years ago is still in use and
+    works!
+  score: 7
+  posted_at: '2026-11-06T18:06:47Z'
+- id: lo-0oiix2
+  parent_id: '0'
+  author: jmmv
+  text: |-
+    I don't know how people handle this at scale...
+    I haven't followed closely the NetBSD space for a while, but in FreeBSD, the tools that merge etc changes can be told to auto-merge files that aren't locally modified, which skips most of the noise. And since I started using freebsd-update (instead of make installworld), I haven't seen any of the /etc conflict resolution stuff any longer. I suppose pkgbase also makes this a non-issue and you then occasionally deal with conflicting updates (which is a thing in other systems; e.g. Debian).
+    But on the topic of /etc updates, there is also the issue that /etc contains... code that I think shouldn't be there, but because it's there, it triggers unnecessary "manual" merges. See https://jmmv.dev/2020/08/rcd-libexec-etc.html for a bit on this topic.
+  score: 3
+  posted_at: '2026-11-06T19:17:59Z'
+article:
+  url: https://www.dwarmstrong.org/netbsd-upgrade/
+  title: Upgrading NetBSD from 11.0 to 11.1 ☯ Daniel Wayne Armstrong
+  fetch_status: success
+  content: "Home→Archive↴\n\n# Upgrading NetBSD from 11.0 to 11.1\n\nLast edited on
+    2026-11-05 • Tagged under  #netbsd   #bsd \n\nI successfully upgraded my NetBSD
+    amd64 system (with one hiccup, detailed below) from 11.0 to 11.1:\n\n$ uname -v
+    NetBSD 11.1 (GENERIC) #0: Mon Nov 2 16:34:32 UTC 2026 mkrepro@mkrepro.NetBSD.org:/usr/src/sys/arch/amd64/compile/GENERIC\n\nThis
+    was my first time upgrading NetBSD and I’m happy with how it all turned out!\n\nNetBSD’s
+    Guide describes two different methods for performing an upgrade: boot from NetBSD
+    install media and use sysinst(8), or use sysupgrade(8) to do an in-place upgrade
+    of the system. With a bit of research, I get the sense that for major version
+    changes (i.e 10.1 -> 11.1) sysinst is the preferred method, while sysupgrade is
+    a convenient alternative for minor version bumps.\n\nSo sysupgrade it is. First,
+    I install the package:\n\n# pkgin update # pkgin install sysupgrade\n\nThen simply
+    run:\n\n# sysupgrade auto https://cdn.netbsd.org/pub/NetBSD/NetBSD-11.1/$(uname
+    -m)/\n\nThis will proceed to download the kernel and sets appropriate for your
+    computer, unpack them, then prompt you to review and merge new configuration changes.
+    There were only a few files that needed hands-on editing like passwd and sshd_config
+    and I liked how NetBSD shows the diffs between the old and new files and its handling
+    of merging differences.\n\nI had one postinstall check that failed:\n\n# postinstall
+    checks failed: opensslcertsrehash\n\nI resolved the issue by wiping the legacy
+    cache, then letting certctl(8) take over by rehasing the certs:\n\n# rm -rf /etc/openssl/certs/*
+    # certctl rehash\n\nVerify certctl successfully populated the directory:\n\n#
+    certctl list\n\nI manually re-run postinstall fix [issue] and confirm that it
+    now passes inspection (which it did):\n\n# sysupgrade postinstall fix opensslcertsrehash
+    # sysupgrade clean\n\nReboot the computer and start enjoying the upgrade!\n\nNOTE
+    In addition, edit /usr/pkg/etc/pkgin/repositories.conf and point pkgin to the
+    new 11.1 repositories.\n\nYou can like, share, or comment on this post on the
+    Fediverse \U0001F4AC\n\n« Previous: Customize the Login on NetBSD"
+  error:
+  fetched_at: '2026-11-07T00:41:19Z'
+archived_at: '2026-11-07T00:41:19Z'
