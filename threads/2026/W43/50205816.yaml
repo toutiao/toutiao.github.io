@@ -4,13 +4,10 @@ post:
   title: 'Remove pgrust: the entry is cheating (per-query kernels and result caching)'
   url: https://github.com/ClickHouse/ClickBench/pull/2165
   hn_url: https://news.ycombinator.com/item?id=50205816
-  score: 192
+  score: 198
   author: f311a
   posted_at: '2026-10-23T08:05:33Z'
-  fetched_at: '2026-10-24T19:18:56Z'
-  article_url: https://github.com/ClickHouse/ClickBench/pull/2165
-  article_fetch_status: success
-  article_fetched_at: '2026-10-24T19:18:05Z'
+  fetched_at: '2026-11-07T21:33:45Z'
   raw_comment_count: 144
 comments:
 - id: '50206898'
@@ -418,6 +415,13 @@ comments:
     otherwise is naive.
   score: 0
   posted_at: '2026-10-23T13:53:52Z'
+- id: '50209031'
+  parent_id: '50208979'
+  author: hmry
+  text: "&gt; acknowledges the issue<p>I don&#x27;t see any acknowledgement in that
+    text."
+  score: 0
+  posted_at: '2026-10-23T13:54:10Z'
 - id: '50209120'
   parent_id: '50207768'
   author: ddorian43
@@ -427,6 +431,65 @@ comments:
     just a very big project.
   score: 0
   posted_at: '2026-10-23T13:59:24Z'
+- id: '50209450'
+  parent_id: '50205816'
+  author: malisper
+  text: 'Hi! I&#x27;m the creator of pgrust. Let me explain what happened.<p>For the
+    most part, the actual accusations are false. This submission was an earlier version
+    of pgrust 0.4 called pgrust 0.4-preview. We just open-sourced a newer version
+    called pgrust 0.4-beta yesterday, and you can fully audit it here[0]. Rather than
+    contest the accusations on GitHub, we figured it would be easier to complete pgrust
+    0.4 and open-source it to show that we&#x27;re being honest. You can also verify
+    what I&#x27;m saying yourself against the 0.4-preview binary we submitted to ClickBench
+    here[1]. I don&#x27;t have a way to prove this is the exact binary submitted,
+    but if ClickHouse provided the SHA of the binary they tested against, it would
+    match.<p>The three main accusations boil down to: 1) We used handwritten code
+    optimized against each query in the benchmark, 2) We cached the results between
+    query runs, and 3) We didn&#x27;t support queries outside of the 43 ClickBench
+    queries.<p>First, we did not use handwritten queries. The code Alexey pointed
+    out does not run during the benchmark. The design of 0.4 relies on a JIT compiler
+    that compiles your SQL to a Lisp-based intermediate representation that we call
+    Gravity IR that we then convert to x86 and ARM assembly. While developing 0.4,
+    I wrote handwritten code against the IR for benchmarking purposes. The idea was
+    that if queries written in our IR are fast, and we can compile good enough IR
+    fast, then our new query engine will be fast. This is also the reason the directory
+    those &quot;kernels&quot; are in is called &quot;irprobe&quot; - it was a probe
+    of our IR to make sure it was fast. Our 0.4-preview submission went through the
+    pipeline: SQL query -&gt; Gravity IR -&gt; assembly.<p>Second, the &quot;result-cache&quot;
+    Alexey observed is the result of a cache we use to cache which predicates match
+    which strings in our dictionaries we use for dictionary compression. Alexey wasn&#x27;t
+    aware of this cache and assumed we were just caching the query results. On ClickBench
+    you are allowed to use caches like this that hold intermediate data[2]. ClickHouse
+    has its own cache similar to this called the Condition Cache[3]. In our newest
+    submission, we were upfront about all the caching we do and how to disable each
+    cache[4].<p>The third claim that we didn&#x27;t support other queries outside
+    of the 43 ClickBench queries is partially false, but does have some ground to
+    it. As I said before, pgrust 0.4-preview was an early version of pgrust 0.4. Once
+    our new JIT compiler supported enough SQL to handle the ClickBench queries, we
+    decided to submit it to ClickBench. AFAIK, ClickBench has no rules about how much
+    SQL you need to support. On top of that, we did ship that we did ship 0.4-preview
+    with our old query engine. It would have been a two-line change to fall back to
+    it and support a much broader set of queries outside what our new engine could
+    support. Those queries would still be fast, but not quite as fast as our new engine
+    was. Our new 0.4-beta release does now support all Postgres SQL (minus some bugs
+    around CTEs and MERGE)<p>To sum up, pgrust 0.4-preview was an early build of pgrust
+    0.4 while it was in development. It was a real query engine and actually executed
+    queries. I acknowledge that we submitted it prematurely, when it supported a narrow
+    set of SQL, and we should have ensured broader SQL coverage before submitting
+    it. With our new submission that solves these problems, and we&#x27;re hoping
+    for pgrust to be reinstated. If there&#x27;s anything off about the submission,
+    please point it out and we&#x27;re happy to fix it.<p>[0] <a href="https:&#x2F;&#x2F;github.com&#x2F;malisper&#x2F;pgrust&#x2F;releases&#x2F;tag&#x2F;v0.4-beta"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;malisper&#x2F;pgrust&#x2F;releases&#x2F;tag&#x2F;v0.4-beta</a><p>[1]
+    <a href="https:&#x2F;&#x2F;pgrust.com&#x2F;downloads&#x2F;archive&#x2F;2026-09-clickbench-snapshot&#x2F;pgrust-v0.4-preview-aarch64-neoverse-v2.tar.gz"
+    rel="nofollow">https:&#x2F;&#x2F;pgrust.com&#x2F;downloads&#x2F;archive&#x2F;2026-09-clickbench-snap...</a><p>[2]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;blob&#x2F;main&#x2F;README.md"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;blob&#x2F;main&#x2F;README.md</a><p>[3]
+    <a href="https:&#x2F;&#x2F;clickhouse.com&#x2F;docs&#x2F;concepts&#x2F;features&#x2F;performance&#x2F;caches&#x2F;query-condition-cache"
+    rel="nofollow">https:&#x2F;&#x2F;clickhouse.com&#x2F;docs&#x2F;concepts&#x2F;features&#x2F;performance&#x2F;ca...</a><p>[4]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pull&#x2F;2751"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pull&#x2F;2751</a>'
+  score: 0
+  posted_at: '2026-10-23T14:16:20Z'
 - id: '50209518'
   parent_id: '50208770'
   author: gpm
@@ -438,6 +501,12 @@ comments:
     to stop).
   score: 0
   posted_at: '2026-10-23T14:19:50Z'
+- id: '50209558'
+  parent_id: '50209450'
+  author: philipwhiuk
+  text: Can you explain &quot;PGRUST_GRAVITY_Q20_VARIANT&quot;?
+  score: 0
+  posted_at: '2026-10-23T14:21:38Z'
 - id: '50209620'
   parent_id: '50207880'
   author: xdavidliu
@@ -575,6 +644,12 @@ comments:
     rel="nofollow">https:&#x2F;&#x2F;kevinrenatojones.wordpress.com&#x2F;about&#x2F;</a>'
   score: 0
   posted_at: '2026-10-23T16:03:06Z'
+- id: '50211217'
+  parent_id: '50209031'
+  author: acalvino4
+  text: submitting corrections is an acknowledgment in action
+  score: 0
+  posted_at: '2026-10-23T16:04:49Z'
 - id: '50211240'
   parent_id: '50209861'
   author: fatty_patty89
@@ -808,6 +883,15 @@ comments:
   text: Confirmed by who and how?
   score: 0
   posted_at: '2026-10-23T22:10:00Z'
+- id: '50216266'
+  parent_id: '50216047'
+  author: Vaushite
+  text: |-
+    At the top of this page is the following text:<p><pre><code>     Remove pgrust: the entry is cheating (per-query kernels and result caching)
+    </code></pre>
+    Please click on that text and read the next page.
+  score: 0
+  posted_at: '2026-10-23T22:31:43Z'
 - id: '50216413'
   parent_id: '50213572'
   author: JCattheATM
@@ -863,6 +947,34 @@ comments:
   text: If you&#x27;ve been accused of cheating it is a very different scenario.
   score: 0
   posted_at: '2026-10-24T07:19:11Z'
+- id: '50225126'
+  parent_id: '50217881'
+  author: verdverm
+  text: Have you happen to have seen the 3 commits? They are over 1000 file diffs,
+    that is not pristine or communicating changes the way devs do.
+  score: 0
+  posted_at: '2026-10-24T20:51:00Z'
+- id: '50225468'
+  parent_id: '50211329'
+  author: LtWorf
+  text: So what is the point of benchmarking it?
+  score: 0
+  posted_at: '2026-10-24T21:23:42Z'
+- id: '50226938'
+  parent_id: '50225468'
+  author: throwaway894345
+  text: Whenever people benchmark something my default assumption is that they want
+    to know how well it performs, but I’m not the author and can’t speak to their
+    intentions.
+  score: 0
+  posted_at: '2026-10-25T00:27:25Z'
+- id: '50229263'
+  parent_id: '50225126'
+  author: true_religion
+  text: No, it&#x27;s the old school cathedral &quot;throw code over the wall&quot;
+    style commits that some companies were famous for.
+  score: 0
+  posted_at: '2026-10-25T07:52:49Z'
 article:
   url: https://github.com/ClickHouse/ClickBench/pull/2165
   title: 'Remove pgrust: the entry is cheating (per-query kernels and result caching)
@@ -952,4 +1064,4 @@ article:
     while loading. Please reload this page.\n\n### 2 participants"
   error:
   fetched_at: '2026-10-24T19:18:05Z'
-archived_at: '2026-10-24T19:19:09Z'
+archived_at: '2026-11-07T21:33:56Z'
