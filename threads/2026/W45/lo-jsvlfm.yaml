@@ -1,0 +1,220 @@
+---
+post:
+  id: lo-jsvlfm
+  source: lobsters
+  title: 'Scriptable GeoDNS: leaving AWS for Bunny'
+  url: https://vincent.bernat.ch/en/blog/2026-bunny-geodns
+  hn_url: https://lobste.rs/s/jsvlfm
+  score: 18
+  author: vbernat
+  posted_at: '2026-11-07T07:46:35Z'
+  fetched_at: '2026-11-07T17:32:41Z'
+  article_url: https://vincent.bernat.ch/en/blog/2026-bunny-geodns
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T17:32:42Z'
+  raw_comment_count: 11
+  tags:
+  - performance
+  - web
+comments:
+- id: lo-7fygas
+  parent_id: '0'
+  author: viraptor
+  text: |-
+    I love more attention sent to Bunny recently. I'm happy for everyone moving away from the big "default" providers.
+    On the other hand:
+
+    But Route 53 is expensive
+
+
+    I run seven small NixOS virtual machines to host this blog around the world: Paris, Nuremberg, Ashburn, Singapore, San Jose, São Paulo, and Sydney.
+
+    That feels like both an overkill (why not let Bunny cache it then if it's a static blog?) and high enough traffic ($10 in DNS queries!) that it will cost real money?
+    I'm really curious why it's done this way to begin with?
+  score: 5
+  posted_at: '2026-11-07T08:15:30Z'
+- id: lo-b4xdl8
+  parent_id: '0'
+  author: vbernat
+  text: |-
+    Yes, it's overkill. But that's how I keep myself busy! Somebody else would host it on a Raspberry Pi running on solar power, that would be fine too.
+    About not hosting the HTML itself on the CDN too, it's because I want to control the integrity of the content: CSS and JavaScript files are protected by an integrity hash (SRI) and can therefore be hosted externally. If I could, I would also include images in this, but this is not supported by browsers/HTML spec (and not something that looks planned).
+    The $10 was for haproxy.debian.net, which hosts an APT repository and is being hit by automated tools. My blog is far from costing that much in DNS traffic. Most of the costs were fixed (a few zones, the KMS key, so maybe 2$ for CloudFront+Route53 traffic). Paying $5 for a VM seems an OK deal for me. Paying 0.75$ for an healthcheck, not so much.
+  score: 8
+  posted_at: '2026-11-07T09:18:38Z'
+- id: lo-tev8bv
+  parent_id: '0'
+  author: viraptor
+  text: That's fair. I was just confused by the post motivation and constraints. Like,
+    if it's for saving money, then there are other approaches, if it's for latency
+    , then there are other things to fix, etc. But "because I can" is a cool direction
+    ;⁠)
+  score: 3
+  posted_at: '2026-11-07T09:26:09Z'
+- id: lo-o7n6nh
+  parent_id: '0'
+  author: elobommart
+  text: Love the sharks and pirate ship.
+  score: 3
+  posted_at: '2026-11-07T09:28:39Z'
+- id: lo-mlveh5
+  parent_id: '0'
+  author: tensegrist
+  text: how do you host the vms?
+  score: 2
+  posted_at: '2026-11-07T12:11:04Z'
+- id: lo-brzmsn
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    Nice!
+    It's a shame the ACME DNS part ends up a bit complex, though as you say in a footnote, it's simpler if you find/use a DNS host that offers API tokens that are scoped to a particular domain.
+    I often want a different auth scheme than a service provider offers, and so end up writing/using proxies to do my preferred auth on ingress, and then inject the actual token on the egress. Exactly where to host that is another question (where are you willing to host a server that has write on all your domains...), but perhaps Bunny Edge Scripting could do this (since you already trust Bunny).
+    For ACME DNS in particular, https://letsencrypt.org/2026/02/18/dns-persist-01 will allow DNS-based cert validation, without needing to do DNS updates, making all this a lot easier.
+  score: 2
+  posted_at: '2026-11-07T12:32:17Z'
+- id: lo-orntzs
+  parent_id: '0'
+  author: vbernat
+  text: |-
+    Exactly where to host that is another question (where are you willing to host a server that has write on all your domains...)
+
+    I was previously using nginx and the certificates were managed through NixOS security.acme.certs. After adding more hosts, I noticed Let's Encrypt had quite a low limit when you ask the same certificates many times (5 per week). I started working around this issue by making SAN different for each host by adding a host-specific cert. But there are many limits, including the number of new certs per domain.
+    When I switched to Caddy, I have considered its ability to share certificates through an S3 bucket, but this would add another dependency on a service I need either to self-host or rely on an external party. Instead, I get the certificates on my laptop (with DNS-01) and I push them to each server when updating them (I am using Colmena and a wrapper script). I added a test with Hurl to ensure I don't forget to refresh the certificates.
+    From my understanding, DNS-PERSIST-01 is not yet available? I didn't investigate much. Edit: looks like it's still not ready.
+  score: 1
+  posted_at: '2026-11-07T12:58:32Z'
+- id: lo-8zvxcr
+  parent_id: '0'
+  author: vbernat
+  text: |-
+    Various VPS providers: Sapinet, Vultr, and Hetzner.
+    If the question was more "but you don't really self host if you rely on a VM running on a third party infrastructure", yes, that's true. This is a compromise.
+  score: 2
+  posted_at: '2026-11-07T13:00:07Z'
+- id: lo-laq1ju
+  parent_id: '0'
+  author: ysun
+  text: "I host my site on NixOS thru anycast which I think is easier than setting
+    up GeoDNS \U0001F923"
+  score: 1
+  posted_at: '2026-11-07T13:45:15Z'
+- id: lo-rpgr96
+  parent_id: '0'
+  author: mtlynch
+  text: |-
+    This is cool! I use Bunny but didn't realize they offered a DNS product. It's especially neat that they allow custom server-side logic on the DNS requests.
+    I use dnsimple, and I've been pretty happy with them, but bot traffic is recently driving up my costs because bots are doing millions of DNS queries from different residential proxies.
+    Currently, dnsimple's overage fees only cost me about $3/month, but if it gets worse, I might explore delegating DNS to Bunny.
+  score: 1
+  posted_at: '2026-11-07T14:57:02Z'
+- id: lo-iqohym
+  parent_id: '0'
+  author: robalex
+  text: |-
+    Thanks for sharing, I've used PowerDNS to self host scriptable DNS before (https://doc.powerdns.com/authoritative/backends/pipe.html). I've seen all sorts of hacks, like weather reports as TXT records.
+    On the ACME DNS-01 front, you can also consider acme-dns (https://github.com/acme-dns/acme-dns) or commercial options like Certify DNS (https://docs.certifytheweb.com/docs/dns/providers/certifydns/).
+    I'm really looking forward to ACME DNS-PERSIST-01, as mentioned in other threads, but it's not quite ready yet. I plan to add it to localcert (https://localcert.net/) as soon as it is. It will greatly improve usability.
+  score: 1
+  posted_at: '2026-11-07T17:23:27Z'
+article:
+  url: https://vincent.bernat.ch/en/blog/2026-bunny-geodns
+  title: 'Scriptable GeoDNS: leaving AWS for Bunny'
+  fetch_status: success
+  content: "To op­ti­mize the per­for­mance met­rics of this blog, I re­lied on _Ama­zon
+    Cloud­Front_ to serve the as­sets, and _Route 53_ for the geo-aware DNS to di­rect
+    read­ers to the clos­est host serv­ing the con­tent. But Route 53 is ex­pen­sive:
+    [US$0.50 per zone per month, US$0.70 per mil­lion ge­olo­ca­tion queries, and
+    US$0.75 per healthcheck per month](https://aws.amazon.com/route53/pricing/ \"Amazon
+    Route 53 pricing\")[1], plus [US$1 per month for the KMS key](https://aws.amazon.com/kms/pricing/
+    \"AWS Key Management Service pricing\")[2] needed to sign zones with DNSSEC. When
+    I dis­cov­ered that Bunny DNS is [al­most free](https://bunny.net/blog/were-making-bunny-dns-free/
+    \"We’re making Bunny DNS free\")[3] for up to 500 do­mains and fea­tures script­able
+    an­swers, I made the jump! Plus, it’s a Eu­ro­pean com­pany based in Slovenia.\n\n-
+    [Bunny&nbsp;CDN](#bunny-cdn)\n- [Bunny DNS](#bunny-dns)\n  - [The HTTPS record
+    solution](#the-https-record-solution)\n  - [The hy­brid solution](#the-hybrid-solution)\n-
+    [ACME DNS with Hickory&nbsp;DNS](#acme-dns-with-hickory-dns)\n\n# Bunny [#](#bunny-cdn
+    \"Permanent link\")\n\n[_Bunny.net_](https://bunny.net/ \"bunny.net: The Global
+    Edge Platform that truly Hops\")[4] started as [BunnyCDN in 2015](https://bunny.net/our-story/
+    \"Story of a small company disrupting the CDN market!\")[5]. They added [IPv6
+    sup­port in 2017](https://bunny.net/blog/bunnycdn-is-now-ipv6-enabled/ \"BunnyCDN
+    is Now IPv6 Enabled\")[6]. Switch­ing was un­event­ful. I don’t bring a cus­tom
+    do­main: I serve the con­tent from the `b-cdn.​net` do­main. As I de­pend on con­tent
+    ne­go­ti­a­tion to [serve AVIF and WebP im­ages](/en/blog/2021-webp-avif-nginx
+    \"Serving WebP & AVIF images with Nginx\")[7], I con­fig­ure the to [cache each
+    im­age for­mat sep­arately](https://bunny.net/docs/cdn/vary-cache \"Vary Cache
+    on bunny.net documentation\")[8].\n\nI [dis­able log­ging](https://github.com/vincentbernat/cdktf-take1/blob/8950deb049198982b595f864b2a53517e63717e3/luffy/bunnycdn.ts#L31
+    \"cdktf-take1/luffy/bunnycdn.ts at main\")[9] to avoid col­lect­ing per­sonal
+    in­for­ma­tion. While the [bunny.net GDPR page](https://bunny.net/gdpr/ \"General
+    Data Protection Regulation (GDPR) for bunny.net\")[10] prom­ises they anonymize
+    data, it is un­clear what Cloud­Front keeps in its own logs when log­ging is disabled.\n\nThe
+    only down­side of the _bunny.net_ of­fer­ing is the lack of HTTP/3. I asked their
+    sup­port: two min­utes later, they an­swered they are work­ing on it but have
+    no to&nbsp;share.\n\n# Bunny DNS[#](#bunny-dns \"Permanent link\")\n\n_Bunny.net_
+    in­tro­duced their [DNS of­fer­ing in 2022](https://bunny.net/blog/transforming-internet-routing-introducing-bunny-dns/
+    \"We're transforming internet routing: Bunny DNS!\")[11] and re­cently re­duced
+    its cost [to al­most zero](https://bunny.net/blog/were-making-bunny-dns-free/
+    \"We’re making Bunny DNS free\")[3]. They sup­port [ge­o­graph­i­cal rout­ing](https://bunny.net/docs/dns/records#geographic-routing
+    \"DNS Records on bunny.net documentation\")[12], but a very cool fea­ture is the
+    [script­able DNS](https://bunny.net/docs/dns/scriptable/introduction \"Scriptable
+    DNS on bunny.net documentation\")[13]: it runs a piece of user-sup­plied Java­Script
+    on each query to com­pute the&nbsp;answer.\n\nI run seven small NixOS vir­tual
+    ma­chines to host this blog around the world: Paris, Nurem­berg, Ash­burn, Sin­ga­pore,
+    San Jose, São Paulo, and Syd­ney. Bunny’s script­able DNS lets me re­turn the
+    IP ad­dresses of the **two near­est servers**. The browser falls back to the sec­ond
+    server if the first one&nbsp;is&nbsp;down.\n\n    const servers = [\n      {\n
+    \       ipv4: \"45.90.160.60\",\n        ipv6: \"2a0c:8881:5:100::1\",\n        latitude:
+    48.88,\n        longitude: 2.22,\n      },\n      /* […] */\n      {\n        ipv4:
+    \"139.180.162.114\",\n        ipv6: \"2001:19f0:5800:1855:5400:6ff:fef0:4c0a\",\n
+    \       latitude: -33.87,\n        longitude: 151.21,\n      },\n    ];\n    const
+    families = { A: \"ipv4\", AAAA: \"ipv6\" };\n    const records = { A: ARecord,
+    AAAA: AaaaRecord };\n    \n    export default function handleQuery(query) {\n
+    \     const type = String(query.request.queryType).toUpperCase();\n      const
+    family = families[type];\n      if (!family) return [];\n      // Get user location\n
+    \     const location = query.request.geoLocation;\n      // Build a list of candidates\n
+    \     let candidates = servers.map(\n        (s) => new Server(s[family], s.latitude,
+    s.longitude, 100),\n      );\n      // Select the two closest alive servers\n
+    \     const selected = [];\n      while (selected.length < 2) {\n        const
+    server = RoutingEngine.getClosestServer(candidates, location, true);\n        selected.push(server);\n
+    \       candidates = candidates.filter((s) => s.ip !== server.ip);\n      }\n
+    \     // Return their IP addresses\n      return selected.map((s) => new records[type](s.ip,
+    3600));\n    }\n\nThe above script re­lies on the[`RoutingEngine.​getClosestServer()`](https://bunny.net/docs/dns/scriptable/helper-objects#routingengine-getclosestserver-servers-array%3Cserver%3E-location-geolocation-onlineonly-bool-=-false-applyweight-bool-=-true--server
+    \"Helper Objects on bunny.net documentation\")[14] helper, which re­turns the
+    clos­est alive server to the user. Thanks to [Doggo](https://doggo.mrkaran.dev/
+    \"Doggo DNS\")[15], we can check it works as ex­pected, at least&nbsp;for&nbsp;`A`:\n\n
+    \   $ doggo --gp-from=\"Amsterdam\" A vincent.bernat.ch\n    LOCATION NAME TYPE
+    TTL ADDRESS\n    Amsterdam, NL\n                      vincent.bernat.ch. A 3600s
+    45.90.160.60\n                      vincent.bernat.ch. A 3600s 116.203.18.48\n
+    \   $ doggo --gp-from=\"Texas\" A vincent.bernat.ch\n    LOCATION NAME TYPE TTL
+    ADDRESS\n    Houston (TX), US\n                      vincent.bernat.ch. A 3600s
+    5.161.44.145\n                      vincent.bernat.ch. A 3600s 149.28.219.155\n\nThe
+    most an­noy­ing draw­back of this method is that a user from Buenos Aires gets
+    both São Paulo (1000 mi, 30 ms ) and Ash­burn (5200 mi, 140 ms ). Most re­solvers
+    ran­dom­ize the or­der, so the user may pull the web page from Ash­burn. We could
+    re­turn only the near­est server—and swap the scripted record with the built-in
+    ge­o­graphic rout­ing in­stead. But if the server be­comes un­avail­able, the
+    browser has no al­ter­na­tive un­til the DNS cache ex­pires. It leaves a short
+    win­dow of un­avail­abil­ity, even with a short&nbsp;.\n\n## The HTTPS record
+    solution[#](#the-https-record-solution \"Permanent link\")\n\nThe [HTTPS DNS record](https://kalfeher.com/https-records-simple/
+    \"Simple HTTPS Records\")[19], de­fined in [RFC 9460](https://www.rfc-editor.org/info/rfc9460
+    \"RFC 9460: Service Binding and Parameter Specification via the DNS (SVCB and
+    HTTPS Resource Records)\")[20], solves both the avail­abil­ity and the la­tency
+    is­sues. Mod­ern browsers query this record to get ad­di­tional in­for­ma­tion
+    to reach an HTTP server, in­clud­ing an al­ter­na­tive port and the ap­pli­ca­tion
+    layer protocol—HTTP/2 or HTTP/3. Each record has a pri­or­ity. We can ask browsers
+    to con­tact the near­est server first and fall back to the next one if the first
+    is un­available:\n\n    vincent HTTPS 1 first.geo alpn=\"h3,h2\"\n    vincent
+    HTTPS 2 second.geo alpn=\"h3,h2\"\n    vincent HTTPS 3 . alpn=\"h3,h2\"\n    \n
+    \   ; Bunny DNS must provide the two closest servers as \"first.geo\"\n    ; and
+    \"second.geo\" with geographic or latency routing.\n    first.geo A 45.90.160.60\n
+    \   first.geo AAAA 2a0c:8881:5:100::1\n    second.geo A 116.203.18.48\n    second.geo
+    AAAA 2a01:4f8:1c0c:5eb5::1\n    \n    vincent A 45.90.160.60\n    vincent A 116.203.18.48\n
+    \   vincent AAAA 2a0c:8881:5:100::1\n    vincent AAAA 2a01:4f8:1c0c:5eb5::1\n\nThis
+    looks like the ideal so­lu­tion! Un­for­tu­nately, Chrome [ig­nores any record
+    whose tar­get is not&nbsp;`.`](https://issues.chromium.org/issues/40257146 \"Fully
+    implement HTTPS-RR [40257146]\")[21], hence the last record at pri­or­ity 3. More­over,
+    un­like with a `CNAME`, Bunny DNS does not re­turn the IP ad­dresses for`first.​geo`
+    and `second.​geo` in the ad­di­tional sec­tion. The re­solve"
+  error:
+  fetched_at: '2026-11-07T17:32:42Z'
+archived_at: '2026-11-07T17:32:43Z'
