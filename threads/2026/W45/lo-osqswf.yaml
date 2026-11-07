@@ -1,0 +1,146 @@
+---
+post:
+  id: lo-osqswf
+  source: lobsters
+  title: The Port That Does Not Exist
+  url: https://acid.vegas/blog/the-port-that-does-not-exist/
+  hn_url: https://lobste.rs/s/osqswf
+  score: 45
+  author: drmorr
+  posted_at: '2026-11-06T23:03:12Z'
+  fetched_at: '2026-11-07T09:42:34Z'
+  article_url: https://acid.vegas/blog/the-port-that-does-not-exist/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T09:42:34Z'
+  raw_comment_count: 3
+  tags:
+  - networking
+comments:
+- id: lo-a0fijr
+  parent_id: '0'
+  author: icefox
+  text: 'Good to see that some of the best traditions of hackers are still out there:
+    stainless steel rats, nibbling on the concrete wainscotting of society.'
+  score: 8
+  posted_at: '2026-11-07T03:44:07Z'
+- id: lo-sq2jw0
+  parent_id: '0'
+  author: tclancy
+  text: I’m sorry, what in the Suicidal Tendencies is that header image and font?
+    I am all the way in.
+  score: 9
+  posted_at: '2026-11-07T03:46:56Z'
+- id: lo-o3gyo9
+  parent_id: '0'
+  author: rau
+  text: In the context of the discussion of *sshhole, it’s interesting to see yet
+    another issue caused by the in-band signalling so common in C APIs, in this case
+    using 0 as a sentinel rather than as 0.
+  score: 1
+  posted_at: '2026-11-07T09:40:24Z'
+article:
+  url: https://acid.vegas/blog/the-port-that-does-not-exist/
+  title: acidvegas x blog - the port that does not exist
+  fetch_status: success
+  content: "# The Port That Does Not Exist\n\nPort 0 is the port you are not supposed
+    to use, so nobody looks there. So we put an IRC network on it. Then I got curious
+    whether anyone else had, and scanned all of IPv4 for port 0. Turns out we weren't
+    alone, and some of our neighbours really shouldn't be there.\n\nAsk any program
+    to listen on port 0 and it will hand you a socket on port 47193...or 58037...or
+    whatever the kernel felt like that day. Port 0 is not a port you can have. It
+    is the number you pass when you want the operating system to pick one for you.\n\nBut
+    a TCP header is just bytes. The destination port field is 16 bits wide, and 0x0000
+    fits in 16 bits as well as anything else does. Nothing on the wire stops a packet
+    from being addressed to port 0. Your tools will refuse it, your browser will block
+    it, and your scanner's default port list skips it, because everyone agrees it
+    isn't a real port.\n\nWhich makes it a pretty good place to hide things, whether
+    anyone meant to or not. So we did some TCP cowboy shit & port scanned the entire
+    fucking internet for open ports on port 0, which uncovered some interesting unexpected
+    findings.\n\n## What Port 0 Actually Is\n\nThe standards are thin on this. RFC
+    9293, the 2022 consolidation of the TCP spec, defines the source and destination
+    port as \"16 bits\" and leaves it there. It has no rule against zero.\n\nIANA
+    lists 0/tcp and 0/udp as Reserved, pointing at RFC 6335. That RFC splits the port
+    space into System (0–1023), User (1024–49151) and Dynamic (49152–65535) ranges,
+    and explains what \"Reserved\" means:\n\n> Reserved port numbers include values
+    at the edges of each range, e.g., 0, 1023, 1024, etc., which may be used to extend
+    these ranges or the overall port number space in the future.\n\nSo port 0 is not
+    forbidden. It is set aside. The only place zero has a defined protocol meaning
+    is UDP: RFC 768 makes the source port optional, and \"if not used, a value of
+    zero is inserted.\" TCP has nothing like that.\n\n## Why You Can't Listen On It\n\nPort
+    0's reputation comes from the sockets API, not the wire. When you call bind()
+    with sin_port = 0, you are not asking for port 0. You are asking for any port.
+    The ip(7) man page lists every case where Linux hands out an ephemeral port: bind()
+    with port 0, listen() on an unbound socket, connect() on an unbound socket, and
+    sendto() on an unbound datagram socket.\n\nThe range comes from net.ipv4.ip_local_port_range,
+    which defaults to 32768 60999 on Linux, not the 49152–65535 that IANA calls Dynamic.
+    And asking for port 0 needs no privileges. __inet_bind() only checks CAP_NET_BIND_SERVICE
+    when the requested port is non-zero.\n\nHow the kernel picks is more interesting
+    than I expected. In net/ipv4/inet_connection_sock.c (v6.8), inet_csk_find_open_port()
+    starts at a random offset and then does this:\n\noffset = get_random_u32_below(remaining);
+    /* __inet_hash_connect() favors ports having @low parity * We do the opposite
+    to not pollute connect() users. */ offset |= 1U;\n\nIt walks the range in steps
+    of two. The function above it says it outright: \"We try to allocate an odd port
+    (and leave even ports for connect()).\" Outgoing connections go through __inet_hash_connect()
+    in inet_hashtables.c, which implements RFC 6056 Algorithm 4 (double-hash port
+    selection) and takes the even ports first. The kernel splits the range by parity
+    so servers asking for \"any port\" and clients making outbound connections don't
+    fight over the same numbers. If SO_REUSEADDR is set, bind() also tries the lower
+    half of the range before the upper half.\n\nThat is easy to test. On a stock Ubuntu
+    box running Linux 6.8:\n\nSo when your program says \"listen on port 0\", the
+    kernel hears \"give me an odd number between 32768 and 61000.\" No normal program
+    can listen on port 0.\n\n## So We Did It Anyways\n\nYou can bypass all of this
+    with raw sockets, but if you just want to cheat, you can simply forward the port
+    to another with iptables/nftables. As a fun proof of concept, I set up my IRC
+    network at irc.supernets.org to accept plaintext connections on port 0 and SSL
+    connections on port 1. JUST TO FLEX. \U0001F60E\n\n-A PREROUTING -p tcp -m tcp
+    --dport 0 -j REDIRECT --to-ports 6667 -A PREROUTING -p tcp -m tcp --dport 1 -j
+    REDIRECT --to-ports 6697\n\nA SYN arrives for port 0, netfilter rewrites the destination
+    to 6667 where the ircd is actually listening, and the reply is rewritten back
+    on the way out. The ircd never knows. Port 1 does the same for TLS on 6697.\n\n##
+    Talking To Port 0 Is Its Own Problem\n\nGetting a server onto port 0 was the easy
+    part. Getting a client there is where tools give up. I pointed everything I had
+    at our own server on port 0:\n\nThat last one is strange, because the TCP connection
+    underneath it is fine. The problem is that the kernel says it isn't, and it does
+    that on purpose. Here is inet_getname() in net/ipv4/af_inet.c, which backs getpeername():\n\nif
+    (peer) { if (!inet->inet_dport || (((1 << sk->sk_state) & (TCPF_CLOSE | TCPF_SYN_SENT))
+    && peer == 1)) { release_sock(sk); return -ENOTCONN; }\n\nLinux uses \"destination
+    port is 0\" as its internal marker for \"this socket isn't connected to anything.\"
+    A socket that really is connected to port 0 trips that check, so getpeername()
+    returns ENOTCONN on a working connection.\n\nPython's ssl.wrap_socket() calls
+    getpeername() to decide whether the socket is connected, gets ENOTCONN, decides
+    it isn't, switches to non-blocking and tries a recv(1), gets EAGAIN, and raises
+    BlockingIOError. The TCP connection is fine. It just reports that it doesn't exist.
+    Python's asyncio does TLS through memory buffers instead of wrap_socket(), never
+    asks, and works.\n\n## Scanning The Internet For Port 0\n\nYou can't scan port
+    0 with connect()-based tools for all the reasons above, but masscan doesn't use
+    the kernel's TCP stack. It builds its own SYN packets, so port 0 is just another
+    number.\n\n1,173,626 addresses answered with a SYN-ACK.\n\nThat sounds like a
+    lot of people using port 0. It isn't. Grouped by /24, the responses are packed
+    into a few thousand dense blocks:\n\n8% of those /24s hold 78% of the responding
+    IPs. Whole blocks answer on every address: 172.65.0.0/16 returned 65,534 of 65,536.
+    That isn't 65,534 servers. It's a firewall or router at the edge answering the
+    SYN for everything behind it. 1,116,675 addresses completed the handshake and
+    never sent a single byte.\n\n## 94% Of The Banners Are A Load Balancer Complaining\n\n56,951
+    addresses did send something. Almost all of it looked like this:\n\nBIG-IP: [0x31dbae9:14718]
+    {peer} TCP retransmit timeout BIG-IP: [0x31dbae9:4992] {peer} TCP RST from remote
+    system BIG-IP: [0x2bd2afd:5226] SYN timeout (server not responding)\n\nF5 BIG-IP
+    load balancers write the reason for a reset into the RST packet, and masscan saved
+    it as a banner. That's 53,741 of the 56,951 (94%), and 46,583 of them are in 132.246.0.0/16
+    alone. Drop those, plus 305 hosts returning the same fixed (Ref.Id: ?...?) token,
+    and 2,905 addresses are left. That's about 0.25% of everything that answered.\n\n##
+    What's Actually On Port 0\n\nNobody is running anything exotic on port 0. It's
+    the same stuff that's on every other port: SSH, databases, telnet, FTP. What stands
+    out is how much of it is embedded gear. dropbear, micro_httpd, NAS certificates
+    from QNAP, Synology and Buffalo, DVRs, power switches. Some of it clearly comes
+    from one device model rolled out across an ISP:\n\n- VERO S.A (Brazil): 145 addresses
+    across six ASNs, all registered as \"America-NET Ltda.\" 132 show the identical
+    telnet login: prompt. The other 13 print a CLI or shell error instead.\n\n- ALFANET
+    (Azerbaijan): 32 addresses, every one SSH-2.0-dropbear_0.48.\n\n- Great Plains
+    Communications (US): 20 of the 23 \"Residential Gateway\" login pages.\n\n- INVITECH
+    (Hungary): 17 FTP servers announcing AMG1001-T10A FTP version 1.0, with clocks
+    set to early 2000 or 2036.\n\n- Telekom Srbija: 13 identical MySQL 4.1.22-community-nt,
+    an ancient Windows MySQL build.\n\nMy guess is that nobody at those ISPs picked
+    port 0 on purpose: a port-forward or NAT rule shipped in a CPE confi"
+  error:
+  fetched_at: '2026-11-07T09:42:34Z'
+archived_at: '2026-11-07T09:42:34Z'

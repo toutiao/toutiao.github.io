@@ -1,0 +1,140 @@
+---
+post:
+  id: lo-0ouxwf
+  source: lobsters
+  title: Libghostty 1.0
+  url: https://mitchellh.com/writing/libghostty-1-0
+  hn_url: https://lobste.rs/s/0ouxwf
+  score: 77
+  author: dgv
+  posted_at: '2026-11-06T23:48:03Z'
+  fetched_at: '2026-11-07T09:42:34Z'
+  article_url: https://mitchellh.com/writing/libghostty-1-0
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T09:42:34Z'
+  raw_comment_count: 3
+  tags:
+  - c
+  - release
+  - zig
+comments:
+- id: lo-toactr
+  parent_id: '0'
+  author: gignico
+  text: Wow this is a major milestone, congrats! What is Zig used for in the library?
+    For something so stable is the choice of Zig going to lead to friction when the
+    language will have incompatible changes again?
+  score: 0
+  posted_at: '2026-11-07T05:21:15Z'
+- id: lo-zgpwnu
+  parent_id: '0'
+  author: lalitm
+  text: 'The stability layer exists at the C ABI level: any churn on the Zig side
+    is completely opaque becuase it''s all abstracted away behind the C layer which
+    is what consumers will actually use.'
+  score: 2
+  posted_at: '2026-11-07T05:37:21Z'
+- id: lo-5oaizr
+  parent_id: '0'
+  author: gignico
+  text: Yes of course the C API hides Zig, but the library itself will require some
+    specific version of the Zig language to build, since Zig is not stable. I guess
+    this will put some constraints on packagers if nothing else
+  score: 1
+  posted_at: '2026-11-07T05:43:37Z'
+article:
+  url: https://mitchellh.com/writing/libghostty-1-0
+  title: Libghostty 1.0 – Mitchell Hashimoto
+  fetch_status: success
+  content: |-
+    # [Mitchell Hashimoto](/)
+
+    # Libghostty 1.0
+
+    November 6, 2026
+
+    `libghostty-vt` 1.0 is here. [libghostty](https://lib.ghostty.org/) is a portable, high-performance C library for terminal emulation, extracted directly from the core of Ghostty. The 1.0 release means both the library itself and the C ABI are now stable.
+
+    A little over a year ago, I wrote that[libghostty is coming](/writing/libghostty-is-coming). At the time, the Zig module had just been merged, the C API didn't exist, and nobody but Ghostty was a consumer. Today, the C API is a complete terminal emulator, it runs in production for millions of people across hundreds of products, both free and commercial, and it has a real, enforced ABI stability policy.
+
+    This post is about how we got here and what 1.0 actually means.
+
+    * * *
+
+    ## Who Is Already Using It
+
+    Since starting the Ghostty project in 2022, the most common question I've been asked is "why?". I already answered this in the[libghostty is coming](/writing/libghostty-is-coming)post, so feel free to read that if you wish. Today, I'd rather answer this by showing the broad industry impact libghostty _has already had_. I believe this strongly validates its existence.
+
+    A year ago, I used a[bug in JediTerm](https://github.com/JetBrains/jediterm/pull/311), the terminal emulator in JetBrains IDEs, as an example of why terminal emulation is hard to get right. A year later,[the terminal in JetBrains IDEs now runs on libghostty](https://blog.jetbrains.com/platform/2026/10/jetbrains-terminal-now-uses-ghostty/). Every IntelliJ, PyCharm, GoLand, etc. user now has a libghostty-powered terminal. Based on a report by JetBrains, that's over 12.5 million active users.
+
+    Neovim has an [approved pull request](https://github.com/neovim/neovim/pull/39773)replacing libvterm with `libghostty-vt`. Among other things, it closes a[10-year-old issue](https://github.com/neovim/neovim/issues/4997)about reflowing scrollback on resize. The maintainers are waiting on a tagged release before merging so that distributions can package the dependency separately, and the release today should enable that.
+
+    KDE developers are[experimenting with a Konsole replacement](https://blogs.kde.org/2026/11/01/introducing-kwi/)built on it. Vercel's Turborepo [uses it](https://github.com/vercel/turborepo/pull/13135)to render task output in its TUI. [devenv](https://devenv.sh/blog/2026/05/07/devenv-21-nix-with-zsh-fish-and-nushell-via-libghostty/)uses it to drive shells. Antithesis[used it to fuzz TUI programs](https://wickstrom.tech/2026-04-30-bombadil-terminal-experiment.html)and found real bugs in btop and others. [Ghostel](https://github.com/dakra/ghostel)brings it to Emacs. [ghostty-web](https://github.com/coder/ghostty-web)is the WASM build with an Xterm.js-compatible API. Commercial products like [OrbStack](https://orbstack.dev/) embed it. And a whole wave of new terminals and "agentic" coding tools, such as[herdr](https://github.com/herdrdev/herdr) and[cmux](https://github.com/manaflow-ai/cmux), have been built on it rather than writing yet another emulator.
+
+    There are community bindings for Rust, Go, JavaScript, Swift, Python, .NET, Elixir, Dart, Java, and more, and the[awesome-libghostty](https://github.com/Uzaaft/awesome-libghostty)list tracks well over a hundred projects.
+
+    More people today use a terminal powered by libghostty than use Ghostty the application, by a very large multiple. And libghostty is having a much larger impact than being "just" a terminal emulator.
+
+    * * *
+
+    ## ABI Stability
+
+    1.0 means `libghostty-vt` follows semantic versioning and has strict[ABI compatibility](https://en.wikipedia.org/wiki/Application_binary_interface)promises so that packagers across distributions and operating systems can be confident packaging `libghostty-vt` and program developers can be confident dynamically linking against it.
+
+    Beyond providing useful features, I believe the hallmark of a high-quality and enduring C library is ABI stability. So from the start, I took inspiration from C libraries I enjoyed working with and designed the API to have a strong, stable ABI that allows for future additions.
+
+    Every object is an opaque handle. The hundreds of values you might read or write go through a small set of enum-keyed getters and setters, so we can add new values easily without introducing a new symbol. Programs with newer headers linked against an older libghostty get `GHOSTTY_UNSUPPORTED`results instead of crashes or undefined behavior. The few non-opaque structs we have carry their size so that fields can be appended later, or contain reserved padding. Enums are pinned to `int` on every compiler, as much as the C standard allows.
+
+    Our CI enforces our ABI policy. Every change is checked with[libabigail](https://sourceware.org/libabigail/) against a committed baseline on Linux, and against golden type manifests on macOS and WebAssembly.
+
+    On ELF platforms, every exported symbol is also versioned, so the dynamic loader refuses to load a mismatched library by name rather than failing in some mysterious way later.
+
+    * * *
+
+    ## Packaging
+
+    In addition to ABI stability, the 1.0 release brings along the proper build tooling, tarballs, dependency licensing manifests, documentation, and more to enable every major operating system and distribution to package `libghostty-vt` through standard official tooling.
+
+    Libghostty has its own release cycle, separate from Ghostty the application. And it has its own tarballs with only the files and dependencies libghostty needs, resulting in smaller sizes and simpler licensing verification and compatibility.
+
+    Each release publishes a signed source tarball along with a companion dependencies tarball containing every Zig package in Zig's own cache layout, so a distribution can build the library completely offline. The build installs the shared and static libraries with a proper SONAME, headers, pkg-config files, and a CMake package config, and it honors`--prefix`, `DESTDIR`, and `lib64`. Debug info is kept by default so distros can split it out. All of this is documented in[PACKAGING-LIBGHOSTTY.md](https://github.com/ghostty-org/ghostty/blob/main/PACKAGING-LIBGHOSTTY.md), which ships with the tarball.
+
+    * * *
+
+    ## Dependencies and Licensing
+
+    `libghostty-vt` is MIT licensed. At runtime it needs nothing beyond libc, and it can be built fully freestanding if you don't want that either.
+
+    The library compiles in a small number of permissively licensed dependencies: [simdutf](https://github.com/simdutf/simdutf) and[Google Highway](https://github.com/google/highway) for SIMD, a compact Unicode table for grapheme data, and[Wuffs](https://github.com/google/wuffs) for image decoding in the Kitty graphics protocol. Both simdutf and Highway are built[without libc++](/writing/simdutf-no-libcxx), so there is no C++ standard library dependency.
+
+    There is no copyleft code anywhere in the dependency tree. Every dependency is listed in a machine-readable manifest with its version, SPDX license, and hash, specifically so distros can fill in their bundled-library metadata more easily.
+
+    If a distro would rather dynamically link the system simdutf or Highway, there's a build flag for that.
+
+    * * *
+
+    ## Portability
+
+    `libghostty-vt` is highly portable. The table below lists all the platforms and architectures that we build and test (full unit tests plus running all examples) in CI:
+
+    | Platform | Architectures |
+    | --- | --- |
+    | Linux (glibc, musl) | `x86_64`, `aarch64` |
+    | macOS 13+ | `x86_64`, `aarch64` |
+    | iOS 13+ | `aarch64` |
+    | FreeBSD | `x86_64`, `aarch64` |
+    | Windows | `x86_64` |
+    | Android | `aarch64`, `x86_64`, `arm` |
+    | WebAssembly | `wasm32` (freestanding) |
+
+    There is a second set of platforms we build in CI but do not run tests for. These systems all have known users; we just haven't set up the machinery for automated testing:
+
+    | Platform | Architectures |
+    | --- | --- |
+    | Bare metal | `riscv32`, `thumb` |
+    | WebAssembly (WASI) | `wasm32` |
+    | Windows | `arm64` |
+    | illumos | `x86_64
+  error:
+  fetched_at: '2026-11-07T09:42:34Z'
+archived_at: '2026-11-07T09:42:34Z'

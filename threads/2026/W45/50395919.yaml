@@ -1,0 +1,207 @@
+---
+post:
+  id: '50395919'
+  title: 'Memorilla: Latent Semantic Memory for LLMs'
+  url: https://arxiv.org/abs/2610.21375
+  hn_url: https://news.ycombinator.com/item?id=50395919
+  score: 104
+  author: handfuloflight
+  posted_at: '2026-11-06T18:03:33Z'
+  fetched_at: '2026-11-07T09:42:31Z'
+  article_url: https://arxiv.org/abs/2610.21375
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T09:42:31Z'
+  raw_comment_count: 13
+comments:
+- id: '50396599'
+  parent_id: '50395919'
+  author: jkingsman
+  text: So if I&#x27;m reading this right, it&#x27;s basically a specialized embedding
+    of a RAG, and then a model in the middle takes the agent&#x27;s queries and returns
+    responses in a form that is injecting into the main model&#x27;s input token stream
+    directly i.e. skipping actual text. And the injection format is INCREDIBLY token
+    efficient. Sort of injecting a vibe rather than quotable text. Their results of
+    &quot;good on concepts, less good on quotes&#x2F;exact text retrieval&quot; seem
+    to intuitively line up with that.
+  score: 0
+  posted_at: '2026-11-06T18:50:01Z'
+- id: '50398396'
+  parent_id: '50396599'
+  author: NaiveEmpiricist
+  text: It looks like another difference with RAGs is that instead of reranking the
+    doc vectors and taking the top 5 or so, this paper mixes all the docs (weighted
+    by relevance) into a fixed number of &quot;memory tokens&quot;.<p>It looks like
+    this helps avoid a problem I&#x27;ve had with RAG - when a fact isn&#x27;t local
+    to a single patch of text.
+  score: 0
+  posted_at: '2026-11-06T20:55:08Z'
+- id: '50398430'
+  parent_id: '50396599'
+  author: johnshahbazian
+  text: I think its offering a compromise between accuracy and tokens.  You don&#x27;t
+    have to use as many tokens and you get pretty good accuracy, but not the absolute
+    best.  I think, however, in many situations people aren&#x27;t super concerned
+    about the tokens as they are with the accuracy.
+  score: 0
+  posted_at: '2026-11-06T20:58:00Z'
+- id: '50399431'
+  parent_id: '50398396'
+  author: CharlieDigital
+  text: |-
+    <p><pre><code>    &gt; ...a problem I&#x27;ve had with RAG - when a fact isn&#x27;t local to a single patch of text
+    </code></pre>
+    Is this a problem, though? Vector similarity should surface the relevant, related patches.
+  score: 0
+  posted_at: '2026-11-06T22:37:17Z'
+- id: '50399474'
+  parent_id: '50395919'
+  author: bob1029
+  text: I am finding that semantic ~= lexical when you have something like a frontier
+    model driving. Using full text search engines is still the most compelling approach
+    for handling large document sets.<p>I really struggle with the semantic &#x2F;
+    embedding concerns when we have a generative model that can reverse engineer a
+    Mario 64 rom dump to run on my toaster oven. These models know how to compose
+    Lucene &amp; other FTS query strings in such a way that we are effectively getting
+    semantic search over purely lexical systems.
+  score: 0
+  posted_at: '2026-11-06T22:41:32Z'
+- id: '50400161'
+  parent_id: '50399431'
+  author: mastry
+  text: But only in documents that make it through RAG’s hard cutoff. There’s an explanation
+    of this on the related Stanford site at <a href="https:&#x2F;&#x2F;memory.stanford.edu&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;memory.stanford.edu&#x2F;</a> (see “How MEMORILLA
+    differs from RAG”)
+  score: 0
+  posted_at: '2026-11-06T23:56:03Z'
+- id: '50400671'
+  parent_id: '50399474'
+  author: continualLearne
+  text: I think semantic embeddings are only a part of the picture. A hybrid system
+    is definitely needed but only text based approaches are miserable. My agents keep
+    on repeating the same mistakes across sessions. We need to first get rid of this
+    notion of a session.
+  score: 0
+  posted_at: '2026-11-07T01:18:23Z'
+- id: '50401119'
+  parent_id: '50395919'
+  author: airesearcher2
+  text: memory as a modality is such a cool idea!
+  score: 0
+  posted_at: '2026-11-07T02:43:28Z'
+- id: '50401454'
+  parent_id: '50396599'
+  author: totetsu
+  text: I was just trying to find work about this yesterday.. Wondering, if we have
+    multimodal image,text,sound models, why not multimodal, text,graph models that
+    can store their memory in more efficent format than text in their context, without
+    needed external tooling..
+  score: 0
+  posted_at: '2026-11-07T03:50:35Z'
+- id: '50401586'
+  parent_id: '50401454'
+  author: continualLearne
+  text: agree
+  score: 0
+  posted_at: '2026-11-07T04:22:35Z'
+- id: '50402049'
+  parent_id: '50399474'
+  author: _bobm
+  text: This is true, but consider that we have agentic token injection (what you
+    are referring, prompting), embedding injection (memorilla) and continual learning.<p>So
+    the first will update _what_ information the model reasons&#x2F;infers about,
+    the last will update _how_ the model reasons&#x2F; infers about.<p>These are very
+    different.<p>As far as I understand memorilla sits in the middle. And it embeds
+    not tokens but embedding vectors with all their complexity. The compression (semantic)
+    is significant and in my mind is super interesting.
+  score: 0
+  posted_at: '2026-11-07T05:58:18Z'
+- id: '50402210'
+  parent_id: '50399474'
+  author: njstraub608
+  text: The types of systems from the paper get more interesting when you’re dealing
+    with really tight voice-based conversation loops.  If the workload isn’t latency
+    sensitive and you can just have a harness execute the types of searches you mentioned
+    it’s rarely worth it to explore these types of optimizations or memory structures
+    (or using embeddings at all).  However, if I ask a model for something we talked
+    about yesterday I don’t want to have to wait for it to reason and then make a
+    tool call then read it and reason again.  Even the, “let me check on that” gets
+    tired quickly.  They mentioned a 27x speed up putting the retrieval at 0.79 seconds
+    vs 19s which is very promising for voice-based personal assistants.
+  score: 0
+  posted_at: '2026-11-07T06:38:36Z'
+- id: '50402884'
+  parent_id: '50402210'
+  author: _bobm
+  text: 'The speed-up has another component: semantic compression: you express more
+    in a single embedding vector vs. tokens retrieved.<p>Your point is valid for the
+    agentic tool search, i am just saying there are two things lurking.'
+  score: 0
+  posted_at: '2026-11-07T09:02:55Z'
+article:
+  url: https://arxiv.org/abs/2610.21375
+  title: "[2610.21375] Memorilla: Latent Semantic Memory for LLMs"
+  fetch_status: success
+  content: |-
+    Press Enter to search · Advanced search
+
+    # Computer Science > Machine Learning
+
+    # Title:Memorilla: Latent Semantic Memory for LLMs
+
+    > Abstract:Memory enables large language models (LLMs) to use information beyond their parameters, such as past user conversations, long documents, or an agent's earlier actions. For a frozen LLM, access to this accumulated knowledge is limited to what a memory system places in its context window. However, gathering and combining relevant information needed for each query while keeping the model's context short remains challenging for existing systems. Here we introduce Memorilla, a memory system that gathers information from an entire document collection into a fixed number of query-dependent 'memory tokens' for a frozen LLM. Memorilla encodes documents (such as user chats, book chapters) once into reusable embeddings, then learns to retrieve and place query-specific information in the LLM's input embedding space. Using only 16 memory tokens, Memorilla achieves the best performance against baselines including Mem0 and MemoRAG on five of eight benchmarks spanning personalization, long-document and knowledge-intensive question answering. Notably, on FactKG, it reaches 84.33% accuracy versus 80.43% with full-context inference, while using 108x fewer tokens to represent the source documents. Furthermore, Memorilla can facilitate continual learning in agentic systems where the document count (the agent's past turns) increases throughout the trajectory. In a TextWorld environment, we show that Memorilla reduces the agent's tendency to wander between rooms it has already explored, and improves its average success rate from 18.6% with full-history in-context learning to 24.2%. Overall, Memorilla aids frozen LLMs in accumulating and using knowledge effectively across long-context interactions and takes a step towards building continually learning AI systems.
+
+    ## Submission history
+
+    ## Access Paper:
+
+    - View PDF
+
+    - HTML (experimental)
+
+    - TeX Source
+
+    ### Additional Features
+
+    - Audio Summary
+
+    ### Current browse context:
+
+    ### References & Citations
+
+    - SciX
+
+    - Google Scholar
+
+    - Semantic Scholar
+
+    ## BibTeX formatted citation
+
+    ### Bookmark
+
+    # Bibliographic and Citation Tools
+
+    # Code, Data and Media Associated with this Article
+
+    # Demos
+
+    # Recommenders and Search Tools
+
+    - Author
+
+    - Venue
+
+    - Institution
+
+    - Topic
+
+    # arXivLabs: experimental projects with community collaborators
+
+    arXivLabs is a framework that allows collaborators to develop and share new arXiv features directly on our website.
+
+    Both individuals and organizations that work with arXivLabs have embraced and accepted our values of openness, community, excellence, and user data privacy. arXiv is committed to these values and only works with partners that adhere to them.
+
+    Have an idea for a project that will add value for arXiv's community? Learn more about arXivLabs.
+  error:
+  fetched_at: '2026-11-07T09:42:31Z'
+archived_at: '2026-11-07T09:42:33Z'

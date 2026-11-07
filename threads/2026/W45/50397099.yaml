@@ -1,0 +1,325 @@
+---
+post:
+  id: '50397099'
+  title: GitHub's new Git storage architecture
+  url: https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/
+  hn_url: https://news.ycombinator.com/item?id=50397099
+  score: 144
+  author: DAlperin
+  posted_at: '2026-11-06T19:24:21Z'
+  fetched_at: '2026-11-07T09:42:30Z'
+  article_url: https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T09:42:30Z'
+  raw_comment_count: 28
+comments:
+- id: '50400097'
+  parent_id: '50397099'
+  author: chjail-11
+  text: |-
+    As if more developers means better code.
+    Wasn&#x27;t it Bonhoeffer who said stupidity is when smart people don&#x27;t question authority?
+  score: 0
+  posted_at: '2026-11-06T23:49:26Z'
+- id: '50400136'
+  parent_id: '50397099'
+  author: rochacon
+  text: So that is why I got a bunch of 500&#x27;s during push this week :)<p>Hope
+    it helps improve reliability, it was getting hard to defend GitHub with all the
+    recent outages.
+  score: 0
+  posted_at: '2026-11-06T23:53:04Z'
+- id: '50400381'
+  parent_id: '50397099'
+  author: yakkomajuri
+  text: If I&#x27;m reading this right, this is (really solid) future planning but
+    won&#x27;t help with the current outages?<p>I&#x27;d have thought so from the
+    headline + initial content but then they say that the horizontal scale techniques
+    are basically carrying over from the existing architecture (where it seems the
+    problem is?) and this is mostly to help with what they call &quot;vertical scale&quot;
+    (intra-repo scalability). They also admit right after that the most active repos
+    today will receive short bursts of at most dozens of writes.<p>So this seems like
+    really useful planning for a near future that likely helps prevent more issues
+    but isn&#x27;t really meant to help current issues. Am I reading this right?<p>Of
+    course improvements like this are always useful either way. Not dunking here at
+    all.
+  score: 0
+  posted_at: '2026-11-07T00:28:22Z'
+- id: '50400590'
+  parent_id: '50397099'
+  author: mococa
+  text: So we can have one more 9?
+  score: 0
+  posted_at: '2026-11-07T01:03:50Z'
+- id: '50400695'
+  parent_id: '50397099'
+  author: pksunkara
+  text: Most of this is similar to what <a href="https:&#x2F;&#x2F;enroute.sh" rel="nofollow">https:&#x2F;&#x2F;enroute.sh</a>
+    already did scaling Git. <a href="https:&#x2F;&#x2F;enroute.sh&#x2F;blog&#x2F;everyone-is-doing-git-on-s3-wrong"
+    rel="nofollow">https:&#x2F;&#x2F;enroute.sh&#x2F;blog&#x2F;everyone-is-doing-git-on-s3-wrong</a>
+  score: 0
+  posted_at: '2026-11-07T01:21:58Z'
+- id: '50400747'
+  parent_id: '50400381'
+  author: pksunkara
+  text: Since they wouldn&#x27;t need to actually have the inactive repositories on
+    disk anymore, I reckon it should solve the horizontal scale issue too by reducing
+    the compute&#x2F;disk capacity that needs to be maintained.
+  score: 0
+  posted_at: '2026-11-07T01:30:44Z'
+- id: '50400775'
+  parent_id: '50400590'
+  author: cr125rider
+  text: It will be nice having maybe a few at the beginning of the number!
+  score: 0
+  posted_at: '2026-11-07T01:35:37Z'
+- id: '50400822'
+  parent_id: '50400381'
+  author: rockwotj
+  text: personally I see more issues with actions over pushing
+  score: 0
+  posted_at: '2026-11-07T01:44:58Z'
+- id: '50400901'
+  parent_id: '50400695'
+  author: cedel2k1
+  text: At this point GitHub should likely just try snatching the Enroute guys :)
+  score: 0
+  posted_at: '2026-11-07T01:57:04Z'
+- id: '50401021'
+  parent_id: '50400695'
+  author: esafak
+  text: Looks cool. Anybody here with experience to share?
+  score: 0
+  posted_at: '2026-11-07T02:19:31Z'
+- id: '50401058'
+  parent_id: '50400590'
+  author: UltraSane
+  text: Maybe every other month.
+  score: 0
+  posted_at: '2026-11-07T02:26:28Z'
+- id: '50401109'
+  parent_id: '50397099'
+  author: crote
+  text: Sorry, but <i>thousands</i> of pushes per second, per repository?! In what
+    world could that <i>possibly</i> seem like a sound idea?<p>Sure, it&#x27;s nice
+    that you can technically handle it, but to me it sounds like at that point something
+    has gone absolutely horribly wrong in the way you set up your agents. Last time
+    I checked, GitHub was intended as a platform to upstream <i>finished work items</i>,
+    not a realtime cross-agent chat channel.<p>Handling thousands of git pushes per
+    second implies thousands of issues, thousands of PRs, tens of thousands of comments,
+    thousands of Actions runs, and dozens of releases. How&#x27;s <i>that</i> part
+    of their infra going to scale?<p>How about introducing rate limits instead, nudging
+    people to <i>not</i> have agents push every individual single-line changes to
+    GH, but instead have them collaborate as a local cluster and only upstreaming
+    PR-sized chunks of finished work?<p>If you <i>still</i> need thousands of pushes
+    per second you&#x27;d be looking at millions of lines of code, and at that point
+    you&#x27;re looking at an insane monorepo which is growing at a rate of <i>terabytes
+    per day</i>, and which basically instantly becomes unusable due to being impossible
+    to clone or check out.
+  score: 0
+  posted_at: '2026-11-07T02:39:55Z'
+- id: '50401230'
+  parent_id: '50401109'
+  author: clivedup
+  text: My understanding is that forks on GitHub share the same storage in the GH
+    backend.<p>It&#x27;s not unreasonable to imagine thousands of commits per second
+    to the kernel, especially if you consider that bots might be watching LKML and
+    applying patches to various forks.<p>&gt; Handling thousands of git pushes per
+    second implies thousands of issues, thousands of PRs, tens of thousands of comments,
+    thousands of Actions runs, and dozens of releases. How&#x27;s that part of their
+    infra going to scale?<p>For each issue my agent might raise 5 independent PRs
+    as experiments.<p>Further, the more changes there are, the more important it is
+    that they don&#x27;t conflict, which means smaller changes, which means even more
+    changes.<p>Bots interleaving typos, single line whitespace fixes, single dependency
+    bumps, etc.
+  score: 0
+  posted_at: '2026-11-07T03:02:55Z'
+- id: '50401432'
+  parent_id: '50397099'
+  author: mitxela
+  text: You could also just ban people who spam you and consume immense amounts of
+    server time. Or make them pay for the server time.
+  score: 0
+  posted_at: '2026-11-07T03:45:40Z'
+- id: '50401437'
+  parent_id: '50401109'
+  author: mitxela
+  text: Welcome to the new AI future, where everyone is insane and reality doesn&#x27;t
+    matter.<p>I&#x27;m starting to think AI isn&#x27;t a productivity machine, but
+    rather a machine for hypnotising people into the false belief of productivity.
+  score: 0
+  posted_at: '2026-11-07T03:46:59Z'
+- id: '50401485'
+  parent_id: '50397099'
+  author: fifjcj38384
+  text: it’s pretty ironic we got all the complexity of distributed source control
+    with all of the drawbacks of centralisation
+  score: 0
+  posted_at: '2026-11-07T03:58:45Z'
+- id: '50401543'
+  parent_id: '50397099'
+  author: jxramos
+  text: Agent scale is definitely on the mind around industry, I wonder what github
+    folks would say in response to <a href="https:&#x2F;&#x2F;www.anthropic.com&#x2F;research&#x2F;redesigning-source-control"
+    rel="nofollow">https:&#x2F;&#x2F;www.anthropic.com&#x2F;research&#x2F;redesigning-source-contro...</a>.
+    It&#x27;s an interesting read to step back and consider source control from first
+    principles and rebalance the tradeoffs for what qualities matter in this new regime.
+  score: 0
+  posted_at: '2026-11-07T04:13:49Z'
+- id: '50401625'
+  parent_id: '50397099'
+  author: fnord77
+  text: Which repo were they referring to that was growing too big vertically?
+  score: 0
+  posted_at: '2026-11-07T04:30:01Z'
+- id: '50401888'
+  parent_id: '50401625'
+  author: jacques_chester
+  text: Possibly Shopify&#x27;s monolith.<p>Or alternatively someone is doing something
+    very silly.
+  score: 0
+  posted_at: '2026-11-07T05:23:10Z'
+- id: '50401930'
+  parent_id: '50397099'
+  author: usr1106
+  text: 'Based on Azure... Isn&#x27;t that one of the more unreliable clouds in the
+    market?<p>Edit: <a href="https:&#x2F;&#x2F;assets.theregister.com&#x2F;2026&#x2F;04&#x2F;04&#x2F;azure_talent_exodus&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;assets.theregister.com&#x2F;2026&#x2F;04&#x2F;04&#x2F;azure_talent_exodu...</a>
+    The blog post that story is based on was also on HN.<p>Edit2: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=47616242">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=47616242</a>
+    (1297 points)'
+  score: 0
+  posted_at: '2026-11-07T05:32:57Z'
+- id: '50402634'
+  parent_id: '50401437'
+  author: __s
+  text: Yesterday&#x27;s &quot;web scale&quot; is today&#x27;s &quot;agentic workload&quot;
+  score: 0
+  posted_at: '2026-11-07T08:08:13Z'
+- id: '50402654'
+  parent_id: '50401888'
+  author: byroot
+  text: Nah, they replaced GitHub with some in-house videcoded stuff a few months
+    ago, and from what I hear from the grapevine it&#x27;s not going well.<p>But there&#x27;s
+    a number of other big private repos with a high rate of merge on GitHub, and indeed
+    it&#x27;s currently a bit painful, e.g. the subroutine that check whether a PR
+    can be merged tend to take ages. So my read is that they want to better support
+    these big customers out of concern that they might leave too.
+  score: 0
+  posted_at: '2026-11-07T08:12:30Z'
+- id: '50402693'
+  parent_id: '50401930'
+  author: landoncrabtree2
+  text: 'Define unreliable? Azure has a 99.97% historical uptime, AWS at 99.95%. Azure
+    is #2 in market share, right beyond AWS. Engineer anecdotes about internal strife
+    doesn’t equate to external reliability. I’m sure you can find AWS engineers complaining
+    about AWS, or GCP, or <i>insert company</i>. (Also, Microsoft owns Azure and GitHub,
+    so what did you expect?)'
+  score: 0
+  posted_at: '2026-11-07T08:19:19Z'
+- id: '50402715'
+  parent_id: '50401543'
+  author: jason1cho
+  text: Thousands of changes per day means no human reads all these changes.<p>There&#x27;re
+    really security issues, and a black box creates black boxes.
+  score: 0
+  posted_at: '2026-11-07T08:23:52Z'
+- id: '50402750'
+  parent_id: '50400822'
+  author: Walf
+  text: What? 7.2k CI runs per second is a piece of cake! ;-)
+  score: 0
+  posted_at: '2026-11-07T08:31:33Z'
+- id: '50402893'
+  parent_id: '50397099'
+  author: petervandijck
+  text: I wonder if they’re working on a non git version forward looking for agents
+    as well
+  score: 0
+  posted_at: '2026-11-07T09:03:57Z'
+- id: '50402939'
+  parent_id: '50401109'
+  author: MisterMunchkin
+  text: Yeah it’s just total slop. If your code is slop anyway, why commit it? Just
+    push it at major milestones. It’s not like it matters if you lose it.
+  score: 0
+  posted_at: '2026-11-07T09:14:01Z'
+- id: '50403025'
+  parent_id: '50401625'
+  author: qrobit
+  text: The biggest very active repo I know of is nixpkgs, and I heard it was a stress
+    test for GitHub already.
+  score: 0
+  posted_at: '2026-11-07T09:29:15Z'
+article:
+  url: https://github.blog/engineering/architecture-optimization/inside-githubs-new-git-storage-architecture/
+  title: Inside GitHub's new Git storage architecture - The GitHub Blog
+  fetch_status: success
+  content: |-
+    - Share:
+
+    Last week at GitHub Universe, we announced our new Git storage architecture, capable of handling thousands of writes per second with reads that scale on demand. Through internal testing, we’ve demonstrated the ability to support 5,000 concurrent agents working on a repository, sending 7,200 pushes per second to a repo, all while serving read traffic with consistently low latency. This new architecture is the foundation for GitHub to support agentic development for hundreds of millions of developers, and we’ve been building it underneath GitHub while it keeps running.
+
+    Over the past year, agents changed what a busy repository looks like on GitHub. In our first post in this series, we laid out the two principles behind our next-generation Git storage architecture: minimize coordination, and decouple storage from compute. In our last post, we covered the bridge: moving 99.99999% of repositories into Azure, scoping the write quorum to individual references, and standing up virtual replicas backed by Azure Blob Storage.
+
+    We also left off with an observation: very little of a write needs to be ordered. Git objects are immutable and named by their contents, meaning two writers can store them at the same time without agreeing on anything. The part of a push that needs agreement is the reference update, and a reference update is tiny in comparison. Virtual replicas were the first step toward building around that, and the means by which we onboard repositories to the new architecture.
+
+    The rest of the architecture builds on that observation. Only reference updates need agreement. That lets the parts of Git infrastructure that used to be tightly coupled (storing data, serving requests, and maintaining repositories) scale independently. For developers, Git stays Git: they push, fetch, and branch the same way, with the same protections in place. Below, we walk through the requirements behind the design, follow a request through the system, and dive deep into two of its components.
+
+    ## Building for agent scale
+
+    We think about the scale of the GitHub platform along two axes:
+
+    - Horizontal scale is how many developers and agents can work across many repositories. Many of GitHub’s current approaches on this axis have been battle-tested over the years and are carried forward to the new architecture: partitioning of tenants across infrastructure, isolation and/or fairness enforcement of tenant traffic, and load-aware routing, to name a few.
+
+    - Vertical scale is how many developers and agents can work on one repository. As agents write more code, we expect individual repositories to get larger and busier, so most of our requirements came from the vertical axis.
+
+    Today, the busiest repositories on GitHub.com receive at most dozens of writes in a single second, typically in short bursts. As more of that work shifts to agents running in parallel and around the clock, we expect those bursts to become a sustained rate within the next year. Each push leads to more reads: CI runs, deployment systems pull the new commit, and other agents fetch it for context. This read fan-out results in a large amplification effect on overall traffic that scales with writes.
+
+    We’re already seeing this trend play out on repositories at the top of the curve. The chart below shows daily requests to one repository on GitHub from March to May, when its traffic grew about 4x. Its growth has continued on an exponential trajectory since then.
+
+    We have to plan for a world where agent-driven development keeps accelerating at this speed. Instead of planning for the next increment, we set a target of at least two orders of magnitude more scale. For a single repository, that meant the new architecture needed to:
+
+    - Accept thousands of writes per second.
+
+    - Support multiple writer nodes. There are two reasons for this: Experience has taught us that indexing incoming packs and checking object connectivity are the most CPU-expensive parts of a write, and that cost scales with the size of the write, so a single node will become compute-bound quickly. Spreading that work across many nodes improves fault tolerance and shortens recovery when a node fails.
+
+    - Experience has taught us that indexing incoming packs and checking object connectivity are the most CPU-expensive parts of a write, and that cost scales with the size of the write, so a single node will become compute-bound quickly.
+
+    - Spreading that work across many nodes improves fault tolerance and shortens recovery when a node fails.
+
+    - Minimize commit latency. An agent waits on each push before it moves to its next step.
+
+    - Record changes in order for each reference with the ability to quickly linearize across references. A virtual replica that falls behind needs to catch up by downloading only the data it needs to serve the incoming request.
+
+    - Keep reads cheap when nothing has changed, which is the common case given the read-to-write ratio.
+
+    - Let each component scale independently.
+
+    On top of that, the system had to be able to improve overall reliability and scale globally.
+
+    ## Introducing “Project Rubicon”
+
+    In May of 2026, hot on the heels of the initial Azure migration, we started working on a design that could meet those demands. We tried several approaches. In all of them, pack data lived in Azure Blob Storage, and in some we experimented with keeping reference state there too. We’ll cover some of the trade-offs we found below, but we settled on a design we felt maximized throughput while preserving the correctness, durability, availability, and latency guarantees a platform like GitHub requires. We called it “Rubicon,” a nod to the point of no return the industry crossed with agentic development.
+
+    Let’s walk through Rubicon from the top down. Many things stay the same: requests from Git clients, the API, and the web UI arrive at Spokes, which still handles routing and load balancing, and serves the internal API that the rest of GitHub uses to read and write repository data. Spokes also maintains its role as a placement and balancing service, maintaining the partitioning, isolation, and tenant fairness required for horizontal scale. The data plane underneath Spokes, in contrast, is new.
+
+    Spokes routes each request to one of a small group of virtual replicas assigned to that repository. Virtual replicas are a single fleet of disposable compute that serves reads, writes, or both. A virtual replica’s local disk is a cache that can be rebuilt at any time.
+
+    Spokes routes a repository’s traffic to the same virtual replicas when it can, which keeps their caches warm and latency low, but nothing about correctness depends on a request landing on any particular virtual replica. When a virtual replica goes away, the repository’s other virtual replicas keep serving, and a replacement fills its cache as traffic arrives.
+
+    When a repository gets busy, we add more virtual replicas. Separately, a fleet of compaction nodes works in the background, directly against Blob Storage and Ref-CAS, to merge each repository’s packs and remove unreachable objects. That work never runs on a virtual replica, meaning their CPU and memory can be almost entirely dedicated to serving requests.
+
+    Durable state lives in two places:
+
+    - Git objects, in the form of packs and auxiliary read acceleration data, live in Azure Blob Storage.
+
+    - References and the list of packs that make up the repository (the pack manifest) live in a separate replicated log service we call Ref-CAS (for “Reference Compare-and-Swap”).
+
+    Let’s walk the architecture from the perspective of a write and a read:
+
+    - Write: a virtual replica indexes the incoming pack and uploads it to Blob Storage, then commits one transaction to Ref-CAS that lists the pack in the manifest and updates the references. Later, a compaction node merges that pack with others to keep reads fast.
+
+    - Read: a virtual replica checks its reference version with Ref-CAS, pulls the packs it needs from Blob Storage into its cache, and serv
+  error:
+  fetched_at: '2026-11-07T09:42:30Z'
+archived_at: '2026-11-07T09:42:33Z'

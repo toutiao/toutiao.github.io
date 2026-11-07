@@ -4,14 +4,14 @@ post:
   title: First steps in bare-metal programming using UEFI
   url: https://kevinboone.me/efitest_index.html
   hn_url: https://news.ycombinator.com/item?id=50394855
-  score: 175
+  score: 220
   author: LaSombra
   posted_at: '2026-11-06T16:50:29Z'
-  fetched_at: '2026-11-07T00:40:53Z'
+  fetched_at: '2026-11-07T09:42:30Z'
   article_url: https://kevinboone.me/efitest_index.html
   article_fetch_status: success
   article_fetched_at: '2026-11-06T18:59:59Z'
-  raw_comment_count: 29
+  raw_comment_count: 40
 comments:
 - id: '50395644'
   parent_id: '50394855'
@@ -353,6 +353,132 @@ comments:
     own OS and that UEFI has been something that would be useful there
   score: 0
   posted_at: '2026-11-06T23:50:17Z'
+- id: '50400926'
+  parent_id: '50394855'
+  author: JdeBP
+  text: Rod Smith and the OSDev Wiki went here, sometimes word for word, years before:<p>*
+    <a href="https:&#x2F;&#x2F;rodsbooks.com&#x2F;efi-programming&#x2F;" rel="nofollow">https:&#x2F;&#x2F;rodsbooks.com&#x2F;efi-programming&#x2F;</a><p>*
+    <a href="https:&#x2F;&#x2F;wiki.osdev.org&#x2F;GNU-EFI" rel="nofollow">https:&#x2F;&#x2F;wiki.osdev.org&#x2F;GNU-EFI</a><p>Of
+    course, they both assume GCC on Linux.  Change either one of those, and it is
+    a wholly different kettle of fish.  Both NetBSD and FreeBSD, for examples, come
+    with an EFI development environment in base, squirreled away in &#x2F;usr&#x2F;src&#x2F;boot
+    in the case of FreeBSD.  They have to, because they need to be able to build their
+    own EFI boot loaders.  NetBSD targets more than Intel processor architectures
+    for EFI, moreover.  (NetBSD can boot via EFI on ARM CPUs, for instance.)
+  score: 0
+  posted_at: '2026-11-07T02:00:58Z'
+- id: '50400980'
+  parent_id: '50394855'
+  author: mlfreeman
+  text: You can even use C#<p><a href="https:&#x2F;&#x2F;github.com&#x2F;MichalStrehovsky&#x2F;zerosharp"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;MichalStrehovsky&#x2F;zerosharp</a><p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;MichalStrehovsky&#x2F;uefimaze" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;MichalStrehovsky&#x2F;uefimaze</a><p>Not
+    my creation but on my list to poke at one day soon
+  score: 0
+  posted_at: '2026-11-07T02:10:29Z'
+- id: '50401077'
+  parent_id: '50398558'
+  author: JdeBP
+  text: 'Not really, no.  Linux regards various ways of looking at the same on-disc
+    filesystem format as distinct filesystem types: msdos, umsdos, vfat.  Old Microsoft
+    doco from the 1990s that is still lying around explains things in the way that
+    they historically progressed rather than structurally, describing VFAT as an extension
+    of FAT32.<p>The reality, certainly in respect of the headlined subject, is that
+    the bitness of the FAT and the style of the root directory (fixed location or
+    variable length) are the only meaningful variants.  In 2026, no-one aims <i>not</i>
+    to support long filenames on FAT, and EFI understands them natively.  EFI copes
+    with all three bitnesses.  And it does the conventional thing of variable length
+    root directory on 32-bit and fixed-length root directory on 16-bit and 12-bit.<p>FAT
+    is a very poor filesystem format, and no, it&#x27;s not a minimum filesystem format
+    if one is writing one&#x27;s own operating system.  It&#x27;s a <i>lazy</i> filesystem
+    format, inasmuch as the cross-development tooling for it exists.  But if one were
+    writing a <i>minimum</i> filesystem for one&#x27;s own operating system, one could
+    start from much better places.  FAT is not minimal by any reasonable definition
+    even if one is not writing one&#x27;s own operating system, and requires an awful
+    lot of hoops to be jumped through that are only there <i>because</i> one is being
+    compatible with the cross-development tooling, several decades of historical changes,
+    and whatnot.<p>One could use the original UFS, for example.  LEAN exists.  Over
+    20 years ago, I invented HPFS2.<p>* <a href="https:&#x2F;&#x2F;jdebp.uk&#x2F;Proposals&#x2F;hpfs2.html"
+    rel="nofollow">https:&#x2F;&#x2F;jdebp.uk&#x2F;Proposals&#x2F;hpfs2.html</a>'
+  score: 0
+  posted_at: '2026-11-07T02:32:32Z'
+- id: '50401228'
+  parent_id: '50401077'
+  author: kragen
+  text: HPFS2 looks appealing. Did you implement it? And what were the design blunders
+    in LEAN you decided not to go into in the footnote?<p>Given that normally UEFI
+    only needs to read the filesystem, not write it, I think a more appropriate filesystem
+    might be something like ZIP.
+  score: 0
+  posted_at: '2026-11-07T03:02:41Z'
+- id: '50401245'
+  parent_id: '50399136'
+  author: kragen
+  text: Yes, build-time.<p>Coincidentally, I had Claude fix 18 bugs in PCC earlier
+    this week actually. But PCC itself doesn&#x27;t support the UEFI calling convention
+    or PE32+ image format.  Those can be provided by something much smaller and simpler
+    than LLVM, of course, but I&#x27;m not there yet.
+  score: 0
+  posted_at: '2026-11-07T03:06:19Z'
+- id: '50401555'
+  parent_id: '50398437'
+  author: brcmthrowaway
+  text: UEFI engineer found!
+  score: 0
+  posted_at: '2026-11-07T04:16:56Z'
+- id: '50401807'
+  parent_id: '50398967'
+  author: kragen
+  text: Maybe coreboot is what you are looking for? Or DeviceTree? Or Open Firmware?<p>Or
+    something for a specific board. UEFI or BIOS is just a compatibility layer, and
+    its only advantage over saner ones is that it&#x27;s already installed and working
+    on certain cheap, fast hardware you can easily buy.<p>But maybe that&#x27;s less
+    of an advantage now than it was 28 years ago.
+  score: 0
+  posted_at: '2026-11-07T05:08:54Z'
+- id: '50402055'
+  parent_id: '50398437'
+  author: Melatonic
+  text: What do you think will succeed UEFI ?
+  score: 0
+  posted_at: '2026-11-07T05:59:33Z'
+- id: '50402155'
+  parent_id: '50394855'
+  author: akoboldfrying
+  text: 'I enjoyed this informative series (I skipped only the article on setting
+    up on a DVD or USB flash drive). The tone is enjoyable too: that of a developer
+    who has spent time working through many difficult corners and wants to share useful
+    tips based on their experience, but makes no claims to omniscience. Needless to
+    say, this is a refreshing change of pace from the AI-&quot;enhanced&quot; fare
+    that&#x27;s so common nowadays.<p>I did notice that the link in the main &quot;menu&quot;
+    to part 5 actually goes to part 4, but you can still get to that final part via
+    the &quot;next part&quot; link from the end of part 4.'
+  score: 0
+  posted_at: '2026-11-07T06:26:35Z'
+- id: '50402831'
+  parent_id: '50398558'
+  author: fredoralive
+  text: Windows 95 introduced long filenames to FAT, and implements the file system
+    in the VFAT.VXD driver. “VFAT” is thus sometimes thus shorthand for FAT with “Windows
+    style long filenames”. It can be applied to all variants of FAT, such as FAT16
+    and FAT32.<p>FAT32 is a variant of FAT introduced in the mid 90s with Windows
+    95 OSR2 that better supports large hard drives (beyond size limits, cluster sizes
+    were getting too large on FAT16 drives etc.).
+  score: 0
+  posted_at: '2026-11-07T08:52:50Z'
+- id: '50402960'
+  parent_id: '50394855'
+  author: skrellm
+  text: A simple solution for the lack of a C standard library:<p><a href="https:&#x2F;&#x2F;gitlab.com&#x2F;bztsrc&#x2F;posix-uefi"
+    rel="nofollow">https:&#x2F;&#x2F;gitlab.com&#x2F;bztsrc&#x2F;posix-uefi</a><p>Features:<p>-
+    works on POSIX systems, with native tools (no special build env needed)<p>- provides
+    a (limited) POSIX interface for your UEFI app<p>- transparently converts UTF-8
+    and UCS-16 strings between your app and the firmware<p>- unlike GNU-EFI, no &quot;uefi_call_wrapper&quot;
+    trickery needed<p>- has a tool to create a bootable disk image (with GPT, ESP)<p>-
+    example codes from a &quot;Hello World&quot; to booting an ELF executable<p>-
+    100% AI-free
+  score: 0
+  posted_at: '2026-11-07T09:18:24Z'
 article:
   url: https://kevinboone.me/efitest_index.html
   title: |-
@@ -375,4 +501,4 @@ article:
     that refers to this one._"
   error:
   fetched_at: '2026-11-06T18:59:59Z'
-archived_at: '2026-11-07T00:41:16Z'
+archived_at: '2026-11-07T09:42:33Z'

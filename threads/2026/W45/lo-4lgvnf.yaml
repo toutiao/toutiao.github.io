@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-4lgvnf
+  source: lobsters
+  title: Nondeterminism in Futhark
+  url: https://futhark-lang.org/blog/2026-11-04-nondeterminism.html
+  hn_url: https://lobste.rs/s/4lgvnf
+  score: 14
+  author: veqq
+  posted_at: '2026-11-06T19:16:01Z'
+  fetched_at: '2026-11-07T09:42:34Z'
+  article_url: https://futhark-lang.org/blog/2026-11-04-nondeterminism.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-07T09:42:36Z'
+  raw_comment_count: 0
+  tags:
+  - apl
+  - plt
+comments: []
+article:
+  url: https://futhark-lang.org/blog/2026-11-04-nondeterminism.html
+  title: Nondeterminism in Futhark
+  fetch_status: success
+  content: "# [Nondeterminism in Futhark](#)\n\n Posted on November 4, 2026 \n\nLast
+    week I attended [IFL2026](https://ifl26.cse.chalmers.se/), which was probably
+    one of the best conference experiences I have ever had. One of the many good presentations
+    was by [Michael Haddon](https://michael.haddon.me/), who presented [The Replay
+    Lattice](https://michael.haddon.me/research/replay-lattice), which is a type system
+    for floating-point reproducibility. The type system was presented for a demonstration
+    language called Lane, but it inspired me to think more carefully about nondeterminism
+    in Futhark (there is some), and what it might cost to get rid of it.\n\nI often
+    use the terms “determinism” or “deterministic” when explaining why I think data
+    parallel programming is such a good paradigm, so perhaps it is surprising to see
+    me write a blog post about nondeterminism in Futhark. But as is so often the case
+    with such bold promises, they often tend to get a little weaker once you look
+    closely enough. Michael Haddon’s work defines some nomenclature that is helpful
+    for this discussion:\n\n- **Exact** means that the computation produces the same
+    result every time, guaranteed. (Michael describes this as matching the “serial
+    reference”, which I think is not the best way of looking at it, but that’s a question
+    of perspective)\n\n- **Replay** means that if you rerun the computation with the
+    same “schedule” (in some sense “machine”), you will get the same result, but other
+    machines may give different results.\n\n- **Approx** means potentially nondeterministic
+    results.\n\nThe kind of nondeterminism we are talking about here is not the kind
+    of free-form nondeterminism that arises from classic shared-state concurrent programming.
+    Indeed, both Lane and Futhark are pretty much exclusively concerned with the kind
+    of nondeterminism that arises from floating-point rounding errors. The simplest
+    example is the non-associativity of addition:\n\n    > (0.1 + 0.2) + 0.3 == 0.1
+    + (0.2 + 0.3)\n    false\n\nIf we have an array of numbers we need to sum, then
+    the result depends on the order in which you sum them. When parallelising a summation,
+    you often do things like split the numbers into blocks, sum each block on a separate
+    processor, then combine the partial results. This changes the order of addition,
+    and hence the result. Now, an important point is that there is no reason to think
+    that the parallelised result is numerically _worse_ than a serial left-to-right
+    summation, but it will be different. Further, an efficient implementation will
+    likely choose a number of chunks somewhat proportional to the number of processors
+    on the machine, which means the result may also be different on other machines
+    (but again, _not necessarily worse_). This corresponds to the “Replay” class of
+    nondeterminism. Finally, the partial results may be combined using[atomic instructions](2024-09-23-faster-opencl-float-atomics.html),
+    which may be resolved in a different order when the program is rerun on the same
+    machine. This is then “Approx”.\n\nEven in this simple example of summing a bunch
+    of numbers, we encounter both classes of nondeterminism. Note that none of them
+    are “race conditions” in the usual sense of the program sometimes just _malfunctioning_:
+    the point is that the result changes, but given that the result is in some sense
+    already “wrong” (due to roundoff error), the main issue is that there are cases
+    where we care about getting the _same_ “wrong” result every time.\n\nSo in Futhark,
+    ostensibly a deterministic language, where does the nondeterminism come from?
+    There are a few sources. Some of them come when programmers violate mandated constraints
+    (but which are unchecked for various reasons), and others are basically down to
+    floating-point roundoff error.\n\n### [Language abuse](#language-abuse \"language-abuse\")\n\nLet
+    us start by considering language abuse. The worst but also least interesting case
+    is using the `#[unsafe]` [attribute](2020-06-28-attributes-in-futhark.html)to
+    disable safety checks, after which you can do arbitrary memory reads and[writes](2022-06-13-uniqueness-types.html).
+    This can be avoided by passing`--safe` to the compiler, or perhaps by just not
+    doing this kind of cowboy coding in the first place. If you are a good enough
+    programmer that your code does not need any safety checks, why not just go and
+    write in C? Those folks never make mistakes.\n\nAnother more insidious problem
+    is related to the `scatter` construct. The semantics of an expression `scatter
+    d is vs` are simple enough, and can be expressed with this imperative pseudocode:\n\n
+    \   for (i,v) in zip(is, vs):\n      res[i] = v\n\nThat is, `scatter d is vs`
+    pairs the indexes in `is` with the corresponding values in `vs` and writes each
+    value to the corresponding index. It is a parallel random-access write. To ensure
+    that the writes can indeed be written in parallel, Futhark requires that `is`
+    contains no duplicates, or in a slight weakening, that if `is` contains duplicates,
+    then the corresponding values are also identical. This is _not_ checked dynamically,
+    and a program can get in an awful lot of trouble by violating this property. Which
+    write “wins” is unpredictable - in the worst case, you can even get a “torn” write
+    that combines two different values.\n\nThis behaviour of `scatter` is thorny,
+    and even experienced Futhark programmers sometimes make this mistake. The reason
+    it has no safety checks is twofold:\n\n1. `scatter` is a [fundamental construct](2019-04-10-what-is-the-minimal-basis-for-futhark.html)
+    used in most sophisticated parallel algorithms, and so its performance is paramount.\n\n2.
+    I’m not sure how to detect duplicate writes in a way that does not violate the
+    [cost model](2022-01-27-cost-models-are-contracts.html) (although[`scatter` is
+    already a bit iffy in that regard](2026-02-04-when-cost-models-hit-the-wall-clock.html)).
+    Basically, the cost of `scatter` must be proportional to the number of elements
+    written, not to the total size of the target array, and that makes it difficult
+    to construct appropriate auxiliary structures for safety checks.\n\nAnd yes, I
+    do realise the irony of insisting on an unsafe `scatter` after making fun of C
+    programmers for using an unsafe language.\n\nAnyway, let’s move on to `reduce`.
+    Parallel reductions, just like parallel scans, histograms, and so on, work only
+    if the provided operator is[associative](https://en.wikipedia.org/wiki/Operator_associativity)
+    and in some cases also commutative. This is documented but unchecked - in Futhark
+    you can do a `reduce` with an arbitrary operator of the right type, and it just
+    might give you nonsensical or nondeterministic results. It is a common error among
+    new Futhark programmers to treat `reduce` as a general fold and use operators
+    that are not associative, but it seems not to show up so much among more experienced
+    programmers. The reason we do not check for associativity is that [it is impossible](https://en.wikipedia.org/wiki/Rice%27s_theorem),
+    and even when it is possible it remains hard - well beyond what a practical type
+    checker is capable of. It is not too hard to [empirically test associativity](../examples/testing-associativity.html)
+    and other properties, and so it seems that this source of nondeterminism is not
+    so problematic in practice.\n\nThat actually concludes the list of “true” nondeterminism
+    in Futhark, and in both cases we can wash our hands and blame the programmer.
+    Of course, there is one rather important caveat here…\n\n### [The floating-point
+    problem](#the-floating-point-problem \"the-floating-point-problem\")\n\nStrictly
+    speaking, floating-point addition is not associative, and so we could just declare
+    that `reduce (+) 0` on floating-point numbers is simply wrong. However, Futhark
+    is not mainly intended as a framework for explaining why the program you wrote
+    is wrong, but rather as a practical tool for parallel programming, and clearly
+    people _want_ to sum floating-point numbers. Indeed, summing and multiplying floating-point
+    numbers is worth trillions of curre"
+  error:
+  fetched_at: '2026-11-07T09:42:36Z'
+archived_at: '2026-11-07T09:42:36Z'
