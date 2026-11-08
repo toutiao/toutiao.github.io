@@ -1,0 +1,130 @@
+---
+post:
+  id: lo-sh62d1
+  source: lobsters
+  title: I’m not a fan of Deno’s security model (2024)
+  url: https://goldstein.lol/posts/deno-security/
+  hn_url: https://lobste.rs/s/sh62d1
+  score: 11
+  author: ThinkChaos
+  posted_at: '2026-11-07T23:19:53Z'
+  fetched_at: '2026-11-08T04:56:21Z'
+  article_url: https://goldstein.lol/posts/deno-security/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-08T04:56:21Z'
+  raw_comment_count: 1
+  tags:
+  - security
+comments:
+- id: lo-4gnz85
+  parent_id: '0'
+  author: xonix
+  text: |-
+    Java since its inception had similar concept of Security Manager, which was eventually deprecated and removed: https://openjdk.org/jeps/411
+    I think it was "broken by design" similarly to the Deno's case.
+  score: 2
+  posted_at: '2026-11-08T00:04:07Z'
+article:
+  url: https://goldstein.lol/posts/deno-security/
+  title: I’m not a fan of Deno’s security model | max’s place
+  fetch_status: success
+  content: "# I’m not a fan of Deno’s security model\n\nthis has been bothering me
+    for a while now, so I want to write down my thoughts so I can get it out of my
+    head and move on. we’re gonna talk about how Deno approaches security, specifically
+    with its permissions system, and why I think this approach is fundamentally insecure
+    and misleading.\n\n[\n## wait, what’s Deno?\n](#wait-whats-deno)\n\n[Deno](https://deno.com)
+    is a language runtime for JavaScript. it consists of a standard library, a package
+    manager, a TypeScript transpiler and a bunch of other stuff that’s not important
+    for our story. it’s not a JavaScript _implementation_, so it does not interpret
+    or compile JavaScript, it reuses V8 for that.\n\none of the flagship features
+    of Deno is its permission system (it’s under the “Secure by default” header on
+    their [landing page](https://deno.com)). the idea is simple: as JS code running
+    in Deno needs the standard library to access the outside world, Deno can choose
+    which accesses it allows or disallows, so when you run\n\n    shelldeno run --allow-read=/tmp/dir
+    --allow-run=uname code.ts\n\nthe standard library will only allow `code.ts` to
+    read `/tmp/dir` and run `uname`.\n\nadditionally, a program can request permissions
+    at runtime, so code like\n\n    typescriptconst r = { name: \"read\", path: \"/tmp/dir\"
+    } as const;\n    await Deno.permissions.request(r);\n\nwill display a nice little
+    prompt in the terminal:\n\n    ┌ ⚠️ Deno requests read access to \"/tmp/dir\".\n
+    \   ├ Requested by `Deno.permissions.request()` API.\n    ├ Run again with --allow-read
+    to bypass this prompt.\n    └ Allow? [y/n/A] (y = yes, allow; n = no, deny; A
+    = allow all read permissions) >\n\nand you can grant or refuse it.\n\n(aside:
+    I really miss this feature in browser extensions. currently, if your extension
+    needs _potential_access to _any_ website, it needs to request _actual_ access
+    to _all_ the websites, which is less than ideal)\n\nif you like puzzles, this
+    is the point where you can stop and think about what could go wrong with this
+    system.\n\n[\n## the prompts problem\n](#the-prompts-problem)\n\nof the two specific
+    issues I want to point out this is the less severe one. we’ll discuss it first
+    because this was the first thing I noticed and it kinda immediately irked me when
+    I first read about this.\n\n(if you’re only interested in the more juicy part,
+    you can skip to the [next section](#the---allow-run-problem)).\n\nso, this nice
+    little prompt is displayed in the terminal. it’s not, like, a PolKit GUI window
+    or anything, it’s just text on stdout waiting for input from stdin. this is a
+    wild thing to do.\n\nyou see, terminal has a somewhat weird API. most of the commands
+    / requests application can send to the terminal are sent in-band, by printing
+    them to stdout. terminal can then reply by sending data to stdin. as Deno allows
+    programs to print arbitrary data to stdout and read from stdin without requiring
+    any permissions or doing any filtering, malicious code can send arbitrary commands
+    to the terminal. it’s usually okay, because terminals won’t, like, execute shell
+    commands just because stdout told them to, you’re supposed to be able to freely
+    `cat` files without risking arbitrary code execution. it’s markedly less okay
+    if you allow malicious code to do whatever with the terminal and then print a
+    prompt on the same exact terminal.\n\nyou could, like, [hide the prompt by messing
+    with terminal colors](https://github.com/denoland/deno/issues/9666). (this one
+    got closed in 2026 because the permission prompt is “partially visible” (you can
+    see an emoji) and “AI agents tend to” change terminal colors, so that’s a “valid
+    use-case”)\n\nor [trick the user into pre-feeding approval into stdin](https://github.com/denoland/deno/issues/9750).\n\nor
+    [trick the terminal into feeding approval into stdin as a response to some request](https://github.com/denoland/deno/issues/9750#issuecomment-796702901).
+    (terminal won’t ever send Enter to stdin to avoid executing commands, but “press
+    Enter to continue” is common enough to not be suspicious; the user never sees
+    the actual prompt). here’s [an asciicast of that](https://asciinema.org/a/9rvK8ANJK0WnQc9nsrFKdC7ir),
+    I think it looks quite cool.\n\nthe specific issue on the screencast is long patched;
+    the issue with terminal colors is not. that doesn’t really matter because the
+    _real_ issue is using an attacker-controlled channel for security-sensitive information.
+    it’s like executing attacker-controlled JS code on a webpage and then asking for
+    password on the same page. you can’t know that the page is in a safe state, so
+    you can’t trust any input.\n\neven if Deno manages to patch every single issue
+    with the “standard” escape codes, you never know which non-standard codes even
+    exist out there. many terminals have some, it’s impossible to predict how they
+    will interact with your prompt.\n\n(aside: how come sudo can do it then? the difference
+    is that sudo asks for the password first, before running any other code. to trick
+    sudo that way you’d need to fuck up terminal state before you even type `sudo`,
+    and do it quietly enough that you don’t notice it while you type it. if some terminal
+    allows it, I’d consider it a bug in the terminal)\n\n[\n## the `--allow-run` problem\n](#the---allow-run-problem)\n\nso,
+    there’s a weird thing with this command I wrote above (I’ll copy it here for reference):\n\n
+    \   shelldeno run --allow-read=/tmp/dir --allow-run=uname code.ts\n\nwhat does
+    `--allow-run=uname` even mean? it’s not like programs have canonical names, it’s
+    not `org.gnu.coreutils.uname`, it’s not even `/nix/store/8k1dmzr3gwzqdgw45nzj76902ca7g1is-coreutils-full-9.5/bin/uname`.
+    it’s just a shortcut for “look at all the directories in `PATH` one-by-one to
+    see if you can find `uname` there”.\n\nyou can set environment variables for the
+    child process without needing any extra permissions, so what if we just\n\n    $
+    cat t.ts\n    const command = new Deno.Command(\"uname\", {\n      // my current
+    working directory, can be anything\n      env: { 'PATH': '/tmp/tmp.7ofmKaNW83'
+    },\n    });\n    const { code, stdout, stderr } = command.outputSync();\n    console.log(new
+    TextDecoder().decode(stdout));\n    $ cat uname\n    #!/bin/sh\n    printf lol\n
+    \   $ deno run --allow-run=uname t.ts\n    lol\n\nyeah.\n\nonce again, we have
+    a pretty and convenient interface that doesn’t really make sense from the security
+    standpoint. it would be _nice_ if programs were uniquely identified by their names,
+    but they’re _not_, and pretending they are leads to security holes.\n\nfunnily
+    enough, I didn’t even think that this issue would be there when I poked at Deno
+    for the first time, so I haven’t reported it [until now](https://github.com/denoland/deno/issues/11964#issuecomment-2322993158)
+    (spoiler alert: this is a comment on a GitHub issue that I created for the problem
+    I’ll explain below).\n\nso let’s imagine we fixed that. it’s not _that_ hard,
+    we can force `PATH` to be whatever it was when the runtime started, or always
+    require fully-qualified paths, or prompt with a fully-qualified path before running.
+    are we safe now?\n\nlol no of course we’re not. while `PATH` decides which executable
+    gets run, dynamically-linked executables (so, like, most executables) require
+    dynamic loader to actually start. dynamic loader is a program that, well, loads
+    the executable into memory, finds its dependencies and does a bunch of other fun
+    stuff we won’t get into. the important part is that dynamic loader is _configurable_via
+    environment variables. you can probably see where this is going now.\n\n`LD_PRELOAD`
+    instructs the dynamic loader to load specific dynamic library when loading executables.
+    dynamic libraries can execute arbitrary code on load. we can just pass `LD_PRELOAD`
+    and we’ve completely escaped the sandbox once again:\n\n    $ cat t.c\n    #include
+    <stdio.h>\n    \n    // ask dynamic loader to run this function on load time pretty
+    please\n    __attribute__ ((constructor)) void lol() {\n        puts(\"lol\");\n
+    \   }\n    $ cat t.ts\n    const command = new Deno.Command(\"uname\", {\n      //
+    ask dynamic"
+  error:
+  fetched_at: '2026-11-08T04:56:21Z'
+archived_at: '2026-11-08T04:56:22Z'

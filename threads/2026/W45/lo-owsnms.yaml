@@ -1,0 +1,404 @@
+---
+post:
+  id: lo-owsnms
+  source: lobsters
+  title: "*sshole, or when are we finally going to get rid of C?"
+  url: https://sunshowers.io/posts/sshole/
+  hn_url: https://lobste.rs/s/owsnms
+  score: 28
+  author: novedevo
+  posted_at: '2026-11-07T21:05:35Z'
+  fetched_at: '2026-11-08T04:56:21Z'
+  article_url: https://sunshowers.io/posts/sshole/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-08T04:56:21Z'
+  raw_comment_count: 37
+  tags:
+  - security
+comments:
+- id: lo-4lxoqd
+  parent_id: '0'
+  author: riking
+  text: |-
+    The powerful thing about community norms in the LLM age is that it's what the LLM will replicate.
+    If you make secure and memory-safe code the average, then the LLM will output secureish and memory safeish code.
+  score: 4
+  posted_at: '2026-11-07T21:19:55Z'
+- id: lo-hydg5v
+  parent_id: '0'
+  author: carlomonte
+  text: whom exactly does the author address? do we need another flame war?
+  score: 0
+  posted_at: '2026-11-07T21:36:42Z'
+- id: lo-outh5z
+  parent_id: '0'
+  author: lorddimwit
+  text: There is nothing inherently C-caused in this vulnerability.
+  score: 26
+  posted_at: '2026-11-07T21:59:26Z'
+- id: lo-dtjp48
+  parent_id: '0'
+  author: intelfx
+  text: |-
+    There is nothing inherently C-caused in this vulnerability.
+
+    Nothing is inherently caused by anything, in the sense that you can achieve any desired outcome with any given tool, if you put enough effort into it. Yet, we still say that there are good and bad tools, and similarly, there are languages that make it easier or harder to follow best practices.
+    In-band signaling with sentinel values is an astonishingly bad practice which is made astonishingly pervasive by C's bad type system.
+  score: 44
+  posted_at: '2026-11-07T22:04:28Z'
+- id: lo-7r2ufi
+  parent_id: '0'
+  author: Zash
+  text: |-
+    Having recently dug into this topic a bit, I think the better question is
+
+    when are we finally getting rid of crypt(3)?
+
+    So many subtly different input formats for the algorithm and salt...
+  score: 6
+  posted_at: '2026-11-07T22:23:28Z'
+- id: lo-h67dyq
+  parent_id: '0'
+  author: BenjaminRi
+  text: That's like saying wearing reflective safety vests is useless because the
+    photons that are hitting the retina of the driver do not deccelerate the car that
+    moves towards you. Which is technically true but also a total non-sequitur.
+  score: 8
+  posted_at: '2026-11-07T22:28:11Z'
+- id: lo-kl1rw7
+  parent_id: '0'
+  author: ianloic
+  text: |-
+    This is a musl bug not a C issue. If you had the same logic written in Haskell or whatever your language of choice was you'd get the same issue.
+    The fact that AWS offers official images that use a libc reimplementation that's an endless source of bugs is a disservice to their customers.
+  score: 6
+  posted_at: '2026-11-07T22:29:23Z'
+- id: lo-p86aaw
+  parent_id: '0'
+  author: hailey
+  text: In-band signalling in this context is also known as the semipredicate problem
+    and like you say, it is pervasive in C
+  score: 26
+  posted_at: '2026-11-07T22:30:22Z'
+- id: lo-cvrdqg
+  parent_id: '0'
+  author: fanf
+  text: |-
+    I wrote a summary of the things that led to this bug and one of the crucial issues that this article misses is standards conformance, and how standards can or don’t evolve to deal with new circumstances.
+    In this case the problem is that the specification for crypt() doesn’t allow for error cases except for the complete absence of crypt() itself. In practice most code is written as if crypt(&str, &str) -> String (or perhaps more accurately with the moral equivalent of .unwrap()) which in the past was reasonable when the code only works on implementations that have crypt().
+    So the question is then, how should crypt() evolve to support error cases that were not previously considered, such as malformed salt, salt that specifies an unsupported algorithm, unreasonably long passwords, etc. And there are two levels of answer to this question: at a small scale, what can or should the crypt() API look like, and at a larger scale, what are the standards and compatibility considerations for the various options.
+    At the small scale, musl decided to return an in-band value that is poorly chosen because it conflicts with existing assumptions about what strings crypt() can return. (A better choice would have been “:” since that cannot appear inside a field in the password file, so it can never match an account that doesn’t allow password logins.) Other implemenentations have chosen to expand the vestigial NULL return so that it can be used for dynamic errors that did not previously exist.
+    At the larger scale, the better choice depends on how the libc maintainers view their relationship with the programs that use libc and with POSIX. If you view the ecosystem as essentially fixed, too difficult to change, then musl’s in-band error is reasonable (except for the extremely dangerous choice of error value). On the other hand, if you think that the amount of effort needed to fix callers is small enough then it’s reasonable to improve the API.
+    Then there’s the question of how to fix POSIX so that it doesn’t lead to poor choices like musl’s. And that depends on whether changes to POSIX should occur first in the spec or first in implementations (or perhaps in parallel). I tend to think that specs should not be treated as if they were handed down by god, and when (as in this case) there’s an obvious way to fix a bad API, implementations shouldn’t be scared to lead the effort to fix it by writing code that deviates from the spec, especially if that is likely to encourage the spec to be changed to match.
+  score: 13
+  posted_at: '2026-11-07T22:42:40Z'
+- id: lo-iw472g
+  parent_id: '0'
+  author: timthelion
+  text: Yes there is, in any language with proper union types you would be fired for
+    even suggesting such a thing as representing NULL by "*". This is truely just
+    a case of C having an insufficiently powerfull typesystem to express things correctly.
+  score: 11
+  posted_at: '2026-11-07T23:43:57Z'
+- id: lo-mmujgi
+  parent_id: '0'
+  author: timthelion
+  text: Yes, but if you were to do this  (store NULL as "*") rather than use union
+    types in Haskell you would be doing something wrong.
+  score: 12
+  posted_at: '2026-11-07T23:46:05Z'
+- id: lo-0hwxf5
+  parent_id: '0'
+  author: dvogel
+  text: Is there any technical constraint preventing C from acquiring a result type
+    and/or multi-value return? I get there are social constraints and ecosystem issues
+    that could arise but are those the only reasons?
+  score: 1
+  posted_at: '2026-11-07T23:46:57Z'
+- id: lo-fted3g
+  parent_id: '0'
+  author: jjuran
+  text: |-
+    The engineering norms of C developers allow for "*" to be an acceptable sentinel value indicating an error; the engineering norms of Rust developers simply do not.
+
+    I call BS.  This is empty Us vs. Them rhetoric masquerading as language advocacy.
+    The icing on the turd is writing "*sshole" instead of, say, "ss*hole".  Who does that?
+  score: 2
+  posted_at: '2026-11-07T23:53:57Z'
+- id: lo-o6qiug
+  parent_id: '0'
+  author: aw1621107
+  text: |-
+    Pretty sure you can already sort of pull off multi-value returns just by returning a struct by value. Result types can be easy or hard depending on how strict you want compile-time checks to be (basic discriminated unions are easy; statically ruling out misuse is harder, especially given C's relative paucity of information hiding options).
+    Also I feel that once you drop social and ecosystem constraints there probably isn't much left to prevent any language from changing in arbitrary ways?
+  score: 2
+  posted_at: '2026-11-08T00:05:24Z'
+- id: lo-5uz3ru
+  parent_id: '0'
+  author: ekuber
+  text: |-
+    The icing on the turd is writing "sshole" instead of, say, "sshole". Who does that?
+
+    The people who published the vulnerability: https://sshhole.com/
+  score: 13
+  posted_at: '2026-11-08T00:10:42Z'
+- id: lo-35mwhf
+  parent_id: '0'
+  author: ache
+  text: |-
+    I love C, I pretty much did C for the past twenty years of my life.
+    Yet I acknowledge that is a C problem (but Python, JavaScript, ... also have the same problem). We must move to an non legacy language when possible (I'm not saying Python or JavaScript are legacy).
+    We have enough computer power and modern languages to have good type systems and rule out most of the bugs. Yet we don't have enough "human power" to move all the legacy code to modern alternative.
+    It's not a flame war. Just saying that doing any new modern technology in C is absurd nowadays.
+  score: 6
+  posted_at: '2026-11-08T00:11:16Z'
+- id: lo-wciquf
+  parent_id: '0'
+  author: sigmonsez
+  text: we dont need more write in rust preach
+  score: 0
+  posted_at: '2026-11-08T00:12:15Z'
+- id: lo-1yjkfq
+  parent_id: '0'
+  author: ache
+  text: |-
+    The original website does that.
+    The name is sshhole, but the page title reads as *sshole, the 'h' is only shadowed, and the first character is an asterisk.
+    This is confusing, and it's all just for a juvenile pun.
+    Ref: https://sshhole.com/
+  score: 6
+  posted_at: '2026-11-08T00:18:38Z'
+- id: lo-vrigbp
+  parent_id: '0'
+  author: sammko
+  text: Technically the photons do decelerate the car. Just not by much.
+  score: 3
+  posted_at: '2026-11-08T00:41:26Z'
+- id: lo-iei0bu
+  parent_id: '0'
+  author: BenjaminRi
+  text: I know, and I knew this would come up, but I didn't get around to correcting
+    the phrasing. The fact that we are having this discussion shows how suitable the
+    metaphor is ;-)
+  score: 1
+  posted_at: '2026-11-08T00:53:27Z'
+- id: lo-vonzgf
+  parent_id: '0'
+  author: singpolyma
+  text: musl is libc... If you're not in C you don't need it at all
+  score: 2
+  posted_at: '2026-11-08T01:04:01Z'
+- id: lo-yruhoz
+  parent_id: '0'
+  author: ianloic
+  text: Other than golang, all popular languages rely on libc.
+  score: 2
+  posted_at: '2026-11-08T01:07:12Z'
+- id: lo-utqx32
+  parent_id: '0'
+  author: kornel
+  text: |-
+    C failed to prevent such preventable problem.
+    It doesn't have a type system able to express "this is a failure that the caller must handle". Error handling in C is enforced by shaming programmers, which demonstrably is less effective than compile-time errors.
+  score: 7
+  posted_at: '2026-11-08T01:13:23Z'
+- id: lo-vfuswp
+  parent_id: '0'
+  author: aw1621107
+  text: Even Go has to rely on libc (or equivalent) when the lower-level interface
+    is either unstable (macOS) or restricted (OpenBSD).
+  score: 4
+  posted_at: '2026-11-08T01:20:18Z'
+- id: lo-45dut5
+  parent_id: '0'
+  author: kornel
+  text: |-
+    but you wouldn't get the same logic in Haskell or whatever, because languages with better constructs for exceptional results use them.
+    C APIs don't even agree whether returning 0 means false or not-an-error-code. This is absolutely a C problem: primitivism of the language lead to a widespread problem of inconsistent ad-hoc error handling. Inability to enforce proper error handling by the compiler leads to the vicious cycle of sloppy library users summoning nasal demons, and library authors mitigating that with the crappy sentinels.
+  score: 4
+  posted_at: '2026-11-08T01:21:32Z'
+- id: lo-c6z1wj
+  parent_id: '0'
+  author: orib
+  text: |-
+    What if the API was initially designed such that there was initially no concept of a user without a password, and you needed to compatibly shoehorn something in after the fact without breaking millions of lines of existing, ISO-standardized APIs?
+    Do you design every Haskell API with the idea that some day someone may add an error case, even though none currently exist?
+  score: 3
+  posted_at: '2026-11-08T01:22:04Z'
+- id: lo-ifpdv2
+  parent_id: '0'
+  author: kornel
+  text: JS and Python don't have this problem - such APIs can (and do) throw exceptions
+    instead of relying on callers checking for a special sentinel value. They can
+    also just return undefined/None without worrying about callers causing UB.
+  score: 4
+  posted_at: '2026-11-08T01:39:04Z'
+- id: lo-mjb625
+  parent_id: '0'
+  author: Johz
+  text: That would be an issue, but in this case crypt was defined to be fallible
+    from the start, and that's one of the key players here. In the C version, crypt
+    returned a string or null, but the type system doesn't differentiate between those
+    two, so it was easier for callers to incorrectly handle the return value. But
+    in Haskell, crypt would have returned Either (I think?) with the string or an
+    explicit error. And at that point, the caller cannot implicitly ignore anything,
+    they have to deal with both cases explicitly, and the problem would never have
+    shown up in the first place.
+  score: 2
+  posted_at: '2026-11-08T01:40:00Z'
+- id: lo-mfsjqn
+  parent_id: '0'
+  author: remmyfoo
+  text: |-
+    In this case the problem is that the specification for crypt() doesn’t allow for error cases except for the complete absence of crypt() itself.
+
+    This is a fundamental misunderstanding of how POSIX works.  Functions specified by POSIX can define errnos that either must or may be set in certain circumstances, but unless the function's specification explicitly states otherwise, then implementations may return any other appropriate errno as well.
+
+    Implementations shall not generate a different error number from one required by this volume of POSIX.1-2024 for an error condition described in this volume of POSIX.1-2024, but may generate additional errors unless explicitly disallowed for a particular function.
+
+    — https://pubs.opengroup.org/onlinepubs/9799919799/functions/V2_chap02.html#tag_16_03
+  score: 2
+  posted_at: '2026-11-08T01:41:41Z'
+- id: lo-xswckl
+  parent_id: '0'
+  author: orib
+  text: It wasn't initially failible -- failability was added quite a long time ago,
+    though, when migrating to encrypted passwords in /etc/shadow.
+  score: 2
+  posted_at: '2026-11-08T01:44:45Z'
+- id: lo-l8r85q
+  parent_id: '0'
+  author: kornel
+  text: |-
+    Rust has Option, Result and panic!() for such cases, and there's a decade of real-world experience and hundreds of thousands of libraries demonstrating that using them is indeed the norm.
+    OTOH C has been using sentinel values forever. EOF is in stdlib. NULL is normal and the standard C doesn't even have non-nullable pointers. In-band signalling without compiler enforcement is the norm in C.
+  score: 4
+  posted_at: '2026-11-08T01:45:48Z'
+- id: lo-2jalfb
+  parent_id: '0'
+  author: hyperpape
+  text: |-
+    The post specifies a reason why the author think that C programming leads to this behavior.
+    You’re free to argue this reason is wrong. But you cannot responsibly just ignore the reason and state that this is not an issue with C. You might as well just say “No.”
+  score: 9
+  posted_at: '2026-11-08T01:50:51Z'
+- id: lo-kmtol8
+  parent_id: '0'
+  author: kornel
+  text: |-
+    Technically it seems doable to extend enum and switch to have at least some minimal tagged unions and basic pattern matching.
+    I think the problem is political and social:
+
+    Microsoft thinks C is dead, so they won't add any such syntax to MSVC unless C++ also adopts it, but C++ won't adopt it because they have std::variant at home. Microsoft's veto has chilling effect on C standardization and adoption of features. Projects worrying about portability and back compat would end up wrapping it in macros, creating ugly syntax nobody likes.
+    Remaining C users like it exactly the way it is, and will resist addition of a new design pattern.
+
+    Even without these obstacles it will take few years for the C working group to consider it, then a few more years before it lands in a C spec, then few more years before compilers ship it, then a few more years before distros switch to those compilers, then a few more years before notable C projects consider the syntax old enough to be acceptable to migrate to it. And even then, stdlib and POSIX probably won't ever change.
+  score: 1
+  posted_at: '2026-11-08T01:55:20Z'
+- id: lo-uxmrbp
+  parent_id: '0'
+  author: fanf
+  text: |-
+    That’s a good point, but you also need to consider the preceding sentence:
+
+    Implementations may generate error numbers listed here under circumstances other than those described, if and only if all those error conditions can always be treated identically to the error conditions as described in this volume of POSIX.1-2024.
+
+    In the case of crypt() the difficulty is introducing errors that depend on the password and/or salt, because those kinds of errors need to be handled differently from the only error defined in POSIX (which will always fail or always succeed). It’s a practical difficulty too, because (as I wrote) there is old software that doesn’t check for errors from crypt() because historically it had no errors.
+  score: 4
+  posted_at: '2026-11-08T01:56:57Z'
+- id: lo-ocstli
+  parent_id: '0'
+  author: fanf
+  text: |-
+    It doesn't have a type system able to express "this is a failure that the caller must handle".
+
+    C23 has [[nodiscard]] functions, and there has been an equivalent feature for decades in GNU C.
+    But in the case of crypt() the caller needs to use the return value to check the password, and if errors are represented by returning NULL in the idiomatic manner, then a caller will crash if it fails to handle the error.
+    So this vulnerability would not have occurred if crypt() was written in idiomatic C.
+    The vulnerability is caused in part because musl doesn’t return an error in the idiomatic way, but instead signals an error with a value that can match a disabled account (which should fail) in the same way that a successful return matches an account with the right password (which should succeed). (And in part because OpenSSH uses a dummy salt for checking disabled accounts.)
+  score: 3
+  posted_at: '2026-11-08T02:12:03Z'
+- id: lo-xtmdfz
+  parent_id: '0'
+  author: remmyfoo
+  text: |-
+    In the case of crypt() the difficulty is introducing errors that depend on the password and/or salt, because those kinds of errors need to be handled differently from the only error defined in POSIX (which will always fail or always succeed).
+
+    Not at all, musl could just as well choose to return a single errno value for all cases in which crypt was called with invalid arguments, which would be infinitely more expressive than what it currently does.
+
+    It’s a practical difficulty too, because (as I wrote) there is old software that doesn’t check for errors from crypt() because historically it had no errors.
+
+    That's not really true, it always had errors across various implementations, people failing to care doesn't mean that it could never happen.
+    Musl used to report errors from crypt but decided to stop doing so because C programmers don't know to check for NULL pointers.  In the process they made buggy programs not crash but also made correct programs misbehave.  That seems like a clear bug to me.
+    And by that rationale we should stop signaling errors everywhere that returns NULL because people skip NULL checks everywhere, including when calling malloc.
+  score: 1
+  posted_at: '2026-11-08T02:16:57Z'
+- id: lo-fm1svz
+  parent_id: '0'
+  author: sunshowers
+  text: |-
+    From the post:
+
+    What if there isn’t an error variant today? Then a breaking change would add an error variant, and a RustSec advisory would probably be published as well.
+
+    I suspect the same would apply to Haskell. (Or maybe not, but I didn't bring up Haskell.)
+  score: 1
+  posted_at: '2026-11-08T03:38:47Z'
+article:
+  url: https://sunshowers.io/posts/sshole/
+  title: "*sshole, or when are we finally going to get rid of C? · sunshowers"
+  fetch_status: success
+  content: |-
+    # [\*sshole, or when are we finally going to get rid of C?](../../posts/sshole/)
+
+    2026-11-06·4 min read[types](https://sunshowers.io/tags/types/)[shorts](https://sunshowers.io/tags/shorts/)
+
+    ![The meme of a happy person and a sad person on a bus, the sad person captioned with '4' and the happy person with a string of 257 As.](../../images/4-aaaaaa.jpg)
+    _Original art by Genildo Ronchi._
+
+    Yet another day, [yet another vulnerability](https://sshhole.com/) in core C code. This one happened due to two different conditions using the same sentinel value:
+
+    - On Unix, a password hash of `"*"` has meant a locked account since the very early days.
+    - Since 2012, musl libc’s `crypt` function has returned the string `"*"` for a password that’s too long for it to hash.
+
+    The two points combined, along with sshd hashing login attempts for locked accounts to avoid timing leaks, mean that on musl systems without PAM (like, oh, _the official Alpine AWS image_), an unauthenticated user now gets a (possibly root!) shell on your computer. See [this Alpine advisory](https://www.alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/) for more details.
+
+    This is not a memory safety vulnerability; rather, it is one of those issues that, people often say, languages with better type systems won’t save you from. This is true! You can very well write a Rust function that returns `"*"` if the password is too long. But the big difference between C and Rust in this regard is that _the norms of the Rust community do not allow that_.
+
+    The POSIX spec tries to account for error cases. It [says](https://pubs.opengroup.org/onlinepubs/9799919799/functions/crypt.html):
+
+    > Upon successful completion, crypt() shall return a pointer to the hashed password; [&mldr;] Otherwise, it shall return a null pointer and set errno to indicate the error.
+
+    But the C type system can’t force developers to check that the return value is NULL. The musl libc developers saw that some binaries weren’t checking for it, and as a result [deviated](https://git.musl-libc.org/cgit/musl/commit/?id=b3c4cc121f70faea45389fe7ddc1127ed5cbd8bb) from the spec, returning the sentinel `"*"` value instead.
+
+    As I’ve [written about before](../../posts/types/), type systems have a strong effect on engineering culture. Because C doesn’t have algebraic data types or result types, the engineering norms that form around C communities lead to this kind of in-band signaling. Meanwhile, in Rust, a password that’s too long would be returned as an error variant, and the caller would be compelled to handle it. What if there isn’t an error variant today? Then a breaking change would add an error variant, _and_ a [RustSec advisory](https://rustsec.org/) would probably be published as well.
+
+    As an aside, it remains surprising to me when Linux distro maintainers complain about projects introducing Rust dependencies. Rather than adapting to the new world where the engineering norms are likely to serve users better, these maintainers insist on the world adapting to them. Yes, compile times and portability to niche architectures are real costs, but are you here to serve your own interests or the bulk of your users’? There’s a real [principal-agent problem](https://en.wikipedia.org/wiki/Principal%E2%80%93agent_problem) going on here.
+
+    ## Agents won’t save you[#](#agents-wont-save-you)
+
+    Speaking of agents! There’s a recent strain of argument that goes roughly like this:
+
+    - Rust is admittedly useful for humans to write correct software today.
+    - LLMs can now, or in the near future will be able to, reason about memory safety and other error cases directly.
+    - So in an agent-heavy development lifecycle there’s no difference in software rigor between Rust and C (or even assembly).
+    - But C has certain advantages over Rust in terms of build speed, portability, etc.
+    - So we might as well write software in C (or even assembly).
+
+    There is plenty that’s wrong about the argument, including the dubious decision to trust a fuzzy process when we have already shown that a far more deterministic approach works. But the big missing piece is the norms of the respective communities! When you (or your agent) write Rust software, you’re probably going to use Rust libraries, and your agent is probably going to pattern-match on existing Rust code in its training set. As a result, _even if you aren’t already a skilled Rust developer_, there will likely be more invariants encoded in the type system.
+
+    The engineering norms of C developers allow for `"*"` to be an acceptable sentinel value indicating an error; the engineering norms of Rust developers simply do not. These norms are the result of the accumulated contributions of a community, and part of the responsibility of a software professional is to think about the kinds of communities one’s work is a part of. But some people have [decided](https://bsky.app/profile/sunshowers.io/post/3mzkaurqkrk2v) that none of this really matters in this shiny new world, and that the contributions of other people can mostly be ignored. Their hubris will be their downfall.
+
+    _Discuss on [Hacker News](https://news.ycombinator.com/item?id=50399400)._
+
+    * * *
+
+    1. If you’re a skilled Rust developer, you’ll likely find the first-pass invariants the agent encodes to be woefully inadequate, and you’ll probably go through a long review cycle where those kinds of issues are fixed.&nbsp;[↩︎](#fnref:1)
+
+    Read other posts
+    * * *
+
+    [More on Anthropic's Scion ripping off Mononoke→](../../posts/anthropic-mononoke-2/)
+  error:
+  fetched_at: '2026-11-08T04:56:21Z'
+archived_at: '2026-11-08T04:56:21Z'

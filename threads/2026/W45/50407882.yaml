@@ -1,0 +1,1066 @@
+---
+post:
+  id: '50407882'
+  title: Claude Code's "Don't Ask Again" exposes passwords in 1,122 public GitHub
+    files
+  url: https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again
+  hn_url: https://news.ycombinator.com/item?id=50407882
+  score: 268
+  author: ''
+  posted_at: '2026-11-07T20:45:32Z'
+  fetched_at: '2026-11-08T04:55:55Z'
+  article_url: https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again
+  article_fetch_status: error
+  article_fetched_at: '2026-11-08T04:55:55Z'
+  raw_comment_count: 171
+comments:
+- id: '50408069'
+  parent_id: '50407882'
+  author: qezz
+  text: "<p><pre><code>  &gt; Is it public? \n  &gt; \n  &gt; Search your GitHub organization
+    for .claude&#x2F;settings.local.json and .claude&#x2F;settings.json. Each hit
+    is a file anyone can read right now.\n</code></pre>\nSo, it&#x27;s not necessarily
+    &quot;public&quot;, it&#x27;s simply in the repository, and whether it&#x27;s
+    actually public or not depends on the repository settings.<p>Or am I missing something"
+  score: 0
+  posted_at: '2026-11-07T21:06:36Z'
+- id: '50408084'
+  parent_id: '50407882'
+  author: Aurornis
+  text: Confusing headline. They scanned for repos where people had committed their
+    .claude&#x2F; folder and local settings and then scanned those files for commands
+    which contained keys or passwords.<p>So pressing “Don’t Ask Again” by itself doesn’t
+    expose passwords by itself. If you commit your local Claude settings and in those
+    settings you have manually approved commands containing secrets directly in the
+    command and then you publish the repo, that’s exposed.
+  score: 0
+  posted_at: '2026-11-07T21:08:56Z'
+- id: '50408093'
+  parent_id: '50407882'
+  author: lacoolj
+  text: This page is like 80% repeating itself<p>If you post output from AI, please
+    remember to edit before publishing
+  score: 0
+  posted_at: '2026-11-07T21:09:54Z'
+- id: '50408099'
+  parent_id: '50408069'
+  author: shmulc
+  text: Thanks, fair point. Our 1,122 files are all in public repos. In a private
+    repo, only people with access can read it, but &quot;don&#x27;t ask again&quot;
+    still writes the password into a project file that gets committed, so it spreads
+    with every clone and fork, and goes public if the repo does.
+  score: 0
+  posted_at: '2026-11-07T21:10:48Z'
+- id: '50408106'
+  parent_id: '50407882'
+  author: rvz
+  text: Vibe coders in open source proudly don&#x27;t read the (slop)code and place
+    all their agents in autonomous loops without them knowing that Claude leaked their
+    passwords and environment variables on GitHub.<p>This incident would have been
+    caught in an open source harness. This one is closed source malware, and you don&#x27;t
+    know what Claude Code does internally to behave like this.<p>Yet another reason
+    why you cannot trust a closed harness.
+  score: 0
+  posted_at: '2026-11-07T21:11:36Z'
+- id: '50408108'
+  parent_id: '50407882'
+  author: jedisct1
+  text: If you really need to commit private files to GitHub, use Turbocrypt <a href="https:&#x2F;&#x2F;github.com&#x2F;jedisct1&#x2F;turbocrypt&#x2F;blob&#x2F;main&#x2F;docs&#x2F;git.md"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;jedisct1&#x2F;turbocrypt&#x2F;blob&#x2F;main&#x2F;docs&#x2F;git.md</a>
+  score: 0
+  posted_at: '2026-11-07T21:11:44Z'
+- id: '50408116'
+  parent_id: '50408084'
+  author: shmulc
+  text: 'That&#x27;s the chain, yes. The part people don&#x27;t expect: the file is
+    created inside the project, and Claude Code only adds it to your global git ignore,
+    not the repo&#x27;s .gitignore. So a fresh clone or a second machine commits it
+    like any other file. In 539 of the 1,105 repos we traced, a commit co-authored
+    by Claude itself changed the file.'
+  score: 0
+  posted_at: '2026-11-07T21:12:39Z'
+- id: '50408123'
+  parent_id: '50408093'
+  author: NooneAtAll5
+  text: don&#x27;t edit Ai garbage - make Ai your editor that points out mistakes
+    instead
+  score: 0
+  posted_at: '2026-11-07T21:13:18Z'
+- id: '50408126'
+  parent_id: '50407882'
+  author: bcherny
+  text: 'Boris from the Claude Code team here. Historically Claude Code has not done
+    secret scrubbing (there are many good tools for that), but we are looking into
+    what we can do to prevent this.<p>That said, a few thoughts:<p>1. .claude&#x2F;settings.local.json
+    is meant to stay local. This is not a file you should check into source control.
+    We automatically gitignore it when Claude creates the file, so in this case the
+    files were manually created and checked in (docs: <a href="https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;settings"
+    rel="nofollow">https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;settings</a>)<p>2.
+    Permission rules are old hat. Everyone should be using auto mode instead. It is
+    safer and also does not require manually maintaining finicky allow&#x2F;deny lists.
+    Auto mode is enabled by default and is included for free in all plans.<p>3. Regardless
+    of what agent you use, you should have secret scanning enabled. GitHub and other
+    source control hosts offer it. There are many threat models that it protects against
+    and you should absolutely use it if you can. (see <a href="https:&#x2F;&#x2F;github.com&#x2F;security&#x2F;plans"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;security&#x2F;plans</a>)'
+  score: 0
+  posted_at: '2026-11-07T21:13:38Z'
+- id: '50408140'
+  parent_id: '50408106'
+  author: happyopossum
+  text: That’s ridiculously overblown rhetoric.  Claude Code didn’t publish these
+    secrets, the users did by committing their Claude Code settings to public repos.<p>Same
+    thing could&#x2F;would happen with an open source harness.
+  score: 0
+  posted_at: '2026-11-07T21:15:19Z'
+- id: '50408167'
+  parent_id: '50408126'
+  author: agentdev001
+  text: I appreciate you getting communication out in front of this fast.<p>&gt; &quot;but
+    we are looking into what we can do to prevent this&quot;<p>I would presume that
+    CC&#x27;s auto-review of tool-call turns would already solve this &gt;99% of the
+    time, no? From my read, any harness-side deterministic solution here would be
+    saving the user from themselves, which seems like a bad pattern. Somewhat dulling
+    the scalpel in my mind.
+  score: 0
+  posted_at: '2026-11-07T21:19:49Z'
+- id: '50408176'
+  parent_id: '50408167'
+  author: bcherny
+  text: 'There’s a few possible approaches: making sure auto mode catches this, building
+    in basic secret scanning, a few other ideas. Going to prototype a few of these
+    to understand the tradeoffs better before we ship something.'
+  score: 0
+  posted_at: '2026-11-07T21:21:55Z'
+- id: '50408180'
+  parent_id: '50408126'
+  author: markasoftware
+  text: Auto mode cannot be considered safer than anything because it does not even
+    attempt to guarantee any sort of security. The threat model is not even defined.
+    It cannot be quantified or compared with any other approach other than &quot;full
+    access&quot;
+  score: 0
+  posted_at: '2026-11-07T21:22:14Z'
+- id: '50408203'
+  parent_id: '50408126'
+  author: bluebands
+  text: This still presumably happens in auto mode as it asks for sensitive commands
+    (and the default is &quot;always allow,&quot; which saves it)
+  score: 0
+  posted_at: '2026-11-07T21:24:52Z'
+- id: '50408237'
+  parent_id: '50408180'
+  author: bcherny
+  text: 'Auto mode is significantly safer than manual approval in practice. Details
+    about the engineering approach and how we tested whether it is safer here: <a
+    href="https:&#x2F;&#x2F;claude.com&#x2F;resources&#x2F;articles&#x2F;auto-mode-default-in-claude-code"
+    rel="nofollow">https:&#x2F;&#x2F;claude.com&#x2F;resources&#x2F;articles&#x2F;auto-mode-default-in-c...</a>.'
+  score: 0
+  posted_at: '2026-11-07T21:29:08Z'
+- id: '50408250'
+  parent_id: '50408203'
+  author: bcherny
+  text: Yeah good catch. Thinking through what we can do to improve this (ideas welcome).
+  score: 0
+  posted_at: '2026-11-07T21:30:24Z'
+- id: '50408322'
+  parent_id: '50408126'
+  author: 80fj0348i
+  text: I and other colleagues have been struggling with auto mode refusing perfectly
+    safe commands in our environment, so we frequently find ourselves switching to
+    the other modes to handhold Claude Code into perfectly safe things like triggering
+    deterministic and guardrailed CI&#x2F;CD pipelines or read-only queries of production
+    data. Auto mode seems overtuned for caution around deployment and production,
+    which is a regression from how useful Claude Code was for operations around June&#x2F;July.
+    Until that&#x27;s improved, permission rules are incredibly important to our workflows.
+  score: 0
+  posted_at: '2026-11-07T21:43:46Z'
+- id: '50408341'
+  parent_id: '50408250'
+  author: 80fj0348i
+  text: I would love if Auto Mode, instead of instantly denying the command, had an
+    option to go into an &quot;assisted manual review&quot; interface where the command
+    was explained in depth (perhaps by an adversarial review agent) and the user asked
+    for their input on whether this command is OK. Perhaps needing a detailed response
+    instead of a simple Yes&#x2F;No, e.g. so the agent understands if there are compensating
+    controls for the risk.
+  score: 0
+  posted_at: '2026-11-07T21:46:22Z'
+- id: '50408343'
+  parent_id: '50408093'
+  author: nicce
+  text: If the thing is not worth writing by yourself, then it is probably not worth
+    of reading by any humans.
+  score: 0
+  posted_at: '2026-11-07T21:46:54Z'
+- id: '50408367'
+  parent_id: '50408237'
+  author: ceejayoz
+  text: Is that because auto mode is good, or because the manual approval system sucks?
+  score: 0
+  posted_at: '2026-11-07T21:51:12Z'
+- id: '50408371'
+  parent_id: '50408176'
+  author: agentdev001
+  text: I&#x27;m not a CC user myself, so I can&#x27;t say that I have my head wrapped
+    around exactly how the &quot;yes + don&#x27;t ask again&quot; flow works. That
+    said- from my (outsider) perspective, saving off the entire tool call [1] and
+    its arguments is very weird. I would expect that the hit-rate following that for
+    similar calls would be very small, which leads me to believe that the list either
+    must be seeded into the auto-reviewer&#x27;s context, or used in some other similarity-check
+    engine for future calls.<p>If we&#x27;ve already crossed the bridge to being confident
+    in a non-deterministic reviewer for auto-mode, then, I see no obvious reason as
+    to why we couldn&#x27;t have  the proposed rules be generated by a model. If that
+    were reality, then- all rules placed in settings.local could be secretless, with
+    the confidence of whatever model we tell &#x27;make sure the rule does not contain
+    secret material, consider its destination as potentially public&#x27;.<p>[1] <a
+    href="https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;permissions#wildcard-patterns"
+    rel="nofollow">https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;permissions#wildcard-pattern...</a>
+    AFAICT, CC will either save off a prefix+wildcard rule, or exact command. Sounds
+    like the former is likely not the cause of the problem here.
+  score: 0
+  posted_at: '2026-11-07T21:51:54Z'
+- id: '50408406'
+  parent_id: '50408069'
+  author: mschuster91
+  text: "&gt; So, it&#x27;s not necessarily &quot;public&quot;, it&#x27;s simply in
+    the repository, and whether it&#x27;s actually public or not depends on the repository
+    settings.<p>Even then, you might not want every developer in your company to have
+    the password to the production SQL database..."
+  score: 0
+  posted_at: '2026-11-07T21:56:11Z'
+- id: '50408409'
+  parent_id: '50408116'
+  author: cassianoleal
+  text: It&#x27;s a disgrace that the parent comment was flagged. My vouching has
+    undone that but it&#x27;s likely to be flagged again.
+  score: 0
+  posted_at: '2026-11-07T21:56:27Z'
+- id: '50408416'
+  parent_id: '50408322'
+  author: bcherny
+  text: 'Yeah, by default we err on the side of caution. That said, the auto mode
+    classifier is fully customizable based on your team’s usage. Two ways to tune
+    it:<p>1. After a command is blocked, run &#x2F;permissions to retry and allow
+    it going forward<p>2. More deeply configure the classifier itself: <a href="https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;auto-mode-config"
+    rel="nofollow">https:&#x2F;&#x2F;code.claude.com&#x2F;docs&#x2F;en&#x2F;auto-mode-config</a><p>We
+    are working on making these easier and more automated.'
+  score: 0
+  posted_at: '2026-11-07T21:56:54Z'
+- id: '50408448'
+  parent_id: '50408367'
+  author: bcherny
+  text: The blog post has more detail, but tldr is humans make mistakes that automation
+    can catch.
+  score: 0
+  posted_at: '2026-11-07T22:00:10Z'
+- id: '50408459'
+  parent_id: '50408409'
+  author: Aurornis
+  text: All of their comments were auto flagged from the moment they were posted.
+    Must have triggered an LLM detector or spam detector.
+  score: 0
+  posted_at: '2026-11-07T22:01:53Z'
+- id: '50408490'
+  parent_id: '50408416'
+  author: written-beyond
+  text: Auto mode really easily gaslights itself when it runs into a roadblock and
+    starts deviating so far away from its intended goal that I don&#x27;t let automode
+    run without me reading what it&#x27;s actually trying.<p>I frequently hit stop
+    on and auto mode task to prevent it from completely flooding my context with some
+    completely unrelated garbage.<p>Claude really should push away tasks that end
+    up needing more exploration in worker contexts. That way the workers can maintain
+    a sensible amount of context without pushing the main chat into the dumb region.
+  score: 0
+  posted_at: '2026-11-07T22:05:10Z'
+- id: '50408510'
+  parent_id: '50408237'
+  author: cozzyd
+  text: I run CC as its own user on my laptop with no secrets&#x2F;keys&#x2F;erc available
+    other than through a LPE exploit or perhaps installing a keylogger. Can I guarantee
+    CC won&#x27;t attempt any of those things in auto mode?
+  score: 0
+  posted_at: '2026-11-07T22:07:48Z'
+- id: '50408527'
+  parent_id: '50408367'
+  author: gsnedders
+  text: Indeed. The article only compares the status quo manual system versus the
+    auto system — and doesn’t consider ways that the manual could be improved.<p>As
+    it says:<p>&gt; 5% allow any shell command outright, and another 43% have interpreter
+    rules like Bash(python:*) or Bash(node:*) that are essentially equivalent in practice<p>Claude
+    Code never should have prompted to always allow Bash(python:*) or Bash(node:*)
+    — that’s clearly a bad idea, and Anthropic know that (given the references in
+    the article!).<p>Of course, Bash(python a.py) still isn’t safe if you also allow
+    Write(a.py), because you may as well allow Bash(python:*) at that point, and that’s
+    often practically what people want (“I want to both make edits to the source and
+    then run the test suite”). So maybe the whole permission system is broken to start
+    with — and the actual answer is leaning more heavily on fine-grained sandboxing.<p>You
+    also, as the article rightfully points out, run into permission fatigue and users
+    blindly hitting allow.<p>I do still wish you could do more with hooks — outside
+    of auto, I might want to allow a given command via a hook <i>if</i> Claude Code
+    has read access to given file, but there’s no way to query if a given path allows&#x2F;denies
+    read&#x2F;write.
+  score: 0
+  posted_at: '2026-11-07T22:10:03Z'
+- id: '50408580'
+  parent_id: '50408527'
+  author: bcherny
+  text: 'Will look into exposing that in hooks.<p>Ultimately, the threat model here
+    is: human has to approve a lot of commands, so gets tired and accidentally approves
+    a command they shouldn’t have. We spent a significant amount of effort to build
+    a richer permission system, allow configuration at multiple levels, use static
+    analysis to detect dangerous and safe commands, monitor the model to detect and
+    block prompt injection at the inference layer, etc. Some of these components we
+    rewrote and red teamed dozens of times. Our conclusion was that despite all of
+    this work, in practice the threat model is that human attention is limited and
+    that that a different approach performs an order of magnitude better in practice.'
+  score: 0
+  posted_at: '2026-11-07T22:16:41Z'
+- id: '50408583'
+  parent_id: '50408140'
+  author: cassianoleal
+  text: From TFA:<p>&gt; Often Claude commits the file itself. In 539 of the 1,105
+    repos with a real secret that we traced, a commit co-authored by Claude changed
+    the file. Those commits name every recent model, from Sonnet 4.5 to Opus 5.5.<p>Could
+    open source harnesses do that? Sure, if they were programmed in a similar fashion
+    as Claude Code. Do you have any evidence of it happening?
+  score: 0
+  posted_at: '2026-11-07T22:17:29Z'
+- id: '50408629'
+  parent_id: '50408237'
+  author: eterm
+  text: Just a few days ago, opus 5.5 in auto mode deleted backups that it shouldn&#x27;t
+    have, and in the &quot;apology&quot; it even said, &quot;Nothing was lost, I didn&#x27;t
+    delete your original files&quot;.
+  score: 0
+  posted_at: '2026-11-07T22:24:21Z'
+- id: '50408673'
+  parent_id: '50408237'
+  author: markasoftware
+  text: No its not generally safer. It depends on who is doing the approving, the
+    task being completed etc.
+  score: 0
+  posted_at: '2026-11-07T22:33:05Z'
+- id: '50408697'
+  parent_id: '50408108'
+  author: Groxx
+  text: 'Or git-crypt, which has been around for over a decade: <a href="https:&#x2F;&#x2F;github.com&#x2F;agwa&#x2F;git-crypt"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;agwa&#x2F;git-crypt</a>'
+  score: 0
+  posted_at: '2026-11-07T22:36:38Z'
+- id: '50408702'
+  parent_id: '50408448'
+  author: ceejayoz
+  text: Sure, but Claude is deeply useless at making permissions hooks! Every time
+    I&#x27;ve tried it it completely fails at the task, despite researching the docs
+    and using various skills. It trivially evades its own just-created rules.
+  score: 0
+  posted_at: '2026-11-07T22:37:21Z'
+- id: '50408718'
+  parent_id: '50408106'
+  author: skeledrew
+  text: Devs have been leaking secrets in public repos a long time before now. Nothing
+    new here, except there are now more with dev power, which statistically means
+    more leakage.
+  score: 0
+  posted_at: '2026-11-07T22:40:16Z'
+- id: '50408742'
+  parent_id: '50408583'
+  author: ceejayoz
+  text: Of course an open source harness can put secrets into a commit.<p>Humans do
+    it!
+  score: 0
+  posted_at: '2026-11-07T22:44:01Z'
+- id: '50408747'
+  parent_id: '50408583'
+  author: skeledrew
+  text: Nothing stops someone from committing secrets to public repos, with or without
+    AI. Unless guardrails are put in place that scans repos before push, and only
+    people already wary of secrets leaking would setup said guardrails in the first
+    place.
+  score: 0
+  posted_at: '2026-11-07T22:45:33Z'
+- id: '50408779'
+  parent_id: '50408583'
+  author: happyopossum
+  text: The file is .gitignored if Claude creates it - any commits by Claude would
+    be due to someone overriding that or creating it themselves incorrectly.<p>None
+    of this has anything to do with open vs. closed source.
+  score: 0
+  posted_at: '2026-11-07T22:50:06Z'
+- id: '50408792'
+  parent_id: '50408371'
+  author: skeledrew
+  text: If a given action requires a secret, and you&#x27;d like that action to be
+    repeated in the future, how do you expect it to work without said secret included
+    in the save (and without being entangled in secrets management tools)?
+  score: 0
+  posted_at: '2026-11-07T22:51:27Z'
+- id: '50408866'
+  parent_id: '50408629'
+  author: knollimar
+  text: I hate this condescension by Claude. It doubles down in such a bad faith way.
+  score: 0
+  posted_at: '2026-11-07T23:00:54Z'
+- id: '50408877'
+  parent_id: '50408490'
+  author: skeledrew
+  text: You should note that auto-mode is handled by a different session (and likely
+    model) from your actual. There&#x27;s no road block or deviation or context flooding;
+    all it does is monitor the model actually doing the work and block it from potentially
+    problematic actions (which you can usually override by saying you explicitly give
+    permission for X), nothing more.
+  score: 0
+  posted_at: '2026-11-07T23:01:49Z'
+- id: '50408893'
+  parent_id: '50408180'
+  author: wyager
+  text: "&quot;My personal security model can&#x27;t represent this, therefore it&#x27;s
+    not secure&quot;"
+  score: 0
+  posted_at: '2026-11-07T23:03:31Z'
+- id: '50408897'
+  parent_id: '50408416'
+  author: kay_o
+  text: For some reason claude code hates using the read&#x2F;write&#x2F;grep tools
+    and defaults to complex sed, awk, grep Bash:* runs which results in always consistently
+    ignoring auto mode due to the classifier not knowing what to do with a 10-line
+    long bash pipe instead of a read + pre&#x2F;post read and write hooks being ignored
+    and not firing, what is up with that?
+  score: 0
+  posted_at: '2026-11-07T23:03:45Z'
+- id: '50408910'
+  parent_id: '50408116'
+  author: kccqzy
+  text: That doesn’t make sense. I use my own global git ignore all the time because
+    there are files that only I produce that I definitely don’t want committed (flycheck
+    looking at you). A fresh clone wouldn’t contain these files because they are not
+    committed in the first place. You will have to use a non-git transport mechanism
+    to transfer the repo without also transferring your global git ignore.<p>Anyways
+    this probably indicates that these repos don’t have a good code review process.
+    The <i>settings.local.json</i> file name screams it’s local and shouldn’t be committed.
+  score: 0
+  posted_at: '2026-11-07T23:06:10Z'
+- id: '50408917'
+  parent_id: '50408237'
+  author: bulder
+  text: Auto mode may be significantly safer in the niche case where you want the
+    model to have free reign, in a fully unopinionated environment, where it&#x27;s
+    allowed to make any changes and make any external calls.<p>Many of the problems
+    when it comes to the manual approval feel like they stem from the expectation
+    of using auto mode in the first place. After all, what&#x27;s the point of improving
+    the manual approval and safety matching if auto mode is the end all be all, and
+    what&#x27;s the point of training the model to output commands in a manner that
+    can be parsed by a human if auto mode is always meant to be used? It&#x27;s very
+    rare for me to <i>not</i> see &quot;command could not be statically analyzed&quot;,
+    because the model keeps outputting bash golf.
+  score: 0
+  posted_at: '2026-11-07T23:07:37Z'
+- id: '50408962'
+  parent_id: '50408126'
+  author: stogot
+  text: $19&#x2F;user&#x2F;month for secret scrubbing?  What a rip off<p>Use this
+    instead for free <a href="https:&#x2F;&#x2F;github.com&#x2F;awslabs&#x2F;git-secrets"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;awslabs&#x2F;git-secrets</a>
+  score: 0
+  posted_at: '2026-11-07T23:15:41Z'
+- id: '50408976'
+  parent_id: '50408580'
+  author: aftbit
+  text: The problem is that you didn&#x27;t even attempt to build a proper box (a
+    sandbox that prevents the AI from running bad stuff by design). It&#x27;s an extraordinarily
+    hard problem. Only OpenAI Codex is actually trying to do it, and they suck at
+    it too. They keep breaking permissions, their own AI can&#x27;t troubleshoot it,
+    their defaults give read to the whole filesystem (go ahead, slurp my ssh keys),
+    and their &quot;manual approval&quot; escape does not seem to work.
+  score: 0
+  posted_at: '2026-11-07T23:18:22Z'
+- id: '50408982'
+  parent_id: '50408580'
+  author: kragen
+  text: Maybe you can include some percentage of intentionally malicious commands,
+    but not actually run them if the user approves them.  Just blare an alarm telling
+    the user they misclassified a malicious command, and maybe pause the Claude Code
+    session for a frustrating 5–15 seconds.  Video games can elicit truly astonishing
+    levels of performance from human brains by using this approach.  I&#x27;m guessing
+    it&#x27;s probably outside your Overton window, which is too bad, because it has
+    the potential to work a lot better than the 89% you get with &quot;Auto mode&quot;,
+    which is far too low if anything really significant is at risk. That&#x27;s not
+    even one single order of magnitude lower risk than just &quot;allow everything
+    always&quot;.<p><i>Speaking of</i> really significant things being at risk, it&#x27;s
+    pretty infuriating that the web-chat Incognito mode can&#x27;t write and test
+    code locally, and neither the non-Incognito web-chat nor the local Claude Code
+    client can be shielded from the knowledge of my email address and my geolocation.  (Even
+    the Incognito mode knows my geolocation.)  This gives users no alternative but
+    to put privacy-sensitive information at the disposal of Claude Code, which is
+    far too unreliable to be entrusted with it.  It&#x27;s tempting to attribute this
+    to Anthropic&#x27;s corporate DNA valuing users&#x27; interests at a very low
+    level, but conceivably it&#x27;s just an oversight, and if I mention it here,
+    it will be corrected in a month or two?<p>Currently, my assessment is that Claude
+    Code, and in particular the Opus 5.5 model, is head and shoulders above the competition
+    in software development capabilities.  Nothing else is even close.  But I&#x27;ve
+    seen several small signs like this which suggest that Anthropic, as a company,
+    is maliciously misaligned.  So, if Grok, Qwen, GLM, or Astra starts to come <i>anywhere
+    close</i> to being competitive, I&#x27;ll switch as soon as I can.  I imagine
+    that most of your users feel the same way.
+  score: 0
+  posted_at: '2026-11-07T23:19:13Z'
+- id: '50409006'
+  parent_id: '50408409'
+  author: kragen
+  text: It&#x27;s AI slop.  If what it says is actually true, hopefully a human will
+    post it.
+  score: 0
+  posted_at: '2026-11-07T23:22:23Z'
+- id: '50409012'
+  parent_id: '50408116'
+  author: Aurornis
+  text: "&gt; the file is created inside the project, and Claude Code only adds it
+    to your global git ignore, not the repo&#x27;s .gitignore. So a fresh clone or
+    a second machine commits it like any other file<p>A fresh clone wouldn’t have
+    the file. This claim doesn&#x27;t make any sense.<p>The only way I can see this
+    getting committed is if someone edited their global .gitignore or, more likely,
+    did a whole directory transfer to do a different machine to work on."
+  score: 0
+  posted_at: '2026-11-07T23:23:56Z'
+- id: '50409014'
+  parent_id: '50408982'
+  author: wonnage
+  text: this is not a serious proposal
+  score: 0
+  posted_at: '2026-11-07T23:24:00Z'
+- id: '50409021'
+  parent_id: '50408877'
+  author: bulder
+  text: The context pollution happens when a denial triggers but the model still keeps
+    attempting the harmful action via alternative avenues. It&#x27;s got nothing to
+    do with the auto-mode eval model&#x27;s actual output.
+  score: 0
+  posted_at: '2026-11-07T23:26:27Z'
+- id: '50409043'
+  parent_id: '50408897'
+  author: dcrazy
+  text: I use a hook to deny attempts to invoke `grep &#x2F;` and `find &#x2F;`, even
+    as part of a complex pipeline.
+  score: 0
+  posted_at: '2026-11-07T23:29:37Z'
+- id: '50409048'
+  parent_id: '50409014'
+  author: kragen
+  text: 'Not only is it a serious proposal, it&#x27;s been used in practice in every
+    airport X-ray baggage scanner for decades, where it&#x27;s called Threat Image
+    Projection (TIP): <a href="https:&#x2F;&#x2F;www.xscann.com&#x2F;products-HiTipPlus.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.xscann.com&#x2F;products-HiTipPlus.html</a>
+    and it&#x27;s actually a regulatory requirement in that context in a number of
+    countries: <a href="https:&#x2F;&#x2F;caainternational.com&#x2F;course&#x2F;threat-image-projection-implementation-analysis&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;caainternational.com&#x2F;course&#x2F;threat-image-projection-...</a>'
+  score: 0
+  posted_at: '2026-11-07T23:31:28Z'
+- id: '50409095'
+  parent_id: '50409012'
+  author: shmulc
+  text: Fair, “fresh clone” was wrong. It happens on a new machine or container without
+    the global ignore, in a copied project folder, or once the file has been committed,
+    since ignore rules don’t apply to tracked files.
+  score: 0
+  posted_at: '2026-11-07T23:38:36Z'
+- id: '50409111'
+  parent_id: '50409048'
+  author: ceejayoz
+  text: Yes, but you can <i>require</i> it in such a situation, as they&#x27;re subordinates
+    who have to follow policy or lose their jobs.
+  score: 0
+  posted_at: '2026-11-07T23:40:39Z'
+- id: '50409124'
+  parent_id: '50409043'
+  author: awfulneutral
+  text: I had claude write a hook to deny `find &#x2F;`. It tested it thoroughly.
+    Much later I learned that the hook denied `find &#x2F;` but allowed everything
+    else that existing permissions denied, like running whatever random python&#x2F;bash
+    code it wanted without asking.
+  score: 0
+  posted_at: '2026-11-07T23:43:04Z'
+- id: '50409135'
+  parent_id: '50408250'
+  author: hologramofham
+  text: "&gt; Thinking through what we can do to improve this (ideas welcome).<p>$Trillion
+    AI company asking for ideas from the community whose work they hoovered up to
+    make money, ruin an entire industry and make lifetimes of hard earned skill completely
+    valueless in the span of 2 years."
+  score: 0
+  posted_at: '2026-11-07T23:45:55Z'
+- id: '50409145'
+  parent_id: '50408976'
+  author: bcherny
+  text: 'I agree actually. We built an open source agent-agnostic sandbox that we
+    are landing improvements to, much more to come: <a href="https:&#x2F;&#x2F;github.com&#x2F;anthropics&#x2F;sandbox-runtime"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;anthropics&#x2F;sandbox-runtime</a>.
+    That said the sandbox is not perfect, and any sandbox needs holes punched otherwise
+    it is not useful in practice (at least for inference and MCPs, and almost certainly
+    more). We will be doing much more in this area.'
+  score: 0
+  posted_at: '2026-11-07T23:47:52Z'
+- id: '50409151'
+  parent_id: '50408897'
+  author: awfulneutral
+  text: I don&#x27;t understand this either, it makes commands really hard to parse.
+    It seems like 90% of what claude does could be going through some mcp tool that
+    could be easily sandboxed instead of bash gibberish.
+  score: 0
+  posted_at: '2026-11-07T23:48:44Z'
+- id: '50409209'
+  parent_id: '50408917'
+  author: smallnamespace
+  text: "&gt; in the niche case where you want the model to have free reign, in a
+    fully unopinionated environment, where it&#x27;s allowed to make any changes and
+    make any external calls.<p>That is not the niche case, that&#x27;s the dominant
+    use of models.<p>It would be helpful to distinguish between your own opinion on
+    how models ought to be used, compared to how others actually use models."
+  score: 0
+  posted_at: '2026-11-07T23:58:13Z'
+- id: '50409221'
+  parent_id: '50409111'
+  author: kragen
+  text: As I pointed out above, Anthropic places a lot of requirements on its users
+    already, but if Claude Code TIP were optional, presumably, savvy users would turn
+    it on voluntarily, unless they wanted to use Auto Mode.  As Anthropic&#x27;s study
+    clearly documents, the current manual approval workflow basically doesn&#x27;t
+    work at all, because the users just approve 87% of dangerous actions.  So there&#x27;s
+    no reason to use it, except maybe very rarely.
+  score: 0
+  posted_at: '2026-11-08T00:00:18Z'
+- id: '50409236'
+  parent_id: '50408510'
+  author: AspireOne
+  text: There are no hard guarantees as far as LLM output is considered.
+  score: 0
+  posted_at: '2026-11-08T00:03:42Z'
+- id: '50409281'
+  parent_id: '50408792'
+  author: agentdev001
+  text: Yea good point- constraint of no secrets management tooling kinda makes this
+    impossible. Ideally no action requires a secret in plain text. It would be neat
+    if the harness could bundle its own secret manager, and requests for secrets (&quot;hey
+    I need this api token&quot;) are out of band, and placed in the store out of sight
+    of the agent.<p>Otherwise you need a broker that can verify chain of trust for
+    the workload, but that&#x27;s significantly more complexity if you&#x27;re pitching
+    a harness&#x2F;app.
+  score: 0
+  posted_at: '2026-11-08T00:08:43Z'
+- id: '50409288'
+  parent_id: '50409151'
+  author: kay_o
+  text: If it was human approval ? Read(&quot;.&#x2F;file.name&quot;) then Bash(&quot;docker
+    compose run unit-tests&quot;), sure, I can read that fine !<p>As I was reading
+    your post I got another approval request that auto-mode did not understand. It
+    was a single Bash call !!23!!  lines tall on a retina mac display with six different
+    variables. If anything this is the cause of approval fatigue and auto mode does
+    nothing helpful when this is every call. I also have in my claude.md and global
+    instructions to use tool calls rather than bash grep&#x2F;cat&#x2F;find, which
+    are disregarded.
+  score: 0
+  posted_at: '2026-11-08T00:09:42Z'
+- id: '50409297'
+  parent_id: '50408250'
+  author: piva00
+  text: You are the one being paid millions to solve this, solve it.
+  score: 0
+  posted_at: '2026-11-08T00:10:41Z'
+- id: '50409308'
+  parent_id: '50409135'
+  author: AspireOne
+  text: Putting aside the rest of your comment, this<p>&gt; Thinking through what
+    we can do to improve this (ideas welcome)<p>&gt; $Trillion AI company asking for
+    ideas from the community<p>indeed always felt very weird to me. $trillion dollar
+    company, with employees bought for as high as $100m, and a whole team&#x2F;time&#x2F;internal
+    knowledge&#x2F;resources&#x2F;data at their disposal, asking for ideas from random
+    individuals in some public forum? Really? How is this real? Maybe I&#x27;m missing
+    the mark here, but it always struck me as odd.
+  score: 0
+  posted_at: '2026-11-08T00:12:13Z'
+- id: '50409318'
+  parent_id: '50409111'
+  author: yunwal
+  text: Most of anthropic&#x27;s money comes from enterprises that may want to enforce
+    something like this at an org level.
+  score: 0
+  posted_at: '2026-11-08T00:13:07Z'
+- id: '50409335'
+  parent_id: '50409209'
+  author: RHSeeger
+  text: "&gt; That is not the niche case, that&#x27;s the dominant use of models.<p>It
+    would be helpful to distinguish between your own opinion on how models ought to
+    be used, compared to how others actually use models."
+  score: 0
+  posted_at: '2026-11-08T00:16:04Z'
+- id: '50409372'
+  parent_id: '50408367'
+  author: rbehrends
+  text: A key problem when using manual approval with Claude is that too much of Claude&#x27;s
+    tool use is Bash or Python slop that is difficult to review (especially when you
+    are getting spammed by it) and impossible to handle through rules. Example:<p>sed
+    -n 1,30p src&#x2F;vm&#x2F;wren_vm.c &amp;&amp; sed -n 310,350p src&#x2F;vm&#x2F;wren_vm.c
+    &amp;&amp; sed -n 560,600p src&#x2F;vm&#x2F;wren_vm.c &amp;&amp; sed -n 740,775p
+    src&#x2F;vm&#x2F;wren_vm.c &amp;&amp; sed -n 40,70p src&#x2F;vm&#x2F;wren_common.h
+    &amp;&amp; cat util&#x2F;wren_to_c_string.py | head -80 &amp;&amp; ls test&#x2F;random
+    doc&#x2F;site doc&#x2F;site&#x2F;modules doc&#x2F;site&#x2F;modules&#x2F;random
+    2&gt;&#x2F;dev&#x2F;null; cat projects&#x2F;premake&#x2F;premake5.lua | head -80;
+    cat util&#x2F;generate_projects.py<p>After ten or more of these, you&#x27;re going
+    to get hit by permission fatigue, and then, yes, manual review becomes too error-prone
+    to use safely.<p>The irony is that Claude is regularly ignoring its existing Read&#x2F;Write&#x2F;Edit
+    tools that could make everything more readable.<p>Other models&#x2F;harnesses
+    have their own problems, but Claude Code is one of the worst for manual approval.<p>You
+    can get manual approval to work reasonably well if you give the model a reasonable
+    set of tools (I have literally written my own MCP servers to cover gaps in existing
+    harnesses) where you can then write rules for the vast majority of safe cases.<p>For
+    example, I have a stdio MCP server that allows models to inspect crates under
+    ~&#x2F;.cargo&#x2F;registry&#x2F;src (paired with the existing query-crates MCP
+    server). It provides read-only operations limited to crate data, so I can pretty
+    safely auto-approve everything in there. With the right setup, including a sandbox,
+    you only ever have to manually approve something once in a while and usually with
+    delimited scope, avoiding permission fatigue.
+  score: 0
+  posted_at: '2026-11-08T00:22:09Z'
+- id: '50409379'
+  parent_id: '50409308'
+  author: solyin
+  text: Think of it as an informal interview. If you come up with a brilliant idea
+    that no one there was able to communicate effectively, what are the chances they&#x27;re
+    not going to offer you a job or at least a chance to interview?
+  score: 0
+  posted_at: '2026-11-08T00:24:37Z'
+- id: '50409413'
+  parent_id: '50408367'
+  author: greatgib
+  text: Related to that, there are quite a lot of common command cases where you have
+    the choice:<p>- Yes, but only one time, you will have to manually approve next
+    time<p>- Enable auto mode and stop worrying<p>- No<p>Nothing to save this command
+    or part of it to the manual approve list. So will be requested again 100x times.
+  score: 0
+  posted_at: '2026-11-08T00:29:48Z'
+- id: '50409420'
+  parent_id: '50408250'
+  author: solyin
+  text: The UI&#x2F;UX needs to offer editing. Currently the prompt is either accept
+    once, accept always with the given filter, or deny. If the command is a 500 character
+    long bash command, with an rm -rf $S&#x2F;foo in the middle, and we just hope
+    $S is defined, I don&#x27;t really have good options other than &quot;I hope my
+    backups work&quot;.<p>If the command is explained, and then we get a chance to
+    edit it, maybe make the rm -rf into a mv; give us UI to edit the filter being
+    applied. I have no problem hitting &quot;Always allow&quot; so claude can run
+    &quot;git status --flags a&#x2F;b&#x2F;c&#x2F;filename&quot; but as a human, I&#x27;d
+    like to be able to edit the permission blanket to be &quot;git status *.<p>Which
+    I can do manually specify in the config file, but that&#x27;s annoying. I&#x27;m
+    fully capable of opening my terminal app and editing that in vim, but I&#x27;d
+    rather not have to. It&#x27;s like this for every project too. If I start fresh
+    on a new machine, new Claude account, how much do I need to redo?
+  score: 0
+  posted_at: '2026-11-08T00:31:34Z'
+- id: '50409512'
+  parent_id: '50409288'
+  author: awfulneutral
+  text: Yeah I agree, I didn&#x27;t used to feel approval fatigue but lately the huge
+    bash chains are giving it to me. I haven&#x27;t even tried auto mode. I&#x27;m
+    just sure it has some definition of &quot;safe&quot; that does not align with
+    my own.
+  score: 0
+  posted_at: '2026-11-08T00:49:53Z'
+- id: '50409530'
+  parent_id: '50408580'
+  author: joombaga
+  text: Did you ever test putting the auto mode classifier in front of manual approval?
+    This is how I use it, but last I checked that option is not available out of the
+    box.
+  score: 0
+  posted_at: '2026-11-08T00:52:36Z'
+- id: '50409545'
+  parent_id: '50408180'
+  author: Kim_Bruning
+  text: 'Compare approving every step manually: at first you read everything the llm
+    proposes carefully, convinced that you&#x27;ll catch it out. After a while you
+    get faster and faster until at some point you find yourself hitting &quot;approve&quot;
+    the second the text appears, long before you actually could absorb what it said.<p>This
+    is called &quot;approval fatigue&quot;.<p>If you think this can&#x27;t possibly
+    happen to you, you might be in for a surprise.  This is an almost textbook case
+    of classic conditioning. You&#x27;ll find yourself hitting that button faster
+    and faster even while fighting back the urge. So a human is no guaranteed backstop.<p>This
+    is the scenario that cc auto mode guards against. It cuts down the number of permission
+    prompts to something manageable, so that your fingers don&#x27;t get trained into
+    clicking &#x27;approve&#x27; on &#x27;rm -rf&#x27; in the very eyeblink that it
+    appears.<p>So maybe you feel it doesn&#x27;t work in theory; but weirdly enough,
+    in practice this particular approach is actually one of the better ones; especially
+    when used in combination with other common sense measures where practical.'
+  score: 0
+  posted_at: '2026-11-08T00:55:42Z'
+- id: '50409549'
+  parent_id: '50409379'
+  author: cube00
+  text: Only to lay me off next year after the IPO, no thanks.
+  score: 0
+  posted_at: '2026-11-08T00:56:29Z'
+- id: '50409602'
+  parent_id: '50408917'
+  author: wongarsu
+  text: Auto mode seems to have some reasonable restrictions baked in. For example
+    if you give claude access to two k8s namespaces, seriousproject-qa and seriousproject-prod,
+    auto-mode will grant `kubectl exec` on the qa environment while denying the same
+    command for the production environment. Of course you <i>should</i> be enforcing
+    that by restricting what kind of access tokens you give claude access to, but
+    auto-mode does have opinions about this stuff too, even if it&#x27;s not bulletproof<p>However
+    I do share your desire for a better manual mode. Auto-mode is both sometimes surprisingly
+    lax, and sometimes too restrictive. Maybe manual mode should inject a reminder
+    &quot;keep your commands as simple one-liners&quot;, the same way plan mode injects
+    a reminder that you are in plan mode and don&#x27;t want any code changes
+  score: 0
+  posted_at: '2026-11-08T01:07:09Z'
+- id: '50409636'
+  parent_id: '50408976'
+  author: Kim_Bruning
+  text: Making a sandbox both fully secure and fully useful are contradictory requirements.
+    If you want the agent to do any real work, you have to leave gaps.<p>With SOTA
+    agents that’s a real bind, because they’re very likely to find those gaps. Whether
+    they exploit them, close them, or leave them alone then becomes a prompting challenge
+    yet again.<p>I don&#x27;t think this means don&#x27;t sandbox at all. You can
+    prevent a lot of small and medium accidents by locking down or gating access to
+    hidden files, ssh, sudo, etc.<p>But your sandbox can never be the whole story.
+  score: 0
+  posted_at: '2026-11-08T01:14:22Z'
+- id: '50409678'
+  parent_id: '50409135'
+  author: jefftk
+  text: As a Claude Code user I&#x27;m very glad to see Boris and other devs asking
+    for our feedback and advice.  That&#x27;s how you make good products, and should
+    be welcome on HN.<p>I&#x27;ve always been into programming as a way to solve problems,
+    and that CC allows us to get more done faster is a good thing.<p>(Up to the point
+    that we get to RSI and extremely powerful models that we don&#x27;t know how to
+    align or control.  Which I think is uncomfortably soon, and so there&#x27;s a
+    part of me that says &quot;don&#x27;t make CC better, it&#x27;s on the critical
+    path to reaching RSI before we&#x27;re ready&quot;)
+  score: 0
+  posted_at: '2026-11-08T01:22:54Z'
+- id: '50409701'
+  parent_id: '50409545'
+  author: markasoftware
+  text: I&#x27;m not claiming auto is worse than manual; I&#x27;m claiming it cannot
+    be compared with anything security-wise because it does not aim to provide any
+    guarantees, there&#x27;s no systematic way to reason about what it will and won&#x27;t
+    allow, etc<p>With e.g. VM or container sandboxing, we can say things like &quot;If
+    there are no vulnerabilities in the hypervisor or hardware, then the agent can
+    only access these files, these network services, etc&quot;. Auto mode doesn&#x27;t
+    even try to provide any guarantees, so it&#x27;s impossible to reason about. It
+    amounts to just using the models judgment about what&#x27;s &quot;malicious&quot;
+    or not, a definition which is subjective, changes model to model, and can be influenced
+    by attacker input.<p>Empirical evaluations of how many vulnerabilities manual
+    vs auto mode let through are not super meaningful because auto mode changes dramatically
+    with model releases, the type of task being performed, whether the attacker is
+    making targeted attacks designed to bypass auto mode, etc. A security feature
+    cannot rely on these sorts of factors if it&#x27;s to be taken seriously.<p>Further,
+    percent of malicious tool calls accepted is a bad metric. It&#x27;s like measuring
+    the security of ssh in terms of what percent of unauthenticated logins succeed.
+    The only acceptable value is zero. It&#x27;s pass&#x2F;fail, not a spectrum. So
+    both auto and manual mode should fail equally here. Further, the set of malicious
+    tool calls admitted in auto mode may not be a subset of those admitted in manual
+    mode.
+  score: 0
+  posted_at: '2026-11-08T01:26:28Z'
+- id: '50409720'
+  parent_id: '50409512'
+  author: kay_o
+  text: I&#x27;m not sure when claude started preferring huge bash chains but auto
+    mode tends to decline most of them and drop to a permission prompt -- getting
+    rid of the use of auto mode -- because it refuses to handle anything chained with
+    expansions, variables or similar items
+  score: 0
+  posted_at: '2026-11-08T01:30:12Z'
+- id: '50409745'
+  parent_id: '50408180'
+  author: rectang
+  text: Claude routinely tries to install software if I don&#x27;t stop it.  I try
+    to only use Claude within a container.  Outside the container, I <i>never</i>
+    use &quot;auto&quot; mode.<p>Ideally I would never use Claude at all outside a
+    disposable container, even on a box with no sensitive information and with the
+    sandbox enabled. It&#x27;s like having an attacker breach your system — you don&#x27;t
+    know what it did.
+  score: 0
+  posted_at: '2026-11-08T01:36:46Z'
+- id: '50409824'
+  parent_id: '50408527'
+  author: '1659447091'
+  text: "&gt; I do still wish you could do more with hooks I might want to allow a
+    given command via a hook [...]  given path allows&#x2F;denies read&#x2F;write<p>You
+    can make a script for the PreToolUse hook that can do that. I use a command gate
+    script that parses input for doing that exactly, allowing&#x2F;denying actions
+    based on tool use + paths -- it started out as a hook to prevent claude from polluting
+    my clojure projects&#x2F;filesystem with python in sneaky ways. Babashka works
+    really well here"
+  score: 0
+  posted_at: '2026-11-08T01:56:06Z'
+- id: '50409851'
+  parent_id: '50409308'
+  author: CamperBob2
+  text: So developers who get paid more than $X,XXX,XXX per year don&#x27;t need to
+    pay attention to their customers.  Got it.<p>Where do you feel the dollar threshold
+    should be set?  At $990,000 per year you still need to listen to users, but at
+    $1,000,000 you are basically King C of Rust Mountain and they are lucky you even
+    let them run your code?<p>Should RSUs and cash signing bonuses be included in
+    the calculation?
+  score: 0
+  posted_at: '2026-11-08T02:01:27Z'
+- id: '50409900'
+  parent_id: '50409701'
+  author: Kim_Bruning
+  text: Ah, you&#x27;re going for the actual adversarial case.<p>I think I&#x27;d
+    trust the current approver with correctly classifying regular semi-interactive
+    LLM behavior fairly well.<p>However, if we bring in a hostile adversary that calculus
+    changes, and you&#x27;d be right to start thinking about other approaches.<p>On
+    the other hand, transformers are a surprisingly powerful technology, and I wonder
+    if there wouldn&#x27;t be ways to train one to several nines reliability  under
+    adversarial attack. It seems to have worked in at least one case; though I&#x27;d
+    be a bit cautious to extend that conclusion to more cases quite yet.<p>* <a href="https:&#x2F;&#x2F;hackmyclaw.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;hackmyclaw.com&#x2F;</a> ; <a href="https:&#x2F;&#x2F;simonwillison.net&#x2F;2026&#x2F;Jun&#x2F;26&#x2F;hack-my-ai-assistant&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;simonwillison.net&#x2F;2026&#x2F;Jun&#x2F;26&#x2F;hack-my-ai-assistant&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-08T02:15:05Z'
+- id: '50409919'
+  parent_id: '50408250'
+  author: usernomdeguerre
+  text: Is this maybe a mistaken abstraction?<p>What if the &#x27;settings&#x27; being
+    described here aren&#x27;t &#x27;project settings&#x27; they&#x27;re &#x27;personal
+    settings for the project&#x27;.<p>I imagine we&#x27;re following dev ecosystem
+    conventions where everybody puts their tool settings in the project folder so
+    they know where to find it and can share it; but are agent directives like this
+    closer to a &#x27;tool&#x27;, or closer to a &#x27;contributor&#x27;?<p>If the
+    latter, I wouldn&#x27;t expect to see &quot;Joe&#x27;s personal list of naughty
+    and nice commands&quot; in my project files either, certainly not under &#x27;settings&#x27;.
+    So just don&#x27;t put them there.
+  score: 0
+  posted_at: '2026-11-08T02:20:50Z'
+- id: '50409948'
+  parent_id: '50409900'
+  author: markasoftware
+  text: Hmm, what does auto mode protect against in the non-adversarial case? Aren&#x27;t
+    the models already extensively trained not to perform harmful actions without
+    provocation?
+  score: 0
+  posted_at: '2026-11-08T02:28:33Z'
+- id: '50410009'
+  parent_id: '50409948'
+  author: Kim_Bruning
+  text: 'It mostly stops honest mistakes, because those do happen, especially when
+    the &lt;prompting&gt; might not have been perfect either.<p>You do have a bit
+    of a point, though: I’ve run several models in sandboxes with --dangerously-skip-permissions
+    for months; in the full expectation that I&#x27;d need to replace a sandbox once
+    in a while. But so far none of the sandboxes have trashed themselves, yet. <i>knock
+    on wood</i><p>Auto mode seems like a lighter-weight version of that: fewer local
+    resources, and it can run on the metal if you need cc to help with system work.'
+  score: 0
+  posted_at: '2026-11-08T02:45:19Z'
+- id: '50410041'
+  parent_id: '50408237'
+  author: j45
+  text: That may be for most cases, but it wasn&#x27;t safe for this password scenario,
+    and likely others that haven&#x27;t been discovered.  Maybe there&#x27;s a PII
+    setting that can be enabled by default.
+  score: 0
+  posted_at: '2026-11-08T02:53:12Z'
+- id: '50410123'
+  parent_id: '50408123'
+  author: vips7L
+  text: Don’t use LLMs.
+  score: 0
+  posted_at: '2026-11-08T03:14:17Z'
+- id: '50410196'
+  parent_id: '50409530'
+  author: adastra22
+  text: That’s how auto works right now. It gives you a prompt.
+  score: 0
+  posted_at: '2026-11-08T03:32:29Z'
+- id: '50410310'
+  parent_id: '50408250'
+  author: verdverm
+  text: Not optimizing for eyes free coding, versus hands free, would be a welcomed
+    change. It&#x27;s hard to take the p(doom) worry seriously when such unsafe development
+    practices are prognosticated from Anthropic employees
+  score: 0
+  posted_at: '2026-11-08T03:58:24Z'
+- id: '50410375'
+  parent_id: '50408910'
+  author: pastel8739
+  text: They&#x27;re probably mostly just random solo people who barely even know
+    what git is. This---that people who don&#x27;t know how to code can code now--is
+    the whole thing that AI companies love to advertise, and it&#x27;s true. But it
+    also means that tools need to stop people from doing stupid things, because they
+    won&#x27;t know that the things they are doing are stupid.
+  score: 0
+  posted_at: '2026-11-08T04:17:15Z'
+- id: '50410414'
+  parent_id: '50408250'
+  author: data-ottawa
+  text: Two modifications I&#x27;ve made that help:<p>I ended up having to build a
+    full shell argument decomposition and parser, with it I can manage allow list
+    of rich tree structured commands. Centralizing a curated collection of known command
+    structures and their side effects would help a lot. I don&#x27;t know if Claude
+    does this already, but it doesn&#x27;t work with things like `gcloud` from my
+    experience, and that has resulted in it slurping secrets (even a partial read
+    I&#x27;ve had to rotate keys for).<p>Claude uses bigquery in the command line
+    by piping sql files from &#x2F;tmp into the `bq` command. I had Claude create
+    a hook that expands the SQL file into the permission prompt giving me a real chance
+    to review these, but the TUI truncates long commands with no scroll option. Making
+    that the default behaviour and adding a pager would allow better review of lots
+    of executable scripts.<p>As long Claude is running as the user&#x27;s account
+    there&#x27;s no guarantees. An approach like 1password&#x27;s `op read` to physically
+    separate secrets from repo read access and printing would he helpful (as in, make
+    sure that no standard key formats can be ingested into the agent&#x27;s context
+    or logging).<p>Again, I don&#x27;t know if any of these are implemented, they&#x27;ve
+    very likely to have been tried by the Claude team, but maybe there&#x27;s a long
+    shot chance that it helps.
+  score: 0
+  posted_at: '2026-11-08T04:29:03Z'
+- id: '50410474'
+  parent_id: '50410123'
+  author: DaSHacka
+  text: I&#x27;ll do you one better, don&#x27;t use computers.
+  score: 0
+  posted_at: '2026-11-08T04:43:13Z'
+- id: '50410486'
+  parent_id: '50409948'
+  author: lifeisloving
+  text: All SOTA models will still try to delete its home directory. I have a plugin
+    that prevents things like this and it gets triggered more than you&#x27;d think,
+    despite having hook instructions on every request not do do certain things. It
+    will also try to find ways around its permissions, quite cunningly.<p>You can
+    not trust that they&#x27;re RL&#x27;d to be safe. Even if it only happens 99.80%
+    of the time (its more than that) it will eventually happen.<p>Less severe actions
+    will happen even more often. People using llms with their native browser profiles
+    are getting farmed, hard.<p>Llms are highly dangerous in terms of security, but
+    they&#x27;re being marketed as highly intelligent tools that everyone should use.
+    Its really mind blowing.
+  score: 0
+  posted_at: '2026-11-08T04:47:44Z'
+- id: '50410508'
+  parent_id: '50410009'
+  author: lifeisloving
+  text: That is not my experience. They attempt to nuke my containers quite frequently.
+    I run regex on all their tool calls and stop them from doing certain things, its
+    the only thing that prevents them from removing their home directory at some point.<p>This
+    isnt even the main concern with dangerously skip all permission though. There
+    are many. What happens when they get prompt injected on a web page and send someone
+    all their privileged information because you give them free access to the internet.<p>Using
+    llms like this is dangerous. They will ruin your day eventually.
+  score: 0
+  posted_at: '2026-11-08T04:52:44Z'
+- id: '50410509'
+  parent_id: '50408093'
+  author: eviks
+  text: Why would you &quot;remember&quot; to edit when you explicitly resorted to
+    AI not to do any of that?
+  score: 0
+  posted_at: '2026-11-08T04:54:05Z'
+article:
+  url: https://apiiro.com/blog/coding-agents-leaking-secrets-github-dont-ask-again
+  title: 'Apiiro: Secure your agentic development'
+  fetch_status: error
+  content: ''
+  error: insufficient content (0 chars)
+  fetched_at: '2026-11-08T04:55:55Z'
+archived_at: '2026-11-08T04:56:20Z'
