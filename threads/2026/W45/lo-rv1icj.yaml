@@ -1,0 +1,127 @@
+---
+post:
+  id: lo-rv1icj
+  source: lobsters
+  title: NetBSD 11 desktop on a Raspberry Pi 4
+  url: https://neongd.com/articles/netbsd11-rpi4.gmi
+  hn_url: https://lobste.rs/s/rv1icj
+  score: 14
+  author: jaypatelani
+  posted_at: '2026-11-08T12:07:39Z'
+  fetched_at: '2026-11-08T19:23:40Z'
+  article_url: https://neongd.com/articles/netbsd11-rpi4.gmi
+  article_fetch_status: success
+  article_fetched_at: '2026-11-08T19:23:43Z'
+  raw_comment_count: 1
+  tags:
+  - netbsd
+comments:
+- id: lo-krkxmu
+  parent_id: '0'
+  author: jaredkrinke
+  text: I appreciate having the commands written down, but if you’re prone to forgetting
+    them like me, note that adding a user, setting up pkgin, and setting WiFi SSID/password
+    can be done using sysinst (or at least I think that’s how I did it on my Pi 1).
+  score: 3
+  posted_at: '2026-11-08T16:06:42Z'
+article:
+  url: https://neongd.com/articles/netbsd11-rpi4.gmi
+  title: NetBSD 11 desktop on a Raspberry Pi 4
+  fetch_status: success
+  content: "# NetBSD 11 desktop on a Raspberry Pi 4\n\nNow that I moved this capsule
+    to a VPS, my Raspberry Pi became available for other use. NetBSD is the only open-source
+    operating system in development that I know of, that doesn't include AI slop.
+    At least for now? I decided to give it a go and try to install it on the Pi. How
+    hard can it be? It turns out, not that much. I made a small guide on how I did
+    it, maybe it helps someone.\n\nI assume you're preparing the SD card for the Pi
+    on Linux.\n\nGet the latest image for arm64:\n\n[https://nycdn.netbsd.org/pub/NetBSD-daily/netbsd-11/latest/evbarm-aarch64/binary/gzimg/arm64.img.gz](https://nycdn.netbsd.org/pub/NetBSD-daily/netbsd-11/latest/evbarm-aarch64/binary/gzimg/arm64.img.gz)\n\nGet
+    the latest Raspberry Pi UEFI firmware:\n\n[https://github.com/pftf/RPi4/releases](https://github.com/pftf/RPi4/releases)\n\nGet
+    Balena's Etcher (if you don't have it):\n\n[https://etcher.balena.io/#download-etcher](https://etcher.balena.io/#download-etcher)\n\nExtract\n\n
+    \   $ gunzip arm64.img.gz\n\nInsert the microSD card in your laptop (I used cheap
+    USB SD card reader).\n\nExtract the Etcher, enter it's directory and launch it
+    (as a regular user):\n\n    $ cd balenaEtcher-linux-x64/\n    $ ./balena-etcher\n\nIn
+    the UI, select the \"Flash from file\" option and find the previously extracted
+    NetBSD arm64 image. For destination select the SD card (make sure it's really
+    the SD card! In my case it was on /dev/sda). Flash the image (give sudo access).\n\nExtract
+    it:\n\n    $ mkdir rpi_firmware\n    $ unzip -d rpi_firmware RPi4_UEFI_Firmware_v1.53.zip\n\nCreate
+    a directory for the NetBSD boot partition mount:\n\n    $ sudo mkdir -p /mnt/netbsd-boot\n\nMount
+    the SD card's first partition there:\n\n    $ sudo mount -t vfat /dev/sda1 /mnt/netbsd-boot\n\nCopy
+    all the files from the rpi\\_firmware directory to /mnt/netbsd-boot (overwrite
+    everything).\n\n    $ sudo cp -r rpi_firmware /mnt/netbsd-boot/\n\nThis step is
+    needed so the UEFI BIOS can actually boot the NetBSD partitions on the SD card.\n\nUnmount
+    the partition:\n\n    $ sudo umount /mnt/netbsd-boot\n\nNow you can insert the
+    SD card into your Raspberry Pi.\n\nTurn it on and press ESC to enter the UEFI
+    setup menu.\n\nOpen Boot Maintenance Manager -\\> Boot Options -\\> Change Boot
+    Order, move the SD card to the top (with the + key), then choose Commit Changes
+    and Exit.\n\nNetBSD should now boot. It will start with resizing the root filesystem.\n\nWhen
+    finished, you can login with \"root\".\n\nSet a password with 'passwd'.\n\nIt's
+    recommended to create a user right away, but you can do that later too:\n\n    $
+    useradd -m -G wheel YOUR_USER\n    $ passwd YOUR_USER\n\n## Make WiFi work\n\nNow
+    let's connect to the WiFi.\n\nIf we type 'ifconfig', we can't see the wireless
+    adapter there. That's a problem.\n\nIn dmesg however we can see that the kernel
+    recognized it and found its driver, but couldn't autoconfigure it:\n\n    $ dmesg
+    | grep -iE 'bwfm|firmware|sdio|wifi'\n\nbwfm0: Found firmware file: brcmfmac43455-sdio.bin\n\nbwfm0:
+    autoconfiguration error: NVRAM file not available\n\nLet's fix this:\n\n    $
+    cd /libdata/firmware/if_bwfm\n    $ ln -s brcmfmac43455-sdio.raspberrypi,4-model-b.txt
+    \"brcmfmac43455-sdio.Raspberry Pi 4 Model B.txt\"\n\nReboot.\n\nifconfig now shows
+    the bwfm0 device. Let's configure our WiFi access point.\n\nEdit the rc.conf:\n\n
+    \   $ vi /etc/rc.conf\n\nAdd this to the bottom:\n\n    ifconfig_bwfm0=\"up\"\n
+    \   wpa_supplicant=YES\n\nEdit the wpa\\_supplicant.conf:\n\n    $ vi /etc/wpa_supplicant.conf\n\nAdd
+    this to the bottom (pay attention to case sensitivity):\n\n    network={\n        ssid=\"Your_WiFi_SSID_name\"\n
+    \       psk=\"YourWifiPassword\"\n        scan_ssid=0\n    }\n\n(Quick Vi help:
+    you enter the interactive (edit) mode by pressing 'i'. You delete a character
+    by leaving the interactive mode with ESC and pressing 'x' on the character you
+    want to delete. You save the file by pressing ':' outside the interactive mode
+    to enter the command mode and typing 'wq' \\<enter\\>, as for write and quit.)\n\nIf
+    everything went well, after reboot (or wpa supplicant restart) you should be online.\n\nifconfig
+    should show 'status: active' and the IP address it received on dhcp.\n\nFrom this
+    point on it's entirely up you how you want to configure the OS and what you want
+    to install. Next are some things I did to make it more usable for me.\n\n## Installing
+    software\n\nNetBSD has pkg\\_src, which is way of installing and building packages
+    from source, and pkgin, which is a way to install prebuild binary packages.\n\nEdit
+    ~/.profile and remove the comment from the export line setting PKG\\_PATH, so
+    we can install binary packages.\n\nThen do a logout with 'exit' and log in again.\n\nLet's
+    add pkgin, the binary package manager:\n\n    $ pkg_add pkgin\n\nNow install some
+    software. For example:\n\n    $ pkgin update\n    $ pkgin install nano fastfetch
+    doas\n\nDoas works in a simiar way as sudo, to execute admin commands as a regular
+    user.\n\nCreate the doas config with 'vi /etc/pkg/etc/doas.conf' and add this
+    line:\n\n    permit persist YOUR_USER\n\n## Set up X11 \n\nEnable the graphical
+    login manager:\n\n    $ cp /etc/X11/xinit/xinitrc ~/.xinitrc\n    $ chmod u+w
+    ~/.xinitrc\n    $ ln -s .xinitrc ~/.xsession\n    $ echo 'xdm=YES' >> /etc/rc.conf\n
+    \   $ service xdm start\n\nMake sure that you create .xinitrc and .xsession in
+    your user's home (and also in /root if you would ever want to login as root).\n\nFor
+    more information see here:\n\n[https://www.netbsd.org/docs/guide/en/chap-x.html](https://www.netbsd.org/docs/guide/en/chap-x.html)\n\nLog
+    in with your regular user (press enter after typing in the user name to enter
+    the password field).\n\nThis will start NetBSD's built in ctwm window manager.
+    It's very simple, but efficient.\n\n## NsCDE - Not so Common Desktop Environment\n\nIf
+    you want to make it actually usable though, I recommend NsCDE, a modern desktop
+    environment in the style of CDE, based on fvwm:\n\n[https://github.com/NsCDE/NsCDE](https://github.com/NsCDE/NsCDE)\n\nFirst,
+    install every depencency it needs. Let's do all this as root:\n\n    su -\n    pkgin
+    install fvwm3 ksh93-1.0.10nb3 py313-yaml py313-qt5 py313-psutil coreutils xclip
+    \n    pkgin install gtail ImageMagick xdotool dunst stalonetray gsed xterm git
+    xscreensaver-615nb2\n\nMake python3 available:\n\n    mkdir -p \"$HOME/bin\"\n
+    \   ln -s /usr/pkg/bin/python3.13 \"$HOME/bin/python3\"\n    export PATH=\"$HOME/bin:/usr/pkg/bin:/usr/pkg/sbin:/usr/X11R7/bin:$PATH\"\n
+    \   python3 --version\n\n(Do the same thing for your user's home too).\n\nCreate
+    this folder as NsCDE might expect it:\n\n    mkdir -p /etc/xdg/menus\n\nGet and
+    build NsCDE:\n\n    cd /tmp\n    git clone https://github.com/NsCDE/NsCDE.git\n
+    \   cd NsCDE\n    ./configure\n\nCheck for warnings. If any package is still missing,
+    install it. Find the available packages with\n\n    pkgin search <packagename>\n\nThen
+    build NsCDE:\n\n    make\n\nIf everything went well:\n\n    make install\n\nTo
+    make the shell more usable edit ~/.shrc both for root and your user and add these
+    to the interactive mode settings:\n\n    set -E\n    set -o emacs\n    PS1='$PWD
+    $ '\n    HISTFILE=\"$HOME/.sh_history\"\n    HISTSIZE=1000\n    HISTAPPEND=1\n
+    \   export HISTFILE HISTSIZE HISTAPPEND\n\nNow edit the ~/.xinitrc for your user
+    (and for root if you ever would want to login as root) and change the exec line
+    on the bottom to:\n\n    export PATH=\"$HOME/bin:/usr/pkg/bin:/usr/pkg/sbin:/usr/local/bin:/usr/X11R7/bin:$PATH\n
+    \   export ENV=\"$HOME/.shrc\"\n    exec /usr/local/bin/nscde\n\nReboot and login
+    with your user. NsCDE first launch setup should start, where you can configure
+    the theme and integration with GTK and QT.\n\nIf you click the up arrow above
+    the multimedia icon on the task bar you'll find a Volume Control menu option.
+    But clicking it will give you the error message saying that you don't have a volumectrl
+    application installed. Same with the File Manager. Let's fix this:\n\n    doas
+    pkgin install xmix pcmanfm\n\nEdit ~/.NsCDE/NsCDE.conf and add this:\n\n    InfoStoreAdd
+    volumectrl xmix\n\nReplace the 'InfoStoreAdd filemgr true' with:\n\n    InfoStoreAdd
+    filemgr pcmanfm\n\nAs a start we can also install a graphical web browser"
+  error:
+  fetched_at: '2026-11-08T19:23:43Z'
+archived_at: '2026-11-08T19:23:43Z'

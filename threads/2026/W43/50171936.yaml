@@ -1,0 +1,253 @@
+---
+post:
+  id: '50171936'
+  title: Symbolic Learning in Python and Julia
+  url: https://github.com/astroautomata/PySR
+  hn_url: https://news.ycombinator.com/item?id=50171936
+  score: 83
+  author: alex_hirner
+  posted_at: '2026-10-20T20:07:35Z'
+  fetched_at: '2026-11-08T19:23:45Z'
+  raw_comment_count: 23
+comments:
+- id: '50172026'
+  parent_id: '50171936'
+  author: verdverm
+  text: 'related: <a href="https:&#x2F;&#x2F;github.com&#x2F;verdverm&#x2F;pge-jax"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;verdverm&#x2F;pge-jax</a><p>A
+    deterministic algorithm for Symbolic Regression, which I recently ported to JAX'
+  score: 0
+  posted_at: '2026-10-20T20:14:40Z'
+- id: '50224111'
+  parent_id: '50172026'
+  author: verdverm
+  text: weird that my comment time was updated, this was not today<p>(original post
+    refreshed by HN mods if I understand correctly, maybe dang or tomhow will chime
+    in on this)
+  score: 0
+  posted_at: '2026-10-24T19:08:05Z'
+- id: '50224314'
+  parent_id: '50224111'
+  author: Jtsummers
+  text: Second chance pool. All comments get a new timestamp with the submission for
+    a while. Eventually it will have its original timestamp.
+  score: 0
+  posted_at: '2026-10-24T19:29:22Z'
+- id: '50224318'
+  parent_id: '50171936'
+  author: thatsabadlook
+  text: Yay now when you load your python project you have 2 interpreters, 2 gcs,
+    200mb of ram overhead, and nondeterministic performance due to joat.
+  score: 0
+  posted_at: '2026-10-24T19:29:58Z'
+- id: '50225686'
+  parent_id: '50171936'
+  author: JanisErdmanis
+  text: Is the Julia part here compiled via JuliaC and if not what would it take to
+    do so?
+  score: 0
+  posted_at: '2026-10-24T21:46:56Z'
+- id: '50225929'
+  parent_id: '50171936'
+  author: brumar
+  text: How do we measure and compare prediction quality in a symbolic&#x2F;deterministic
+    context that also punish for complexity? I struggled on this in my phd thesis
+    and had to brew my own Minimum Description Length implementation because I found
+    nothing applicable. The statisticians I interrogated were like &quot;don&#x27;t
+    try to do model selection on symbolic models, make them probabilistic and work
+    from there&quot;
+  score: 0
+  posted_at: '2026-10-24T22:15:15Z'
+- id: '50226145'
+  parent_id: '50171936'
+  author: jgalt212
+  text: Has anyone thrown the n-body problem at this?
+  score: 0
+  posted_at: '2026-10-24T22:38:36Z'
+- id: '50226393'
+  parent_id: '50171936'
+  author: owls-on-wires
+  text: 'related: <a href="https:&#x2F;&#x2F;github.com&#x2F;owls-on-wires&#x2F;keplearn"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;owls-on-wires&#x2F;keplearn</a><p>A
+    deterministic SR engine in Rust, written for SRBench. Happy to see the field getting
+    some front-page attention!'
+  score: 0
+  posted_at: '2026-10-24T23:08:34Z'
+- id: '50227057'
+  parent_id: '50225929'
+  author: nsajko
+  text: The approach here assigns a cost to each operator, variable and constant.
+    See docs.
+  score: 0
+  posted_at: '2026-10-25T00:47:50Z'
+- id: '50227110'
+  parent_id: '50225686'
+  author: bikvfeee
+  text: It&#x27;s 1 command line to compile with juliac.
+  score: 0
+  posted_at: '2026-10-25T00:56:26Z'
+- id: '50227137'
+  parent_id: '50171936'
+  author: saithound
+  text: 'PySR itself is still alright, mostly because of previous development. But
+    not for long. Quality control has collapsed, and e.g. the examples in the repo
+    are now embarrassing vibeslop.<p>Pangram reports 100% AI on most comment blurbs
+    in the examples directory. That in itself is not the problem, AI-generated code
+    could still be valid. But in this case, the AI-generated examples have the characteristic
+    shape of slop: plausible sounding technical jargon, combined with zero actual
+    understanding of either the target domain, or even evolutionary search (loss function
+    design). They were vibed by people who had no idea what they were doing.<p>I suggest
+    taking a look at the &quot;evolved PRNG&quot; example [1].<p>First, its loss function
+    is basically designed to reward discovering linear feedback shift registers (LFSRs)
+    only. It deliberately gives a massively lower loss to LFSRs than most other functions.<p>The
+    AI slop phrased this in terms of &quot;certifying the period&quot;, but the period
+    certificate used only identifies LFSRs of max period, is unsound on the rest of
+    the search space, and gives a meaningless very high loss to most non-LFSRs. So
+    the regression will almost always just return an LFSR.<p>Whoever designed the
+    example (Codex I suppose) also knew that most LFSRs are defective, and make poor
+    random number generators. Thus, they included a &quot;shear&quot; penalty to detect
+    such defective LFSRs, but of course they slopped it together.<p>The 360 correlations
+    they measure should have been added together (having just one strong correlation
+    is bad, and having two strong correlations is twice as bad as havin one). Instead,
+    they take the MEAN of the correlations, so a perfect correlation contributes only
+    1&#x2F;360=0.00278 to the loss.<p>And indeed, the result of their example run,
+    reported in the docs [2] has such a perfect correlation: bit 29 is copied to bit
+    31 every two iterations.<p>[1] <a href="https:&#x2F;&#x2F;github.com&#x2F;astroautomata&#x2F;PySR&#x2F;blob&#x2F;master&#x2F;examples&#x2F;prng_period.py"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;astroautomata&#x2F;PySR&#x2F;blob&#x2F;master&#x2F;examples&#x2F;p...</a><p>[2]
+    <a href="https:&#x2F;&#x2F;pysr.ai&#x2F;v2.7.0&#x2F;examples&#x2F;objectives#inventing-a-pseudorandom-generator-with-no-target"
+    rel="nofollow">https:&#x2F;&#x2F;pysr.ai&#x2F;v2.7.0&#x2F;examples&#x2F;objectives#inventing-a-pseud...</a>'
+  score: 0
+  posted_at: '2026-10-25T00:59:32Z'
+- id: '50227327'
+  parent_id: '50226393'
+  author: verdverm
+  text: Is there a paper for your method? I&#x27;m always keen to see other deterministic
+    algos for SR, it sounds interesting from what I can glean, but I don&#x27;t read&#x2F;write
+    rust so may need an agent to help me decipher<p>I&#x27;ll see about getting mine
+    added to SRbench as well
+  score: 0
+  posted_at: '2026-10-25T01:29:47Z'
+- id: '50227379'
+  parent_id: '50225929'
+  author: verdverm
+  text: Are you familiar with NSGA-2? That was the one I used in my PhD work.<p>A
+    lot of research in GP&#x2F;SR went toward methods for balancing density and selection
+    from the pareto front.<p>One of the bigger problems is growth of meaningless equation
+    material to counteract other pressures in the algorithm, which itself leads to
+    premature convergence on suboptimal solutions. I had some thoughts at the time
+    about ways to penalize this during the growth phase in my own algo, but never
+    got around to them. Mainly needs bookkeeping for contribution to the final equation
+    output.
+  score: 0
+  posted_at: '2026-10-25T01:36:47Z'
+- id: '50227406'
+  parent_id: '50227137'
+  author: verdverm
+  text: "&gt; by people who had no idea what they were doing.<p>I would personally
+    hold this opinion of anyone still using genetic&#x2F;evolutionary inspired algorithms
+    for symbolic regression. There are multiple deterministic algorithms that do not
+    have the same inherent drawbacks and are generally quite good.<p>Before I wrote
+    my algo, and was trying to scale out GP, I hit the limits of RNG and had to go
+    find some with seriously huge cycle properties. (howany calls before they reached
+    the end and started over producing the same sequence)"
+  score: 0
+  posted_at: '2026-10-25T01:40:16Z'
+- id: '50228294'
+  parent_id: '50226393'
+  author: verdverm
+  text: Is your project limited in scope to physics equations? The coefficient snapping
+    is interesting, but seems like it would not work well for problems like predator-prey
+    (<a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Lotka%E2%80%93Volterra_equations"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Lotka%E2%80%93Volterra_equatio...</a>).
+    I mainly worked with biology and life-sciences data. (real-world, separate from
+    the synthetic benchmark data)<p>I introduced a new type of &quot;constant&quot;
+    for well known values like this that sit between measured data and free parameters.
+    I think I had some idea similar to your snapping, i.e. to look for places where
+    free parameters could be replaced with const, but multiples of them was not part
+    of that.
+  score: 0
+  posted_at: '2026-10-25T04:22:08Z'
+- id: '50232330'
+  parent_id: '50227327'
+  author: owls-on-wires
+  text: Unfortunately no paper yet, but I’m considering publishing one here soon!
+    As far as agents go, I just pointed Claude at the repo at asked it to explain,
+    and it did a good job. It also helps that it’s not a ton of code, and a lot of
+    it is structurally similar to patterns in training data (in this case, it can
+    recognize a recursive beam-search).<p>Would highly recommended submitting a PR
+    for SRBench! The maintainers were very responsive, despite one necessary correction
+    mine was merged within 2 weeks.
+  score: 0
+  posted_at: '2026-10-25T15:06:45Z'
+- id: '50232481'
+  parent_id: '50228294'
+  author: owls-on-wires
+  text: Physics and known-constant problems were definitely the focus. My ambition
+    was to create a fast algorithm that could pull out a nice, “natural-looking” equation
+    from (potentially noisy) data, if one existed. Model ranking and selection, coefficient
+    snapping, noise robustness, and the search patterns were all designed to that
+    end.<p>For that reason, it does terribly on the SRBench black-box track (it doesn’t
+    like to produce long, overfit models), but (to my knowledge) it scores the highest
+    on exact symbolic recovery, and even with noise it can often find the answer in
+    under 10s (single-thread, no GPU).
+  score: 0
+  posted_at: '2026-10-25T15:17:41Z'
+- id: '50232706'
+  parent_id: '50232481'
+  author: verdverm
+  text: Does SRBench still run deterministic algorithms 30 times? A more useful measure
+    than wall clock time is the number of equation evaluations and iterations it takes
+    to get there. One of the benefits to deterministic algos is they only need to
+    be run once, whereas you have to run the rng based algos 30+ times for statistical
+    significance.<p>My algorithm came from frustration at the lack of rigor in the
+    field. There were no standard benchmarks, results were not reproducible, don&#x27;t
+    get me started on Korns lol
+  score: 0
+  posted_at: '2026-10-25T15:36:43Z'
+- id: '50233130'
+  parent_id: '50227406'
+  author: archermarks
+  text: Can you share more? I&#x27;ve only heard of genetic-based symbolic regression
+  score: 0
+  posted_at: '2026-10-25T16:11:47Z'
+- id: '50233267'
+  parent_id: '50233130'
+  author: verdverm
+  text: 'I believe I wrote the second deterministic algorithm for SR<p>- FFX (Fast
+    Function eXtraction) was the year before or so.<p>- PGE (Prioritized Grammar Enumeration)
+    won best paper at GECCO 2013<p>I go into the problems and causes in my paper:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;verdverm&#x2F;go-pge&#x2F;blob&#x2F;master&#x2F;pge_gecco2013.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;verdverm&#x2F;go-pge&#x2F;blob&#x2F;master&#x2F;pge_gecco2013...</a><p>And
+    took a stab at vibe coding with a tiny LLM to port it to JAX: <a href="https:&#x2F;&#x2F;github.com&#x2F;verdverm&#x2F;pge-jax"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;verdverm&#x2F;pge-jax</a> I&#x27;ll
+    put some more effort (tokens) into this and get it added to SRBench.<p>Fundamentally,
+    most of GP based SR research fights issues with the algorithm (loss of diversity,
+    equation bloat, premature convergence). I have not seen the field really adopt
+    a new mentality in the 13 years since, not that I have been paying close attention,
+    but I do look at the papers in GECCO GP track from time to time.'
+  score: 0
+  posted_at: '2026-10-25T16:24:54Z'
+- id: '50233324'
+  parent_id: '50232330'
+  author: verdverm
+  text: Well, you&#x27;ve inspired me to work on my revamp, get it benched, make some
+    new additions, and check out your project in more detail.<p>If you want to chat
+    about papers or have me do a pre-review, I&#x27;m more than happy to. Contact
+    methods can be found in my HN profile
+  score: 0
+  posted_at: '2026-10-25T16:29:40Z'
+- id: '50233771'
+  parent_id: '50233267'
+  author: archermarks
+  text: Thank you so much for the resources! These look very interesting.
+  score: 0
+  posted_at: '2026-10-25T17:14:56Z'
+- id: '50234372'
+  parent_id: '50233771'
+  author: verdverm
+  text: you&#x27;re welcome, I have a channel in my discord for this topic if you
+    want to chat and discord is something you use
+  score: 0
+  posted_at: '2026-10-25T18:15:16Z'
+article:
+archived_at: '2026-11-08T19:24:13Z'

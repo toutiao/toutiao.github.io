@@ -1,0 +1,224 @@
+---
+post:
+  id: '50412072'
+  title: JIT bitmap text rendering for microcontrollers
+  url: https://linebender.org/blog/jit-bitmap-text/
+  hn_url: https://news.ycombinator.com/item?id=50412072
+  score: 80
+  author: ''
+  posted_at: '2026-11-08T10:42:15Z'
+  fetched_at: '2026-11-08T19:23:23Z'
+  article_url: https://linebender.org/blog/jit-bitmap-text/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-08T19:23:23Z'
+  raw_comment_count: 14
+comments:
+- id: '50412705'
+  parent_id: '50412072'
+  author: drfuchs
+  text: For prior related work, check out patent US-6377261-B1 &quot;Compiling glyphs
+    into instructions for imaging for execution on a general purpose computer&quot;
+    filed 1996.  The basic idea is each character turns into a sequence of &quot;Load
+    Immediate&quot; &#x2F; &quot;Shift&quot; &#x2F; &quot;OR to Memory&quot; instructions;
+    so there&#x27;s no more fetching from a stored bitmap of the font, as the pixels
+    are implicit in the Immediate data in the generated machine code.  Then you can
+    get fancy when one row of pixels is the same as the previous row in the character,
+    so you don&#x27;t even need to do the Load Immediate.  Etc.  This scheme was used
+    in FrameMaker for Macintosh back in the day, as implemented by Gus Fernandez (who
+    went hog wild on additional optimizations).
+  score: 0
+  posted_at: '2026-11-08T12:32:15Z'
+- id: '50412786'
+  parent_id: '50412705'
+  author: drfuchs
+  text: 'Permalink: <a href="https:&#x2F;&#x2F;patents.google.com&#x2F;patent&#x2F;US6377261B1&#x2F;en"
+    rel="nofollow">https:&#x2F;&#x2F;patents.google.com&#x2F;patent&#x2F;US6377261B1&#x2F;en</a><p>Image
+    6 (with figures 8 through 12) is fun; you can eliminate the Shift if you&#x27;re
+    willing to have multiple different JITed functions for each character, each one
+    generated knowing what its shift count is, leading to yet more optimization opportunities.'
+  score: 0
+  posted_at: '2026-11-08T12:44:17Z'
+- id: '50412869'
+  parent_id: '50412072'
+  author: codazoda
+  text: 'I&#x27;ve been building BASIC32, a retro BASIC interpreter for microcontrollers
+    so I can flash it once and easily create lots of new projects.<p>What you give
+    up with the authors approach is &quot;read&quot;. The screen becomes write-only.
+    There are only a few functions that require reads: getting a pixels current color
+    and doing operations like flood fills or paints.<p>Because I was going for the
+    retro feel of BASIC, I wanted to support these, so I opted for a frame buffer.
+    It isn&#x27;t as technically cool. On the RP2350, it does require low resolution
+    and low bit rates because they often have RAM limited to KB.<p>If you step-up
+    to the ESP32-S3 variants with 4MB or 8MB of RAM the frame buffer gets much easier.'
+  score: 0
+  posted_at: '2026-11-08T12:55:45Z'
+- id: '50412911'
+  parent_id: '50412072'
+  author: dsign
+  text: Added &quot;race the beam&quot; to my personal dictionary today :-). It&#x27;s
+    such a breath of fresh air to read something which is not written by an LLM.
+  score: 0
+  posted_at: '2026-11-08T13:02:32Z'
+- id: '50412997'
+  parent_id: '50412072'
+  author: erichocean
+  text: This is cool, I did something similar with a CoreText replacement I&#x27;ve
+    been building recently.<p>My code can JIT + render to the atlas faster at p100
+    than CoreText can render without the JIT at p50, and with better quality (measured
+    against an exact cover reference).
+  score: 0
+  posted_at: '2026-11-08T13:13:16Z'
+- id: '50413123'
+  parent_id: '50412786'
+  author: StilesCrisis
+  text: Since he&#x27;s not caching the JITted code anyway, might as well!
+  score: 0
+  posted_at: '2026-11-08T13:26:05Z'
+- id: '50413682'
+  parent_id: '50412705'
+  author: bitwize
+  text: Something like this was called &quot;sprite compilation&quot; and used a lot
+    in the DOS game coding scene back in the day. The idea was, given a bitmap image
+    of a sprite, produce <i>the code that would draw that sprite on the screen</i>
+    in assembly and incorporate it into your game. Not very flexible, but fast and
+    useful in the days when games had a lot of 2D bits and bobs moving around, especially
+    for those who could not yet afford a 486 and were stuck on an old Tandy 1000 or
+    something...
+  score: 0
+  posted_at: '2026-11-08T14:31:31Z'
+- id: '50413821'
+  parent_id: '50412072'
+  author: toolbrewlab
+  text: The dot-product kerning trick is the bit I keep coming back to — encoding
+    each glyph&#x27;s edge profile as a bitvector and letting the overlap popcount
+    decide the spacing feels like the sort of elegant hack that only falls out of
+    genuinely understanding the problem. Also appreciated the honesty about the LLM-assisted
+    parts; the cycle-count analysis is clearly hand-checked either way. I wonder how
+    far the packed-font idea scales before the packing overlaps start costing more
+    than they save.
+  score: 0
+  posted_at: '2026-11-08T14:49:13Z'
+- id: '50414034'
+  parent_id: '50412911'
+  author: movsx
+  text: 'You might find this[0] interesting.<p>[0]: <a href="https:&#x2F;&#x2F;mitpress.mit.edu&#x2F;9780262539760&#x2F;racing-the-beam&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;mitpress.mit.edu&#x2F;9780262539760&#x2F;racing-the-beam&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-08T15:21:03Z'
+- id: '50414105'
+  parent_id: '50414034'
+  author: pbhjpbhj
+  text: 'Link is to a book recommendation, &quot;Racing the Beam: The Atari Video
+    Computer System&quot; $27 paperback.'
+  score: 0
+  posted_at: '2026-11-08T15:30:45Z'
+- id: '50414720'
+  parent_id: '50412072'
+  author: karmakaze
+  text: 'This is a really great project. So many retro computers are OP that they
+    can use large frame buffers and programming to them doesn&#x27;t feel like being
+    close to the metal back like back in the day which was more intimate.<p>This implementation
+    reminds me of two of my early experiences: programming display lists on Atari
+    8-bit and an HP PCL 5e interpreter <i>(with short raster band buffer)</i>. I didn&#x27;t
+    really get into VCS&#x2F;2600 128-byte beam racing but did do a fair amount of
+    display-list-interrupt on-the-fly coding for homemade games and demos. I really
+    thought the Atari Antic display list system was terrific--thanks to Jay Miner
+    who also did the Amiga--and didn&#x27;t see much like it again until OS&#x2F;2
+    Presentation Manager or Java FX.<p>The PCL interpreter probably had the closest
+    shape using a few hundred line cyclic buffer. It &#x27;rendered&#x27; into y-sorted
+    objects that needed to be later rendered&#x2F;rasterized. Each object was cut
+    to be at most 255 pixels (0.85&quot;) tall and used reverse max-y ordering since
+    it couldn&#x27;t be drawn until after the beam passed the wraparound scan line
+    still rendering Y - buffer_height.'
+  score: 0
+  posted_at: '2026-11-08T16:34:31Z'
+- id: '50415813'
+  parent_id: '50412072'
+  author: drzaiusx11
+  text: The &quot;racing the beam&quot; technique extended the life of many RAM-strapped
+    systems back in the day, like the Atari VCS&#x2F;2600 (which ran a 6507 with 128
+    bytes of RAM!)  It&#x27;s amazing what you can do with it on machines which basically
+    have no RAM and a little software to control the electron beam.
+  score: 0
+  posted_at: '2026-11-08T18:42:38Z'
+- id: '50415816'
+  parent_id: '50412072'
+  author: sehugg
+  text: Funny, I was just thinking about JIT&#x27;ted blitters the other day. I&#x27;m
+    pretty sure the Windows 3.1 BitBlt function was a JIT, probably building a blitter
+    routine from templates, as they had to handle different src&#x2F;dest ops, different
+    bits-per-pixel and also linear&#x2F;planar frame buffers.<p>Symbolasm looks neat.
+  score: 0
+  posted_at: '2026-11-08T18:42:50Z'
+- id: '50416046'
+  parent_id: '50412072'
+  author: londons_explore
+  text: 'Related:    for a project I needed readable vector fonts in as few bytes
+    as possible.   Had to handle full Unicode and any font face.<p>Setting Claude
+    on the challenge and giving some pointers (use a set of ANS coders!   Be lossy
+    as long as there are no errors when rendered!), I was amazed that a typical font
+    can be rendered in just ~40 bytes per used character.<p>It saddens me that despite
+    this, plenty of websites ship hundreds of kilobytes of custom fonts!'
+  score: 0
+  posted_at: '2026-11-08T19:08:02Z'
+article:
+  url: https://linebender.org/blog/jit-bitmap-text/
+  title: JIT bitmap text rendering for microcontrollers - Linebender
+  fetch_status: success
+  content: |-
+    # JIT bitmap text rendering for microcontrollers
+
+    ### Raph Levien, November 7, 2026
+
+    I've been working on [vic-2350](https://github.com/raphlinus/vic-2350), a re-envisioning of an 80s home computer on an RP2350 microcontroller board. Of course, such a project needs text rendering. Though bitmap fonts are now out of favor, I chose them both for efficiency and because, at low resolutions, I prefer the aesthetic of a crisp, intentionally designed bitmap font over the blurry mush of antialiased font rendering. They still have a niche, if a narrow one.
+
+    I also wanted proportional spacing and kerning, again because I love the aesthetic of early Macintosh and its predecessors. Most text rendering in RP2350 projects is based on a fixed character cell, as achieving good performance is tricky.
+
+    ![Demo of bitmap text rendering on RP2350](https://linebender.org/blog/jit-bitmap-text/textdemo.png)
+
+    This blog post presents a technique for extremely fast rendering of bitmap text on microcontrollers such as the RP2350. I've implemented it as part of my race-the-beam renderer, but the same technique would work when writing into a framebuffer as well. The core idea is a JIT to generate highly optimized code on the fly for rendering a string.
+
+    ## Racing the beam
+
+    Around the mid-80s, a split was happening in the way computers displayed text. The established technique was a fixed cell size, and hardware that looked up characters in a font ROM on the fly as the image was scanned out to the monitor. The advantage was very fast update and responsiveness with limited hardware. A lot of terminals worked this way, as did home computers. The downside was the lack of flexibility. In particular, only monospace fonts were supported.
+
+    The newer technique was a bitmap framebuffer, as pioneered on a line of computers originating with the [Xerox Alto](https://en.wikipedia.org/wiki/Xerox_Alto), continuing through the Apple Lisa, and finally becoming popular with the Macintosh. The framebuffer was vastly more flexible, but required a lot more computing power to keep updated. In the early 80s, you would generally watch text progressively render. I should also mention, graphics modes were generally available on home computers, but they were typically lower resolution than text mode and a 1MHz 6502 (or similar) was just not powerful enough, so serious text-based programs like word processors and spreadsheets used text mode.
+
+    Fast forward to the RP2350. It is capable of DVI video out with the help of the HSTX peripheral, but it is still entirely up to software to fill the video buffer. Some projects choose a framebuffer, but there's only 520kB of SRAM on the chip, so a framebuffer must be limited in either resolution or bit depth or both, and it would also be good for that RAM to be available to the app for other purposes. I've chosen instead to race the beam, filling a video buffer each scanline. That allows more visual richness and much lower latency, but is a hard performance constraint on the renderer. There's a budget of approximately 6 cycles per pixel. The lower we come in under budget, the more is available for rendering other graphical objects, and for other app functions.
+
+    Rust is not capable of meeting the performance requirement, so I started writing ARM assembly language. The renderer, and much of vic-2350, is now written in [symbolasm](https://github.com/raphlinus/symbolasm), a programming language I've created for extremely high performance Cortex-M33 programming. Employing a JIT speeds up rendering further.
+
+    ## The rendering pipeline
+
+    Rendering is often modeled as a pipeline, and the vic-2350 renderer is no exception. The interface between application and renderer is a _display list._ At heart, that's just what it says, a list of _display objects._ The display list is double-buffered; one is being rendered and scanned out, and the other is built by the application. At each vsync, if the app is ready, the display list is swapped. Building the display list is not computationally intensive, but of course the app might be busy doing other things.
+
+    As the display list is of unknown size at compile time, it allocates. Display objects are packed into two vectors; one holds the display objects themselves, the other a list of indices into the first vector. A display object consists of a vtable, a bounding rectangle, and the object-specific payload. Allocation is acceptable because _building_ the display list is not timing critical. Rendering is a different story. That said, it is important for the display list to be memory efficient, especially as there are two copies.
+
+    Before presenting, the indices are sorted into ascending y0 order.
+
+    During rendering, the renderer maintains an _active list,_ which is just the subset of display objects that intersect the current scanline. At each scanline, objects for which y1 = y are deleted from the active list, and new objects with y0 = y are inserted, which is the reason for the sort earlier; it is exactly the order objects are inserted into the active list. The active list is kept in display object order.
+
+    Then the renderer just calls the `render` method for each display object in the active list. I'll do a bit more optimization soon, tracking opaque spans and eliding rendering work for spans of pixels that will be overwritten later, but that's not fundamental to the text rendering as presented here.
+
+    At the start and end of an object (when it's inserted and deleted) the renderer calls `start` and `end` methods on the display object. These methods can allocate scratch space and do other work to set up rendering of the object. There's a specialized bitmap allocator, which is both fast and deterministic.
+
+    ### Text display objects
+
+    All this gives us everything we need to implement text rendering as an instance of display objects.
+
+    The text object itself contains the string (1 byte per character), a pointer to the font, and foreground and background colors. RAM is precious, and more so for the display list because it's double buffered. In an earlier iteration of the renderer, I had an expanded version of the text stored in the display list, and that created unacceptable memory pressure when the screen was filled with text.
+
+    The `start` method allocates scratch space for both the JIT code and a 1 bit per pixel intermediate buffer, and invokes the JIT compiler, expanding the string into code.
+
+    The `render` method calls that code, which fills the 1 bit per pixel buffer, then runs a second pass to expand that 1 bit per pixel buffer into 16 bit per pixel RGB (565 format). This second pass runs at a sustained rate of 1.75 cycles per pixel.
+
+    The font is stored in extremely packed format. All the "ink" for glyphs is stored in a wide bitmap image, same height as the font. The packing also makes sure no glyph straddles a 32-pixel chunk boundary, so one row of font pixels can always be read with a single 32 bit load. If a glyph has space on either side of the glyph, that's not stored in the packed bitmap; rather, the space is in the per-glyph metadata.
+
+    In the spirit of micro-optimization, the packing algorithm also detects overlaps, as there's no requirement that pixels be unique to a single glyph. This optimization reduces the size of the font bitmap from 1140 to 960 bytes. Every byte counts, and more so as we add more fonts. The font bitmap needs to live in SRAM, as having it in flash could cause stalls during rendering at video rate.
+
+    ![A bitmap font packed very tightly into 32 bit words, with overlap. Word boundaries are alternating blue and yellow shading, and overlap is slightly darker shading](https://linebender.org/blog/jit-bitmap-text/font-shared-grid-marked-4x.png)
+
+    I especially liked the `{][}` sequence (near the start of the second row). Any glyph contained within another glyph doesn't need to be packed separately. There are a few examples, some surprising. For example, `l` is the left side of `U`, and `0` is identical to `()` with the space be
+  error:
+  fetched_at: '2026-11-08T19:23:23Z'
+archived_at: '2026-11-08T19:23:39Z'
