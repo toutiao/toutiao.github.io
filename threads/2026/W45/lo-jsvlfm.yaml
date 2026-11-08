@@ -5,14 +5,14 @@ post:
   title: 'Scriptable GeoDNS: leaving AWS for Bunny'
   url: https://vincent.bernat.ch/en/blog/2026-bunny-geodns
   hn_url: https://lobste.rs/s/jsvlfm
-  score: 18
+  score: 25
   author: vbernat
   posted_at: '2026-11-07T07:46:35Z'
-  fetched_at: '2026-11-07T17:32:41Z'
+  fetched_at: '2026-11-08T12:54:51Z'
   article_url: https://vincent.bernat.ch/en/blog/2026-bunny-geodns
   article_fetch_status: success
-  article_fetched_at: '2026-11-07T17:32:42Z'
-  raw_comment_count: 11
+  article_fetched_at: '2026-11-08T12:54:54Z'
+  raw_comment_count: 13
   tags:
   - performance
   - web
@@ -31,7 +31,7 @@ comments:
 
     That feels like both an overkill (why not let Bunny cache it then if it's a static blog?) and high enough traffic ($10 in DNS queries!) that it will cost real money?
     I'm really curious why it's done this way to begin with?
-  score: 5
+  score: 10
   posted_at: '2026-11-07T08:15:30Z'
 - id: lo-b4xdl8
   parent_id: '0'
@@ -40,7 +40,7 @@ comments:
     Yes, it's overkill. But that's how I keep myself busy! Somebody else would host it on a Raspberry Pi running on solar power, that would be fine too.
     About not hosting the HTML itself on the CDN too, it's because I want to control the integrity of the content: CSS and JavaScript files are protected by an integrity hash (SRI) and can therefore be hosted externally. If I could, I would also include images in this, but this is not supported by browsers/HTML spec (and not something that looks planned).
     The $10 was for haproxy.debian.net, which hosts an APT repository and is being hit by automated tools. My blog is far from costing that much in DNS traffic. Most of the costs were fixed (a few zones, the KMS key, so maybe 2$ for CloudFront+Route53 traffic). Paying $5 for a VM seems an OK deal for me. Paying 0.75$ for an healthcheck, not so much.
-  score: 8
+  score: 12
   posted_at: '2026-11-07T09:18:38Z'
 - id: lo-tev8bv
   parent_id: '0'
@@ -49,13 +49,13 @@ comments:
     if it's for saving money, then there are other approaches, if it's for latency
     , then there are other things to fix, etc. But "because I can" is a cool direction
     ;⁠)
-  score: 3
+  score: 4
   posted_at: '2026-11-07T09:26:09Z'
 - id: lo-o7n6nh
   parent_id: '0'
   author: elobommart
   text: Love the sharks and pirate ship.
-  score: 3
+  score: 4
   posted_at: '2026-11-07T09:28:39Z'
 - id: lo-mlveh5
   parent_id: '0'
@@ -82,7 +82,7 @@ comments:
     I was previously using nginx and the certificates were managed through NixOS security.acme.certs. After adding more hosts, I noticed Let's Encrypt had quite a low limit when you ask the same certificates many times (5 per week). I started working around this issue by making SAN different for each host by adding a host-specific cert. But there are many limits, including the number of new certs per domain.
     When I switched to Caddy, I have considered its ability to share certificates through an S3 bucket, but this would add another dependency on a service I need either to self-host or rely on an external party. Instead, I get the certificates on my laptop (with DNS-01) and I push them to each server when updating them (I am using Colmena and a wrapper script). I added a test with Hurl to ensure I don't forget to refresh the certificates.
     From my understanding, DNS-PERSIST-01 is not yet available? I didn't investigate much. Edit: looks like it's still not ready.
-  score: 1
+  score: 2
   posted_at: '2026-11-07T12:58:32Z'
 - id: lo-8zvxcr
   parent_id: '0'
@@ -106,7 +106,7 @@ comments:
     This is cool! I use Bunny but didn't realize they offered a DNS product. It's especially neat that they allow custom server-side logic on the DNS requests.
     I use dnsimple, and I've been pretty happy with them, but bot traffic is recently driving up my costs because bots are doing millions of DNS queries from different residential proxies.
     Currently, dnsimple's overage fees only cost me about $3/month, but if it gets worse, I might explore delegating DNS to Bunny.
-  score: 1
+  score: 3
   posted_at: '2026-11-07T14:57:02Z'
 - id: lo-iqohym
   parent_id: '0'
@@ -115,8 +115,27 @@ comments:
     Thanks for sharing, I've used PowerDNS to self host scriptable DNS before (https://doc.powerdns.com/authoritative/backends/pipe.html). I've seen all sorts of hacks, like weather reports as TXT records.
     On the ACME DNS-01 front, you can also consider acme-dns (https://github.com/acme-dns/acme-dns) or commercial options like Certify DNS (https://docs.certifytheweb.com/docs/dns/providers/certifydns/).
     I'm really looking forward to ACME DNS-PERSIST-01, as mentioned in other threads, but it's not quite ready yet. I plan to add it to localcert (https://localcert.net/) as soon as it is. It will greatly improve usability.
-  score: 1
+  score: 3
   posted_at: '2026-11-07T17:23:27Z'
+- id: lo-imu1kw
+  parent_id: '0'
+  author: deivid
+  text: |-
+    Interesting, thanks for sharing.
+    For about a year I ran a similar setup with US, EU-west and Singapore regions, to get sub 100ms from anywhere I tested, but the geo dns often classified IPs as being in the wrong places, which sucked.
+    All I wanted was a way to redirect based on the DNS resolver's geo, not on the client, but failed to do so.
+    And the annoyances with Let's encrypt eventually beat the benefit for me so I folded back to a single VPS
+  score: 1
+  posted_at: '2026-11-08T11:10:17Z'
+- id: lo-ceymd2
+  parent_id: '0'
+  author: vbernat
+  text: It's also possible to use the latency from the check. I didn't because I think
+    this is worse (but I don't have numbers) because it's the latency between the
+    DNS servers answering the request from the resolver and the server, so it relies
+    a lot on the request to be answered by a DNS server near the client.
+  score: 1
+  posted_at: '2026-11-08T12:01:22Z'
 article:
   url: https://vincent.bernat.ch/en/blog/2026-bunny-geodns
   title: 'Scriptable GeoDNS: leaving AWS for Bunny'
@@ -217,4 +236,4 @@ article:
     and `second.​geo` in the ad­di­tional sec­tion. The re­solve"
   error:
   fetched_at: '2026-11-07T17:32:42Z'
-archived_at: '2026-11-07T17:32:43Z'
+archived_at: '2026-11-08T12:54:54Z'

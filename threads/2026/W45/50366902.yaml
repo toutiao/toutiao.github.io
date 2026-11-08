@@ -1,0 +1,215 @@
+---
+post:
+  id: '50366902'
+  title: Clj.rs – a Clojure dialect implemented in Rust
+  url: https://clj.rs/
+  hn_url: https://news.ycombinator.com/item?id=50366902
+  score: 83
+  author: ''
+  posted_at: '2026-11-04T15:23:16Z'
+  fetched_at: '2026-11-08T12:54:34Z'
+  article_url: https://clj.rs/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-08T12:54:34Z'
+  raw_comment_count: 17
+comments:
+- id: '50411586'
+  parent_id: '50366902'
+  author: jiehong
+  text: Nice, but what are the non goals?<p>Except maybe the compilation to native
+    binary, this is closer to clojurescript than clojure I suppose ?<p>How about a
+    comparison with Jank?
+  score: 0
+  posted_at: '2026-11-08T09:07:47Z'
+- id: '50411667'
+  parent_id: '50366902'
+  author: sshine
+  text: Cool.<p>I&#x27;m already a big fan of the scheme-rs crate.<p>I use it any
+    time I need a dynamic scripting language.<p>It allows for more flexible hot-reloading
+    of parts of a program.<p>I don&#x27;t personally have any Clojure interop holes
+    that need filling.<p>But I can imagine a future where one moves partially away
+    from the JVM if e.g. faster starts or leaner container images are desired.
+  score: 0
+  posted_at: '2026-11-08T09:25:44Z'
+- id: '50411749'
+  parent_id: '50366902'
+  author: tux
+  text: Why not name it “Cloju.rs” instead? :-)
+  score: 0
+  posted_at: '2026-11-08T09:41:06Z'
+- id: '50411751'
+  parent_id: '50411667'
+  author: benrutter
+  text: I love scheme and rust but somehow did not know about scheme-rs! Looks like
+    such a good project, thanks for the recommendation!
+  score: 0
+  posted_at: '2026-11-08T09:41:35Z'
+- id: '50411996'
+  parent_id: '50411749'
+  author: imafish
+  text: came here to write exactly that xD
+  score: 0
+  posted_at: '2026-11-08T10:30:44Z'
+- id: '50412070'
+  parent_id: '50366902'
+  author: rfgplk
+  text: "I&#x27;m working on something similar.<p>My guess is, within the next 3-5
+    years, most ALGOL descendant languages will become obsolete, and S-exp based Lisp
+    dialects will take over. Objectively superior.<p>Behold a native kernel, no inline
+    asm or linker scripts, of any kind. The full compiler pipeline is controllable
+    through the compiler (you can arbitrarily target, devise, or enable&#x2F;disable
+    various optimization passes, for instance you can enable LICM at will). Also has
+    a hard 1:1 correspondence to C&#x2F;C++&#x2F;Rust&#x2F;adding more languages soon.<p><pre><code>
+    \  ;; GNU multiboot kernel\n   (image (target x86-64) (origin 0x100000) (entry
+    &quot;boot32&quot;)\n     (section &quot;.multiboot&quot; (align 4) (keep))\n
+    \    (section &quot;.bss&quot; (align 4096) (zero))\n     (stack &quot;bootstrap&quot;
+    16384) (stack &quot;kernel&quot; 32768)\n     (assert (&lt;= (address &quot;kernel.end&quot;)
+    0x40000000) &quot;early memory must fit the first GiB identity map&quot;))\n   \n
+    \  (static header (Array u32 8)\n     (declare (section &quot;.multiboot&quot;)
+    (used) (link-name &quot;multiboot_header&quot;))\n     (arr (0x1badb002 0x10003
+    0xe4514ffb\n           (link u32 (address &quot;multiboot_header&quot;)) (link
+    u32 (origin))\n           (link u32 (+ (origin) (image-size))) (link u32 (+ (origin)
+    (image-size)))\n           (link u32 (address &quot;boot32&quot;)))))\n   (static
+    gdt (Array u64 3) (declare (aligned 8) (link-name &quot;boot_gdt&quot;))\n     (arr
+    (0 0x00af9a000000ffff 0x00cf92000000ffff)))\n   (static pml4 (Array u64 512) (declare
+    (mutable) (aligned 4096) (link-name &quot;boot_pml4&quot;)))\n   (static pdpt
+    (Array u64 512) (declare (mutable) (aligned 4096) (link-name &quot;boot_pdpt&quot;)))\n
+    \  (static pages (Array u64 512) (declare (mutable) (aligned 4096) (link-name
+    &quot;boot_pages&quot;)))\n   \n   (fn prepare-paging ()\n     (declare (mode
+    protected32) (noinline))\n     (dotimes (i 512)\n       (at pml4 i (-&gt;u64 0))
+    (at pdpt i (-&gt;u64 0))\n       (at pages i (| (* (-&gt;u64 i) 0x200000) 0x83)))\n
+    \    (at pml4 0 (| (link u64 (address &quot;boot_pdpt&quot;)) 3))\n     (at pdpt
+    0 (| (link u64 (address &quot;boot_pages&quot;)) 3))\n     (unsafe\n       (x86::write-cr
+    &#x27;cr3 (link u64 (address &quot;boot_pml4&quot;)))\n       (x86::write-cr &#x27;cr4
+    (| (x86::read-cr &#x27;cr4) 32))\n       (x86::write-msr 0xc0000080 (| (x86::read-msr
+    0xc0000080) 256))\n       (x86::load-gdt (link VirtAddr (address &quot;boot_gdt&quot;))
+    23)))\n\n   (fn show-greeting ()\n     (unsafe\n       (auto video (i-&gt;ptr
+    (Volatile u16) 0xb8000))\n       (dotimes (i 2000) (at* video i (+ 0x5725 (-&gt;u16
+    i))))\n       (auto greeting &quot;:d&quot;)\n       (dotimes (i (size greeting))\n
+    \         (auto byte (-&gt;u8 (at greeting i)))\n         (at* video i (| 0x0f00
+    (-&gt;u16 byte)))\n         (x86::out8 0xe9 byte))\n       (x86::out8 0xe9 10)))\n\n
+    \  (boot-entry boot32 (mode protected32)\n     (handoff (magic eax u32) (information
+    ebx PhysAddr))\n     (with-stack &quot;bootstrap&quot;\n       (prepare-paging)\n
+    \      (unsafe\n         (x86::enter-long-mode &#x27;kernel64 8 magic information
+    (link u64 0x123456789abcdef0)))))\n\n   (boot-entry kernel64 (mode long64)\n     (handoff
+    (magic rdi u32) (information rsi PhysAddr) (cookie r12 u64))\n     (with-stack
+    &quot;kernel&quot;\n       (unsafe\n         (x86::write-segment &#x27;ds 16)
+    (x86::write-segment &#x27;es 16) (x86::write-segment &#x27;ss 16)\n         (auto
+    valid (and (= magic (-&gt;u32 0x2badb002)) (&gt; (address-bits information) 0)\n
+    \                         (= cookie (-&gt;u64 0x123456789abcdef0))\n                          (=
+    (&amp; (x86::read-cr &#x27;cr0) 0x80000001) 0x80000001)\n                          (=
+    (&amp; (x86::read-msr 0xc0000080) 0x500) 0x500)))\n         (if valid (show-greeting)\n
+    \          (progn (x86::out8 0xe9 70) (x86::out8 0xe9 10))))))</code></pre>"
+  score: 0
+  posted_at: '2026-11-08T10:42:04Z'
+- id: '50412091'
+  parent_id: '50366902'
+  author: lightningspirit
+  text: I expect this to take over within the next couple of years. Great job!
+  score: 0
+  posted_at: '2026-11-08T10:45:24Z'
+- id: '50412115'
+  parent_id: '50412091'
+  author: pseudony
+  text: |-
+    Take over what, exactly?
+    The java ecosystem version? The javascript ecosystem version ? The c++, clojure-like dialect ?
+  score: 0
+  posted_at: '2026-11-08T10:50:25Z'
+- id: '50412295'
+  parent_id: '50366902'
+  author: JavierFlores09
+  text: 'Has Clojure become the new base for Lisp-like languages? What does it got
+    going for it that people seem to want its specific flavor of lisp? Just asking
+    since I&#x27;ve also seen the Clojure talk about Jank[1] recently and it has gotten
+    me interested.<p>1: <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=tHgApFhevrQ"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=tHgApFhevrQ</a>'
+  score: 0
+  posted_at: '2026-11-08T11:19:44Z'
+- id: '50412377'
+  parent_id: '50412070'
+  author: neutronicus
+  text: Curious why you’re so bullish on S-Expressions now of all times.<p>It seems
+    like the idea of the macro, and more generally of expressing code succinctly,
+    is the closest to obsolete in my memory?<p>The other half of the Lisp sales pitch
+    (image based development, constantly inspect state, hot swap code, REPL, etc)
+    seems like what has retained currency in the LLM age.
+  score: 0
+  posted_at: '2026-11-08T11:36:27Z'
+- id: '50412385'
+  parent_id: '50412295'
+  author: neutronicus
+  text: Hash table literals.<p>Also, living on a host language has always been part
+    of its ethos. So if you want to be Lisp on C++ or Lisp on Rust, you’re going to
+    be more ideologically aligned with the Clojure crowd than the Common Lisp crowd
+    who pinch their nose and say ALGOL when you mention either.
+  score: 0
+  posted_at: '2026-11-08T11:37:52Z'
+- id: '50412606'
+  parent_id: '50412385'
+  author: skydhash
+  text: SBCL is written in C and have FFI baked in<p><a href="http:&#x2F;&#x2F;www.lichteblau.com&#x2F;sbcl&#x2F;doc&#x2F;manual&#x2F;sbcl&#x2F;Foreign-Function-Interface.html"
+    rel="nofollow">http:&#x2F;&#x2F;www.lichteblau.com&#x2F;sbcl&#x2F;doc&#x2F;manual&#x2F;sbcl&#x2F;Foreign-Funct...</a><p>Maybe
+    it’s too much work to write a full lisp vm in another language when it’s easier
+    to write a loader.
+  score: 0
+  posted_at: '2026-11-08T12:16:03Z'
+- id: '50412687'
+  parent_id: '50411667'
+  author: petre
+  text: Any advantages over steel?<p><a href="https:&#x2F;&#x2F;github.com&#x2F;mattwparas&#x2F;steel"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;mattwparas&#x2F;steel</a>
+  score: 0
+  posted_at: '2026-11-08T12:28:01Z'
+- id: '50412709'
+  parent_id: '50366902'
+  author: andersmurphy
+  text: Claude sure is busy these days.
+  score: 0
+  posted_at: '2026-11-08T12:32:44Z'
+- id: '50412714'
+  parent_id: '50412295'
+  author: CountVonGuetzli
+  text: Coming from Ruby, wanting to learn a Lisp, there are so many things in Clojure
+    that make the language much easier for me to understand, compare to other Lisps.
+    Simple things like first&#x2F;rest vs car&#x2F;cdr make it much more ergonomic
+    and easy to grok, IMHO.
+  score: 0
+  posted_at: '2026-11-08T12:34:01Z'
+- id: '50412747'
+  parent_id: '50412377'
+  author: frje1400
+  text: "&gt; It seems like the idea of the macro, and more generally of expressing
+    code succinctly, is the closest to obsolete in my memory?<p>That seems true in
+    a world where we completely stop looking at code. Right now my reality is giant
+    verbose PRs written by agents in Java, and it sucks to review."
+  score: 0
+  posted_at: '2026-11-08T12:39:18Z'
+- id: '50412762'
+  parent_id: '50366902'
+  author: xnfra
+  text: The only thing I know about Clojure is Walmart used it to rewrite their entire
+    inventory system.
+  score: 0
+  posted_at: '2026-11-08T12:41:57Z'
+article:
+  url: https://clj.rs/
+  title: clj.rs
+  fetch_status: success
+  content: |-
+    cljrs is an experimental Clojure dialect targeting the Rust ecosystem. It aims to be a capable Lisp runtime with persistent data structures, a hosted macro system, and native interop — compiled or interpreted, suitable for use as an agentic coding runtime.
+
+    Available on crates.io. Early stage; expect rough edges.
+
+    - crates.io/crates/cljrs published crate
+
+    - clj.rs/repl try it in your browser
+
+    - github.com/csm/clojurust source repository
+
+    - docs.clj.rs language reference
+
+    - (tap> :log) dev log
+  error:
+  fetched_at: '2026-11-08T12:54:34Z'
+archived_at: '2026-11-08T12:54:50Z'
