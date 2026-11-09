@@ -1,0 +1,326 @@
+---
+post:
+  id: '50421155'
+  title: 'Show HN: Flide: Make Jev-like decision models up to 9.5x faster'
+  url: https://github.com/OmniJev/Flide
+  hn_url: https://news.ycombinator.com/item?id=50421155
+  score: 115
+  author: ''
+  posted_at: '2026-11-09T04:43:12Z'
+  fetched_at: '2026-11-09T22:01:30Z'
+  article_url: https://github.com/OmniJev/Flide
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T22:01:30Z'
+  raw_comment_count: 27
+comments:
+- id: '50421227'
+  parent_id: '50421155'
+  author: unikcc
+  text: 'Hi HN! I&#x27;m one of the Flide team.<p>We built Flide from scratch to make
+    Jev-like decision model inference up to 9.5x faster than vLLM and SGLang, while
+    keeping exactness.<p>Here is the source code: <a href="https:&#x2F;&#x2F;github.com&#x2F;OmniJev&#x2F;Flide"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;OmniJev&#x2F;Flide</a><p>Look
+    forward to hearing your feedback and ideas!'
+  score: 0
+  posted_at: '2026-11-09T04:55:19Z'
+- id: '50422671'
+  parent_id: '50421227'
+  author: rytill
+  text: Under what specific circumstances is it actually 9.5x faster?<p>Are there
+    any circumstances where it is just about as fast as something like vLLM? For instance,
+    single user, single token&#x2F;decision inference?<p>How did you achieve the biggest
+    speed up?<p>Are there any tradeoffs? “While keeping exactness” implies not.<p>Are
+    there any specifics about how one must structure their context to take full advantage
+    of it?
+  score: 0
+  posted_at: '2026-11-09T08:24:34Z'
+- id: '50422922'
+  parent_id: '50421155'
+  author: jarym
+  text: I wanted to try this - essentially for my dataset I have a number of decision
+    questions for the same input. I haven&#x27;t figured out yet which local model
+    to try first with it!
+  score: 0
+  posted_at: '2026-11-09T08:54:10Z'
+- id: '50422934'
+  parent_id: '50422671'
+  author: tancop
+  text: I looked at their paper and the biggest gains come when you have many questions
+    from one context, which is the way these models are supposed to be used. It&#x27;s
+    around 1.5-3x faster than vLLM with single questions. That&#x27;s the worst case
+    where you can&#x27;t reuse anything.<p>The way I understand it most of their speedup
+    comes from caching intermediate results. They freeze the state after processing
+    context then branch each question off that point. It means they can process questions
+    in parallel after the context stage is finished, and don&#x27;t waste time doing
+    the same work N times.
+  score: 0
+  posted_at: '2026-11-09T08:56:08Z'
+- id: '50423297'
+  parent_id: '50421155'
+  author: yossuf2000
+  text: |-
+    do i need to host the model to do this ?
+    if yes what model can i host in 3050 card
+  score: 0
+  posted_at: '2026-11-09T09:41:16Z'
+- id: '50423700'
+  parent_id: '50422671'
+  author: unikcc
+  text: Thanks for the questions! I think tancop&#x27;s summary has already captured
+    the essence, and I can add some details.<p>&gt; Under what specific circumstances
+    is it actually 9.5x faster?<p>The 9.5x is Qwen3.5-0.8B on QuALITY, one long article
+    that has 5.8k tokens and 18 questions on average. The more questions share a context,
+    the bigger the gain.<p>&gt; Are there any circumstances where it is just about
+    as fast as something like vLLM? For instance, single user, single token&#x2F;decision
+    inference?<p>Yes, with a state that has only a single question, it ranges from
+    a near tie with 27B on a long input to more than 3x with a small model on a short
+    input. In this case nothing is shared, so the gain only comes from lower per-request
+    overhead, since Flide runs the whole forward pass as one prerecorded CUDA graph.<p>&gt;
+    How did you achieve the biggest speed up?<p>The big speedup comes from cases where
+    one state carries many questions, where we only compute the shared context once.
+    We achieve this by using a mask that keeps the questions from seeing each other,
+    and each question carries the correct position index just as if it came right
+    after the state, so we can get the answers in one pass. The second is the prerecorded
+    CUDA graph.<p>&gt; Are there any tradeoffs? &quot;While keeping exactness&quot;
+    implies not.<p>There is no accuracy tradeoff, since each question gets the identical
+    computation as if asked alone. What remains is floating-point rounding that shifts
+    slightly with batch size in every engine, even for a question asked alone, and
+    our results are still the closest to the FP32 results among all the engines.<p>&gt;
+    Are there any specifics about how one must structure their context to take full
+    advantage of it?<p>To get the most out of it, you can put everything shared in
+    the state and ask all the questions in one request. And for continuous agentic
+    decisions, use --session-cache-gb to get a further speedup.
+  score: 0
+  posted_at: '2026-11-09T10:30:17Z'
+- id: '50423747'
+  parent_id: '50422934'
+  author: unikcc
+  text: Thanks for the clarification! That&#x27;s our main idea. I think a shared
+    state with many independent questions is the nature of decision tasks, so we push
+    it to the extreme. This is a decision-native design.
+  score: 0
+  posted_at: '2026-11-09T10:36:05Z'
+- id: '50423801'
+  parent_id: '50422922'
+  author: unikcc
+  text: |-
+    Thanks! Welcome to give it a try.<p>You can check the Decision Index leaderboard at <a href="https:&#x2F;&#x2F;huggingface.co&#x2F;spaces&#x2F;multimodalart&#x2F;jev-decision-index" rel="nofollow">https:&#x2F;&#x2F;huggingface.co&#x2F;spaces&#x2F;multimodalart&#x2F;jev-decision-ind...</a> for reference, and we already support many of the models (see our README).<p>Or you can try our own model, OneJev (<a href="https:&#x2F;&#x2F;github.com&#x2F;OmniJev&#x2F;OneJev" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;OmniJev&#x2F;OneJev</a>):<p><pre><code>  flide serve --model OmniJev&#x2F;OneJev1.6-0.8B
+    </code></pre>
+    We&#x27;re actively improving it.
+  score: 0
+  posted_at: '2026-11-09T10:43:47Z'
+- id: '50423863'
+  parent_id: '50423297'
+  author: unikcc
+  text: Yes, Flide is self-hosted and serves the model on your own GPU. 3050 card
+    is totally OK for the 0.8B model, and there&#x27;s plenty of room for long inputs.
+    We&#x27;ve only tested Flide on Linux, so on Windows you may need WSL2.
+  score: 0
+  posted_at: '2026-11-09T10:51:06Z'
+- id: '50423965'
+  parent_id: '50421155'
+  author: unikcc
+  text: Flide is extremely fast when one input carries many questions, as the shared
+    input is computed only once. Even with a single question, it can still be up to
+    3x faster, depending on the model size and input length.
+  score: 0
+  posted_at: '2026-11-09T11:04:26Z'
+- id: '50424467'
+  parent_id: '50423801'
+  author: roger_
+  text: Is GLiDE 9B+ supported? It&#x27;s a Qwen fine tune so it&#x27;s not clear.
+  score: 0
+  posted_at: '2026-11-09T12:05:15Z'
+- id: '50424507'
+  parent_id: '50423965'
+  author: p-e-w
+  text: Unfortunately, the reverse situation, where the same question is asked about
+    many inputs, is much more useful in practice.
+  score: 0
+  posted_at: '2026-11-09T12:09:59Z'
+- id: '50424563'
+  parent_id: '50424507'
+  author: zurfer
+  text: Really depends on the use case. Look at the voice assistant demo from Jev.
+    One input, many questions.
+  score: 0
+  posted_at: '2026-11-09T12:16:06Z'
+- id: '50424643'
+  parent_id: '50421155'
+  author: Tostino
+  text: You really don&#x27;t need an entire new inference engine for this. I modified
+    vllm to work just fine for my decision model experiments.<p>It properly uses the
+    single shared context and only recomputes the questions, or if the questions are
+    longer, I let the questions go first and then the context that changes often can
+    go after, and then the answer menu tokens... I got roughly the same speed increase
+    with the right workloads that you&#x27;re saying though.
+  score: 0
+  posted_at: '2026-11-09T12:24:50Z'
+- id: '50424982'
+  parent_id: '50424643'
+  author: unikcc
+  text: Nice, similar point! I agree it works fine for full attention. But for Gated
+    DeltaNet on Qwen3.5, vLLM only supports caching at block boundaries. So we developed
+    a new one. Also, we optimize the CUDA graph usage and can keep answers bit-identical
+    at any load.
+  score: 0
+  posted_at: '2026-11-09T12:59:12Z'
+- id: '50425027'
+  parent_id: '50424507'
+  author: unikcc
+  text: Good point. In that case, the current setting may not help much. But I think
+    we can extend the framework to put the question first, so all the states share
+    one question. We&#x27;d decide dynamically whether to place state or question
+    first.
+  score: 0
+  posted_at: '2026-11-09T13:03:21Z'
+- id: '50425079'
+  parent_id: '50424467'
+  author: unikcc
+  text: Not yet, unfortunately. We plan to support it in the next few versions. But
+    since GLiDE uses bidirectional attention, it can&#x27;t be accelerated as much
+    as others.
+  score: 0
+  posted_at: '2026-11-09T13:07:49Z'
+- id: '50426184'
+  parent_id: '50423747'
+  author: e12e
+  text: 'So, if your problem is: tag these 10 000 emails (work, spam, personal, English,
+    French...) it&#x27;s fast? (Feed large context of mails (input) and question context).<p>If
+    it&#x27;s answer if this one email is spam - not so fast?'
+  score: 0
+  posted_at: '2026-11-09T14:32:37Z'
+- id: '50426654'
+  parent_id: '50426184'
+  author: unikcc
+  text: Yes, but not quite. Let me clarify.<p>Currently, the speedup mainly depends
+    on the number of questions per input. The more questions for each input, the lower
+    the average time per question, as the input is computed only once by our engine.<p>For
+    tagging one email is spam or not, our engine can still be up to 3x faster, but
+    the speedup is not as significant as with multiple questions per state.
+  score: 0
+  posted_at: '2026-11-09T15:05:44Z'
+- id: '50427190'
+  parent_id: '50421155'
+  author: totisjosema
+  text: Cool!
+  score: 0
+  posted_at: '2026-11-09T15:48:40Z'
+- id: '50427339'
+  parent_id: '50426654'
+  author: vinibrito
+  text: So max benefits would come from picking an email and asking &quot;is this
+    spam, is this in english, does this contain grammar errors, does it contain a
+    signature, is it a commercial pitch&quot;?
+  score: 0
+  posted_at: '2026-11-09T15:59:39Z'
+- id: '50427347'
+  parent_id: '50427190'
+  author: unikcc
+  text: Thanks! Feel free to try!
+  score: 0
+  posted_at: '2026-11-09T15:59:59Z'
+- id: '50427437'
+  parent_id: '50427339'
+  author: unikcc
+  text: Exactly!
+  score: 0
+  posted_at: '2026-11-09T16:06:23Z'
+- id: '50428443'
+  parent_id: '50423863'
+  author: schainks
+  text: Is there a lower limit of hardware for &quot;good enough&quot; performance?
+    I plan to integrate Flide into an existing product that is a desktop app for lesser-powered
+    laptops that needs a local model.
+  score: 0
+  posted_at: '2026-11-09T17:15:08Z'
+- id: '50428694'
+  parent_id: '50421155'
+  author: nico
+  text: Amazing, love it<p>Do you have numbers for running something like Laya locally
+    with&#x2F;without Flide?
+  score: 0
+  posted_at: '2026-11-09T17:33:38Z'
+- id: '50428996'
+  parent_id: '50428443'
+  author: unikcc
+  text: |-
+    Thanks! If the laptop has a 6GB NVIDIA GPU, Flide can serve the 0.8B model on it.
+    Otherwise, llama.cpp or LM Studio is a better choice for CPU-only devices or smaller GPUs.
+  score: 0
+  posted_at: '2026-11-09T17:57:01Z'
+- id: '50429133'
+  parent_id: '50428694'
+  author: unikcc
+  text: |-
+    Thanks! We support 30+ local models and show the performance comparison with&#x2F;without Flide. The results are on the README page.
+    However, we haven&#x27;t supported Laya yet and we&#x27;d love to support it in the next few versions.
+  score: 0
+  posted_at: '2026-11-09T18:05:03Z'
+article:
+  url: https://github.com/OmniJev/Flide
+  title: "GitHub - OmniJev/Flide: \U0001F525\U0001F525 The extremely fast inference
+    engine for decision model · GitHub"
+  fetch_status: success
+  content: "## Latest commit\n\n## History\n\n## Folders and files\n\n## Repository
+    files navigation\n\nEnglish · 简体中文 · 日本語\n\nNews · Quick start · Models · Options\n\nFlide
+    is fast inference infrastructure for Jev-style decision models. With exact state
+    forking it is up to 9.5 times faster than vLLM and SGLang, and every answer is
+    the one the model gives the question alone. It serves the Jev /v1/systemone API.\n\n##
+    \U0001F525 News\n\n- \U0001F525 2026-11-10 We added an email triage demo in Flide
+    0.1.11, where Flide tags 10,000 emails with eight questions each in 28 seconds
+    on one H200.\n\n- \U0001F525 2026-11-09 We added Ainvest-Decision, Darwin-27B-RSI-Decision
+    and KnowLine-31B-Gen1.5 in Flide 0.1.10, and the KnowLine family now reads images.\n\n-
+    \U0001F525 2026-11-09 We added pplx-decider-v1.1-27b and JEV-35B in Flide 0.1.9,
+    and /v1/systemone now takes several requests in one body.\n\n- \U0001F525 2026-11-08
+    We added two decision model families in Flide 0.1.8, including AutoTrust and Clef,
+    and also drex-max-v1.\n\n- \U0001F525 2026-11-02 We released our paper Flide:
+    Accelerating Decision Inference with Exact State Forking on arXiv.\n\n- \U0001F525
+    2026-10-29 We added three decision model families in Flide 0.1.7, including SynACK
+    Decide, Wald and Xor, and Gemma 4 mixture-of-experts models such as KnowLine-26B-A4B.\n\n-
+    \U0001F525 2026-10-29 We added two decision model families in Flide 0.1.6, including
+    Drex and KnowLine, and flide verify checks exact forking on your own model and
+    requests.\n\n- \U0001F525 2026-10-28 We added six decision model families in Flide
+    0.1.5, including Jeffan, JevAny, Kev, Lychee, pplx-decider and StartLux, and images
+    for Lumma and mammoth.\n\n- \U0001F525 2026-10-26 We added five decision model
+    families in Flide 0.1.4, including cerno, JADE, Linne, mammoth and Sieve, and
+    also Quyet-1.0-Large.\n\n- \U0001F525 2026-10-26 We added eight decision model
+    families in Flide 0.1.3, including AJev, Bespoke-Nimble, Darwin, jiwo, Lumma,
+    mogan, Quyet and Senova, and LoRA adapters now serve as they are.\n\n- \U0001F525
+    2026-10-25 We added two decision model families in Flide 0.1.2, including Intern-Decision
+    and torchcast, and a question now takes up to 256 options.\n\n- \U0001F525 2026-10-24
+    We released Flide 0.1.0 on PyPI, serving Qwen3.5 and Gemma 4 chat models and the
+    OneJev and Open-Jev decision models. Welcome to have a try.\n\n## Quick start\n\nSee
+    the docs for every model, images, the API and all options.\n\nuv venv -p 3.12
+    && source .venv/bin/activate uv pip install flide torchvision flide serve --model
+    OmniJev/OneJev1.6-0.8B\n\nAny model in the model table starts the same way, for
+    example Perplexity's decision model.\n\nflide serve --model perplexity-ai/pplx-decider-flash-v1.2\n\nEvery
+    one of them answers this request.\n\ncurl http://localhost:8000/v1/systemone -H
+    \"Content-Type: application/json\" -d '{ \"state\": \"Order #1182 arrived with
+    a cracked screen. The customer asks for a refund and attached two photos.\", \"questions\":
+    { \"action\": {\"type\": \"choice\", \"instructions\": \"What should support do
+    next?\", \"criteria\": {\"refund\": \"refund the order\", \"replace\": \"send
+    a replacement\", \"escalate\": \"ask a human\"}}, \"urgent\": {\"type\": \"noul\",
+    \"instructions\": \"Does this need a reply within the hour?\"} } }'\n\n## Example\n\nFlide
+    answers eight questions for each of 10,000 emails in only 28 s. The email triage
+    demo has the code to run it yourself.\n\nOn one H200 with OneJev1.6-0.8B, Flide
+    answers one email in 10.0 ms and all 10,000 in 28 seconds, 3.5 times as fast as
+    the fastest other engine for one email and 4.1 times for all of them.\n\n## Models\n\nThe
+    last three columns say how much faster Flide answers one request than the engine
+    its release ships, as the median latency over the requests of each workload on
+    one H200, where DI is the Decision Index. The chat models run against the faster
+    of vLLM and SGLang, and OneJev against qev, the engine it used before Flide. KnowLine
+    35B runs with --quantize fp8, as its release serves it in FP8. A value marked
+    ~ is the average over the sizes tested.\n\n## Options\n\n## License\n\nApache-2.0.
+    flide/kernels/gdn.py holds a kernel derived from two kernels of flash-linear-attention
+    (MIT); THIRD_PARTY_NOTICES lists it with the other code Flide builds on.\n\n##
+    Citation\n\nIf you use Flide in your research, please cite our paper.\n\n@article{li2026flide,
+    title = {Flide: Accelerating Decision Inference with Exact State Forking}, author
+    = {Li, Bobo and Song, Jiajia and Fei, Hao and Hsu, Wynne and Lee, Mong Li}, journal
+    = {arXiv preprint arXiv:2610.42148}, year = {2026} }\n\n## About\n\n\U0001F525\U0001F525
+    The extremely fast inference engine for decision model\n\n### Topics\n\n### Resources\n\n###
+    Contributing\n\n### Stars\n\n### Watchers\n\n### Forks\n\n## Releases\n\n## Packages\n\n##
+    Contributors\n\n## Languages"
+  error:
+  fetched_at: '2026-11-09T22:01:30Z'
+archived_at: '2026-11-09T22:01:41Z'

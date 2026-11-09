@@ -1,0 +1,146 @@
+---
+post:
+  id: lo-vtjjbc
+  source: lobsters
+  title: What's new in Node.js 27
+  url: https://nodejsdesignpatterns.com/blog/whats-new-in-nodejs-27/
+  hn_url: https://lobste.rs/s/vtjjbc
+  score: 14
+  author: loige
+  posted_at: '2026-11-09T11:48:55Z'
+  fetched_at: '2026-11-09T22:01:41Z'
+  article_url: https://nodejsdesignpatterns.com/blog/whats-new-in-nodejs-27/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T22:01:46Z'
+  raw_comment_count: 4
+  tags:
+  - javascript
+  - nodejs
+comments:
+- id: lo-eobkhf
+  parent_id: '0'
+  author: bakkot
+  text: |-
+    Two of these are mine! (Math.sumPrecise and Iterator.prototype.join.)
+    sumPrecise is fun; it turns out that maximally precise summation can be done reasonably efficiently. Originally the plan was to do a naive Math.sum and accept the error introduced by intermediate rounding but it's not that much slower to do it right so we might as well. I wanted to still call it Math.sum but engines pushed back because it's still somewhat slower, alas.
+  score: 7
+  posted_at: '2026-11-09T18:35:45Z'
+- id: lo-ikpaap
+  parent_id: '0'
+  author: Johz
+  text: How did you get involved in TC39 stuff? I love reading through these proposals,
+    and it's really interesting to see some of the discussions about quite specific
+    details like the performance issues you mention here.
+  score: 2
+  posted_at: '2026-11-09T20:22:42Z'
+- id: lo-8vk1pp
+  parent_id: '0'
+  author: bakkot
+  text: |-
+    Undergrad research was on static analysis of JS, which led to a job at a company (Shape Security) that was doing some interesting JS tooling with interesting constraints and was participating in the committee for that reason. ECMA is very much in the traditional "this is a way for companies to coordinate without running afoul of anti-trust" mold for standards bodies, so participation in the committee as such pretty much requires working for a member company.
+    That said, most conversation happens on GitHub (and sometimes Matrix) and is open to anyone. It's just participation at the actual meetings that requires being at a member company.
+  score: 2
+  posted_at: '2026-11-09T20:54:57Z'
+- id: lo-2tftcv
+  parent_id: '0'
+  author: loige
+  text: Oh wow! That’s awesome! Thanks for these, especially join since I like all
+    things iterators and iterator helpers! Are you still actively involved? Any other
+    cool features coming next?
+  score: 1
+  posted_at: '2026-11-09T20:59:29Z'
+article:
+  url: https://nodejsdesignpatterns.com/blog/whats-new-in-nodejs-27/
+  title: What's new in Node.js 27
+  fetch_status: success
+  content: "Table of Contents     \n1. [Quick Answer: what’s new in Node.js 27](#quick-answer-whats-new-in-nodejs-27)\n2.
+    [New Iterator superpower: zip, zipKeyed, join, and includes](#new-iterator-superpower-zip-zipkeyed-join-and-includes)
+    \n  1. [Pairing sequences lazily with Iterator.zip()](#pairing-sequences-lazily-with-iteratorzip)
+    \n  2. [Combining endless iterators: solar generation and household consumption](#combining-endless-iterators-solar-generation-and-household-consumption)
+    \n  3. [Turning columns into objects with Iterator.zipKeyed()](#turning-columns-into-objects-with-iteratorzipkeyed)
+    \n  4. [Finishing pipelines with Iterator.prototype.join() and includes()](#finishing-pipelines-with-iteratorprototypejoin-and-includes)
+    \n \n3. [More accurate sums with Math.sumPrecise()](#more-accurate-sums-with-mathsumprecise)\n4.
+    [node:net/promises and async-iterable TCP servers](#nodenetpromises-and-async-iterable-tcp-servers)\n5.
+    [Virtual File System (node:vfs) is now unflagged](#virtual-file-system-nodevfs-is-now-unflagged)\n6.
+    [More Node.js Core upgrades: fs, Permissions, Test Runner, and HTTP](#more-nodejs-core-upgrades-fs-permissions-test-runner-and-http)
+    \n  1. [Atomic temporary files with fs.mkstemp() and native fs.glob()](#atomic-temporary-files-with-fsmkstemp-and-native-fsglob)
+    \n  2. [Permission Model gets --allow-env](#permission-model-gets---allow-env)
+    \n  3. [Built-in Test Runner: stable watch mode and Jest-style mock helpers](#built-in-test-runner-stable-watch-mode-and-jest-style-mock-helpers)
+    \n  4. [Smarter HTTP & HTTP/2 defaults](#smarter-http--http2-defaults) \n  5.
+    [Why remove the prototype from req.headers?](#why-remove-the-prototype-from-reqheaders)
+    \n \n7. [Under the hood: V8 15.6, the 4 GB Heap Default, and OpenSSL 4.1](#under-the-hood-v8-156-the-4-gb-heap-default-and-openssl-41)\n8.
+    [Heads-up: Node.js 27 breaking changes](#heads-up-nodejs-27-breaking-changes)
+    \n  1. [1. req.headers has a null prototype](#1-reqheaders-has-a-null-prototype)
+    \n  2. [2. Memory limits for multi-process deployments](#2-memory-limits-for-multi-process-deployments)
+    \n  3. [3. V8 serialization format and larger heap snapshots](#3-v8-serialization-format-and-larger-heap-snapshots)
+    \n  4. [4. V8 behavior changes that can break tests and caches](#4-v8-behavior-changes-that-can-break-tests-and-caches)
+    \n  5. [5. Deprecations, removals, and platform changes](#5-deprecations-removals-and-platform-changes)
+    \n \n9. [Should you use Node.js 27 today?](#should-you-use-nodejs-27-today)\n10.
+    [Wrapping up](#wrapping-up)\n11. [Frequently Asked Questions](#frequently-asked-questions)
+    \n  1. [Why did Node.js 27 start with an Alpha release in October 2026?](#why-did-nodejs-27-start-with-an-alpha-release-in-october-2026)
+    \n  2. [Will Node.js 27 become an LTS release even though 27 is an odd number?](#will-nodejs-27-become-an-lts-release-even-though-27-is-an-odd-number)
+    \n  3. [What are the biggest JavaScript features in Node.js 27?](#what-are-the-biggest-javascript-features-in-nodejs-27)
+    \n  4. [How did the default memory limit change in Node.js 27?](#how-did-the-default-memory-limit-change-in-nodejs-27)
+    \n  5. [Should I run Node.js 27 in production?](#should-i-run-nodejs-27-in-production)
+    \n \n  \n\nOn October 29, 2026, the Node.js team published [`v27.0.0-alpha.0.0.0`](https://nodejs.org/en/blog/release/v27.0.0-alpha.0.0.0).
+    If you have been using Node.js for a few years, that version string alone probably
+    made you do a double take. Where is the usual October `v27.0.0` Current release?\n\nNode.js
+    27 is the first release to follow the new annual schedule. Under the old schedule,
+    October brought a major release that reached end of life six months later without
+    entering Long Term Support (LTS). October now starts a six-month Alpha phase,
+    ahead of the `27.0.0` Current release in April 2027 and LTS promotion in October
+    2027.\n\nIn this first Alpha, V8 moves from 14.6 to 15.6, adding `Iterator.zip()`,
+    `Iterator.zipKeyed()`, `Iterator.prototype.join()`, `Iterator.prototype.includes()`,
+    and `Math.sumPrecise()`. There is a promises API for `node:net`, along with async-iterable
+    TCP servers. The Virtual File System (`node:vfs`) is now unflagged, the Permission
+    Model gains `--allow-env`, and HTTP and memory defaults change too.\n\nWe’ll start
+    with the JavaScript and Node.js APIs you can use in everyday code, comparing them
+    with the older approaches. Then we’ll cover runtime changes and what to check
+    before upgrading.\n\n## Quick Answer: what’s new in Node.js 27\n\nThe main additions
+    in Node.js 27 so far:\n\n1. New `Iterator` helpers (`zip`, `zipKeyed`, `join`,
+    `includes`) pair sequences, join their values into strings, and search them without
+    collecting intermediate arrays.\n2. `Math.sumPrecise()` sums an iterable of numbers
+    without rounding each intermediate addition.\n3. `node:net/promises` and async-iterable
+    `net.Server` let you use `async`/`await` to set up TCP servers and sockets.\n4.
+    Virtual File System (`node:vfs`) is unflagged, making in-memory file systems and
+    `--vfs-load` available without `--experimental-vfs`.\n5. Core upgrades across
+    `fs`, permissions, test runner, and `http`, including atomic temp files with `fs.mkstemp()`,
+    `--allow-env`, Jest-style mock helpers, and a 65-second HTTP `keepAliveTimeout`.\n6.
+    V8 15.6 and OpenSSL 4.1 update sorting and cryptography, and the default heap
+    limit rises to 4 GB on an 8 GB machine.\n\nFor example, we can format a list of
+    products and total their prices:\n\n_00-quick-answer/teaser.js_\n\n    const items
+    = ['Keyboard', 'Mouse', 'Monitor']\n    \n    \n    const prices = [129.99, 49.99,
+    349.95]\n    \n    \n    \n    \n    const lines = Iterator.zipKeyed({ item: items,
+    price: prices })\n    \n    \n      .map(({ item, price }) => `${item} ($${price.toFixed(2)})`)\n
+    \   \n    \n      .join(', ')\n    \n    \n    \n    \n    console.log(`${lines}
+    -> Total: $${Math.sumPrecise(prices)}`)\n    \n    // Keyboard ($129.99), Mouse
+    ($49.99), Monitor ($349.95) -> Total: $529.93\n\nIf you want to experiment locally,
+    [check your current Node.js version](/blog/checking-node-js-version/) before running
+    the snippets below.\n\n## New Iterator superpower: `zip`, `zipKeyed`, `join`,
+    and `includes`\n\nThis is the part of the release I’m most excited about. I love
+    seeing how far we can push streams, iterators, and generators. Our article on
+    [JavaScript async iterators](/blog/javascript-async-iterators/) should give you
+    an idea of what I mean.\n\nIn [What’s new in Node.js 26](/blog/whats-new-in-nodejs-26/),
+    we used `Iterator.concat()` to consume multiple iterables one after another. Node.js
+    27, through V8 15.6, lets us consume them side by side, pairing values at the
+    same position.\n\n### Pairing sequences lazily with `Iterator.zip()`\n\nSuppose
+    you are checking a weather forecast against the temperatures recorded over the
+    same four days. The predictions come from your model, while the actual values
+    come from observations. To calculate each day’s error, you need to pair the values
+    at the same position. Both sequences must cover the same days in the same order.\n\nIn
+    Node.js 26 and earlier, if both sequences were arrays, you would typically use
+    `.map()` with an index lookup:\n\n_01-iterators/iterator-zip-old.js_\n\n    //
+    Node.js 26 and earlier\n    \n    const predicted = [18, 21, 20, 23]\n    \n    \n
+    \   const actual = [19, 20, 22, 21]\n    \n    \n    \n    \n    const errors
+    = predicted.map((prediction, i) => actual[i] - prediction)\n    \n    \n    console.log(errors)
+    // [1, -1, 2, -2]\n\nThat works well for arrays. But what if observations come
+    from a generator, or your model returns an iterator of predictions? Index lookups
+    won’t work on those inputs, and converting them to arrays means loading both sequences
+    into memory first.\n\nIn Node.js 27, `Iterator.zip()` takes an iterable of iterables
+    and returns a lazy iterator of pairs. We can calculate the errors with the same
+    pipeline whether the inputs are arrays or iterators:\n\n_01-iterators/iterator-zip.js_\n\n
+    \   const predicted = [18, 21, 20, 23]\n    \n    \n    const actual = [19, 20,
+    22, 21]\n    \n    \n    \n    \n    const"
+  error:
+  fetched_at: '2026-11-09T22:01:46Z'
+archived_at: '2026-11-09T22:01:47Z'

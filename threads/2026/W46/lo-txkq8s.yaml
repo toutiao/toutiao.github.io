@@ -1,0 +1,150 @@
+---
+post:
+  id: lo-txkq8s
+  source: lobsters
+  title: Horrible public key tricks
+  url: https://maurycyz.com/projects/badcert/
+  hn_url: https://lobste.rs/s/txkq8s
+  score: 63
+  author: rrampage
+  posted_at: '2026-11-09T12:55:11Z'
+  fetched_at: '2026-11-09T22:01:41Z'
+  article_url: https://maurycyz.com/projects/badcert/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T22:01:43Z'
+  raw_comment_count: 8
+  tags:
+  - cryptography
+comments:
+- id: lo-0uwgc4
+  parent_id: '0'
+  author: gerikson
+  text: For some reason, this post brings me great joy.
+  score: 11
+  posted_at: '2026-11-09T13:20:10Z'
+- id: lo-ey8fxe
+  parent_id: '0'
+  author: gir
+  text: |-
+    while the resulting public key would be week,
+
+    Typo ;)
+    I already read the pre-story on mastodon, nice to have a linkable version!
+  score: 1
+  posted_at: '2026-11-09T15:27:28Z'
+- id: lo-hj1xvw
+  parent_id: '0'
+  author: wofo
+  text: The linked pdf (No one can force me to have a secure website!!!) is hilarious
+    and informative at the same time, thanks for sharing!
+  score: 10
+  posted_at: '2026-11-09T15:51:58Z'
+- id: lo-jcz8dj
+  parent_id: '0'
+  author: Kronopath
+  text: There’s also a video version of the paper.
+  score: 9
+  posted_at: '2026-11-09T16:08:11Z'
+- id: lo-dnbsah
+  parent_id: '0'
+  author: dsschnau
+  text: I had to check to make sure, and sure enough, the cert for this site has a
+    vanity message in it.
+  score: 4
+  posted_at: '2026-11-09T17:28:32Z'
+- id: lo-lwzsuk
+  parent_id: '0'
+  author: dsschnau
+  text: |-
+    it reminds me of this other "prior work" on https being a bit over-sold:
+    Discourse on HTTPS | n-gate.com
+  score: 3
+  posted_at: '2026-11-09T17:32:23Z'
+- id: lo-ub2sty
+  parent_id: '0'
+  author: Ambroisie
+  text: To be honest, as a casual reader most of these retorts read like bad faith?
+  score: 4
+  posted_at: '2026-11-09T19:22:30Z'
+- id: lo-79aiqr
+  parent_id: '0'
+  author: jonatan
+  text: There is no way that is not a shitpost.
+  score: 1
+  posted_at: '2026-11-09T21:52:07Z'
+article:
+  url: https://maurycyz.com/projects/badcert/
+  title: 'Horible public key tricks:'
+  fetch_status: success
+  content: "# _Horible public key tricks:_\n — \n\nSo, I've always been somewhat annoyed
+    at SSL/TLS. It requires everyone to go through a complex \"ACME\" dance just to
+    put up a public website. Worse, certificates expire every few months, so it's
+    not a one and done thing: even with automation, maintaining a certificate requires
+    care to ensure the ACME client always has access to DNS records or the web server.\n\n...
+    and the whole system doesn't even work because certificates are issued over plaintext
+    connections, and trusted certificate aurthorities use very secure keys like [\"4\"](https://en.wikipedia.org/wiki/EMudhra)\n\n_There
+    is prior art_ of protest SSL [implementations](https://tom7.org/httpv/httpv.pdf),
+    but I do actually want to encrypt web traffic. Passive eavesdropping is a real
+    risk... but preventing it doesn't require the whole certificate thing: therefore,
+    the best choice is a protest certificate.\n\nThe only part of the certificate
+    I directly control is the public key. Therefore, the simplest way to obtain a
+    bad certificate is use a vanity private key such as 313333333337 (one of the most
+    eleet primes). However, while the resulting public key would be weak, no one would
+    know unless they try to break it.\n\nA good protest should be obvious:\n\n    #s_client
+    -connect:< /dev/null 2>\\\n        |-n|-zE--color=////You+dont+actually+have+to+pick+random+privat\n
+    \   e+keys//No+one+checks+these+things//A+certificate+authority+got+\n    away+with+the+number+4+for+a+year/////\n\n_First,
+    let's look at mathematical framework_ of RSA. To generate a key, pick two large
+    prime numbers (p and q) and multiply them to yeild the modulus (n). Pick a small
+    number, e as public exponent.\n\nThe RSA public key is composed of the modulus
+    (n) and the public exponent:\n\n    cyphertext = plaintext^e mod n\n\nThe private
+    key contains the modulus and the private exponent (d) which is chosen to be the
+    multiplicate inverse of e modulo n. Exactly how d is found is not relevent, but
+    the process requires knowing p and q.\n\n    = cyphertext^d mod n\n    \n    =
+    plaintext^e^d mod n\n    = plaintext^(e*d) mod n\n    = plaintext^1 mod n\n    =
+    plaintext\n\n_Ok, back to vanity keys._The standard value for e is 65537 (0x10001),
+    because the small number of set bits makes encryption faster. In fact, the CA
+    I used will refuse to sign keys with a non-standard public exponent, so I can't
+    do anything funny there.\n\nThe modulus, n, is either 2,048 or 4,096 \"user controlled\"
+    bits, so it's the ideal place to hide a message. However, to use the certificate,
+    I'll need to find two large primes that multiply out to the vanity modulus.\n\nMy
+    method starts by picking two random primes and calculating the resulting n value.
+    Then, the bytes of n are modified to introduce message into the base64 encoding.
+    Of course, the modified n is not the product of p and q, but this is fixable by
+    setting q to n/p.\n\nThe resulting q value is very unlikely to be a prime (or
+    integer), so I round it and find the next prime after the ideal q: which usually
+    only requires changing the value of q by a few hundred. Since p and q are similar
+    in size, a small change q only affects the least-sigifiant half of the product:\n\n
+    \   58174124 * 918491824 = 5343245726236217658174124 * 9184918= 5343245836\n\nAs
+    long as the message is embedded into the upper half of n, it's likely to survive
+    undamaged. The original p and newly selected q can now be used to construct a
+    functional RSA private key in the usual manner.\n\nFrom here, it's really just
+    a matter of getting a certificate aurthority to sign the key:\n\n    req -new>certonly
+    --manual> configreq -new>certonly --manual\n\n... although since base64 operates
+    on groups of three byte, it is possible for the message to be misaligned and not
+    readable. However, since the layout of the certificate is static, it is possible
+    to adjust the message's placement until it works: this should take less than four
+    attempts. \n\nThe result is a functional, trusted certificate with a longish message
+    hidden in the public key. Renewal is done by resumbitting the CSR and repeating
+    the ACME chalange, which can be automated.\n\nBase64 is missing most punctuation,
+    but it provides the full ASCII alphabet, and the ~150 (RSA-2048) or ~320 (RSA-4096)
+    avalable charaters provides plenty of space for jokes. Another option would be
+    to target the base16 displayed in most browser's certificate viewer: this would
+    provide a lot more space (2 chars/byte instea of 0.75), but requires careful word
+    choice.\n\n_As for security_, this trick obviously reduces the entropy in the
+    private key. However, it should still be secure: nearly identical methods have
+    been considered as a form of compression. If the top-half of the modulus is fixed
+    to a well known value, it doesn't have to be sent or stored as part of the key.\n\nA
+    reduction of around 1/2 can be achieved through division, but the state of the
+    art can fix 2/3 of the key, reducing the size to 1/3 of standard RSA while retaining
+    a similar level of security... although I should note that such tricks have largly
+    been abandoned in favor of other crytosystems which can directly use small keys.\n\nThe
+    manipulation of q may produce primes that are very close together, which makes
+    it possible to factor n and recover the private key. A very small d value can
+    also be a problem. Both of these are unlikely, but my script doesn't check for
+    insecure values\n\nHowever, regardless of the key's security, it should be perfectly
+    fine for a public website: modern TLS provides forward secrecy, so eavesdropping
+    requires a man-in-the-middle attack even if the private key is compromised.\n\n#
+    _Related_:"
+  error:
+  fetched_at: '2026-11-09T22:01:43Z'
+archived_at: '2026-11-09T22:01:43Z'

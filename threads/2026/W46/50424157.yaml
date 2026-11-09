@@ -1,0 +1,696 @@
+---
+post:
+  id: '50424157'
+  title: What is malloc doing, anyway?
+  url: https://benmandrew.com/articles/what-is-malloc-doing-anyway
+  hn_url: https://news.ycombinator.com/item?id=50424157
+  score: 193
+  author: ''
+  posted_at: '2026-11-09T11:31:05Z'
+  fetched_at: '2026-11-09T22:01:12Z'
+  article_url: https://benmandrew.com/articles/what-is-malloc-doing-anyway
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T22:01:12Z'
+  raw_comment_count: 50
+comments:
+- id: '50425114'
+  parent_id: '50424157'
+  author: amelius
+  text: If the DRAM scarcity continues, not much.
+  score: 0
+  posted_at: '2026-11-09T13:10:58Z'
+- id: '50425141'
+  parent_id: '50424157'
+  author: assumed_throwaw
+  text: Tangential, but the complexity and over-head of the malloc abstraction is
+    precisely what made me very intrigued by &quot;stack-only&quot; languages, such
+    a recently published Goose. There is something very elegant and exciting about
+    the idea of (almost) completely getting rid of it. Just as modern programming
+    languages have developed good ergonomics that replaces a garbage collector, the
+    same could hopefully be done to replace heap-allocated memory.
+  score: 0
+  posted_at: '2026-11-09T13:13:07Z'
+- id: '50425326'
+  parent_id: '50425141'
+  author: nialv7
+  text: the stack is just a bump allocator. the unique thing about stack-only languages
+    is lifetime management, not really how they allocate.
+  score: 0
+  posted_at: '2026-11-09T13:29:16Z'
+- id: '50425664'
+  parent_id: '50425114'
+  author: xnickb
+  text: It&#x27;s a consumer market scarcity. Since you&#x27;re supposed to run everything
+    on rented hardware, own nothing and be happy, I&#x27;d expect the malloc to be
+    the right place to invest into once it is IPO.
+  score: 0
+  posted_at: '2026-11-09T13:56:24Z'
+- id: '50425712'
+  parent_id: '50425326'
+  author: saagarjha
+  text: A stack only language that called into malloc to service allocations would
+    not be very interesting.
+  score: 0
+  posted_at: '2026-11-09T13:59:29Z'
+- id: '50425742'
+  parent_id: '50424157'
+  author: wpmaven
+  text: 'I found this one very well explained time ago, for those looking for more
+    details: <a href="https:&#x2F;&#x2F;sploitfun.wordpress.com&#x2F;2015&#x2F;02&#x2F;10&#x2F;understanding-glibc-malloc&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;sploitfun.wordpress.com&#x2F;2015&#x2F;02&#x2F;10&#x2F;understanding-gli...</a>'
+  score: 0
+  posted_at: '2026-11-09T14:01:41Z'
+- id: '50425767'
+  parent_id: '50424157'
+  author: TZubiri
+  text: like many C functions you must remember that C is not low level, you won’t
+    learn how memory is allocated by inspecting malloc() anymore than you would learn
+    how characters are printed to the screen by reading printf() or how a file is
+    written by reading write().<p>you will only learn about the thin or heavy wrapper
+    that C is responsible for, the real magic is happening in the kernel and the device
+    firmware
+  score: 0
+  posted_at: '2026-11-09T14:03:07Z'
+- id: '50425899'
+  parent_id: '50425742'
+  author: benmandrew
+  text: That&#x27;s a great reference, thanks!
+  score: 0
+  posted_at: '2026-11-09T14:12:11Z'
+- id: '50426195'
+  parent_id: '50425141'
+  author: jacquesm
+  text: Most stack oriented languages <i>also</i> have a heap.
+  score: 0
+  posted_at: '2026-11-09T14:33:10Z'
+- id: '50426220'
+  parent_id: '50425141'
+  author: smashspectacle
+  text: This is actually what first drew me to zig. Most people talk about error handling,
+    but the explicit allocator handling and making choosing an allocator a deliberate
+    consideration has pushed me to better coding habits in general. I don&#x27;t think
+    it is possible or practical to completely abandon heap-allocated memory, but explicitly
+    choosing between allocation types and styles that most precisely fit a job has
+    great potential for meeting that spirit.
+  score: 0
+  posted_at: '2026-11-09T14:35:17Z'
+- id: '50426225'
+  parent_id: '50425767'
+  author: Someone
+  text: Malloc needs the kernel to obtain memory, but in any reasonable implementation
+    (you do not want to make a syscall for every malloc and free) is mostly user space,
+    and studying that will tell you a lot about how your malloc works.
+  score: 0
+  posted_at: '2026-11-09T14:35:33Z'
+- id: '50426311'
+  parent_id: '50425767'
+  author: foobarian
+  text: Disagree, I found malloc source useful, and writing a toy allocator especially
+    useful because you learn about the brk() syscall which is a great breadcrumb into
+    kernel land and a great bridge to connect the memory mapping lessons from computer
+    architecture with application code.
+  score: 0
+  posted_at: '2026-11-09T14:41:57Z'
+- id: '50426497'
+  parent_id: '50426311'
+  author: stevekemp
+  text: |-
+    Depending on how low-level you&#x27;re going, you don&#x27;t even need to call brk.<p>My toy stop&#x2F;copy GC and allocation routines just have this:<p><pre><code>    %define HEAP_SIZE (4 * 1024 * 1024 * 1024)
+
+        .section bss
+        ;;
+        ;; Two heaps so we can flip-flop between them
+        ;;
+        heap_a:
+            resb HEAP_SIZE
+        heap_a_end:
+        heap_b:
+            resb HEAP_SIZE
+        heap_b_end:
+    </code></pre>
+    Of course there are other syscalls involved in my compiler&#x2F;runtime, but for memory allocations the static area sufficed for me.
+  score: 0
+  posted_at: '2026-11-09T14:55:51Z'
+- id: '50426707'
+  parent_id: '50424157'
+  author: OhMeadhbh
+  text: "<p><pre><code>   One of  my pet  peeves is  when people,  trying to  make
+    a\n   point, use code  that doesn&#x27;t compile.  I  mean, it&#x27;s fine\n   when
+    you&#x27;re sketching  out code on a white  board.  But on\n   an  article you&#x27;ve
+    \ had  time to  prepare,  it&#x27;s a  little\n   annoying.\n\n   Take for instance,
+    this code fragment:\n\n   .. static void *ptrs[1000];\n   .. \n   .. int main(void)
+    {\n   ..     for (int i = 0; i &lt; 1000; i++)\n   ..         ptrs[i] = malloc(16);\n
+    \  ..     }\n   ..  }\n\n   I&#x27;m pretty sure what they &#x2F;&#x2F;meant&#x2F;&#x2F;
+    to write was:\n\n   .. #include &lt;stdlib.h&gt;\n   ..\n   .. static void *ptrs[1000];\n
+    \  .. \n   .. int main(void) {\n   ..     for (int i = 0; i &lt; 1000; i++)\n
+    \  ..         ptrs[i] = malloc(16);\n   ..     }\n   ..     return( 0 );\n   ..
+    \ }\n\n   I  understand why  the  author produced  the  code on  top\n   instead
+    of the code at the bottom.  The code on the bottom\n   includes  features extraneous
+    \ to  the conversation.   The\n   include  directive  and  return statement  only
+    \ serve  to\n   distract from the point the author is making.\n\n   If you read
+    far enough down,  you&#x27;ll see he has links to a\n   broken GitHub  repo presumably
+    \ with code  fragments.  (or\n   maybe  GitHub itself  is  broken today  or  it
+    decided  it\n   didn&#x27;t  like me  trying to  access the  repo from  an AT&amp;T\n
+    \  fiber line.)\n\n   I&#x27;m sure when GitHub decides to behave and serve bits
+    like\n   it&#x27;s supposed to, there will be compilable code so readers\n   can
+    understand  the author&#x27;s intent within  the context it\n   was intended to
+    be viewed.\n\n   Which is to say:\n\n   1. It&#x27;s probably  okay to have only
+    code  fragments in the\n      main part  of your  discussion.  Please provide
+    \ a note\n      that  there is  code which  shows your  snippet in  the\n      context
+    \ of a  compilable program.   And put  that note\n      somewhere near the code
+    fragment.\n\n      Or... consider putting  a note at the  beginning of the\n      article
+    saying  something like &quot;Compilable  versions of\n      code  fragments  in
+    this  article  are  available at  a\n      GitHub  repository  referenced  at
+    the  bottom  of  the\n      page.&quot;\n\n   2. Do  not depend on  GitHub to
+    hold your  code fragments.\n      You do not  know when it will be down  or which
+    readers\n      it will randomly decide to block.\n\n   3.  I really  do  think
+    \ you should  include  more of  the\n      &quot;layout&quot;  code.   When   reading
+    \ &quot;The  Address  Space&quot;\n      section,   it  was   unclear  where   the
+    \ initialized,\n      uninitialized and local came from.  I initially thought\n
+    \     the  author was  using a  version of  C I  had not  yet\n      encountered
+    that defined these symbols.\n\n   4.  Since  the code  uses  ``sbrk()``,  the
+    author  should\n      probably have  cautioned readers  the code  isn&#x27;t POSIX\n
+    \     compliant, but should compile  and run on Linux systems\n      using gcc.
+    \  There&#x27;s a  comment about  demonstrating it\n      with  glibc, but  I
+    think  that&#x27;s not  a strong  enough\n      warning since you can  compile
+    programs with clang that\n      are intended to link against glibc.\n      \n
+    \     I doubt there  are many QNX users out  there who expect\n      random code
+    from  the internet to run  on their systems\n      without alteration, but it
+    \ seems good form to describe\n      the environment you are targeting.\n\n      Now
+    I&#x27;m wondering if this is expected to work on Darwin\n      as well as Linux.\n\n
+    \  5.  It  might  be  a  decent  idea  to  order  the  SHOW()\n      statements
+    in  the code in &quot;The  Address Space&quot; section\n      to follow  the order
+    \ of the diagram  at the  bottom of\n      that section:\n\n      .. SHOW( &quot;local
+    (stack)&quot;, &amp;local );\n      .. SHOW( &quot;printf (libc)&quot;, printf
+    );\n      .. SHOW( &quot;program break&quot;, sbrk(0) );\n      .. SHOW( &quot;malloc(16)
+    (heap)&quot;, malloc(16) );\n      .. SHOW( &quot;uninitialised (bss)&quot;, &amp;uninitialised);\n
+    \     .. SHOW( &quot;initialised (data)&quot;, &amp;initialised );\n      .. SHOW(
+    &quot;main(text)&quot;, main );\n\n   6.  In  the  &quot;Chunks  and  Headers&quot;
+    \ section,  it  may  be\n      interesting to mention what the flags in the allocation\n
+    \     headers actually mean.\n\n   7. glibc does late fill,  right?  I can&#x27;t
+    remember.  If it\n      does,  it might  be  useful to  mention  in the  Demand\n
+    \     Paging section since it affects the program logic.\n   \n   Now that I&#x27;ve
+    yelled at the  cloud a bit, allow me to say,\n   I enjoyed the article.  Things
+    I liked:\n\n   1. The author  used the exact strace command  they used to\n      produce
+    \ the  output  discussed  in  the  text  of  the\n      article.\n\n   2. The
+    graphics are quite nice.\n\n   3. Despite grousing about  fragments being fragments,
+    they\n      do a good job of illustrating points made in the text.\n\n   EDIT:
+    After complaining about  GitHub not being available,\n   it&#x27;s finally come
+    back.  The web interface is still borked\n   for me, but  I can clone the repo
+    mentioned  at the bottom\n   of the page and view the local copy of the source.</code></pre>"
+  score: 0
+  posted_at: '2026-11-09T15:09:44Z'
+- id: '50426740'
+  parent_id: '50425141'
+  author: connicpu
+  text: Avoiding the heap entirely isn&#x27;t required and will prevent you from working
+    with substantial amounts of data. The real key is to allocate all the memory you
+    need up front and use that large block for a long duration.
+  score: 0
+  posted_at: '2026-11-09T15:11:41Z'
+- id: '50426830'
+  parent_id: '50424157'
+  author: '0xbadcafebee'
+  text: This shows you how you could &quot;secure&quot; memory code in C by using
+    more robust implementations of these functions. But it doesn&#x27;t show you that
+    you don&#x27;t even need them anyway. I think in my entire career I&#x27;ve only
+    used dynamic memory in C twice. The rest of the time I use functions with static
+    allocations, buffers, unrolled loops, etc. Maybe it&#x27;s paranoia, or habits
+    from embedded programming, or being a control freak... But my C programs don&#x27;t
+    get memory leaks or crash from memory issues.
+  score: 0
+  posted_at: '2026-11-09T15:18:14Z'
+- id: '50426901'
+  parent_id: '50425141'
+  author: eschneider
+  text: Embedded programming has taught me that almost anything can be a stack-only
+    language if you want it to be, even C++. :)
+  score: 0
+  posted_at: '2026-11-09T15:23:59Z'
+- id: '50427045'
+  parent_id: '50424157'
+  author: K0IN
+  text: When getting into wasm when it was new and had clang support, I wrote my own
+    libc and malloc, which was so a great learning all these low level functions and
+    tricks (free lists for example), I also like that I can read wasm quite well,
+    and tooling is good to just return a .wat and read it.
+  score: 0
+  posted_at: '2026-11-09T15:35:26Z'
+- id: '50427262'
+  parent_id: '50426220'
+  author: EPWN3D
+  text: I don&#x27;t think we can get rid of heap memory, but I do think we can get
+    rid of a shared heap.
+  score: 0
+  posted_at: '2026-11-09T15:54:03Z'
+- id: '50427357'
+  parent_id: '50426311'
+  author: Joker_vD
+  text: |-
+    &gt; and writing a toy allocator especially useful because you learn about the brk() syscall<p>Nobody in their right mind (except musl) use brk(2) nowadays; mmap(2) is pretty much universally accessible, and brk() has been non-portable for more than 20 years already (POSIX ditched it in 2001) anyhow. For goodness sake, stop keeping this stupid API from VM-lacking PDP-7 alive, and let it go away!<p>Edit: also, I have no idea how musl even uses it:<p><pre><code>    uintptr_t new = ctx.brk + pagesize;
+        int need_guard = 0;
+        if (!ctx.brk) {
+            need_guard = 1;
+            ctx.brk = brk(0);
+            &#x2F;&#x2F; some ancient kernels returned _ebss
+            &#x2F;&#x2F; instead of next page as initial brk.
+            ctx.brk += -ctx.brk &amp; (pagesize-1);
+            new = ctx.brk + 2*pagesize;
+        }
+        if (brk(new) != new) {
+            ctx.brk = -1;
+        } else {
+            if (need_guard) mmap((void *)ctx.brk, pagesize,
+                    PROT_NONE, MAP_ANON|MAP_PRIVATE|MAP_FIXED, -1, 0);
+            ctx.brk = new;
+            ctx.avail_meta_areas = (void *)(new - pagesize);
+            ctx.avail_meta_area_count = pagesize&gt;&gt;12;
+            need_unprotect = 0;
+        }
+    </code></pre>
+    That&#x27;s... not what brk() returns; it returns 0 on success and -1 on failure. Huh?
+  score: 0
+  posted_at: '2026-11-09T16:00:31Z'
+- id: '50427507'
+  parent_id: '50425767'
+  author: netbsdusers
+  text: Notwithstanding that most kernels today are written almost entirely in C anyway,
+    you&#x27;ll see learn a great deal about memory allocation by inspecting malloc().<p>The
+    usual division of labour in most operating systems is the kernel manages the virtual
+    memory and physical pages and provides a mechanism for coarse page-aligned allocation
+    of virtual address for userland. These coarse mappings userland (malloc or something
+    else) is responsible for carving up, and in that is much design space. Just look
+    at mimalloc for example.<p>The kernel&#x27;s own page allocation is often very
+    simple (many get by with a simple freelist, some use buddies.) The allocators
+    for the kernel&#x27;s own datastructures are usually relatively simple at least
+    conceptually. Bonwick explains the slab allocator - the almost universally acknowledged
+    queen of all kernel memory allocators and mother of those of Linux, BSD, and beyond
+    - in a 12-page paper.<p>As for the firmware there&#x27;s basically nothing of
+    an ongoing role for it after the kernel is in charge. Its role is limited for
+    the most part to providing the kernel with a map of the physical addres space.<p>By
+    reading malloc() you will not learn everything about allocation - that is a problem
+    that spans multiple layers - but you will certainly learn a lot about it. To call
+    it a mere wrapper is not reasonable.
+  score: 0
+  posted_at: '2026-11-09T16:11:28Z'
+- id: '50427548'
+  parent_id: '50425664'
+  author: colejohnson66
+  text: MaaS (malloc as a service)? Everytime your serverless function needs to allocate,
+    you pay some fraction of a penny?
+  score: 0
+  posted_at: '2026-11-09T16:13:40Z'
+- id: '50427553'
+  parent_id: '50426311'
+  author: netbsdusers
+  text: These days brk and sbrk have fallen from grace (and I think even some Unix-likes
+    no longer provide them as general mechanisms, at least I don&#x27;t think macOS
+    does) - mmap is usually favoured.
+  score: 0
+  posted_at: '2026-11-09T16:13:52Z'
+- id: '50427580'
+  parent_id: '50426830'
+  author: hansvm
+  text: You can secure part of C with robust memory-handling functions. So long as
+    people are using --&gt; and ++ to parallel iterate through buffers where they
+    have to pass the right length around separate from its pointer though, you&#x27;re
+    not going to fix it all.
+  score: 0
+  posted_at: '2026-11-09T16:15:39Z'
+- id: '50427607'
+  parent_id: '50425767'
+  author: '100111011111'
+  text: Well, yes, but its low level , no matter what, I mean whats left thats lower?
+  score: 0
+  posted_at: '2026-11-09T16:16:39Z'
+- id: '50427811'
+  parent_id: '50426740'
+  author: packetlost
+  text: "&gt; Avoiding the heap ... will prevent you from working with substantial
+    amounts of data<p>This isn&#x27;t really true of Goose, it&#x27;s avoiding &#x27;the
+    heap&#x27; in the C sense, not in the OS allocated pages of memory sense. One
+    is a programming abstraction provided by the other, but GP is <i>only</i> talking
+    about the programming abstraction. I have never encountered a program that couldn&#x27;t
+    have memory be explicitly tied to lexical scope, but it can result in less efficient
+    use of it in some cases.<p>Goose is almost, but not exactly the &quot;allocate
+    all your stuff at the beginning&quot; the programming language. It&#x27;s honestly
+    the most exciting language I&#x27;ve seen in quite some time."
+  score: 0
+  posted_at: '2026-11-09T16:29:30Z'
+- id: '50427865'
+  parent_id: '50427357'
+  author: roelschroeven
+  text: When you call brk() from a user program you use the lib wrapper, and that
+    does indeed return 0 on success and -1 on failure. But the actual Linux system
+    call, which I presume is what musl calls, returns the current break on failure
+    instead of -1.<p>See the NOTES section in man brk(2):<p>&gt; C library&#x2F;kernel
+    differences<p>&gt; The return value described above for brk() is the behavior
+    provided by the glibc wrapper function for the Linux brk() system call. (On  most
+    other  implementations,  the  return  value from brk() is the same; this return
+    value was also specified in SUSv2.) However, the actual Linux system call returns
+    the new program break on success.  On failure, the system call returns the current
+    break. The glibc wrapper function does some work (i.e., checks whether the new
+    break is less than addr) to provide the 0 and -1 return values described above.
+  score: 0
+  posted_at: '2026-11-09T16:32:36Z'
+- id: '50428413'
+  parent_id: '50427811'
+  author: dataflow
+  text: '&gt; I have never encountered a program that couldn&#x27;t have memory be
+    explicitly tied to lexical scope, but it can result in less efficient use of it
+    in some cases.<p>&gt; Goose is honestly the most exciting language I&#x27;ve seen
+    in quite some time.<p>I took a look at its home page [1] and I immediately see
+    red flags:<p>- Over sixteen benchmarks Goose runs at 3.3x the speed of idiomatic
+    C++, 1.16x hand-optimized C++ and 1.12x the best safe Rust, and uses 1.9x, 1.3x
+    and 1.2x less memory (results). These gains come from Goose&#x27;s data layouts
+    and memory model.<p>- push returns a reference to the new element, so a program
+    can link elements while building the array. A vector&lt;T&gt; or Vec&lt;T&gt;
+    may reallocate and cannot provide this guarantee. Stable references account for
+    several benchmark gains.<p>You&#x27;re suggesting a performance loss (as expected),
+    but they&#x27;re claiming a (rather incredible) performance gain?<p>And they&#x27;re
+    claiming their vector stable and doesn&#x27;t reallocate, yet without a performance
+    loss, which makes no sense... it&#x27;s not a vector anymore. And if you want
+    a non-vector then you can do that in C++ too.<p>The whole LLM vibe doesn&#x27;t
+    help inspire confidence either, but even ignoring that, the technical claims themselves
+    are incredible and bizarre, and I&#x27;m only a few paragraphs in.<p>[1] <a href="https:&#x2F;&#x2F;aardappel.github.io&#x2F;goose&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;aardappel.github.io&#x2F;goose&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-09T17:12:11Z'
+- id: '50428547'
+  parent_id: '50424157'
+  author: bajard
+  text: Malloc() is sloooow. Even more if you also use free(). Consider allocating
+    a single array and scratching there if possible.
+  score: 0
+  posted_at: '2026-11-09T17:22:46Z'
+- id: '50428699'
+  parent_id: '50424157'
+  author: projectileboy
+  text: 'Good learning resource for this (and related) topics: <a href="https:&#x2F;&#x2F;cs61.seas.harvard.edu&#x2F;site&#x2F;2026&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;cs61.seas.harvard.edu&#x2F;site&#x2F;2026&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-09T17:34:12Z'
+- id: '50428720'
+  parent_id: '50427548'
+  author: ozgrakkurt
+  text: Just give us water as a service at this point
+  score: 0
+  posted_at: '2026-11-09T17:35:38Z'
+- id: '50429008'
+  parent_id: '50428413'
+  author: packetlost
+  text: Goose is a weird language. It uses a pile of pre-allocated datastacks, enforces
+    lexical lifetimes for all data, and has first-class syntactic support for capped,
+    growable, and shrinkable arrays. It also spits out a pile of C that gets all the
+    optimization benefits of &lt;insert C compiler of choices&gt;.<p>Goose in particular
+    excites me because I have done similar design work over the years.
+  score: 0
+  posted_at: '2026-11-09T17:57:47Z'
+- id: '50429642'
+  parent_id: '50425141'
+  author: i2talics
+  text: If your takeaway from this was &quot;wow malloc has so much overhead&quot;
+    then you may want to notice the part where they benchmark against glibc malloc
+    and glibc is somewhere between 20-150x faster than their implementation. And that&#x27;s
+    fine, this exposition is basically what you would learn in an undergraduate systems
+    programming course, but production allocators are able to significantly cut down
+    the amount of work needed to grab an allocation, especially for small ones that
+    occur frequently.
+  score: 0
+  posted_at: '2026-11-09T18:39:39Z'
+- id: '50429746'
+  parent_id: '50428413'
+  author: senderista
+  text: I just want to point out that the author of Goose has plenty of technical
+    cred, having authored flatbuffers and lots of other cool stuff.
+  score: 0
+  posted_at: '2026-11-09T18:46:26Z'
+- id: '50429809'
+  parent_id: '50424157'
+  author: senderista
+  text: If you want to study how modern allocators work I&#x27;d recommend something
+    like mimalloc, which has a reasonably approachable codebase. No brk&#x2F;sbrk
+    in sight, btw (or boundary tags, or splitting&#x2F;merging...).
+  score: 0
+  posted_at: '2026-11-09T18:50:52Z'
+- id: '50430101'
+  parent_id: '50428720'
+  author: toast0
+  text: Most people have that at home? Personally, I don&#x27;t but electricity as
+    a service + a well pump is WaaS with extra steps.
+  score: 0
+  posted_at: '2026-11-09T19:07:12Z'
+- id: '50430413'
+  parent_id: '50424157'
+  author: incognito124
+  text: mental reminder to finish my history of malloc writeup. It&#x27;s almost 20
+    llm-less pages with context and examples. goes through general purpose malloc
+    like dlmalloc, mimalloc, tcmalloc, jemalloc and others, while also mentioning
+    some purpose-specific ones like scudo.
+  score: 0
+  posted_at: '2026-11-09T19:24:50Z'
+- id: '50430641'
+  parent_id: '50425141'
+  author: SkiFire13
+  text: "&gt; the complexity and over-head of the malloc abstraction is precisely
+    what made me very intrigued by &quot;stack-only&quot; languages, such a recently
+    published Goose.<p>Goose&#x27;s stack<i>s</i> have quite some complexity themselves.
+    They preallocate a ton of memory. The compiler has to magically match your code
+    to each stack. You are not allowed to have nested growing types (e.g. creating
+    an adjacency list is not so easy). And after all for some usecases you still end
+    up using an allocator (Goose&#x27;s linked list example ends up building a pool
+    allocator for the linked list nodes!)"
+  score: 0
+  posted_at: '2026-11-09T19:36:11Z'
+- id: '50430750'
+  parent_id: '50424157'
+  author: giannischatz
+  text: |-
+    A thing worth adding for anyone reading: in long-running PHP processes
+    (workers, queue runners, Laravel Octane), the overhead of malloc&#x2F;free
+    patterns compounds in ways the request&#x2F;response model hides.<p>A page handler that leaks 2KB per request is invisible under php-fpm
+    (the process dies on the next request anyway) but becomes a slow memory
+    creep in a queue worker that runs for hours. The fix usually isn&#x27;t
+    &quot;call unset more&quot; — it&#x27;s recognizing which objects Zend&#x27;s refcount
+    can&#x27;t collect without a full GC cycle (circular references, mostly),
+    and forcing `gc_collect_cycles()` at known-safe points.<p>Took me a while to realize that in production.
+  score: 0
+  posted_at: '2026-11-09T19:41:22Z'
+- id: '50431186'
+  parent_id: '50424157'
+  author: virtyaluk
+  text: I highly recommend reading Professional Linux Kernel Architecture by Wolfgang
+    Mauerer, which describes the Linux memory management system in great detail.
+  score: 0
+  posted_at: '2026-11-09T20:07:51Z'
+- id: '50431521'
+  parent_id: '50430101'
+  author: ozgrakkurt
+  text: No no, I want the version where you have to subscribe per person and it is
+    extremely difficult to unsubscribe a person from it.<p>Also where it gets worse
+    and more expensive up to the point where people really can&#x27;t pay for it anymore.<p>If
+    you think about it, it should be possible to sell drinking water for 10$ per glass
+    since people will buy it at that price. Just need to consolidate all of the supply
+    by selling it on subsidized prices until all the competitors are bankrupt.
+  score: 0
+  posted_at: '2026-11-09T20:27:03Z'
+- id: '50431665'
+  parent_id: '50429746'
+  author: dataflow
+  text: That&#x27;s great, but it doesn&#x27;t explain anything I&#x27;m seeing. I&#x27;m
+    just commenting on the (presentation of) the project. It&#x27;s entirely possible
+    they have something awesome that just isn&#x27;t presented well, or that I&#x27;m
+    just too dense to grasp the awesomeness of what&#x27;s before me. Whatever it
+    is, I&#x27;m just saying I can&#x27;t make sense of what I&#x27;m being sold.
+  score: 0
+  posted_at: '2026-11-09T20:34:53Z'
+- id: '50431674'
+  parent_id: '50426220'
+  author: dreamcompiler
+  text: You can definitely avoid heap-allocated memory; early versions of Fortran
+    could not do dynamic memory allocation at all. You basically had to preallocate
+    giant arrays and build your own memory manager. It was sheer hell but it worked.
+  score: 0
+  posted_at: '2026-11-09T20:35:17Z'
+- id: '50431868'
+  parent_id: '50426220'
+  author: tremon
+  text: To me the value of zig&#x27;s approach is in being able to control the allocations
+    that happen in (library) code. When you call a C function, all kinds of heap allocations
+    may happen between the callee and malloc, even if the return value of the call
+    is in caller-allocated memory. With zig, you can pass a local (arena) allocator
+    instead and avoid uncontrolled global allocations.
+  score: 0
+  posted_at: '2026-11-09T20:47:27Z'
+- id: '50432254'
+  parent_id: '50424157'
+  author: loeg
+  text: This is mostly describing a kind of obsolete allocator that uses the brk to
+    adjust a single contiguous heap range.  This is basically irrelevant with virtual
+    memory and mmap.  The good malloc impls (jemalloc, mimalloc) don&#x27;t do this.
+  score: 0
+  posted_at: '2026-11-09T21:14:22Z'
+- id: '50432278'
+  parent_id: '50425664'
+  author: loeg
+  text: Hyperscalars are also experiencing DRAM scarcity, FWIW.
+  score: 0
+  posted_at: '2026-11-09T21:16:00Z'
+- id: '50432371'
+  parent_id: '50424157'
+  author: gebt
+  text: |-
+    This phrack article on malloc is highly recommended:<p>Vudo malloc tricks
+    by Michel &quot;MaXX&quot; Kaempf (2001)<p><a href="https:&#x2F;&#x2F;phrack.org&#x2F;issues&#x2F;57&#x2F;vudo-malloc-tricks" rel="nofollow">https:&#x2F;&#x2F;phrack.org&#x2F;issues&#x2F;57&#x2F;vudo-malloc-tricks</a>
+  score: 0
+  posted_at: '2026-11-09T21:23:09Z'
+- id: '50432397'
+  parent_id: '50431186'
+  author: okanat
+  text: Kernel usually uses SLABs which work differently than general purpose userspace
+    allocators.
+  score: 0
+  posted_at: '2026-11-09T21:24:55Z'
+- id: '50432644'
+  parent_id: '50428413'
+  author: Someone
+  text: "&gt; You&#x27;re suggesting a performance loss (as expected), but they&#x27;re
+    claiming a (rather incredible) performance gain?<p>I think part of the reason
+    they’re getting higher performance is that they accept higher memory usage. Memory
+    can be ‘freed’ later than in traditional languages, and the combined size of all
+    stacks will be larger (maybe even much larger) than maximum memory usage.<p>The
+    language likely also has limitations in that some constructs are hard or impossible
+    to express (similar to how Rust has memory safety safer, but pays for it by having
+    problems implemented doubly-linked lists)"
+  score: 0
+  posted_at: '2026-11-09T21:41:23Z'
+- id: '50432645'
+  parent_id: '50432254'
+  author: schmichael
+  text: mmap is covered later on, and as an introduction to heap memory management
+    this seems like the right place to start. jemalloc and mimalloc build upon the
+    fundamentals explained here.<p>What I&#x27;d love is for an article that goes
+    a step <i>back</i> in allocator theory instead of &quot;forward&quot; to jemalloc&#x2F;mimalloc.
+    Optimal resource allocation has a rich history in pre-computer fields whose general
+    theories are applicable today. Replace &quot;linear memory&quot; with &quot;paper
+    roll&quot; and &quot;types&quot; with &quot;items&quot;, and instead of malloc
+    you have the cutting stock problem! <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Cutting_stock_problem"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Cutting_stock_problem</a><p>The
+    reason why allocator fundamentals are important is because there is no universally
+    optimal solution. jemalloc &quot;emphasizes fragmentation avoidance and scalable
+    concurrency support&quot; while mimalloc focuses on a bounded worst-case allocation
+    latency. Meanwhile if you&#x27;re writing extremely memory constrained code for
+    certain embedded systems, you may still be best off using a simple bump allocator
+    with no free! <a href="https:&#x2F;&#x2F;devblogs.microsoft.com&#x2F;oldnewthing&#x2F;20180228-00&#x2F;?p=98125&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;devblogs.microsoft.com&#x2F;oldnewthing&#x2F;20180228-00&#x2F;?p=98...</a>
+    The optimal resource allocation strategy is always use case dependent.
+  score: 0
+  posted_at: '2026-11-09T21:41:27Z'
+article:
+  url: https://benmandrew.com/articles/what-is-malloc-doing-anyway
+  title: What is malloc doing, anyway? | Ben M. Andrew
+  fetch_status: success
+  content: "`malloc` has a very nice and simple interface: you ask for a certain amount
+    of memory, and you’re given a `void` pointer to your block of contiguous bytes
+    that’s been magicked into existence. Once you’re done with it, you call `free`
+    with the same pointer and the memory disappears into the ether.\n\nBut what’s
+    actually happening here? Obviously, as we’re running as a userspace program, `malloc`
+    must be asking the kernel for the memory through _syscalls_. However, we may be
+    allocating many small blocks, and syscalls are expensive (575 ns for an empty
+    one, as measured below), so some bookkeeping is done in the background. We’ll
+    demonstrate this on GNU `libc` (`glibc`) with the program snippet below, which
+    calls `malloc(16)` a thousand times.\n\n    static void *ptrs[1000];\n    \n    int
+    main(void) {\n        for (int i = 0; i < 1000; i++)\n            ptrs[i] = malloc(16);\n
+    \   }\n\nUsing `strace`, we can see that the whole loop makes only two `brk` syscalls:
+    the first asks where the _program break_ is (the address where the process’s heap
+    ends), and the second grows the heap by 132 KiB. These are both done in the first
+    `malloc` call — the other 999 just take from that already allocated memory.\n\n
+    \   $ strace -e trace=brk,mmap,munmap,write \\\n        ./malloc1000 > /dev/null\n
+    \   ...\n    brk(NULL) = 0x59faca231000\n    brk(0x59faca252000) = 0x59faca252000\n
+    \   +++ exited with 0 +++\n\nYou may see both `brk` and `sbrk` mentioned in discussions.
+    `brk` is a syscall that sets the program break to the address it is provided,
+    and `sbrk` is a `libc` convenience wrapper that takes a _delta_, increasing the
+    program break by that amount.\n\n## The Address Space [#](#the-address-space)\n\nA
+    running process gets its own _address space_, split into a number of regions.
+    These include `text` for executable code, `data` for initialised global variables,
+    and `bss` for uninitialised global variables, among others. The following program
+    prints one address from each region of the process.\n\n    #define SHOW(label,
+    p) \\\n        printf(\"%-22s %p\\n\", label, (void *)(p))\n    \n    SHOW(\"main
+    (text)\", main);\n    SHOW(\"initialised (data)\", &initialised);\n    SHOW(\"uninitialised
+    (bss)\", &uninitialised);\n    SHOW(\"malloc(16) (heap)\", malloc(16));\n    SHOW(\"program
+    break\", sbrk(0));\n    SHOW(\"printf (libc)\", printf);\n    SHOW(\"local (stack)\",
+    &local);\n\nThe addresses rise from the binary’s code up to its stack.\n\n    $
+    ./layout\n    main (text) 0x59c0791d7149\n    initialised (data) 0x59c0791da020\n
+    \   uninitialised (bss) 0x59c0791da028\n    malloc(16) (heap) 0x59c0903182b0\n
+    \   program break 0x59c090338000\n    printf (libc) 0x711dcf7c15b0\n    local
+    (stack) 0x7ffff86c45ec\n\nSome of these regions can change as the program runs.
+    For example, `malloc(16)` grows the heap and moves the break up. Note that in
+    this run, the break and `printf` in `libc` are 23.4 TiB apart, about 1,530 times
+    the machine’s 15.6 GiB of RAM. Nearly all of that range is unmapped, so it costs
+    no physical memory.\n\n## A Toy Allocator with `sbrk` [#](#a-toy-allocator-with-sbrk)\n\nBecause
+    we can move the program break directly, we can write a little allocator of our
+    own. This is called a _bump_ allocator, because each call simply bumps up the
+    amount of memory that we are allowed to use.\n\n    void *my_malloc(size_t size)
+    {\n        void *p = sbrk(align_up(size));\n        return p == (void *)-1 ? NULL
+    : p;\n    }\n    \n    void my_free(void *ptr) {\n        (void)ptr;\n    }\n\nThis
+    allocator is not very good! It moves the break on every single request, and each
+    move is a syscall. We can time a syscall against `malloc` to see why `malloc`
+    requests large blocks from the kernel and cuts them up itself. Each of the following
+    three functions is timed over a million calls.\n\n    static void *volatile sink;\n
+    \   \n    static void call_getppid(void) {\n        syscall(SYS_getppid);\n    }\n
+    \   \n    static void call_sbrk(void) {\n        sink = sbrk(16);\n    }\n    \n
+    \   static void call_malloc(void) {\n        sink = malloc(16);\n    }\n\n`sbrk(16)`
+    costs only 35 ns more than the empty syscall, whereas `malloc(16)` runs 22.7 times
+    faster than `sbrk(16)`.\n\n    $ ./syscall-cost\n    syscall(SYS_getppid) 575.2
+    ns per call\n    sbrk(16) 610.1 ns per call\n    malloc(16) 26.9 ns per call\n
+    \   sbrk(16) / malloc(16) 22.7x\n\nThe bump allocator also has no way to reuse
+    freed memory. Each request lands straight after the one before, so in the following
+    example, `d` goes after `c` even though `b` has been freed.\n\n    $ ./my-bump-1\n
+    \   a = my_malloc(16) start+0\n    b = my_malloc(1) start+16\n    c = my_malloc(100)
+    start+32\n    my_free(b)\n    d = my_malloc(1) start+144\n    break start+160\n\nThe
+    rest of the post improves the allocator one stage at a time.\n\n## Chunks and
+    Headers [#](#chunks-and-headers)\n\n`malloc` actually allocates more memory than
+    you request. This is because each allocation, or _chunk_, has a size header just
+    before the returned pointer; this is how `free` works without passing an explicit
+    size. Chunk sizes are always multiples of 16, so the low bits of the size are
+    always zero, and `glibc` keeps three flags in them.\n\n    size_t requests[] =
+    {1, 24, 25, 1000};\n    \n    size_t count = sizeof requests / sizeof requests[0];\n
+    \   for (size_t i = 0; i < count; i++) {\n        char *p = malloc(requests[i]);\n
+    \       size_t chunk = ((size_t *)p)[-1] & ~(size_t)7;\n        printf(\"%8zu
+    %8zu\\n\", requests[i], chunk);\n    }\n\nEach chunk is the request plus 8 bytes
+    for the header, rounded up to a multiple of 16, with a minimum of 32. The rounding
+    keeps every pointer that `malloc` returns 16-byte aligned, which is the alignment
+    x86-64 gives `max_align_t`, so the memory suits any C type. The 32-byte minimum
+    leaves room for the list pointers that a chunk stores once it is freed.\n\n    $
+    ./chunk-header\n     request chunk\n           1 32\n          24 32\n          25
+    48\n        1000 1008\n\nWhen we free a chunk, it is put into what’s called a
+    _free list_ to allow reuse. When more data is requested, `malloc` looks through
+    this free list and splits large chunks to fit small requests, and `free` merges
+    free neighbours back together. Each chunk in the free list needs two pieces of
+    information: its size (which we already have), and a pointer to the next chunk
+    in the free list. `glibc` stores the pointer after the size, reusing the memory
+    that the user stored their data in before it was freed!\n\nThe toy allocator stores
+    the same two fields in each chunk.\n\n    typedef struct chunk {\n        size_t
+    size;\n        struct chunk *next;\n    } chunk_t;\n\n## Splitting and Coalescing
+    [#](#splitting-and-coalescing)\n\nWe can improve our `my_malloc` by rounding the
+    request plus its header up to a multiple of 16 bytes, and taking the first chunk
+    in the free list that is big enough. To keep things simple, the toy’s header is
+    the whole `chunk_t`, so a chunk keeps room for `next` even while it is in use.
+    That makes the header 16 bytes where `glibc`’s is 8, and `my_malloc(100)` takes
+    a 128-byte chunk where `malloc(100)` takes 112.\n\n    void *my_malloc(size_t
+    size) {\n        size_t need = align_up(size + HEADER_SIZE, ALIGN);\n        for
+    (chunk_t **link = &free_list; *link != NULL;\n             link = &(*link)->next)\n
+    \           if ((*link)->size >= need)\n                return take(link, need);\n
+    \       if (grow_heap(need) != 0)\n            return NULL;\n        return my_malloc(size);\n
+    \   }\n\nWe define `take` to split that chunk, leaving whatever the request does
+    not need in the free list.\n\n    static void *take(chunk_t **link, size_t need)
+    {\n        chunk_t *c = *link;\n        if (c->size > need) {\n            chunk_t
+    *rest = (chunk_t *)((char *)c + need);\n            rest->size = c->size - need;\n
+    \           rest->next = c->next;\n            c->size = need;\n            *link
+    = rest;\n        } else {\n            *link = c->next;\n        }\n        return
+    (char *)c + HEADER_SIZE;\n    }\n\nWhen no free chunk fits, `grow_heap` moves
+    the program break up in 64 KiB steps using `sbrk` and puts the new space on the
+    free list as one chunk.\n\n"
+  error:
+  fetched_at: '2026-11-09T22:01:12Z'
+archived_at: '2026-11-09T22:01:41Z'

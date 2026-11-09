@@ -5,14 +5,14 @@ post:
   title: systemd loves Rust
   url: https://amutable.com/blog/systemd-loves-rust
   hn_url: https://lobste.rs/s/62loik
-  score: 45
+  score: 52
   author: lorenzleutgeb
   posted_at: '2026-11-08T12:55:05Z'
-  fetched_at: '2026-11-09T11:01:33Z'
+  fetched_at: '2026-11-09T22:01:41Z'
   article_url: https://amutable.com/blog/systemd-loves-rust
   article_fetch_status: success
-  article_fetched_at: '2026-11-09T11:01:37Z'
-  raw_comment_count: 19
+  article_fetched_at: '2026-11-09T22:01:50Z'
+  raw_comment_count: 24
   tags:
   - rust
   - systemd
@@ -23,7 +23,7 @@ comments:
   text: Well, by "loves Rust", they mean "no Rust standard library, no external dependencies,
     and no Rust anywhere but leaf binaries." Which, if that brings them joy, more
     power to them.
-  score: 24
+  score: 30
   posted_at: '2026-11-08T15:37:10Z'
 - id: lo-bwv7gu
   parent_id: '0'
@@ -47,7 +47,7 @@ comments:
     crates.io and all that, but I also love that those are not mandatory. You can
     fit Rust into all sorts of more constrained environments and get all the benefits
     of the language (albeit not of the ecosystem).
-  score: 42
+  score: 50
   posted_at: '2026-11-08T16:11:25Z'
 - id: lo-mkoxyw
   parent_id: '0'
@@ -58,13 +58,13 @@ comments:
     Also, this means that they're committing to rebuilding all their own collection types on top of custom fallible allocation routines and unsafe. Which means that they may not have as much security auditing as the Rust std library. std isn't perfect, but it's frequently used as a testbed for people's theorem provers. Which has flushed some bugs in the past.
     To be clear, I'm not criticizing them. I'm just pointing out that they're choosing to throw away pretty much everything but the borrow checker and iterators, and build from scratch, which likely requires lots of unsafe. So they won't see the same cost/benefit tradeoffs as "normal" Rust projects. Which may make sense.
     (EDIT: Looking at some of their code, they seem to have already rebuilt an entire standard library using their own abstractions. But they've made it far enough to start seeing many of the benefits of Rust at higher levels, by that point. But that was a lot of code to rewrite.)
-  score: 10
+  score: 13
   posted_at: '2026-11-08T16:11:40Z'
 - id: lo-uexwo8
   parent_id: '0'
   author: greg_loscombe
   text: I dont even want that much tbh...
-  score: 1
+  score: 0
   posted_at: '2026-11-08T17:41:09Z'
 - id: lo-ykb4bd
   parent_id: '0'
@@ -73,7 +73,7 @@ comments:
     They love "Rust, the language" like the Linux kernel Rust developers or the various embedded developers singing Rust's praises do.
     I've written Rust "shell scripts" where they don't really depend on the ecosystem and are purely there so that I can have APIs that return Option<T> or Result<T, E> instead of things like Python's os.getcwd documentation just assuming Everyone Knows™ that getcwd is unavoidably fallible at the kernel level, or bash being annoying with its opt-out whitespace splitting and retrofitted array support.
     That's loosely analogous to what they're doing with their internal alternative to calling libc functions. Using "Rust, the means of having a nicer type system".
-  score: 25
+  score: 29
   posted_at: '2026-11-08T17:48:29Z'
 - id: lo-gewzz0
   parent_id: '0'
@@ -87,7 +87,7 @@ comments:
   author: lorenzleutgeb
   text: There is a systemd_shared::alloc::Vec at src/rust/systemd-shared/alloc.rs:362-370,
     see also commit 626261b.
-  score: 7
+  score: 8
   posted_at: '2026-11-08T18:48:07Z'
 - id: lo-nfjn0k
   parent_id: '0'
@@ -98,7 +98,7 @@ comments:
     A growable array on the heap, like alloc::vec::Vec but without the paths that abort when memory runs out: whatever may allocate returns an error instead.
 
     So indeed they are not reimplementing things for the sake of it, there are important API differences.
-  score: 4
+  score: 6
   posted_at: '2026-11-08T18:53:12Z'
 - id: lo-cuinan
   parent_id: '0'
@@ -115,14 +115,14 @@ comments:
   text: |-
     What stands out to me from that quote (and checking the rest of the linked code) is that that entire file is LLM-generated, including the SAFETY: comments that are meant to explain why the unsafe Rust is valid (!).
     At least in my experience writing unsafe Rust can be quite subtle (there's a whole book about it for a reason!), so that strategy strikes me as kind of insane. Then again, if they're using LLMs for their C maybe it's about as insane as what they were already doing...
-  score: 26
+  score: 30
   posted_at: '2026-11-08T20:16:29Z'
 - id: lo-hqimre
   parent_id: '0'
   author: gignico
   text: I didn’t realise that it was AI-written. Yes that’s pretty insane for a fundamental
     software like systemd but that’s life nowadays I guess…
-  score: 4
+  score: 5
   posted_at: '2026-11-08T20:50:12Z'
 - id: lo-tvcu0f
   parent_id: '0'
@@ -137,14 +137,14 @@ comments:
     I've written Rust "shell scripts" where they don't really depend on the ecosystem
 
     Do you run them with cargo run? Or they are just very lean compiled binaries that you manage?
-  score: 1
+  score: 2
   posted_at: '2026-11-09T00:20:28Z'
 - id: lo-csmuwh
   parent_id: '0'
   author: hjvt
   text: 'There''s a nightly cargo feature on track for stabilization for this usecase:
     https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#script'
-  score: 4
+  score: 8
   posted_at: '2026-11-09T00:40:12Z'
 - id: lo-io7t9t
   parent_id: '0'
@@ -152,7 +152,7 @@ comments:
   text: |-
     Generally lean compiled binaries I manage, because I find Cargo's too eager to find excuses to do a rebuild with an invalidated build cache. Using rust-analyzer, bacon, and --release in the same project? You're on borrowed time. rustup update? That's a rebuild. Compiling both the host app and the WASIp2 plugins for it without forcing separate target directories? Yup. etc. etc. etc.
     Once the nightly cargo scripts feature is stabilized and rust-analyzer supports it, I'l re-evaluate something like https://rust-script.org/ since the main place I still use Python (aside from stuff where the Rust ecosystem isn't there yet like memory-safe Qt QWidgets bindings, SQL databasing with Django ORM/SQLAlchemy+Alembic "derive is authoritative and will be diffed against the in-database schema"-style autogeneration of draft migrations and abstracting over SQLite's limited ALTER TABLE, and Django's ecosystem of reusable apps) is truly "too simple for me to be motivated to manage a new project folder" things.
-  score: 4
+  score: 6
   posted_at: '2026-11-09T00:59:46Z'
 - id: lo-dgo68h
   parent_id: '0'
@@ -160,14 +160,66 @@ comments:
   text: |-
     Oh, that's most unfortunate. There are already several popular Rust crates which implement standard collections with fallible allocation semantics, crates which are widely used in embedded and small kernel contexts.
     Apparently they just decided to vibe slop a bunch of unsafe code instead of taking a dependency on a popular, well-established crate that does one thing (with almost no transitive dependencies)? That's certainly a choice.
-  score: 11
+  score: 15
   posted_at: '2026-11-09T02:25:06Z'
 - id: lo-us9ewh
   parent_id: '0'
   author: gignico
   text: Interesting, what’s the name of the crate you’re talking about?
-  score: 3
+  score: 4
   posted_at: '2026-11-09T06:23:42Z'
+- id: lo-kpmkrk
+  parent_id: '0'
+  author: pie_flavor
+  text: no-std is a standard Rust development mode, well supported by the library
+    ecosystem. It's not common, but neither is it unheard of, to use it in a security-critical
+    application extremely tightly tied to kernel behavior that would already forbid
+    any actual function in std by policy. The value of the Rust language is not in
+    std::fs::OpenOptions. Neither is it necessarily the case that the library ecosystem
+    is forbidden just because they're not using Cargo; you can use crates.io dependencies
+    with Bazel, I assume there's a way to do the same thing with Meson. But even if
+    they are forbidding that, again, that's not where the most significant improvement
+    over C can be found. (What would systemd even want to import? Maybe nix?) The
+    point of Rust is to isolate your unsafety to small bits of code with well defined
+    pre- and post-conditions, then freely write normal 'business logic' without worrying
+    about unsafety at all, and then take this same strategy towards type correctness,
+    and mutability correctness, and so on.
+  score: 2
+  posted_at: '2026-11-09T19:30:10Z'
+- id: lo-5fnqdq
+  parent_id: '0'
+  author: moltonel
+  text: I've happily used scriptisto, it seems to cache correctly and I like that
+    it supports many languages.
+  score: 1
+  posted_at: '2026-11-09T20:52:55Z'
+- id: lo-k7hcke
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    For me, the deal-breaker is that the tooling other than the compiler driver doesn't yet support single-file projects. That killed the experiment before I evaluated rust-script's caching behaviour.
+    With Python, my Vim integrations for things like ruff and mypy Just Work™ for lone .py files... even if I am still torn on whether to bake stuff like mypy --strict into the IDE-default configuration at the cost of an increased risk of forgetting to make sure they're in the project configs and applying properly. (eg. That's why I have a stock ~/.gitignore)
+    If it's big enough to benefit from Rust, then it's also big enough to benefit from things like cargo clippy and cargo fmt. (with use_small_heuristics = "Max", dammit. I don't have a portrait-oriented monitor.)
+  score: 1
+  posted_at: '2026-11-09T20:54:39Z'
+- id: lo-n9lve4
+  parent_id: '0'
+  author: 5d22b
+  text: |-
+    I don't have a portrait-oriented monitor.
+
+    I definitely do not mean to suggest that you should change your formatting preferences, but one easily could have a landscape monitor and still have a portrait editing window, if one has the editing window side by side with, e.g., documentation or a list of compilation errors.
+  score: 1
+  posted_at: '2026-11-09T21:23:25Z'
+- id: lo-inkulq
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    OK, let me rephrase that. My monitors are only 1024px, 1080px, and 1024px tall, respectively. I don't want to spend the money to buy a large-format 4K display. (i.e. a 4K monitor equivalent to keeping my existing three-monitor spread at a DPI that allows me to fit the same amount of readable text horizontally, but doubling the height, with no "smart TV" spyware looking for compatible devices within neighboring houses to passwordlessly exfiltrate "demographic information" from the camera and microphone via technologies in the vein of Amazon Sidewalk.)
+    I'm already used to having two or three :vsplit columns in my Vim with use_small_heuristics = "Max".
+    Hell, it's inconvenient enough reaching over my row of monitors to get at some of the books on my bookshelves as-is.
+  score: 1
+  posted_at: '2026-11-09T21:31:33Z'
 article:
   url: https://amutable.com/blog/systemd-loves-rust
   title: systemd ❤️ Rust - Amutable
@@ -273,4 +325,4 @@ article:
     parts of the codebase written in C will not be converted without good reaso"
   error:
   fetched_at: '2026-11-08T19:23:40Z'
-archived_at: '2026-11-09T11:01:38Z'
+archived_at: '2026-11-09T22:01:51Z'

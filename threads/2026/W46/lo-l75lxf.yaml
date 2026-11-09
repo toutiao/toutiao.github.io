@@ -1,0 +1,142 @@
+---
+post:
+  id: lo-l75lxf
+  source: lobsters
+  title: What is malloc doing, anyway?
+  url: https://benmandrew.com/articles/what-is-malloc-doing-anyway
+  hn_url: https://lobste.rs/s/l75lxf
+  score: 16
+  author: thasso
+  posted_at: '2026-11-09T13:19:22Z'
+  fetched_at: '2026-11-09T22:01:41Z'
+  article_url: https://benmandrew.com/articles/what-is-malloc-doing-anyway
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T22:01:48Z'
+  raw_comment_count: 2
+  tags:
+  - c
+  - unix
+comments:
+- id: lo-jctqvb
+  parent_id: '0'
+  author: thasso
+  text: |-
+    This is a fairly nice introduction to memory allocation and the syscalls used to implement a memory allocator in a typical Unix userspace.
+    A nice addition would be a discussion of the binary buddy allocation scheme, which is a fairly simple and elegant algorithm, which is used in some real physical memory allocators (eg Linux). The algorithm is featured in volume 1 of Knuth’s Art of Computer Programming, if someone is interested.
+  score: 4
+  posted_at: '2026-11-09T13:33:40Z'
+- id: lo-z0p8uj
+  parent_id: '0'
+  author: je
+  text: Unfortunately, binary buddy allocation has degenerate fragmentation behavior
+    that's pretty easy to trip on. Hence segregated size classes in most modern allocators.
+  score: 2
+  posted_at: '2026-11-09T16:54:09Z'
+article:
+  url: https://benmandrew.com/articles/what-is-malloc-doing-anyway
+  title: What is malloc doing, anyway? | Ben M. Andrew
+  fetch_status: success
+  content: "`malloc` has a very nice and simple interface: you ask for a certain amount
+    of memory, and you’re given a `void` pointer to your block of contiguous bytes
+    that’s been magicked into existence. Once you’re done with it, you call `free`
+    with the same pointer and the memory disappears into the ether.\n\nBut what’s
+    actually happening here? Obviously, as we’re running as a userspace program, `malloc`
+    must be asking the kernel for the memory through _syscalls_. However, we may be
+    allocating many small blocks, and syscalls are expensive (575 ns for an empty
+    one, as measured below), so some bookkeeping is done in the background. We’ll
+    demonstrate this on GNU `libc` (`glibc`) with the program snippet below, which
+    calls `malloc(16)` a thousand times.\n\n    static void *ptrs[1000];\n    \n    int
+    main(void) {\n        for (int i = 0; i < 1000; i++)\n            ptrs[i] = malloc(16);\n
+    \   }\n\nUsing `strace`, we can see that the whole loop makes only two `brk` syscalls:
+    the first asks where the _program break_ is (the address where the process’s heap
+    ends), and the second grows the heap by 132 KiB. These are both done in the first
+    `malloc` call — the other 999 just take from that already allocated memory.\n\n
+    \   $ strace -e trace=brk,mmap,munmap,write \\\n        ./malloc1000 > /dev/null\n
+    \   ...\n    brk(NULL) = 0x59faca231000\n    brk(0x59faca252000) = 0x59faca252000\n
+    \   +++ exited with 0 +++\n\nYou may see both `brk` and `sbrk` mentioned in discussions.
+    `brk` is a syscall that sets the program break to the address it is provided,
+    and `sbrk` is a `libc` convenience wrapper that takes a _delta_, increasing the
+    program break by that amount.\n\n## The Address Space [#](#the-address-space)\n\nA
+    running process gets its own _address space_, split into a number of regions.
+    These include `text` for executable code, `data` for initialised global variables,
+    and `bss` for uninitialised global variables, among others. The following program
+    prints one address from each region of the process.\n\n    #define SHOW(label,
+    p) \\\n        printf(\"%-22s %p\\n\", label, (void *)(p))\n    \n    SHOW(\"main
+    (text)\", main);\n    SHOW(\"initialised (data)\", &initialised);\n    SHOW(\"uninitialised
+    (bss)\", &uninitialised);\n    SHOW(\"malloc(16) (heap)\", malloc(16));\n    SHOW(\"program
+    break\", sbrk(0));\n    SHOW(\"printf (libc)\", printf);\n    SHOW(\"local (stack)\",
+    &local);\n\nThe addresses rise from the binary’s code up to its stack.\n\n    $
+    ./layout\n    main (text) 0x59c0791d7149\n    initialised (data) 0x59c0791da020\n
+    \   uninitialised (bss) 0x59c0791da028\n    malloc(16) (heap) 0x59c0903182b0\n
+    \   program break 0x59c090338000\n    printf (libc) 0x711dcf7c15b0\n    local
+    (stack) 0x7ffff86c45ec\n\nSome of these regions can change as the program runs.
+    For example, `malloc(16)` grows the heap and moves the break up. Note that in
+    this run, the break and `printf` in `libc` are 23.4 TiB apart, about 1,530 times
+    the machine’s 15.6 GiB of RAM. Nearly all of that range is unmapped, so it costs
+    no physical memory.\n\n## A Toy Allocator with `sbrk` [#](#a-toy-allocator-with-sbrk)\n\nBecause
+    we can move the program break directly, we can write a little allocator of our
+    own. This is called a _bump_ allocator, because each call simply bumps up the
+    amount of memory that we are allowed to use.\n\n    void *my_malloc(size_t size)
+    {\n        void *p = sbrk(align_up(size));\n        return p == (void *)-1 ? NULL
+    : p;\n    }\n    \n    void my_free(void *ptr) {\n        (void)ptr;\n    }\n\nThis
+    allocator is not very good! It moves the break on every single request, and each
+    move is a syscall. We can time a syscall against `malloc` to see why `malloc`
+    requests large blocks from the kernel and cuts them up itself. Each of the following
+    three functions is timed over a million calls.\n\n    static void *volatile sink;\n
+    \   \n    static void call_getppid(void) {\n        syscall(SYS_getppid);\n    }\n
+    \   \n    static void call_sbrk(void) {\n        sink = sbrk(16);\n    }\n    \n
+    \   static void call_malloc(void) {\n        sink = malloc(16);\n    }\n\n`sbrk(16)`
+    costs only 35 ns more than the empty syscall, whereas `malloc(16)` runs 22.7 times
+    faster than `sbrk(16)`.\n\n    $ ./syscall-cost\n    syscall(SYS_getppid) 575.2
+    ns per call\n    sbrk(16) 610.1 ns per call\n    malloc(16) 26.9 ns per call\n
+    \   sbrk(16) / malloc(16) 22.7x\n\nThe bump allocator also has no way to reuse
+    freed memory. Each request lands straight after the one before, so in the following
+    example, `d` goes after `c` even though `b` has been freed.\n\n    $ ./my-bump-1\n
+    \   a = my_malloc(16) start+0\n    b = my_malloc(1) start+16\n    c = my_malloc(100)
+    start+32\n    my_free(b)\n    d = my_malloc(1) start+144\n    break start+160\n\nThe
+    rest of the post improves the allocator one stage at a time.\n\n## Chunks and
+    Headers [#](#chunks-and-headers)\n\n`malloc` actually allocates more memory than
+    you request. This is because each allocation, or _chunk_, has a size header just
+    before the returned pointer; this is how `free` works without passing an explicit
+    size. Chunk sizes are always multiples of 16, so the low bits of the size are
+    always zero, and `glibc` keeps three flags in them.\n\n    size_t requests[] =
+    {1, 24, 25, 1000};\n    \n    size_t count = sizeof requests / sizeof requests[0];\n
+    \   for (size_t i = 0; i < count; i++) {\n        char *p = malloc(requests[i]);\n
+    \       size_t chunk = ((size_t *)p)[-1] & ~(size_t)7;\n        printf(\"%8zu
+    %8zu\\n\", requests[i], chunk);\n    }\n\nEach chunk is the request plus 8 bytes
+    for the header, rounded up to a multiple of 16, with a minimum of 32. The rounding
+    keeps every pointer that `malloc` returns 16-byte aligned, which is the alignment
+    x86-64 gives `max_align_t`, so the memory suits any C type. The 32-byte minimum
+    leaves room for the list pointers that a chunk stores once it is freed.\n\n    $
+    ./chunk-header\n     request chunk\n           1 32\n          24 32\n          25
+    48\n        1000 1008\n\nWhen we free a chunk, it is put into what’s called a
+    _free list_ to allow reuse. When more data is requested, `malloc` looks through
+    this free list and splits large chunks to fit small requests, and `free` merges
+    free neighbours back together. Each chunk in the free list needs two pieces of
+    information: its size (which we already have), and a pointer to the next chunk
+    in the free list. `glibc` stores the pointer after the size, reusing the memory
+    that the user stored their data in before it was freed!\n\nThe toy allocator stores
+    the same two fields in each chunk.\n\n    typedef struct chunk {\n        size_t
+    size;\n        struct chunk *next;\n    } chunk_t;\n\n## Splitting and Coalescing
+    [#](#splitting-and-coalescing)\n\nWe can improve our `my_malloc` by rounding the
+    request plus its header up to a multiple of 16 bytes, and taking the first chunk
+    in the free list that is big enough. To keep things simple, the toy’s header is
+    the whole `chunk_t`, so a chunk keeps room for `next` even while it is in use.
+    That makes the header 16 bytes where `glibc`’s is 8, and `my_malloc(100)` takes
+    a 128-byte chunk where `malloc(100)` takes 112.\n\n    void *my_malloc(size_t
+    size) {\n        size_t need = align_up(size + HEADER_SIZE, ALIGN);\n        for
+    (chunk_t **link = &free_list; *link != NULL;\n             link = &(*link)->next)\n
+    \           if ((*link)->size >= need)\n                return take(link, need);\n
+    \       if (grow_heap(need) != 0)\n            return NULL;\n        return my_malloc(size);\n
+    \   }\n\nWe define `take` to split that chunk, leaving whatever the request does
+    not need in the free list.\n\n    static void *take(chunk_t **link, size_t need)
+    {\n        chunk_t *c = *link;\n        if (c->size > need) {\n            chunk_t
+    *rest = (chunk_t *)((char *)c + need);\n            rest->size = c->size - need;\n
+    \           rest->next = c->next;\n            c->size = need;\n            *link
+    = rest;\n        } else {\n            *link = c->next;\n        }\n        return
+    (char *)c + HEADER_SIZE;\n    }\n\nWhen no free chunk fits, `grow_heap` moves
+    the program break up in 64 KiB steps using `sbrk` and puts the new space on the
+    free list as one chunk.\n\n"
+  error:
+  fetched_at: '2026-11-09T22:01:48Z'
+archived_at: '2026-11-09T22:01:49Z'

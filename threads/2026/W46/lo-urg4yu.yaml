@@ -5,14 +5,14 @@ post:
   title: Unattended reboots with encrypted disks
   url: https://jmmv.dev/2026/11/zkeys-intro.html
   hn_url: https://lobste.rs/s/urg4yu
-  score: 21
+  score: 30
   author: jmmv
   posted_at: '2026-11-08T16:58:03Z'
-  fetched_at: '2026-11-09T11:01:33Z'
+  fetched_at: '2026-11-09T22:01:41Z'
   article_url: https://jmmv.dev/2026/11/zkeys-intro.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-09T11:01:37Z'
-  raw_comment_count: 12
+  article_fetched_at: '2026-11-09T22:01:49Z'
+  raw_comment_count: 24
   tags:
   - freebsd
   - security
@@ -32,7 +32,7 @@ comments:
   text: |-
     That's cool. I get by with dracut-sshd for my AlmaLinux hosts with encrypted root partitions, but it's not fully unattended. You still have to log in and type the password yourself. I saw this blog post about getting something similar going with FreeBSD, but I never tried it.
     Out of interest, how come the server decrypts the password-half that it keeps using the client-provided key, rather than just sending the encrypted data and letting the client handle the decryption? That way, the server would never touch the key or the raw password-half.
-  score: 2
+  score: 4
   posted_at: '2026-11-08T19:37:45Z'
 - id: lo-dvffsj
   parent_id: '0'
@@ -68,7 +68,7 @@ comments:
     Split keys: The ZKeys server only stores half of the passphrase used to unlock a volume. The other half remains on the client machine.
 
     Would Shamir's Secret Sharing be a better fit here, so compromising either half doesn't get you any information?
-  score: 7
+  score: 12
   posted_at: '2026-11-08T23:47:12Z'
 - id: lo-dkw8vo
   parent_id: '0'
@@ -76,7 +76,7 @@ comments:
   text: |-
     At least on Linux, you can set up dropbear to run in the initramfs, so you can ssh in to unlock the disks. Debian has a ready-to-use package for this, and the Gentoo Wiki has a guide for setting it up from scratch which seems like it should work on other distros too.
     I wonder if there's a way to keep the encryption key in memory while rebooting, so you wouldn't even have to do that (unless you lose power or something). That'd be pretty cool.
-  score: 3
+  score: 6
   posted_at: '2026-11-09T01:00:32Z'
 - id: lo-dtsd5k
   parent_id: '0'
@@ -110,7 +110,7 @@ comments:
   text: I don't think you'd need SSS for the case of two parties where both have to
     release their key-shares. A plain old one-time pad (XOR with random data) would
     do.
-  score: 8
+  score: 13
   posted_at: '2026-11-09T01:39:56Z'
 - id: lo-aqvrou
   parent_id: '0'
@@ -118,7 +118,7 @@ comments:
   text: |-
     Dis you look into Clevis that's in the same space? Any particular motivation for not using it?
     I don't know if it supports FreeBSD, and having more options is nice!
-  score: 3
+  score: 5
   posted_at: '2026-11-09T05:29:21Z'
 - id: lo-hv8bdm
   parent_id: '0'
@@ -139,6 +139,99 @@ comments:
     when I have time to work on it.
   score: 1
   posted_at: '2026-11-09T10:26:36Z'
+- id: lo-1kq9vs
+  parent_id: '0'
+  author: rweir
+  text: 'soon, I think: https://lwn.net/Articles/1105117/'
+  score: 2
+  posted_at: '2026-11-09T12:43:49Z'
+- id: lo-tohufv
+  parent_id: '0'
+  author: m_a_r_k
+  text: What do you see as the value to this tool vs a tpm?
+  score: 1
+  posted_at: '2026-11-09T13:53:17Z'
+- id: lo-3sdvys
+  parent_id: '0'
+  author: gcupc
+  text: |-
+    I have been considering trying to set up disk encryption key storage in the TPM, but honestly, I'd prefer to be able to ssh in and enter the passphrase. Usually when I'm putting off rebooting, it's because I don't want to go across the room and get down on my hands and knees to plug the little monitor and keyboard into the server. Entering a passphrase from my laptop across the room would be fine.
+    EDIT: Fedora and RHEL support dracut-sshd.
+  score: 1
+  posted_at: '2026-11-09T14:05:47Z'
+- id: lo-qo2klj
+  parent_id: '0'
+  author: JulianSildenLanglo
+  text: Another option would be to encrypt the files instead of the disks. That way
+    the backup server doesn't need to be able to decrypt anything.
+  score: 1
+  posted_at: '2026-11-09T15:39:04Z'
+- id: lo-ynpxxu
+  parent_id: '0'
+  author: joschi
+  text: |-
+    You can easily remove the decryption keys if the whole device was stolen.
+    When storing the decryption keys in TPM, the thieves could still boot the machine.
+    It helps against the loss of individual storage devices, but not against the loss of the whole machine.
+  score: 3
+  posted_at: '2026-11-09T16:06:04Z'
+- id: lo-duc6nu
+  parent_id: '0'
+  author: jmmv
+  text: |-
+    I couldn't find this project back then (and I did a few searches to see if someone had implemented the same idea...). Maybe because I started with the premise "I need this for FreeBSD" and Clevis doesn't support it. For my use case, Fedora was only an after-thought.
+    From the looks of it, Clevis is similar to what I need. IIUC, I'd need to use the Shamir Secret Sharing PIN or Tang PIN types. But the former does not allow auto-revocation and the latter assumes same network; correct? And it doesn't support FreeBSD right now. So Clevis wouldn't have solved my problem right away and I'd have had to do extra work on it.
+    At the end of the day, what I needed was pretty trivial in concept and I had a basic implementation of "serve this key and auto-lock it until keepalives fail" in just a couple of days. I'd have left it at that. The "real work" was in coming up with something I could share, with a web management interface and polishing the client integrations to work across FreeBSD and Fedora ;P I.e. the fun parts!
+  score: 2
+  posted_at: '2026-11-09T16:49:56Z'
+- id: lo-wgnlrc
+  parent_id: '0'
+  author: jmmv
+  text: Correct. As I point out in the article and the site, the threat model is "the
+    machine is stolen from my house, plugged elsewhere, and suddenly all my data is
+    exposed". Keeping the key on the machine, even behind a TPM, fails to protect
+    agains this.
+  score: 2
+  posted_at: '2026-11-09T16:52:38Z'
+- id: lo-hvekkk
+  parent_id: '0'
+  author: jmmv
+  text: |-
+    I'm not sure where "backup server" comes into play here?
+    The point of this set up is to allow a server to come back on its own after a reboot, with disks unlocked. For the specific case of a NAS, I want the shared volumes to be available right away. (E.g. if I'm away from home and the NAS reboots for whichever reason, I do not want to have to SSH into it to perform admin tasks.)
+  score: 1
+  posted_at: '2026-11-09T16:54:18Z'
+- id: lo-fyjgnm
+  parent_id: '0'
+  author: jmmv
+  text: |-
+    Should be easily doable. I already implemented "key access history" and perform geolocation for auditability purposes: in the UI you can see all accesses to a key of yours and which IPs and countries those activities originated from.
+    The IP only is not sufficient because of dynamic IPs in many cases. More precise geolocation could be done without much difficulty... but I don't particularly like the idea of storing that information. Maybe it'd be an option...
+  score: 1
+  posted_at: '2026-11-09T16:57:26Z'
+- id: lo-9sssb1
+  parent_id: '0'
+  author: vpr
+  text: You don't for the k-of-n 2-of-2 special case, sure, but polynomial interpolation
+    gets you everything beyond that trivial base case.
+  score: 1
+  posted_at: '2026-11-09T17:13:36Z'
+- id: lo-yvwuof
+  parent_id: '0'
+  author: jmmv
+  text: Maybe (I didn't know about it). But for my threat model, this wouldn't gain
+    me anything, I think...
+  score: 2
+  posted_at: '2026-11-09T17:30:42Z'
+- id: lo-grhox9
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    Let's say your passphrase is eight random words (~12 bits of entropy each), and you store four of those words on the remote server. Your passphrase has 96 bits of entropy total, which should be sufficient for an encryption key. But if you already know half of the passphrase, the unknown half only has 48 bits of entropy, and a motivated attacker could brute-force that. (See also: EFF's custom DES cracker brute-forces 56-bit keys.)
+    One threat model is someone getting their hands on your powered-off home server. If I understand ZKeys correctly, half of your passphrase is stored unencrypted on your home server, and the other half is known by the ZKeys server (but is inaccessible to the attacker). So the attacker reads half of the passphrase from local disk, brute-forces the other 2^48 possibilities for the other half, and decrypts your hard drive.
+    I think @cyberia's suggestion of an XOR one-time pad is the correct thing to do here. One half tells you no information about the other, so you are protected by the whole undiluted strength of your passphrase.
+  score: 3
+  posted_at: '2026-11-09T19:46:22Z'
 article:
   url: https://jmmv.dev/2026/11/zkeys-intro.html
   title: Unattended reboots with encrypted disks - Julio Merino (jmmv.dev)
@@ -243,4 +336,4 @@ article:
     between the backend APIs and the f"
   error:
   fetched_at: '2026-11-09T11:01:37Z'
-archived_at: '2026-11-09T11:01:37Z'
+archived_at: '2026-11-09T22:01:50Z'
