@@ -1,0 +1,119 @@
+---
+post:
+  id: lo-zozcwa
+  source: lobsters
+  title: 'Virtualized Redox: from Virtio-FS to Cloud Hypervisor, and beyond'
+  url: https://www.redox-os.org/news/virtualized-redox/
+  hn_url: https://lobste.rs/s/zozcwa
+  score: 15
+  author: hugoarnal
+  posted_at: '2026-11-08T21:06:06Z'
+  fetched_at: '2026-11-09T11:01:33Z'
+  article_url: https://www.redox-os.org/news/virtualized-redox/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T11:01:39Z'
+  raw_comment_count: 0
+  tags:
+  - osdev
+comments: []
+article:
+  url: https://www.redox-os.org/news/virtualized-redox/
+  title: 'Virtualized Redox: from Virtio-FS to Cloud Hypervisor, and beyond - Redox
+    - Your Next(Gen) OS'
+  fetch_status: success
+  content: "# [Virtualized Redox: from Virtio-FS to Cloud Hypervisor, and beyond](https://www.redox-os.org/news/virtualized-redox/)\n\n#####
+    By MJ Pooladkhay on \n\nHello, Reader!\n\nI’m [MJ Pooladkhay](https://pooladkhay.com),
+    and for the past couple of months I have been building a [Virtio-FS](https://virtio-fs.gitlab.io/)
+    driver for Redox OS and, more recently, getting Redox to run on [Cloud Hypervisor](https://www.cloudhypervisor.org/).
+    The driver is merged into the [base repository](https://gitlab.redox-os.org/redox-os/base/-/tree/main/drivers/storage/virtio-fsd),
+    where most Redox drivers and system components live. The kernel, bootloader and
+    driver changes that let Redox boot to a shell on Cloud Hypervisor are merged too
+    ([details below](/news/virtualized-redox/#booting-on-cloud-hypervisor)).\n\nBoth
+    are fun pieces of work on their own, but they are really the first steps of a
+    bigger effort with two directions:\n\n- **Redox as a guest** : Redox runs as a
+    cloud server, starting with Cloud Hypervisor, without the legacy PC hardware it
+    used to depend on in QEMU. Most of this post is about this one.\n- **Redox as
+    a host** : Redox runs virtual machines itself. This one is still a proposal, and
+    I’ll go over it [at the end of this post](/news/virtualized-redox/#looking-further-redox-as-a-host).\n\nThe
+    guest work is generously funded by [NGI Zero Commons](https://nlnet.nl/commonsfund/)
+    and [NLnet](https://nlnet.nl/) as part of the [Virtualized Redox](https://nlnet.nl/project/Redox-virtualised-microservices/)
+    grant.\n\n## Why run Redox as a guest?\n\nMost Internet-facing software today
+    runs in virtual machines, either in the cloud or on edge servers close to its
+    users. Web servers, databases, API backends and microservices spend all day handling
+    input from strangers, and that is where a memory-safe microkernel-based operating
+    system has the most to offer:\n\n- **A smaller, safer base.** Redox is written
+    in Rust, and its drivers, filesystems and network stack run as separate userspace
+    processes instead of inside the kernel ([microkernel architecture](https://doc.redox-os.org/book/microkernels.html)).
+    A bug may hang or crash only that process, not the whole system, and the code
+    running with highest system privileges stays small.\n- **Sandboxing built in.**
+    With [capability-based security](/news/nlnet-cap-nsmgr-cwd/), each service can
+    be limited to the files, sockets and devices it actually needs ([more on that
+    below](/news/virtualized-redox/#putting-the-pieces-together)).\n- **Hardware becomes
+    the host’s problem.** On bare metal, Redox needs a driver for every disk controller,
+    network card and chipset it meets. Inside a VM, the host deals with the hardware,
+    and Redox only needs a handful of VirtIO drivers. That makes a VM one of the quickest
+    paths to running Redox in the real world, and real-world use is the best way to
+    prove it as a secure platform.\n\nThis is the direction the project set in its
+    [development priorities](/news/development-priorities-2025-09/): Redox as a secure
+    host for web services, first as a private or edge server, and eventually as a
+    multi-tenant cloud server where each tenant is isolated from others.\n\n## How
+    Virtualization Works\n\nThe easiest way I know to think about a hypervisor is
+    as an operating system whose processes are operating systems. A process runs directly
+    on the CPU until it needs the kernel, for a system call, a page fault or a timer
+    tick, and then the kernel takes over for a moment. A guest OS runs directly on
+    the CPU in the same way, until it does something that only the hypervisor is allowed
+    to handle. That moment a “VM exit” happens where the control is transferred to
+    the hypervisor (similar to how a system call transfers control to the OS kernel).
+    On Linux, [KVM](https://linux-kvm.org/page/Main_Page) in the host kernel handles
+    it, either by itself or by passing it to the virtual machine monitor (VMM), an
+    ordinary process such as Cloud Hypervisor or QEMU. I went through the theory behind
+    this, and why x86 needed new hardware ([VT-x](https://en.wikipedia.org/wiki/X86_virtualization#Intel_virtualization_%28VT-x%29)
+    and [AMD-V](https://en.wikipedia.org/wiki/X86_virtualization#AMD_virtualization_%28AMD-V%29))
+    to make it work, in [an earlier post](https://pooladkhay.com/posts/virt-theory-silicon/)
+    on my personal blog.\n\nFrom Redox’s side, a VM boots much like a laptop does.
+    The virtual CPU starts in firmware, the firmware loads the bootloader from a disk,
+    and the bootloader hands over to the kernel. It’s the same code that runs on real
+    hardware, running natively, with the kernel in supervisor mode (ring 0 on x86)
+    as usual.\n\nMost of what Redox does never leaves the guest. System calls, context
+    switches and page faults are handled by the Redox kernel itself, and the hypervisor
+    doesn’t even see them.\n\nMemory takes a few more steps than on bare metal, because
+    there are now two kernels that each think they own it. Redox’s page tables turn
+    a guest virtual address (GVA) into a guest physical address (GPA), the address
+    Redox believes is in RAM. But guest RAM is really just a big chunk of memory the
+    VMM allocated in its own address space, and the VMM tells KVM which part of it
+    backs which range of guest RAM (a [memslot](https://docs.kernel.org/virt/kvm/api.html#kvm-set-user-memory-region)).
+    So every GPA is also a host virtual address (HVA) in the Cloud Hypervisor process,
+    and the host kernel’s page tables turn that into a host physical address (HPA),
+    the actual spot in RAM:\n\n    GVA --[Redox's page tables]--> GPA --[KVM memslots]-->
+    HVA --[host page tables]--> HPA\n\nGoing through all of that on every memory access
+    would be painfully slow, so KVM collapses the GPA to HPA part into a single step.
+    It builds [nested page tables](https://en.wikipedia.org/wiki/Second_Level_Address_Translation)
+    that map guest physical addresses straight to host physical ones, and fills them
+    in lazily as the guest touches memory. The CPU then walks Redox’s page tables
+    and the nested ones together in hardware, and caches the result in the [TLB](https://en.wikipedia.org/wiki/Translation_lookaside_buffer).
+    Redox manages its own page tables freely, and only touching guest memory that
+    isn’t mapped yet causes an exit.\n\nThe HVA step has a nice side effect: since
+    guest RAM is an ordinary mapping in the VMM, it can be shared with other host
+    processes. That’s how [`virtiofsd`](https://gitlab.com/virtio-fs/virtiofsd) reads
+    Virtio-FS requests straight out of the guest’s memory, and why sharing a directory
+    requires the guest’s memory to be shared.\n\nDevices are where the hypervisor
+    earns its keep, because every device the guest sees is made up. Some are emulations
+    of real hardware, such as an [8259 interrupt controller](https://en.wikipedia.org/wiki/Intel_8259),
+    a [programmable interval timer (PIT)](https://en.wikipedia.org/wiki/Programmable_interval_timer),
+    a serial port or each CPU’s [local APIC](https://en.wikipedia.org/wiki/Advanced_Programmable_Interrupt_Controller#Integrated_local_APICs),
+    and every register access to them is a VM exit that the hypervisor turns into
+    behavior. Others are VirtIO devices, which don’t pretend to be hardware at all
+    and talk to the host through queues in shared memory. Interrupts are made up too.
+    The host keeps the real ones, and the guest only gets the ones the hypervisor
+    injects on behalf of its virtual devices and timers. If the hypervisor doesn’t
+    emulate a device, nobody raises its interrupt (keep that in mind for the ping
+    story below).\n\nIn short, the CPU, its [timestamp counter (TSC)](https://en.wikipedia.org/wiki/Time_Stamp_Counter)
+    and the memory are real, and everything else is virtual. The interesting question
+    is which virtual devices you get, and that’s where cloud hypervisors and QEMU
+    part ways.\n\n## Leaving the legacy PC behind\n\nSo far, Redox has been run either
+    on QEMU or on physical hardware. On both, it has leaned on devices that date back
+    to the original IBM PC/AT: a pair of 8259 interrupt controllers, the PIT, a [PS/2
+    keyboard controller](https://en.wiki"
+  error:
+  fetched_at: '2026-11-09T11:01:39Z'
+archived_at: '2026-11-09T11:01:39Z'

@@ -4,14 +4,11 @@ post:
   title: 'Broccoli2Shell: Brotli decoder RCE in Node.js, Python and more'
   url: https://broccoli2shell.com/
   hn_url: https://news.ycombinator.com/item?id=50219177
-  score: 393
+  score: 405
   author: theanonymousone
   posted_at: '2026-10-24T08:06:39Z'
-  fetched_at: '2026-10-26T03:36:18Z'
-  article_url: https://broccoli2shell.com/
-  article_fetch_status: success
-  article_fetched_at: '2026-10-25T18:43:42Z'
-  raw_comment_count: 211
+  fetched_at: '2026-11-09T11:01:41Z'
+  raw_comment_count: 221
 comments:
 - id: '50219946'
   parent_id: '50219177'
@@ -1425,6 +1422,47 @@ comments:
     history), took almost 8 months.
   score: 0
   posted_at: '2026-10-26T00:49:14Z'
+- id: '50253708'
+  parent_id: '50224794'
+  author: aftbit
+  text: |-
+    It&#x27;s safe to upgrade with python 3.12.16 now:<p><pre><code>  # docker run --rm --net=host --add-host=pypi.org:127.0.0.1 --add-host=files.pythonhosted.org:127.0.0.1 python:3.12.16-slim-trixie pip install six
+      WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by &#x27;SSLError(SSLCertVerificationError(1, &#x27;[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate rejected (_ssl.c:1011)&#x27;))&#x27;: &#x2F;simple&#x2F;six&#x2F;</code></pre>
+  score: 0
+  posted_at: '2026-10-27T01:42:55Z'
+- id: '50255292'
+  parent_id: '50220696'
+  author: zahlman
+  text: "&gt; Could have been a person.<p>The commit is attributed to &quot;eustas&quot;
+    (Eugene Kliuchnikov) on the Google GitHub repo, who is the primary contributor
+    to the Brotli project by a wide margin going back to 2015; so I think we can reasonably
+    say it was."
+  score: 0
+  posted_at: '2026-10-27T06:24:32Z'
+- id: '50255420'
+  parent_id: '50253708'
+  author: zahlman
+  text: |-
+    Yep. Per the main thread on the Python forums (<a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident&#x2F;109576&#x2F;60" rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;information-for-python-users-re...</a>), this now happens even with the outdated pip because the built-in `ssl` module has been patched to reject it. The relevant commit is <a href="https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;commit&#x2F;7dd8b4736a1419750b94a388e6d158be15836fe6" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;commit&#x2F;7dd8b4736a1419750b9...</a> , featuring a rather amusing workaround for security scanners that might mistake the blacklisted certificates (included for testing purposes) for &quot;leaked&quot; certificates accidentally included in a source package.<p>From code comments, because I found it interesting:<p><pre><code>  * This is an extraordinary measure and last line of defense.  Removing trust is
+      * primarily the job of the platform root store. This list only blocks keys while
+      * that update is still propagating to the OS, container images, or root CAs
+      * bundled in Python packages.  The threshold for adding an entry is very high.
+      *
+      * See https:&#x2F;&#x2F;github.com&#x2F;python&#x2F;cpython&#x2F;issues&#x2F;160040 for the eMudhra discussion.
+    </code></pre>
+    As a Mint 22.x user, I wonder if and when Debian or Ubuntu will pick up the change and release another patch for the system Python (basically, to my understanding, a base of 3.12.3 with security patches from other patch releases backported). Since they&#x27;ve already updated ca-certificates it might not seem necessary, at least as long as the pip package gets updated (although I don&#x27;t use that anyway).<p>BTW, I think I saw your comments in other places about the 30-cent vibe-coded MITM demo proxy, unless someone else had the same idea. Thanks for helping educate.<p>Edit: apparently (<a href="https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;avoiding-compromised-certificates-in-pip&#x2F;109602&#x2F;6" rel="nofollow">https:&#x2F;&#x2F;discuss.python.org&#x2F;t&#x2F;avoiding-compromised-certificat...</a>), the relevant Debian and Ubuntu packages already patch the distro-provided pip to enforce using the system certificates. (Indeed, `ca-certificates` is listed as &quot;Depends&quot; for the pip package, rather than &quot;Recommends&quot;.) But maybe they&#x27;ll still be interested in the key blocking, on defense-in-depth principles.
+  score: 0
+  posted_at: '2026-10-27T06:47:36Z'
+- id: '50350592'
+  parent_id: '50231638'
+  author: super256
+  text: You wouldn&#x27;t believe what great things are happening in the lands of
+    bread and rolls.<p>My go-to bakery sells pumpkin seed rolls called &quot;Freddy&quot;
+    this Halloween. The full product name is &quot;Kürbiskernbeißer Freddy.&quot;,
+    named after Freddy Krueger because Freddy Krueger is scary and Halloween is scary.
+    And, well, a Brotli decoder RCE is pretty scary too! So it even fits the theme.
+  score: 0
+  posted_at: '2026-11-03T11:19:38Z'
 article:
   url: https://broccoli2shell.com/
   title: 'Broccoli2Shell: Brotli decoder RCE (CVE-2026-111497) in Node.js, Python
@@ -1526,4 +1564,4 @@ article:
     - Outbound: removing br from Accept-Encoding helps less than you'd hope, because a malicious server can send Brotli anyway. A WAF doesn't see responses your app fetches. Only the runtime
   error:
   fetched_at: '2026-10-25T18:43:42Z'
-archived_at: '2026-10-26T03:36:27Z'
+archived_at: '2026-11-09T11:02:01Z'

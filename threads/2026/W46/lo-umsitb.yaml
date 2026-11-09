@@ -1,0 +1,119 @@
+---
+post:
+  id: lo-umsitb
+  source: lobsters
+  title: What can I realistically do with local AI on a Mac mini M5 Pro (48GB)?
+  url: ''
+  hn_url: https://lobste.rs/s/umsitb
+  score: 17
+  author: napolux
+  posted_at: '2026-11-08T17:07:51Z'
+  fetched_at: '2026-11-09T11:01:33Z'
+  article_url: ''
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 8
+  tags:
+  - ai
+  - ask
+  - mac
+comments:
+- id: lo-aglw1f
+  parent_id: '0'
+  author: kornel
+  text: |-
+    Qwen3.8-27B is by far the best coding model runnable locally. However, it will be difficult to hold a long context window, and forget about running multiple coding sessions in parallel. It's also going to be annoyingly slow for interactive work. It can be useful if you give it chores to do in the background or overnight. It can be useful as a secondary model like advisor role in oh-my-pi.
+    Unfortunately, other models smaller than 27B are too dumb for coding (in serious projects you'll get more bugs than help from them).
+    4-bit quants are optimal for small RAM budget. Going lower starts breaking the models and higher quants give you diminishing results.
+    gemma4-e4b is small and pretty fast, and works fine as a lossy wikipedia and a smarter regex (searching and summarization where accuracy isn't critical), but don't let it edit anything that you want to keep.
+    Comfy stuff tends to fit easily in 48GB, but it's a bit slow (most workflows are designed for nvidia cards with less VRAM and more raw power).
+    I've got 48GB M3 Max and 96GB M5 Ultra. The 96GB is still barely usable for real coding, and financially doesn't make sense compared to Deepseek 4.1 Flash that's smarter, 4x faster than anything I can run, and doesn't OOM when I run more than a couple things at once.
+  score: 6
+  posted_at: '2026-11-08T17:58:22Z'
+- id: lo-upor2f
+  parent_id: '0'
+  author: spillybones
+  text: I have the same hardware as you and I've been using MLX-LM with Qwen3.6-35B
+    6bit quant. My setup is a vibe-coded local server that just wires together a bunch
+    of different components with a web UI. It's fairly fast in terms of token output,
+    but noticeably worse than claude at coding. It can handle routine tasks and I've
+    been using it to scan my codebase for bugs. Low-powered models work pretty well
+    for finding bugs if you make them verify the bug is real. I was also using it
+    for some voice assistant stuff (with a separate speech-to-text and text-to-speech
+    setup) and it was pretty good at handling natural language questions and using
+    tools accordingly (turn the lights on, play music, etc.). I got it to a point
+    where the latency was extremely low and it felt really responsive. As for image
+    generation, the version I was able to get running on my home setup was drastically
+    worse than the big company offerings and I didn't really have much use for it,
+    so I abandoned that part.
+  score: 1
+  posted_at: '2026-11-08T18:52:25Z'
+- id: lo-yps0qz
+  parent_id: '0'
+  author: kevinc
+  text: |-
+    My local setup: M1 Max 64GB, LM Studio, pi, and OrbStack for isolation. I get about 60 tps from Gemma 4 26B A4B QAT and prefer MLX if available for a small speed increase. I use this setup when I want complete privacy. Or I'll use it to hear my fan spin up and get a feel for what's happening under the hood, details an API would hide.
+    That I pay my own power bill is satisfying for part but not all of the ethics problem. I look forward to a local setup being good enough for most anybody, so we can in some form give back to the commons what we took.
+    For now I'm constrained by models being either too slow on this chip to wait for, or too dumb to depend on. I don't just mean they write bugs, I mean sometimes they think their way into a non-converging fugue state I must abort. But they are much smarter per time than two years ago when I first explored this, and the DIY aspect is fun.
+    For general questions, I'm happy enough with Siri AI. It's fine for a first try and that's often plenty. And local + PCC is usually private enough.
+    For automated coding tasks whose results I'll depend on to be good, I'd go back to the two major players and get a subscription again. I don't have one today, but I'd get whichever is not on tap at work.
+  score: 1
+  posted_at: '2026-11-08T19:30:55Z'
+- id: lo-k6avp3
+  parent_id: '0'
+  author: coby
+  text: |-
+    Check out Unbiased Strata which aims to be a more secure version of Strata. It's a custom inference engine based on llama.cpp (?) tuned to let you run Qwen-Flash-Next locally using as little as 12GB VRAM (plus 96GB RAM). It works by predicting which MoE parameters will activate and hot-loading them into VRAM before they are needed.
+    I have a 12GB Nvidia GPU on my framework laptop and have been running this for a month or two. It's the best local LLM setup I've used by far. I mostly use it with the Pi harness, which took a little tuning to get the context window and certain token limits right. I don't have hard numbers off the top of my head but I've found it to be a little slower than Opus, and still very usable. You can probably get higher speeds on 48GB.
+  score: -1
+  posted_at: '2026-11-08T21:32:27Z'
+- id: lo-wwxihb
+  parent_id: '0'
+  author: refi64
+  text: |-
+    However, it will be difficult to hold a long context window
+
+    This might improve a bit if a Qwen4 27b is released since Qwen4 will be replacing the dense attention layers with sparse attention layers.
+    EDIT: Actually no, I forgot QSA still keeps the full kv cache representation around and only compresses for selection purposes, unlike DSV4.1 which uses the compressed version for attention as well. So performance is improved but not memory usage.
+  score: 1
+  posted_at: '2026-11-09T00:27:25Z'
+- id: lo-75do9m
+  parent_id: '0'
+  author: glacambre
+  text: What is not secure about Strata and how does Unbiased Strata make it more
+    secure? The readme does a pretty bad job of explaining any of that.
+  score: 1
+  posted_at: '2026-11-09T06:29:49Z'
+- id: lo-myjocz
+  parent_id: '0'
+  author: df
+  text: |-
+    My machine is better than yours in some ways, and worse than others: it has 128GB RAM and 12GB VRAM. It's just made out of parts I had before the massive price increases in components, not really  chosen intentionally.
+    Qwen Flash Next works really well. It's by far the best local LLM I've used. It can accurately write text or smaller amounts of code (eg a web-based utility that's a few thousand lines of Javascript). It's up there with frontier models from 12-18 months ago. It's much less useful than Claude though, which I also pay for, and electricity for this beast is expensive so I'm not saving any money by using it.
+    There are two use cases for local LLMs that make sense to me: processing sensitive information like personal email or financials, or doing security research that would be forbidden for a commercial provider. They're both pretty weak cases though since my email already goes through Google which is probably already doing all sorts of AI on it, and the big providers do have security research versions of their LLMs that you can get.
+    The big benefits are for non-LLM stuff:
+    Open image generation with Flux works marvelously. You certainly don't have to pay anyone for that anymore. ComfyUI gives you a ton of power.
+    3D model generation using Trellis-2 is quite good. You give the model an image, the AI creates a 3D model file, guessing what the sides and back look like. Right now I'm running it for over 1000 objects to make models for a game I'm working on (background objects, they don't matter that much). It takes under 5 minutes per model. It works really well for people, statues, animals, fruit, etc, and tends to completely fall apart if you give it a tree.
+    There are really high quality open models for speech to text and text to speech. I often record voice notes when I'm out on a walk and then convert them to text. I've turned ebooks into audio books for myself. These are available as SaaS of course, but get pretty pricey for heavy usage.
+    I've been meaning to try open models for making music. Yue2 needs more VRAM than I have, so that might have to wait. Suno and Udio are very cheap so I'm not sure why you'd want this locally.
+    The last big use case would be RAG search on personal notes or documents. For example if you're studying a scientific topic, you could keep gigabytes of papers on your local machine and quickly search and understand them. Google Notebook is okay for this, but is limited to just 300 documents per notebook, which is very restrictive for real work.
+  score: 1
+  posted_at: '2026-11-09T08:25:03Z'
+- id: lo-5y0km4
+  parent_id: '0'
+  author: frontsideair
+  text: |-
+    I certainly applaud trying to go local, for more control and more ethical consumption. I went the same route for a few years now and pretty happy where I landed at, and I can't recommend this enough.
+    The machine you have is a beast, and has a ton of support. I started with my Macbook first, which was a great learning experience, but it was getting warm and sluggish during inference, so I made the jump to a mini PC, which seems to be the best bet. (Mine is Strix Halo, Minisforum MS-S1 Max specifically.)
+    I'll reflect a lot of the other comments by saying that Qwen3.8-27B is the best for this memory size and bandwidth. That'll leave plenty of memory for KV cache and other purposes. You can start with LM Studio (not Bionic, you can find the vanilla version on developers page) which ships with a few different inference engines. Splash is new, and seems to be the fastest currently, and it beats even Apple's own MLX somehow. You need to find its specific quant from the model discovery page though, Q4 should be the sweet spot in terms of size vs quality.
+    (You may want to keep an eye on Qwen news, Qwen4 seems to be right around the corner and there's a high possibility they'll release a 27B upgrade.)
+    For coding, I personally use Pi for coding, with only the pi-sandbox extension. Pi is deliberately lightweight and I find going overboard with extensions against its philosophy. Distributions like oh-my-pi both make it bloated and increase the attack surface, while you inherit someone else's preferences. (I feel similarly towards oh-my-zsh which shares the naming scheme.)
+    I also use Zed as my editor of choice, which has spearheaded ACP and has support for Pi. I found it to be better than connecting Zed directly to my llama.cpp instance. For general chat/RAG use cases LM Studio should be a good starting point.
+    My Strix Halo mini PC has 128GB unified memory with lower bandwidth, so I use Qwen3.8-Flash-Next instead and find it to be really powerful for my preferences, and I never miss any Claude models I use at work. I think Qwen3.8 models are at a tipping point where more powerful models have diminishing returns, at least for my use cases. I prefer having a short leash on the models that I use and I found QFN to be particularly useful for brainstorming and occasional agentic use cases. I haven't used 27B that much due to low token generation speed, but I expect it be similar in terms or capability and experience.
+    I haven't done a lot of image generation apart from occasional curiosity towards a new model release. I have used stable-diffusion.cpp with Ideogram 4.0 which ranks really well among other models. Heavy users prefer ComfyUI and I have yet to give Qwen-Image-2.1 a try, which seems to rank a bit better than Ideogram.
+    Lastly, sorry for such a long comment but I had a lot on my mind and was considering writing a blog post already, you can consider this a draft of that upcoming post!
+  score: 1
+  posted_at: '2026-11-09T10:20:27Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-11-09T11:01:39Z'

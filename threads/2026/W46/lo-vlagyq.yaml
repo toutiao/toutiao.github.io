@@ -1,0 +1,118 @@
+---
+post:
+  id: lo-vlagyq
+  source: lobsters
+  title: 'Herb Sutter: When a language’s creator and its owners strongly disagree:
+    C++26 post-DIS, historical experience, and paths forward'
+  url: https://isocpp.org/files/papers/P4454R0.pdf
+  hn_url: https://lobste.rs/s/vlagyq
+  score: 26
+  author: mort
+  posted_at: '2026-11-08T21:59:26Z'
+  fetched_at: '2026-11-09T11:01:33Z'
+  article_url: https://isocpp.org/files/papers/P4454R0.pdf
+  article_fetch_status: blocked
+  article_fetched_at: '2026-11-09T11:01:37Z'
+  raw_comment_count: 10
+  tags:
+  - c++
+  - pdf
+comments:
+- id: lo-v4ug6q
+  parent_id: '0'
+  author: mort
+  text: |-
+    I think this whole situation is incredibly politically interesting. The C++ standardization process is fascinating.
+    One thing I've been thinking about regarding the criticisms of concepts is: to me, an "obviously good", incremental change to the language would've been to add better assertions. Standardize something like Google's CHECK and DCHECK, with proper language support. I imagine a solution where C++ defines 3 build modes: debug, release and release-unchecked, then introduces modernized assert functions, std::check(bool) and std::dcheck(bool).
+
+    std::check(bool) runs in modes debug and release, it throws a std::contract_violation (or abort or whatever) if passed a false-y value
+    std::dcheck(bool) runs only in debug mode, it also throws a std::contract_violation or whatever if passed a false-y value but is for slower checks which should only be run in debug mode
+    Maybe have some magic standardese somewhere which guarantees that the code inside the check functions don't get compiled for the modes which they shouldn't apply to (magic behavior in "functions" in std isn't new, look at std::launder)
+
+    I personally would love something like this; I wouldn't have to try to remember whether I was meant to define/undefine NDEBUG or _NDEBUG or _DEBUG, moving more things away from macros is a good thing, it would be nice to have a standard way to define heavier debug-only checks and lighter "you probably want to run these in release mode too" checks, etc.
+    Yet it runs foul of one of the major issues which C++26 Contracts detractors bring up, which is that behavior changes depending on compiler settings for the particular TU and that checking behavior might therefore be different depending on the compiler settings for the TU whose implementation of a function happens to be picked.
+    I don't understand why this is worse for C++26 Contracts than for my obvious and minimal version, or C-style assert() for that matter. Is there anyone who could care to explain? ODR violations due to compiler settings between TUs is obviously a big problem, but it has been an obvious big problem for most of the language for the past 30 years, why does it matter more now?
+  score: 6
+  posted_at: '2026-11-08T22:22:11Z'
+- id: lo-8jxb5a
+  parent_id: '0'
+  author: andrewrk
+  text: Why is this blog post a PDF? Anyway it makes sense and I appreciate the explanation.
+  score: 1
+  posted_at: '2026-11-09T01:16:01Z'
+- id: lo-vqqgz5
+  parent_id: '0'
+  author: mort
+  text: PDFs shared via e-mail is the primary way in which the committee does formal
+    communication I believe. Sutter is the chair of the committee.
+  score: 5
+  posted_at: '2026-11-09T01:40:19Z'
+- id: lo-eoqhmp
+  parent_id: '0'
+  author: emk
+  text: |-
+    Throwing an exception in response to an assertion violation seems weird to me. An assertion failure means, "Some fundamental invariant of this program was supposed to be impossible to violate, but it happened anyway. Presumably everything we though we knew was a lie?"
+    The correct response to an assertion failure is an abort, or some dire last case mechanism like killing a thread and notifying a handler supervising that thread. Erlang/BEAM and Rust essentially have versions of the latter. Erlang gets away with this because Erlang processes have isolated memory spaces and because processor supervisor trees are standard. Rust mostly uses this mechanism when running tests, to catch assertion violations in a test and report them nicely.
+    But exceptions are essentially an error flow, not a "panic-like flow". They don't feel like a good match when your program is in a known-broken state where fundamental assumptions have been violated.
+    (Not that I have a dog in the C++ fight.)
+  score: 5
+  posted_at: '2026-11-09T03:27:30Z'
+- id: lo-k3g7bm
+  parent_id: '0'
+  author: spc476
+  text: I view asserts more as a "my assumption at this point in the program is that
+    this should be true."  And yes, I do run with asserts in production (at least,
+    on my public server).  And yes, there have been a few times (once or twice if
+    I recall) where an assert triggered, and upon deeper investigation, I realized
+    the assertion was wrong.  But note, this is using C's assert().  I also use assert()
+    in a contract-like mechanism in my C code (mostly, pointer parameters to functions
+    should never be NULL, stuff like that).
+  score: 1
+  posted_at: '2026-11-09T05:14:33Z'
+- id: lo-qkhz7q
+  parent_id: '0'
+  author: WeetHet
+  text: |-
+    Funny how the cited Stroustrup PDF with objections to contracts seems to have its majority (Appendix: Documentation) be completely AI-generated
+    I can't understand how anyone can look at that and take his objections seriously if Stroustrup didn't even find them important enough to actually write them down himself:
+    https://www.stroustrup.com/Contracts_fundamental_flaws.pdf
+  score: 1
+  posted_at: '2026-11-09T07:55:59Z'
+- id: lo-zspbld
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    OpenStep’s NSAssert macro threw an NSInternalConsistencyException if the assertion failed. So we have over 30 years of this model being tested in production at scale (almost every OS X and iOS app will do this somewhere: inside system libraries if nowhere else).
+    One of the objections to aborting comes from safety-critical systems (the place that P2900 claimed to be helping, though the fact that it makes source-level reasoning non-local means it’s a disaster in that domain). Stopping is often more dangerous than continuing in an erroneous state in such systems, because the software is controlling some physical process.
+  score: 4
+  posted_at: '2026-11-09T08:31:49Z'
+- id: lo-ovzemh
+  parent_id: '0'
+  author: david_chisnall
+  text: It’s a C++ paper. They are all submitted and recorded in the system as PDFs.
+  score: 3
+  posted_at: '2026-11-09T08:32:27Z'
+- id: lo-lnna8t
+  parent_id: '0'
+  author: mort
+  text: |-
+    I didn't write it because it wasn't relevant to my core point and my comment was already getting pretty long, but my idea is actually that std::contract_violation should not be an exception, aka not inherit from std::exception. That would mean it can be caught if you actually want to (just like you can catch panic in e.g Rust or Go), but it won't be caught by typical existing catch-all exception handlers.
+    And when compiling with -fnoexcept it's just be a call to std::terminate anyway.
+  score: 3
+  posted_at: '2026-11-09T10:19:57Z'
+- id: lo-qmyx6k
+  parent_id: '0'
+  author: ralfj
+  text: |-
+    Interesting writeup.
+    However, in its references to Rust, I think this mischaracterizes the role of Graydon Hoare. He explicitly did not want to be BDFL or have special sway over the language, and one reason he stepped back was to avoid ever causing a situation like the one C++ now finds itself in.
+  score: 1
+  posted_at: '2026-11-09T10:49:26Z'
+article:
+  url: https://isocpp.org/files/papers/P4454R0.pdf
+  title:
+  fetch_status: blocked
+  content:
+  error: HTTP 403
+  fetched_at: '2026-11-09T11:01:37Z'
+archived_at: '2026-11-09T11:01:37Z'

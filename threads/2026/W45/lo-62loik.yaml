@@ -5,14 +5,14 @@ post:
   title: systemd loves Rust
   url: https://amutable.com/blog/systemd-loves-rust
   hn_url: https://lobste.rs/s/62loik
-  score: 33
+  score: 45
   author: lorenzleutgeb
   posted_at: '2026-11-08T12:55:05Z'
-  fetched_at: '2026-11-09T00:36:58Z'
+  fetched_at: '2026-11-09T11:01:33Z'
   article_url: https://amutable.com/blog/systemd-loves-rust
   article_fetch_status: success
-  article_fetched_at: '2026-11-09T00:36:59Z'
-  raw_comment_count: 15
+  article_fetched_at: '2026-11-09T11:01:37Z'
+  raw_comment_count: 19
   tags:
   - rust
   - systemd
@@ -23,14 +23,14 @@ comments:
   text: Well, by "loves Rust", they mean "no Rust standard library, no external dependencies,
     and no Rust anywhere but leaf binaries." Which, if that brings them joy, more
     power to them.
-  score: 15
+  score: 24
   posted_at: '2026-11-08T15:37:10Z'
 - id: lo-bwv7gu
   parent_id: '0'
   author: gignico
   text: It makes sense to enforce the usage of project-level abstractions. I suppose
     they mean no_std but still use core
-  score: 5
+  score: 7
   posted_at: '2026-11-08T15:51:19Z'
 - id: lo-vduexb
   parent_id: '0'
@@ -47,7 +47,7 @@ comments:
     crates.io and all that, but I also love that those are not mandatory. You can
     fit Rust into all sorts of more constrained environments and get all the benefits
     of the language (albeit not of the ecosystem).
-  score: 33
+  score: 42
   posted_at: '2026-11-08T16:11:25Z'
 - id: lo-mkoxyw
   parent_id: '0'
@@ -58,7 +58,7 @@ comments:
     Also, this means that they're committing to rebuilding all their own collection types on top of custom fallible allocation routines and unsafe. Which means that they may not have as much security auditing as the Rust std library. std isn't perfect, but it's frequently used as a testbed for people's theorem provers. Which has flushed some bugs in the past.
     To be clear, I'm not criticizing them. I'm just pointing out that they're choosing to throw away pretty much everything but the borrow checker and iterators, and build from scratch, which likely requires lots of unsafe. So they won't see the same cost/benefit tradeoffs as "normal" Rust projects. Which may make sense.
     (EDIT: Looking at some of their code, they seem to have already rebuilt an entire standard library using their own abstractions. But they've made it far enough to start seeing many of the benefits of Rust at higher levels, by that point. But that was a lot of code to rewrite.)
-  score: 7
+  score: 10
   posted_at: '2026-11-08T16:11:40Z'
 - id: lo-uexwo8
   parent_id: '0'
@@ -73,7 +73,7 @@ comments:
     They love "Rust, the language" like the Linux kernel Rust developers or the various embedded developers singing Rust's praises do.
     I've written Rust "shell scripts" where they don't really depend on the ecosystem and are purely there so that I can have APIs that return Option<T> or Result<T, E> instead of things like Python's os.getcwd documentation just assuming Everyone Knows™ that getcwd is unavoidably fallible at the kernel level, or bash being annoying with its opt-out whitespace splitting and retrofitted array support.
     That's loosely analogous to what they're doing with their internal alternative to calling libc functions. Using "Rust, the means of having a nicer type system".
-  score: 20
+  score: 25
   posted_at: '2026-11-08T17:48:29Z'
 - id: lo-gewzz0
   parent_id: '0'
@@ -87,7 +87,7 @@ comments:
   author: lorenzleutgeb
   text: There is a systemd_shared::alloc::Vec at src/rust/systemd-shared/alloc.rs:362-370,
     see also commit 626261b.
-  score: 3
+  score: 7
   posted_at: '2026-11-08T18:48:07Z'
 - id: lo-nfjn0k
   parent_id: '0'
@@ -107,7 +107,7 @@ comments:
     standard library, and they are filling it in. hopefully some of the community
     will be interested in polishing it up as its own thing other people can use in
     similar situations.
-  score: 2
+  score: 4
   posted_at: '2026-11-08T19:39:16Z'
 - id: lo-ndg2hh
   parent_id: '0'
@@ -115,14 +115,14 @@ comments:
   text: |-
     What stands out to me from that quote (and checking the rest of the linked code) is that that entire file is LLM-generated, including the SAFETY: comments that are meant to explain why the unsafe Rust is valid (!).
     At least in my experience writing unsafe Rust can be quite subtle (there's a whole book about it for a reason!), so that strategy strikes me as kind of insane. Then again, if they're using LLMs for their C maybe it's about as insane as what they were already doing...
-  score: 14
+  score: 26
   posted_at: '2026-11-08T20:16:29Z'
 - id: lo-hqimre
   parent_id: '0'
   author: gignico
   text: I didn’t realise that it was AI-written. Yes that’s pretty insane for a fundamental
     software like systemd but that’s life nowadays I guess…
-  score: 3
+  score: 4
   posted_at: '2026-11-08T20:50:12Z'
 - id: lo-tvcu0f
   parent_id: '0'
@@ -139,6 +139,35 @@ comments:
     Do you run them with cargo run? Or they are just very lean compiled binaries that you manage?
   score: 1
   posted_at: '2026-11-09T00:20:28Z'
+- id: lo-csmuwh
+  parent_id: '0'
+  author: hjvt
+  text: 'There''s a nightly cargo feature on track for stabilization for this usecase:
+    https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#script'
+  score: 4
+  posted_at: '2026-11-09T00:40:12Z'
+- id: lo-io7t9t
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Generally lean compiled binaries I manage, because I find Cargo's too eager to find excuses to do a rebuild with an invalidated build cache. Using rust-analyzer, bacon, and --release in the same project? You're on borrowed time. rustup update? That's a rebuild. Compiling both the host app and the WASIp2 plugins for it without forcing separate target directories? Yup. etc. etc. etc.
+    Once the nightly cargo scripts feature is stabilized and rust-analyzer supports it, I'l re-evaluate something like https://rust-script.org/ since the main place I still use Python (aside from stuff where the Rust ecosystem isn't there yet like memory-safe Qt QWidgets bindings, SQL databasing with Django ORM/SQLAlchemy+Alembic "derive is authoritative and will be diffed against the in-database schema"-style autogeneration of draft migrations and abstracting over SQLite's limited ALTER TABLE, and Django's ecosystem of reusable apps) is truly "too simple for me to be motivated to manage a new project folder" things.
+  score: 4
+  posted_at: '2026-11-09T00:59:46Z'
+- id: lo-dgo68h
+  parent_id: '0'
+  author: emk
+  text: |-
+    Oh, that's most unfortunate. There are already several popular Rust crates which implement standard collections with fallible allocation semantics, crates which are widely used in embedded and small kernel contexts.
+    Apparently they just decided to vibe slop a bunch of unsafe code instead of taking a dependency on a popular, well-established crate that does one thing (with almost no transitive dependencies)? That's certainly a choice.
+  score: 11
+  posted_at: '2026-11-09T02:25:06Z'
+- id: lo-us9ewh
+  parent_id: '0'
+  author: gignico
+  text: Interesting, what’s the name of the crate you’re talking about?
+  score: 3
+  posted_at: '2026-11-09T06:23:42Z'
 article:
   url: https://amutable.com/blog/systemd-loves-rust
   title: systemd ❤️ Rust - Amutable
@@ -244,4 +273,4 @@ article:
     parts of the codebase written in C will not be converted without good reaso"
   error:
   fetched_at: '2026-11-08T19:23:40Z'
-archived_at: '2026-11-09T00:36:59Z'
+archived_at: '2026-11-09T11:01:38Z'

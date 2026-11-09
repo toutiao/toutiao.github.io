@@ -4,14 +4,14 @@ post:
   title: I'm not a fan of Deno's security model (2024)
   url: https://goldstein.lol/posts/deno-security/
   hn_url: https://news.ycombinator.com/item?id=50413769
-  score: 81
+  score: 98
   author: ''
   posted_at: '2026-11-08T14:42:38Z'
-  fetched_at: '2026-11-09T00:36:56Z'
+  fetched_at: '2026-11-09T11:01:19Z'
   article_url: https://goldstein.lol/posts/deno-security/
   article_fetch_status: success
   article_fetched_at: '2026-11-09T00:36:56Z'
-  raw_comment_count: 39
+  raw_comment_count: 51
 comments:
 - id: '50414563'
   parent_id: '50413769'
@@ -393,6 +393,116 @@ comments:
     the user to do this.
   score: 0
   posted_at: '2026-11-09T00:09:45Z'
+- id: '50419715'
+  parent_id: '50416645'
+  author: kragen
+  text: You probably shouldn&#x27;t call it a &quot;capability system&quot; if you
+    don&#x27;t mean ocaps, because despite your best intentions, many people who are
+    familiar with ocap systems will assume you are engaged in some sort of fraud.
+  score: 0
+  posted_at: '2026-11-09T01:14:06Z'
+- id: '50419746'
+  parent_id: '50419201'
+  author: phyzome
+  text: Not that I can think of, no. This <i>is</i> the public key based way of doing
+    things.
+  score: 0
+  posted_at: '2026-11-09T01:19:25Z'
+- id: '50420075'
+  parent_id: '50414563'
+  author: zahlman
+  text: So, what happens to yt-dlp?
+  score: 0
+  posted_at: '2026-11-09T02:05:35Z'
+- id: '50420107'
+  parent_id: '50419715'
+  author: ch4s3
+  text: It literally is a capability system it just isn’t OCAP because it’s a purely
+    functional language and there are no objects. You declare capabilities you need
+    and grant them where they’re allowed. It differs in happening at compile time
+    only and not being threaded through every method which I think is ergonomically
+    awful.<p>It’s heavily inspired by Eiffel and Pony. It is also coincidentally a
+    lot like Bluefin for Haskell[1], and in that spirit I use them beyond security.
+    For example behavioral promises like no_alloc and no_panic.<p>I’ve shown to some
+    compiler researchers who understood it to be a capability system. In your mind
+    what makes it not a capability system?<p>[1] <a href="https:&#x2F;&#x2F;h2.jaguarpaw.co.uk&#x2F;posts&#x2F;bluefin-capability-system&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;h2.jaguarpaw.co.uk&#x2F;posts&#x2F;bluefin-capability-system&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-09T02:09:26Z'
+- id: '50420144'
+  parent_id: '50419746'
+  author: dingaling911
+  text: I mean the value gets encrypted or signed with a private key.
+  score: 0
+  posted_at: '2026-11-09T02:15:53Z'
+- id: '50420458'
+  parent_id: '50419129'
+  author: sieve
+  text: My current design idea lets the runtime collect all the requests till the
+    application locks its set of demands. This entire set is presented to the user
+    who can then approve&#x2F;reject&#x2F;approve-always<p>The runtime maintains state
+    in the config directory so that approve-always works for `(hash(ls), dir_read(&#x2F;etc))`
+    without producing that question during the next `ls &#x2F;etc`
+  score: 0
+  posted_at: '2026-11-09T02:56:39Z'
+- id: '50420872'
+  parent_id: '50420144'
+  author: phyzome
+  text: Not really applicable here. If you want to create an alternative design, I
+    recommend first looking at src&#x2F;protocol.rs to see what the current design
+    constraints are. (Or the README.md for the overall workflow.)
+  score: 0
+  posted_at: '2026-11-09T03:52:34Z'
+- id: '50421059'
+  parent_id: '50420107'
+  author: amluto
+  text: You lost me.  If I want to grant read to &#x2F;etc&#x2F;passwd, how do I do
+    it without threading it through every call?  Is it an implicit parameter system?
+    Do you literally write “&#x2F;etc&#x2F;passwd” in the code?
+  score: 0
+  posted_at: '2026-11-09T04:24:30Z'
+- id: '50421463'
+  parent_id: '50415319'
+  author: its-summertime
+  text: with deno being &quot;The main thing it protects you against is malicious
+    code that isn&#x27;t smart enough.&quot;, does this not practically put them on
+    the same footing?
+  score: 0
+  posted_at: '2026-11-09T05:36:27Z'
+- id: '50421543'
+  parent_id: '50417495'
+  author: thegagne
+  text: Cool!<p>I did look for “url” on that page and came up empty, then read it
+    with my own eyes and didn’t see it, and even passed it to Claude and it also couldn’t
+    find an answer for my query:<p>&gt; Take a look at and see if there’s a way to
+    limit fetching from a particular hostname over https. <a href="https:&#x2F;&#x2F;march-lang.org&#x2F;docs&#x2F;capabilities"
+    rel="nofollow">https:&#x2F;&#x2F;march-lang.org&#x2F;docs&#x2F;capabilities</a><p>What
+    I would like to be able to do is to say “only let this imported function talk
+    to <a href="https:&#x2F;&#x2F;example.com&#x2F;*" rel="nofollow">https:&#x2F;&#x2F;example.com&#x2F;*</a>”,
+    and deny any tcp connections other than the dns lookup and https calls to that
+    domain.
+  score: 0
+  posted_at: '2026-11-09T05:49:50Z'
+- id: '50422082'
+  parent_id: '50415346'
+  author: schlarpc
+  text: I built exactly this at work over the past few months, sadly not open source
+    though. It uses Cedar policies for process lifecycle, network activity (at basically
+    every layer), filesystem access, credential usage through brokers, and so on,
+    with context injected into every evaluation, and cgroup freezer on Linux for stop-and-escalate-to-user.
+    Maybe I should use this as evidence of demand for us to open source it...
+  score: 0
+  posted_at: '2026-11-09T07:07:22Z'
+- id: '50422624'
+  parent_id: '50420107'
+  author: kragen
+  text: It really sounds like you&#x27;re describing an ambient-authority system,
+    which separates designation from authority.  Ocap systems don&#x27;t separate
+    designation from authority, and purely functional languages <i>do</i> have objects
+    in the sense of &quot;object&quot; that the &quot;o&quot; in &quot;ocap&quot;
+    stands for.
+  score: 0
+  posted_at: '2026-11-09T08:17:27Z'
 article:
   url: https://goldstein.lol/posts/deno-security/
   title: I’m not a fan of Deno’s security model | max’s place
@@ -496,4 +606,4 @@ article:
     ask dynamic"
   error:
   fetched_at: '2026-11-09T00:36:56Z'
-archived_at: '2026-11-09T00:36:58Z'
+archived_at: '2026-11-09T11:01:32Z'

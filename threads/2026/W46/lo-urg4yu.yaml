@@ -1,0 +1,246 @@
+---
+post:
+  id: lo-urg4yu
+  source: lobsters
+  title: Unattended reboots with encrypted disks
+  url: https://jmmv.dev/2026/11/zkeys-intro.html
+  hn_url: https://lobste.rs/s/urg4yu
+  score: 21
+  author: jmmv
+  posted_at: '2026-11-08T16:58:03Z'
+  fetched_at: '2026-11-09T11:01:33Z'
+  article_url: https://jmmv.dev/2026/11/zkeys-intro.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T11:01:37Z'
+  raw_comment_count: 12
+  tags:
+  - freebsd
+  - security
+comments:
+- id: lo-py4mcq
+  parent_id: '0'
+  author: jmmv
+  text: |-
+    Hi! I'm posting this new article of mine here because I have mentioned my work on ZKeys (not by name) in a bunch of the recent "What are you doing this week/weekend" threads and I finally published the project. There was some very light interest in those threads so this announcement seems suitable.
+    You'll notice that the use-case for this project is extremely niche, but I'm sure we have a bunch of people running their own NAS with FreeBSD and ZFS around here. Oh, but don't let that put you off: I also have support for Fedora out of the box now, and could add other systems if there is interest in the idea.
+    Note that you need a coupon to register. The service is free but I just want to gate registrations in case something goes rogue. Use LAUNCH50 and you're in.
+  score: 4
+  posted_at: '2026-11-08T16:58:55Z'
+- id: lo-x6kjhy
+  parent_id: '0'
+  author: cyberia
+  text: |-
+    That's cool. I get by with dracut-sshd for my AlmaLinux hosts with encrypted root partitions, but it's not fully unattended. You still have to log in and type the password yourself. I saw this blog post about getting something similar going with FreeBSD, but I never tried it.
+    Out of interest, how come the server decrypts the password-half that it keeps using the client-provided key, rather than just sending the encrypted data and letting the client handle the decryption? That way, the server would never touch the key or the raw password-half.
+  score: 2
+  posted_at: '2026-11-08T19:37:45Z'
+- id: lo-dvffsj
+  parent_id: '0'
+  author: jaredkrinke
+  text: Comment removed by its author
+  score: 1
+  posted_at: '2026-11-08T20:42:21Z'
+- id: lo-vzxncq
+  parent_id: '0'
+  author: BenjaminRi
+  text: |-
+    But then… can you reboot the machine without manually entering a passphrase before being able to access your files again?
+
+    No, but I never reboot. If I had that problem, e.g. due to power outages, I would use a pikvm to restore access.
+  score: 1
+  posted_at: '2026-11-08T21:28:11Z'
+- id: lo-mzyzyo
+  parent_id: '0'
+  author: jmmv
+  text: |-
+    Out of interest, how come the server decrypts the password-half that it keeps using the client-provided key, rather than just sending the encrypted data and letting the client handle the decryption? That way, the server would never touch the key or the raw password-half.
+
+    That's a good question. The reason it's this way is because I wanted to protect key retrievals with a password (to prevent arbitrary access, but also to detect malicious retrieval attempts as shown in the dashboard), so the natural thing to do after that password already made it to the server was to reuse it for encryption/decryption of the server-side key. I definitely didn't want to store user keys unencrypted at rest.
+    As a different option, I could return the encrypted blob to the client, but that'd no better because then the server would still see the password for a moment.
+    Yet another option would be to have a different password on the client to handle key decryption, but that would adds extra complexity (we'd end up with a password for retrieval, a password for decryption, and a local half) and I'm not seeing much of a gain for that.
+    Which leads to another completely different option: the "local half" could become the decryption key for the remote blob, instead of gluing together two halves. That would resolve this, but I kinda like the local/remote key separation + recombination that I have now because it's easy to reason about and convince yourself that the local portion was really generated locally and never left the machine.
+  score: 1
+  posted_at: '2026-11-08T23:27:09Z'
+- id: lo-4n0pjz
+  parent_id: '0'
+  author: jackdk
+  text: |-
+    Split keys: The ZKeys server only stores half of the passphrase used to unlock a volume. The other half remains on the client machine.
+
+    Would Shamir's Secret Sharing be a better fit here, so compromising either half doesn't get you any information?
+  score: 7
+  posted_at: '2026-11-08T23:47:12Z'
+- id: lo-dkw8vo
+  parent_id: '0'
+  author: dzwdz
+  text: |-
+    At least on Linux, you can set up dropbear to run in the initramfs, so you can ssh in to unlock the disks. Debian has a ready-to-use package for this, and the Gentoo Wiki has a guide for setting it up from scratch which seems like it should work on other distros too.
+    I wonder if there's a way to keep the encryption key in memory while rebooting, so you wouldn't even have to do that (unless you lose power or something). That'd be pretty cool.
+  score: 3
+  posted_at: '2026-11-09T01:00:32Z'
+- id: lo-dtsd5k
+  parent_id: '0'
+  author: BenjaminRi
+  text: Thanks, this is some valuable information I did not know. I just realized,
+    I wouldn't even need that. My boot drive is unencrypted, it's only the disk drives
+    that are encrypted. The boot drive holds no data of importance (swap is disabled).
+  score: 1
+  posted_at: '2026-11-09T01:03:51Z'
+- id: lo-ehu2eo
+  parent_id: '0'
+  author: cyberia
+  text: |-
+    Right, that makes sense.
+    I'm writing an end-to-end encrypted app right now (for fun), and I solved a similar problem by having the server keep an HKDF-derived hash of the password, to compare against a client-provided hash for authentication.
+    My flow goes:
+
+    Client uses scrypt to derive some bits (D) from their password
+    Client computes an authentication key A = HKDF(D, "authentication") and an encryption key K = HKDF(D, "encryption")
+    Client submits A to the server (over HTTPS)
+    Server compares A with a stored, known value
+    If successful, server returns encrypted content (C) to client
+    Client computes Decrypt(K, C) to get the decrypted data.
+
+    That way you can use the same password for auth and decryption, but HKDF gives you the guarantee that the server can't get the decryption key from the auth key.
+  score: 2
+  posted_at: '2026-11-09T01:24:46Z'
+- id: lo-zyhw2c
+  parent_id: '0'
+  author: cyberia
+  text: I don't think you'd need SSS for the case of two parties where both have to
+    release their key-shares. A plain old one-time pad (XOR with random data) would
+    do.
+  score: 8
+  posted_at: '2026-11-09T01:39:56Z'
+- id: lo-aqvrou
+  parent_id: '0'
+  author: ThinkChaos
+  text: |-
+    Dis you look into Clevis that's in the same space? Any particular motivation for not using it?
+    I don't know if it supports FreeBSD, and having more options is nice!
+  score: 3
+  posted_at: '2026-11-09T05:29:21Z'
+- id: lo-hv8bdm
+  parent_id: '0'
+  author: sjamaan
+  text: I don't know if you implemented it, but it would be useful to link the key
+    to a physical location as extra security measure. Bringing up a stolen machine
+    should typically cause it to get a new IP address and "location" (different hops
+    along the route) in the network.
+  score: 1
+  posted_at: '2026-11-09T08:19:37Z'
+- id: lo-qxcql5
+  parent_id: '0'
+  author: frontsideair
+  text: This solves the exact problem I had with my cheap OVH bare metal box that
+    I had parked, thanks! My box doesn't have a TPM and I was considering a similar
+    solution to this but unsure about the direction and the required engineering effort.
+    Great to see validation and the concrete implementation. I may give this a try
+    when I have time to work on it.
+  score: 1
+  posted_at: '2026-11-09T10:26:36Z'
+article:
+  url: https://jmmv.dev/2026/11/zkeys-intro.html
+  title: Unattended reboots with encrypted disks - Julio Merino (jmmv.dev)
+  fetch_status: success
+  content: "Do you run a small home server or NAS holding your precious photos and
+    sensitive documents? If so, I suppose the drives are encrypted, right? But then&mldr;
+    can you reboot the machine without manually entering a passphrase before being
+    able to access your files again?\n\nIf you answered yes to the questions above—which
+    is common for convenience—that implies the encryption keys live in the machine
+    which&mldr; kinda defeats the purpose of disk encryption, doesn’t it? A thief
+    can break into your house, lift the whole box (they are small these days, huh),
+    plug it in elsewhere, and gain free rein over your files.\n\nSo, which one is
+    it? Simplicity and reliability by allowing automatic reboots or data protection
+    by keeping the key in your head? With ZKeys—a little new project I’m launching
+    today—you can have your cake and eat it too.\n\nA blog on operating systems, programming
+    languages, testing, build systems, my own software projects and even personal
+    productivity. Specifics include FreeBSD, Linux, Rust, Bazel and EndBASIC.\n\n[![Follow
+    @jmmv on Mastodon](/images/badges/mastodon-logo.svg)](https://mastodon.online/@jmmv)[![Follow
+    @jmmv on Twitter](/images/badges/Twitter_logo_blue.svg)](https://twitter.com/intent/follow?original_referer=https%3A%2F%2Fjmmv.dev%2F&screen_name=jmmv)[![RSS
+    feed](/images/badges/feed-icon-28x28.png)](/feed.xml)\n\n# TL;DR\n\nZKeys is a
+    managed service that stores encryption passphrases off-site. Client machines fetch
+    the encryption keys from the service and keep those keys alive (unlocked) via
+    periodic keepalive messages.\n\nIf the server stops receiving those messages for
+    a long period of time (e.g. because it has been unplugged as part of theft), access
+    to the key is automatically locked. You get automatic, passwordless reboots while
+    keeping your data protected against real incidents.\n\n# Storytime\n\nAbout a
+    year ago, I was reinstalling my FreeBSD home server to act as my NAS after a [short
+    stint with a Synology box](/2024/12/synology-ds923-vs-freebsd.html). During that
+    process, I decided to enable encryption for the ZFS data pool. But as I did that,
+    I faced the question: how do I allow the machine to automatically serve my data
+    after a reboot? I could put the key in a local file, which FreeBSD supports via
+    the `keylocation` ZFS option, but that would render disk encryption pretty much
+    useless.\n\nSo I had an idea: what if I put the key on a _different_ machine away
+    from my house? I could then make the NAS fetch the key to mount the drives. And
+    if someone stole the server, I could wipe the remote key and make the data unreadable
+    _before_ they could plug it back in. I did post this to Twitter and there was
+    some interest in the idea:\n\n> Silly or smart? I wrote a startup rc.d script
+    to automatically mount my encrypted ZFS pool by fetching the key from a remote
+    server. What I want to protect against is the \"drives stolen from home\" case.
+    If that happened, I could quickly remove the key. https://t.co/eZle2nJlXW\n> \n>
+    — Julio Merino (@jmmv) [September 7, 2025](https://x.com/jmmv/status/1964517899101725041?ref_src=twsrc%5Etfw)\n\nBut&mldr;
+    did you notice the problem with what I said above? Wiping the key by hand after
+    noticing something is wrong is problematic because the gap between those two events
+    may be large. What if I’m on a long vacation and I have no means of noticing that
+    the machine has been stolen? Game over.\n\nSo I refined the idea: what if I had
+    a _service_ that stored the key remotely and required the consuming machine to
+    send it frequent pings to keep the key unlocked? This way, if the machine were
+    stolen, it’d likely be offline for more than a few minutes and the service could
+    automatically determine that something is wrong and lock the key from future accesses.
+    And that’s precisely what ZKeys does.\n\n# Zero-knowledge protection\n\nBefore
+    getting into details, it’s important to get something out of the way early on:
+    ZKeys is designed so that a compromise of the server is insufficient to retrieve
+    or reconstruct your keys. This is done in two ways:\n\n- **Split keys:** The ZKeys
+    server only stores _half_ of the passphrase used to unlock a volume. The other
+    half remains on the client machine. The `zkeys` client program combines both halves
+    to produce the whole passphrase.\n\n- **Encryption at rest:** The keys are encrypted
+    at rest with a password that the `zkeys` client must supply for retrieval and
+    which is securely transmitted over HTTPS. The password only lives in the server’s
+    memory for a brief period of time.\n\nThe tradeoff is, simply, that you MUST back
+    up the full encryption keys in a third location of your own (a paper in a safe,
+    a password manager, you name it). If ZKeys goes down or you lose your remote key
+    password, there is absolutely nothing I can do to help you. _You have been warned._
+    The setup instructions later on will instruct you how to back the key up.\n\n#
+    Installation and setup\n\nThe ZKeys service is available at [https://zkeys.jmmv.dev/](https://zkeys.jmmv.dev/)
+    and the open-source client—along with system integrations for FreeBSD and Fedora—is
+    in my [`jmmv/zkeys`](https://github.com/jmmv/zkeys/) repository.\n\n> Disclaimer:
+    ZKeys is offered to you for free. I make no promises about its reliability, availability,
+    or anything else. I am giving you access because I expect that supporting a handful
+    of extra users won’t be a big issue. But if support becomes a burden, or if load
+    becomes unmanageable, I’ll have to re-evaluate my choices here. Which means that,
+    for now, you have to use the limited `LAUNCH50` code to get started!\n\nThe basic
+    idea to set ZKeys up is the following:\n\n1. Install the `zkeys` client CLI tool.\n2.
+    Create a service account.\n3. Create a new key (or onboard an existing key).\n4.
+    Configure the keep-alive service on the target machine.\n5. Change or add the
+    filesystem encryption key to be the one stored in ZKeys.\n6. Configure the auto-mount
+    service on the target machine.\n7. Reboot!\n\nThat’s all it takes, but the steps
+    are quite manual at the moment because no upstream OSes provide packages. The
+    [service documentation](https://zkeys.jmmv.dev/#/docs) covers several scenarios
+    in detail for FreeBSD and Fedora, so I’m not going to repeat them here.\n\n_Demo
+    of the integration between ZKeys and Fedora 44 with a fully encrypted root volume:
+    the video starts by showing a fully unattended boot, followed by a manual lock
+    of a key that causes Fedora to refuse to reboot on its own, and finishes with
+    another automatic reboot after the key has been unlocked again._\n\n# Behind the
+    scenes\n\nNow for the nerdy details, because that’s what you’re here for:\n\n-
+    The CLI is Rust, of course, but it has to come with a bunch of shell scripts to
+    integrate with FreeBSD’s rc.d system and Fedora’s systemd and dracut. These integration
+    points are the trickiest part of the client package and the hardest to validate
+    automatically, which is why I only provide support for the two systems I use on
+    a daily basis. It should be possible to integrate ZKeys with any other Unix-like
+    OS, though.\n\n- The CLI package is a frankenmonster made up of Cargo and GNU
+    Automake/Autoconf because of the above. I believe system-level tools should abide
+    by de facto standard tooling even if such standard tooling is deficient, so GNU
+    Autotools it is.\n\n- I run two non-replicated instances of the service: one in
+    US West and one in EU West, because I have machines in both locations and both
+    rely on encryption. I strongly suggest you use the US instance as I’m seeing frequent
+    power hiccups in my EU deployment.\n\n- The frontend uses Bootstrap, straight
+    from the 2010s. Does it look ugly? Maybe, but I kinda like it and, most importantly,
+    it’s _functional_. Of course I could have asked AI to produce yet-another-dull-site
+    full of gradients and slop, but I did not want to do that, so I stuck to what
+    I already knew how to do by hand from previous services.\n\n- The admin page is
+    an SPA, yes. This is an intentional design choice that forces a very clear separation
+    between the backend APIs and the f"
+  error:
+  fetched_at: '2026-11-09T11:01:37Z'
+archived_at: '2026-11-09T11:01:37Z'

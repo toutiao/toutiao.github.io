@@ -1,0 +1,121 @@
+---
+post:
+  id: lo-kbrpx3
+  source: lobsters
+  title: unlocking any car from X brand in most of the world
+  url: https://shubs.io/unlocking-any-car-from-x-brand-in-most-of-the-world/
+  hn_url: https://lobste.rs/s/kbrpx3
+  score: 29
+  author: markerz
+  posted_at: '2026-11-09T04:43:15Z'
+  fetched_at: '2026-11-09T11:01:33Z'
+  article_url: https://shubs.io/unlocking-any-car-from-x-brand-in-most-of-the-world/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-09T11:01:34Z'
+  raw_comment_count: 0
+  tags:
+  - reversing
+  - security
+comments: []
+article:
+  url: https://shubs.io/unlocking-any-car-from-x-brand-in-most-of-the-world/
+  title: unlocking any car from X brand in most of the world
+  fetch_status: success
+  content: "# unlocking any car from X brand in most of the world\n\nI've always had
+    a soft spot for this particular car brand. Our family has owned a few of them
+    over the years, and they've served us incredibly well. In 2023, I bought a new
+    four wheel drive/SUV from them, and it was the first time I had access to their
+    connected car platform.\n\nHaving looked at platforms like this before ([previous
+    works](https://samcurry.net/hacking-subaru?ref=shubs.io)), I was sceptical about
+    how secure they really were. I suspected there was something there, but life kept
+    getting in the way of actually looking. This July, I collaborated with Sam Curry
+    to take a look at the security of a major automaker's connected car systems. Throughout
+    this post, I'll refer to them simply as \"the automaker\".\n\nWhen you typically
+    think of car hacking, it's often easy to jump into the hardware side of things,
+    but my background sits pretty squarely in compromising internet-facing web applications
+    and infrastructure. Regardless of all the hardware bits and bobs, it all connects
+    back to some service that, by design, has to be reachable from the internet.\n\nThe
+    journey started with a simple question: what infrastructure does the app talk
+    to when I remotely unlock my car? To work this out, I downloaded the APK and decompiled
+    it, eventually reconstructing the API requests that were being made.\n\nGoing
+    through the code, the primary point of contact seemed to be assets under `*.redacted-telematics.com.au`:\n\n
+    \   dartExecutor.executeDartEntrypoint(createDefault, CollectionsKt.r(gson.toJson(new
+    GlobalConfigParams(false, g11, com.redacted.app.xcapp.a.f69866f, \"X\", str)),
+    new Gson().toJson(new ApiConfig(\"https://api.redacted-telematics.com.au\", \"https://api.redacted-telematics.com.au\",
+    \"https://api.redacted-telematics.com.au\" ...\n\nAlmost every part of the consumer
+    application called back to `redacted-telematics.com.au`. What else existed under
+    this domain?\n\n## The admin tool\n\nRunning connected car infrastructure can
+    be quite complex, and managing it requires a mix of admin tools, staging, dev,
+    and QA environments, to make sure that customers get a clean experience. Whether
+    all of that should be sitting on the public internet, available to anyone willing
+    to do some basic reconnaissance, is a different story.\n\nOne asset caught my
+    attention more than the others. `admintool.redacted-telematics.com.au` returned
+    a page titled TEST HARNESS. Who can resist a subdomain with admintool in it?\n\nVisiting
+    this subdomain presented a very plain and grey login screen, which didn't exactly
+    ooze quality, given it presented a logout button before we'd logged in.\n\nI love
+    that most single-page applications ship their entire JavaScript bundle even when
+    all they need to render is a login page. Sure, some more modern frameworks split
+    out JavaScript files so that they only serve what is necessary, but in this case,
+    we could comb through the large JavaScript bundle to understand what this \"admin
+    tool\" actually let you do.\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-07-24-at-09.35.19@2x.png)\n_Oozing
+    quality_\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-11-07-at-17.10.32.png)\n_Who
+    even reads JavaScript bundles?_\n\nTurns out this admin tool let you do quite
+    a lot. It had a rich API that let the automaker's employees interact with customer
+    accounts and production vehicles with very few restrictions. Reconstructing the
+    requests, we found that a lot of these APIs needed no authentication beyond the
+    hardcoded API keys sitting in the JavaScript bundle.\n\nFor example, we could
+    look up user accounts by email address:\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-11-07-at-17.12.40.png)\n\nBut
+    that's just not good enough. If we want to unlock any of their cars from just
+    knowing the number plate, we're going to need to do better than that.\n\nIn Australia,
+    a number plate gets you the VIN (vehicle identification number) fairly easily
+    through state-based registration lookup sites.\n\nThis isn't really a security
+    flaw. There are plenty of legitimate reasons to want a VIN, like checking a car's
+    true repair and insurance history before buying second-hand. If we could go from
+    VIN to a subscriber or email, we'd complete the chain.\n\nFortunately, there was
+    an API that let you do exactly that:\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-11-08-at-08.32.13.png)\n\nWith
+    the subscriber GUID, you could pull the full account details (including the user's
+    email via the `/v1/account` endpoint) like so:\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-11-09-at-12.22.31.png)\n\nWell,
+    I guess we have the first part of our chain sorted. Plate -\\> VIN -\\> Subscriber
+    GUID -\\> User Account PII (email) registered on the automaker's identity platform
+    (ForgeRock OpenIDM).\n\nNow, how do we send commands to any car we want? Surely
+    this admin tool would let us do that? Unfortunately, no. It let us provision features
+    to a car, add ourselves to a user's account as a secondary user, and even generate
+    remote access codes. But for all that functionality, none of it actually got us
+    remote control of a vehicle.\n\n## The identity platform\n\nSam and I then spent
+    two weeks digging into how the automaker manages their central identity system:
+    the software they use, the way commands are issued, and how consumers authenticate.\n\nWhen
+    a user goes through the authentication flow for the automaker's mobile app, requests
+    are made to `login.redacted-identity.com.au`, and after going through an MFA flow,
+    a consumer auth token is finally issued. This auth token is then used for subsequent
+    requests to `api.redacted-telematics.com.au` (both REST APIs and GraphQL). Once
+    you have that auth token, it's pretty much game over. You can control a user's
+    car (remote unlock/lock, horns, engine, etc).\n\nSo if we could mint a token for
+    any user, we'd finally be able to control anyone's connected car. This is the
+    angle we went for.\n\nThe automaker is a heavy user of ForgeRock's identity software
+    (OpenAM/OpenIDM). This is the cornerstone of their authentication mechanisms.
+    Pulling the subdomains for `*.redacted-identity.com.au`, we quickly found their
+    OpenIDM instance at `openidm.redacted-identity.com.au`. This is the system that
+    manages every identity registered on the automaker's connected car platform.\n\nThis
+    all clicked together when we were combing through the JavaScript files under `*.redacted-telematics.com.au`
+    and we came across an absolutely cursed vendor JavaScript bundle that embedded
+    admin credentials for OpenIDM \U0001F631:\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-11-07-at-17.15.20.png)\n\nEven
+    though these admin credentials were meant to be for their staging environment,
+    given the hygiene we'd seen so far, we were pretty sure they'd work in production
+    too.\n\n## Fighting the WAF\n\nLooking closer at OpenIDM, we couldn't tell whether
+    the automaker knew how fragile it was. One thing was obvious though: they'd invested
+    heavily in WAF rules to block access to the sensitive APIs that ForgeRock typically
+    lets you call via `/openidm/*`.\n\n![](https://shubs.io/content/images/2026/11/CleanShot-2026-11-07-at-19.32.01.png)\n\nEven
+    with the origin IP, any request to `/openidm/` came straight back as an Nginx
+    WAF block. Someone had put real effort into hardening these assets (despite them
+    being externally accessible).\n\nFair enough, and we respect the hardening. But
+    that much WAF investment usually means bandaids over something known to be bad.
+    They probably understood how bad it was to have this asset exposed at all, and
+    some business case kept it there anyway.\n\nI'm not sure a WAF rule has ever stopped
+    us when we're motivated enough, so we invested days into finding a way out of
+    these protections, using our trusty path traversal tricks. How hard could it be?\n\nValidating
+    the admin credentials we found inside the JavaScript bundle was not that tough.
+    The Australian OpenIDM instance had a few paths whitelisted like `/XUI/` and `/UI/`,
+    and path traversal charact"
+  error:
+  fetched_at: '2026-11-09T11:01:34Z'
+archived_at: '2026-11-09T11:01:36Z'
