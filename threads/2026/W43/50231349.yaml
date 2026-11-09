@@ -1,0 +1,376 @@
+---
+post:
+  id: '50231349'
+  title: 'Show HN: Farol – A risk map of a pull request for the person who approves
+    it'
+  url: https://github.com/winnin/farol
+  hn_url: https://news.ycombinator.com/item?id=50231349
+  score: 60
+  author: ericholiveira
+  posted_at: '2026-10-25T13:28:06Z'
+  fetched_at: '2026-11-09T00:37:03Z'
+  raw_comment_count: 43
+comments:
+- id: '50231355'
+  parent_id: '50231349'
+  author: ericholiveira
+  text: |-
+    Hi HN, I built farol at Winnin, where we open-sourced it (MIT).<p>AI agents now write a lot of our code, and AI reviewers catch a lot of
+    the line-level problems. But someone still has to press &quot;merge&quot;, and
+    that person has the same question every time: how risky is this, and
+    where should I spend my attention? A 40-file PR where 38 files are
+    isolated is very different from a 3-file PR that changes a model used
+    by 23 endpoints.<p>farol is a CLI (and a GitHub Action) that answers that statically:<p>- classifies the PR (global &#x2F; touches-existing &#x2F; isolated &#x2F; unknown)
+      and gives a 0-100 merge risk score
+    - ranks the files by risk and says why: what each one reaches
+      (routes, endpoints, jobs), contract breaks in API responses,
+      dependency changes, security patterns
+    - diff coverage from your existing coverage report, so &quot;38% of the
+      changed lines are tested&quot; sits next to the risky files
+    - an HTML report where you mark files as reviewed and the score and
+      test plan follow; incremental mode for &quot;what changed since my last
+      review&quot;; suggested reviewers from git blame<p>How: it uses the TypeScript compiler API for TS&#x2F;React (React Router,
+    Next.js, TanStack Router) and TS backends, a small go&#x2F;types helper for
+    Go, and Python&#x27;s ast for FastAPI&#x2F;Flask&#x2F;Django and friends. No LLM, no
+    network during analysis, and it never executes the analyzed repo&#x27;s
+    code. It&#x27;s deterministic and informs only; it never blocks a merge.<p>Live demo (two reports from a real PR, nothing to install):
+    <a href="https:&#x2F;&#x2F;winnin.github.io&#x2F;farol&#x2F;demo&#x2F;" rel="nofollow">https:&#x2F;&#x2F;winnin.github.io&#x2F;farol&#x2F;demo&#x2F;</a><p>Try it on a branch: npx @winninjs&#x2F;farol --help<p>Limitations: only TS, Go and Python for now, and the reachability is
+    static, so dynamic dispatch and reflection make it fail closed
+    (&quot;unknown&quot;) rather than guess. I&#x27;d love feedback on the risk score
+    and on false positives in your codebase.
+  score: 0
+  posted_at: '2026-10-25T13:28:48Z'
+- id: '50231700'
+  parent_id: '50231349'
+  author: ccvannorman
+  text: why is the only comment by the OP flagged and dead? Is it because they were
+    supposed to include that data in the description text rather than a comment, was
+    it flagged as AI generated, or..?<p>Trying to understand why the poster&#x27;s
+    own comment was flagged and killed but the original article remains up.
+  score: 0
+  posted_at: '2026-10-25T14:02:09Z'
+- id: '50231749'
+  parent_id: '50231700'
+  author: shiandow
+  text: I&#x27;m not sure either. The comments don&#x27;t look wrong to me.
+  score: 0
+  posted_at: '2026-10-25T14:07:23Z'
+- id: '50231799'
+  parent_id: '50231349'
+  author: sikozu
+  text: I like the concept, a risk map could be useful in some circumstances but I
+    absolutely hate the UI design; it reeks of AI with no human thought or care put
+    into it.
+  score: 0
+  posted_at: '2026-10-25T14:12:07Z'
+- id: '50231854'
+  parent_id: '50231700'
+  author: rubyn00bie
+  text: You can vouch for it, if you view the comment by clicking the time since posted
+    a “vouch” option appears. I did it. I’ve noticed this happening more and more
+    on here for show HN posts especially. I’m not sure if it’s like some sort of troll
+    gang or what…
+  score: 0
+  posted_at: '2026-10-25T14:17:04Z'
+- id: '50231863'
+  parent_id: '50231700'
+  author: BalinKing
+  text: 'AI-edited or -generated comments are disallowed by HN guidelines: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html#generated">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html#generated</a>.
+    I don&#x27;t think any such restriction exists for submissions themselves, so
+    that&#x27;s my guess as to why the comment but not the submission has been flagged
+    to death.'
+  score: 0
+  posted_at: '2026-10-25T14:17:41Z'
+- id: '50231926'
+  parent_id: '50231349'
+  author: looperhacks
+  text: Or you could, you know, read the changes your approving
+  score: 0
+  posted_at: '2026-10-25T14:25:11Z'
+- id: '50231948'
+  parent_id: '50231926'
+  author: y42
+  text: Sire, wouldst thou perchance elaborate upon this ancient, forgotten technique,
+    long buried in the mists of antiquity and shrouded in mysterious lore?
+  score: 0
+  posted_at: '2026-10-25T14:27:15Z'
+- id: '50232040'
+  parent_id: '50231349'
+  author: alsiola
+  text: Looked at the backend demo, and the first lines suggested to look at were
+    importing things. Exactly what I really <i>don&#x27;t</i> need to be reviewing
+  score: 0
+  posted_at: '2026-10-25T14:38:36Z'
+- id: '50232098'
+  parent_id: '50232040'
+  author: ericholiveira
+  text: It suggested based on the files most used (through graph dependency), for
+    this reason it appears as a important file (as if it breaks, it can break several
+    places in your codebase), but that being said, you can add some files to be ignored
+    (if you have special files, like consts or i18n)
+  score: 0
+  posted_at: '2026-10-25T14:45:03Z'
+- id: '50232105'
+  parent_id: '50231349'
+  author: fcarraldo
+  text: I think tools like this are needed and will become standard in the near future.<p>However,
+    the backend demo report seems longer and more complex than just reading the code.
+    I’m trying to build something similar as well, and no one has quite nailed this
+    yet.<p>The risk map &#x2F; assisted review needs to be succinct and information
+    dense, to guide your attention. My current philosophy is that we need to be annotating
+    code, not replacing the entire code review interface with a bunch of text.
+  score: 0
+  posted_at: '2026-10-25T14:45:44Z'
+- id: '50232106'
+  parent_id: '50231799'
+  author: ericholiveira
+  text: Thats is surely true... i did it with AI and i do lack design skills
+  score: 0
+  posted_at: '2026-10-25T14:45:51Z'
+- id: '50232129'
+  parent_id: '50232105'
+  author: ericholiveira
+  text: Thanks... it surely is possible to try to reduce the amount of information
+  score: 0
+  posted_at: '2026-10-25T14:48:38Z'
+- id: '50232160'
+  parent_id: '50231349'
+  author: munro
+  text: |-
+    IDK lot of noise in report, I need more signal to noise ratio, already reading so much AI output as it is.<p>But the example PR... It said code generate with Claude, is it really still this bad?  Last I was using SQLAlchemy with Claude was Opus 4.5, and it took some heavy coaching and skill gen not to generate code like this--but why even use SQLAlchemy at all if you&#x27;re just going to use string interpolation jeez<p><a href="https:&#x2F;&#x2F;github.com&#x2F;erich-oliveira-winnin&#x2F;full-stack-fastapi-template&#x2F;pull&#x2F;1&#x2F;changes#diff-a24cc8a7da1269ef574678e6c12b8ac89e24a415f5aff2688dd1317525927bd3R55-R56" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;erich-oliveira-winnin&#x2F;full-stack-fastapi-...</a><p><pre><code>    owner = &quot;&quot; if current_user.is_superuser else f&quot;WHERE owner_id = &#x27;{current_user.id}&#x27;&quot;
+        query = f&quot;SELECT status, count(*) FROM item {owner} GROUP BY status&quot;
+        rows = session.execute(text(query)).all()
+    </code></pre>
+    Part of me thinks maybe because it&#x27;s not popular or well documented, but SQLAlchemy has an eDSL of SQL, so you can skip the whole ORM&#x2F;table mapping layer, and just use it to programmatically construct SQL syntax
+  score: 0
+  posted_at: '2026-10-25T14:51:50Z'
+- id: '50232221'
+  parent_id: '50232160'
+  author: benglish11
+  text: That’s my favorite part of sqlalchemy. I don’t even use the orm anymore.
+  score: 0
+  posted_at: '2026-10-25T14:57:00Z'
+- id: '50232258'
+  parent_id: '50231349'
+  author: osigurdson
+  text: "&gt;&gt; Claude Code lives in its own repository, separate from the monorepo<p>I
+    thought mono meant one."
+  score: 0
+  posted_at: '2026-10-25T15:01:50Z'
+- id: '50232317'
+  parent_id: '50231349'
+  author: messia
+  text: it&#x27;s hard for me to imagine something made with so little taste can be
+    any good...
+  score: 0
+  posted_at: '2026-10-25T15:05:57Z'
+- id: '50232351'
+  parent_id: '50231349'
+  author: timcobb
+  text: This looks nice, but I would use it with caution.<p>There was a post here
+    recently, &quot;Using LLM for confidence scoring is a bad idea&quot;, my mind
+    went immediately to using LLMs for scoring risk. Seems like a bad idea. If there&#x27;s
+    anything we still need a human for, it&#x27;s assessing risk.
+  score: 0
+  posted_at: '2026-10-25T15:08:06Z'
+- id: '50232550'
+  parent_id: '50232160'
+  author: alex_suzuki
+  text: '&gt; SQLAlchemy has an eDSL of SQL, so you can skip the whole ORM&#x2F;table
+    mapping layer, and just use it to programmatically construct SQL syntax<p>Yes,
+    this is called SQLAlchemy Core: <a href="http:&#x2F;&#x2F;docs.sqlalchemy.org&#x2F;en&#x2F;latest&#x2F;core&#x2F;"
+    rel="nofollow">http:&#x2F;&#x2F;docs.sqlalchemy.org&#x2F;en&#x2F;latest&#x2F;core&#x2F;</a><p>You
+    can also just use psycopg (the Postgres driver layer) directly, it’s surprisingly
+    ergonomic in my (limited) experience.'
+  score: 0
+  posted_at: '2026-10-25T15:23:37Z'
+- id: '50232566'
+  parent_id: '50231349'
+  author: cowlevel
+  text: Good idea. Do you take bribes to exclude certain lines from the risk map?
+    Asking for my good friend Jia Tan.
+  score: 0
+  posted_at: '2026-10-25T15:24:41Z'
+- id: '50232816'
+  parent_id: '50231926'
+  author: esafak
+  text: Assuming it works this could focus your attention.
+  score: 0
+  posted_at: '2026-10-25T15:46:35Z'
+- id: '50232892'
+  parent_id: '50232160'
+  author: nico
+  text: "&gt; It said code generate with Claude, is it really still this bad?<p>Anecdata,
+    datapoint of 1 personal experience: I had been using Opus 4.6 with no problems
+    until yesterday, then it seemed like it was missing things constantly, introducing
+    random bugs, forgetting basic stuff that was in its memory and skills and should
+    never miss<p>Same thing happened on 2 separate sessions I had with Opus 4.6<p>Ended
+    up switching to 5.5 and Fable, things improved instantly<p>This left me with a
+    weird taste"
+  score: 0
+  posted_at: '2026-10-25T15:52:35Z'
+- id: '50232938'
+  parent_id: '50231863'
+  author: nico
+  text: No restriction for the submission itself, unless it’s  something like an Ask&#x2F;Tell&#x2F;Show
+    HN, in which the content goes directly on the post (and will get flagged if AI-generated&#x2F;assisted)
+  score: 0
+  posted_at: '2026-10-25T15:55:40Z'
+- id: '50232981'
+  parent_id: '50231854'
+  author: nico
+  text: In my personal experience, it’s very rare to catch a comment&#x2F;story while
+    vouchable. Not sure how many flags does it take for something to be killed, but
+    it seems like almost as soon as something gets flagged, it becomes a signal for
+    others to flag it too immediately without thought (similar thing kinda happens
+    too when you post a comment and the first vote is a downvote, it almost never
+    recovers, even if it was a good comment, as the initial drop&#x2F;greying biases
+    anyone that sees it before they even read it)
+  score: 0
+  posted_at: '2026-10-25T15:59:11Z'
+- id: '50232991'
+  parent_id: '50232258'
+  author: Zambyte
+  text: If there couldn&#x27;t be multiple monorepos, there would be no such thing
+    as a monorepo.
+  score: 0
+  posted_at: '2026-10-25T16:00:02Z'
+- id: '50233273'
+  parent_id: '50232991'
+  author: dboreham
+  text: Well there&#x27;s one at Google, one at Facebook...
+  score: 0
+  posted_at: '2026-10-25T16:25:21Z'
+- id: '50233337'
+  parent_id: '50232566'
+  author: b473a
+  text: What, are you doubting in the integrity of the large language binary blob?
+  score: 0
+  posted_at: '2026-10-25T16:30:44Z'
+- id: '50233422'
+  parent_id: '50232258'
+  author: lubujackson
+  text: Monorepo -&gt; microservices -&gt; monoreposervices
+  score: 0
+  posted_at: '2026-10-25T16:38:14Z'
+- id: '50233733'
+  parent_id: '50232892'
+  author: lurkshark
+  text: Out of curiosity, was this on a codebase where other folks started using Opus
+    5.5? I’ve been curious if each generation of model has its own biases that make
+    it generate output that’s more difficult for other models&#x2F;previous models
+    to work with. That’s been my personal suspicion when I’ve hit situations like
+    yours
+  score: 0
+  posted_at: '2026-10-25T17:09:58Z'
+- id: '50233747'
+  parent_id: '50231349'
+  author: hbcdbff
+  text: I want off this train. Please, make it stop…
+  score: 0
+  posted_at: '2026-10-25T17:11:48Z'
+- id: '50233750'
+  parent_id: '50232258'
+  author: hbcdbff
+  text: Birepo
+  score: 0
+  posted_at: '2026-10-25T17:12:12Z'
+- id: '50233758'
+  parent_id: '50232351'
+  author: pixl97
+  text: "&gt;we still need a human for<p>A trained human mind that is.<p>Your average
+    human in any given topic will give confidently incorrect risk assessments  just
+    like an LLM."
+  score: 0
+  posted_at: '2026-10-25T17:13:44Z'
+- id: '50233833'
+  parent_id: '50231700'
+  author: tomhow
+  text: 'It was classified by our software as genai, which is explicitly against the
+    guidelines: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html#genai">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html#genai</a>'
+  score: 0
+  posted_at: '2026-10-25T17:20:38Z'
+- id: '50233834'
+  parent_id: '50233733'
+  author: nico
+  text: It was on 2 separate private repos, personal projects. No one else working
+    on those<p>But now that you asked, I recently had a similar experience with Codex,
+    but on a shared repo. I also was using a slightly older model, and the all of
+    a sudden it kinda stopped running tasks. I would ask it to do something and the
+    it would just kind of do an analysis, then give me a recommendation of what to
+    do. I had to tell it to execute the task, and then it would “be lazy”, like run
+    one part then give me a recap and recommendation again instead of just going<p>Switched
+    to a newer model, and the issue was instantly gone
+  score: 0
+  posted_at: '2026-10-25T17:20:43Z'
+- id: '50234171'
+  parent_id: '50231349'
+  author: realitylabs
+  text: An engineer where I work built something like this so that when QA is about
+    to deploy, they have a better indication of who to call and what is potentially
+    going to be impacted.  Our implementation is done prior to production deploy (which
+    requires human approval)  and compares currrebt deployed build code to new build
+    changes diff and then analyses.  I think there is a lot of room for tools like
+    this in the future.  Scoping&#x2F;homing&#x2F;etc
+  score: 0
+  posted_at: '2026-10-25T17:58:25Z'
+- id: '50235146'
+  parent_id: '50234171'
+  author: ericholiveira
+  text: I do agree those kinds of tools are needed... great to know youve been working
+    on something similar
+  score: 0
+  posted_at: '2026-10-25T19:22:40Z'
+- id: '50235846'
+  parent_id: '50231349'
+  author: cpan22
+  text: this is very needed - I don&#x27;t think we&#x27;ll see a world where agents
+    approve all our PRs but there can definitely be better tooling for focusing human
+    attention during review
+  score: 0
+  posted_at: '2026-10-25T20:39:56Z'
+- id: '50247288'
+  parent_id: '50232317'
+  author: ericholiveira
+  text: Thank you for the feedback, ive just updated the UI... would love to hear
+    if you feel it improved it
+  score: 0
+  posted_at: '2026-10-26T17:12:35Z'
+- id: '50247334'
+  parent_id: '50232351'
+  author: ericholiveira
+  text: |-
+    It dont uses LLM to give score.. the score is based on static analysis only, based on some criterias:
+    - Dependency graph of the code (the more is central on the graph, the riskier is the change)
+    - If it have any obvious flaws (security, lint, breaking API Changes)
+    - Test coverage of diff lines
+  score: 0
+  posted_at: '2026-10-26T17:15:13Z'
+- id: '50247349'
+  parent_id: '50232105'
+  author: ericholiveira
+  text: Ive taken your feedback in consideration, and recreated UX&#x2F;UI for the
+    artifact, would love to hear your feedback on it
+  score: 0
+  posted_at: '2026-10-26T17:16:16Z'
+- id: '50247361'
+  parent_id: '50235846'
+  author: ericholiveira
+  text: Thank you... good to know youre sensing the same problem
+  score: 0
+  posted_at: '2026-10-26T17:16:51Z'
+- id: '50247367'
+  parent_id: '50232816'
+  author: ericholiveira
+  text: exactly, that is the objective
+  score: 0
+  posted_at: '2026-10-26T17:17:14Z'
+- id: '50247384'
+  parent_id: '50231349'
+  author: ericholiveira
+  text: Heard your feedback on improving UX&#x2F;UI for the final artifact and just
+    updated it... Thank you all, and would love to hear more feedbacks
+  score: 0
+  posted_at: '2026-10-26T17:18:39Z'
+article:
+archived_at: '2026-11-09T00:37:06Z'

@@ -5,14 +5,14 @@ post:
   title: systemd loves Rust
   url: https://amutable.com/blog/systemd-loves-rust
   hn_url: https://lobste.rs/s/62loik
-  score: 23
+  score: 33
   author: lorenzleutgeb
   posted_at: '2026-11-08T12:55:05Z'
-  fetched_at: '2026-11-08T19:23:40Z'
+  fetched_at: '2026-11-09T00:36:58Z'
   article_url: https://amutable.com/blog/systemd-loves-rust
   article_fetch_status: success
-  article_fetched_at: '2026-11-08T19:23:40Z'
-  raw_comment_count: 10
+  article_fetched_at: '2026-11-09T00:36:59Z'
+  raw_comment_count: 15
   tags:
   - rust
   - systemd
@@ -23,14 +23,14 @@ comments:
   text: Well, by "loves Rust", they mean "no Rust standard library, no external dependencies,
     and no Rust anywhere but leaf binaries." Which, if that brings them joy, more
     power to them.
-  score: 5
+  score: 15
   posted_at: '2026-11-08T15:37:10Z'
 - id: lo-bwv7gu
   parent_id: '0'
   author: gignico
   text: It makes sense to enforce the usage of project-level abstractions. I suppose
     they mean no_std but still use core
-  score: 2
+  score: 5
   posted_at: '2026-11-08T15:51:19Z'
 - id: lo-vduexb
   parent_id: '0'
@@ -47,7 +47,7 @@ comments:
     crates.io and all that, but I also love that those are not mandatory. You can
     fit Rust into all sorts of more constrained environments and get all the benefits
     of the language (albeit not of the ecosystem).
-  score: 16
+  score: 33
   posted_at: '2026-11-08T16:11:25Z'
 - id: lo-mkoxyw
   parent_id: '0'
@@ -58,7 +58,7 @@ comments:
     Also, this means that they're committing to rebuilding all their own collection types on top of custom fallible allocation routines and unsafe. Which means that they may not have as much security auditing as the Rust std library. std isn't perfect, but it's frequently used as a testbed for people's theorem provers. Which has flushed some bugs in the past.
     To be clear, I'm not criticizing them. I'm just pointing out that they're choosing to throw away pretty much everything but the borrow checker and iterators, and build from scratch, which likely requires lots of unsafe. So they won't see the same cost/benefit tradeoffs as "normal" Rust projects. Which may make sense.
     (EDIT: Looking at some of their code, they seem to have already rebuilt an entire standard library using their own abstractions. But they've made it far enough to start seeing many of the benefits of Rust at higher levels, by that point. But that was a lot of code to rewrite.)
-  score: 4
+  score: 7
   posted_at: '2026-11-08T16:11:40Z'
 - id: lo-uexwo8
   parent_id: '0'
@@ -73,21 +73,21 @@ comments:
     They love "Rust, the language" like the Linux kernel Rust developers or the various embedded developers singing Rust's praises do.
     I've written Rust "shell scripts" where they don't really depend on the ecosystem and are purely there so that I can have APIs that return Option<T> or Result<T, E> instead of things like Python's os.getcwd documentation just assuming Everyone Knows™ that getcwd is unavoidably fallible at the kernel level, or bash being annoying with its opt-out whitespace splitting and retrofitted array support.
     That's loosely analogous to what they're doing with their internal alternative to calling libc functions. Using "Rust, the means of having a nicer type system".
-  score: 5
+  score: 20
   posted_at: '2026-11-08T17:48:29Z'
 - id: lo-gewzz0
   parent_id: '0'
   author: gignico
   text: Did they rewrite things like Vec and similar? I supposed they wanted to implement
     interfaces to the data structures already present in the C code.
-  score: 1
+  score: 2
   posted_at: '2026-11-08T18:42:25Z'
 - id: lo-uusjbe
   parent_id: '0'
   author: lorenzleutgeb
   text: There is a systemd_shared::alloc::Vec at src/rust/systemd-shared/alloc.rs:362-370,
     see also commit 626261b.
-  score: 1
+  score: 3
   posted_at: '2026-11-08T18:48:07Z'
 - id: lo-nfjn0k
   parent_id: '0'
@@ -98,8 +98,47 @@ comments:
     A growable array on the heap, like alloc::vec::Vec but without the paths that abort when memory runs out: whatever may allocate returns an error instead.
 
     So indeed they are not reimplementing things for the sake of it, there are important API differences.
-  score: 1
+  score: 4
   posted_at: '2026-11-08T18:53:12Z'
+- id: lo-cuinan
+  parent_id: '0'
+  author: zem
+  text: that sounds like there was a hole in the ecosystem for a more constrained
+    standard library, and they are filling it in. hopefully some of the community
+    will be interested in polishing it up as its own thing other people can use in
+    similar situations.
+  score: 2
+  posted_at: '2026-11-08T19:39:16Z'
+- id: lo-ndg2hh
+  parent_id: '0'
+  author: eta
+  text: |-
+    What stands out to me from that quote (and checking the rest of the linked code) is that that entire file is LLM-generated, including the SAFETY: comments that are meant to explain why the unsafe Rust is valid (!).
+    At least in my experience writing unsafe Rust can be quite subtle (there's a whole book about it for a reason!), so that strategy strikes me as kind of insane. Then again, if they're using LLMs for their C maybe it's about as insane as what they were already doing...
+  score: 14
+  posted_at: '2026-11-08T20:16:29Z'
+- id: lo-hqimre
+  parent_id: '0'
+  author: gignico
+  text: I didn’t realise that it was AI-written. Yes that’s pretty insane for a fundamental
+    software like systemd but that’s life nowadays I guess…
+  score: 3
+  posted_at: '2026-11-08T20:50:12Z'
+- id: lo-tvcu0f
+  parent_id: '0'
+  author: peter-leonov
+  text: Via Skype?
+  score: -1
+  posted_at: '2026-11-08T21:19:57Z'
+- id: lo-dhzdhg
+  parent_id: '0'
+  author: gnyeki
+  text: |-
+    I've written Rust "shell scripts" where they don't really depend on the ecosystem
+
+    Do you run them with cargo run? Or they are just very lean compiled binaries that you manage?
+  score: 1
+  posted_at: '2026-11-09T00:20:28Z'
 article:
   url: https://amutable.com/blog/systemd-loves-rust
   title: systemd ❤️ Rust - Amutable
@@ -205,4 +244,4 @@ article:
     parts of the codebase written in C will not be converted without good reaso"
   error:
   fetched_at: '2026-11-08T19:23:40Z'
-archived_at: '2026-11-08T19:23:41Z'
+archived_at: '2026-11-09T00:36:59Z'

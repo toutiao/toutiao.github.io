@@ -4,14 +4,14 @@ post:
   title: 'ZapFast: A fast, native WhatsApp client in Rust and egui'
   url: https://github.com/crmne/zapfast
   hn_url: https://news.ycombinator.com/item?id=50409855
-  score: 96
+  score: 99
   author: ''
   posted_at: '2026-11-08T02:02:27Z'
-  fetched_at: '2026-11-08T19:23:22Z'
+  fetched_at: '2026-11-09T00:36:54Z'
   article_url: https://github.com/crmne/zapfast
   article_fetch_status: success
   article_fetched_at: '2026-11-08T12:54:33Z'
-  raw_comment_count: 78
+  raw_comment_count: 87
 comments:
 - id: '50410385'
   parent_id: '50409855'
@@ -678,6 +678,111 @@ comments:
     last year+ ones. Works pretty well!
   score: 0
   posted_at: '2026-11-08T18:10:49Z'
+- id: '50416204'
+  parent_id: '50414960'
+  author: elendilm
+  text: "I just tested a simple Qt app on my Linux KDE Neon and it consumes just ~32.3
+    MB RSS. Simple Qml app memory consumption is ~120.4 MB RSS.<p>$ ps -o pid,rss,command
+    -p $(pgrep -f SimpleQtApp)<p>PID   RSS COMMAND<p>1471929 33052 .&#x2F;SimpleQtApp<p>$
+    ps -o pid,rss,command -p $(pgrep -f SimpleQmlApp)<p>PID   RSS COMMAND<p>1478335
+    123260 .&#x2F;SimpleQmlApp<p>&#x2F;&#x2F; Following is the simple Qt app code.<p>#include
+    &lt;QApplication&gt;<p>#include &lt;QWidget&gt;<p>#include &lt;QLabel&gt;<p>#include
+    &lt;QPushButton&gt;<p>#include &lt;QVBoxLayout&gt;<p>int main(int argc, char <i>argv[])
+    {<p><pre><code>    QApplication app(argc, argv);\n    QWidget window;\n    window.setWindowTitle(&quot;Qt
+    Simple App (CMake)&quot;);\n    window.resize(300, 150);\n\n    QLabel *label
+    = new QLabel(&quot;Hello, World!&quot;, &amp;window);\n    label-&gt;setAlignment(Qt::AlignCenter);\n\n
+    \   QPushButton *button = new QPushButton(&quot;Click Me&quot;, &amp;window);\n\n
+    \   QVBoxLayout *layout = new QVBoxLayout(&amp;window);\n    layout-&gt;addWidget(label);\n
+    \   layout-&gt;addWidget(button);\n\n    QObject::connect(button, &amp;QPushButton::clicked,
+    [label]() {\n        label-&gt;setText(&quot;You clicked the button!&quot;);\n
+    \   });\n\n    window.show();\n    return app.exec();</code></pre>\n}</i><p>&#x2F;&#x2F;
+    Following is the QML app code<p>#include &lt;QGuiApplication&gt;<p>#include &lt;QQmlApplicationEngine&gt;<p>int
+    main(int argc, char *argv[]) {<p><pre><code>    QGuiApplication app(argc, argv);\n\n
+    \   QQmlApplicationEngine engine;\n\n    const QUrl url(QStringLiteral(&quot;qrc:&#x2F;Main.qml&quot;));\n\n
+    \   QObject::connect(&amp;engine, &amp;QQmlApplicationEngine::objectCreationFailed,
+    &amp;app, []() { QCoreApplication::exit(-1); }, Qt::QueuedConnection);\n\n    engine.load(url);\n\n
+    \   return app.exec();</code></pre>\n}<p>&#x2F;&#x2F; Main.qml<p>import QtQuick<p>import
+    QtQuick.Controls<p>Window {<p><pre><code>    width: 320\n    height: 200\n    visible:
+    true\n    title: &quot;Simple QML Application&quot;\n\n    Column {\n        anchors.centerIn:
+    parent\n        spacing: 20\n\n        Label {\n            id: statusLabel\n
+    \           text: &quot;Hello, QML World!&quot;\n            font.pointSize: 16\n
+    \           anchors.horizontalCenter: parent.horizontalCenter\n        }\n\n        Button
+    {\n            text: &quot;Click Me&quot;\n            anchors.horizontalCenter:
+    parent.horizontalCenter\n            \n            &#x2F;&#x2F; Handle click event
+    inline\n            onClicked: {\n                statusLabel.text = &quot;You
+    clicked the QML button!&quot;\n            }\n        }\n    }\n}</code></pre>"
+  score: 0
+  posted_at: '2026-11-08T19:24:35Z'
+- id: '50416414'
+  parent_id: '50412729'
+  author: piker
+  text: Yes but it comes at the trade off persistent memory usage. It isn’t just free,
+    and depending on the application in question that may be a lot better trade to
+    make if, say, the app runs in the background or is rarely interacted with.
+  score: 0
+  posted_at: '2026-11-08T19:43:12Z'
+- id: '50416624'
+  parent_id: '50413802'
+  author: viraptor
+  text: It doesn&#x27;t connect to your phone, it just authenticates via the app.
+    I deal with a company where people use thin clients that run WhatsApp on the remote
+    desktop. It&#x27;s not an unusual case.
+  score: 0
+  posted_at: '2026-11-08T20:06:54Z'
+- id: '50417096'
+  parent_id: '50416624'
+  author: saghm
+  text: Interesting, I apparently skimmed the &quot;Link to your phone&quot; section
+    too quickly (and I guess have a different sense of what that phrase implies than
+    the author of that README, since a &quot;link&quot; that no longer requires the
+    other end to exist anymore doesn&#x27;t really seem like a link at all).
+  score: 0
+  posted_at: '2026-11-08T20:51:06Z'
+- id: '50417350'
+  parent_id: '50410986'
+  author: codedokode
+  text: 'I disagree. First, not every GPU supports Vulkan and other modern standards,
+    and not every GPU even supports executing code. Drivers are often buggy&#x2F;unsupported.
+    Even if there is a GPU, compiling shaders takes time and CPU must be used in the
+    meantime.<p>Finally, for app to have access to GPU, it must run on a host unrestricted.
+    Why would you take somebody&#x27;s code from Internet and run it unrestricted,
+    violating the principle of minimal pivileges? That does not sound smart, especially
+    if you have a crypto wallet on the same computer. Those who do not use VM or sandboxes
+    will sooner or later learn this.<p>&gt; Did you measure anything in a real setup?<p>VM
+    is a real setup.  Why would I run third-party apps without a sandbox?<p>Also,
+    today we have an advanced AI that is capable of solving science problems. Should
+    not be difficult to build a GUI that works fast without graphic acceleration,
+    right?<p>Finally: the modern DDR4 DRAM has approximately 40-50 Gb&#x2F;s bandwidth.
+    Updating 4K screen at 120 Hz requires 3840 × 2160 × 4 (actually should be 3) ×
+    120 ≈ 4 Gb&#x2F;s. No problem at all.'
+  score: 0
+  posted_at: '2026-11-08T21:16:08Z'
+- id: '50417385'
+  parent_id: '50413802'
+  author: codedokode
+  text: It is a potentially unsafe app from some random person that can backdoor your
+    computer so it doesn&#x27;t make sense to run it without a VM.
+  score: 0
+  posted_at: '2026-11-08T21:18:36Z'
+- id: '50417422'
+  parent_id: '50411776'
+  author: codedokode
+  text: Moving the mouse is an interaction because there are hover effects.
+  score: 0
+  posted_at: '2026-11-08T21:21:53Z'
+- id: '50417469'
+  parent_id: '50412144'
+  author: codedokode
+  text: How long can a phone run on a battery when playing games? A day? Or an hour?
+    Clearly shows how &quot;efficient&quot; GPU is.
+  score: 0
+  posted_at: '2026-11-08T21:26:04Z'
+- id: '50419233'
+  parent_id: '50417469'
+  author: LoganDark
+  text: I mean, if the game used CPU for rendering, it would last even less long.
+  score: 0
+  posted_at: '2026-11-09T00:12:44Z'
 article:
   url: https://github.com/crmne/zapfast
   title: 'GitHub - crmne/zapfast: ZapFast: a fast, native WhatsApp client in Rust
@@ -775,4 +880,4 @@ article:
     ## Languages
   error:
   fetched_at: '2026-11-08T12:54:33Z'
-archived_at: '2026-11-08T19:23:39Z'
+archived_at: '2026-11-09T00:36:58Z'
