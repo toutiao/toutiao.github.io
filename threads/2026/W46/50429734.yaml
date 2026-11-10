@@ -4,14 +4,14 @@ post:
   title: 'E-means: Outperforming k-means in one-tenth the epochs'
   url: https://e-means.github.io/
   hn_url: https://news.ycombinator.com/item?id=50429734
-  score: 346
+  score: 474
   author: ''
   posted_at: '2026-11-09T18:45:43Z'
-  fetched_at: '2026-11-10T06:21:11Z'
+  fetched_at: '2026-11-10T16:50:39Z'
   article_url: https://e-means.github.io/
   article_fetch_status: success
   article_fetched_at: '2026-11-09T22:01:20Z'
-  raw_comment_count: 30
+  raw_comment_count: 68
 comments:
 - id: '50431087'
   parent_id: '50429734'
@@ -324,6 +324,439 @@ comments:
     mini batch kmeans like the one in scikit.
   score: 0
   posted_at: '2026-11-10T06:14:06Z'
+- id: '50436735'
+  parent_id: '50434973'
+  author: oofbey
+  text: There isn’t a well defined correct or ideal answer. It depends on what you’re
+    doing with the clusters.  Sometimes the raw data are too numerous to properly
+    deal with and you just want a smaller set of points to reason about. In that case
+    pick the number of points that are convenient to reason about. Sometimes you have
+    a fixed budget for the cluster representation and that defines k. Sometimes just
+    pick sqrt(N) so the average cluster size is k.
+  score: 0
+  posted_at: '2026-11-10T06:19:34Z'
+- id: '50437227'
+  parent_id: '50434973'
+  author: loehnsberg
+  text: You could use X-means instead (<a href="https:&#x2F;&#x2F;www.cs.cmu.edu&#x2F;~dpelleg&#x2F;download&#x2F;xmeans.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.cs.cmu.edu&#x2F;~dpelleg&#x2F;download&#x2F;xmeans.pdf</a>).
+    The idea is to use an information criterion that trades the number of parameters
+    against the reduction in within-cluster variance. The approach essentially splits
+    a cluster when the BIC of the split is larger than without. I’d use this to select
+    k and still run normal k-means though.
+  score: 0
+  posted_at: '2026-11-10T07:37:07Z'
+- id: '50437297'
+  parent_id: '50429734'
+  author: Thomashuet
+  text: |-
+    Their example is terrible, there are clearly 3 clusters and trying to find 200 clusters doesn&#x27;t make any sense.
+    They show their algorithm performs better on some degenerate case but what about when there are actually k clusters?<p>EDIT: actually I see that they have a section about &quot;The k-means problem&quot; and that&#x27;s where I think they get it wrong. What they describe is not the problem itself but how to solve it. The real problem (for most people at least, they seem to have a different problem) is to find the clusters in a dataset where you already know that there are clusters and how many there are.
+  score: 0
+  posted_at: '2026-11-10T07:49:40Z'
+- id: '50437302'
+  parent_id: '50429734'
+  author: hubertzhang
+  text: what&#x27;s the common use case for e-means&#x2F;k-means nowadays?
+  score: 0
+  posted_at: '2026-11-10T07:50:07Z'
+- id: '50437496'
+  parent_id: '50432676'
+  author: tcumulus
+  text: Your website looks incredibly interesting! Very exited to read it when I have
+    time. When you mentioned icosahedral meshes, I immediately thought it would be
+    related to weather&#x2F;climate modeling :D.<p>On the topic of these meshes, I&#x27;m
+    currently exploring if we can come up with better meshing strategies in data-driven
+    weather models (<a href="https:&#x2F;&#x2F;tcumulus.dev&#x2F;blog&#x2F;thesis&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;tcumulus.dev&#x2F;blog&#x2F;thesis&#x2F;</a>).
+  score: 0
+  posted_at: '2026-11-10T08:19:35Z'
+- id: '50437567'
+  parent_id: '50429734'
+  author: refactor_master
+  text: So this is a <i>different</i> clustering algorithm, of which there are many,
+    maaaany?<p>That makes it... not very interesting, because it&#x27;s not a drop-in
+    replacement then, and potentially many other clustering methods would have worked
+    in particular applications as well. Or does this one beat most of the others as
+    well?
+  score: 0
+  posted_at: '2026-11-10T08:30:59Z'
+- id: '50437686'
+  parent_id: '50431156'
+  author: thatsabadlook
+  text: Nor me. This is one of the better things in ml I&#x27;ve seen in a while.
+    Creative.
+  score: 0
+  posted_at: '2026-11-10T08:50:11Z'
+- id: '50438282'
+  parent_id: '50435033'
+  author: swann_bessa
+  text: 'Hi saagarjha, I&#x27;m Swann Bessa, the author of the paper. Thank you for
+    your message on the work. If I may I&#x27;d like to address a few points.<p>&quot;People
+    have been doing minibatch k-means for a while, including with an EMA update&quot;
+    : EMA updates are indeed used in clustering, but to our knowledge there is no
+    paper that uses pure EMA updates for k-means clustering on a static dataset. EMA
+    updates are typically used for moving distributions because of their ability to
+    forget the past (as in VQ-VAEs), but their advantage for static datasets had not
+    been empirically demonstrated. If you take a look at appendix E of the paper,
+    we compare EMA to other gradient descent methods and show that EMA is much more
+    stable and has better quality, especially at large batches. Our method also integrates
+    EMA updates in an optimization framework that reliably outperforms Lloyd and previous
+    mini-batch methods.<p>&quot;the contribution here is that they tried to measure
+    how much better it is&quot;: The contribution here is to integrate EMA updates
+    in an optimization framework to provide a method as robust and performant as we
+    could. If you look at previous mini-batch k-means papers, the speedups and the
+    performance is nowhere nearly as good as e-means, which beats Lloyd at 25 epochs
+    in 2 to 3 epochs. In fact, mini-batch k-means is known in the literature as a
+    fast method but with lesser convergence than Lloyd, and we compare to them in
+    Figure 3. The e-means framework allows to be both faster and have better convergence
+    than Lloyd, without the user having to tune the batch or the step.<p>&quot;How
+    your algorithm scales as more data is present&quot;: In the first figure of the
+    paper, we show that e-means scales up to 10 billion points and 16 million clusters.<p>On
+    communication: workers only exchange per-update statistics (K×d numbers with replicated
+    centroids). You argue that bigger batches have diminishing returns, so that extra
+    local work doesn&#x27;t cut the number of updates. But that&#x27;s precisely what
+    our batch law addresses: it returns the largest batch whose loss stays within
+    ~0.2% of the best loss at a fixed number of epochs. In other words, we carefully
+    scale the batch size to avoid that our speedups are driven down by the diminishing
+    returns you mention.<p>The multi-node regime is in the paper: the 10B run used
+    32 machines, so synchronization went over the inter-node network, and the bottleneck
+    was still the distance computation, not communication. That&#x27;s also why an
+    IVF variant, which cuts distance computations, does it in ~23 GPU-hours.'
+  score: 0
+  posted_at: '2026-11-10T10:22:15Z'
+- id: '50438366'
+  parent_id: '50436698'
+  author: swann_bessa
+  text: |-
+    Hi oofbey,
+    If you look at Figure 3 of our paper, the baseline &quot;Sculley&quot; is precisely the well tuned mini batch kmeans of scikit-learn. We swept on batch sizes and threshold for dead cluster reassignment (Batch size: 256, 512, 1024, 2048, 4096, 65536, 262144, 524288. Dead-cluster threshold : 0, 0.001, 0.01, 0.05, 0.1, 0.5). The reason e-means outperforms previous mini-batch methods is because it is a robust optimization framework powered by scaling laws, specializing techniques inspired from the deep learning literature for the k-means problem. Meanwhile mini-batch k-means methods rely on the MacQueen update rule introduced in 1967, which is known to be highly suboptimal and converge to a lesser solution than Lloyd (See Darken and Moody, 1990, Note on Learning Rate Schedules for Stochastic Optimization).
+  score: 0
+  posted_at: '2026-11-10T10:31:15Z'
+- id: '50438425'
+  parent_id: '50437227'
+  author: swann_bessa
+  text: Why would you use run normal k-means if e-means gives lower loss and reliably
+    goes much faster ? If you don&#x27;t believe it you can try e-means at <a href="https:&#x2F;&#x2F;e-means.github.io&#x2F;playground.html"
+    rel="nofollow">https:&#x2F;&#x2F;e-means.github.io&#x2F;playground.html</a>
+  score: 0
+  posted_at: '2026-11-10T10:39:28Z'
+- id: '50438465'
+  parent_id: '50432676'
+  author: swann_bessa
+  text: 'Hi, I&#x27;m Swann Bessa, the author of e-means. Thanks for trying e-means.
+    If I may I&#x27;d like to come back on a few of the points you made.<p>&quot;e-means
+    wins by needing fewer passes over a huge dataset&quot;: the improvements of e-means
+    are shown on datasets from 10k up to 10B points (you can try e-means against Lloyd
+    at low problem sizes at <a href="https:&#x2F;&#x2F;e-means.github.io&#x2F;playground.html"
+    rel="nofollow">https:&#x2F;&#x2F;e-means.github.io&#x2F;playground.html</a>) so
+    I would not say huge datasets only. It depends on what you call huge obviously,
+    and that&#x27;s relative.<p>&quot;It has the same objective and the same optimum,
+    so at best it matches Lloyd.&quot; I strongly disagree with that. e-means has
+    the same objective and the optimal clustering is set by the problem, but Lloyd
+    doesn&#x27;t find this optimal clustering in the vast majority of cases. Lloyd
+    gets stuck in a local minimum, and what we find is that e-means reliably finds
+    better clusterings than Lloyd in terms of MSE, but also other clustering metrics.<p>Regarding
+    your usecase : I&#x27;d be curious to know what settings you used for e-means
+    and a reproduction code. Don&#x27;t hesitate to send me your code at swann@meta.com,
+    I&#x27;m down to have a check because we&#x27;re confident about e-means&#x27;
+    performance against Lloyd.'
+  score: 0
+  posted_at: '2026-11-10T10:45:04Z'
+- id: '50438496'
+  parent_id: '50437567'
+  author: swann_bessa
+  text: 'It&#x27;s not a new kind of clustering. It solves exactly the same problem
+    as k-means (minimize the mean squared distance to k centroids), returns the same
+    thing (k centroids and an assignment), and has the same inputs (k and a number
+    of epochs). The batch size and step size are set automatically, so there&#x27;s
+    nothing extra to tune. So it is a drop-in replacement for k-means specifically:
+    in Faiss it&#x27;s Emeans(d, k).train(x) where you&#x27;d call Kmeans(d, k).train(x).
+    The code is in faiss at <a href="https:&#x2F;&#x2F;github.com&#x2F;facebookresearch&#x2F;faiss&#x2F;tree&#x2F;main&#x2F;contrib&#x2F;e_means"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;facebookresearch&#x2F;faiss&#x2F;tree&#x2F;main&#x2F;contrib&#x2F;...</a>'
+  score: 0
+  posted_at: '2026-11-10T10:49:29Z'
+- id: '50438548'
+  parent_id: '50437297'
+  author: swann_bessa
+  text: Hi Thomashuet, I&#x27;m Swann Bessa, the author of e-means.<p>The goal of
+    e-means is to be a drop-in replacement for k-means. It solves the exact same problem,
+    with the exact same inputs and delivers better centroids and quality in a fraction
+    of the time. So I&#x27;m not sure what we get wrong by working on a problem that
+    hundreds of papers also worked on. Is the whole k-means literature getting it
+    wrong then ?<p>Picking the k is a separate problem, on which also a body of literature
+    has worked too. e-means is a drop-in replacement for k-means so you can use any
+    method you would use for choosing the k but with e-means instead of k-means.<p>e-means
+    performs better on a very wide array of datasets, definitely not degenerate cases,
+    don&#x27;t hesitate to check out our paper at <a href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2611.09501"
+    rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2611.09501</a>.<p>If
+    you have any question or objection, I&#x27;ll be happy to answer.
+  score: 0
+  posted_at: '2026-11-10T10:56:53Z'
+- id: '50438581'
+  parent_id: '50432198'
+  author: swann_bessa
+  text: Hi bashhq_r, I&#x27;m Swann Bessa, the author of the e-means paper.<p>If you
+    look at our paper on arxiv (<a href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2611.09501"
+    rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2611.09501</a>), Table
+    2, the hyperparameters laws have been validated on 4 datasets outside of the fit,
+    but also on scales outside of the fit. There the hyperparameters they picked made
+    the loss only 0.07% worse than the best hyperparameters possible on average. The
+    robust results in the paper, which are on 26 different datasets where e-means
+    beats Lloyd by a wide margin, are also a proof of the generalization of our scaling
+    laws.
+  score: 0
+  posted_at: '2026-11-10T11:00:55Z'
+- id: '50438736'
+  parent_id: '50432834'
+  author: swann_bessa
+  text: 'Hi, I&#x27;m Swann Bessa, the author of the paper.<p>If you want, you can
+    also play with it now in your browser at : <a href="https:&#x2F;&#x2F;e-means.github.io&#x2F;playground.html"
+    rel="nofollow">https:&#x2F;&#x2F;e-means.github.io&#x2F;playground.html</a><p>Feel
+    free to ask any questions, I&#x27;ll be happy to answer.'
+  score: 0
+  posted_at: '2026-11-10T11:17:55Z'
+- id: '50438818'
+  parent_id: '50433634'
+  author: swann_bessa
+  text: Hi shiandow, I&#x27;m Swann Bessa, the author of the paper.<p>The fact that
+    the update rule keeps the centroid within the convex hull is indeed very important.
+    If you look at Appendix E, the gradient descent methods don&#x27;t have this property
+    and are less stable than EMA updates.<p>Regarding simulated annealing, I agree
+    with the parallel. You can see mini-batches as introducing noise in the beginning
+    of the optimization to espace local minima and the step size decreasing through
+    the training acts like a temperature in simulated annealing. Simulated annealing
+    was already used for k-means with theoretical proof that you can reach the global
+    minimum in enough epochs, but in practice, those methods are really slow. A paper
+    that comes to mind is &quot;A simulated annealing algorithm for the clustering
+    problem&quot; (<a href="https:&#x2F;&#x2F;www.sciencedirect.com&#x2F;science&#x2F;article&#x2F;pii&#x2F;003132039190097O"
+    rel="nofollow">https:&#x2F;&#x2F;www.sciencedirect.com&#x2F;science&#x2F;article&#x2F;pii&#x2F;0031320391...</a>).<p>The
+    parallel with expectation maximization is also coherent, though less straightforward
+    to me. K-means can be viewed as a hard-assignment, special case of the Expectation-Maximization
+    algorithm applied to Gaussian Mixture Models (GMMs).<p>If you have any other questions,
+    I&#x27;ll be happy to answer.
+  score: 0
+  posted_at: '2026-11-10T11:28:01Z'
+- id: '50438823'
+  parent_id: '50431500'
+  author: swann_bessa
+  text: Thank you for trying e-means, let me know if you have any questions !
+  score: 0
+  posted_at: '2026-11-10T11:28:47Z'
+- id: '50438828'
+  parent_id: '50429734'
+  author: gilfyole
+  text: 'Thanks for this. I tried experimenting with e-means in retrieval engine im
+    building, for that I had to port the CPU version from faiss to Rust<p><a href="https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;emeans"
+    rel="nofollow">https:&#x2F;&#x2F;crates.io&#x2F;crates&#x2F;emeans</a><p><a href="https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;emeans"
+    rel="nofollow">https:&#x2F;&#x2F;pypi.org&#x2F;project&#x2F;emeans</a><p>We use
+    k-means to build the cells of our vector index, which today runs 5 Lloyd iterations
+    on a sample of the data. So I ran a quick test on 500k LAION embeddings (768 dimensions,
+    4,096 cells) against our current code:<p>- Current setup of 5 iterations: about
+    4x faster, with slightly better recall at every probe count (for example 0.9518
+    vs 0.9473 at 32 probes) and fewer rows scanned per query<p>- Cells came out much
+    more even. The biggest cell went from 6.6x the average size to 4.75x, and there
+    were no empty cells (we had 7)<p>- With only 2 iterations it was about 10x faster
+    and recall stayed close to what we have today<p>These numbers are from my mac.
+    I&#x27;m rerunning on a Linux box with AVX-512 now. If it holds up, we&#x27;ll
+    try it in our index build<p>Some notes here: <a href="https:&#x2F;&#x2F;github.com&#x2F;infino-ai&#x2F;infino&#x2F;issues&#x2F;1279"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;infino-ai&#x2F;infino&#x2F;issues&#x2F;1279</a>'
+  score: 0
+  posted_at: '2026-11-10T11:29:38Z'
+- id: '50439052'
+  parent_id: '50438828'
+  author: swann_bessa
+  text: Hi, I’m the author of the paper.<p>Thank you for trying e-means and detailing
+    your results. This kind of results of e-means at 2 epochs compared with Lloyd
+    is the typical kind of acceleration we want people to know about.<p>If you have
+    any questions, I’ll be happy to answer.
+  score: 0
+  posted_at: '2026-11-10T11:56:12Z'
+- id: '50439071'
+  parent_id: '50437686'
+  author: swann_bessa
+  text: Thanks for the feedback, thatsabadlook. This is my first PhD work so I’m really
+    happy to hear that.
+  score: 0
+  posted_at: '2026-11-10T11:57:50Z'
+- id: '50439483'
+  parent_id: '50432461'
+  author: CyberDildonics
+  text: Sampling above the nyquist sampling limit then representing it as something
+    else is not beating the nyquist sampling limit, it&#x27;s just compression.
+  score: 0
+  posted_at: '2026-11-10T12:38:45Z'
+- id: '50439663'
+  parent_id: '50438465'
+  author: manvillej
+  text: Is E-means finding the true global minimum? Or is it just finding a better
+    solution more consistently?
+  score: 0
+  posted_at: '2026-11-10T12:55:31Z'
+- id: '50439756'
+  parent_id: '50435984'
+  author: benjiro29
+  text: Well, thanks for the downvote.
+  score: 0
+  posted_at: '2026-11-10T13:05:27Z'
+- id: '50440093'
+  parent_id: '50438818'
+  author: shiandow
+  text: Thanks for the extra detail!<p>I agree that simulated annealing is perhaps
+    the closest. The missing link, I suppose, is knowing what distribution you get
+    by running the algorithm for a fixed temperature (alpha). But the method works
+    even if you don&#x27;t know all that really matters is that it converges to the
+    distribution you want, which is neat! I might use that trick sometime.<p>The reason
+    simulated annealing sprang to mind is that I&#x27;ve done something similar once
+    where I tuned the temperature curve for a simulated annealing algorithm, but I
+    couldn&#x27;t find a general enough rule. So seeing someone do something similar
+    is really neat!<p>There are some theoretical guarantees to be had if the update
+    step can be recast into a MCMC update, or equivalent. And I think there&#x27;s
+    an expression for the optimal temperature at any point in time (same way you found
+    it for alpha). Any idea if there is a useful description for the steady state
+    distribution at a given alpha?
+  score: 0
+  posted_at: '2026-11-10T13:34:06Z'
+- id: '50440774'
+  parent_id: '50438282'
+  author: saagarjha
+  text: "&gt; to our knowledge there is no paper that uses pure EMA updates for k-means
+    clustering on a static dataset<p>So I&#x27;ll be honest the reason I said this
+    is that I know there are people who are using it and I just assumed it was common
+    :P I will ask if any of them are relying on published work or what for where they
+    got this from.<p>&gt; In the first figure of the paper, we show that e-means scales
+    up to 10 billion points and 16 million clusters.<p>Sorry, I should have clarified.
+    I actually think this is what is saving you: with that many clusters, your arithmetic
+    intensity is inherently really high, so you are truly super compute limited. In
+    this case introducing a bit of comms is cheap relative to the bazillion matmuls
+    you&#x27;re doing for distance calculation. However if you have fewer centroids
+    then the amount of work you do is much lower between updates. As an extreme example,
+    if you&#x27;re doing hierarchical k-means you might have as few as 2 centroids,
+    which means you barely do any work, and adding any sort of comms just kills you.
+    Of course you are doing very little math but even if you&#x27;re just looking
+    at memory bandwidth at that point (because your intensity is like 5 FLOPs&#x2F;byte
+    or something) it will be done too fast.<p>(I don&#x27;t actually know how to solve
+    this, which is why I was super excited to see someone else working on this. I
+    agree that your thing works for more centroids, in fact I know it works because
+    I just assumed it was what you were supposed to do, I just couldn&#x27;t make
+    it work in this situation.)"
+  score: 0
+  posted_at: '2026-11-10T14:20:26Z'
+- id: '50440904'
+  parent_id: '50439663'
+  author: swann_bessa
+  text: The answer is that e-means consistently finds a better solution than Lloyd.
+    It&#x27;s impossible to know if it&#x27;s the global minimum or not. Finding the
+    true global optimum is NP-hard, so no practical algorithm can guarantee that.
+  score: 0
+  posted_at: '2026-11-10T14:29:13Z'
+- id: '50441099'
+  parent_id: '50429734'
+  author: leecarraher
+  text: i would like to see comparisons to k-means++. k-means is rarely the bottleneck
+    in most modern algorithms, instead it&#x27;s the multiple runs or seeding of kmeans
+    to determine a stable &#x27;good&#x27; solution that takes the lion&#x27;s share
+    of processing time. If this avoids the km++ seeding process while achieving similarly
+    accuracy and stability, then this is would be a great practical improvement.
+  score: 0
+  posted_at: '2026-11-10T14:43:54Z'
+- id: '50441319'
+  parent_id: '50440774'
+  author: swann_bessa
+  text: |-
+    Thanks for your kind responses.<p>I&#x27;d be very interested if they have a reference. If you feel like it, you can always send me an e-mail at swann@meta.com with the references. I&#x27;ll add them to my benchmarks.<p>The fewer centroids case is super interesting. Because we found in our experiments that basically if your n&#x2F;k ratio (n is the dataset size, k the number of clusters) is high, running the clustering as is on your n points is a waste of resource. You should subsample your dataset such that there is about 250 points per cluster and you will get very similar loss at a fraction of the compute. This is why faiss k-means, by default, subsamples datasets to 256 points per cluster if n&#x2F;k &gt; 256.
+    So I fully agree with your computational remarks, but I think it&#x27;s a case that should never happen in practice because subsampling your dataset is the solution in those cases.
+  score: 0
+  posted_at: '2026-11-10T14:58:54Z'
+- id: '50441331'
+  parent_id: '50436146'
+  author: swann_bessa
+  text: Hi, I&#x27;m the author of e-means. If you can send them, I would love to
+    hear about the results you got !
+  score: 0
+  posted_at: '2026-11-10T15:00:10Z'
+- id: '50441371'
+  parent_id: '50435643'
+  author: swann_bessa
+  text: Hi, I&#x27;m Swann Bessa, the author of the e-means paper. FYI, we get very
+    good results on ARI and NMI on ImageNet and also synthetic data. We will release
+    them in a later revision. If you have another distribution you have in mind for
+    us to test, I would be glad to run it as well.
+  score: 0
+  posted_at: '2026-11-10T15:02:26Z'
+- id: '50441420'
+  parent_id: '50433657'
+  author: swann_bessa
+  text: Careful tuning is provided by the scaling laws, so you don&#x27;t need to
+    set the hyperparameters yourself. I am quite skeptical about setting alpha=-0.1
+    tbh, but I&#x27;m curious to see what happens too lol.
+  score: 0
+  posted_at: '2026-11-10T15:05:52Z'
+- id: '50441611'
+  parent_id: '50429734'
+  author: haifeng
+  text: Lloyd is not the fastest algorithm for k-means for very long time. I am curious
+    how e-means compares with more advanced algorithms such as BBD-tree based implementation.
+    SMILE has a k-means implementation with both BBD-tree and llyod algorithm. BBD-tree
+    approach is often 10x faster. Wonder if e-means is better than BBD-tree.<p>See
+    <a href="https:&#x2F;&#x2F;www.aihalo.dev&#x2F;api&#x2F;java&#x2F;smile&#x2F;clustering&#x2F;KMeans"
+    rel="nofollow">https:&#x2F;&#x2F;www.aihalo.dev&#x2F;api&#x2F;java&#x2F;smile&#x2F;clustering&#x2F;KMeans</a>
+    and <a href="https:&#x2F;&#x2F;www.aihalo.dev&#x2F;api&#x2F;java&#x2F;smile&#x2F;clustering&#x2F;BBDTree"
+    rel="nofollow">https:&#x2F;&#x2F;www.aihalo.dev&#x2F;api&#x2F;java&#x2F;smile&#x2F;clustering&#x2F;BBDTree</a><p>Maybe
+    we combine the ideas of e-means and BBD-tree?
+  score: 0
+  posted_at: '2026-11-10T15:18:42Z'
+- id: '50441930'
+  parent_id: '50440904'
+  author: nine_k
+  text: "&gt; <i>if it&#x27;s the global minimum or not</i><p>Not impossible, just
+    very expensive, because k-means is NP-hard, and finding the strictly optimal solution
+    may require exponential time (or worse)."
+  score: 0
+  posted_at: '2026-11-10T15:41:07Z'
+- id: '50441938'
+  parent_id: '50435799'
+  author: detourdog
+  text: This is what I was looking for. I appreciate all the responses.
+  score: 0
+  posted_at: '2026-11-10T15:41:27Z'
+- id: '50442082'
+  parent_id: '50441611'
+  author: swann_bessa
+  text: BBD-tree is only for low dimensions because it suffers from the curse of dimensionality.<p>Note
+    that BBD-tree is orthogonal to e-means, they can combined very straightforwardly
+    just like it is combined with k-means. The 10x speedup should remain compared
+    to BBD-tree k-means.<p>So it&#x27;s not that e-means is better than BBD-tree,
+    it&#x27;s that you can combine them to make e-means even better, but only at low
+    dimensions and on CPU.
+  score: 0
+  posted_at: '2026-11-10T15:50:03Z'
+- id: '50442083'
+  parent_id: '50439071'
+  author: thatsabadlook
+  text: If you can continue to look at known problems with fresh perspectives like
+    this you have a very bright future ahead of you. But also if this is your biggest
+    thing, you did good. Most grad students don&#x27;t land on things this practical
+    and useful.
+  score: 0
+  posted_at: '2026-11-10T15:50:04Z'
+- id: '50442100'
+  parent_id: '50441930'
+  author: swann_bessa
+  text: Yes, right. That&#x27;s more rigorous to say it like that. Note that at the
+    scales of the paper it is in practice impossible with today&#x27;s computational
+    means.
+  score: 0
+  posted_at: '2026-11-10T15:51:10Z'
+- id: '50442134'
+  parent_id: '50437302'
+  author: swann_bessa
+  text: Minimizing Mean Squared Error between a dataset and a given number of centroids.
+    In practice it can be used in deduplication, data curation, compression, Vector
+    Search, and many others. It remains one of the most used Machine Learning algorithms
+    in the world.
+  score: 0
+  posted_at: '2026-11-10T15:53:45Z'
 article:
   url: https://e-means.github.io/
   title: 'e-means: 10x faster k-means at equal loss - Blog'
@@ -430,4 +863,4 @@ article:
     better understand why e-means reaches better losses than "
   error:
   fetched_at: '2026-11-09T22:01:20Z'
-archived_at: '2026-11-10T06:21:26Z'
+archived_at: '2026-11-10T16:50:56Z'

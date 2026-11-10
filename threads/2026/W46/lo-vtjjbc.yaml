@@ -5,14 +5,14 @@ post:
   title: What's new in Node.js 27
   url: https://nodejsdesignpatterns.com/blog/whats-new-in-nodejs-27/
   hn_url: https://lobste.rs/s/vtjjbc
-  score: 19
+  score: 22
   author: loige
   posted_at: '2026-11-09T11:48:55Z'
-  fetched_at: '2026-11-10T06:21:27Z'
+  fetched_at: '2026-11-10T16:50:57Z'
   article_url: https://nodejsdesignpatterns.com/blog/whats-new-in-nodejs-27/
   article_fetch_status: success
-  article_fetched_at: '2026-11-10T06:21:30Z'
-  raw_comment_count: 6
+  article_fetched_at: '2026-11-10T16:51:03Z'
+  raw_comment_count: 10
   tags:
   - javascript
   - nodejs
@@ -23,7 +23,7 @@ comments:
   text: |-
     Two of these are mine! (Math.sumPrecise and Iterator.prototype.join.)
     sumPrecise is fun; it turns out that maximally precise summation can be done reasonably efficiently. Originally the plan was to do a naive Math.sum and accept the error introduced by intermediate rounding but it's not that much slower to do it right so we might as well. I wanted to still call it Math.sum but engines pushed back because it's still somewhat slower, alas.
-  score: 14
+  score: 25
   posted_at: '2026-11-09T18:35:45Z'
 - id: lo-ikpaap
   parent_id: '0'
@@ -31,7 +31,7 @@ comments:
   text: How did you get involved in TC39 stuff? I love reading through these proposals,
     and it's really interesting to see some of the discussions about quite specific
     details like the performance issues you mention here.
-  score: 3
+  score: 5
   posted_at: '2026-11-09T20:22:42Z'
 - id: lo-8vk1pp
   parent_id: '0'
@@ -39,7 +39,7 @@ comments:
   text: |-
     Undergrad research was on static analysis of JS, which led to a job at a company (Shape Security) that was doing some interesting JS tooling with interesting constraints and was participating in the committee for that reason. ECMA is very much in the traditional "this is a way for companies to coordinate without running afoul of anti-trust" mold for standards bodies, so participation in the committee as such pretty much requires working for a member company.
     That said, most conversation happens on GitHub (and sometimes Matrix) and is open to anyone. It's just participation at the actual meetings that requires being at a member company.
-  score: 4
+  score: 7
   posted_at: '2026-11-09T20:54:57Z'
 - id: lo-2tftcv
   parent_id: '0'
@@ -47,7 +47,7 @@ comments:
   text: Oh wow! That’s awesome! Thanks for these, especially join since I like all
     things iterators and iterator helpers! Are you still actively involved? Any other
     cool features coming next?
-  score: 1
+  score: 3
   posted_at: '2026-11-09T20:59:29Z'
 - id: lo-iume6s
   parent_id: '0'
@@ -69,7 +69,7 @@ comments:
     TypedArray .equals
     a helper to turn Array<Promise<T>> into AsyncIterator<T> by racing all the promises, like Python's asyncio.as_completed
     dedent
-  score: 3
+  score: 7
   posted_at: '2026-11-09T22:57:40Z'
 - id: lo-riw0sj
   parent_id: '0'
@@ -82,8 +82,97 @@ comments:
   author: altano
   text: dedent is a great example of something I’ve hit countless times but never
     even thought to try and solve. Perfect stdlib material.
-  score: 2
+  score: 3
   posted_at: '2026-11-09T23:20:27Z'
+- id: lo-51nsf9
+  parent_id: '0'
+  author: conartist6
+  text: |-
+    Async iterator helpers are also a disaster.
+    Wrong in nearly every way at the same time..!
+    The async iterator protocol? It's fucking wrong. It's too slow to be useful for anything serious. It's too concrete to be a useful abstraction.
+    The design of iterator helpers, even the sync ones, is also atrocious. They go on the list of "Javascript, the bad parts". As the foremost expert on Javascript iterators, I could not in good faith suggest that anyone uses the built in interator helper APIs. There are just toi many footguns -- new footguns that did't exist. ...even scary security footguns that really really really really should not exist.
+    I call on the committee and the community to REJECT this proposal
+  score: -1
+  posted_at: '2026-11-10T11:03:25Z'
+- id: lo-thzusq
+  parent_id: '0'
+  author: alanmeira
+  text: this is amazing, bakkot! I wish to see "uncoupling private fields from class
+    syntax" part of JS. Really missed feature for my use.
+  score: 2
+  posted_at: '2026-11-10T12:33:04Z'
+- id: lo-m3h0e3
+  parent_id: '0'
+  author: jo3_l
+  text: |-
+    I flagged your comment originally, but I'm leaving a comment instead in the hope that it will help you.
+    You're using incredibly incendiary language ("fucking wrong"? "atrocious"? "the bad parts"? "REJECT"?) while simultaneously providing no substantive content at all for other people who already aren't in the know to engage with. Clearly you hate the current design of the async iterator protocol... but that's about all I can glean from your comment. Sure, you allude vaguely to issues ("it's too slow", "it's too concrete", "there's too many footguns", "scary security footguns"), but there's no detail nor nuance to support an actual civil discussion! And that's notwithstanding the fact that the focus of the original discussion was not on the merits of iterators but bakkot's recent TC39 proposals more generally...
+    I'm forced to conclude that you simply keyword matched "iterator protocol" in an otherwise unrelated thread, and decided to come in guns ablaze to bash on someone else. To be clear, I'm sure you have real points to make and are quite knowledgeable, but your manner of engagement makes me steer well away from any thread you're involved in.
+  score: 7
+  posted_at: '2026-11-10T12:59:57Z'
+- id: lo-qa1uzo
+  parent_id: '0'
+  author: conartist6
+  text: "I'm mad because I'm trying to blow the whistle on major structural problems
+    and I can't get anyone engaged. But I agree that what I've said so far was provocative
+    rather than productive, so here's the productive version:\nThere's two basic problems
+    in play here. First is the design of async iteration. Second, the introduction
+    of an \"Iterator prototype\" has introduced confusion (where none existed) as
+    to what an iterator is. Is it a duck-typed protocol? Or an instance of a particular
+    class?\nLet's talk about the design of async iteration. My complaint is that it
+    injects synthetic deferrals. Every for loop that consumes an async iterator, at
+    every step it consumes, must perform either a real deferral or a synthetic one.
+    Synthetic deferrals are pure overhead in that they are work that produces no used
+    result, and no other work can be done while that work is being done.\nFundamentally
+    iteration is, well, I think Henry Ford invented it, he just called it \"the assembly
+    line\". Its core proposition was the same as iterators: you have stations on a
+    line, and the line runs continuously -- it might need never halt.\nThe tendency
+    of an assembly line is to have many stations, each of which make a small change
+    to each \"widget\" that passes through the station.\nWhat mandatory async deferrals
+    do, more or less, is create the position of \"postman\". The postman on the assembly
+    line is the only person who is allowed to pick up a completed widget from one
+    line worker and present it to another line worker.\nThe problem is that there
+    is only one postman. If you have ten stations it's station one processes the widget,
+    then leaves it sitting. The postman comes, picks it up, walks it over to the internal
+    mailroom, looks up the address of the next station, and then walks it back to
+    station 2. You can imagine the cascade. 100 workers finish processing items, then
+    the postman walks down the line. Each worker is standing idle waiting for the
+    postman to arrive at their station with the next widget they need to work on.\nI
+    call this time the postman spends walking around pure overhead because station
+    2 is right next to station 1 on the assembly line, and the result of all this
+    business with the postman is the same result as if the the worker at station 1
+    just passed the widet they finished working on directly to station 2. This is
+    of course exactly how a real assembly line works and what makes it so efficient.\nSo
+    because we have this \"there is only one postman\" problem that rapidly becomes
+    the bottleneck, basically the sane factory manager responds by having the workers
+    process boxes full of widgets rather than individual widgets. This is basically
+    why filesystem APIs are AsyncIterator<Buffer>. The Buffer is the crate you've
+    inserted into the assembly line to avoid the dues to the postman.\nThe problem
+    with an iterator of buffers is that you've now wrecked the abstraction. Iterators
+    are, as a pattern, a way to introduce some overhead in order to avoid revealing
+    exactly how data is stored.\nYou would prefer that the instructions given to the
+    person working each station are described in terms of transforming a single widget,
+    not transforming a crate of widgets. Really the only thing the worker should need
+    to know about the crate is how to take the items out of the \"inbox\" container
+    one by one, and how to put them in \"outbox\" container one by one. The abstraction
+    is that the worker can in fact avoid knowing anything about boxes or bags, the
+    worker knows how to take and give items one by one, and the boxes and bags known
+    how to take and give items one by one, and the end result is that any worker can
+    use any container without needing to know anything about it.\nSo the problem is
+    that a slow postman forces us to process widgets one crate at a time, and that
+    is forcing us to use crates and make the use of crates explicit for every worker.
+    To fix it, we would let the work flow directly between workers.\nIn code it looks
+    like this:\nlet streamIterator = {\n  next() {\n    if (valueAvailable)\n      return
+    { done: false, value }; \n    else\n      return valueSource().then(value => ({done:
+    false, value ))\n  }\n}\n\nNow our code is sync when it can be, and async when
+    it has to be, and now we can view files not as buffer iterators but character
+    iterators again. You can try using it to access the filesystem if you wish: https://www.npmjs.com/package/@bablr/fs\nThere's
+    a pretty famous blog post about all this too... https://blog.izs.me/2013/08/designing-apis-for-asynchrony/.
+    It specifically advices against \"synthetic\" deferrals, and is why I am using
+    that term for them."
+  score: 1
+  posted_at: '2026-11-10T15:44:13Z'
 article:
   url: https://nodejsdesignpatterns.com/blog/whats-new-in-nodejs-27/
   title: What's new in Node.js 27
@@ -178,4 +267,4 @@ article:
     22, 21]\n    \n    \n    \n    \n    const"
   error:
   fetched_at: '2026-11-09T22:01:46Z'
-archived_at: '2026-11-10T06:21:31Z'
+archived_at: '2026-11-10T16:51:03Z'

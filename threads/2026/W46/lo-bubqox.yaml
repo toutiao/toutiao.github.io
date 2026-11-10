@@ -1,0 +1,192 @@
+---
+post:
+  id: lo-bubqox
+  source: lobsters
+  title: Blunt Banhammer Blocks Basic Bots Ballistically
+  url: https://shkspr.mobi/blog/2026/11/blunt-banhammer-blocks-basic-bots-ballistically/
+  hn_url: https://lobste.rs/s/bubqox
+  score: 20
+  author: soulcutter
+  posted_at: '2026-11-10T00:48:20Z'
+  fetched_at: '2026-11-10T16:50:57Z'
+  article_url: https://shkspr.mobi/blog/2026/11/blunt-banhammer-blocks-basic-bots-ballistically/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-10T16:51:02Z'
+  raw_comment_count: 9
+  tags:
+  - web
+comments:
+- id: lo-wtlsbe
+  parent_id: '0'
+  author: cornel
+  text: i don’t know. it looks complicated. why not tail -f access.log | grep honey
+    and firewall-ban the ips found!?
+  score: 3
+  posted_at: '2026-11-10T01:58:09Z'
+- id: lo-w7lzdh
+  parent_id: '0'
+  author: stephenr
+  text: |-
+    Trusting XFF header blindly sounds like a bad idea to me.
+    If you have to use it (ie you are behind a proxy but don't control it or otherwise can't use PROXY protocol) you should generally validate that the connecting address (REMOTE_ADDR) is that proxy, before trusting XFF header - otherwise nothing stops someone from making requests to you with arbitrary XFF headers.
+    Checking for a valid non private IP also doesn't help you here, because you're checking the XFF headers first and exiting early so a bot spamming you with random public addresses in XFF will not be blocked and cause you to block other addresses.
+    It's not often I'd expect to see an easily achieved false positive and false negative concurrently.
+  score: 5
+  posted_at: '2026-11-10T02:29:53Z'
+- id: lo-r2o6dv
+  parent_id: '0'
+  author: zimpenfish
+  text: Basically what I do with fail2ban and an invisible link.  Doesn't catch as
+    many things as iocaine but it's non-zero.
+  score: 2
+  posted_at: '2026-11-10T09:07:20Z'
+- id: lo-zhnag8
+  parent_id: '0'
+  author: quad
+  text: Is throwing {$UA} unquoted in .htaccess like that safe?
+  score: 2
+  posted_at: '2026-11-10T11:10:43Z'
+- id: lo-p5kvkk
+  parent_id: '0'
+  author: sjamaan
+  text: This entire script is insecure garbage.
+  score: 3
+  posted_at: '2026-11-10T11:12:18Z'
+- id: lo-apgg6n
+  parent_id: '0'
+  author: quad
+  text: "\U0001F937 I don't know enough PHP to judge.\nBut I'm surprised to see nothing
+    arbitrating concurrent access to the .htaccess file. The code, as written, seems
+    like it would result in file_get_contents returning nothing and .htaccess being
+    all but cleared under any serious load?\n\nReading further, at least two commenters
+    on the page itself have pointed out these issues and presented better solutions."
+  score: 1
+  posted_at: '2026-11-10T11:32:33Z'
+- id: lo-swajwb
+  parent_id: '0'
+  author: chrismorgan
+  text: Probably. It’s in a line comment, so you’d need to inject a line break (with
+    ␊ presumably the only candidate), and it’s derived from a field value and such
+    control characters are not permitted in field values. HTTP/1 will be structurally
+    immune. An HTTP/2 implementation could conceivably be vulnerable, but I’d be very
+    surprised if Apache’s was.
+  score: 2
+  posted_at: '2026-11-10T11:34:14Z'
+- id: lo-rjbwuv
+  parent_id: '0'
+  author: wheybags
+  text: And fail2ban can do expiring bans so you don't permaban some entire cgnat
+    forever just because one person was inadvertently hosting a botnet on their temu
+    tv
+  score: 2
+  posted_at: '2026-11-10T15:10:38Z'
+- id: lo-xgglvr
+  parent_id: '0'
+  author: freddyb
+  text: |-
+    You can achieve something similar more easily. Skip the honeypot URL (and link), but just banning people hitting typical URLs that you don't host. Wordpress wp-admin.php comes to mind.
+    Worked well for me but I don't have a chart :)
+  score: 1
+  posted_at: '2026-11-10T16:20:36Z'
+article:
+  url: https://shkspr.mobi/blog/2026/11/blunt-banhammer-blocks-basic-bots-ballistically/
+  title: Blunt Banhammer Blocks Basic Bots Ballistically – Terence Eden’s Blog
+  fetch_status: success
+  content: "I cut bot traffic to my site by over 80% with a simple trap.\n\nLast month,
+    my hobby website [OpenBenches.org](https://openbenches.org) transferred more than
+    2.5TB of data to visitors. As much as I'd like to think the site is enormously
+    popular, it looks like it is just AI bots endlessly crawling the data and slurping
+    up the images.\n\nSo I've built B to be an indiscriminate tool to eradicate these
+    unwanted parasites.\n\nIt is _very_ loosely inspired by [Jeff Starr's Blackhole](https://perishablepress.com/blackhole-bad-bots/),
+    but works even on sites with heavy caching.\n\nHere's the high level description
+    of how it works.\n\n- Create a directory like `/honeypot/` on your site \n- Put
+    some code in `index.php` within the directory \n- Add the honeypot as an explicit
+    \"Disallow\" in `robots.txt`\n- Include a hidden link to to the honeypot on every
+    page of your site\n- If something accesses that page, write its IP address to
+    your `.htaccess`\n- The `.htaccess` bans the IP address from ever accessing your
+    site again. \n\nThis blog post shows you how you can build this yourself and discusses
+    some of the problems it might cause.\n\n## [Bad Robots!](#bad-robots)\n\nThe file
+    [robots.txt](https://developers.google.com/search/docs/crawling-indexing/robots/intro)
+    lives at the root of your website. It contains a list of instructions to automated
+    web crawlers. Respectful bots will read it and refuse to look at specific parts
+    of your site.\n\nAdd these two lines to it:\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/notepad.svg)
+    User-agent: *\n    Disallow: /honeypot/\n\nThat says bots shouldn't visit any
+    page in the honeypot directory.\n\nBots generally check for updates every 24 hours,
+    so either wait a day or manually submit it to major crawlers.\n\n## [.htaccess](#htaccess)\n\nThe
+    [.htaccess file](https://httpd.apache.org/docs/current/howto/htaccess.html) contains
+    a list of instructions for how your server should process requests.\n\nFind the
+    bit of your `.htaccess` file which looks like this:\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/notepad.svg)
+    <IfModule mod_rewrite.c>\n            RewriteEngine On\n            RewriteBase
+    /\n\nEdit it to look like this:\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/notepad.svg)
+    <IfModule mod_rewrite.c>\n            RewriteEngine On\n            RewriteBase
+    /\n    \n    ### BLOCKED IPs\n        # TEST-NET-1\n        RewriteCond %{REMOTE_ADDR}
+    \"=192.0.2.1\"\n        RewriteRule ^ - [R=402,L]\n    ### /BLOCKED IPs\n\nIt
+    is important that these rules come before any other rewrite rules.\n\nChange the
+    end of this `IfModule` to look like:\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/notepad.svg)
+    </IfModule>\n    \n    ErrorDocument 402 \"Payment Required - Access Denied.\"\n\nIf
+    an IP address is in the blocked IP list, the server will send an error code and
+    a readable message. You can add whatever plain text you like here.\n\n## [Wipe
+    Them All Out](#wipe-them-all-out)\n\nInside the honeypot directory, create a file
+    called `index.php` (or whatever you like). When this page is visited, it grabs
+    the visitor's IP address and the name of its User Agent. It then places them in
+    the BLOCKED IPs section.\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/php.svg)
+    PHP// What's their IP?\n    $IP = get_client_ip();\n    \n    // User Agent\n
+    \   $UA = isset( $_SERVER[\"HTTP_USER_AGENT\"] ) ? $_SERVER[\"HTTP_USER_AGENT\"]
+    : \"\";\n    \n    // Get the existing .htaccess file.\n    $htaccess_file = \"../.htaccess\";\n
+    \   $htaccess = file_get_contents( $htaccess_file );\n    \n    // Split by newline.\n
+    \   $htaccess_lines = explode( separator: \"\\n\", string: $htaccess );\n    \n
+    \   // Where's our start block?\n    $start = \"### BLOCKED IPs\";\n    $end =
+    \"### /BLOCKED IPs\";\n    \n    // Exit if the .htaccess doesn't have the block.\n
+    \   if ( !in_array( needle: $start, haystack: $htaccess_lines ) ) { die(); }\n
+    \   \n    // This is where to start from.\n    $start_block = array_search( needle:
+    $start, haystack: $htaccess_lines );\n    \n    // Add the line after the start
+    block.\n    // Include a date.\n    $htaccess_lines[$start_block] = $start . \"\\n\"
+    . \n        \"\\t#\\t\" . date( \"c\" ) . \"\\t{$UA}\\n\" . \n        \"\\tRewriteCond
+    %{REMOTE_ADDR} \\\"={$IP}\\\" [OR]\";\n    \n    // Turn the array back to a string.\n
+    \   $newHtaccess = implode( separator: \"\\n\", array: $htaccess_lines );\n    \n
+    \   // Save the new .htaccess file.\n    file_put_contents( filename: $htaccess_file,
+    data: $newHtaccess );\n    \n    function get_client_ip():string\n    {\n        //
+    Adapted from https://github.com/ibericode/koko-analytics/blob/main/src/Resources/functions/collect.php\n
+    \   \n        // X-Forwarded-For sometimes contains a comma-separated list of
+    IP addresses\n        // @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For\n
+    \       $ips = empty( $_SERVER[\"HTTP_X_FORWARDED_FOR\"] ) ?\n            [] :\n
+    \           \\array_map( \"trim\", \\explode( \",\", $_SERVER[\"HTTP_X_FORWARDED_FOR\"]
+    ) );\n    \n        // Always add REMOTE_ADDR and HTTP_CLIENT_IP to list of ip
+    addresses, if set\n        foreach ( [\"REMOTE_ADDR\", \"HTTP_CLIENT_IP\"] as
+    $key ) {\n            if ( !empty( $_SERVER[$key] ) ) {\n                $ips[]
+    = $_SERVER[$key];\n            }\n        }\n    \n        // Return first valid
+    IP address from list\n        foreach ( $ips as $ip ) {\n            if ( \\filter_var(
+    $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+    ) ) {\n                return $ip;\n            }\n        }\n    \n        return
+    \"\";\n    }\n\n## [Setting The Trap](#setting-the-trap)\n\nWeb crawlers look
+    at a page, find every link on it, then visit those links. So we need to put a
+    link to the honeypot on every page - but in such a way that normal users will
+    not find it or click it.\n\nThis adds a link, removes it from the accessibility
+    tree, and gives it impossible to click text (a zero width joiner).\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/html.svg)
+    HTML<a id=\"honey\" aria-hidden=\"true\" href=\"/honeypot/index.php\">‍</a>\n\nThis
+    CSS hides it from normal viewers and removes the mouse cursor from view.\n\n     ![](https://shkspr.mobi/blog/wp-content/plugins/tempest-highlight/svg/css.svg)
+    CSS#honey {\n        display: none !important;\n        cursor: none !important;\n
+    \   }\n\n## [Problems This Might Cause](#problems-this-might-cause)\n\nIt's unlikely
+    that a human will find the link, click on it, and be banned. But if they do, consider
+    put a message in the blocking text telling them how they can get unblocked.\n\nSome
+    useful bots ignore robots.txt. If they identify themselves via a User-Agent string
+    (and they should) you can manually remove them from .htaccess. You could also
+    code in an allow list exemption for them. But, of course, many bad bots lie about
+    who they really are.\n\nConversely, not all bots crawl every link. This won't
+    catch bots which respect robots.txt but are nevertheless problematic.\n\nIf you
+    have thousands of different bots blocked, the performance of your server _might_
+    slow down while .htaccess is parsed. There's weak anecdotal evidence that it adds
+    a slight overhead. But, personally, I don't think that's worth worrying about.\n\nBots
+    often use hijacked IP addresses. After the bot has moved, an innocent party might
+    be blocked from your site. Each block has a timestamp associated with it. You
+    could periodically unblock older entries.\n\nBots rotate through hundreds of different
+    IP addresses. So the same bot might get blocked multiple times.\n\nBots might
+    see the CSS marks the link as hidden and refuse to follow it. Instead of CSS,
+    you could use invisible spaces or other characters which would be hard for a human
+    to see but appear visible to a bot.\n\nSimilarly, a smart bot might refuse to
+    visit a path called /honeypot/ so choose a better name for it. A smarter bot would
+    see that touching the honeypot leads to a ban - so perhaps a selection of traps
+    are needed?\n\nAs is implied in the name, this is a _bl"
+  error:
+  fetched_at: '2026-11-10T16:51:02Z'
+archived_at: '2026-11-10T16:51:03Z'

@@ -1,0 +1,132 @@
+---
+post:
+  id: lo-n8reli
+  source: lobsters
+  title: Building a networking switch ASIC chip
+  url: https://essenceia.github.io/projects/expresso/
+  hn_url: https://lobste.rs/s/n8reli
+  score: 19
+  author: florianhartung
+  posted_at: '2026-11-10T07:39:39Z'
+  fetched_at: '2026-11-10T16:50:57Z'
+  article_url: https://essenceia.github.io/projects/expresso/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-10T16:51:00Z'
+  raw_comment_count: 1
+  tags:
+  - hardware
+comments:
+- id: lo-3ks1zq
+  parent_id: '0'
+  author: napkindrawing
+  text: Wow, those details! What a joy to read.
+  score: 2
+  posted_at: '2026-11-10T12:57:41Z'
+article:
+  url: https://essenceia.github.io/projects/expresso/
+  title: Building a networking switch ASIC chip · Tales on the wire
+  fetch_status: success
+  content: "Well that was a ride, where do I start ?\n\nI am currently on a quest
+    to build some open source networking equipment with the final boss being a full
+    router.\n\nThere are a lot of very valuable and less complex pieces of hardware
+    on the way that also need building, one of them being the common networking switch.\n\nPreviously
+    I was building the infrastructure to handle ethernet packets and worked my way
+    up to a simple three-port switch that I had taped it out via Tiny Tapeout. But
+    a few days after that tapeout, as I was still reeling from the adrenaline of rushing
+    to meet the deadline, an unexpected opportunity presented itself: the possibility
+    of taping out my own full chip, free of charge!\n\nFull chip inital global placement
+    in action, performed by the OpenROAD placement tool.\n\nBut there was one slight
+    problem, I only had four days to design the entire thing, also known as 96 hours
+    ( putting it in hours definitely does not make it sound less terrifying ).\n\nA
+    few months back, I wrote that building a full matrix multiplication accelerator
+    with some in-silicon debug infrastructure in under 2 weeks was too tight of a
+    deadline, all around a terrible idea and should absolutely never be attempted,
+    especially not in a corporate setting. Well since then I have discovered a new
+    circle of hell: designing a full ASIC solo in 4 days.\n\nIt’s caffeinated down
+    here.\n\nBut now that I have gazed upon these new depths of hell, let me tell
+    you about the journey of building full ASICs!\n\nFully open-source full chip tapeout
+    of the unmanaged cut-through 100Mbps Ethernet switch and the Heat Death of the
+    Universe beacon. Targeting 0.5x0.5 waffer.space run#2.\n\n## Will the fab talk
+    to me?#\n\nNo … no they won’t &mldr;\n\nBut they will talk to wafer.space, and
+    wafer.space will talk to me.\n\nNow I suspect you might be wondering: what is
+    wafer.space again ?\n\nA few months ago, something happened. Tim Ansell, formerly
+    part of the team at Google that got us the SkyWater 130nm and GlobalFoundries
+    180nm open source PDKs, left Google and started wafer.space where he opened up
+    the possibility for mere mortals to taped out their own chip at GlobalFoundries
+    for an affordable price. They offer the services of getting your chip manufactured
+    on GlobalFoundaries 180nm and optionally get it packaged.\n\n### Big chips and
+    little chips#\n\nChips come in all rectangular sizes with the size measured in
+    area.\n\nArea is one of the primary concerns of the design as it is once again
+    a question of cold calculated economics, because, when you go to get a chip manufactured
+    you pay per \\( mm^2 \\) of area.\n\nTake for example the price quoted bellow
+    by IHP (another fab) for their own multiwafer runs. If you participate in this
+    run you will get back a set number of chips (40 in this case) and your final chip
+    cost will correspond to how big your chip ultimately is.\n\nIHP MWP price quotes:
+    MPW Price Information 2026\n\nYet, more area is not simply more expensive because
+    of the direct manufacturing cost, there is a second more subtle factor inflating
+    the price, and that is yield.\n\nUltimately broken chips have no value, actually
+    we could argue that we should ascribe negative value to broken chips because identifying
+    which chips are broken costs money, and selling a customer a broken chip costs
+    even more money. So maximizing the ratio of good chips to manufactured chips is
+    of primary importance. This ratio is called the yield.\n\nChips can be broken
+    for a plethora of reasons, but for simplicity I will put them in two different
+    buckets. Firstly it could be a design issue, in which case all your chips are
+    equally affected. Secondly it could be a manufacturing defect that affects your
+    chips semi-randomly.\n\nManufacturing defects that occur during semiconductor
+    device fabrication can be modeled as constant defect probability per unit of area,
+    meaning that chips with higher area have a higher probability of having a defect,
+    and thus lower yield, leading to ultimately higher costs.\n\nThis doesn’t impact
+    the price which I pay to the chip area per-se, but it affects the average net
+    price that I will pay per functional chip.\n\nThis is the double reason why area
+    optimization is such a concern when designing chips.\n\nNow GlobaFoundaries 180nm
+    (gf180) is not a young node, and the polite way of calling something old is “matrue”.
+    With node maturity comes increased expertise of the process by the foundry leading
+    to better yields over time. So gf180 is a node with excellent yields for which
+    area related defects are not a concern especially compared to younger leading
+    edge nodes.\n\nWafer.space now offers 4 chip sizes, commonly referred to in the
+    community as the “full”, “half”s and “quarter” slots.\n\nwafer.space pricing for
+    run 2\n\nFor people in need of some perspective, the full slot and its nearly
+    13mm2 of area is the same size as the entire Tiny Tapeout gf180 shuttle chip.
+    The same chip that is capable of accommodating unto 160 project tiles and all
+    the Tiny Tapeout common infrastructure. For reference, my two systolic arrays
+    (8 bit integer and bfloat16) and the original switch all fit on only 4 tiles and
+    my largest design to date, the blake2s hashing accelerator on 8.\n\nRun 2 wafers
+    with the Tiny Tapeout chips in the middle on the left.\n\n### Dicing#\n\nBut getting
+    the silicon manufactured is only the first battle of the war.\n\nOnce you get
+    your chip onto a wafer, there are two more important steps to clear before it
+    can actually be called a chip.\n\nSemiconductors are manufactured on a substrate
+    called a wafer, this is a solid silicon disk that then needs to be very precisely
+    broken up into individual chips. This step is called dicing.\n\nSo once the wafers
+    have exited the fab and the guys at wafer.space take delivery of the full set
+    of wafers, they call to another specialized service to dice them into individual
+    chips along the scrible lines using a very precise diamond saw.\n\nExample of
+    a cheap “mature” manual wafer dicer being sold at auction.\n\nAt that point, wafer.space
+    offers two possibilities. The first is to mail you the diced chips directly, the
+    second is to get the chips packaged for you.\n\n### Packaging ?#\n\nRaw semiconductor
+    silicon is beautiful but unless you are also in the habit of collecting expensive
+    crystals to look at, they are not much use as is. After all, how do you communicate
+    with a piece of doped silicon crystal?\n\nFABulous FPGA raw die, part of the first
+    wafer.space run.\n\nIn order to both power our chip and be able to communicate
+    with it, we need to package it in the form in which we can connect it to a wider
+    electronic circuit.\n\nMicromaipulator probing station from the Balseiro Institute.\n\nThat
+    is, unless you just happen to have a micromanipulator and about 56 microprobes
+    lying in your garage that you can use for chip bringup. In which case please do
+    tell me if you ever need some help clearing out your garage, I have nothing planned
+    that day.\n\nChip packages come in different forms, the most common being some
+    kind of black plastic enclosures used not only to create accessible connections
+    to the silicon but also for protecting the delicate die and the connections from
+    the environmental damage caused by shocks, humidity and extreme temperature fluctuations.\n\nThe
+    type of package we chose also affects how we architect the IO and thus what our
+    silicon floorplan will look like. There are two big families of packages:\n\n-
+    wire bonded\n\n- flip-chip\n\nsource: https://anysilicon.com/flip-chip/\n\nIn
+    the case of flip-chips the IO pin connections will be spread out regularly all
+    over the floorplan leading to shorter logic to pin connections, and supporting
+    a greater pin density and count. But on the flip side (put intended), flip chips
+    packaging requires a lot more precision and is more expensive compared to …\n\nWire
+    bonding works by conning your silicon to a pad in the package using a very thin
+    fly wire made from gold or aluminium.\n\nThis is done by a wire bonding machine
+    that will physically pull a wire from a IO landing pad on the silicon and connect
+    it to "
+  error:
+  fetched_at: '2026-11-10T16:51:00Z'
+archived_at: '2026-11-10T16:51:00Z'
