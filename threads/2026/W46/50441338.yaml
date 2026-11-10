@@ -4,14 +4,14 @@ post:
   title: The Hardest Tarball?
   url: https://stoppels.ch/2026/11/07/the-hardest-tarball.html
   hn_url: https://news.ycombinator.com/item?id=50441338
-  score: 89
+  score: 141
   author: ''
   posted_at: '2026-11-10T15:00:39Z'
-  fetched_at: '2026-11-10T16:50:47Z'
+  fetched_at: '2026-11-10T22:56:20Z'
   article_url: https://stoppels.ch/2026/11/07/the-hardest-tarball.html
   article_fetch_status: success
   article_fetched_at: '2026-11-10T16:50:47Z'
-  raw_comment_count: 4
+  raw_comment_count: 31
 comments:
 - id: '50441680'
   parent_id: '50441338'
@@ -50,9 +50,279 @@ comments:
 - id: '50442826'
   parent_id: '50441338'
   author: dataflow
-  text: "[delayed]"
+  text: Disregarding erroring as an option-<p>I feel like the most faithful extraction
+    would dictate that any field in the original header should take precedence over
+    the PaxHeader&#x27;s iff the PaxHeader field&#x27;s value would&#x27;ve been representable
+    in the original field. Anyone have thoughts?
   score: 0
   posted_at: '2026-11-10T16:44:14Z'
+- id: '50442911'
+  parent_id: '50441338'
+  author: molticrystal
+  text: "&gt;NET, Julia and uv&#x27;s tar-codec - These implementations reject the
+    tarball. I believe this is the best thing you can do, even if it&#x27;s technically
+    not POSIX-compliant.<p>While this is the safest choice, it is the least helpful,
+    I would always prefer to get something out of an archive then nothing. Damage&#x2F;irregularity
+    to an archive shouldn&#x27;t prevent data inspection, just a warning and a way
+    to fall back with caveats for what can be extracted."
+  score: 0
+  posted_at: '2026-11-10T16:50:26Z'
+- id: '50443096'
+  parent_id: '50442911'
+  author: pixl97
+  text: It depends where. Inside a server application, fail fast and fail safe.<p>Now
+    if I&#x27;m a user trying to extract the file then I&#x27;d want to get as much
+    as possible.
+  score: 0
+  posted_at: '2026-11-10T17:02:51Z'
+- id: '50443118'
+  parent_id: '50442911'
+  author: rwmj
+  text: You really want two different modes.  If you&#x27;re parsing untrusted tarballs
+    (eg. ones uploaded to your website) then you should err on the side of rejecting
+    anything that&#x27;s even slightly suspicious.  But in another mode you are a
+    user who needs to extract any data you can from your corrupted family photos archive.
+  score: 0
+  posted_at: '2026-11-10T17:04:40Z'
+- id: '50443135'
+  parent_id: '50442911'
+  author: stabbles
+  text: It is somewhat unfortunate that tar has two main purposes with very different
+    threat models, namely backup and (software) distribution.<p>The POSIX standard
+    promotes best-effort extraction, which is reasonable for backups, but a liability
+    for distribution.<p>Julia&#x27;s Tar.jl was developed for Pkg.jl and tar-codec
+    for uv, so these are focused on the security aspect of software distribution.
+  score: 0
+  posted_at: '2026-11-10T17:06:14Z'
+- id: '50443319'
+  parent_id: '50441680'
+  author: weryberl5
+  text: TIL there are different hardness for tarballs...
+  score: 0
+  posted_at: '2026-11-10T17:20:40Z'
+- id: '50443504'
+  parent_id: '50441338'
+  author: Joker_vD
+  text: "&gt; Now, POSIX says that data blocks for a hard link “may be included” in
+    pax archives, but the implications of this are not entirely clear.<p>How so? If
+    the data blocks are included, then those are the intended content of the file
+    behind that hard link. They should overwrite the previous content of the file.<p>&gt;
+    So the 512 bytes after the hard link are its data, and not the header of empty
+    as we archived it?<p>Yes, precisely.<p>&gt; How can a hard link have different
+    contents from its previous counterpart file?<p>Why, very simply: while the archive
+    was being created, the file behind the two different hard links changed; the archival
+    utility noticed it, and included the new content of the file as the content for
+    the second hard link instead of rewinding and overwriting the original file in
+    the archive (which would be impossible to do on a tape, you know). At least I
+    believe that&#x27;s what was the rationale for this allowance, and the intended
+    behavior on the extraction."
+  score: 0
+  posted_at: '2026-11-10T17:38:43Z'
+- id: '50443842'
+  parent_id: '50443504'
+  author: woodruffw
+  text: "“Precisely” and “simply” are not words I would use to describe pax’s prescriptions
+    around data-bearing hardlink members.<p>(I maintain several of the tar parsers
+    mentioned in this post, which I appreciate for its clear treatment of a larger
+    differential problem in the tar ecosystem.)"
+  score: 0
+  posted_at: '2026-11-10T18:03:08Z'
+- id: '50443857'
+  parent_id: '50442720'
+  author: rmast
+  text: A strict parser makes sense for flagging that there are issues, but that also
+    can’t block extraction; it needs to be configurable enough that users can make
+    a decision on how to handle the ambiguity.
+  score: 0
+  posted_at: '2026-11-10T18:03:59Z'
+- id: '50443961'
+  parent_id: '50443857'
+  author: woodruffw
+  text: 'There are many scenarios (such as fetching package distributions over the
+    internet) where the user lacks sufficient information to make an informed and
+    secure decision about how to safely parse and extract a malformed tar (or any
+    other archive format).<p>(Another way of saying that is that we live in a post-Postel
+    world[1].)<p>[1]: <a href="https:&#x2F;&#x2F;alexgaynor.net&#x2F;2025&#x2F;mar&#x2F;25&#x2F;postels-law-and-the-three-ring-circus&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;alexgaynor.net&#x2F;2025&#x2F;mar&#x2F;25&#x2F;postels-law-and-the-three...</a>'
+  score: 0
+  posted_at: '2026-11-10T18:12:14Z'
+- id: '50444337'
+  parent_id: '50441338'
+  author: djha-skin
+  text: Tl;dr don&#x27;t use pax.<p>Hit up Wikipedia for tarball format and you may
+    agree with me. It&#x27;s a classic example of a standard where you look at it
+    and go, &quot;??? Who asked for that?&quot;. I&#x27;m not surprised the article
+    focuses on pax when finding tar inconsistencies. Original tar is just fine.
+  score: 0
+  posted_at: '2026-11-10T18:38:11Z'
+- id: '50444363'
+  parent_id: '50443842'
+  author: Joker_vD
+  text: Fair enough, although in all honestly, &quot;precisely&quot; and &quot;simply&quot;
+    are not words I would personally use to describe anything about POSIX&#x27;s stipulations
+    on the pax&#x27;s behaviour either. But as you probably know way better than I
+    do, the whole tar standardization effort was quite a train wreck (IIRC one of
+    the major discussions was &quot;shouldn&#x27;t we just ditch tar entirely in favor
+    of cpio&quot;... yeah), with lots of different people with different interests
+    and opinions, so what we got is what we got. It&#x27;s a fine format for a single-system&#x2F;installation
+    archival and backup; for portable data interchange? Not so that much. Hardened
+    against malicious actors? Absolutely not in the slightest.
+  score: 0
+  posted_at: '2026-11-10T18:39:50Z'
+- id: '50444498'
+  parent_id: '50444337'
+  author: woodruffw
+  text: I don’t really think pax is the issue here, although pax <i>is</i> a bad specification
+    in absolute terms. But “classic” (V7) tar just isn’t specified at all, and has
+    plenty of its own differentials.<p>(Users also want things like filenames that
+    are longer than 100 characters, for obvious reasons.)
+  score: 0
+  posted_at: '2026-11-10T18:50:09Z'
+- id: '50444683'
+  parent_id: '50444337'
+  author: wpollock
+  text: 'Pax has an interesting use in POSIX: combined with od, pax is the only way
+    (in POSIX) to get a Unix timestamp from the command line. The exact command line
+    is left as an exercise for the interested reader.'
+  score: 0
+  posted_at: '2026-11-10T19:03:50Z'
+- id: '50444825'
+  parent_id: '50442826'
+  author: woodruffw
+  text: 'pax says the opposite: the extended headers <i>always</i> take precedence,
+    even when they produce invalid states (such as deleting the `path` state).<p>pax
+    does not prescribe what to do in these kinds of invalid states, so there’s a long
+    tail of people making educated guesses.'
+  score: 0
+  posted_at: '2026-11-10T19:12:41Z'
+- id: '50444828'
+  parent_id: '50441338'
+  author: JdeBP
+  text: There&#x27;s a prominent tar implementation missing.  paxmirabilis is tar,
+    cpio, and pax all in one, as a multiple-call binary.  It&#x27;s what one gets
+    as pax in Debian, in fact.<p>* <a href="https:&#x2F;&#x2F;mbsd.evolvis.org&#x2F;pax.htm"
+    rel="nofollow">https:&#x2F;&#x2F;mbsd.evolvis.org&#x2F;pax.htm</a><p>* <a href="https:&#x2F;&#x2F;manpages.debian.org&#x2F;trixie&#x2F;pax&#x2F;index.html"
+    rel="nofollow">https:&#x2F;&#x2F;manpages.debian.org&#x2F;trixie&#x2F;pax&#x2F;index.html</a><p>No,
+    it&#x27;s not libarchive&#x27;s bsdtar.  There&#x27;s more than 1 tar in the BSD
+    world.
+  score: 0
+  posted_at: '2026-11-10T19:12:49Z'
+- id: '50445065'
+  parent_id: '50442911'
+  author: yjftsjthsd-h
+  text: Really what I think I&#x27;d want out of any archive utility is a safe default
+    mode (for whatever &quot;safe&quot; means here), but the <i>ability</i> for a
+    user to pull out everything in the archive one way or another. If an archive can
+    be read as having multiple versions of a given file, the user should be able to
+    pick to extract any or all of them at will, but only on purpose.
+  score: 0
+  posted_at: '2026-11-10T19:28:24Z'
+- id: '50445116'
+  parent_id: '50444363'
+  author: stabbles
+  text: Were you involved with this process? I&#x27;m the author of the blog post,
+    and I&#x27;m looking for people to discuss a rewrite of that POSIX pax page. What
+    bothers me most about that section is that it prescribes that if you don&#x27;t
+    support a (vendor) typeflag, you should treat it as a header for a regular file,
+    extract it, and continue with the next header. The problem is that vendor extensions
+    may change the framing of the archive, and POSIX sets a precedent for that with
+    pax headers, where you can override size=... of the next header. It should just
+    leave it unspecified what you should do when you encounter an unrecognized header,
+    or say that the implementation may error. There are more such improvements to
+    be made.
+  score: 0
+  posted_at: '2026-11-10T19:32:09Z'
+- id: '50445495'
+  parent_id: '50445116'
+  author: JdeBP
+  text: 'I think that as of last Sunday you discovered the best place to be for that.  (-:<p>Although
+    now comes the hard part: filing defect reports and convincing other people.'
+  score: 0
+  posted_at: '2026-11-10T19:59:06Z'
+- id: '50445574'
+  parent_id: '50441338'
+  author: zahlman
+  text: "&gt; This tarball is one of 134 tricky tarballs that I&#x27;m collecting
+    and categorizing in my test suite haampie&#x2F;tar-minefield<p>Surely &quot;tarpit&quot;
+    is a more natural name?"
+  score: 0
+  posted_at: '2026-11-10T20:05:24Z'
+- id: '50445607'
+  parent_id: '50442911'
+  author: wolrah
+  text: "&gt; While this is the safest choice, it is the least helpful, I would always
+    prefer to get something out of an archive then nothing. Damage&#x2F;irregularity
+    to an archive shouldn&#x27;t prevent data inspection, just a warning and a way
+    to fall back with caveats for what can be extracted.<p>I would argue the correct
+    answer can have both.<p>Fail by default, fail with a clear error that says the
+    file is damaged, then offer an explicitly opt-in path to try your best anyways,
+    preferably one where the command line option is something like --dangerous-try-extract-anyways
+    and will itself fail on non-broken files so it can&#x27;t just be shoved in a
+    script as a way to &quot;make sure it works&quot;."
+  score: 0
+  posted_at: '2026-11-10T20:07:58Z'
+- id: '50445654'
+  parent_id: '50443961'
+  author: rmast
+  text: That’s true, but also much more general than our SBOM generator is targeting.
+    We’re typically looking at filesystems pulled from embedded systems, or their
+    update files. Ultimately we want to accurately represent what the state of the
+    file system in the device looks like, which can require reverse engineering the
+    update process to determine how to handle ambiguous cases (“correct” is matching
+    what the device firmware update does).
+  score: 0
+  posted_at: '2026-11-10T20:11:42Z'
+- id: '50445710'
+  parent_id: '50445495'
+  author: stabbles
+  text: Ah, excellent, so my email did come through ;)
+  score: 0
+  posted_at: '2026-11-10T20:15:51Z'
+- id: '50446052'
+  parent_id: '50445574'
+  author: woodruffw
+  text: I don’t know if ‘stabbles didn’t pick it for this reason, but `tarpit` is
+    the low level tar inspection CLI that tar-codec provides.
+  score: 0
+  posted_at: '2026-11-10T20:43:08Z'
+- id: '50446101'
+  parent_id: '50444683'
+  author: woodruffw
+  text: As of POSIX.1-2024 you can use %s to get the number of seconds since the epoch.
+    But that was indeed not specified in earlier POSIX versions, AFAIK.
+  score: 0
+  posted_at: '2026-11-10T20:46:25Z'
+- id: '50446244'
+  parent_id: '50444825'
+  author: dataflow
+  text: Right, it just feels wrong to me for pax to mandate that. My argument is that
+    the whole point of the extension is to handle the cases that the original can&#x27;t
+    handle <i>while still preserving existing behavior for what is already supported</i>
+    - hence making it an extension. If you&#x27;re fully overriding the original then
+    you just have a different format altogether and aren&#x27;t respecting the original
+    at all, and therefore shouldn&#x27;t be allowing decoders for the original format
+    to read the new one.
+  score: 0
+  posted_at: '2026-11-10T20:58:17Z'
+- id: '50446553'
+  parent_id: '50446244'
+  author: woodruffw
+  text: I think this is true in a sense. But the other major benefit to pax is that
+    it normalizes metadata handling away from the mess that is fixed octal fields
+    in a V7 tar header. pax is its own mess, but at least it’s extremely clear about
+    how spaces, NULs, etc. interact with values.<p>(On a more basic level, I can imagine
+    it would be even more differential prone for the precedence rule to be “pax, but
+    not always.” pax still makes it complicated but that would be another whole circle
+    of hell.)
+  score: 0
+  posted_at: '2026-11-10T21:28:14Z'
+- id: '50447092'
+  parent_id: '50445065'
+  author: stabbles
+  text: 'Exactly, I&#x27;m trying to define such a policy here: <a href="https:&#x2F;&#x2F;stoppels.ch&#x2F;tar"
+    rel="nofollow">https:&#x2F;&#x2F;stoppels.ch&#x2F;tar</a>'
+  score: 0
+  posted_at: '2026-11-10T22:19:32Z'
 article:
   url: https://stoppels.ch/2026/11/07/the-hardest-tarball.html
   title: The hardest tarball?
@@ -119,4 +389,4 @@ article:
     If you'd like to discuss this, send me an email at firstname[at]lastname.ch.
   error:
   fetched_at: '2026-11-10T16:50:47Z'
-archived_at: '2026-11-10T16:50:57Z'
+archived_at: '2026-11-10T22:56:29Z'

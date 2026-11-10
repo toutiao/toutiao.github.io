@@ -1,0 +1,1060 @@
+---
+post:
+  id: '50382401'
+  title: I deleted all my SSH keys
+  url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
+  hn_url: https://news.ycombinator.com/item?id=50382401
+  score: 209
+  author: ''
+  posted_at: '2026-11-05T18:17:51Z'
+  fetched_at: '2026-11-10T22:56:19Z'
+  article_url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-10T22:56:19Z'
+  raw_comment_count: 110
+comments:
+- id: '50390464'
+  parent_id: '50382401'
+  author: mrlonglong
+  text: Can yubikeys be used for logging onto Linux consoles?
+  score: 0
+  posted_at: '2026-11-06T10:12:52Z'
+- id: '50391054'
+  parent_id: '50390464'
+  author: ycombinatrix
+  text: Yes, via PAM. I use the rssh module myself.
+  score: 0
+  posted_at: '2026-11-06T11:29:01Z'
+- id: '50399357'
+  parent_id: '50391054'
+  author: mrlonglong
+  text: Nice thanks, I&#x27;m getting one to play with.
+  score: 0
+  posted_at: '2026-11-06T22:29:19Z'
+- id: '50436604'
+  parent_id: '50399357'
+  author: ycombinatrix
+  text: It&#x27;s great, I&#x27;m completely done with passwords in Linux.
+  score: 0
+  posted_at: '2026-11-10T05:54:36Z'
+- id: '50443239'
+  parent_id: '50436604'
+  author: project2501a
+  text: Thanks for the info, I have ubiqeys but i did not where to start!
+  score: 0
+  posted_at: '2026-11-10T17:14:20Z'
+- id: '50443449'
+  parent_id: '50382401'
+  author: luz666
+  text: How are those compared to nitrokeys? I know an IT guy that prefers those,
+    I think he mentioned those are open hardware?
+  score: 0
+  posted_at: '2026-11-10T17:33:37Z'
+- id: '50443465'
+  parent_id: '50436604'
+  author: hoppp
+  text: Do you have a backup yubi key? So it&#x27;s a good idea to buy 2?
+  score: 0
+  posted_at: '2026-11-10T17:34:54Z'
+- id: '50443581'
+  parent_id: '50382401'
+  author: aorth
+  text: Great article! I discovered ssh-tpm-agent last year and was surprised that
+    all my ThinkPads have hardware TPM, even one from 2018! I&#x27;ve switched over
+    to using it for everything and there are no more private keys on my devices.<p>I
+    also have a Yubikey but it&#x27;s been a few years since I tried it for ssh keys.
+    I use it as a regular security key. Maybe I should try it for ssh keys as it sounds
+    like the tooling has improved.
+  score: 0
+  posted_at: '2026-11-10T17:44:04Z'
+- id: '50443590'
+  parent_id: '50382401'
+  author: Bender
+  text: |-
+    I will stick with ssh keys, except that I:<p>- Put the public authorized keys in &#x2F;etc&#x2F;ssh&#x2F;keys&#x2F;%u immutable, monitored for checksum changes.<p>- Have CIDR restrictions in said public keys.<p><pre><code>    from=&quot;x.x.x.x&#x2F;n,x.x.x.x&#x2F;n&quot; ssh-ed25519 AAAA[snip] Text-Identifier
+    </code></pre>
+    - Have NFTables checks for MSS, TCP SYN TTL, Window sizes, CIDR blocks permitted on the public ssh instances <i>(throw away nodes)</i> and behind a VPN on more important roles.  If I have a need to keep netfilter disabled then I put sshd behind L4 haproxy with ACL&#x27;s.
+  score: 0
+  posted_at: '2026-11-10T17:44:53Z'
+- id: '50443604'
+  parent_id: '50382401'
+  author: entrope
+  text: 'My sticking point with these has always been SSH agent support: the last
+    time I looked, I couldn&#x27;t use my Yubikey to authenticate the second hop in
+    an A-&gt;B-&gt;C sequence with a jump box in the middle.  Is that resolved now?
+    This blog doesn&#x27;t address that use case.'
+  score: 0
+  posted_at: '2026-11-10T17:45:55Z'
+- id: '50443632'
+  parent_id: '50382401'
+  author: Foxboron
+  text: '&gt; You will notice though that the private keyfile held on disk uses a
+    .tpm extension this time. This is where an important caveat of the TPM method
+    comes in – Unlike the YubiKey approach, the private key material is actually being
+    stored on disk here. This is because TPM devices do not natively support enrolling
+    SSH keys. So what is happening is that the private key material is being stored
+    on disk in encrypted form, and the TPM is being used to decrypt it.<p>While this
+    is true, you can create static hierarchy keys that would not resolve into separate
+    key files for the TPM. The <i>issue</i> here is that anyone with access to your
+    TPM can recreate the keys, unless you set a owner password.<p><a href="https:&#x2F;&#x2F;man.archlinux.org&#x2F;man&#x2F;ssh-tpm-agent.1#Hierarchy_keys"
+    rel="nofollow">https:&#x2F;&#x2F;man.archlinux.org&#x2F;man&#x2F;ssh-tpm-agent.1#Hierarchy_keys</a>'
+  score: 0
+  posted_at: '2026-11-10T17:47:48Z'
+- id: '50443676'
+  parent_id: '50382401'
+  author: buckle8017
+  text: Unfortunately hardware resident keys are basically useless under qubes.<p>I&#x27;d
+    rather have qubes than hardware resident keys.
+  score: 0
+  posted_at: '2026-11-10T17:52:17Z'
+- id: '50443697'
+  parent_id: '50382401'
+  author: stryan
+  text: 'Hey I&#x27;m in the middle of doing a very similar thing, though I didn&#x27;t
+    go quite as far as OP. I&#x27;m slowly deprecating my old RSA SSH keys and replacing
+    them with a combination of Yubikey, Password Manager, and alternative SSH auth:<p>1.
+    -sk keys on Yubikeys (with touch enabled) are my primary keys, used for signing
+    and always installed on every host I touch&#x2F;etc. I initially planned on using
+    the PIV slots on my Yubi&#x27;s to store the SSH keys instead of the built-in
+    FIDO2 setup, but I hated having to manage multiple moving parts (like getting
+    pscd running on all my clients). The only main benefit of using the PIV slots
+    was being able to set the &quot;cache&quot; touch policy: the YK would cache a
+    touch for up to 15 seconds so doing something like &quot;signing multiple commits
+    during a rebase&quot; would only take one touch instead of num_commits. The side
+    benefit would have been getting to re-use the same SSH key across primary and
+    backup Yubis. The simplicity of the FIDO setup won out and I decided to treat
+    getting annoyed at pressing my Yubikey a bunch of times as a sign I should be
+    doing some sort of alternative setup like a dedicated key. Most prominently, I&#x27;ve
+    now properly setup my Ansible configs with dedicated deploy keys kept as secrets
+    instead of reusing my personal key.<p>2. I use 1Pass and Bitwarden (work&#x2F;personal)
+    to store a secondary SSH key that&#x27;s only used for basic Git auth or other
+    low-risk tasks. This SSH key is loaded from the Password manager directly into
+    ssh-agent via stdin so it never touches my disk; I use fnox to make this backend
+    agnostic.<p>3. Work uses Teleport, personal uses Tailscale so I rely on those
+    SSH auth most of the time. Nothing much to say here except that Tailscale ssh
+    is really convenient :) .<p>I&#x27;ve also setup PAM login and sudo on my machines,
+    which brings me back to the old Sun Ray&#x2F;Smartcard days. None of this is really
+    to prevent security breaches&#x2F;dedicated attackers or anything, though it certainly
+    makes me harder to compromise. I just wanted to make absolutely sure I couldn&#x27;t
+    accidentally upload an SSH private key somewhere.'
+  score: 0
+  posted_at: '2026-11-10T17:53:29Z'
+- id: '50443708'
+  parent_id: '50390464'
+  author: hebetude
+  text: You can also store static passwords on yubikey which requires no direct hardware
+    access. Using a prefix to protect them a little more
+  score: 0
+  posted_at: '2026-11-10T17:54:51Z'
+- id: '50443722'
+  parent_id: '50443604'
+  author: stryan
+  text: If you&#x27;re using -sk keys (i.e. setup via FIDO2 on the Yubikey like the
+    article, not PIV) yes you can forward the keys loaded into your agent like normal,
+    with ssh -A.
+  score: 0
+  posted_at: '2026-11-10T17:55:37Z'
+- id: '50443738'
+  parent_id: '50443449'
+  author: buckle8017
+  text: Many people have issues with nitro key as a business.<p>Something about stealing
+    an iPhone jailbreak years ago?
+  score: 0
+  posted_at: '2026-11-10T17:56:53Z'
+- id: '50443775'
+  parent_id: '50382401'
+  author: makiniq0z
+  text: |-
+    There&#x27;s also an alternative way to using ssh-tpm-agent - the tpm2-pkcs11 stack provides it, here&#x27;s a guide for setting it up: <a href="https:&#x2F;&#x2F;jade.fyi&#x2F;blog&#x2F;tpm-ssh&#x2F;" rel="nofollow">https:&#x2F;&#x2F;jade.fyi&#x2F;blog&#x2F;tpm-ssh&#x2F;</a>
+    Not related to the author, but using that setup personally. Similar considerations as in the OPs TPM notes.
+  score: 0
+  posted_at: '2026-11-10T17:59:08Z'
+- id: '50443784'
+  parent_id: '50382401'
+  author: TacticalCoder
+  text: 'Speaking of which I do something cool with my main desktop (an AMD 7700X,
+    but whatever). It&#x27;s running Debian and there&#x27;s zero executable with
+    the suid bit set. There&#x27;s no <i>sudo</i> command installed. Using &quot;su&quot;
+    to su to root is technically possible but it&#x27;s like a 40 characters long
+    password, meant to never be entered (and I never ever entered it using su).<p>The
+    only way I can get root (short of using a local privilege exploitation exploit
+    to gain root) is by logging, using a Yubikey, over ssh, from a dedicated laptop
+    that has nothing but a SSH client. So the Yubikey is plugged into the laptop.<p>That
+    dedicated laptop has no wifi drivers and is on a dedicated LAN and that dedicated
+    LAN only has two machines on it: my desktop and that laptop.<p>The laptop serves
+    no purpose other than: <i>&quot;log in as root on the desktop&quot;</i>.<p>Of
+    course both that laptop and the desktop have firewalls.<p>This means, yes, I allow
+    log in as root using SSH. But password logins are disabled and the only way to
+    log in as root using SSH is to use the Yubikey. And the firewall only allow SSH
+    attempts to port 22 from the MAC address, IP, and dedicated LAN that corresponds
+    to the laptop.<p>In addition to that my main desktop has multiple user accounts:
+    but none of those users are allowed to su or sudo.<p>Now, I know, I could use
+    Qubes or whatever.<p>But what I explained above is how I do it: even myself I
+    cannot get root on my own desktop without my laptop + Yubikey (I&#x27;d need to
+    find and enter the 40 chars long root password).<p>When I really need to do something
+    as root (and once becoming root becomes extremely hard, suddenly you realize how
+    rare are the occasions when you really need to be root), I open my laptop and
+    boot it (and because that laptop has no GUI and basically nothing besides a SSH
+    client, it boots in three seconds or so).<p>Haters gonna hate but that&#x27;s
+    been working totally fine for me since years and years.'
+  score: 0
+  posted_at: '2026-11-10T17:59:43Z'
+- id: '50444043'
+  parent_id: '50382401'
+  author: mshroyer
+  text: YubiKeys with proof-of-presence for SSH auth are great, but I still use the
+    YubiKey&#x27;s OpenPGP slot for this because my preferred behavior is:<p>1. Require
+    a PIN followed by touch on the first use after inserting the YubiKey<p>2. For
+    every following authentication while the key remains connected, only require touch<p>The
+    extra GnuPG setup needed to make this work is unfortunate, but AFAIK this still
+    isn&#x27;t possible with fido -sk keys on the YubiKey.
+  score: 0
+  posted_at: '2026-11-10T18:17:25Z'
+- id: '50444186'
+  parent_id: '50382401'
+  author: microtonal
+  text: Really nice article!<p>They mention twice that Yubikeys are expensive, but
+    for SSH their cheaper FIDO2 keys work:<p><a href="https:&#x2F;&#x2F;www.yubico.com&#x2F;product&#x2F;security-key-series&#x2F;security-key-nfc-by-yubico-black&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.yubico.com&#x2F;product&#x2F;security-key-series&#x2F;security-...</a>
+  score: 0
+  posted_at: '2026-11-10T18:26:32Z'
+- id: '50444201'
+  parent_id: '50382401'
+  author: rednafi
+  text: Way too much work for my taste. I use the bitwarden CLI to fetch&#x2F;store
+    the key. Opted in for ed25519 on day 1. Works great.
+  score: 0
+  posted_at: '2026-11-10T18:27:18Z'
+- id: '50444202'
+  parent_id: '50443784'
+  author: skydhash
+  text: Why not use:<p>1. Virtual terminals? The answer I can think of is usb hid
+    attacks.<p>2. Serial Consoles? My answer the is encrypted connections on the wire.<p>Any
+    other reasons than mines?
+  score: 0
+  posted_at: '2026-11-10T18:27:27Z'
+- id: '50444204'
+  parent_id: '50382401'
+  author: rolosa
+  text: I like the idea of using my MacBook&#x27;s Secure Enclave for ssh keys but
+    what do I do if I develop on a remote VPS (purely because I&#x27;d rather have
+    the AI accidentally rm -rf &#x2F; on a VPS than my own computer)?
+  score: 0
+  posted_at: '2026-11-10T18:27:36Z'
+- id: '50444234'
+  parent_id: '50390464'
+  author: microtonal
+  text: Yes, it&#x27;s really nice. The fingerprint scanner on my Thinkpad is terrible
+    (even when enrolling a fingerprint multiple times, etc.), whereas the YubiKey
+    Bio work much better. So I use it as an alternative screen unlock.
+  score: 0
+  posted_at: '2026-11-10T18:29:10Z'
+- id: '50444251'
+  parent_id: '50443604'
+  author: unsnap_biceps
+  text: If you use ProxyJump (-J) you don&#x27;t forward the agent off of host A and
+    it works with completely arbitrary chains (A-&gt;B-&gt;C-&gt;D-&gt;E-&gt;F-&gt;...)
+  score: 0
+  posted_at: '2026-11-10T18:30:31Z'
+- id: '50444425'
+  parent_id: '50443722'
+  author: tomatocracy
+  text: PIV keys can also be forwarded through an agent. The only thing to be aware
+    of is that the agent process will effectively cache your PIN if you do this.<p>ssh-add
+    -s &lt;pkcs11.so&gt;<p>To mitigate that you can add -c to the ssh-add command.
+    That will make the agent prompt for confirmation (on the host with the PIV key)
+    every time something asks to use it. Doesn&#x27;t quite get you the same security
+    as just not caching the PIN to start with but it&#x27;s OK.
+  score: 0
+  posted_at: '2026-11-10T18:44:48Z'
+- id: '50444559'
+  parent_id: '50443722'
+  author: entrope
+  text: Thanks to both you and the other person who replied. I appreciate the education.
+  score: 0
+  posted_at: '2026-11-10T18:54:43Z'
+- id: '50444596'
+  parent_id: '50444251'
+  author: wang_li
+  text: Except that&#x27;s not really the network path that&#x27;s going on, right?
+    If I am on A and connect to B and then want to use the network to transfer a bunch
+    of data from B to C over an ssh channel between them, using ProxyJump brings it
+    all back to the bastion box. And if A is in the US and B &amp; C are in Europe
+    connected with a 40 GB LAN, using proxyjump will bring the connection from B-&gt;C
+    into Europe-&gt;US-&gt;Europe. How do I do this with my credentials existing on
+    A being used to log in to B and then the same credentials being used to connect
+    from B to C while only having the one network connection is B-&gt;C and not to
+    my bastion host?
+  score: 0
+  posted_at: '2026-11-10T18:57:18Z'
+- id: '50444613'
+  parent_id: '50444201'
+  author: lxgr
+  text: That&#x27;s kind of the opposite of the approach presented here, though. With
+    hardware-resident, non-exportable keys, you can know that no matter what you do,
+    key hashes to some physical device are 1:1.<p>Whether you want or don&#x27;t want
+    that property is a different story.
+  score: 0
+  posted_at: '2026-11-10T18:57:57Z'
+- id: '50444620'
+  parent_id: '50444204'
+  author: mshroyer
+  text: 'You can use agent forwarding (ssh -A) to make your local hardware-backed
+    key available on the VPS.<p>If you&#x27;re using tmux on the VPS this can get
+    a little tricky, because by default your tmux panes will inherit your initial
+    SSH client&#x27;s SSH_AUTH_SOCK; when you re-attach tmux in a different SSH session
+    you&#x27;ll no longer be able to authenticate with the local YubiKey.  But I wrote
+    a shell script that hooks into tmux to keep SSH_AUTH_SOCK working correctly with
+    this kind of setup: <a href="https:&#x2F;&#x2F;github.com&#x2F;mshroyer&#x2F;socklink"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;mshroyer&#x2F;socklink</a>'
+  score: 0
+  posted_at: '2026-11-10T18:58:22Z'
+- id: '50444648'
+  parent_id: '50444620'
+  author: sillysaurusx
+  text: Brilliant, I just ran into this problem a couple weeks ago. Thanks!
+  score: 0
+  posted_at: '2026-11-10T19:00:34Z'
+- id: '50444725'
+  parent_id: '50443449'
+  author: rmnclmnt
+  text: Interested also in pragmatic feedback about Nitrokeys, oss sw and hw is quite
+    a compelling advantage over yubikeys
+  score: 0
+  posted_at: '2026-11-10T19:05:42Z'
+- id: '50444883'
+  parent_id: '50443581'
+  author: sigbottle
+  text: Interesting, will take a look
+  score: 0
+  posted_at: '2026-11-10T19:16:28Z'
+- id: '50444917'
+  parent_id: '50382401'
+  author: Magicrafter13
+  text: What is the practical&#x2F;security difference between<p>`ssh-keygen -t ed25519-sk
+    -O resident -O no-touch-required -O application=&quot;ssh:nameyourkey&quot; -f
+    ~&#x2F;.ssh&#x2F;id_ed25519-sk`<p>and<p>`ssh-keygen -t ed25519-sk -f ~&#x2F;.ssh&#x2F;id_ed25519-sk`<p>?<p>The
+    latter is what I always do. It creates a file that is useless without my yubikey
+    being present, but is it not actually resident on the key?
+  score: 0
+  posted_at: '2026-11-10T19:19:08Z'
+- id: '50444926'
+  parent_id: '50443738'
+  author: etajgwerafh
+  text: wrong nitrokey<p>the ios thing was in 2009. the company that produces nitrokey
+    security hardware was founded in 2015
+  score: 0
+  posted_at: '2026-11-10T19:19:43Z'
+- id: '50444980'
+  parent_id: '50443449'
+  author: etajgwerafh
+  text: for most use cases they&#x27;re functionally the same. the biggest difference
+    for me is that nitrokey doesn&#x27;t support doing hmac-sha1 challenge, so i can&#x27;t
+    use the nitrokey with keepassxc.<p>fido, gpg, piv all work perfectly
+  score: 0
+  posted_at: '2026-11-10T19:22:59Z'
+- id: '50445028'
+  parent_id: '50443697'
+  author: 0x1ch
+  text: Running very similar setups. PAM handles FIDO &#x2F; security key based auth
+    on my local systems for root users and sudo commands, as well as LUKS decryption.<p>I
+    have a handful of security keys, so I have a helper script to drop them into new
+    hosts and another helper script on my systems to import keys straight to ssh-agent
+    once detected.<p>Has worked very well and I don&#x27;t think I&#x27;ll ever go
+    back to a &quot;password manager as SSH agent&quot; again, but it&#x27;s probably
+    the best alternative backup. I still have Bitwarden holding some backup keypairs
+    for this reason, but haven&#x27;t needed to use them in months.
+  score: 0
+  posted_at: '2026-11-10T19:26:04Z'
+- id: '50445112'
+  parent_id: '50444043'
+  author: sidneythekidney
+  text: 'You get this exact workflow if you use a passphrase on the -sk key, and add
+    the key to your ssh-agent.<p>Edit: well, maybe not exact. With -sk keys you’d
+    have to type in a <i>passphrase</i> instead of a pin. But that passphrase could
+    be a pin.'
+  score: 0
+  posted_at: '2026-11-10T19:31:54Z'
+- id: '50445205'
+  parent_id: '50382401'
+  author: CrimsonCape
+  text: Do yubikeys suffer from flash memory bit rot? If so, it seems it would best
+    have several backups that rotate once a month to being the primary so that the
+    memory gets used?
+  score: 0
+  posted_at: '2026-11-10T19:37:41Z'
+- id: '50445221'
+  parent_id: '50382401'
+  author: data-ottawa
+  text: What is the longevity and migration&#x2F;upgrade story for a yubikey?<p>I
+    always worry what do you do when your hardware fails
+  score: 0
+  posted_at: '2026-11-10T19:38:46Z'
+- id: '50445228'
+  parent_id: '50444917'
+  author: sidneythekidney
+  text: |-
+    Resident keys have their &quot;metadata&quot; stored on the yubikey, in an exportable way. This means using the same ssh-key on a different computer is as easy as plugging in the yubikey and typing ssh-keygen -K.
+    With a non-resident key you’d have to copy the &quot;privatekey&quot;, which contains the metadata needed to use the key, to the other computer first.<p>The downside with resident keys is that someone stealing the yubikey can see what resident keys are on it, and then possibly use those keys (if they aren’t protected). Newer firmware comes with ways to protect against this, but you’d have to enable it.<p>[1] has more details<p>1: <a href="https:&#x2F;&#x2F;developers.yubico.com&#x2F;SSH&#x2F;Securing_SSH_with_FIDO2.html" rel="nofollow">https:&#x2F;&#x2F;developers.yubico.com&#x2F;SSH&#x2F;Securing_SSH_with_FIDO2.ht...</a>
+  score: 0
+  posted_at: '2026-11-10T19:39:12Z'
+- id: '50445240'
+  parent_id: '50382401'
+  author: dingaling
+  text: This is all, frankly, nonsense.<p>If you&#x27;re using userspace software
+    to  decrypt the keys into memory then it&#x27;s all just security theatre.  Any
+    sufficiently motivated actor, ot a comprised package in the software chain, can
+    capture your private key in the clear.  Especially if using ssh-agent that keeps
+    it resident in memory &#x27;for convenience&#x27;.<p>Proper HSM integration with
+    SSH requires challenges signed by the HSM without the private key ever being emitted.<p>Just
+    keep your SSH keys on disk, one per remote host, with a different encryption password
+    for each target host.  If you&#x27;re worried about threats that can defeat that
+    then they&#x27;ll just come to your door and beat the passwords out of you.
+  score: 0
+  posted_at: '2026-11-10T19:40:09Z'
+- id: '50445256'
+  parent_id: '50444917'
+  author: palata
+  text: The first one sets &quot;no-touch-required&quot; and not the second one, is
+    that expected?<p>Anyway, resident key means that you can extract the public key
+    from the yubikey. Say someone steals your Yubikey Fido2 PIN <i>and</i> your Yubikey,
+    they have everything.<p>Non-resident key means that the attacker needs to get
+    that &quot;useless&quot; file you describe, too. And if you lose it, then you
+    can&#x27;t use the key anymore.<p>Another difference is that a resident key takes
+    space <i>on</i> the Yubikey, so you can&#x27;t have infinitely many. Whereas you
+    can have infinitely many &quot;useless&quot; files.
+  score: 0
+  posted_at: '2026-11-10T19:41:16Z'
+- id: '50445281'
+  parent_id: '50445205'
+  author: xmodem
+  text: In my anecdotal experience Yubikeys tend to physically deteriorate long before
+    this happens.  I still have an early YubiKey 5 that must be 8 years old at this
+    point that I use daily and it works fine.
+  score: 0
+  posted_at: '2026-11-10T19:42:51Z'
+- id: '50445360'
+  parent_id: '50444917'
+  author: ramblurr
+  text: Your 2nd one is non-resident, the secret key material is encrypted in that
+    sk file. But it is encrypted with a master key that is only inside your yk. So
+    you need both your sk handle file and the yk to use it. This has the benefit of
+    not consuming the limited number of memory slots in a yk.<p>In the first one the
+    handle file that&#x27;s created, can be recovered from the yk key itself, that&#x27;s
+    what resident is.<p>Having the only practical difference between the two is that,
+    with the first one, you (or someone else) only needs the yk to use the credential.
+    But in the latter case, one needs the yk and the handle file.
+  score: 0
+  posted_at: '2026-11-10T19:48:06Z'
+- id: '50445361'
+  parent_id: '50382401'
+  author: binarin
+  text: There is also a middle ground - it&#x27;s possible to sign SSH certificate
+    using yubikey as CA. By controlling expiration and set of principals, the cert
+    you get on your machine is scope restricted, and quickly expires. Or you can load
+    it into an ssh-agent and drop it immediately.
+  score: 0
+  posted_at: '2026-11-10T19:48:06Z'
+- id: '50445378'
+  parent_id: '50382401'
+  author: auraham
+  text: What is the benefit of using yubikeys instead of ssh keys (ie a plain text
+    file)? My main concern is losing the device or damaging it.
+  score: 0
+  posted_at: '2026-11-10T19:49:12Z'
+- id: '50445414'
+  parent_id: '50382401'
+  author: Surac
+  text: all the commandline magic makes me shy away. why is security always combinde
+    with lines over lines of comamndline
+  score: 0
+  posted_at: '2026-11-10T19:51:56Z'
+- id: '50445441'
+  parent_id: '50445378'
+  author: anyfoo
+  text: Yubikeys (or something like keys in the Secure Enclave of a Mac or iPhone)
+    are themselves not accessible by software, you can only ask the hardware to perform
+    operations with them (e.g. decrypt or sign something).<p>This means someone with
+    access to your filesystem can’t just copy the key off.<p>Of course a passphrase
+    is another protective layer. But passphrases can be keylogged, or the decrypted
+    key (or passphrase, depending) in the memory of an ssh agent can be can potentially
+    be read out by an attacker.<p>With separate hardware, the assumption is that the
+    hardware is much much harder to attack, so the keys stay on there and only on
+    there.
+  score: 0
+  posted_at: '2026-11-10T19:54:16Z'
+- id: '50445451'
+  parent_id: '50445378'
+  author: murderfs
+  text: You can require physical user interaction to use the key. If the mossad is
+    after you, this doesn&#x27;t really help you because they&#x27;ll just replace
+    the ssh binary and intercept one of your requests, but against a less motivated
+    attacker, it makes it harder to pivot from one machine into others.
+  score: 0
+  posted_at: '2026-11-10T19:55:14Z'
+- id: '50445462'
+  parent_id: '50444201'
+  author: tonymet
+  text: is this for new machine installs , or periodic (daily , weekly) access?<p>I
+    thought private keys were meant to be secret (not copied) and the public keys
+    meant to be installed onto the target host.<p>so if you have a desktop, laptop
+    etc, you would generate the secret once per endpoint and then copy the public
+    keys onto targets as needed.  AT scale this could be done by ldap  &#x2F; cloud
+    mgmt.
+  score: 0
+  posted_at: '2026-11-10T19:56:07Z'
+- id: '50445470'
+  parent_id: '50445240'
+  author: stryan
+  text: At least for the Yubikey option, the whole point is that the private key does
+    not leave the HSM.
+  score: 0
+  posted_at: '2026-11-10T19:57:09Z'
+- id: '50445571'
+  parent_id: '50382401'
+  author: pdantix
+  text: 'i recently bought three yubikeys: a 5C nano to sit in my PC, a 5C NFC on
+    my keychain and another 5C NFC as a backup. currently only using them as SSH keys
+    to my servers. probably overkill but all the recent cybersecurity issues got me
+    a little spooked.<p>i can&#x27;t lie, the thought of removing authenticator&#x2F;authy
+    2FA from my critical accounts is a little daunting.'
+  score: 0
+  posted_at: '2026-11-10T20:04:50Z'
+- id: '50445630'
+  parent_id: '50382401'
+  author: bluSCALE4
+  text: I have YubiKeys but frankly, I&#x27;m not a big fan, at least not for daily
+    use on websites. SSH keys seems like a good use case for it tbh.<p>For now, I&#x27;m
+    hosting my own Vaultwarden and I pushed all my ssh keys to that. Anyone feel strongly
+    against that? It stores their passphrase as well.
+  score: 0
+  posted_at: '2026-11-10T20:10:04Z'
+- id: '50445716'
+  parent_id: '50443581'
+  author: TMWNN
+  text: "&gt;I&#x27;ve switched over to using it for everything and there are no more
+    private keys on my devices.<p>What happens when you replace the ThinkPad?"
+  score: 0
+  posted_at: '2026-11-10T20:16:13Z'
+- id: '50445765'
+  parent_id: '50445378'
+  author: yfontana
+  text: My employer gives us yubikeys. The first one I had randomly stopped working
+    after a year. I wouldn&#x27;t use it for anything where pairing a new key is difficult
+    if you cannot use the old one anymore.
+  score: 0
+  posted_at: '2026-11-10T20:20:35Z'
+- id: '50445767'
+  parent_id: '50445630'
+  author: noah_buddy
+  text: What does an ssh key passphrase accomplish if stored with the key?
+  score: 0
+  posted_at: '2026-11-10T20:20:44Z'
+- id: '50445778'
+  parent_id: '50445112'
+  author: mshroyer
+  text: Huh, in that case it&#x27;s possible I did this wrong the last time I tried
+    it, or maybe something&#x27;s changed.<p>Thanks for the tip! I&#x27;ll try that
+    this evening, I&#x27;d love to move to FIDO keys if possible.
+  score: 0
+  posted_at: '2026-11-10T20:22:13Z'
+- id: '50445836'
+  parent_id: '50382401'
+  author: Grimeton
+  text: Kerberos is such a beautiful thing.
+  score: 0
+  posted_at: '2026-11-10T20:26:57Z'
+- id: '50446059'
+  parent_id: '50382401'
+  author: sedatk
+  text: Unfortunately, YubiKeys and TPM don&#x27;t work under WSL2 without complex
+    and potentially unsafe workarounds.
+  score: 0
+  posted_at: '2026-11-10T20:43:28Z'
+- id: '50446150'
+  parent_id: '50382401'
+  author: moebrowne
+  text: I&#x27;d use resident keys if it wasn&#x27;t for the requirement to prepend
+    `no-touch-required` server side, services like GitHub and BitBucket don&#x27;t
+    support it.<p>I don&#x27;t understand why the server should enforce this...
+  score: 0
+  posted_at: '2026-11-10T20:50:47Z'
+- id: '50446170'
+  parent_id: '50382401'
+  author: pona-a
+  text: I experimented with a YubiKey-only GPG key, with a software backup stored
+    on some thumbdrive. The backup thumbdrive was soon lost, and the key on the Yubikey
+    is now probably expired.<p>I can&#x27;t imagine storing my SSH keys on a TPM that
+    might reset them after changing some sticks of RAM changes the hardware measurements
+    or some firmware bug triggers the self-erasure....
+  score: 0
+  posted_at: '2026-11-10T20:52:50Z'
+- id: '50446249'
+  parent_id: '50443590'
+  author: scottlamb
+  text: The article is not about abandoning ssh (client) keys but protecting them
+    from exfiltration:<p>&gt; This post documents how I’m using various secure enclaves
+    (YubiKey, TPM, Apple Secure Enclave) to hold&#x2F;encrypt SSH key material and
+    achieve the goal of not having any unprotected key material living on-disk.<p>Could
+    you help me out and state the goal of your practices as simply as this? I can
+    guess, but I&#x27;m really not sure, especially when you get into nftables checks
+    for window sizes.
+  score: 0
+  posted_at: '2026-11-10T20:59:12Z'
+- id: '50446256'
+  parent_id: '50382401'
+  author: unqueued
+  text: I wanted to warn people that I had a Yubkey usb-c nano MELT because I had
+    a Thinkpad in an awkward location with poor ventilation for slightly too long.
+    Not sure what kind of plastic it uses but it melts very easily and took the entire
+    device with it.
+  score: 0
+  posted_at: '2026-11-10T20:59:50Z'
+- id: '50446258'
+  parent_id: '50445240'
+  author: palata
+  text: "&gt; This is all, frankly, nonsense.<p>Only because you clearly don&#x27;t
+    understand how it works. What&#x27;s interesting is that you seem to understand
+    half of it... or maybe you don&#x27;t, and you just repeat stuff you don&#x27;t
+    understand either?<p>&gt; If you&#x27;re using userspace software to decrypt the
+    keys into memory<p>That&#x27;s exactly why you don&#x27;t do it. A Yubikey or
+    a secure enclave create the private key and emit the public key."
+  score: 0
+  posted_at: '2026-11-10T21:00:02Z'
+- id: '50446271'
+  parent_id: '50445112'
+  author: rdslw
+  text: |-
+    Not exactly.<p>1. This method only works (securely) for non-resident keys.
+    2. hence requiring having pk stub copied manually to every machine
+    3. its passphrase is prone to brute-force<p>While piv based ssh keys solve those 3 problems (with one caveat, left for a careful reader :)
+  score: 0
+  posted_at: '2026-11-10T21:00:57Z'
+- id: '50446295'
+  parent_id: '50443449'
+  author: palata
+  text: Last time I checked, it was possible to update the firmware of Nitrokeys.
+    Which seems to completely defeat the purpose of the device?<p>They started selling
+    the Nitrokey 3 long (like years) before the software had the main features they
+    claimed they had, so I understand why they would want to be able to push updates.
+    But again in terms of security, the first thing I want from a security key is
+    that a compromised computer cannot reflash it...
+  score: 0
+  posted_at: '2026-11-10T21:03:22Z'
+- id: '50446329'
+  parent_id: '50445414'
+  author: palata
+  text: Doesn&#x27;t Yubico have some GUIs for the Yubikeys? I don&#x27;t know, I
+    prefer the CLI :-). But I remember seeing something like that.<p>To answer your
+    question, a CLI is a lot easier to write than a GUI. So the GUI would be the next
+    step after the CLI, if there was enough demand. Now I&#x27;m guessing that people
+    who care enough about security to try to handle it properly are anyway people
+    who can use the CLI.
+  score: 0
+  posted_at: '2026-11-10T21:06:32Z'
+- id: '50446332'
+  parent_id: '50445221'
+  author: isomorphic
+  text: 'First: Always buy two (or n+1). Enroll <i>both</i>. Store one somewhere safe.<p>Anecdotally
+    I have keys from 2013 that are still working fine when I test them, although they&#x27;ve
+    been superseded by newer models.<p>To my knowledge no one has done the Consumer
+    Reports &#x2F; Mythbusters style of testing, buying many Yubikeys over time (to
+    get different hardware batches) and subjecting them to various tests...'
+  score: 0
+  posted_at: '2026-11-10T21:06:54Z'
+- id: '50446347'
+  parent_id: '50446256'
+  author: moebrowne
+  text: |-
+    &gt; All YubiKeys have an operational temperature range
+    between 0°C to 40°C (32°F to 104°F).<p>&gt; All YubiKeys have a storage temperature range
+    between -20°C to 85°C (-4°F to 185°F)<p><a href="https:&#x2F;&#x2F;docs.yubico.com&#x2F;hardware&#x2F;yubikey&#x2F;datasheet&#x2F;_static&#x2F;YubiKey_technical_data_sheet.pdf" rel="nofollow">https:&#x2F;&#x2F;docs.yubico.com&#x2F;hardware&#x2F;yubikey&#x2F;datasheet&#x2F;_static&#x2F;Y...</a>
+  score: 0
+  posted_at: '2026-11-10T21:09:28Z'
+- id: '50446367'
+  parent_id: '50445378'
+  author: palata
+  text: If someone compromises your computer, they can copy your SSH keys and their
+    passphrase and then, well, use them. And you may never know it.<p>If someone steals
+    your Yubikey without compromising your computer, they cannot use it without the
+    passphrase.<p>If someone compromises your computer to copy your passphrase, AND
+    steals your Yubikey, then they can use it. But you will know that you are not
+    in possession of your Yubikey anymore, and you can do something about it.
+  score: 0
+  posted_at: '2026-11-10T21:11:57Z'
+- id: '50446409'
+  parent_id: '50446170'
+  author: palata
+  text: Well, you use multiple keys.<p>If you have just one Yubikey and you lose it,
+    then you lose your SSH access.<p>But that&#x27;s true as well if you have just
+    one SSH key on your computer and you lose your computer, right?
+  score: 0
+  posted_at: '2026-11-10T21:16:38Z'
+- id: '50446430'
+  parent_id: '50446150'
+  author: palata
+  text: I use a resident key with touch with GitHub.
+  score: 0
+  posted_at: '2026-11-10T21:18:37Z'
+- id: '50446437'
+  parent_id: '50446249'
+  author: Bender
+  text: My method reduces the threat of exfiltrated keys when someone or something
+    manages to bypass the aforementioned methods without the need to purchase anything
+    or use anything proprietary.<p>- One must connect from the correct address and
+    with the correct TCP options.<p>So for example I could give you one of my ssh
+    private keys and it would be entirely useless unless you were on my home internet
+    connection using a device that emits my TCP options.  <i>(Or this could be a corporate
+    SNAT pool or corporate VPN pool.)</i>.<p>Even the most clever MitM <i>(man in
+    the middle)</i> attacks become significantly harder to perform.  Leaks happen,
+    I reduce the blast radius of the damage.
+  score: 0
+  posted_at: '2026-11-10T21:19:21Z'
+- id: '50446522'
+  parent_id: '50446437'
+  author: ThePowerOfFuet
+  text: "&quot;Security by obscurity isn&#x27;t.&quot;"
+  score: 0
+  posted_at: '2026-11-10T21:25:21Z'
+- id: '50446538'
+  parent_id: '50446522'
+  author: Bender
+  text: "<i>&quot;Security by obscurity isn&#x27;t.&quot;</i><p>Correct.  Thankfully
+    none of what I am doing is security through obscurity.  It&#x27;s actual security
+    with a subtle scent of obscurity.  If it was just obfuscation and you <i>knew</i>
+    something, then you could <i>do that something</i> from somewhere else which you
+    can not."
+  score: 0
+  posted_at: '2026-11-10T21:26:49Z'
+- id: '50446569'
+  parent_id: '50445630'
+  author: ozim
+  text: I use passkeys on the device where possible.<p>I add YubiKeys as backup everywhere
+    I can. Like I have one YubiKey that always stays at home in case I lose my laptop
+    and phone so I can get access back to some stuff sooner than later.
+  score: 0
+  posted_at: '2026-11-10T21:29:48Z'
+- id: '50446657'
+  parent_id: '50445221'
+  author: noinsight
+  text: I used the same one for work every day from 2018 to 2025.
+  score: 0
+  posted_at: '2026-11-10T21:37:14Z'
+- id: '50446675'
+  parent_id: '50446170'
+  author: bpye
+  text: One nice thing about using a YubiKey GPG key for SSH is that I don&#x27;t
+    have to generate new keys for every device.<p>I have offline key on two different
+    devices, haven&#x27;t lost one yet over the last decade!
+  score: 0
+  posted_at: '2026-11-10T21:39:11Z'
+- id: '50446699'
+  parent_id: '50445765'
+  author: traceroute66
+  text: "&gt; My employer gives us yubikeys. The first one I had randomly stopped
+    working after a year. I wouldn&#x27;t use it for anything where pairing a new
+    key is difficult if you cannot use the old one anymore.<p>I really don&#x27;t
+    see how you can blame Yubikey for this one, your employer is entirely to blame
+    for only supplying you with one Yubikey.<p>Your hardware fault is unfortunate,
+    I&#x27;ve been using Yubikeys for many years without a single issue.  But ultimately
+    that is beyond the point here .... come on dude, you work in IT, surely by now
+    you know you don&#x27;t put all your eggs in one IT basket ?<p>Not following fundamental
+    best-practice and then complaining when things break is really a &quot;move along,
+    nothing to see here&quot; moment."
+  score: 0
+  posted_at: '2026-11-10T21:40:45Z'
+- id: '50446730'
+  parent_id: '50445221'
+  author: traceroute66
+  text: "&gt; I always worry what do you do when your hardware fails<p>There is only
+    one answer to your question:  It is irrelevant.<p>Yubikeys are not that expensive,
+    and anybody who depends on Yubikeys should have minimum two of them.<p>This isn&#x27;t
+    a Yubikey thing.  Its a basic IT equipment redundancy 101 ... if its important,
+    minimum N+1 it.<p>The same reason you don&#x27;t put all your eggs on a single
+    disk."
+  score: 0
+  posted_at: '2026-11-10T21:45:04Z'
+- id: '50446741'
+  parent_id: '50446437'
+  author: sneak
+  text: Just protect your keys in HSMs and all of this TCP mumbo-jumbo trying to pretend
+    to be a secondary weak password becomes entirely unnecessary.
+  score: 0
+  posted_at: '2026-11-10T21:45:23Z'
+- id: '50446773'
+  parent_id: '50446741'
+  author: Bender
+  text: Everyone is free to choose what options work best for their needs and budgets.  I
+    would never attempt to inhibit anyone&#x27;s choices.  I use what has worked well
+    for me and stifled red-team members.
+  score: 0
+  posted_at: '2026-11-10T21:48:50Z'
+- id: '50446788'
+  parent_id: '50443590'
+  author: simgoh
+  text: "&gt; Put the public authorized keys in &#x2F;etc&#x2F;ssh&#x2F;keys&#x2F;%u
+    immutable, monitored for checksum changes.<p>Did you create your own process for
+    monitoring&#x2F;alerting on the checksum?"
+  score: 0
+  posted_at: '2026-11-10T21:49:45Z'
+- id: '50446793'
+  parent_id: '50446295'
+  author: traceroute66
+  text: "&gt; Last time I checked, it was possible to update the firmware of Nitrokeys.
+    Which seems to completely defeat the purpose of the device?<p>Yeah. Precisely
+    my problem with Nitrokey too.<p>If you can flash it, then so will a bad-guy one
+    day.  Not if, but when. You really can&#x27;t say never anymore these days.<p>The
+    flashing process is also annoying and fragile, I bought a couple of Nitrokeys
+    for random testing and generally found myself haivng to repeat the process a couple
+    of times before it finally worked.<p>Also, IIRC not all Nitrokeys have a secure
+    enclave, a bunch just store secrets in software."
+  score: 0
+  posted_at: '2026-11-10T21:50:10Z'
+- id: '50446797'
+  parent_id: '50446788'
+  author: Bender
+  text: "<i>Did you create your own process for monitoring&#x2F;alerting on the checksum?</i><p>Yes,
+    I had an LLM generate a Rust binary that performs only one function, takes up
+    a tiny amount of memory and is hard to kill.  If it is terminated it makes a lot
+    of noise on the way out."
+  score: 0
+  posted_at: '2026-11-10T21:50:28Z'
+- id: '50446827'
+  parent_id: '50445378'
+  author: sneak
+  text: The solution to the second is to have 2-5 devices, each with their own key.  I
+    have a nano in each laptop, one backup one at each house, and a floating one on
+    my keyring.
+  score: 0
+  posted_at: '2026-11-10T21:53:26Z'
+- id: '50446877'
+  parent_id: '50446773'
+  author: sneak
+  text: Yes and you can change the protocol field in your TCP stack to run all connections
+    over ip protocol 200 too, but it doesn’t add any security to your authentication
+    system over and above your private key.  What you are doing is the same thing;
+    lots of extra too-clever-by-half complexity that doesn’t actually benefit you.<p>Key
+    agreement protocols make sniffing the wire for credentials useless. Two seconds
+    in wireshark and your hyper secure tcp options are toast.
+  score: 0
+  posted_at: '2026-11-10T21:58:22Z'
+- id: '50446893'
+  parent_id: '50446522'
+  author: rixed
+  text: That&#x27;s not security by obscurity, that&#x27;s the Swiss cheese approach;
+    which people attracted by purity frown upon but people attracted by practical
+    solutions can live by.
+  score: 0
+  posted_at: '2026-11-10T21:59:46Z'
+- id: '50446941'
+  parent_id: '50446877'
+  author: Bender
+  text: I do not agree.  I have used this exact method to detect all manor of shenanigans
+    within VPS environments, dedicated server environments and corporate environments.  Attackers
+    stumble, fall and make a lot of noise trying to untangle my simple mitigations.  I
+    will keep it.
+  score: 0
+  posted_at: '2026-11-10T22:05:46Z'
+- id: '50446994'
+  parent_id: '50445716'
+  author: kayodelycaon
+  text: Best practice is to not share keys between devices. If you have multiple devices,
+    you should have multiple keys.
+  score: 0
+  posted_at: '2026-11-10T22:10:22Z'
+- id: '50447016'
+  parent_id: '50446793'
+  author: palata
+  text: "&gt; Not if, but when<p>Well, as soon as they compromise your computer. Which
+    is the same security as just having the private SSH key as a file on your computer.
+    Except that if you have a Nitrokey, you may trust it more than a file on your
+    computer, which actually makes it even worse."
+  score: 0
+  posted_at: '2026-11-10T22:12:07Z'
+- id: '50447069'
+  parent_id: '50446797'
+  author: nomel
+  text: "&gt;  If it is terminated it makes a lot of noise on the way out.<p>How do
+    you achieve this? A process hit with halt or sigkill has no knowledge of either
+    (it happens in the kernel). Is this some two way multi-process watchdog type setup,
+    that detects it based on sequential terminations? Or maybe relies on some system
+    service manager not first being disabled?"
+  score: 0
+  posted_at: '2026-11-10T22:17:38Z'
+- id: '50447130'
+  parent_id: '50443676'
+  author: KAMSPioneer
+  text: 'Sorry, but how so? I use FIDO2 and PKCS #11 keys in Qubes OS. PKCS#11 I cheated
+    slightly by assigning access to the one VM that needs that key via sys-usb, but
+    for all the other AppVMs I use the qubes-ctap-proxy and OpenSSH FIDO2 keys. It&#x27;s
+    pretty easy and can even be locked down via ACLs.<p>It&#x27;s true that TPM 2.0
+    is out the window, but FIDO keys are cheap, convenient, and secure.'
+  score: 0
+  posted_at: '2026-11-10T22:22:20Z'
+- id: '50447154'
+  parent_id: '50446430'
+  author: KAMSPioneer
+  text: Yes, GP must have outdated info, I enrolled a FIDO key in Github last week.<p>Bitbucket,
+    however, does not accept them.
+  score: 0
+  posted_at: '2026-11-10T22:24:20Z'
+- id: '50447217'
+  parent_id: '50447069'
+  author: Bender
+  text: "<i>Or maybe relies on some system service manager not first being disabled?</i><p>You
+    got it.  Turtles, all the way down.  Syslog, all the way up."
+  score: 0
+  posted_at: '2026-11-10T22:29:56Z'
+- id: '50447221'
+  parent_id: '50447130'
+  author: buckle8017
+  text: You can&#x27;t use disposable qubes and resident keys.<p>So you have to put
+    way more things into a single qube than you otherwise would want to.<p>The design
+    is basically incompatible with using qubes in a meaningfully useful way.
+  score: 0
+  posted_at: '2026-11-10T22:30:01Z'
+- id: '50447270'
+  parent_id: '50446437'
+  author: invokestatic
+  text: So if an attacker compromises your private keys, they’re already on your computer.
+    If they’re on your computer, what stops them from connecting to your server from
+    your computer? It would have the exact same TCP options, same IP address, same
+    everything.<p>If I were an attacker that had an agent or RAT on your PC and got
+    your private key, I’d first try to connect to your server on my computer. That
+    would fail, but the very next thing I would do is use my RAT or agent to connect
+    to the server via your own PC, because I would assume you had some sort of IP
+    filtering in place.<p>If you store your keys in a trusted enclave like a Yubikey,
+    TPM, etc it stops this cold (configured correctly).
+  score: 0
+  posted_at: '2026-11-10T22:35:02Z'
+- id: '50447316'
+  parent_id: '50447221'
+  author: KAMSPioneer
+  text: Ah, I see. I don&#x27;t use disposable VMs much, and when I do I&#x27;m not
+    using them as SSH clients, so I had no idea. I would push back on heavy use of
+    disposable VMs as the only way to meaningfully use Qubes OS though—although handy,
+    they&#x27;re not my main motivator for dailying it.
+  score: 0
+  posted_at: '2026-11-10T22:39:53Z'
+- id: '50447372'
+  parent_id: '50447270'
+  author: Bender
+  text: "<i>So if an attacker compromises your private keys, they’re already on your
+    computer.</i><p>They could be but I would not automatically assume that.  Many
+    stealers upload keys and do not install a RAT and there is no guarantee the RAT
+    will function even if they manage to install one.  If we want to go down every
+    <i>what if</i> path I could make everyone want to power off their data-center
+    and go home.  If I showed everyone what SSH can do without any RAT&#x27;s many
+    would uninstall it. <i>Involves multiplexing and one phishing victim to bypass
+    MFA, HSM&#x27;s, vaults, bastions, and does not leave a trace by design.</i><p>Most
+    orgs will not buy or implement an HSM so I am offering a soft middle ground that
+    may suffice for some and may not even remotely be an option for others.  Some
+    orgs have no choice but to buy an HSM.  Been there, done that.  It can be a massive
+    daunting task depending on what checkboxes are not yet checked and what requirements
+    B2B financial customers are demanding."
+  score: 0
+  posted_at: '2026-11-10T22:47:04Z'
+article:
+  url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
+  title: I deleted all my SSH keys
+  fetch_status: success
+  content: "# I deleted all my SSH keys\n[security](/tags/security)\n\nI’ve been using
+    `ed25519-sk` keys with YubiKeys since practically the moment they were available.
+    But because of some specific use-cases (and because, frankly, YubiKeys are expensive)
+    I’ve had a few traditional on-disk keys hanging around for a while just waiting
+    for me to finally decide to get rid of them.\n\nThis post documents how I’m using
+    various secure enclaves (YubiKey, TPM, Apple Secure Enclave) to hold/encrypt SSH
+    key material and achieve the goal of not having any unprotected key material living
+    on-disk.\n\n## First – Isn’t using a passphrase enough?\n\nProbably. I don’t intend
+    to imply that this post is the _only_ way that anyone should be doing SSH keys.
+    Using a passphrase will encrypt the key with bcrypt & AES which keeps it protected
+    even if the on-disk keyfile leaks somehow.\n\nAnd with a functioning ssh-agent,
+    the passphrase should only need to be entered once per session, with the decrypted
+    key material being held in RAM after that point.\n\nSo yes, the ’traditional’
+    method is probably fine for most threat models. But I’m still keen to move to
+    hardware-backed keys anyway, mostly for the satisfaction.\n\n## About hardware-resident
+    keys\n\nWhen I say ‘hardware-resident’ keys, I mean keys that use a secure enclave
+    or purpose-built hardware like [YubiKeys](https://www.yubico.com/) to store or
+    protect the key material.\n\nThe theoretical benefit here is that the hardware
+    used to _generate_ the SSH key is needed in order to _use_ the key. There’s no
+    mechanism that allows leaking or exfiltrating keys that generated using this method.
+    Any material that _does_ exist on-disk is useless without the hardware.\n\n##
+    Goals\n\nSo I want to:\n\n- Switch to using hardware-resident keys entirely\n-
+    Do so as natively as possible, avoiding additional software where I can\n- Test
+    these in various real-world scenarios, such as running within an LXC or noninteractively
+    mounting an SSHFS server\n\n## Hardware\n\nI’m going to try three different hardware
+    methods for achieving this, which I think will cover all of my needs:\n\n- Method
+    1: YubiKey\n- Method 2: TPM\n- Method 3: Apple Secure Enclave\n\n## Method 1:
+    YubiKey\n\nWith a YubiKey (5 and newer), SSH keys can be directly enrolled into
+    the device using `ed25519-sk` (where the `-sk` stands for “Security Key”). This
+    doesn’t require any additional software beyond OpenSSH itself.\n\nTo store a new
+    SSH key on a YubiKey, insert it and run:\n\n    ssh-keygen -t ed25519-sk -O resident
+    -O application=\"ssh:yournamehere\" -f ~/.ssh/id_ed25519-sk\n\nThe `application`
+    tag set in the command is arbitrary and can be set to whatever memorable string
+    you prefer to differentiate between multiple SSH keys if you want to create multiple
+    keys on the same YubiKey.\n\nIf you have `ykman` installed, you can now inspect
+    the list of credentials enrolled in the device:\n\n    $ ykman fido credentials
+    list\n    Enter your PIN: \n    Credential ID RP ID Username Display name\n    0f41fb61...
+    ssh:yournamehere openssh openssh\n\nIf `ykman` complains that you haven’t set
+    a FIDO PIN on the YubiKey yet, you can do this with `ykman fido access change-pin`.\n\nNote
+    that you don’t actually need `ykman` to enrol or use SSH keys with a YubiKey but
+    it does make managing the device more convenient.\n\nOnce the key has been created,
+    you can retrieve the public key from disk:\n\n    $ cat ~/.ssh/id_ed25519-sk.pub
+    \n    sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIA9B+2GGCkQvBzpa4WobQhfC9YU5Su3pKXBmVLSXEqfRAAAAEHNzaDp5b3VybmFtZWhlcmU=
+    alice@hostname\n\nThis key can be used like any other SSH public key – added to
+    `authorized_keys` on a host, copied with `ssh-copy-id`, or pasted into services
+    that depend on SSH like Git forges.\n\nYou will also find a `~/.ssh/id_ed25519-sk`
+    file on disk (without the `.pub` extension). Note that although this _looks_ like
+    a private key, it doesn’t actually contain the key material. This is just a handle
+    to find the relevant key on the hardware device.\n\nTo configure the key for authentication,
+    it can be enrolled with `ssh-add` like a regular key, or specified directly in
+    `~/.ssh/config`:\n\n    Host blog.infected.systems\n        IdentityFile ~/.ssh/id_ed25519-sk\n\nFrom
+    here, you can now SSH into the destination host as with a regular key. SSH will
+    ask you to tap the YubiKey to confirm presence when the SSH command runs.\n\n###
+    Unattended YubiKey usage\n\nWhen using an `ed25519-sk` key created with the default
+    settings as above, you will be asked to confirm your presence whenever the key
+    is used by physically touching the YubiKey.\n\nIt’s probably a good idea to keep
+    this default, but if you have a specific use-case that requires unattended key
+    usage, you can generate a `no-touch-required` key as follows:\n\n    ssh-keygen
+    -t ed25519-sk -O resident -O no-touch-required -O application=\"ssh:nameyourkey\"
+    -f ~/.ssh/id_ed25519-sk\n\nWhen using a `no-touch-required` key, although it isn’t
+    possible for a malicious actor to exfiltrate the key even with root access to
+    the host the YubiKey is plugged into, a malicious actor with access could use
+    the key without requiring any presence detection or human interaction. So do make
+    sure this is actually suitable for your risk appetite before doing it.\n\nTo use
+    a `no-touch-required` key for unattended authentication to remote servers, you
+    need to prepend the entry in the `authorized_keys` file on the destination host
+    with `no-touch-required`, otherwise OpenSSH’s default security settings will reject
+    the key.\n\nFor example:\n\n    $ cat ~/.ssh/authorized_keys \n    no-touch-required
+    sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIA9B+2GGCkQvBzpa4WobQhfC9YU5Su3pKXBmVLSXEqfRAAAAEHNzaDp5b3VybmFtZWhlcmU=
+    alice@hostname\n\n## Method 2: TPM\n\nYubiKeys are nice, though fairly expensive.
+    It would be useful if we could use the TPM we already have on our host to protect
+    key material instead. Well, it turns out we can!\n\nUnfortunately this does require
+    additional software, but it’s a fairly minimal Golang package – [ssh-tpm-agent](https://github.com/Foxboron/ssh-tpm-agent).
+    It can be installed with Go directly from GitHub, but is natively packaged by
+    Ubuntu and [I’m working on packaging it for Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=2565411).\n\nTo
+    create a TPM-backed SSH key with a PIN, run:\n\n    ssh-tpm-keygen -N \"your-pin\"\n\nThe
+    process will ask you where to store the key. From here, once again we have a keypair
+    with a `.pub` file that we can use in `authorized_keys` or copy however we wish.\n\nTo
+    use the TPM-backed key we need to use the TPM-aware SSH agent provided by the
+    `ssh-tpm-agent` package. If you installed the native Golang package rather than
+    something vendored by your distribution, you can enable the systemd socket unit
+    for the agent as follows:\n\n    ssh-tpm-agent --install-user-units && systemctl
+    --user enable --now ssh-tpm-agent.socket\n\nTo ensure the socket for the agent
+    can be discovered by SSH processes run within your shell session, add the following
+    to your `.bashrc` or the equivalent for your shell:\n\n    export SSH_AUTH_SOCK=\"$(ssh-tpm-agent
+    --print-socket)\"\n\nAgain, we can now use this key to authenticate to servers
+    as if it were any other traditional on-disk key.\n\n### Unattended TPM usage\n\nIf
+    you want this key to be available unattended, or to services that don’t use a
+    full shell such as [systemd mount units](/posts/2025-10-14-the-five-megabyte-nas/),
+    you can create a new key without a PIN (pass `-N \"\"` to the `ssh-tpm-keygen`
+    command) and specify the socket path in `~/.ssh/config` instead of relying on
+    `SSH_AUTH_SOCK` (although this relies on the socket address being predictable
+    – i.e. your UID being stable):\n\n    Host blog.infected.systems\n        IdentityAgent
+    /run/user/1000/ssh-tpm-agent.sock\n        IdentityFile ~/.ssh/id_ecdsa\n\nNote
+    that `ssh-tpm-agent` does not account for the values in the TPM Platform Configuration
+    Registers (PCRs) which record the state of the booted system – firmware versions
+    etc, so changes of hardware/firmware/OS w"
+  error:
+  fetched_at: '2026-11-10T22:56:19Z'
+archived_at: '2026-11-10T22:56:29Z'

@@ -1,0 +1,124 @@
+---
+post:
+  id: lo-zingk1
+  source: lobsters
+  title: Announcing .NET 11
+  url: https://devblogs.microsoft.com/dotnet/announcing-dotnet-11/
+  hn_url: https://lobste.rs/s/zingk1
+  score: 18
+  author: runesoerensen
+  posted_at: '2026-11-10T16:03:21Z'
+  fetched_at: '2026-11-10T22:56:29Z'
+  article_url: https://devblogs.microsoft.com/dotnet/announcing-dotnet-11/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-10T22:56:32Z'
+  raw_comment_count: 1
+  tags:
+  - dotnet
+  - release
+comments:
+- id: lo-7pwqcz
+  parent_id: '0'
+  author: JulianSildenLanglo
+  text: Union types are of course awesome and awaited, but I was pleasantly surprised
+    by labeled break and continue. Removes one of the main reasons to use goto.
+  score: 5
+  posted_at: '2026-11-10T16:14:17Z'
+article:
+  url: https://devblogs.microsoft.com/dotnet/announcing-dotnet-11/
+  title: Announcing .NET 11 - .NET Blog
+  fetch_status: success
+  content: "![](https://devblogs.microsoft.com/dotnet/wp-content/uploads/sites/10/2023/01/dotnet-logo-96x96.png)\n\n[.NET
+    Team](https://devblogs.microsoft.com/dotnet/author/dotnet)\n\nToday, we’re excited
+    to announce the release of .NET 11! This year’s release makes building modern
+    applications faster, more productive, and has improvements across C# 15, ASP.NET
+    Core, .NET MAUI, and Windows development. With hundreds of runtime optimizations,
+    more responsive SDK tooling, and less overhead in everyday commands, you can spend
+    less time waiting and more time creating. Build richer web and cross-platform
+    applications, take advantage of new C# language features, and explore AI-powered
+    development with improved tools and agentic capabilities.\n\n[Download .NET 11](https://dotnet.microsoft.com/download/dotnet/11.0)\n\n**.NET
+    11 support**\n\n.NET 11 is a Standard Term Support (STS) release with **two years
+    of support** under the [.NET support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core).
+    STS and Long Term Support (LTS) releases have the same quality and servicing policies;
+    the difference is the length of support. .NET 10 remains a supported LTS option.
+    Stay current with servicing updates whichever release you choose.\n\n## Join us
+    at .NET Conf, November 10-13\n\nExplore .NET 11 with the product teams and community
+    at [.NET Conf 2026](https://dot.net/conf). The conference includes product team
+    sessions on November 10 and 11, followed by two days of community sessions.\n\nWatch
+    the [Day 1 livestream, including the keynote](https://www.youtube.com/watch?v=SIBdHRrk8os),
+    or browse the [conference session playlist](https://www.youtube.com/playlist?list=PLJL9Ln_f6sGM).\n\n[Watch
+    .NET Conf](https://dot.net/conf)\n\n## What’s new in .NET 11\n\nSome of the changes
+    we’re most excited for you to try:\n\n- C# 15 union types and closed hierarchies
+    help you express the possible states of your application and handle them with
+    compiler-checked patterns.\n- A Native AOT CLI host and a warm MSBuild server
+    reduce overhead in everyday developer workflows.\n- ASP.NET Core brings asynchronous
+    validation, OpenAPI 3.2, and new capabilities for Blazor and SignalR applications.
+    Experimental Blazor AI components integrate with the Agent User Interaction Protocol
+    (AG-UI) for advanced agentic web experiences.\n- Build AI-powered, agentic applications
+    with Microsoft.Extensions.AI (MEAI) for model access, MCP for tool integration,
+    and Microsoft Agent Framework (MAF) for agents and workflows.\n- Put agentic development
+    tools to work with .NET Skills for .NET-specific guidance, .NET MAUI DevFlow for
+    inspecting and testing running apps, and the .NET Upgrade canvas for reviewing
+    modernization progress.\n- .NET MAUI adopts CoreCLR as its default runtime and
+    improves XAML iteration and native controls.\n- The libraries add built-in Zstandard
+    compression, simpler process execution, richer JSON support, and new ways to work
+    with in-memory data without copying it first.\n\nThe [what’s new in .NET 11 overview](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/overview)
+    links to the full details. Here are the changes behind those headlines and how
+    to start using them.\n\n## Languages\n\n### C# 15\n\n[C# 15](https://learn.microsoft.com/dotnet/csharp/whats-new/csharp-15)
+    is the default language version for projects targeting .NET 11. [Union types](https://devblogs.microsoft.com/dotnet/csharp-15-union-types/)
+    are one of its biggest additions: a value can be one of a declared set of case
+    types, with conversions from those types and exhaustiveness checking in switch
+    expressions.\n\nConsider a product lookup that either finds a product or reports
+    that it wasn’t found:\n\n    ProductLookup result = new Product(42, \"Mechanical
+    keyboard\");\r\n    \r\n    string message = result switch\r\n    {\r\n        Product
+    product => $\"Found {product.Name}\",\r\n        ProductNotFound missing => $\"No
+    product with ID {missing.Id}\",\r\n    };\r\n    \r\n    Console.WriteLine(message);\r\n
+    \   \r\n    public sealed record Product(int Id, string Name);\r\n    public sealed
+    record ProductNotFound(int Id);\r\n    public union ProductLookup(Product, ProductNotFound);\n\nThe
+    result type tells a caller which outcomes it needs to handle. There’s no need
+    to use `object` or an unrelated base class just to put those outcomes behind one
+    return type.\n\nC# 15 also adds **closed hierarchies**. A `closed` class limits
+    direct derivation to its declaring assembly, giving the compiler the information
+    it needs to check patterns over the hierarchy. Unions are useful when you want
+    to combine existing types; closed hierarchies fit models where you own the inheritance
+    relationship.\n\nSmaller language features help with everyday code, too. Collection
+    expression arguments let you pass constructor or factory arguments without giving
+    up collection expression syntax:\n\n    HashSet<string> names =\r\n        [with(StringComparer.OrdinalIgnoreCase),
+    \"Alice\", \"ALICE\", \"Bob\"];\r\n    \r\n    Console.WriteLine(names.Count);\n\nThis
+    prints `2`: the comparer controls equality, so `\"Alice\"` and `\"ALICE\"` are
+    one entry.\n\nOther additions include extension indexers and labeled `break` and
+    `continue`. These features don’t require the preview language version. The separate
+    memory safety work **remains in preview** ; see the [C# 15 feature documentation](https://learn.microsoft.com/dotnet/csharp/whats-new/csharp-15)
+    for its opt-in requirements.\n\n### F# 11\n\nF# 11 improves compiler memory use
+    and reduces allocations in FSharp.Core collection operations. It also adds ways
+    to bound concurrent asynchronous work, useful when a collection operation would
+    otherwise start more work than a service or machine can handle comfortably.\n\nThe
+    [F# release notes](https://github.com/dotnet/core/blob/main/release-notes/11.0/preview/rc2/fsharp.md)
+    distinguish the default-language updates from preview capabilities, including
+    Runtime Async support for custom computation-expression builders.\n\n## Platform\n\n###
+    SDK\n\nThe SDK now enables a [Native AOT CLI host](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/sdk#nativeaot-entry-point-for-the-dotnet-cli)
+    by default. Commands such as help and version queries can run without starting
+    the managed CLI, and tool launches can avoid that startup path too. Commands that
+    need managed execution still use it.\n\nThe [MSBuild server](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/sdk#msbuild-server-enabled-by-default)
+    also stays warm between CLI invocations by default, reducing repeated startup
+    work. SDK installers on Linux and macOS are smaller through assembly deduplication.\n\nFile-based
+    apps can grow across source files with `#:include`, and solution filters can be
+    created and edited from the CLI. `dotnet watch` adds Aspire app-host integration,
+    crash recovery, and device selection for mobile projects.\n\nFor teams using Microsoft.Testing.Platform,
+    `dotnet test` gains run-level timeouts, failure limits, clearer progress reporting,
+    and per-module results directories. The test runner matters: these switches aren’t
+    interchangeable with the VSTest command-line options.\n\nContainer publishing
+    adds reproducible image digests through `SOURCE_DATE_EPOCH` and avoids redundant
+    layer uploads when the target manifest already exists. NuGet source configuration
+    gains a minimum package publication age setting, which lets teams wait before
+    newly published package versions become eligible for selection. This is an additional
+    policy control, not a replacement for vulnerability checks or reviewing dependencies.\n\nSee
+    [what’s new in the SDK and tooling](https://learn.microsoft.com/dotnet/core/whats-new/dotnet-11/sdk)
+    for command examples and configuration.\n\n### Runtime and performance\n\nPerformance
+    work in .NET 11 reaches both the code you deploy and the tools you use to develop
+    it. Stephen Toub’s [Performance Improvements in .NET 11](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-11/)
+    takes a detailed tour through hundreds of runtime and library optimizations, with
+    benchmarks and c"
+  error:
+  fetched_at: '2026-11-10T22:56:32Z'
+archived_at: '2026-11-10T22:56:32Z'
