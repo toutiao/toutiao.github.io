@@ -1,0 +1,126 @@
+---
+post:
+  id: '50386246'
+  title: A primer on GPUs and kernel optimization
+  url: https://www.nabo.dev/blogs/kernel-primer
+  hn_url: https://news.ycombinator.com/item?id=50386246
+  score: 125
+  author: ''
+  posted_at: '2026-11-05T23:48:04Z'
+  fetched_at: '2026-11-10T06:21:19Z'
+  article_url: https://www.nabo.dev/blogs/kernel-primer
+  article_fetch_status: error
+  article_fetched_at: '2026-11-10T06:21:19Z'
+  raw_comment_count: 12
+comments:
+- id: '50432557'
+  parent_id: '50386246'
+  author: augment_me
+  text: Crazy to not see a word about benchmarking&#x2F;evaluation of the kernels.<p>IMO
+    at this time when all performant GPU kernels are generated&#x2F;hill-climbed,
+    its the largest source of error we see.<p>Should be kernel run with a hot or cold
+    cache in practice? Should your kernel be bitwise equivalent to a ref? What error
+    margins should your kernel have to ref? How many times are you running the kernel
+    to avoid thermal noise? Are you running on separate GPUs to avoid overfitting
+    the current hardware? Can you cudagraph-compiling your kernel to remove launch
+    overhead? Are you A&#x2F;B B&#x2F;A interleaving your kernel&#x2F;reference runs
+    to avoid running thermal bias?
+  score: 0
+  posted_at: '2026-11-09T21:35:56Z'
+- id: '50433417'
+  parent_id: '50386246'
+  author: kollegekid
+  text: The writing here is so clear. Do you use Llms to write?
+  score: 0
+  posted_at: '2026-11-09T22:48:59Z'
+- id: '50434541'
+  parent_id: '50432557'
+  author: Farmadupe
+  text: As someone who loves being able to press a button to receive matmuls tuned
+    to the 3090 by his feet, are there rules of thumb to work out how to set thresholds
+    for evals?<p>Do I want to set a particular threshold on any individual op (or
+    a layer for a given transformer)? e.g &quot;for this test set, 99% of l2norms
+    being within 1e-4 error of the golden reference kernel&quot;<p>Or do I want to
+    just shortcut all that and go with task based evals? eg &quot;word error no worse
+    than 1% greater than the reference speech-to-text model&quot;?<p>I&#x27;m assuming
+    the latter is the way to go in the first instance?
+  score: 0
+  posted_at: '2026-11-10T00:38:11Z'
+- id: '50434705'
+  parent_id: '50434541'
+  author: augment_me
+  text: It depends on if you do training or inference and also at what scale.<p>For
+    your task with the 3090, and I assume inference, I would like you suggest do end-to-end
+    on target task.<p>Sometimes for example, a normalization layer can cancel out&#x2F;fix
+    an error from a previous layer, then it makes no sense to spend flops to save
+    the numerics.<p>This is kind of a wild west in inference serving, you sometimes
+    change exp to tanh, sometimes go full 4bit, sometimes remove full layers because
+    you still perform fine on the end-task.<p>Numerics and correctness are more important
+    for training kernels and backwards passes
+  score: 0
+  posted_at: '2026-11-10T01:00:42Z'
+- id: '50434708'
+  parent_id: '50433417'
+  author: saagarjha
+  text: My guess is that the LLMs helped with the diagrams but the writing is mostly
+    or completely from a human. It’s quite good (and has a few typos :P)
+  score: 0
+  posted_at: '2026-11-10T01:00:58Z'
+- id: '50434718'
+  parent_id: '50432557'
+  author: saagarjha
+  text: It’s not crazy at all, the blog post is clearly about human-guided optimization
+    with LLMs rather than hillclimbing with an autonomous agent.
+  score: 0
+  posted_at: '2026-11-10T01:02:41Z'
+- id: '50434738'
+  parent_id: '50386246'
+  author: saagarjha
+  text: "&gt; On the H200s used for most of this work, the GPU&#x27;s main memory
+    is HBM, or high-bandwidth memory. Ironically, this is the slowest memory on the
+    chip.<p>Nit: HBM is off chip, unlike shared memory and registers"
+  score: 0
+  posted_at: '2026-11-10T01:04:21Z'
+- id: '50434748'
+  parent_id: '50434718'
+  author: augment_me
+  text: All of the above is as-relevant in human-guided optimization.
+  score: 0
+  posted_at: '2026-11-10T01:06:02Z'
+- id: '50434846'
+  parent_id: '50434705'
+  author: Farmadupe
+  text: Thanks! Interestingly I find that coding agents really don&#x27;t now how
+    to quantize  a model to a given loose target. &quot;Make it faster and accurate&quot;
+    is seemingly in distribution, &quot;Make it _even_ faster and worse&quot; is a
+    good way to get Opus 5.5 to say &quot;I tried nothing and I&#x27;m all out of
+    ideas&quot;
+  score: 0
+  posted_at: '2026-11-10T01:20:07Z'
+- id: '50434861'
+  parent_id: '50434748'
+  author: saagarjha
+  text: Yes, but they have nothing to do with GPUs and kernels. Those are general
+    performance standards that would apply to any effort regardless of target.
+  score: 0
+  posted_at: '2026-11-10T01:21:32Z'
+- id: '50435274'
+  parent_id: '50386246'
+  author: brcmthrowaway
+  text: Someone needs to write a book on this
+  score: 0
+  posted_at: '2026-11-10T02:17:23Z'
+- id: '50435494'
+  parent_id: '50434861'
+  author: augment_me
+  text: Tell me more about cuda-graphs and async on CPU ;)
+  score: 0
+  posted_at: '2026-11-10T02:52:11Z'
+article:
+  url: https://www.nabo.dev/blogs/kernel-primer
+  title:
+  fetch_status: error
+  content:
+  error: 'gate: too_short'
+  fetched_at: '2026-11-10T06:21:19Z'
+archived_at: '2026-11-10T06:21:26Z'

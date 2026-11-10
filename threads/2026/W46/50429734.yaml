@@ -1,17 +1,17 @@
 ---
 post:
   id: '50429734'
-  title: 'E-means: 10x faster k-means at equal loss'
+  title: 'E-means: Outperforming k-means in one-tenth the epochs'
   url: https://e-means.github.io/
   hn_url: https://news.ycombinator.com/item?id=50429734
-  score: 163
+  score: 346
   author: ''
   posted_at: '2026-11-09T18:45:43Z'
-  fetched_at: '2026-11-09T22:01:20Z'
+  fetched_at: '2026-11-10T06:21:11Z'
   article_url: https://e-means.github.io/
   article_fetch_status: success
   article_fetched_at: '2026-11-09T22:01:20Z'
-  raw_comment_count: 10
+  raw_comment_count: 30
 comments:
 - id: '50431087'
   parent_id: '50429734'
@@ -109,6 +109,221 @@ comments:
     rel="nofollow">https:&#x2F;&#x2F;webgcm.app&#x2F;explain&#x2F;grid#nudging-the-cells-into-shape</a>'
   score: 0
   posted_at: '2026-11-09T21:44:13Z'
+- id: '50432834'
+  parent_id: '50429734'
+  author: coderenegade
+  text: Very cool, saving this to play around with later.
+  score: 0
+  posted_at: '2026-11-09T21:57:12Z'
+- id: '50433634'
+  parent_id: '50429734'
+  author: shiandow
+  text: These kinds of algorithms tend to have equivalent descriptions as expectation
+    maximisation or simulated annealing. I wonder if it&#x27;s possible to understand
+    their algorithm in that sense.<p>Though I suppose it may be as simple as expectation
+    maximization with a friction term, since Sj = sj - a (sj - Sj).<p>Importantly
+    they note that this update rule keeps the centroid within the convex hull, which
+    is pretty important.
+  score: 0
+  posted_at: '2026-11-09T23:05:56Z'
+- id: '50433657'
+  parent_id: '50432676'
+  author: shiandow
+  text: 'Since it&#x27;s basically a linear interpolation between Lloyd&#x27;s algorithm
+    and not moving any points it will be at least as good but gains might be limited
+    without careful tuning.<p>Edit: in fact you might end up going faster by moving
+    the other way, set alpha = -0.1 and see what happens!'
+  score: 0
+  posted_at: '2026-11-09T23:07:59Z'
+- id: '50434170'
+  parent_id: '50432034'
+  author: ivanjermakov
+  text: If anything, NP hard problems are usually the ones worth tackling.
+  score: 0
+  posted_at: '2026-11-09T23:58:43Z'
+- id: '50434281'
+  parent_id: '50429734'
+  author: detourdog
+  text: Can someone explain in layman’s terms the contexts this is used?
+  score: 0
+  posted_at: '2026-11-10T00:08:34Z'
+- id: '50434522'
+  parent_id: '50434281'
+  author: benjiro29
+  text: Faster vector calculations. What help for example, helps with ivfflat or prism
+    index building. It cut CPU (or GPU) usage, and time needed to build. Seen index
+    build times drop by 50 to 80%, and at the same time CPU usage drop by 50%.<p>Impressive
+    results ...
+  score: 0
+  posted_at: '2026-11-10T00:35:36Z'
+- id: '50434592'
+  parent_id: '50434281'
+  author: ttul
+  text: Let&#x27;s say you have a way of encoding the properties of something using
+    a vector of numbers. But two things might be very similar and yet still produce
+    vectors that are not identical to each other. Indeed, the vectors are nearly guaranteed
+    to always be at least slightly different. Also, assume there are a large number
+    of dimensions.<p>You want to assign things to a set of clusters so that things
+    that share similar properties are grouped closely together. But, we also want
+    those clusters to be as big as possible. We don&#x27;t want to leave little islands
+    that only have a few things in them.<p>Take, for example, classification of email
+    messages. Let&#x27;s say you have a billion email messages and you want to find
+    a way to cluster them automatically into 10 categories. You don&#x27;t know what
+    the categories are ahead of time. You just have a way of making sure that an email
+    can be represented by a vector of numbers such that two emails that are close
+    together in their meaning and characteristics will have similar numbers.<p>K-Means
+    clustering solves that problem but is intractable to calculate for large datasets
+    having high dimensionality (such as the email example). My understanding is that
+    E-Means is away to achieve this spectacularly more efficiently than the best alternative
+    previously known.
+  score: 0
+  posted_at: '2026-11-10T00:44:09Z'
+- id: '50434973'
+  parent_id: '50429734'
+  author: senderista
+  text: The one remaining hyperparameter is of course k. I vaguely remember there
+    was some rule of thumb for picking k like the &quot;elbow of a curve&quot;, but
+    what is the state of the art now for picking k?
+  score: 0
+  posted_at: '2026-11-10T01:35:58Z'
+- id: '50434982'
+  parent_id: '50429734'
+  author: robbienukes
+  text: 'What is most impressive about this excellent work is not just the staggering
+    time savings but the robustness of the technique in its assignment of single centroids
+    where legacy may create two due to artefacting or worse one centroid for two blobs.  Their
+    explanation that: mini-batches provide more noisy updates that are more likely
+    to explore the optimization landscape and escape local minima makes perfect sense
+    and just goes to show it is all not settled hash. Incredible work with real world
+    benefits of real marginal utility.'
+  score: 0
+  posted_at: '2026-11-10T01:36:46Z'
+- id: '50435033'
+  parent_id: '50429734'
+  author: saagarjha
+  text: As far as I can tell this isn&#x27;t particularly new, people have been doing
+    minibatch k-means for a while, including with an EWA update. I assume the contribution
+    here is that they tried to measure how much better it is and provided code? I&#x27;m
+    not sure I agree with their claims though, because they didn&#x27;t really measure
+    the things that matter–sure, it&#x27;s better than Lloyd&#x27;s algorithm, but
+    that&#x27;s a very low bar.<p>If you are claiming that your algorithm is &quot;highly
+    parallelizable&quot; and comes with &quot;wall-clock speedups&quot;, then the
+    actual metrics that matter here is not number of steps or even basic wall clock
+    time as your size remains fixed, but how your algorithm scales as more data is
+    present or parallelism is required. This algorithm splits up the minibatch across
+    workers and has them compute local updates, then allreduces it. As the amount
+    of data goes up, the comms become much more expensive (since you have to use a
+    worse transport layer), which means that you&#x27;re basically locked in a desperate
+    attempt to do more local work before you send your partial update to everyone
+    else. If you attempt this (not explored in the paper) you will find that the improvement
+    in clustering by doing this extra work has diminishing returns–you only reduce
+    the number of updates by a few steps (which is what drives your wall clock time).
+    At scale you end up being heavily comms limited and not super parallel at all.
+  score: 0
+  posted_at: '2026-11-10T01:44:13Z'
+- id: '50435643'
+  parent_id: '50429734'
+  author: xiaoliangliang
+  text: I&#x27;d want to see final cluster quality, not just inertia, before treating
+    &quot;one-tenth the epochs&quot; as a drop-in win. On badly imbalanced or overlapping
+    clusters, Lloyd&#x27;s often spends early iterations bouncing centroids around.
+    If the interpolation mainly damps that motion, you can look converged on the objective
+    while the partition is still poor. A plot of ARI or NMI versus epoch budget on
+    messy data would make the claim a lot more convincing.
+  score: 0
+  posted_at: '2026-11-10T03:17:42Z'
+- id: '50435675'
+  parent_id: '50429734'
+  author: kingcauchy
+  text: Played around with changing our hierarchical balanced incremental clustering
+    to this <a href="https:&#x2F;&#x2F;github.com&#x2F;antflydb&#x2F;antfly&#x2F;pull&#x2F;1607"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;antflydb&#x2F;antfly&#x2F;pull&#x2F;1607</a>
+    bulk builds of existing indexes that need to be completely reindexed (like a shard
+    split) were 2.5x faster, overall insertion times didn’t change that much because
+    overall clustering incrementally as data is indexed is a small portion of the
+    cpu time.
+  score: 0
+  posted_at: '2026-11-10T03:22:43Z'
+- id: '50435723'
+  parent_id: '50435643'
+  author: boulos
+  text: I feel like they cover that, a bit, with both explicit examples and the quality
+    curves, right?
+  score: 0
+  posted_at: '2026-11-10T03:31:07Z'
+- id: '50435768'
+  parent_id: '50434973'
+  author: nighthawk454
+  text: The &#x27;Elbow method&#x27; [1], yeah. Sweep a bunch of different k values
+    and pick the one where your target metric starts having diminishing returns. There
+    are a lot of heuristics you could use.<p>There&#x27;s still not one particularly
+    great way to pick k for this type of clustering. There kind of can&#x27;t be as
+    clustering is sort of inherently subjective.<p>Other methods like HDBSCAN can
+    find the number of clusters themselves. There&#x27;s still a &#x27;one key parameter&#x27;
+    you have to pick yourself, but it can be more intuitive and less sensitive for
+    some datasets, when you don&#x27;t know how many clusters there are &#x2F; how
+    many you want.<p>Sometimes, picking k exactly is useful for practical reasons
+    too. Like fixing the size of your codebook. Or partitioning a dataset into k equal-ish
+    pieces, say to spread across a pool of servers of a known&#x2F;fixed size.<p>[1]
+    <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Elbow_method_(clustering)"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Elbow_method_(clustering)</a>
+  score: 0
+  posted_at: '2026-11-10T03:38:01Z'
+- id: '50435799'
+  parent_id: '50434281'
+  author: pcwalton
+  text: It&#x27;s clustering. You have a bunch of data points and you want to group
+    them into k clusters such that all the data points in a cluster are similar. Like
+    dividing customers into high&#x2F;medium&#x2F;low spenders, or whatever (usually
+    you&#x27;d have more dimensions than 1D though).
+  score: 0
+  posted_at: '2026-11-10T03:44:38Z'
+- id: '50435843'
+  parent_id: '50435768'
+  author: senderista
+  text: Yeah, I guess you can&#x27;t really avoid picking k without hierarchical clustering.
+  score: 0
+  posted_at: '2026-11-10T03:52:31Z'
+- id: '50435916'
+  parent_id: '50435843'
+  author: nighthawk454
+  text: Yeah, it&#x27;s not a well-defined problem, so there&#x27;s no one true solution.
+    Then only question left is &quot;well what do you want?&quot;. Always have to
+    pick something.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Cluster_analysis#Definition"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Cluster_analysis#Definition</a>
+  score: 0
+  posted_at: '2026-11-10T04:03:17Z'
+- id: '50435984'
+  parent_id: '50434522'
+  author: akoboldfrying
+  text: I found this unhelpful, sorry. &quot;Faster vector calculations&quot; sounds
+    like a faster way to add or multiply vectors, which TTBOMK k-means doesn&#x27;t
+    help with at all. There are hundreds of types of things called an &quot;index&quot;;
+    I&#x27;m familiar with ordinary RDBMS indices but haven&#x27;t heard of ivfflat
+    or prism indices. Gemini tells me PostgreSQL uses them to support approximate
+    nearest neighbour queries on geometric data -- e.g., finding the nearest train
+    station to your current position.
+  score: 0
+  posted_at: '2026-11-10T04:14:00Z'
+- id: '50436146'
+  parent_id: '50429734'
+  author: jdonaldson
+  text: Here&#x27;s one of my own efforts on density-aware locality-sensitive hashing
+    for embeddings.  It uses k-means at one stage, I&#x27;ll give this approach a
+    shot.<p><a href="https:&#x2F;&#x2F;dyf.io&#x2F;" rel="nofollow">https:&#x2F;&#x2F;dyf.io&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-10T04:43:53Z'
+- id: '50436698'
+  parent_id: '50435033'
+  author: oofbey
+  text: Yeah most of these tricks are already well established. And their own ablations
+    show that combining them doesn’t bring any special synergy - it’s just putting
+    together a lot of common techniques. The baselines also are tough to believe fully.
+    Comparing against faiss is fair since many authors are faiss contributors so they
+    know how to run it. But they don’t and should include a comparison to a well tuned
+    mini batch kmeans like the one in scikit.
+  score: 0
+  posted_at: '2026-11-10T06:14:06Z'
 article:
   url: https://e-means.github.io/
   title: 'e-means: 10x faster k-means at equal loss - Blog'
@@ -215,4 +430,4 @@ article:
     better understand why e-means reaches better losses than "
   error:
   fetched_at: '2026-11-09T22:01:20Z'
-archived_at: '2026-11-09T22:01:41Z'
+archived_at: '2026-11-10T06:21:26Z'
