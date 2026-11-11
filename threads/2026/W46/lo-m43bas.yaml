@@ -1,0 +1,138 @@
+---
+post:
+  id: lo-m43bas
+  source: lobsters
+  title: How do you actually self-host securely?
+  url: ''
+  hn_url: https://lobste.rs/s/m43bas
+  score: 14
+  author: pralkarz
+  posted_at: '2026-11-11T12:01:19Z'
+  fetched_at: '2026-11-11T13:44:08Z'
+  article_url: ''
+  article_fetch_status: skipped
+  article_fetched_at:
+  raw_comment_count: 9
+  tags:
+  - ask
+  - devops
+comments:
+- id: lo-2lsmrl
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    It's safer to start with services that aren't public facing, e.g. install Tailscale on your phone, laptop, and Raspberry Pi, and then start setting up services you want for yourself.
+
+    Some people I asked this question recommended solutions like Cloudflare Tunnels to make it secure, but using such a provider almost feels like it defeats the point of self-hosting
+
+    I like to do the end-to-end myself but sometimes I just can't be bothered and so use Cloudflare Tunnels to make it work, and that's a better outcome for me than giving up entirely.
+  score: 5
+  posted_at: '2026-11-11T12:26:00Z'
+- id: lo-ji2p8l
+  parent_id: '0'
+  author: vincent-uden
+  text: |-
+    How much you need to care about security is entirely dependent on what you host. I would for example greatly invested in security if I self-hosted a public facing file storage or an email server.
+    I would in general care much less if as you describe I would be hosting a static website on a Raspberry Pi. The risk just isn't that big. It can't cost you a lot of money since it's your own hardware. The worst thing that could happen is that a stranger gains complete control over your Raspberry Pi. They could possibly probe your local network (but not if you put the Rasberry Pi on a subnet), display other information on your website or put your Rasberry Pi to work on something benefitting them (as part of a botnet or crypto mining for example).
+    I personally wouldn't consider any of those possibilities as great risks. And as a bonus, setting up logging to detect if any of these were happening could be a fun side project.
+  score: 2
+  posted_at: '2026-11-11T12:39:21Z'
+- id: lo-o6e4eo
+  parent_id: '0'
+  author: mw
+  text: |-
+    Hell yea. I love this question.
+    It sounds like what you may want is "nobody can read my packets but me!" If that's the case I would look at the chain of things.
+
+    you need to route traffic to the pi. DNS for translating the hostname to the static ip, and then some way to route on the internal network from the static ip to your pi.
+    you need a valid key and certificate so the traffic you serve is recognized as secure to other browsers (keys and certs)
+    you want tls, and to deliberately terminate tls somewhere you control
+
+    These three are super intertwined, "self hosting" is choosing which of these you want to own.
+    My personal favorite setup:
+
+    rent a $5/mo box from any provider (anything works - vultr, linode, digital ocean, hetzner)
+    use your pi to ssh to the box you rent, port forward 443 to your pi.
+    run acme.sh on whatever is terminating tls (eventually your pi)
+
+    I like this setup for a few reasons.
+
+    This provides a static IP address you can point DNS records to. It also doesn't disclose where you live. You may or may not care about this. But it also means you spend more time learning about internet and less about fighting port forwarding on home networks.
+    If your pi can touch the internet at all, it can find your box. this means you can duct tape your pi to a mint mobile hotspot and a solar panel and have your static site served anywhere there's sunshine. I always picture it baking in the sun on the cracked back dash of a 1996 Toyota Camry flying down the highway. I don't know why, it just makes me smile.
+    Because you're using ssh, there's TLS over TLS. But that really doesn't matter. The point is that nothing between you and a user is visible to anyone but your pi. When you eventually move off of ssh port forwarding to something more stable nothing else changes.
+    When your initially setting this up and debugging, anything you do on your pi you can do on the $5 box you're renting. It's a touch more stable, and closer to what someone will actually pay you to do some day.
+
+    You may end up using nginx or haproxy somewhere to get ports to line up. But you can also use iptables. Dealer's choice.
+    Tailscale and Cloudflare tunnels are really cool. They take a bit of the headache away, but you're right that they give up that bit of security (and the learning!).
+    I'm so psyched for you :) let me know how it goes!
+  score: 2
+  posted_at: '2026-11-11T12:56:24Z'
+- id: lo-ogu86e
+  parent_id: '0'
+  author: kwas
+  text: instead of a cloudflare tunnel you could grab a vps, and tunnel with NAT.
+    I do this for my torrent and DirectConnect clients, so they get public IPs without
+    UPnP/NAT-PMP. I am considering doing same for Jellyfin so it's available outside
+    of tailscale. But I might still require some extra layer, not sure.
+  score: 1
+  posted_at: '2026-11-11T13:04:58Z'
+- id: lo-kivqrq
+  parent_id: '0'
+  author: pralkarz
+  text: I've heard about Tailscale many times but, to be honest, their website reads
+    the same as corporate emails to me, as in I cannot digest any substance from it
+    (might be another skill issue, I know). Would you mind sharing some concrete use
+    case for it (e.g. an example of what you use it for)? That might make it easier
+    for me to grasp the concept.
+  score: 1
+  posted_at: '2026-11-11T13:10:53Z'
+- id: lo-ognpkx
+  parent_id: '0'
+  author: brn
+  text: The simplest way to explain it I think would be to say that Tailscale makes
+    all your devices act like they’re on the same home network, no matter where they
+    actually are.
+  score: 3
+  posted_at: '2026-11-11T13:15:41Z'
+- id: lo-uynjrm
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    Their site from 2020 is a bit clearer: https://web.archive.org/web/20201129111934/https://tailscale.com/
+    But basically it lets your various devices connect to each other, whereever they are, without having to deal with port forwarding, firewalls, dynamic DNS... so your phone or laptop can access self-hosted services on your Raspberry Pi (photos, Jellyfin, RSS, files, ...). It does this while keeping it all hidden from random people/attackers.
+    I don't use Tailscale, and instead just use plain Wireguard/mTLS, but Tailscale is easiest to set up and seems to be the most popular option for people that want to access their Raspberry Pi when away from home.
+  score: 1
+  posted_at: '2026-11-11T13:17:24Z'
+- id: lo-qfwefn
+  parent_id: '0'
+  author: atmosx
+  text: |-
+    Hello @pralkarz,
+    I assume your internet connection has enough bandwidth to sustain a small to moderate website. Self-hosting a publicly facing service is an order of magnitude more dangerous than self-hosting private services such as photo management applications or media servers because of the security implications. On the bright side, static pages can be hosted securely with relatively low effort compared to LAMP stack.
+    (a) Applying network segmentation is a good start. The RPi should not be able to communicate with other devices through router / firewall configuration. Maybe allow just one device based on IP or MAC address to access the RPi from the LAN.
+    (b) Then setup DNS records. I assume you own an FQDN. Use an ready-made or custom script to update the DNS records. I'm using dnscontrol alongside envsubst and to perform the changes but there are simpler solutions out there.
+    (c) Once the DNS is working and updating properly, use an application to issue SSL certificates. My favourite is acme.sh but there are quite a few polished alternatives, e.g. certbot, lego, etc.
+    (d) Now you're ready to setup a reverse proxy. Note that modern rev-proxies like Caddy can manage (c) on their own. I'm not using them, I'm familiar with nginx so I use that.
+    (e) Create a deployment user with minimum permissions and use that user to upload data via sftp or other secure protocol. If you want to setup a deployment pipeline via git, that's also possible through webhooks.
+    (f) Secure the system. I'm pretty sure that you can flat-out ban the big cloud CIDRs. That will save you from dumb scanners abusing your website. Since very few humans use these addresses for outgoing connections, I think it's a good strategy to block them straight-up. You can setup a cron script to download CIDRs and update your firewall "block" tables.
+    f.1 Make sure you setup some sort of monitoring, so that you can quickly measure things like resources and even incoming requests (e.g. response latency, No of incoming requests, etc). Since you're going to self-host you'll have log access which means full visitors info.
+    f.2 You might want to explore the possibility of setting a "chroot"
+    f.3 Alerting: pushover is a good "host -> mobile" alternative, another is to setup the SMTPd in a way that the system can send you emails with status reports, etc. to your personal email.
+    (g) Backup everything locally (e.g. another NAS) or remotely (backblaze is fairly cheap), or both.
+    I believe that's all I'd say :-)
+    Happy self-hosting!
+  score: 1
+  posted_at: '2026-11-11T13:25:14Z'
+- id: lo-u0glnn
+  parent_id: '0'
+  author: msangi
+  text: |-
+    I avoid exposing my services to the public internet since I am the only user. They are available only via WireGuard. I use plan WireGuard, but solutions like Tailscale or NetBird are fine if you need something else to deal with configuration for you.
+    On top of that, I still do HTTPs everywhere (using the ACME DNS-01 challenge so I get proper certificates from Let's Encrypt without exposing anything on the public Internet).
+    Authentication is mostly based on passkeys (I use PocketID for single-sing-on) and I only use SSH keys (backed by secure enclaves whenever possible).
+    I run my services in NixOS. For my threat model it's okay to run everything on the same machine but to get more workload segregation you could separate the various services across several VMs/micro-VMs.
+  score: 2
+  posted_at: '2026-11-11T13:29:13Z'
+article:
+  fetch_status: skipped
+archived_at: '2026-11-11T13:44:10Z'

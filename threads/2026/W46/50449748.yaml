@@ -1,0 +1,1089 @@
+---
+post:
+  id: '50449748'
+  title: Protecting SSH Keys with macOS Secure Enclave
+  url: https://gatezh.com/posts/macos-secure-enclave-ssh-keys/
+  hn_url: https://news.ycombinator.com/item?id=50449748
+  score: 281
+  author: ''
+  posted_at: '2026-11-11T04:28:57Z'
+  fetched_at: '2026-11-11T13:43:54Z'
+  article_url: https://gatezh.com/posts/macos-secure-enclave-ssh-keys/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-11T13:43:54Z'
+  raw_comment_count: 101
+comments:
+- id: '50449857'
+  parent_id: '50449748'
+  author: cavoirom
+  text: 'If someone like the native approach or is familiar with SeKey, I created
+    sekey-sh to simplify the process: <a href="https:&#x2F;&#x2F;github.com&#x2F;cavoirom&#x2F;sekey-sh"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;cavoirom&#x2F;sekey-sh</a><p>Work
+    on macOS 26 and later.'
+  score: 0
+  posted_at: '2026-11-11T04:50:02Z'
+- id: '50449914'
+  parent_id: '50449748'
+  author: Gigachad
+  text: I was looking in to this just earlier today. The native macos version worries
+    me a little because it seems someone just happened to discover it in MacOS, rather
+    than it being a documented feature. The worry being Apple could change or remove
+    it later locking you out of your keys since they never advertised this as a thing
+    you could do.
+  score: 0
+  posted_at: '2026-11-11T05:01:43Z'
+- id: '50449924'
+  parent_id: '50449748'
+  author: bdamm
+  text: We should have had this 20 years ago. It is almost pathological how difficult
+    it is to reliably use hardware keys as ssh credentials.
+  score: 0
+  posted_at: '2026-11-11T05:04:07Z'
+- id: '50449954'
+  parent_id: '50449748'
+  author: petesergeant
+  text: I&#x27;ve been using Secretive (a nice software wrapper for these) for a few
+    days for my Github keys (where 1Password holds the rest of my SSH keys). It works
+    nicely, but obviously you can&#x27;t back up a key that started life in a secure
+    enclave, so you&#x27;ll need alternative access arrangements for anything you
+    setup that way.
+  score: 0
+  posted_at: '2026-11-11T05:10:55Z'
+- id: '50449960'
+  parent_id: '50449914'
+  author: cavoirom
+  text: It is the same as you lost your device. You must have a second backup key,
+    and treat one in Secure Enclave as disposable key.
+  score: 0
+  posted_at: '2026-11-11T05:12:37Z'
+- id: '50449973'
+  parent_id: '50449748'
+  author: larusso
+  text: "I used yubikeys for ssh for years. First via the older clunky gpg as ssh
+    key feature. Then via the FIDO api. My biggest issue was the chicken and egg issue
+    when using this setup on a new machine or god forbid in a container etc. windows
+    and WLS wasn’t super thrilled either. \nI switched to 1Password ssh because I
+    actually like the fact that I can simply share my keys. It’s still not perfect.
+    Agent forwarding needs an extra configuration and depending how many keys you
+    have and how verbose your ssh config gets it becomes also very finicky. \nThis
+    solution feels for me like a slight setback because it’s a macOS only solution.
+    If you have a Linux or windows machine next to a Mac you have to deal with the
+    insecure key file on your hard drive again either via yubi keys or software solutions.<p>But
+    I think I would take this over a yubikey. I really disliked the fact that one
+    usb port was constantly in use."
+  score: 0
+  posted_at: '2026-11-11T05:14:52Z'
+- id: '50450010'
+  parent_id: '50449973'
+  author: nubb
+  text: you can’t just pop it out once you’re logged in?
+  score: 0
+  posted_at: '2026-11-11T05:26:44Z'
+- id: '50450027'
+  parent_id: '50449748'
+  author: dsenkus
+  text: These days I&#x27;m mainly doing development inside VM&#x27;s. Previously
+    I was embedding Github key to each VM, but since I setup Secure Enclave (with
+    Secretive), I&#x27;m only forwarding it&#x27;s agent to VM and each git action
+    on origin now requires approval using fingerprint reader. I think this a good
+    way to prevent malware from gaining access to github
+  score: 0
+  posted_at: '2026-11-11T05:30:28Z'
+- id: '50450077'
+  parent_id: '50450010'
+  author: larusso
+  text: |-
+    Sure and pop in whenever I do a git commit? I also sign my commits. I used GPG (different key on the same hardware key) and now via SSH key. I had both a compact and bigger key. I got the compact key because my very first yubikey nearly broke. I lifted my Mac while it was connected and it cracked in the middle. I bought a compact one next which can stay inside and that one you don’t want to take out. It’s so small you’ll lose it. I know because that happened to my backup key … (that was actually the idea for the bigger one I bought but I lost the damn thing during the setup phase)
+    But having the yubikey bound to your Mac at all times is also stupid because it doesn’t come with a fingerprint or other biometric sensor. The idea is that you use this thing as a token not that you leave the key in the lock at all times. For that alone I would favor the enclave solution.
+  score: 0
+  posted_at: '2026-11-11T05:43:55Z'
+- id: '50450079'
+  parent_id: '50449748'
+  author: database64128
+  text: |-
+    Security features like this works, until it doesn&#x27;t.<p>When I installed WireGuard on macOS, I was happy to discover that it stores private keys in the system keychain. Accessing the private key requires Touch ID.<p>Then one day after a system upgrade, the WireGuard app crashed on startup with:<p><pre><code>  [APP] Unable to open config from keychain: -25300
+    </code></pre>
+    Then the app deleted all profiles because they are all &quot;orphaned&quot;, apparently for &quot;keychain consistency&quot; [0].<p>From then on, I just use a text editor to edit my WireGuard configuration files, and import them to the app. The bug still exists to this day [1].<p>[0] <a href="https:&#x2F;&#x2F;github.com&#x2F;WireGuard&#x2F;wireguard-apple&#x2F;commit&#x2F;dfb685f2580403cc28aeae7428d52f3655d3436b" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;WireGuard&#x2F;wireguard-apple&#x2F;commit&#x2F;dfb685f2...</a><p>[1] <a href="https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;WireGuard&#x2F;comments&#x2F;wyt828&#x2F;osx_wireguard_config_vanished&#x2F;" rel="nofollow">https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;WireGuard&#x2F;comments&#x2F;wyt828&#x2F;osx_wireg...</a>
+  score: 0
+  posted_at: '2026-11-11T05:44:06Z'
+- id: '50450131'
+  parent_id: '50449954'
+  author: johng
+  text: '2nd this. Found out about it when this type of thing came up about a week
+    ago. I had a hard time getting the stock stuff going but Secretive made it easy
+    to set up and I love using it.<p>Definitely a recco from me as well. -- git hub
+    here: <a href="https:&#x2F;&#x2F;github.com&#x2F;maxgoedjen&#x2F;secretive" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;maxgoedjen&#x2F;secretive</a>'
+  score: 0
+  posted_at: '2026-11-11T05:54:24Z'
+- id: '50450159'
+  parent_id: '50450079'
+  author: redrove
+  text: Developing for macos, I’ve gotten bit by keychain consistency issues far too
+    many times. It’s a mess.
+  score: 0
+  posted_at: '2026-11-11T06:00:32Z'
+- id: '50450161'
+  parent_id: '50450079'
+  author: cl3misch
+  text: "&gt; The bug still exists to this day<p>You linked a commit and a Reddit
+    post. Is there a proper Github issue as well?"
+  score: 0
+  posted_at: '2026-11-11T06:00:37Z'
+- id: '50450200'
+  parent_id: '50450161'
+  author: andersonpico
+  text: |-
+    from his link:<p><pre><code>  Edit (March 2025):
+      Wireguard, to my surprise, has no bug tracking system like Jira or issue tracking area such as GitHub.
+      If you want to see this fixed, the only way to instigate change is to write team@wireguard.com and jason@zx2c4.com.</code></pre>
+  score: 0
+  posted_at: '2026-11-11T06:10:15Z'
+- id: '50450205'
+  parent_id: '50450079'
+  author: con
+  text: I had this as well - funny enough I asked my local AI to &quot;find the removed
+    config&quot; and it was able to restore everything.
+  score: 0
+  posted_at: '2026-11-11T06:10:51Z'
+- id: '50450211'
+  parent_id: '50449924'
+  author: DaSHacka
+  text: ed25519-sk werks on my machine...<p>Unless you specifically mean (f)TPMs&#x2F;secure
+    envlaves.
+  score: 0
+  posted_at: '2026-11-11T06:11:06Z'
+- id: '50450235'
+  parent_id: '50450161'
+  author: database64128
+  text: '&gt; You linked a commit and a Reddit post. Is there a proper Github issue
+    as well?<p>It&#x27;s funny you mentioned that. The GitHub repository is a mirror
+    of <a href="https:&#x2F;&#x2F;git.zx2c4.com&#x2F;wireguard-apple" rel="nofollow">https:&#x2F;&#x2F;git.zx2c4.com&#x2F;wireguard-apple</a>.
+    You cannot create issues there. You&#x27;re supposed to send a bug report to the
+    mailing list, which is enough friction that none of us did so far.'
+  score: 0
+  posted_at: '2026-11-11T06:16:22Z'
+- id: '50450261'
+  parent_id: '50450205'
+  author: database64128
+  text: Lucky for you! I first ran into this before AI agents were a thing, so :(
+  score: 0
+  posted_at: '2026-11-11T06:20:13Z'
+- id: '50450280'
+  parent_id: '50450027'
+  author: LeBit
+  text: Why not use PAT?<p>I’ve grown to appreciate ssh should only be used with git
+    for signing commits and as a deploy key (eg in a CI system).<p>I always use https
+    for day to day git operations. My keys reside in gopass and are extracted by gopass-git-credential
+    when needed by git.<p>I use that within devcontainers<p><a href="https:&#x2F;&#x2F;github.com&#x2F;gopasspw&#x2F;git-credential-gopass"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;gopasspw&#x2F;git-credential-gopass</a>
+  score: 0
+  posted_at: '2026-11-11T06:23:31Z'
+- id: '50450288'
+  parent_id: '50450235'
+  author: Barbing
+  text: '&gt;enough friction that none of us did so far.<p>Emailed per <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50450200">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50450200</a><p>Definitely
+    still a bug right? Linked them to your parent comment.<p>Edit: oops sorry team,
+    think you&#x27;re on it (4d ago): <a href="https:&#x2F;&#x2F;github.com&#x2F;whyredfire&#x2F;wireguard-apple&#x2F;commit&#x2F;0bac1427de2aab12ae7a03c9c4e6e3e676a3f7bf"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;whyredfire&#x2F;wireguard-apple&#x2F;commit&#x2F;0bac142...</a><p>Guess
+    it can serve as feedback on the friction when issues can&#x27;t simply be opened
+    though!'
+  score: 0
+  posted_at: '2026-11-11T06:25:34Z'
+- id: '50450291'
+  parent_id: '50450077'
+  author: LeBit
+  text: The Yubikey 5 Nano and 5C Nano DO come with touch.<p>The idea is precisely
+    that you keep them permanently connected in the laptop.
+  score: 0
+  posted_at: '2026-11-11T06:26:15Z'
+- id: '50450306'
+  parent_id: '50450159'
+  author: wpm
+  text: 'So many of the keychain APIs are &quot;deprecated&quot; (read: marked as
+    &quot;we will nuke this API whenever we want&quot;) and have been for a decade
+    or more, but have no replacement either.<p>A lot of the Security Framework came
+    from Classic, hell, the idea of a keychain came from Classic! Just a mess.'
+  score: 0
+  posted_at: '2026-11-11T06:28:49Z'
+- id: '50450326'
+  parent_id: '50449748'
+  author: devsda
+  text: What&#x27;s the general consensus around ssh-agent?<p>It&#x27;s often the
+    case that we make much effort into securing  the key but expose it via an open
+    agent socket at a well known path or use an open control master path for multiplexing.<p>Certain
+    automation and dev  tools like Ansible make it a pain to work if agent key requires
+    a confirmation.
+  score: 0
+  posted_at: '2026-11-11T06:32:09Z'
+- id: '50450327'
+  parent_id: '50450288'
+  author: database64128
+  text: "&gt; Definitely still a bug right? Linked them to your parent comment.<p>Thanks!
+    Yes, it is still a bug.<p>&gt; Edit: oops sorry team, think you&#x27;re on it
+    (4d ago)<p>I don&#x27;t think @zx2c4 has seen this PR, and the author of the PR
+    has not sent a bug report yet, so it&#x27;s probably fine :P"
+  score: 0
+  posted_at: '2026-11-11T06:32:18Z'
+- id: '50450330'
+  parent_id: '50449748'
+  author: LeBit
+  text: The article starts on an incorrect premise.<p>The author says he doesn’t like
+    the idea of having keys sitting on his file system ready to be snatched by bad
+    actors.<p>That’s why they should be passphrase protected.<p>You use ssh agent
+    to store the keys in memory and for convenience you can store the passphrases
+    in keychain. MacOS OpenSSH has the UseKeychain config directive for that.<p>I
+    use Yubikey&#x2F;FIDO2 myself, but not because private keys cannot be protected
+    on a file system.
+  score: 0
+  posted_at: '2026-11-11T06:32:39Z'
+- id: '50450339'
+  parent_id: '50450330'
+  author: chicagobuss
+  text: was wondering the exact same thing.  dude never heard of passphrases?
+  score: 0
+  posted_at: '2026-11-11T06:34:26Z'
+- id: '50450347'
+  parent_id: '50449973'
+  author: 0xCMP
+  text: 'The way I think of it is YubiKeys should be used to basically provision a
+    computer with an approved device specific key. Whether it&#x27;s a passkey or
+    SE&#x2F;TPM secured SSH&#x2F;GPG&#x2F;TLS key: the Yubikey holds the credential
+    everyone trusts and therefore can be used from any device to gain access and enroll
+    a new approved key.'
+  score: 0
+  posted_at: '2026-11-11T06:36:08Z'
+- id: '50450348'
+  parent_id: '50449973'
+  author: LeBit
+  text: Why do you share private keys?<p>SSH private keys should be passphrase protected.<p>You
+    don’t have to do that if you use FIDO2 with a Yubikey.
+  score: 0
+  posted_at: '2026-11-11T06:36:21Z'
+- id: '50450366'
+  parent_id: '50450330'
+  author: Gigachad
+  text: Secure Enclave is still more secure in that it should be impossible to access
+    the private key. Password protected keys are still vulnerable to malware that
+    can read the keyboard, trick you in to typing the password, or that have exploits
+    in macOS to read the memory.
+  score: 0
+  posted_at: '2026-11-11T06:41:54Z'
+- id: '50450375'
+  parent_id: '50450280'
+  author: Gigachad
+  text: Those access token can still be stolen just the same. The Secure Enclave is
+    better because you can ask it to authorise the action, but you can never get the
+    key out of it, so the latest malicious npm package can’t send off your access
+    tokens or ssh keys.
+  score: 0
+  posted_at: '2026-11-11T06:43:22Z'
+- id: '50450391'
+  parent_id: '50450330'
+  author: Jakob
+  text: 'Isn’t the macOS keychain user-readable by default?<p>Assuming the attacker
+    has user rights (which it needs to read the key) it could also read the passphrase,
+    right?<p>Update: I tried it out and stand corrected. ssh-add doesn’t store it
+    in the user-readable keychain. So the passphrase is protected. (And also not recoverable
+    by the user).'
+  score: 0
+  posted_at: '2026-11-11T06:47:10Z'
+- id: '50450402'
+  parent_id: '50450280'
+  author: Jakob
+  text: PAT are vulnerable, once stolen they can be used from anywhere until their
+    (usually) long term expiry.<p>Better use short lived tokens with auto refresh.
+    For example OAuth tokens. They can be used for the same use cases like PAT, but
+    they expire after a max of 2 hours.
+  score: 0
+  posted_at: '2026-11-11T06:50:01Z'
+- id: '50450408'
+  parent_id: '50450326'
+  author: petesergeant
+  text: 'Weirdly enough, this is _why_ I ended up using Secretive: I needed a second
+    ssh-agent because selecting which keys are forwarded per-host is very fiddly,
+    and while standard ssh-agent kinda supports it, 1Password doesn&#x27;t. Anyway,
+    _a_ solution for this is having separate SSH agents, and Secretive is another
+    agent on top of 1Password.'
+  score: 0
+  posted_at: '2026-11-11T06:51:03Z'
+- id: '50450489'
+  parent_id: '50449748'
+  author: sandeepkd
+  text: Not sure how many people feel like this, the risk in plain sight is a lot
+    easier to handle than the risk hiding under the layers. You can keep shifting
+    the storage for the key, one way or another you have to open up a channel to access
+    to key or use the key. That channel would then become the vulnerability target.
+  score: 0
+  posted_at: '2026-11-11T07:03:18Z'
+- id: '50450515'
+  parent_id: '50450348'
+  author: larusso
+  text: Share as in storing my key in 1Password and use it from different machines.
+    I generated the key from 1Password and don’t intend to export it.
+  score: 0
+  posted_at: '2026-11-11T07:07:43Z'
+- id: '50450553'
+  parent_id: '50450327'
+  author: Barbing
+  text: All right! :)
+  score: 0
+  posted_at: '2026-11-11T07:13:36Z'
+- id: '50450563'
+  parent_id: '50450402'
+  author: masklinn
+  text: Which oauth tokens are you talking about? Because GitHub’s created by oauth
+    or gh apps have a lifetime of either 8h or forever.
+  score: 0
+  posted_at: '2026-11-11T07:15:47Z'
+- id: '50450583'
+  parent_id: '50450489'
+  author: Vegenoid
+  text: To prove possession of a private key, one needs only to sign something with
+    that key (this is how SSH key auth works). This is how things like the macOS Secure
+    Enclave operate - the private key is stored in a separate hardware chip that only
+    exposes an interface to sign something with that key, never to actually present
+    the key. To obtain the key would require having physical access to the computer,
+    ripping it open, and performing advanced deconstruction and analysis of that chip.
+  score: 0
+  posted_at: '2026-11-11T07:19:14Z'
+- id: '50450593'
+  parent_id: '50449748'
+  author: jen729w
+  text: 'I use 1Password&#x27;s `op` for this, but with an allowance: my dev environment
+    keys.<p>I found I was getting fingerprint fatigue. Do I need a fingerprint request
+    <i>every</i> time my dev server wants to connect to dev Supabase? No. That&#x27;s
+    expected, and zero risk. There&#x27;s no data there.<p>I worried that a nefarious
+    request would be auto-approved by me. When you see 20 requests a day, your muscle
+    memory just reaches for the sensor.<p>So I have a separate 1Password vault that
+    a service account [0] can read. That token is in my environment as OP_SERVICE_ACCOUNT_TOKEN,
+    which the `op` tool understands.<p>It also has access to a vault with &#x27;AI-safe&#x27;
+    keys that I want Claude to be able to access without asking me.<p>Now, these requests
+    work invisibly. And when I see a fingerprint popup, it&#x27;s unusual, and I don&#x27;t
+    auto-approve by habit.<p>I also keep an item called &#x27;_One-day keys&#x27;
+    in a separate vault. (The underscore just pushing it to the top of the list for
+    easy access.)<p>It has prod keys, mostly restricted read-only. If required, I
+    move that over to the open vault. Claude knows this item and has instructions
+    to remind me to move it back out when it&#x27;s finished what it was doing.<p>[0]:
+    <a href="https:&#x2F;&#x2F;www.1password.dev&#x2F;service-accounts&#x2F;get-started"
+    rel="nofollow">https:&#x2F;&#x2F;www.1password.dev&#x2F;service-accounts&#x2F;get-started</a>'
+  score: 0
+  posted_at: '2026-11-11T07:20:49Z'
+- id: '50450670'
+  parent_id: '50450593'
+  author: earthpyy
+  text: 1Password + `op` cli is a good alternative choice here.
+  score: 0
+  posted_at: '2026-11-11T07:29:53Z'
+- id: '50450718'
+  parent_id: '50450330'
+  author: mjg59
+  text: Do you type your passphrase every time you log into a remote machine? If not,
+    the private key is in RAM and can be extracted by malware and stolen. If so, that&#x27;s
+    way more annoying than using touchid or some other physical proof of presence.
+  score: 0
+  posted_at: '2026-11-11T07:36:58Z'
+- id: '50450719'
+  parent_id: '50450375'
+  author: dsenkus
+  text: absolute security does not exist, but each small improvement adds up. I quite
+    like having to authorize each remote git action with Touch ID.
+  score: 0
+  posted_at: '2026-11-11T07:37:08Z'
+- id: '50450757'
+  parent_id: '50450235'
+  author: encom
+  text: "&gt;friction<p>I appreciate when both options exist, because I&#x27;ve passed
+    on reporting so many bugs, because I refuse to create a Microsoft account to do
+    it.<p>In fact, I don&#x27;t understand how sending an email is high friction."
+  score: 0
+  posted_at: '2026-11-11T07:44:09Z'
+- id: '50450776'
+  parent_id: '50449748'
+  author: computerfriend
+  text: "&gt; That ssh: at the end is the FIDO2 application ID — it’s part of the
+    key, not a comment.<p>I think this is incorrect and the &quot;ssh:&quot; at the
+    end is indeed a comment."
+  score: 0
+  posted_at: '2026-11-11T07:49:28Z'
+- id: '50450786'
+  parent_id: '50449748'
+  author: computerfriend
+  text: I wish there was a way to cache the touch. As it stands, this is mostly unusable
+    for commit signing in a rebase-heavy workflow.
+  score: 0
+  posted_at: '2026-11-11T07:51:09Z'
+- id: '50450809'
+  parent_id: '50450563'
+  author: Jakob
+  text: Gitlab uses 2h. TIL that GitHub uses 8h.
+  score: 0
+  posted_at: '2026-11-11T07:56:06Z'
+- id: '50450847'
+  parent_id: '50450583'
+  author: sandeepkd
+  text: I dont want to be rude, I am aware of the operational semantics. Getting what
+    you want to be signed with the key is the external channel operation I was referring
+    to. In this particular case, somehow the attack vector being disabled is the actual
+    private key being locked from any export. This gives a sense of security, however
+    the channel abuse can bypass the security.
+  score: 0
+  posted_at: '2026-11-11T08:02:16Z'
+- id: '50450894'
+  parent_id: '50450718'
+  author: elmimmo
+  text: 'I used to install ssh_locker [1] (I don’t know if it still works), and have
+    the passphrase in a keychain separate from the default `login` that I then set
+    in Keychain Access to autolock after a set period of time. Handy for keeping the
+    private key for a while in RAM and then autoremoved, instead of having it there
+    for the whole session. It worked transparently and is a feature that should come
+    with the OS.<p>[1]: <a href="https:&#x2F;&#x2F;github.com&#x2F;ddribin&#x2F;ssh_locker"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ddribin&#x2F;ssh_locker</a>'
+  score: 0
+  posted_at: '2026-11-11T08:14:06Z'
+- id: '50450922'
+  parent_id: '50450786'
+  author: szenrom
+  text: |-
+    In case you want to just have an encrypted SSH key with password in keychain, you can make it work automatically when logged in (and when Mac is unlocked) by putting in .ssh&#x2F;config:<p><pre><code>  Host github.com
+        AddKeysToAgent yes
+        UseKeychain yes
+        IdentityFile ~&#x2F;.ssh&#x2F;id_ed25519
+    </code></pre>
+    Docs: <a href="https:&#x2F;&#x2F;docs.github.com&#x2F;en&#x2F;authentication&#x2F;connecting-to-github-with-ssh&#x2F;generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=mac" rel="nofollow">https:&#x2F;&#x2F;docs.github.com&#x2F;en&#x2F;authentication&#x2F;connecting-to-gith...</a>
+  score: 0
+  posted_at: '2026-11-11T08:19:58Z'
+- id: '50450941'
+  parent_id: '50449748'
+  author: newman314
+  text: The thing I don&#x27;t like about the Secure Enclave is that it does not yet
+    support ed25519 keys.
+  score: 0
+  posted_at: '2026-11-11T08:25:02Z'
+- id: '50450945'
+  parent_id: '50449748'
+  author: mavam
+  text: |-
+    One fundamental problem with agentic development is that accessing the secure enclave key requires human presence. If you&#x27;re running headless and aren&#x27;t logged in, Secretive (not sure about others) will not be able to access the enclave, even when you only chose &quot;notify&quot; and not &quot;touchid&quot;.<p>This is why I&#x27;m skeptical that the approach can scale reliably, even though I&#x27;m relying on it today. (Yes, PATs would fix this, but the enclave model is what I&#x27;m trying to retain for now.) What I&#x27;ve done instead is wrote a small daemon that sets the SSH authentication socket and does agent forwarding. This works when I&#x27;m traveling with laptop...but not yet from my mobile phone.<p>Example:<p><pre><code>    Laptop                                   Remote Mac
+       ┌─────────────────────┐                  ┌──────────────────────────┐
+       │ Secretive           │                  │ ssh &#x2F; git commit -S      │
+       │ (Secure Enclave)    │                  │          │               │
+       │        ▲            │  ForwardAgent    │          ▼               │
+       │        └── ssh ─────┼─────────────────►│  ~&#x2F;.ssh&#x2F;agent.sock       │
+       │                     │                  │  (stable proxy)          │
+       └─────────────────────┘                  │      │          │        │
+                                                │      ▼          ▼        │
+                                                │  forwarded   local       │
+                                                │  laptop      Secretive   │
+                                                │  agent       (if you sit │
+                                                │              at this Mac)│
+                                                └──────────────────────────┘
+    </code></pre>
+    NB: I&#x27;m not using Rex instead of herdr and because Rex uses its own protocol, I always need to have one SSH tunnel to reset the remote agent socket. Not optimal, but it works. All of this feels wrong from a UX perspective, and it feels like I&#x27;m holding on too hard on secure enclave for what my use cases are. Feedback appreciated!
+  score: 0
+  posted_at: '2026-11-11T08:25:24Z'
+- id: '50450974'
+  parent_id: '50450757'
+  author: database64128
+  text: "&gt; I&#x27;ve passed on reporting so many bugs, because I refuse to create
+    a Microsoft account to do it.<p>99% of the time it&#x27;s perfectly fine to just
+    email the maintainer with a bug report and maybe a patch.<p>&gt; In fact, I don&#x27;t
+    understand how sending an email is high friction.<p>Judging from the fact that
+    after so many years, such a widespread (as seen in the Reddit post and here) issue
+    still hasn&#x27;t resulted in a single bug report in the mailing list, I&#x27;d
+    say most people (including myself) do indeed consider using a mailing list to
+    be higher friction.<p>If I&#x27;m not mistaken, unless you&#x27;re already CC&#x27;ed
+    by a participant, you&#x27;d have to subscribe to the whole mailing list just
+    to receive notifications for a single thread. For an &quot;issue&quot; on a Git
+    forge, participation is usually as easy as upvoting and then clicking the &quot;Subscribe&quot;
+    button."
+  score: 0
+  posted_at: '2026-11-11T08:30:18Z'
+- id: '50451007'
+  parent_id: '50450894'
+  author: elmimmo
+  text: ChatGPT says ssh_locker locked the keys with `ssh-add -x` which doesn’t necessarily
+    remove them from RAM. Duh! It does point to suggested minimal changes to its source
+    code to effectively accomplish that though.
+  score: 0
+  posted_at: '2026-11-11T08:34:19Z'
+- id: '50451042'
+  parent_id: '50450079'
+  author: raverbashing
+  text: There are features built for security nerds (like PGP&#x2F;GPG, etc)<p>And
+    features built for normal people<p>The overlap is very rare
+  score: 0
+  posted_at: '2026-11-11T08:41:08Z'
+- id: '50451045'
+  parent_id: '50450974'
+  author: encom
+  text: Assuming you&#x27;re already using MS Github. Anyway, even if I was, a lot
+    of Github project require filling out an absurd Simon Says form. Or that scene
+    from Indiana Jones where he takes a wrong step and falls through the floor. That&#x27;s
+    nothing to do with email or Microsoft specifically, it&#x27;s just another reason
+    I almost never bother reporting bugs. Talk about friction.
+  score: 0
+  posted_at: '2026-11-11T08:41:45Z'
+- id: '50451066'
+  parent_id: '50450327'
+  author: traceroute66
+  text: "&gt; Thanks! Yes, it is still a bug.<p>Its unfortunate no updates for Wireguard
+    macOS have been pushed out for 3 years, App Store is still showing 1.0.16 as the
+    latest version – as also confirmed on the Wireguard website at the latest version.<p>No
+    doubt macOS APIs have moved on a lot in 3 years and so perhaps bugs that are being
+    seen are simply a reflection of the lack of updates to keep up with API changes
+    ?  Just thinking aloud here, I don&#x27;t know if the concept of OS API changes
+    are applicable to this particular PR &#x2F; bug."
+  score: 0
+  posted_at: '2026-11-11T08:45:41Z'
+- id: '50451069'
+  parent_id: '50451042'
+  author: sysguest
+  text: well but deletion isn&#x27;t what even those &quot;security nerds&quot; would
+    have expected...
+  score: 0
+  posted_at: '2026-11-11T08:46:26Z'
+- id: '50451091'
+  parent_id: '50449748'
+  author: dostick
+  text: Isn&#x27;t a GitHub app project Secretive doing that but better?
+  score: 0
+  posted_at: '2026-11-11T08:49:31Z'
+- id: '50451123'
+  parent_id: '50450809'
+  author: eddythompson80
+  text: 2 hours is plenty. The recent binance hack was 20 minutes after all. A 2 hour
+    token is enough time to get all that can be gotten or done by a token in almost
+    any system especially well defined ones like GH or GL.<p>It would be nice if GitHub
+    or GitLab could limit a token to a given IP, but with how proxies and dynamic
+    ips work I would imagine it would be a hassle to get it working correctly for
+    everyone, but it’s better than nothing.
+  score: 0
+  posted_at: '2026-11-11T08:55:56Z'
+- id: '50451134'
+  parent_id: '50451069'
+  author: adastra22
+  text: Security nerd here. I would have expected it. But only in the sense that I
+    have no faith in this industry to write secure software and protect from data
+    loss.
+  score: 0
+  posted_at: '2026-11-11T08:57:42Z'
+- id: '50451162'
+  parent_id: '50451045'
+  author: database64128
+  text: Yeah, I hate these forms (issue templates) too. Every time I have to fill
+    such a form, I always feel that they are discouraging me from writing the bug
+    description in a natural, coherent way. I&#x27;d spend more effort to make sure
+    the description is clear and contains all necessary information, if there&#x27;s
+    no issue template requirements.
+  score: 0
+  posted_at: '2026-11-11T09:02:39Z'
+- id: '50451196'
+  parent_id: '50450670'
+  author: sharts
+  text: "+ fnox"
+  score: 0
+  posted_at: '2026-11-11T09:09:15Z'
+- id: '50451257'
+  parent_id: '50449748'
+  author: artdigital
+  text: On macOS use “Secretive”. It’s a small app that can generate keys from Secure
+    Enclave and prompts you with touchid whenever those keys are being used<p>On iOS&#x2F;ipad&#x2F;(also
+    macOS) you can also use the SSH terminal emulator Termius which has support for
+    SE keys built in as well. So I have the set of keys synced to my VPS, this way
+    I know that only my physical devices can log in and nothing else.
+  score: 0
+  posted_at: '2026-11-11T09:20:57Z'
+- id: '50451268'
+  parent_id: '50449748'
+  author: dylanger
+  text: You should checkout the TKey (<a href="https:&#x2F;&#x2F;www.tillitis.se&#x2F;products&#x2F;tkey&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.tillitis.se&#x2F;products&#x2F;tkey&#x2F;</a>)<p>It&#x27;s
+    effectively an open source version of a YubiKey, the hardware itself is all open
+    source and it handles ed255519 SSH keys really well.<p>inb4 they&#x27;re not the
+    same, I know, I really like what the TKey team is doing.
+  score: 0
+  posted_at: '2026-11-11T09:23:04Z'
+- id: '50451277'
+  parent_id: '50450945'
+  author: bartekpacia
+  text: |-
+    I got a similar idea recently. I was becoming annoyed with the coding agent, running on my laptop, being unable to use sudo (with my supervision) when ssh-ing to my remote server. I wanted to build this as a PAM module.
+    I started building this but after a while I googled (well… asked an agent) a bit more and found out that it already exists: <a href="https:&#x2F;&#x2F;github.com&#x2F;z4yx&#x2F;pam_rssh" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;z4yx&#x2F;pam_rssh</a><p>I’m a happy user!
+  score: 0
+  posted_at: '2026-11-11T09:24:16Z'
+- id: '50451293'
+  parent_id: '50449748'
+  author: dev_l1x_be
+  text: Somebody posted a tool here in the last couple of weeks that was doing this
+    (using macos secure storage for local credentials&#x2F; keys)
+  score: 0
+  posted_at: '2026-11-11T09:26:02Z'
+- id: '50451485'
+  parent_id: '50449748'
+  author: gsliepen
+  text: Secure Enclave, TPM and other such security features are unfortunately so
+    badly documented and need so many hoops to jump through to get them working, with
+    any mistake either causing you to be locked out completely or to not give you
+    the protection you wanted. There really should be a better way to make these technologies
+    usable...
+  score: 0
+  posted_at: '2026-11-11T09:47:26Z'
+- id: '50451558'
+  parent_id: '50451134'
+  author: pjmlp
+  text: I keep hoping better liability laws will force management to support doing
+    it the right way, if not anything else than avoid hefty fines.
+  score: 0
+  posted_at: '2026-11-11T09:56:50Z'
+- id: '50451602'
+  parent_id: '50451042'
+  author: patrakov
+  text: This is not a feature built for security nerds. This is a feature built for
+    corporate compliance box tickers, and it works precisely as wanted in corporate
+    environments, where all lost secrets can be easily replaced after visiting the
+    helpdesk room personally.
+  score: 0
+  posted_at: '2026-11-11T10:04:51Z'
+- id: '50451618'
+  parent_id: '50451123'
+  author: yangm97
+  text: IP prefix should be enough to narrow down to your ISP + rough geographic location.
+    Not perfect but requires no extra setup.
+  score: 0
+  posted_at: '2026-11-11T10:07:10Z'
+- id: '50451692'
+  parent_id: '50449748'
+  author: sssswsww
+  text: '1'
+  score: 0
+  posted_at: '2026-11-11T10:14:55Z'
+- id: '50451693'
+  parent_id: '50449748'
+  author: sssswsww
+  text: ss
+  score: 0
+  posted_at: '2026-11-11T10:15:02Z'
+- id: '50451739'
+  parent_id: '50451602'
+  author: raverbashing
+  text: True, there&#x27;s that as well
+  score: 0
+  posted_at: '2026-11-11T10:21:45Z'
+- id: '50451765'
+  parent_id: '50449748'
+  author: spacelatte
+  text: The `sc_auth` <i>trick</i> was posted about a year ago, since macOS 26 Tahoe
+    added the SSH related functions into the keychain.dylib.<p>&gt; <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=46025721">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=46025721</a><p>One
+    of the problems I constantly face is that the SSH configuration is not portable
+    when I use these esoteric things. Even with Secretive (which plugs a simple SSH
+    socket), remote agent forwarding sometimes fail. (ie. Due to the old version on
+    the server or configuration issue, or something else setting SSH_AUTH_SOCK...)<p>Moreover,
+    it is not possible to drop these files into a file-sharing folder, like OneDrive
+    or iCloudDrive or SMB share, and share them with many hosts at the same time.
+    (Especially when different operating systems are involved...)<p>I found the hacker
+    way simplest and easiest; put a basic Makefile with bunch of rules, have a &quot;central&quot;
+    host&#x2F;machine to distribute the keys and configuration from that point on...
+  score: 0
+  posted_at: '2026-11-11T10:26:17Z'
+- id: '50451770'
+  parent_id: '50451091'
+  author: cavoirom
+  text: No app is better.
+  score: 0
+  posted_at: '2026-11-11T10:26:51Z'
+- id: '50451786'
+  parent_id: '50450945'
+  author: jon-wood
+  text: Two thoughts on this:<p>1. The Secure Enclave being inaccessible when you&#x27;re
+    not present is a feature, not a bug. If you need to run headless then its not
+    the correct solution to your problem and you&#x27;ll have to find another.<p>2.
+    You don&#x27;t need an SSH agent proxy, you can use a `match` block in your `ssh_config`
+    with something like `host * exec &quot;test -z $SSH_TTY` to check whether you&#x27;re
+    operating over an SSH connection and select Secretive&#x27;s SSH agent if you&#x27;re
+    using the machine locally.
+  score: 0
+  posted_at: '2026-11-11T10:29:33Z'
+- id: '50451817'
+  parent_id: '50449748'
+  author: asma33
+  text: "."
+  score: 0
+  posted_at: '2026-11-11T10:35:02Z'
+- id: '50451833'
+  parent_id: '50450941'
+  author: justincormack
+  text: Whats wrong with P256?
+  score: 0
+  posted_at: '2026-11-11T10:36:46Z'
+- id: '50451844'
+  parent_id: '50449748'
+  author: asma33
+  text: ".."
+  score: 0
+  posted_at: '2026-11-11T10:38:39Z'
+- id: '50451863'
+  parent_id: '50450330'
+  author: tiberious726
+  text: Key on disk plus a passphrase is still only 1FA. Key in the SE + an unseal
+    PIN is 2FA. There&#x27;s already plenty written about why one is better better
+    than the other.
+  score: 0
+  posted_at: '2026-11-11T10:41:52Z'
+- id: '50451893'
+  parent_id: '50449748'
+  author: flexorium
+  text: |-
+    I’ve been a happy user of Secretive for years, including for Git commit signature which it make it a separate key with interaction but not for pull &#x2F; push. I find the trade off ideal for GitHub.com and have other keys with different setup for servers.<p>SSH keys in plaintext was one of the first thing that bagel [0] our developer endpoint secret detection focused on. Then we embedded bagel as a library in our developer endpoint protection [1].<p>[0] <a href="https:&#x2F;&#x2F;boostsecurityio.github.io&#x2F;bagel&#x2F;" rel="nofollow">https:&#x2F;&#x2F;boostsecurityio.github.io&#x2F;bagel&#x2F;</a>
+    [1] <a href="https:&#x2F;&#x2F;boostsecurityio.github.io&#x2F;dazio&#x2F;docs&#x2F;install&#x2F;" rel="nofollow">https:&#x2F;&#x2F;boostsecurityio.github.io&#x2F;dazio&#x2F;docs&#x2F;install&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-11T10:46:29Z'
+- id: '50452148'
+  parent_id: '50450593'
+  author: ctolsen
+  text: Proton Pass with `pass-cli` has a similar thing, for anyone using that. You
+    can give agents an expirable token and get an audit log of what item was read
+    and when.
+  score: 0
+  posted_at: '2026-11-11T11:27:04Z'
+- id: '50452159'
+  parent_id: '50450515'
+  author: LeBit
+  text: You should reevaluate if you can instead use multiple public keys where you
+    need to connect.<p>It’s a mind shift worth considering.<p>You then can accept
+    that your ssh keys are different per hardware token (because the private key cannot
+    be extracted).<p>No more sharing of private keys in your password manager.
+  score: 0
+  posted_at: '2026-11-11T11:29:18Z'
+- id: '50452221'
+  parent_id: '50449748'
+  author: esskay
+  text: It&#x27;s a shame that the poster doesn&#x27;t mention what they ended up
+    using instead in their update. Presumably a hardware key.
+  score: 0
+  posted_at: '2026-11-11T11:38:15Z'
+- id: '50452249'
+  parent_id: '50451162'
+  author: jeremyjh
+  text: Yes, but most people won&#x27;t. Most people will submit a bug report with
+    important information missing that means we have to go back and forth. Also, there
+    is often specific debugging information that people would not even know would
+    be useful.<p>In the current age, its useful because AI will submit tickets using
+    the CLI that don&#x27;t use the form, so I can immediately close and lock them
+    and go on living my life.
+  score: 0
+  posted_at: '2026-11-11T11:42:14Z'
+- id: '50452453'
+  parent_id: '50450079'
+  author: BaardFigur
+  text: |-
+    I&#x27;m using WireGuard myself. Not on MacOS, but on Windows&#x2F;Linux&#x2F;Android.
+    The reason I went with WireGuard to begin with, is due to how secure it suppsedly was. Having long standing unresolved issues like that is a bit worrying. I&#x27;m still most likely safe, but it&#x27;s not exactly reassuring, either
+  score: 0
+  posted_at: '2026-11-11T12:05:21Z'
+- id: '50452537'
+  parent_id: '50450786'
+  author: LtWorf
+  text: Normally with gpg agent that leaves the key unlocked it is not a problem.
+  score: 0
+  posted_at: '2026-11-11T12:15:05Z'
+- id: '50452541'
+  parent_id: '50449748'
+  author: 9dev
+  text: 'I have applied this at our company using Secretive, and extended to sudo
+    over SSH: The remote end uses an SSH Agent PAM module that forwards sudo requests
+    to the connected SSH Agent, which is Secretive running on the employee Macs, so
+    we get remote sudo with TouchID prompts.<p>No more passwords to enter anywhere,
+    and whatever an (AI) agent or malware is trying to do will require a human interaction
+    at least, and not work when the screen is locked. The public keys authorized for
+    this are distributed to the fleet via puppet, so we get control over who gets
+    to sudo permissions and can easily provision or decommission machines.<p>Pretty
+    stoked about it so far.'
+  score: 0
+  posted_at: '2026-11-11T12:15:41Z'
+- id: '50452548'
+  parent_id: '50450079'
+  author: kalleboo
+  text: This literally just happened to me yesterday. Again.
+  score: 0
+  posted_at: '2026-11-11T12:17:15Z'
+- id: '50452578'
+  parent_id: '50449960'
+  author: tengwar2
+  text: Just to clarify this  - you can have multiple public keys for the same user
+    on the server end, in ~user&#x2F;.ssh&#x2F;authorized_keys. It&#x27;s obvious
+    when you know it, but I think it can be a source of confusion when discussing
+    backup keys.
+  score: 0
+  posted_at: '2026-11-11T12:20:42Z'
+- id: '50452593'
+  parent_id: '50449748'
+  author: tengwar2
+  text: Has anyone managed to extract a fingerprint reader from an Apple Magic Keyboard?
+    I usually run my Macs in clamshell mode.
+  score: 0
+  posted_at: '2026-11-11T12:22:09Z'
+- id: '50452676'
+  parent_id: '50452593'
+  author: FlyingAvatar
+  text: I have seen a few of these done at this point (i.e. hardware extracted from
+    a Magic Keyboard)<p>This is the most recent one I found via Googling, I have not
+    actually used this product:<p><a href="https:&#x2F;&#x2F;standalone-touch-id.square.site&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;standalone-touch-id.square.site&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-11T12:35:04Z'
+- id: '50452745'
+  parent_id: '50449748'
+  author: cluckindan
+  text: Why would you trust the NIST P-256 curve?<p>It is not one of the cryptographically
+    safe curves, likely intentionally so.<p><a href="https:&#x2F;&#x2F;safecurves.cr.yp.to&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;safecurves.cr.yp.to&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-11T12:44:32Z'
+- id: '50452858'
+  parent_id: '50449748'
+  author: jwr
+  text: I decided years ago that I want to protect my keys with a hardware device
+    that is independent of the vendor of the machine that I&#x27;m currently using.
+    I also want to have backup keys and I want to be able to freely move them around
+    various physical locations. Or have a backup shipped to me across the world if
+    necessary.<p>YubiKeys were the only solution that fit these requirements, so I
+    went with those. I have been using them for the last ten years or so and I&#x27;ve
+    been very happy with this solution. See <a href="https:&#x2F;&#x2F;github.com&#x2F;drduh&#x2F;YubiKey-Guide"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;drduh&#x2F;YubiKey-Guide</a>
+    for a description of how to make your RSA keys stored on YubiKeys work with GPG
+    and SSH at the same time.
+  score: 0
+  posted_at: '2026-11-11T12:58:15Z'
+- id: '50452865'
+  parent_id: '50450593'
+  author: _____-___
+  text: I believe 1Password has a sort of MCP server now as well, have you tried that
+    out? I&#x27;m curious how well that works in place of using the CLI like this
+  score: 0
+  posted_at: '2026-11-11T12:58:59Z'
+- id: '50452889'
+  parent_id: '50450945'
+  author: jwr
+  text: "&gt; requires human presence<p>I&#x27;m not using the secure enclave, but
+    I&#x27;ve been using YubiKeys for many years, and now that AI has arrived, I consider
+    the above to be a good thing.<p>This means, for example, that unless I am physically
+    present with my key inserted, activated, and touched on every operation, an AI
+    agent cannot access any of my production servers. As I do not want AI agents to
+    access my production servers, this is a very good protection technique. I am assuming
+    that no matter how well you try to sandbox and restrict your AI agents running
+    on your local machine, they might eventually be able to access any file in the
+    file system."
+  score: 0
+  posted_at: '2026-11-11T13:00:58Z'
+- id: '50452918'
+  parent_id: '50452453'
+  author: megous
+  text: This is likely just that if someone chooses an OS that requires a special
+    HW just to build a release with no easy cross-compilation possible, and to pay
+    a gatekeeper just to publish it, and that can&#x27;t even run on an emulated computer
+    properly, they can&#x27;t expect FOSS maintainers will be bothered with much more
+    than &quot;here&#x27;s a source code, build it&#x2F;test it&#x2F;do QA yourself
+    if you like&quot; for their particular pet platform.<p>For platforms where development
+    is unhindered by arbitrary obstacles like these and others, wireguard works fine.
+    :)
+  score: 0
+  posted_at: '2026-11-11T13:03:25Z'
+- id: '50453021'
+  parent_id: '50452745'
+  author: kccqzy
+  text: I appreciate DJB in trying to aim higher when it comes to security through
+    his SafeCurves project, but ultimately NIST P-256 is good enough. Many of his
+    criticisms are just nitpicks. Especially since Claude has since provided reverse
+    engineered origin of the random seeds in NIST P-256.<p>Saying it is cryptographically
+    unsafe is a wild exaggeration of what he says.
+  score: 0
+  posted_at: '2026-11-11T13:13:49Z'
+- id: '50453140'
+  parent_id: '50452918'
+  author: dboreham
+  text: Best common on HN this week.
+  score: 0
+  posted_at: '2026-11-11T13:26:58Z'
+- id: '50453163'
+  parent_id: '50449973'
+  author: dboreham
+  text: 'You can use CA signed -sk keys to avoid the provisioning hassle. Provision
+    the CA public key only onto hosts. Disclosure: Claude taught me this trick.'
+  score: 0
+  posted_at: '2026-11-11T13:29:18Z'
+article:
+  url: https://gatezh.com/posts/macos-secure-enclave-ssh-keys/
+  title: Protecting SSH Keys with macOS Secure Enclave (Native Approach) | Serge Gatezh
+  fetch_status: success
+  content: |-
+    I’ve been paranoid about my SSH keys for a while now. They just sit there in `~/.ssh/`, protected by nothing but file permissions. Any malicious script that gets access to my filesystem could just copy them and get into all my servers. Also, there have been many stories out there online about fake interview assignments that asked to clone a repo and run it on your local machine. This is one of the reasons I switched completely to using devcontainers, but even that was not really enough for me (and it shouldn’t be enough for you or anybody else really).
+
+    So I finally decided to do something about it.
+
+    ## TL;DR
+
+    I have decided to **NOT** go with the native macOS Secure Enclave approach (using only out-of-the-box tools) because it ended up plain ugly and I can’t live with that. However, it is a fully functional, working solution that I would definitely use otherwise.
+
+    ## The Options
+
+    After some research, I found several ways to protect SSH keys:
+
+    - **Native macOS Secure Enclave** — no third-party apps, built into the OS
+    - **Secretive** — third-party app that stores keys in Secure Enclave
+    - **YubiKey** — hardware security key with FIDO2 support
+    - **1Password / Bitwarden** — store keys in an encrypted vault, use their SSH agent
+
+    I already use 1Password, but I might switch to something else in the future. Bitwarden recently added SSH key support (even on the free tier!), but it’s still a software solution — the keys are encrypted at rest but decrypted in memory when used.
+
+    What I really wanted was hardware-backed security. The private key should literally be impossible to extract, even if my Mac is fully compromised.
+
+    That left me with YubiKey or Secure Enclave. I have a YubiKey 5C, but I wanted to try the native approach first — no extra hardware to carry around, no third-party apps to maintain.
+
+    ## What is Secure Enclave SSH?
+
+    Since macOS Sequoia (and Tahoe), macOS supports SSH keys backed by the Secure Enclave, a security subsystem on the Mac’s chip that is isolated from the main processor. The private key is created inside it and never leaves.
+
+    When you SSH somewhere, your Mac asks the Secure Enclave to sign the authentication challenge. If you enable Touch ID, you have to approve each signing operation. The actual private key never exists in memory or on disk.
+
+    The workflow is surprisingly similar to regular SSH keys:
+
+    | Aspect | Regular SSH Key | Secure Enclave Key |
+    | --- | --- | --- |
+    | Where private key lives | `~/.ssh/id_ed25519` (a file) | Secure Enclave |
+    | What’s on disk | Actual private key | Just a reference (useless without this Mac) |
+    | Setup on remote server | Copy public key to `authorized_keys` | Same |
+    | Connecting | Just works | Touch ID prompt, then works |
+
+    ## Setting It Up
+
+    ### Step 1: Create the Secure Enclave Key
+
+    macOS provides the `sc_auth` command (Smart Card Authentication) to manage CryptoTokenKit identities. Despite the name, it works with Secure Enclave too.
+
+        sc_auth create-ctk-identity -l "ssh-MacBook" -k p-256-ne -t bio
+
+    Breaking this down:
+
+    - `-l "ssh-MacBook"` — a label for your reference (only visible locally)
+    - `-k p-256-ne` — NIST P-256 curve, **n** on- **e** xportable (the key can never leave Secure Enclave)
+    - `-t bio` — require **bio** metric (Touch ID) for every use
+
+    You’ll be prompted for Touch ID to create the key.
+
+    #### Problem 1: Touch ID Error
+
+    When I first ran this command, I got a scary error:
+
+        Error: Error Domain=NSOSStatusErrorDomain Code=-25293 "Failed to generate keypair"
+        (errKCAuthFailed / errSecAuthFailed: / Authorization/Authentication failed.)
+        UserInfo={..., NSUnderlyingError=... "Failed to get bio catacomb UUID for user 502." ...}
+
+    Turns out my Touch ID enrollment got reset somehow. After re-enrolling my fingerprint in **System Settings → Touch ID & Password** , the command worked fine.
+
+    You can verify the key was created:
+
+        sc_auth list-ctk-identities
+
+    Output:
+
+        Key Type Public Key Hash Prot Label Common Name Valid To Valid
+        p-256-ne A71277F0BC5825A7B3576D014F31282A866EF3BC bio ssh-MacBook ssh-MacBook 2027-01-26, 10:18 YES
+
+    ### Step 2: Export the Key Handle
+
+    Now we need to create a “key handle” file that SSH can use. This is NOT the private key — it’s just a reference that tells SSH “go ask the Secure Enclave to sign this.”
+
+        ssh-keygen -w /usr/lib/ssh-keychain.dylib -K -N ""
+
+    When prompted for PIN, just press Enter (it’s not used for biometric keys). Touch ID will pop up. This creates `id_ecdsa_sk_rk` and `id_ecdsa_sk_rk.pub` in your current directory.
+
+    Move them to your SSH directory:
+
+        mv id_ecdsa_sk_rk* ~/.ssh/
+
+    ### Step 3: Configure SSH to Use the Secure Enclave Provider
+
+    Add this to your `~/.zshrc` (or `~/.bashrc`):
+
+        export SSH_SK_PROVIDER=/usr/lib/ssh-keychain.dylib
+
+    Reload your shell:
+
+        source ~/.zshrc
+
+    #### Problem 2: Outdated Commands Everywhere
+
+    If you search for “macOS Secure Enclave SSH” online, you’ll find a lot of guides telling you to run `ssh-add -K`. Don’t. It’s deprecated:
+
+        WARNING: The -K and -A flags are deprecated and have been replaced
+                 by the --apple-use-keychain and --apple-load-keychain
+                 flags, respectively.
+
+    And even the new flags don’t work for Secure Enclave keys — they’re for the traditional macOS Keychain, not CryptoTokenKit. The `SSH_SK_PROVIDER` environment variable is the correct approach.
+
+    ### Step 4: Get Your Public Key
+
+        cat ~/.ssh/id_ecdsa_sk_rk.pub
+
+    Output:
+
+        sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTIt... ssh:
+
+    That `ssh:` at the end is the FIDO2 application ID — it’s part of the key, not a comment. You can add your own comment after it when copying to `authorized_keys`:
+
+        sk-ecdsa-sha2-nistp256@openssh.com AAAAInNrLWVjZHNhLXNoYTIt... ssh: macbook-secure-enclave
+
+    ### Step 5: Copy to Your Server
+
+        ssh-copy-id -i ~/.ssh/id_ecdsa_sk_rk.pub user@your-server
+
+    Or manually paste the public key (with your comment) into `~/.ssh/authorized_keys` on the server.
+
+    ### Step 6: Configure ~/.ssh/config
+
+    #### Problem 3: SSH Doesn’t Find the Key
+
+    After setting everything up, I tried to SSH&mldr; and it asked for my password.
+
+    The verbose output (`ssh -vvv`) showed SSH was only trying my old RSA key:
+
+        debug1: Offering public key: /Users/sergii/.ssh/id_rsa RSA SHA256:...
+
+    The problem: SSH doesn’t automatically look for files named `id_ecdsa_sk_rk`. It only auto-discovers standard names like `id_rsa`, `id_ed25519`, `id_ecdsa`.
+
+    The fix is to explicitly add it to your `~/.ssh/config`:
+
+        Host *
+            IdentityFile ~/.ssh/id_ecdsa_sk_rk
+            IdentityFile ~/.ssh/id_rsa
+            IdentityFile ~/.ssh/id_ed25519
+
+    SSH tries identity files in order, so put the Secure Enclave key first if you want it to be the default.
+
+    ⚠️ **Note:** If you’re using 1Password’s SSH agent (`IdentityAgent`), it might conflict with this setup. I had to comment it out while testing.
+
+    ### Step 7: Test It
+
+        ssh user@your-server
+
+    You should get a Touch ID prompt, then connect.
+
+    ## The Ugly Touch ID Prompt
+
+    ![Touch ID prompt](/cdn-cgi/image/format=auto,width=auto/posts/macos-secure-enclave-ssh-keys/images/Touch%20ID%20prompt.png)
+    _Touch ID prompt_
+
+    One thing I’m not thrilled about: the Touch ID dialog says **“ctccardtoken needs to authenticate to continue”** instead of something friendly like “SSH wants to use your key.”
+
+    This is because the prompt comes from CryptoTokenKit — a low-level framework that Apple hasn’t polished for end-user SSH. If this bothers you, **Secretive** provides a much nicer UI while still using Secure Enclave under the hood.
+
+    ## Why Touch ID for Everything?
+
+    I initially thought about creating two keys — one with Touch ID for “important” servers, one without for convenience (like Git operations).
+
+    But then I realized: without `-t bio`, malware could use my key silently. With `-t bio`, I always know when something is using my SSH key. A few extra taps per day is a small price for that visibility.
+
+    So my recommendation if you’re planning to store your SSH keys this way: just use `-t bio`
+  error:
+  fetched_at: '2026-11-11T13:43:54Z'
+archived_at: '2026-11-11T13:44:08Z'

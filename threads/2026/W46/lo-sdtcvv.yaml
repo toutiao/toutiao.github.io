@@ -5,14 +5,14 @@ post:
   title: I deleted all my SSH keys
   url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
   hn_url: https://lobste.rs/s/sdtcvv
-  score: 23
+  score: 42
   author: pushcx
   posted_at: '2026-11-10T20:49:23Z'
-  fetched_at: '2026-11-11T05:06:12Z'
+  fetched_at: '2026-11-11T13:44:08Z'
   article_url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
   article_fetch_status: success
-  article_fetched_at: '2026-11-11T05:06:15Z'
-  raw_comment_count: 3
+  article_fetched_at: '2026-11-11T13:44:10Z'
+  raw_comment_count: 16
   tags:
   - hardware
   - security
@@ -22,7 +22,7 @@ comments:
   author: benoliver999
   text: I do a sort of discount version of this, putting them in KeepassXC. It's portable,
     and can be easily 'locked'.
-  score: 1
+  score: 8
   posted_at: '2026-11-10T21:18:50Z'
 - id: lo-ivpfpf
   parent_id: '0'
@@ -30,7 +30,7 @@ comments:
   text: |-
     +1
     almost every single popular password manager can act as an ssh agent nowadays (I'm certain bitwarden and 1password can). I did give a shot to similar setup mentioned in the article, but pushing code was tiresome. Unlocking password manager with physical key and then using keys provided by the agent feels like a good middleground - still secure (enough for me) and a bit less annoying
-  score: 1
+  score: 5
   posted_at: '2026-11-10T22:14:22Z'
 - id: lo-nesxju
   parent_id: '0'
@@ -38,8 +38,129 @@ comments:
   text: Hmm, I don't let my ssh private keys leave the machine which is sort of the
     "enough for me".  I've used hardware keys in the past, I find it incredibly annoying
     to carry them around with me.
-  score: 2
+  score: 6
   posted_at: '2026-11-11T04:19:01Z'
+- id: lo-styrdq
+  parent_id: '0'
+  author: carlomonte
+  text: 'A in CIA: availability. you own the contents of a backup; you don''t own
+    the contents of a yubikey or of the TPM. then, C in CIA: a strong password for
+    the private key plus everything OpenBSD does is not that bad vs. using the local
+    TPM.'
+  score: 1
+  posted_at: '2026-11-11T06:24:47Z'
+- id: lo-vpmib7
+  parent_id: '0'
+  author: juri
+  text: Also the UI of 1Password popping up a window and telling me who wants my key
+    is so much nicer than a YubiKey weakly flashing in the corner of my eye because
+    I guess an agent wants the key? Or maybe my Git client? Or perhaps Xcode?
+  score: 7
+  posted_at: '2026-11-11T07:05:04Z'
+- id: lo-o1wmse
+  parent_id: '0'
+  author: vbernat
+  text: 'Using the TPM looks a nice middle ground, but then you need to be push several
+    keys to your servers: one per TPM, one for the backup Yubikey, one for the backup
+    of the backup Yubikey? How long does a Yubikey last?'
+  score: 1
+  posted_at: '2026-11-11T07:58:59Z'
+- id: lo-syawgh
+  parent_id: '0'
+  author: varesa
+  text: |-
+    I wanted to use ed25519-sk keys, but found out that a lot of LTS distros I work with have too old OpenSSH versions to understand them. Additionally most network appliances with custom CLIs don't pass validation if the key type isn't ed25519 even if the underlying OpenSSH version was new enough. Cloud instance provisioning is another place where those are not accepted. I feel like we've barely reached a place where ed25519 keys are accepted in most places in place of RSA keys, but still not everywhere.
+    I had long discarded the possibility of using PIV applets (also present on Yubikeys for instance) since most of the examples I could find used certificate auth. There are even less places that would accept an SSH CA certificate if it's not a plain linux server that I directly manage. Recently I found out that it's possible to use the PIV applets to just store and use a private key!
+    So I can also generate an ed25519 private key directly on the yubikey into one of the few key slots, and then use that like any key I would have generated with ssh-keygen -t ed25519. Fully accepted by vendor appliances etc. while only my client knows the difference.
+    Of course RSA keys are also possible this way, and probably even easier to work with, since it was surprisingly difficult to find a tool to convert the ed25519 public key (--- BEGIN PUBLIC KEY --- or the like) into the familiar format you can stuff into authorized_keys. For RSA keys support was included in the ssh utilities, while for Ed25519 I ended up using some nodejs project after a quick review (because who doesn't like to set authorized_keys to the output of a random project from npm)
+  score: 1
+  posted_at: '2026-11-11T08:19:54Z'
+- id: lo-jiv610
+  parent_id: '0'
+  author: oliverpool
+  text: 'Stateless TPM is apparently possible : https://github.com/cmdscale/tssh'
+  score: 1
+  posted_at: '2026-11-11T09:43:25Z'
+- id: lo-f6wjua
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    When your KeepassXC vault unlocks, the keys are resident in memory. It's not so different to ordinary ssh-agent with encrypted key files.
+    This post is specifically about hardware-resident keys.
+  score: 1
+  posted_at: '2026-11-11T10:48:13Z'
+- id: lo-xz1ynf
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    I had long discarded the possibility of using PIV applets (also present on Yubikeys for instance) since most of the examples I could find used certificate auth.
+
+    https://jamesez.io/c/2024/02/setting-up-yubikey-ecdsa-ssh-keys/ is a guide on using Yubikey PIV with SSH, without a CA.
+    I agree that the docs are confusing in this space though.
+  score: 1
+  posted_at: '2026-11-11T10:58:36Z'
+- id: lo-eselk1
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    +1 to hardware-backed keys.
+    I like the peace of mind of knowing that each entry in my authorized_keys corresponds to a physical device, rather than worry about keys having been leaked/copied/shared.
+    My LLM agents have some SSH access. To prevent them from being able to accidentally leak the key, it has its own ssh-tpm-agent, with its own TPM-backed key.
+  score: 1
+  posted_at: '2026-11-11T11:15:26Z'
+- id: lo-dmknts
+  parent_id: '0'
+  author: patryk
+  text: we've got different threat model then - I'm working under the assumption my
+    PC is more likely to be hacked than private keys exposed by password manager's
+    hack
+  score: 3
+  posted_at: '2026-11-11T11:18:13Z'
+- id: lo-um91hv
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    I've used hardware keys in the past, I find it incredibly annoying to carry them around with me.
+
+    Just FTR, many hardware keys don't need to be carried around. The post covers TPM and Apple Secure Enclave, which are part of the device. Some Yubikeys are small enough to ~entirely fit into USB slots, allowing them to remain in at all times, though they are expensive, and it sucks to lose a USB port.
+  score: 1
+  posted_at: '2026-11-11T11:33:57Z'
+- id: lo-o5wrvq
+  parent_id: '0'
+  author: tuxes
+  text: |-
+    one for the backup Yubikey, one for the backup of the backup Yubikey
+
+    Using hardware-backed keys needn't be all-or-nothing.
+    If someone uses the TPM for SSH on one/many of their machines, and chooses to keep a backup of an encrypted SSH keyfile, which they rarely/never use, then they benefit from all that reduced exposure of keys to memory.
+    To clarify the risk, if/when you run code that surreptitiously hijacks your ssh-agent, how large is the blast radius?
+    Do they get root on all machines your key is trusted on, immediately?
+  score: 1
+  posted_at: '2026-11-11T11:45:01Z'
+- id: lo-gm6yyf
+  parent_id: '0'
+  author: xx
+  text: |-
+    ... since it was surprisingly difficult to find a tool to convert the ed25519 public key (--- BEGIN PUBLIC KEY --- or the like) into the familiar format you can stuff into authorized_keys.
+
+    I've actually had the same issue in the past, and I made this bash one-liner which generates the authorized_keys line from the PEM using just openssl:
+    {
+      printf '\000\000\000\013ssh-ed25519\000\000\000\040'
+      openssl pkey -pubin -in id_ed25519-whatever.pem -outform DER | tail -c 32
+    } | base64 -w0 | sed 's/^/ssh-ed25519 /'; echo
+
+    Of course these days I just stuff it into my ssh agent instead and just do ssh-add -L.
+  score: 1
+  posted_at: '2026-11-11T11:56:57Z'
+- id: lo-hyiskm
+  parent_id: '0'
+  author: Sharparam
+  text: |-
+    How long does a Yubikey last?
+
+    My first YubiKey (NFC USB-A variant) purchased in early 2020 is still going strong, so almost 7 years now and counting.
+  score: 1
+  posted_at: '2026-11-11T12:27:24Z'
 article:
   url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
   title: I deleted all my SSH keys
@@ -143,4 +264,4 @@ article:
     etc, so changes of hardware/firmware/OS w"
   error:
   fetched_at: '2026-11-11T05:06:15Z'
-archived_at: '2026-11-11T05:06:16Z'
+archived_at: '2026-11-11T13:44:11Z'
