@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-plreds
+  source: lobsters
+  title: Memory Safety Bugs in Rust Standard Library
+  url: https://forge-blog.github.io/posts/rust-std-memory-safety/
+  hn_url: https://lobste.rs/s/plreds
+  score: 12
+  author: expurple
+  posted_at: '2026-11-10T19:44:50Z'
+  fetched_at: '2026-11-11T05:06:12Z'
+  article_url: https://forge-blog.github.io/posts/rust-std-memory-safety/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-11T05:06:18Z'
+  raw_comment_count: 1
+  tags:
+  - rust
+comments:
+- id: lo-fflxb7
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Given how effective I've been at avoiding big sources of it like A.I. writing and pre-LLM LinkedIn, I think this is the first time I've run into a technically-focused document that I wanted to ask an A.I. to summarize for me.
+    Scroll, scroll... "At Microsoft FORGE Lab, we ..." scroll, scroll... I spent far too much time sifting the "What bugs did they identify?" wheat from the irrelevant or "The reader doesn't even know what a computer is" chaff.
+    TL;DR: If you want to skip to the interesting bits without a long introduction to who Microsoft's AI research lab is, what Rust is, how much Microsoft likes Rust, the concept of unsafe, etc., Ctrl+F for # to get to the headers that cite the issues they opened as a result.
+  score: 3
+  posted_at: '2026-11-10T23:00:53Z'
+article:
+  url: https://forge-blog.github.io/posts/rust-std-memory-safety/
+  title: Memory Safety Bugs in Rust Standard Library · FORGE Lab
+  fetch_status: success
+  content: "Microsoft’s FORGE Lab found several memory safety issues in Rust’s standard
+    library (`std` and `core`), including cases where code written entirely in safe
+    Rust can trigger undefined behavior. The research used Hyenas, FORGE’s frontier
+    research version of codename MDASH, an AI-powered vulnerability-scanning system.
+    The findings reveal three recurring patterns of misplaced trust in unsafe code:
+    trusting code not to panic, trusting user-provided implementations to be correct,
+    and trusting the underlying system.\n\nRust’s safety guarantees are precisely
+    what make these findings interesting. Its rich type system and ownership model
+    rule out whole classes of memory-safety issues, but much of the standard library
+    relies on unsafe code underneath its safe APIs. When that code breaks its safety
+    contract, even safe Rust can encounter behavior the language is designed to prevent.\n\nRust’s
+    memory-safety guarantees are increasingly important as the language becomes part
+    of software that billions of people rely on every day. Billions of people are
+    estimated to interact with Rust-based software or operating systems daily, often
+    without knowing it. Microsoft made Rust a[Tier-1 internal language](https://rustfoundation.org/media/guest-post-rust-is-tier-1-language-at-microsoft/)alongside
+    C++, C#, and TypeScript, GitHub[rewrote the Copilot agent runtime in Rust](https://github.blog/ai-and-ml/generative-ai/migrating-the-github-copilot-runtime-to-rust-using-copilot/),
+    and [Bun](https://bun.com/blog/bun-in-rust),[Android](https://blog.google/security/rust-in-android-move-fast-fix-things/),
+    the [Linux kernel](https://lwn.net/Articles/1050174/), and[Cloudflare](https://blog.cloudflare.com/20-percent-internet-upgrade/)
+    are moving code to it as well. Much of this software relies on Rust’s foundational
+    libraries, `core` and `std`, and the safety guarantees of the APIs they provide.
+    Bugs in those libraries can have consequences well beyond the code where they
+    originate.\n\nUnsafe Rust has been a long-running interest for us. Our team includes
+    the people behind [Rudra](https://dl.acm.org/doi/10.1145/3477132.3483570), a static
+    analyzer that looked for memory-safety bugs across the Rust ecosystem in 2021.
+    We also write many of our own tools in Rust, so its safety is more than a research
+    topic for us. This year, we took a closer look at the standard library to see
+    what kinds of mistakes still show up in its unsafe code today.\n\nIn this post,
+    we share some of the bugs we reported to the Rust issue tracker. We use them to
+    discuss what Rust does and doesn’t guarantee, why writing correct unsafe Rust
+    is so difficult, and why Rust’s safety model still matters even though its memory
+    safety isn’t perfect.\n\n## How we found and validated the bugs\n\nAt [Microsoft
+    FORGE Lab](https://www.microsoft.com/en-us/security/blog/2026/10/07/3-lessons-from-frontier-ai-vulnerability-research/),
+    we study vulnerabilities in complex software, including the Rust standard library.
+    Our team combines years of experience in vulnerability research with AI-assisted
+    tools that help us investigate code and find bugs that are difficult to uncover
+    through traditional analysis alone.\n\nSome of the bugs in this post were found
+    with help from Hyenas, our research version of [codename MDASH](https://www.microsoft.com/en-us/security/blog/2026/05/12/defense-at-ai-speed-microsofts-new-multi-model-agentic-security-system-tops-leading-industry-benchmark/).
+    Our researchers investigated the underlying code, reproduced the bugs, assessed
+    their potential security impact, and worked with Rust maintainers to report and
+    fix them.\n\nThis post focuses on soundness bugs in the standard library’s unsafe
+    code. Bugs in the compiler itself, such as miscompilations and holes in the type
+    system, are a different topic that we don’t cover here.\n\n## Patterns of Rust’s
+    Safety Bugs\n\nAt the lowest level, Rust uses[`unsafe` blocks](https://doc.rust-lang.org/book/ch20-01-unsafe-rust.html)
+    to work with raw pointers and interact directly with the operating system. Much
+    of the standard library, including `Vec` and `String`, is built from small unsafe
+    pieces wrapped in safe APIs. Inside an `unsafe` block, the programmer takes responsibility
+    for the guarantees the compiler can’t check, and that responsibility extends to
+    the safe API built around it. That API must be[sound](https://doc.rust-lang.org/nomicon/safe-unsafe-meaning.html):
+    no matter how safe code uses it, it must be impossible to trigger undefined behavior.\n\nUpholding
+    that promise is harder than it looks. Consider a function that returns the byte
+    at `idx` from any type that can be viewed as a byte slice, skipping the redundant
+    bounds check after doing its own:\n\n    pub fn get<S: AsRef<[u8]>>(s: &S, idx:
+    usize) -> Option<u8> {\n        if idx < s.as_ref().len() {\n            // SAFETY:
+    we just checked that `idx` is in bounds.\n            Some(unsafe { *s.as_ref().get_unchecked(idx)
+    })\n        } else {\n            None\n        }\n    }\n\nThe hard part of unsafe
+    Rust is knowing what you can trust. The function above looks correct, but it assumes
+    that two calls to `as_ref` return the same slice. Because `S` is chosen by the
+    caller, a safe `AsRef`implementation can return a long slice the first time and
+    an empty one the second, and `get` reads out of bounds. Unsafe code must be careful
+    with every call it makes, and the bugs we found fall into three patterns of misplaced
+    trust: trusting code not to panic, trusting user-provided implementations to be
+    correct, and trusting the underlying system.\n\n### Pattern 1: Trusting code not
+    to panic\n\nUnsafe code often breaks an invariant for a moment and restores it
+    afterward; for example, it may allocate an uninitialized buffer and fill it directly,
+    avoiding redundant writes to zero the memory first. That’s fine as long as the
+    function runs to the end. But many operations in Rust can panic, from out-of-bounds
+    indexing to calls into user-provided code, and by default a panic unwinds: it
+    leaves the function early while still running destructors. Unwinding inside that
+    window becomes an invisible exit that exposes the broken invariant to code that
+    trusts it. Bugs of this kind are called panic safety bugs.\n\n![Flow diagram:
+    a function breaks an invariant, calls code that may panic, and restores the invariant
+    before returning. If the call panics, unwinding skips the restore step and runs
+    a destructor on the broken state, causing undefined behavior.](panic-safety.svg)\n\n####
+    `MapWindows::clone` (#156501)\n\nWe identified[a panic safety issue in `MapWindows::clone`](https://github.com/rust-lang/rust/issues/156501).[`Iterator::map_windows`](https://doc.rust-lang.org/nightly/std/iter/trait.Iterator.html#method.map_windows),
+    a nightly API, yields overlapping windows of `N` items. It keeps the current window
+    in a `Buffer` whose destructor drops the `N` items starting at `start`. In Rust
+    1.97.0,[`library/core/src/iter/adapters/map_windows.rs`](https://github.com/rust-lang/rust/blob/1.97.0/library/core/src/iter/adapters/map_windows.rs#L37-L43)defines
+    it as:\n\n    37struct Buffer<T, const N: usize> {\n    38 // Invariant: `self.buffer[self.start..self.start
+    + N]` is initialized,\n    39 // with all other elements being uninitialized.
+    This also\n    40 // implies that `self.start <= N`.\n    41 buffer: [[MaybeUninit<T>;
+    N]; 2],\n    42 start: usize,\n    43}\n\n[`Buffer::clone`](https://github.com/rust-lang/rust/blob/1.97.0/library/core/src/iter/adapters/map_windows.rs#L195-L203),
+    in the same file, built the new buffer first and filled it afterward:\n\n    195impl<T:
+    Clone, const N: usize> Clone for Buffer<T, N> {\n    196 fn clone(&self) -> Self
+    {\n    197 let mut buffer = Buffer {\n    198 buffer: [[const { MaybeUninit::uninit()
+    }; N], [const { MaybeUninit::uninit() }; N]],\n    199 start: self.start,\n    200
+    };\n    201 buffer.as_uninit_array_mut().write(self.as_array_ref().clone());\n
+    \   202 buffer\n    203 }\n    204}\n\nAfter line 197, `buffer` breaks its own
+    invariant: its slots are uninitialized, but its "
+  error:
+  fetched_at: '2026-11-11T05:06:18Z'
+archived_at: '2026-11-11T05:06:18Z'

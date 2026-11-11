@@ -1,0 +1,120 @@
+---
+post:
+  id: lo-idktfu
+  source: lobsters
+  title: Go Turns 17
+  url: https://go.dev/blog/17years
+  hn_url: https://lobste.rs/s/idktfu
+  score: 12
+  author: cgrinds
+  posted_at: '2026-11-10T22:47:26Z'
+  fetched_at: '2026-11-11T05:06:12Z'
+  article_url: https://go.dev/blog/17years
+  article_fetch_status: success
+  article_fetched_at: '2026-11-11T05:06:17Z'
+  raw_comment_count: 0
+  tags:
+  - go
+comments: []
+article:
+  url: https://go.dev/blog/17years
+  title: Go Turns 17 - The Go Programming Language
+  fetch_status: success
+  content: "# [The Go Blog](/blog/)\n\n# Go Turns 17\n\nAustin Clements, for the Go
+    team  \n 10 November 2026\n\n ![The Go gopher popping out of a 17th birthday cake](17years/go17.png)\n\nToday,
+    November 10th, we celebrate the 17th anniversary of Go’s [open source release](https://opensource.googleblog.com/2009/11/hey-ho-lets-go.html)!\n\nOver
+    the past year, we released [Go 1.26 in February](/blog/go1.26) and [Go 1.27 in
+    August](/blog/go1.27), alongside a steady stream of releases across our[`golang.org/x`](https://pkg.go.dev/golang.org/x)
+    libraries and developer tools. Meanwhile, the pace of change across the software
+    industry continues to accelerate, driven by shifting hardware, evolving security
+    threats, and the rapid rise of AI-assisted development and agentic systems.\n\nIn
+    a tumultuous time for the industry, Go aims to be a steady hand on the tiller.
+    Our goal is to keep Go grounded in its foundational principles of simplicity,
+    reliability, efficiency, and an unwavering commitment to[compatibility](/doc/go1compat),
+    while adapting to modern hardware, production workloads, and developer workflows.
+    Increasingly, our investments serve a _dual purpose_: what helps human engineers
+    write, understand, and maintain reliable Go code at scale also provides the guardrails
+    and authoritative context that AI coding assistants and agents need to be effective.\n\n##
+    Core language and library improvements\n\nIn the language itself, Go 1.26 and
+    1.27 addressed several long-standing restrictions in generics and everyday Go
+    syntax, guided by years of real-world experience. When generics first landed in
+    Go 1.18, methods could not declare their own type parameters, which sometimes
+    forced awkward package-level functions and “inside-out” nested calls. Go 1.27
+    introduced [generic methods](/blog/generic-methods) on non-interface types (such
+    as the new[`Rand.N`](/pkg/math/rand/v2#Rand.N) method in `math/rand/v2`), allowing
+    APIs to stay naturally organized on types and enabling readable method chaining.
+    Together with support for self-referential type constraints in Go 1.26 and broader
+    type inference for generic function values in Go 1.27, generics in Go feel more
+    complete and natural than ever.\n\nAlongside generics, two refinements to value
+    construction make everyday Go code cleaner and more concise. Go 1.26 extended
+    the built-in `new` function to[accept an initial value expression](/doc/go1.26#language),
+    allowing `new(42)`or `new(\"go1.26\")` without the ubiquitous `newInt`-style helper
+    functions used to populate optional pointer fields in JSON and protocol buffer
+    structs. And in Go 1.27, struct literal keys can [refer directly to fields of
+    embedded or nested structs](/doc/go1.27#language), reducing boilerplate in composite
+    literals.\n\nIn the standard library, our focus has been on evolving Go’s “production
+    stack” and eliminating subtle operational traps. Few packages are as central to
+    that as`encoding/json`, which has been a mainstay of Go since before Go 1.0. While
+    its core model has held up remarkably well for over 15 years, tighter JSON standards
+    and security expectations have turned some of its original defaults into interoperability
+    and security hazards, such as silently accepting invalid UTF-8 or duplicate object
+    keys and matching struct fields case-insensitively. At the same time, its buffered
+    design prevented true streaming and limited performance. Addressing these issues
+    while upholding Go’s compatibility promise for the millions of existing programs
+    that depend on `encoding/json` meant designing a new major version of the package.\n\nSix
+    years in the making, the new [`encoding/json/v2`](/pkg/encoding/json/v2) and[`encoding/json/jsontext`](/pkg/encoding/json/jsontext)
+    packages reached general availability in Go 1.27. Driven by Joe Tsai, Daniel Martí,
+    and contributors from across the Go community, this [modern JSON API](/blog/jsonv2)
+    brings safer, stricter defaults, flexible caller- and type-specified customization,
+    and up to 10× faster unmarshaling, while cleanly separating high-level semantic
+    marshaling (`json/v2`) from low-level, reflection-free syntactic streaming (`jsontext`).
+    Crucially, we didn’t leave existing code behind: the original[`encoding/json`](/pkg/encoding/json)
+    package is now implemented entirely in terms of `v2` under the hood. Existing
+    `v1` callers get faster unmarshaling simply by upgrading, and packages using `v1`
+    and `v2` interoperate seamlessly so that the ecosystem can migrate gradually without
+    flag days.\n\nWe’ve also brought new production diagnostics to Go’s concurrency
+    primitives. Concurrency is one of Go’s greatest strengths, but goroutines accidentally
+    left blocked on abandoned channels or locks can silently leak memory and CPU in
+    long-running services, and traditional goroutine profiles cannot distinguish leaked
+    goroutines from ones legitimately waiting for work. First previewed in Go 1.26
+    and now generally available in Go 1.27, the new [goroutine leak profiler](/blog/goroutine-leak-profiles)
+    (`goroutineleak` in `runtime/pprof` and`/debug/pprof/goroutineleak` in `net/http/pprof`)
+    solves this for production services. Contributed by Vlad Saioc and Uber’s Programming
+    Systems team, building on academic research with Aarhus University and Washington
+    University in St. Louis, the profiler repurposes the garbage collector’s reachability
+    phase to identify goroutines blocked on concurrency primitives that no runnable
+    goroutine can ever reach. That allows it to pinpoint leaks in production with
+    near-zero false positives and zero overhead when not in use.\n\nIn `net/http`,
+    closing an HTTP/1 response body with even a single unread byte—such as a trailing
+    newline left behind by a JSON decoder—previously forced the client to tear down
+    the underlying TCP and TLS connection. Go 1.27’s HTTP transport now [automatically
+    drains small unread response bodies in the background](/blog/http-connection-reuse)
+    on close, turning a widespread latency footgun into up to a 5× speedup for sequential
+    HTTP/1 requests while letting application code stay clean and simple.\n\nThese
+    releases also added several notable standard library APIs, including a native
+    [`uuid`](/pkg/uuid) package, a generic and type-safe[`errors.AsType`](/pkg/errors#AsType),
+    and an in-memory[`httptest.NewTestServer`](/pkg/net/http/httptest#NewTestServer)
+    designed for virtual-time testing with [`testing/synctest`](/pkg/testing/synctest).
+    Existing packages saw significant speedups as well: [`io.ReadAll`](/pkg/io#ReadAll)
+    now runs twice as fast while allocating half as much memory,[`compress/flate`](/pkg/compress/flate)
+    compresses faster (speeding up `gzip`,`zip`, `zlib`, and `png`), and [`image/jpeg`](/pkg/image/jpeg)
+    has a faster, more accurate encoder and decoder.\n\n## Making the most of modern
+    hardware\n\nModern CPUs look very different from the hardware Go first launched
+    on 17 years ago, with wide vector units and deep, non-uniform memory hierarchies.
+    A major focus of our runtime and compiler work is ensuring Go programs make full
+    use of modern silicon, both transparently when you upgrade your toolchain and
+    through new APIs when you need explicit control.\n\nAfter debuting as an experiment
+    in Go 1.25, the [Green Tea garbage collector](/blog/greenteagc) became the default
+    in Go 1.26. By organizing object marking around contiguous memory spans rather
+    than chasing pointers across the heap, Green Tea aligns with modern CPU memory
+    architectures to reduce garbage collection overhead by 10–40% in real-world workloads—and
+    by an additional ~10% on recent `amd64` processors using AVX-512 vector instructions
+    during scanning.\n\nOf course, the runtime shouldn’t be the only part of a Go
+    program that can tap into vector hardware. Without access to Single Instruction,
+    Multiple Data (SIMD) capabilities, compute-intensive software, from cryptography
+    and media processing to data analytics and AI, leaves a significant portion of
+    modern silicon dark. Until recently, the only way to light up that hardware in
+    Go was by writing and maintaining per-architecture as"
+  error:
+  fetched_at: '2026-11-11T05:06:17Z'
+archived_at: '2026-11-11T05:06:18Z'

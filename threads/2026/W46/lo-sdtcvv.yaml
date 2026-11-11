@@ -1,0 +1,146 @@
+---
+post:
+  id: lo-sdtcvv
+  source: lobsters
+  title: I deleted all my SSH keys
+  url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
+  hn_url: https://lobste.rs/s/sdtcvv
+  score: 23
+  author: pushcx
+  posted_at: '2026-11-10T20:49:23Z'
+  fetched_at: '2026-11-11T05:06:12Z'
+  article_url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-11T05:06:15Z'
+  raw_comment_count: 3
+  tags:
+  - hardware
+  - security
+comments:
+- id: lo-hx2mzn
+  parent_id: '0'
+  author: benoliver999
+  text: I do a sort of discount version of this, putting them in KeepassXC. It's portable,
+    and can be easily 'locked'.
+  score: 1
+  posted_at: '2026-11-10T21:18:50Z'
+- id: lo-ivpfpf
+  parent_id: '0'
+  author: patryk
+  text: |-
+    +1
+    almost every single popular password manager can act as an ssh agent nowadays (I'm certain bitwarden and 1password can). I did give a shot to similar setup mentioned in the article, but pushing code was tiresome. Unlocking password manager with physical key and then using keys provided by the agent feels like a good middleground - still secure (enough for me) and a bit less annoying
+  score: 1
+  posted_at: '2026-11-10T22:14:22Z'
+- id: lo-nesxju
+  parent_id: '0'
+  author: erock
+  text: Hmm, I don't let my ssh private keys leave the machine which is sort of the
+    "enough for me".  I've used hardware keys in the past, I find it incredibly annoying
+    to carry them around with me.
+  score: 2
+  posted_at: '2026-11-11T04:19:01Z'
+article:
+  url: https://blog.infected.systems/posts/2026-11-03-i-deleted-all-my-ssh-keys/
+  title: I deleted all my SSH keys
+  fetch_status: success
+  content: "# I deleted all my SSH keys\n[security](/tags/security)\n\nI’ve been using
+    `ed25519-sk` keys with YubiKeys since practically the moment they were available.
+    But because of some specific use-cases (and because, frankly, YubiKeys are expensive)
+    I’ve had a few traditional on-disk keys hanging around for a while just waiting
+    for me to finally decide to get rid of them.\n\nThis post documents how I’m using
+    various secure enclaves (YubiKey, TPM, Apple Secure Enclave) to hold/encrypt SSH
+    key material and achieve the goal of not having any unprotected key material living
+    on-disk.\n\n## First – Isn’t using a passphrase enough?\n\nProbably. I don’t intend
+    to imply that this post is the _only_ way that anyone should be doing SSH keys.
+    Using a passphrase will encrypt the key with bcrypt & AES which keeps it protected
+    even if the on-disk keyfile leaks somehow.\n\nAnd with a functioning ssh-agent,
+    the passphrase should only need to be entered once per session, with the decrypted
+    key material being held in RAM after that point.\n\nSo yes, the ’traditional’
+    method is probably fine for most threat models. But I’m still keen to move to
+    hardware-backed keys anyway, mostly for the satisfaction.\n\n## About hardware-resident
+    keys\n\nWhen I say ‘hardware-resident’ keys, I mean keys that use a secure enclave
+    or purpose-built hardware like [YubiKeys](https://www.yubico.com/) to store or
+    protect the key material.\n\nThe theoretical benefit here is that the hardware
+    used to _generate_ the SSH key is needed in order to _use_ the key. There’s no
+    mechanism that allows leaking or exfiltrating keys that generated using this method.
+    Any material that _does_ exist on-disk is useless without the hardware.\n\n##
+    Goals\n\nSo I want to:\n\n- Switch to using hardware-resident keys entirely\n-
+    Do so as natively as possible, avoiding additional software where I can\n- Test
+    these in various real-world scenarios, such as running within an LXC or noninteractively
+    mounting an SSHFS server\n\n## Hardware\n\nI’m going to try three different hardware
+    methods for achieving this, which I think will cover all of my needs:\n\n- Method
+    1: YubiKey\n- Method 2: TPM\n- Method 3: Apple Secure Enclave\n\n## Method 1:
+    YubiKey\n\nWith a YubiKey (5 and newer), SSH keys can be directly enrolled into
+    the device using `ed25519-sk` (where the `-sk` stands for “Security Key”). This
+    doesn’t require any additional software beyond OpenSSH itself.\n\nTo store a new
+    SSH key on a YubiKey, insert it and run:\n\n    ssh-keygen -t ed25519-sk -O resident
+    -O application=\"ssh:yournamehere\" -f ~/.ssh/id_ed25519-sk\n\nThe `application`
+    tag set in the command is arbitrary and can be set to whatever memorable string
+    you prefer to differentiate between multiple SSH keys if you want to create multiple
+    keys on the same YubiKey.\n\nIf you have `ykman` installed, you can now inspect
+    the list of credentials enrolled in the device:\n\n    $ ykman fido credentials
+    list\n    Enter your PIN: \n    Credential ID RP ID Username Display name\n    0f41fb61...
+    ssh:yournamehere openssh openssh\n\nIf `ykman` complains that you haven’t set
+    a FIDO PIN on the YubiKey yet, you can do this with `ykman fido access change-pin`.\n\nNote
+    that you don’t actually need `ykman` to enrol or use SSH keys with a YubiKey but
+    it does make managing the device more convenient.\n\nOnce the key has been created,
+    you can retrieve the public key from disk:\n\n    $ cat ~/.ssh/id_ed25519-sk.pub
+    \n    sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIA9B+2GGCkQvBzpa4WobQhfC9YU5Su3pKXBmVLSXEqfRAAAAEHNzaDp5b3VybmFtZWhlcmU=
+    alice@hostname\n\nThis key can be used like any other SSH public key – added to
+    `authorized_keys` on a host, copied with `ssh-copy-id`, or pasted into services
+    that depend on SSH like Git forges.\n\nYou will also find a `~/.ssh/id_ed25519-sk`
+    file on disk (without the `.pub` extension). Note that although this _looks_ like
+    a private key, it doesn’t actually contain the key material. This is just a handle
+    to find the relevant key on the hardware device.\n\nTo configure the key for authentication,
+    it can be enrolled with `ssh-add` like a regular key, or specified directly in
+    `~/.ssh/config`:\n\n    Host blog.infected.systems\n        IdentityFile ~/.ssh/id_ed25519-sk\n\nFrom
+    here, you can now SSH into the destination host as with a regular key. SSH will
+    ask you to tap the YubiKey to confirm presence when the SSH command runs.\n\n###
+    Unattended YubiKey usage\n\nWhen using an `ed25519-sk` key created with the default
+    settings as above, you will be asked to confirm your presence whenever the key
+    is used by physically touching the YubiKey.\n\nIt’s probably a good idea to keep
+    this default, but if you have a specific use-case that requires unattended key
+    usage, you can generate a `no-touch-required` key as follows:\n\n    ssh-keygen
+    -t ed25519-sk -O resident -O no-touch-required -O application=\"ssh:nameyourkey\"
+    -f ~/.ssh/id_ed25519-sk\n\nWhen using a `no-touch-required` key, although it isn’t
+    possible for a malicious actor to exfiltrate the key even with root access to
+    the host the YubiKey is plugged into, a malicious actor with access could use
+    the key without requiring any presence detection or human interaction. So do make
+    sure this is actually suitable for your risk appetite before doing it.\n\nTo use
+    a `no-touch-required` key for unattended authentication to remote servers, you
+    need to prepend the entry in the `authorized_keys` file on the destination host
+    with `no-touch-required`, otherwise OpenSSH’s default security settings will reject
+    the key.\n\nFor example:\n\n    $ cat ~/.ssh/authorized_keys \n    no-touch-required
+    sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIA9B+2GGCkQvBzpa4WobQhfC9YU5Su3pKXBmVLSXEqfRAAAAEHNzaDp5b3VybmFtZWhlcmU=
+    alice@hostname\n\n## Method 2: TPM\n\nYubiKeys are nice, though fairly expensive.
+    It would be useful if we could use the TPM we already have on our host to protect
+    key material instead. Well, it turns out we can!\n\nUnfortunately this does require
+    additional software, but it’s a fairly minimal Golang package – [ssh-tpm-agent](https://github.com/Foxboron/ssh-tpm-agent).
+    It can be installed with Go directly from GitHub, but is natively packaged by
+    Ubuntu and [I’m working on packaging it for Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=2565411).\n\nTo
+    create a TPM-backed SSH key with a PIN, run:\n\n    ssh-tpm-keygen -N \"your-pin\"\n\nThe
+    process will ask you where to store the key. From here, once again we have a keypair
+    with a `.pub` file that we can use in `authorized_keys` or copy however we wish.\n\nTo
+    use the TPM-backed key we need to use the TPM-aware SSH agent provided by the
+    `ssh-tpm-agent` package. If you installed the native Golang package rather than
+    something vendored by your distribution, you can enable the systemd socket unit
+    for the agent as follows:\n\n    ssh-tpm-agent --install-user-units && systemctl
+    --user enable --now ssh-tpm-agent.socket\n\nTo ensure the socket for the agent
+    can be discovered by SSH processes run within your shell session, add the following
+    to your `.bashrc` or the equivalent for your shell:\n\n    export SSH_AUTH_SOCK=\"$(ssh-tpm-agent
+    --print-socket)\"\n\nAgain, we can now use this key to authenticate to servers
+    as if it were any other traditional on-disk key.\n\n### Unattended TPM usage\n\nIf
+    you want this key to be available unattended, or to services that don’t use a
+    full shell such as [systemd mount units](/posts/2025-10-14-the-five-megabyte-nas/),
+    you can create a new key without a PIN (pass `-N \"\"` to the `ssh-tpm-keygen`
+    command) and specify the socket path in `~/.ssh/config` instead of relying on
+    `SSH_AUTH_SOCK` (although this relies on the socket address being predictable
+    – i.e. your UID being stable):\n\n    Host blog.infected.systems\n        IdentityAgent
+    /run/user/1000/ssh-tpm-agent.sock\n        IdentityFile ~/.ssh/id_ecdsa\n\nNote
+    that `ssh-tpm-agent` does not account for the values in the TPM Platform Configuration
+    Registers (PCRs) which record the state of the booted system – firmware versions
+    etc, so changes of hardware/firmware/OS w"
+  error:
+  fetched_at: '2026-11-11T05:06:15Z'
+archived_at: '2026-11-11T05:06:16Z'
