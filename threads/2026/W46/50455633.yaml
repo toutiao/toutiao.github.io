@@ -1,0 +1,262 @@
+---
+post:
+  id: '50455633'
+  title: Faster Retrieval for Better, More Efficient RAG
+  url: https://machinelearning.apple.com/research/faster-retrieval
+  hn_url: https://news.ycombinator.com/item?id=50455633
+  score: 112
+  author: ''
+  posted_at: '2026-11-11T16:57:45Z'
+  fetched_at: '2026-11-11T21:46:48Z'
+  article_url: https://machinelearning.apple.com/research/faster-retrieval
+  article_fetch_status: success
+  article_fetched_at: '2026-11-11T21:46:48Z'
+  raw_comment_count: 21
+comments:
+- id: '50456477'
+  parent_id: '50455633'
+  author: comandillos
+  text: I feel like retrieval approaches, despite how good your ranking mechanisms
+    are, end up biasing LLMs into what a heuristics-based system with way worse understanding
+    of the domain says. I guess is a trade off between speed and quality, but letting
+    the LLM explore without a bias (based on my personal experience) seems to generally
+    provide much better results in terms of quality for the final output.
+  score: 0
+  posted_at: '2026-11-11T18:07:51Z'
+- id: '50456751'
+  parent_id: '50455633'
+  author: brrrrrm
+  text: as a recovering RAG-enthusiast, I will share a quote from a peer that has
+    really stuck with me:<p>&quot;why not use grep?&quot;
+  score: 0
+  posted_at: '2026-11-11T18:29:22Z'
+- id: '50456793'
+  parent_id: '50456751'
+  author: goldenarm
+  text: Grep is the fastest tool for many things, but for production RAG it cannot
+    search with meaning, different languages or typos like hybrid vector search can.
+    And it won&#x27;t scale on terabytes of documents across distributed servers if
+    you want to say under 1000ms.
+  score: 0
+  posted_at: '2026-11-11T18:32:43Z'
+- id: '50456881'
+  parent_id: '50456793'
+  author: dv_dt
+  text: If the data is this large then why not ask the llm to build a query
+  score: 0
+  posted_at: '2026-11-11T18:40:38Z'
+- id: '50456938'
+  parent_id: '50456881'
+  author: aaroninsf
+  text: My case:<p>With a very large dataset of totally unnormalized data, semantic
+    folding is a silver bullet.
+  score: 0
+  posted_at: '2026-11-11T18:45:31Z'
+- id: '50456947'
+  parent_id: '50456881'
+  author: nostrebored
+  text: latency is often the reason, distilling interactions into significantly better
+    retrieval is the second.
+  score: 0
+  posted_at: '2026-11-11T18:46:23Z'
+- id: '50457167'
+  parent_id: '50455633'
+  author: lavendermon
+  text: Apple has a fascinating history of waiting and seeing how a market develops
+    before entering with a better product and eventually dominating, the iPod and
+    iPhone are two examples. It seems they may be building a strong position to pull
+    that off again in the personal assistant AI category ChatGPT is trying to dominate.<p>I
+    enjoy watching the slow burn approach Apple is deploying as they quietly gear
+    up to offer some % of local inference on iPhones to provide most of the AI services
+    consumers want. Local inference could enable a very low price point for AI services
+    that Apple would leverage alongside their massive ecosystem advantages and privacy
+    claims to compete very effectively for personal assistant AI subscriptions.
+  score: 0
+  posted_at: '2026-11-11T19:06:54Z'
+- id: '50457213'
+  parent_id: '50456751'
+  author: mejutoco
+  text: Grep is not semantic like embeddings, although the llm can expand a concept
+    into multiple literal searches with a similar effect.
+  score: 0
+  posted_at: '2026-11-11T19:11:00Z'
+- id: '50457225'
+  parent_id: '50456881'
+  author: itishappy
+  text: That&#x27;s more-or-less what RAG is; a tool to surface relevant data so that
+    AI can make informed decisions. Efficient retrieval is important so that AI doesn&#x27;t
+    need to ingest the whole corpus for each query.
+  score: 0
+  posted_at: '2026-11-11T19:12:04Z'
+- id: '50457237'
+  parent_id: '50457167'
+  author: elpakal
+  text: Agreed, but I wonder how that plays out without them entering the frontier
+    model space. I just downloaded the new foundation models cli and ran some inference
+    on my Mac, it wasn&#x27;t great, but it was neat to see. I asked which model it
+    was using and it said gpt 4o mini.<p>An on-device, 100% private AI assistant seems
+    like it could be so big that it could be a legitimate threat to the frontier model
+    providers they are partnering with right now, imho.
+  score: 0
+  posted_at: '2026-11-11T19:12:56Z'
+- id: '50457285'
+  parent_id: '50457213'
+  author: elpakal
+  text: Your understanding was applied too strictly and you missed the intent of the
+    joke...
+  score: 0
+  posted_at: '2026-11-11T19:16:57Z'
+- id: '50457347'
+  parent_id: '50455633'
+  author: pants2
+  text: Can&#x27;t wait to see how they leverage this research to make Siri even worse!
+  score: 0
+  posted_at: '2026-11-11T19:22:18Z'
+- id: '50457419'
+  parent_id: '50457237'
+  author: andriy_koval
+  text: "&gt; I wonder how that plays out without them entering the frontier model
+    space<p>bet could be that this space will be commoditized: many good enough open
+    weight models and multiple competing provides."
+  score: 0
+  posted_at: '2026-11-11T19:30:01Z'
+- id: '50457462'
+  parent_id: '50455633'
+  author: armcat
+  text: Just yesterday I saw a talk from Spotify where they presented their own fast
+    retrieval mechanism &quot;Parallel Fusion Router&quot; [1]. It&#x27;s also in
+    the &quot;learned retrieval&quot; paradigm - in their case they use a teacher
+    LLM to train a much smaller router LLM how to retrieve, using an LLM-as-a-judge
+    based reward function.<p>From my own experience, these learned methods from Apple,
+    Spotify and others, are highly relevant to hyperscale only - when you are dealing
+    with hundreds of millions of items to choose from (or more), and require super
+    high relevance in the top-5. For all other use cases (up to a few million items)
+    I found that just building a BM25 index, and giving the LLM a BM25 &quot;search
+    tool&quot; and casting a &quot;wide net&quot; wins every single time compared
+    to learned methods (though the latter are more publishable in recsys and icml).<p>[1]
+    <a href="https:&#x2F;&#x2F;research.atspotify.com&#x2F;2025&#x2F;9&#x2F;you-say-search-i-say-recs-a-scalable-agentic-approach-to-query-understanding"
+    rel="nofollow">https:&#x2F;&#x2F;research.atspotify.com&#x2F;2025&#x2F;9&#x2F;you-say-search-i-say-r...</a>
+  score: 0
+  posted_at: '2026-11-11T19:34:23Z'
+- id: '50457485'
+  parent_id: '50457237'
+  author: makmanalp
+  text: I think it&#x27;d be foolish to assume that they aren&#x27;t already - they
+    have a reputation of doing a lot more internally than ever comes to light. Smaller
+    companies like mistral or thinking machines show that you don&#x27;t even need
+    that much resources to be semi-competitive, and comparatively Apple is a vertically
+    integrated behemoth.<p>That said in a pinch they could also acquire &#x2F; acquihire
+    both of those companies without much thought.
+  score: 0
+  posted_at: '2026-11-11T19:35:45Z'
+- id: '50457489'
+  parent_id: '50456793'
+  author: ozkatz
+  text: all true for a single grep invocation, however a capable LLM can drive grep
+    using similar terms (`grep (red|maroon|scarlet|crimson)`, moving the measure of
+    similarity from embedding&#x2F;indexing time to inference time. There&#x27;s benefits
+    to that.
+  score: 0
+  posted_at: '2026-11-11T19:36:02Z'
+- id: '50457507'
+  parent_id: '50457213'
+  author: 0o777
+  text: There have been some attempts at &quot;semantic grep&quot; but don&#x27;t
+    know its current status<p><a href="https:&#x2F;&#x2F;github.com&#x2F;lightonai&#x2F;next-plaid&#x2F;tree&#x2F;main&#x2F;colgrep"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;lightonai&#x2F;next-plaid&#x2F;tree&#x2F;main&#x2F;colgrep</a>
+  score: 0
+  posted_at: '2026-11-11T19:37:40Z'
+- id: '50457673'
+  parent_id: '50455633'
+  author: mickeyp
+  text: I&#x27;m not sold; that&#x27;s not to say I can&#x27;t be swayed, but I&#x27;ve
+    spent a lot of time building RAG solutions as a &quot;one-size-fits-all&quot;
+    against codebases and I am not convinced embedding models or any of the myriad
+    BERT implementations work well enough that they can beat out grep.<p>Most embedding&#x2F;BERT
+    models are far too small to truly grasp the nettles when an AI ask questions to
+    them; and if you condition the AI to only search for really basic things, then...
+    you&#x27;re basically back to grep + regex.<p>You need to prune all manner of
+    useless detritus that might gum up your matches like test files, documentation,
+    and sidecars that semantically overlap or you&#x27;re just going to match your
+    tests. That&#x27;s fine if you&#x27;re building a document store for a business,
+    but if you want a &quot;one-and-done&quot; solution for your codebase it&#x27;s
+    rarely good enough.<p>And if you <i>do</i> use a very large embedding model (which
+    means it&#x27;ll require running in the cloud as most company computers won&#x27;t
+    run it well), then... well, you&#x27;re better off just using a language model
+    as a subagent to scout ahead for you and elide the embedding model to begin with.
+  score: 0
+  posted_at: '2026-11-11T19:48:16Z'
+- id: '50457722'
+  parent_id: '50457489'
+  author: jdthedisciple
+  text: "&gt; red|maroon|scarlet|crimson<p>still doesn&#x27;t include typo&#x27;ed
+    variants for any of these"
+  score: 0
+  posted_at: '2026-11-11T19:51:02Z'
+- id: '50458358'
+  parent_id: '50457167'
+  author: QuantumNomad_
+  text: "&gt; the personal assistant AI category<p>Didn’t Apple sort of already enter
+    this market early-on with their subpar Siri?<p>I’ve been an iPhone and MacBook
+    Pro user for years, but each time when I set up a new Apple device the first thing
+    I do is say no to anything Siri, and also turning off additional Siri related
+    settings. To the best of my knowledge, Siri is worse than useless, and I haven’t
+    regretted staying away from it."
+  score: 0
+  posted_at: '2026-11-11T20:39:28Z'
+- id: '50458801'
+  parent_id: '50457722'
+  author: ozkatz
+  text: but a good combination of prompt, harness and model will easily close that
+    gap. a more advanced (but equivalent) form of grep could also offer fuzzy matching&#x2F;levenshtein
+    distance function to augment that.
+  score: 0
+  posted_at: '2026-11-11T21:17:18Z'
+article:
+  url: https://machinelearning.apple.com/research/faster-retrieval
+  title: Faster Retrieval for Better, More Efficient RAG - Apple Machine Learning
+    Research
+  fetch_status: success
+  content: |-
+    Faster Retrieval for Better, More Efficient RAG
+
+    Maximum inner product search (MIPS) sits at the core of recommendation systems, search, and retrieval-augmented generation (RAG). Given a query vector, MIPS systems search within a database of millions of candidate key vectors for the one that best matches the query. The original data point associated with that best-matching key is then used to handle the query: in RAG, the document that is best suited to answer the question is typically prefixed to the query.
+
+    As the number of keys grows to millions and vector dimensions reach thousands, the computational cost of running an exhaustive comparison of the query to all keys grows dramatically. Numerous approximate methods have been proposed to trade off accuracy for speed using clustering and quantization. While these baseline methods focus on the properties of the set of keys to build up clever indexing structures, their geometric arguments loosely assume that the set of queries itself will resemble that found in keys, or bypass any considerations about what the queries will look like. This can be problematic on two fronts: In the crucial RAG case, queries arise from short user-generated questions, whereas keys represent long, informative, and curated pieces of text, making keys and queries substantially different. Additionally, most MIPS use cases deployed in production target an existing base of users with a stable, well-characterized query distribution — a signal that generic, query-agnostic methods leave untapped. Crafting methods that work best for a likely source of inputs — rather than aiming for good performance on all possible inputs — is a central tenet of modern machine learning that helps redirect compute resources more efficiently.
+
+    In Amortizing Maximum Inner Product Search with Learned Support Functions, a paper presented at ICML 2026, researchers from Apple train small neural networks (NNs) — once, offline, for a fixed database of keys — that learn how to route queries toward their best match faster. Their approach trades off an upfront amortization cost to understand how typical queries tend to be matched in exchange for faster, more accurate retrieval at inference time through these small NNs.
+
+    ## The Basics of Maximum Inner Product Search
+
+    A fundamental principle in MIPS is to leverage the geometry of the set of keys to speed up search: Typical MIPS systems split the set of keys into k clusters — k is typically much smaller than the total number of keys n — keeping track of a representative centroid for each cluster. When receiving a new query, the system compares it with these k centroids. The query is then routed toward the cluster of the representative centroid it is closest to, and subsequently compared exhaustively with all keys stored in that cluster. If the database has n keys and k evenly distributed clusters, the effective number of keys that will be considered in that second step is on the order of n/k — a factor-of- k speedup when compared to the n comparisons done in the naive exhaustive approach. Unfortunately, this routing mechanism can result in errors, since centroid routing is not an exact approach, as illustrated in Figure 1 below.
+
+    Figure 1: Geometric approaches to search can fail and miss nearest neighbors. This is due to their reliance on partitioning the space based on distances to centroids. In the animation, a nearest neighbor is missed as it is not associated with the nearest centroid.
+
+    ## MIPS as a Support Function
+
+    What makes MIPS interesting from a machine learning perspective is that it is built on a mathematical structure that had been largely overlooked before this work: The function that maps a query to the largest inner product with any key in a set is the support function of that set, a well-studied object in convex analysis. This function has two important properties: First, it is convex, so it can be approximated by a class of neural networks specifically designed for convex functions, input convex neural networks (ICNNs). Second, the gradient of that support function at any query returns the best-matching key itself.
+
+    The broad idea behind this work is to learn a neural network that can mimic the ground-truth support function (or its gradient directly) for a much lower computational cost. This can be achieved through a classical ML technique known as regression: one simply needs to precompute a large number of training examples formed by sampling input vectors (user queries) and pair them with the relevant output signal produced by MIPS (either the optimal score or the optimal key vector itself). All that is then needed is to train a suitably parameterized neural network to replicate the output given the input.
+
+    ## Two Ways to Learn Maximum Inner Product Search
+
+    If the regression problem were to be solved perfectly, according to the mathematical approach outlined above, the same neural network that is trained to mimic the support function could also output the optimal key by evaluating its gradient (through automatic differentiation). In practice, we observe that training separate, specialized networks for each of these two tasks works best:
+
+    The SupportNet neural network architecture can learn the support function directly, using a (loosely constrained) ICNN. The approach is mathematically principled and aligns with the convex structure of the problem. We find that this approach can shine when used to compute one support function per data cluster to improve routing quality.
+
+    KeyNet models learn to directly output the best-matching key vector when fed a query. A consistency loss derived from Euler’s theorem for homogeneous functions keeps their predictions geometrically grounded in the underlying support function, even though no convexity is explicitly enforced.
+
+    Both models are trained on examples drawn from the relevant query distribution: for each sampled query, the ground-truth best match is computed once via exhaustive search and stored, creating a supervised dataset that captures the MIPS solution landscape for the distribution of queries that actually matter.
+
+    ## Learned Routing with SupportNet
+
+    As shown in Figure 1, the simplest way to handle larger scales is to split the keys into clusters, compare the query to each cluster’s centroid, and route the query to the most promising clusters based on these k scores. This provides a cheap yet coarse rule that can be prone to mistakes because a centroid alone cannot account for the spread of its cluster. Indeed, a cluster can hold a key that sits far from its own centroid yet close to the query, and when the query is near such an outlier, centroid routing scores the cluster low and skips it, missing the true best match.
+
+    If one were given access to the support function of each cluster, then one would instead be able to do exact routing, since each support function quantifies exactly to what extent any key within each cluster can match the query with a large score. This is illustrated in Figure 2, in which the support function of each of the four clusters is plotted for a query that varies in the space of embeddings.
+
+    Figure 2: Relying on distances to centroids can be misleading as those distances do not account for every key in each cluster. Given access to each cluster’s support function, assignment can be made based on how well a given query matches any key in a cluster.
+
+    Leaning on this theoretical insight, we propose to learn these k support functions jointly with a trained SupportNet that can output k scores at once. We can then use the largest of these k scores to route any new query instead. The SupportNet model can answer a more useful question than a simple comparison to the centroid can: “How good is the best key inside this cluster for this query?” SupportNets are trained in a classic machine learning fashion, also known as regression: we generate sample queries that are drawn from the distribution (typically embeddings for text querie
+  error:
+  fetched_at: '2026-11-11T21:46:48Z'
+archived_at: '2026-11-11T21:46:50Z'

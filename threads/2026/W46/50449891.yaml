@@ -1,0 +1,641 @@
+---
+post:
+  id: '50449891'
+  title: 'Show HN: Black Ops II statically recompiled to native ARM64 macOS'
+  url: https://github.com/adrbn/bo2-mac
+  hn_url: https://news.ycombinator.com/item?id=50449891
+  score: 132
+  author: ''
+  posted_at: '2026-11-11T04:56:47Z'
+  fetched_at: '2026-11-11T21:46:47Z'
+  article_url: https://github.com/adrbn/bo2-mac
+  article_fetch_status: success
+  article_fetched_at: '2026-11-11T21:46:47Z'
+  raw_comment_count: 59
+comments:
+- id: '50451271'
+  parent_id: '50449891'
+  author: phaser
+  text: what was your workflow for creating this? there&#x27;s now extra guardrails
+    around decompiling &#x2F; reverse engineering, do you think this is still possible
+    to do or were you just lucky enough to do it before the guardrails?
+  score: 0
+  posted_at: '2026-11-11T09:23:31Z'
+- id: '50451368'
+  parent_id: '50451271'
+  author: adrbn
+  text: Well it took me almost 4 months using parallel Claude sessions, each one of
+    them working on its own worktree. I also made a point of measuring before considering
+    anything fixed, and I tested and played throughout the whole development so this
+    way I knew the real impact of every change it was applying.  I&#x27;m yet to start
+    another similar project to see how things have changed in terms of guardrails,
+    but it has not been a problem for me in the last month AFAIK. Sessions keep working
+    without any problem and Codex (Astra) has also been of a great help in addition,
+    when I did encounter some refusals with Claude. Also maybe (big maybe!) the fact
+    the tool only works from a Steam copy helped, I guess.
+  score: 0
+  posted_at: '2026-11-11T09:34:40Z'
+- id: '50451806'
+  parent_id: '50449891'
+  author: Benard-dev
+  text: |-
+    This is great, I also grew up on Black Ops 2.
+     How big is the recompiled binary compared to original?
+  score: 0
+  posted_at: '2026-11-11T10:33:16Z'
+- id: '50452186'
+  parent_id: '50449891'
+  author: cedws
+  text: How does it actually recompile, does it use an existing tool? I can’t imagine
+    the agent combs through every routine and hand translates the assembly.
+  score: 0
+  posted_at: '2026-11-11T11:33:05Z'
+- id: '50452259'
+  parent_id: '50451368'
+  author: addandsubtract
+  text: I would be interested in a write up of how to get started with something like
+    this. I know there are tools like REA now, but it still seems daunting for someone
+    that has never done game development or decompiled anything before.
+  score: 0
+  posted_at: '2026-11-11T11:44:13Z'
+- id: '50452325'
+  parent_id: '50452186'
+  author: saagarjha
+  text: "&gt; Remill lifts each function to LLVM IR, a chain of our own passes rewrites
+    that IR, and the result is linked with a Win32 runtime written by hand, whose
+    Direct3D 11 is drawn by Metal. There is no Wine and no JIT: the game runs as native
+    code, in one process. About 150,000 functions are translated across the three
+    executables. Only the short sequences that the copy protection hides run in a
+    small x86 interpreter, and so does any code the translation missed, so a hole
+    is built to cost speed rather than crash the game."
+  score: 0
+  posted_at: '2026-11-11T11:52:10Z'
+- id: '50452375'
+  parent_id: '50449891'
+  author: baalimago
+  text: Stuff like this makes me really happy about AI. The convenience that AAA lacks,
+    or that they intentionally withhold, is now within reach.
+  score: 0
+  posted_at: '2026-11-11T11:57:47Z'
+- id: '50452413'
+  parent_id: '50452186'
+  author: adrbn
+  text: 'Yes, it uses two already existing tools for the heavy lifting. Remill lifts
+    the x86 machine code to LLVM IR, and LLVM then compiles that IR to ARM64. And
+    no, nobody translates the assembly by hand luckily, not me nor the agent. All
+    of these 150k functions go through this automatic chain I explained before.<p>What
+    I wrote with Claude is basically everything else: custom LLVM passes, a hand-written
+    runtime that replaces the Windows calls, a Direct3D 11 to Metal layer and the
+    shader translation! Plus fixing the crashes one by one by iterating and playing.
+    All details are in the Pipeline section of the README if you&#x27;re interested:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;adrbn&#x2F;bo2-mac#pipeline" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;adrbn&#x2F;bo2-mac#pipeline</a>'
+  score: 0
+  posted_at: '2026-11-11T12:01:16Z'
+- id: '50452434'
+  parent_id: '50452259'
+  author: adrbn
+  text: 'Check the repo: the README already has a Method, Findings and Pipeline section,
+    so that&#x27;s kind of the start of a guide already.<p>If you want something simpler
+    to begin with, look at N64Recomp (that&#x27;s what gave us the PC ports of Zelda
+    Majora&#x27;s Mask) or XenonRecomp (Xbox 360, used for Sonic Unleashed), they&#x27;re
+    static recompilations too and way better documented than mine as of now haha.
+    And to look inside an executable, Ghidra is free (made by the NSA, fun fact).
+    A proper write-up might come at some point, but no promises on a date :)<p>Also,
+    I had never done anything like this before either!'
+  score: 0
+  posted_at: '2026-11-11T12:03:40Z'
+- id: '50452544'
+  parent_id: '50452413'
+  author: cedws
+  text: Thanks.
+  score: 0
+  posted_at: '2026-11-11T12:16:28Z'
+- id: '50452660'
+  parent_id: '50452375'
+  author: rvz
+  text: Don&#x27;t be surprised about them moving to cloud gaming even more which
+    they already have with Xbox cloud gaming and in the future, the real game will
+    be hidden and simulated behind a world model.
+  score: 0
+  posted_at: '2026-11-11T12:31:25Z'
+- id: '50452668'
+  parent_id: '50452413'
+  author: doodlesdev
+  text: Out of curiosity, why not adopt Wine instead of hand rolling the Win32 API
+    layer, and also why not use MoltenVK + dxvk for rendering? Have you tried these
+    alternatives to compare the performance?
+  score: 0
+  posted_at: '2026-11-11T12:33:16Z'
+- id: '50452674'
+  parent_id: '50449891'
+  author: alanfranz
+  text: |-
+    The README is very much AI slop. Why don&#x27;t you people write by yourself at least your READMEs? Explain the why? Explain the advantages? You can still ask AI for reviews.<p>Almost every paragraph makes me want to ask: &quot;so what?&quot;<p>&gt; There is no Wine and no JIT: the game runs as native code, in one process
+    &gt; the campaign runs at 51–60 frames per second<p>So what?<p>Is it a matter of running the game in itself? Was the game not running on Apple M-series in any way, so you&#x27;re unlocking something that was impossible before?<p>Or does the game just ran faster (more FPS), load quicker, render better, what?<p>There&#x27;s no comparison to how the game runs on x86, or how it runs on M-series with translation layers (IF it runs).<p>This is an exact manifestation of the AI slop problem. A lot of details. A lot of &quot;how&quot;. A lot of &quot;what&quot;. So little &quot;why&quot; - you need to read a lot and in the end your questions are never answered, and you don&#x27;t understand if the project makes sense at all or is just something &quot;we did it because we could&quot;. I&#x27;m perfectly happy to read AI generated text if it&#x27;s properly and clearly written and answers the right questions.
+  score: 0
+  posted_at: '2026-11-11T12:33:53Z'
+- id: '50452780'
+  parent_id: '50452674'
+  author: adrbn
+  text: The why is in my post actually, BO2 never came out on Mac. On M chips you&#x27;d
+    have to go through CrossOver and Rosetta, here it&#x27;s native ARM64 so I can
+    fix things and add stuff like split-screen, which the PC version never had. Fair
+    point on the CrossOver benchmark, I haven&#x27;t done it yet. I&#x27;ll add a
+    why section to the README, thanks.
+  score: 0
+  posted_at: '2026-11-11T12:48:42Z'
+- id: '50452794'
+  parent_id: '50452660'
+  author: risyachka
+  text: "Yup. \nNot just aaa, all games that can afford to.<p>Massive chance these
+    recompilations just ruined gaming for everyone.<p>Like on your own- do whatever.<p>As
+    soon as you share it - you actually harm players, not help them"
+  score: 0
+  posted_at: '2026-11-11T12:50:16Z'
+- id: '50452802'
+  parent_id: '50452413'
+  author: unwind
+  text: 'Uh it&#x27;s a cool project for sure even if its getting hard to keep these
+    apart and seems kind of strange to do all that targeted solely on game ... but
+    cool!<p>This is very confusing to read, though:<p><i>What I wrote with Claude:
+    [...] a hand-written runtime</i><p>To me you have to pick one or the other. Claude
+    has no hands.'
+  score: 0
+  posted_at: '2026-11-11T12:50:57Z'
+- id: '50452812'
+  parent_id: '50452660'
+  author: s_dev
+  text: Companies have been trying to solve the &quot;be able to show and hide&quot;
+    the same thing paradox for decades now.<p>The AI will still recreate a game that
+    it can view and interact with.
+  score: 0
+  posted_at: '2026-11-11T12:51:50Z'
+- id: '50452827'
+  parent_id: '50452780'
+  author: alanfranz
+  text: Where did I complain about your post? I complained about the README.<p>Thanks
+    for adding the Why in your readme, btw :-)<p>By the way, the why in the README
+    is still unclear:<p>Your post says:<p>&gt; see if I could make it work on my 2020
+    MacBook Pro<p>This seems to imply that it didn&#x27;t work on the 2020 MacBook
+    Pro (which I suppose is the M1)<p>&gt; On Apple Silicon the usual way to play
+    it is Wine or CrossOver on top of Rosetta 2, which translate the game while it
+    runs<p>This is from the README. So, it was playable on M-series already? Just
+    not natively? Then, what kind of benefits does your translator offer?<p>&gt; so
+    I can fix things and add stuff like split-screen, which the PC version never had<p>So
+    THIS is the advantage? I&#x27;m not sure why this advantage would be limited to
+    the ARM64 version BTW; cannot you patch the original?<p>That&#x27;s the why I&#x27;m
+    asking for, and that&#x27;s where LLMs suck, and where you need to have your human
+    brain &amp; skills actually work.
+  score: 0
+  posted_at: '2026-11-11T12:53:49Z'
+- id: '50453225'
+  parent_id: '50452827'
+  author: adrbn
+  text: |-
+    Actually it wasn&#x27;t really playable on M-series before. AppleGamingWiki lists it as unplayable on CrossOver and not supported on Rosetta 2. The only way was a Windows ARM VM in Parallels, and reports go from 1fps in matches on an M1 Max to 60-80fps on M3&#x2F;M4 chips. On my base 2020 M1 it now runs at 51-60fps, natively, no Windows license or VM needed. That&#x27;s the why :)
+    <a href="https:&#x2F;&#x2F;www.applegamingwiki.com&#x2F;wiki&#x2F;Call_of_Duty:_Black_Ops_II" rel="nofollow">https:&#x2F;&#x2F;www.applegamingwiki.com&#x2F;wiki&#x2F;Call_of_Duty:_Black_Ops...</a> (Took me two minutes to find, human brain included :)
+  score: 0
+  posted_at: '2026-11-11T13:34:11Z'
+- id: '50453266'
+  parent_id: '50452794'
+  author: inertiatic
+  text: "&gt;Massive chance these recompilations just ruined gaming for everyone.<p>Nah
+    that was microtransactions and associated corporate greed.<p>If we have good enough
+    AI to force companies to do this, we have good enough AI to build any shit we
+    want and we&#x27;ll build better shit than what these companies are putting out."
+  score: 0
+  posted_at: '2026-11-11T13:37:38Z'
+- id: '50453299'
+  parent_id: '50451806'
+  author: adrbn
+  text: Thanks a lot! The original exe is around 13 MB per mode, mine is more between
+    500 and 800 MB each. Basically every x86 instruction becomes a bunch of ARM64
+    ones, and there is also a lot of extra code for the CPU state. Still runs at 60fps
+    tho, so as long as you have decent storage it&#x27;s not that much of a problem
+    :)
+  score: 0
+  posted_at: '2026-11-11T13:40:37Z'
+- id: '50453335'
+  parent_id: '50452812'
+  author: StilesCrisis
+  text: I&#x27;m not convinced. All the &quot;AI built this AAA-like game&quot; examples
+    I&#x27;ve seen involve stealing real AAA assets. That&#x27;s just piracy, we always
+    had that.
+  score: 0
+  posted_at: '2026-11-11T13:44:04Z'
+- id: '50453473'
+  parent_id: '50453225'
+  author: l-albertovich
+  text: Disregard the whiners and trolls, I found what you did really interesting
+    and inspiring.<p>I didn&#x27;t know about remill before and finding such a good
+    display of its capabilities was fantastic because I&#x27;ve been thinking about
+    doing something similar for an old-ish geological research system that runs on
+    a sparc system.<p>Similarly to your case I don&#x27;t aim to subdue the licensing
+    system or do anything   else but ensure that the system can run on current x86
+    hardware (mostly for fun).<p>So yeah, it was a long way of saying &quot;thanks
+    for sharing your project and methodology, I think it&#x27;s really cool and I
+    don&#x27;t mind the AI text at all&quot;
+  score: 0
+  posted_at: '2026-11-11T13:55:58Z'
+- id: '50453503'
+  parent_id: '50452660'
+  author: brookst
+  text: Conveniently, models are improving and I expect they’ll be able to create
+    a port just based on a video of gameplay soon, if not already.
+  score: 0
+  posted_at: '2026-11-11T13:58:21Z'
+- id: '50453553'
+  parent_id: '50449891'
+  author: scronkfinkle
+  text: "&gt; does not use any emulator whatsoever, be it Wine, Crossover or Rosetta<p>Not
+    sure about the other two, but WINE Is Not an Emulator. It&#x27;s in the name :)"
+  score: 0
+  posted_at: '2026-11-11T14:02:10Z'
+- id: '50453597'
+  parent_id: '50453473'
+  author: adrbn
+  text: Thanks a lot, really appreciate it! Also, remill supports SPARC too. So your
+    geological system should be doable with the same approach. Good luck with it,
+    happy to help if you get stuck :)
+  score: 0
+  posted_at: '2026-11-11T14:07:13Z'
+- id: '50453692'
+  parent_id: '50453553'
+  author: markgavalda
+  text: |-
+    Crossaover is Wine, just the commercial edition.
+    And Rosetta solves the exact opposite problem from Wine: same OS but different CPU architecture so it recompiles those x86 CPU instructions into ARM64 instructions and Apple specifically does not call it an emulator. It doesn&#x27;t emulate an OS but it does user-mode CPU emulation so I don&#x27;t know what it should be called.
+  score: 0
+  posted_at: '2026-11-11T14:15:17Z'
+- id: '50453728'
+  parent_id: '50452802'
+  author: adrbn
+  text: Haha fair. I meant written from scratch, not taken from Wine. Claude did the
+    typing, I did the steering and the playtesting :)
+  score: 0
+  posted_at: '2026-11-11T14:18:37Z'
+- id: '50453730'
+  parent_id: '50452827'
+  author: steele
+  text: Sentiment analysis is a successful commercial usage of this class of technology,
+    and engaging with that may help prevent you from gaslighting and weaseling. Cannot
+    you classify complaints that you generate?
+  score: 0
+  posted_at: '2026-11-11T14:19:10Z'
+- id: '50453757'
+  parent_id: '50452668'
+  author: adrbn
+  text: 'The thing is that both Wine and DXVK would still need the original x86 code
+    to run through Rosetta. Which is exactly what I wanted gone. Here it’s all ARM64
+    before the game even starts. DXVK is also a Windows DLL that reaches Vulkan through
+    Wine so without Wine I can’t really use it. And BO2 is 32-bit, so every Windows
+    and D3D11 call has to be adapted anyway! Going straight to Metal ended up simpler
+    :) No benchmark against them yet but it’s on my list! There is a short explanation
+    in the README too if you&#x27;re curious: <a href="https:&#x2F;&#x2F;github.com&#x2F;adrbn&#x2F;bo2-mac#pipeline"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;adrbn&#x2F;bo2-mac#pipeline</a>'
+  score: 0
+  posted_at: '2026-11-11T14:20:58Z'
+- id: '50453835'
+  parent_id: '50453335'
+  author: IKnowMazin
+  text: And I’ve yet to see any of them at AAA quality. Albeit, that’s not even a
+    hard bar for some of the AAA games coming out, but still.
+  score: 0
+  posted_at: '2026-11-11T14:27:03Z'
+- id: '50453837'
+  parent_id: '50449891'
+  author: cornedor
+  text: 'I&#x27;ve used to same technique to get Fallout: New Vegas running on Asahi
+    Linux on MacOS. Its quite a step, but <a href="https:&#x2F;&#x2F;github.com&#x2F;doitsujin&#x2F;dxvk"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;doitsujin&#x2F;dxvk</a> makes
+    it possible to skip a lot of work and get the game running in day. You can then
+    make any changes you want, so I&#x27;m running fallout nv on a wide display in
+    native resolution and some graphical improvements. Realtime whole world shadow
+    maps, SSAO, tonemap + color grading, FXAA and Hor+ FOV.<p>Gives me a solid 60fps
+    most of the time, with only the occasianal bug here and there that is often fixed
+    in no time. Luckily i&#x27;ve added 10min auto save quite quickly, so that it
+    does not cause that big of a problem.<p>Aside from the fun of both getting the
+    game to work on this machine, and the fun of actually being able to play the game,
+    it is a great way to find creative ways to work with LLM. Building out dev tools
+    on the way that works for an LLM etc.'
+  score: 0
+  posted_at: '2026-11-11T14:27:03Z'
+- id: '50453842'
+  parent_id: '50452827'
+  author: adrbn
+  text: 'To answer your last question also: yes, the PC version can be patched, that’s
+    what mods like Plutonium do actually :) But it still wouldn’t run on a Mac, which
+    is the main point here. And the rest of the features, like split-screen being
+    worked on currently, are nothing but a bonus on top.'
+  score: 0
+  posted_at: '2026-11-11T14:27:35Z'
+- id: '50453845'
+  parent_id: '50449891'
+  author: klaussilveira
+  text: 'Somewhat related: <a href="https:&#x2F;&#x2F;lwss.github.io&#x2F;Kisak-Black&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;lwss.github.io&#x2F;Kisak-Black&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-11T14:27:51Z'
+- id: '50453929'
+  parent_id: '50452794'
+  author: GaryNumanVevo
+  text: Video game piracy has been around for decades, you can get a cracked copy
+    of nearly every game. Even some games like Black Ops II has a custom server browser
+    and matchmaking servers for pirated copies.
+  score: 0
+  posted_at: '2026-11-11T14:33:51Z'
+- id: '50454240'
+  parent_id: '50453692'
+  author: Zambyte
+  text: "&gt; It doesn&#x27;t emulate an OS but it does user-mode CPU emulation so
+    I don&#x27;t know what it should be called.<p>An emulator. In the context of computing
+    translation software, &quot;emulation&quot; generally refers to emulating hardware
+    rather than software. Hence why WINE Is Not an Emulator :)"
+  score: 0
+  posted_at: '2026-11-11T14:57:52Z'
+- id: '50454269'
+  parent_id: '50449891'
+  author: stmw
+  text: This is impressive. Besides personal use gaming, it has a lot of interesting
+    opportunities... Elsewhere OP said it was 4 months of Claude, which is very fas
+    for something this complicated.
+  score: 0
+  posted_at: '2026-11-11T15:00:18Z'
+- id: '50454316'
+  parent_id: '50452413'
+  author: PorciiVorbesc
+  text: 'My big question: How did you get Claude to do reverse engineering work on
+    a game without it getting cold feet and telling you it can&#x27;t do that due
+    to breaking ToS?'
+  score: 0
+  posted_at: '2026-11-11T15:05:56Z'
+- id: '50454411'
+  parent_id: '50449891'
+  author: HelloUsername
+  text: Now do MW (2007) and MW2 (2009) :)
+  score: 0
+  posted_at: '2026-11-11T15:14:11Z'
+- id: '50454523'
+  parent_id: '50449891'
+  author: nicman23
+  text: i want someone to make a co op mod for cod 4 :C
+  score: 0
+  posted_at: '2026-11-11T15:24:09Z'
+- id: '50454611'
+  parent_id: '50451271'
+  author: jcon321
+  text: any guardrail claude throws up at me during my decomplication efforts I simply
+    get around by saying &quot;oh thats a false positive&quot; or &quot;this is for
+    education&quot; or &quot;im doing this so i can fix the issue&quot;... its a laughable
+    &quot;guardrail&quot;
+  score: 0
+  posted_at: '2026-11-11T15:31:59Z'
+- id: '50454835'
+  parent_id: '50452660'
+  author: datas
+  text: On the other hand we have full steam os on android last month.
+  score: 0
+  posted_at: '2026-11-11T15:51:30Z'
+- id: '50454879'
+  parent_id: '50453266'
+  author: risyachka
+  text: |-
+    There are many levels to &quot;ruined&quot; and it always can get worse.<p>&gt;&gt; and we&#x27;ll build better shit than what these companies are putting out.
+    feel free to share what you&#x27;ve built. Sure its possible just need to be real here - 1% will be good, 99% will be slop.
+    And that 1% will down in that slop.<p>As a result though in theory you can make some games better than existing ones - the overall effect is net negative.
+  score: 0
+  posted_at: '2026-11-11T15:55:20Z'
+- id: '50455044'
+  parent_id: '50452660'
+  author: jimmydorry
+  text: Moving to cloud gaming would mean cutting off any chance of selling to most
+    of the world. &gt;50ms for user input is very noticable, and &gt;100ms people
+    just won&#x27;t pay for it. You also need very low packet loss and a reasonable
+    amount of bandwidth. Those three requirements can be met for most (but notably
+    not all!) of NA... but elsewhere? Not as much.
+  score: 0
+  posted_at: '2026-11-11T16:09:38Z'
+- id: '50455076'
+  parent_id: '50453837'
+  author: mr_toad
+  text: "&gt; with only the occasianal bug here and there<p>If it doesn’t lock up
+    your machine every hour or so then it’s not a very authentic experience!"
+  score: 0
+  posted_at: '2026-11-11T16:12:25Z'
+- id: '50455164'
+  parent_id: '50455044'
+  author: vel0city
+  text: And yet people then also bash the US and say the US has terrible internet
+    connectivity compared to the rest of the world where you can get 100 gigabit internet
+    on every street corner for €5&#x2F;mo.
+  score: 0
+  posted_at: '2026-11-11T16:21:24Z'
+- id: '50455348'
+  parent_id: '50452794'
+  author: bethekidyouwant
+  text: We really need to bring back the thumbscrews for all these pesky hackers
+  score: 0
+  posted_at: '2026-11-11T16:34:51Z'
+- id: '50455640'
+  parent_id: '50454316'
+  author: georgemcbay
+  text: Probably by starting 4 months ago.<p>The restraint Anthropic added to Claude
+    to stop it from reverse engineering commercial games is recently added
+  score: 0
+  posted_at: '2026-11-11T16:58:07Z'
+- id: '50455831'
+  parent_id: '50449891'
+  author: pipes
+  text: Two of the best games of all time waverace 64 and 1080 snowboarding for the
+    n64 have been statically recomped. I&#x27;ve been playing them on my steamdeck.<p>Unfortunately
+    I think the party will end soon as anthropic are already preventing reimplementing
+    games in there system prompts.
+  score: 0
+  posted_at: '2026-11-11T17:13:38Z'
+- id: '50455841'
+  parent_id: '50455164'
+  author: shigawire
+  text: I think the point is you&#x27;d need to host and run the game from all over
+    the world to serve customers all over the world.<p>I have no idea how difficult
+    that is for large publishers though. I&#x27;d guess hard since Google gave up
+    on stadia
+  score: 0
+  posted_at: '2026-11-11T17:14:38Z'
+- id: '50455930'
+  parent_id: '50455044'
+  author: boahen319
+  text: I just always assumed that&#x27;s what was motivating the &quot;space datacenters&quot;
+    noise, if it was based in anything rational at all. Run latency-sensitive things
+    in the Starlink network itself to expand those markets...
+  score: 0
+  posted_at: '2026-11-11T17:22:48Z'
+- id: '50455984'
+  parent_id: '50455831'
+  author: leetrout
+  text: I wish they would re-make waverace. It was such a great game.
+  score: 0
+  posted_at: '2026-11-11T17:27:56Z'
+- id: '50456129'
+  parent_id: '50455831'
+  author: yieldcrv
+  text: distillation spawning abliterated models will make this re-available permanently
+    in just a few weeks
+  score: 0
+  posted_at: '2026-11-11T17:40:33Z'
+- id: '50456218'
+  parent_id: '50456129'
+  author: wredcoll
+  text: People always say stuff like this but I&#x27;ve never been quite clear what
+    they mean.<p>Presumably claude&#x2F;etc aren&#x27;t any kind of &quot;open&quot;,
+    so what specific models are we talking about?
+  score: 0
+  posted_at: '2026-11-11T17:48:33Z'
+- id: '50456322'
+  parent_id: '50456218'
+  author: yieldcrv
+  text: future versions of Qwen Kimi Deepseek available for download<p>they train
+    off of US closed models illicitly and have lots of post training, and then community
+    versions pushed in yet other directions
+  score: 0
+  posted_at: '2026-11-11T17:55:28Z'
+- id: '50457389'
+  parent_id: '50455841'
+  author: vel0city
+  text: Microsoft already has this infrastructure though, and I imagine would be interested
+    in continuing to expand it even more as time goes own regardless of cloud gaming.<p><a
+    href="https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;azure&#x2F;reliability&#x2F;regions-list?tabs=europe"
+    rel="nofollow">https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;azure&#x2F;reliability&#x2F;regions-...</a><p>Playstation
+    offers this already in a ton of European countries as well as Japan and South
+    Korea.<p>Google gives up on most things, doesn&#x27;t mean it was overly challenging
+    for them to do. I guess running an RSS aggregation platform is also too difficult
+    for anyone else to do based on the logic of &quot;well Google decided to quit&quot;.
+  score: 0
+  posted_at: '2026-11-11T19:27:33Z'
+- id: '50458406'
+  parent_id: '50449891'
+  author: Limonero
+  text: Now do Age of Empires II please. :)
+  score: 0
+  posted_at: '2026-11-11T20:43:24Z'
+- id: '50458879'
+  parent_id: '50455831'
+  author: terminalcommand
+  text: Anthropic bans almost everything. Chatgpt is much more liberal.
+  score: 0
+  posted_at: '2026-11-11T21:22:50Z'
+- id: '50459080'
+  parent_id: '50449891'
+  author: vanillax
+  text: Why cant someone do a REA and fix anti cheat so we can finally play real games
+    on Linux? So tired of Anti-Cheat only working on WinBlows (tm)
+  score: 0
+  posted_at: '2026-11-11T21:39:59Z'
+article:
+  url: https://github.com/adrbn/bo2-mac
+  title: 'GitHub - adrbn/bo2-mac: Call of Duty: Black Ops II statically recompiled
+    from 32-bit x86 Windows to native ARM64 macOS: Remill → LLVM IR, a hand-written
+    Win32 runtime, Direct3D 11 drawn by Metal. No Wine, no game files. · GitHub'
+  fetch_status: success
+  content: "## Latest commit\n\n## History\n\n## Folders and files\n\n## Repository
+    files navigation\n\n# bo2-mac\n\nCall of Duty: Black Ops II, statically recompiled
+    from 32-bit x86 Windows to native ARM64 macOS. Campaign, Zombies and multiplayer
+    against bots, built on your Mac from your own Steam copy.\n\nEnglish · 中文\n\n 
+         \n\nWhy · Abstract · Method · Limits · Repository · Legal Beta, 2026-11-03
+    · measured on one Apple M1 (4 performance + 4 efficiency cores, 16 GB)\n\nCampaign
+    (Angola), Zombies (Town) and multiplayer (Hijacked, against bots) on an Apple
+    M1, recorded while playing; the number in the top right corner is frames per second,
+    and the screen recording itself costs some, mostly in the campaign. 80-second
+    video (MP4, 20 MB)\n\nImportant\n\nThis repository contains no game file and no
+    translated game code. It turns your own Steam copy of Black Ops II into an app
+    for your Mac, on your Mac. The game's code ends up inside that app, so nobody
+    can hand you a ready-made one: each player builds their own, and it may not be
+    shared. Unofficial fan project, not affiliated with Activision, Treyarch or Microsoft.
+    To play, buy the game. Beta: read what has and has not been proven.\n\n## Why\n\nBlack
+    Ops II never came out on Mac, and on Apple Silicon it was not really playable
+    before. AppleGamingWiki lists it as unplayable under CrossOver and not supported
+    under Rosetta 2. What remains is a Windows ARM virtual machine in Parallels, with
+    reports ranging from 1 frame per second in matches on an M1 Max to 60–80 on M3
+    and M4 (MacGamingDB). Here the game is translated once, before it starts, into
+    a native ARM64 app: 51–60 frames per second on a base M1, with no Windows and
+    no virtual machine. Being native also means it can be fixed and extended like
+    any Mac app: split-screen, which the PC version never had, is in progress.\n\n##
+    Abstract\n\nbo2-mac takes the three executables of Black Ops II, the campaign
+    (t6sp.exe), Zombies (t6zm.exe) and multiplayer (t6mp.exe), and turns their x86
+    machine code into ARM64 machine code ahead of time. Remill lifts each function
+    to LLVM IR, a chain of our own passes rewrites that IR, and the result is linked
+    with a Win32 runtime written by hand, whose Direct3D 11 is drawn by Metal. There
+    is no Wine and no JIT: the game runs as native code, in one process. About 150,000
+    functions are translated across the three executables. Only the short sequences
+    that the copy protection hides run in a small x86 interpreter, and so does any
+    code the translation missed, so a hole is built to cost speed rather than crash
+    the game.\n\nOn an Apple M1 the campaign runs at 51–60 frames per second, and
+    every mission loads and hands over to the next one, down to the end credits. Zombies
+    is played solo on six maps through the game's own menus at 57–60. Multiplayer
+    is played against bots through its real menus, eleven game modes, at 53–60. One
+    app, Black Ops II.app, opens the campaign, and the CAMPAIGN / ZOMBIES / MULTIPLAYER
+    entries of each menu switch to the other game.\n\nNothing is downloaded from anyone
+    but you: the converter reads the executables of the copy you bought, checks them
+    byte for byte, and builds the app on your machine.\n\n## Results\n\nFrame rate
+    counts the drawables really presented to the screen, checked against the screen
+    and the Metal HUD.\n\nWhat you can play\n\nAll three modes: keyboard and mouse,
+    or a DualSense as XInput through GameController.framework; sound on; movement
+    keys follow their position on your keyboard (ZQSD on AZERTY, WASD on QWERTY),
+    unless you bound them yourself in the game's options.\n\n## Pipeline\n\nIn five
+    steps, all on the player's Mac:\n\n- Check. The converter accepts only the exact
+    Steam build of each executable, checked by SHA-256. The launcher asks the Steam
+    client on your Mac whether the signed-in account owns the game, and refuses otherwise.\n\n-
+    Catalogue and lift. Ghidra lists the functions of your own executable; Remill
+    v6.0.1 lifts each one to LLVM IR. Five patches to the lifter are carried in tools/remill-patches/,
+    among them the x87 rounding mode, and one that forks a running Remill for each
+    function instead of reloading its x86 semantics.\n\n- Fold. Remill's IR is correct
+    but slow: every guest memory access, flag and x87 push is a call or a store into
+    a State structure. Our passes rewrite it before clang -O2: guest reads and writes
+    are inlined, lock sequences become hardware atomics, the guest ret stays inside
+    the lifted code, and the x87 stack is promoted to locals.\n\n- Runtime. runtime/
+    implements the Windows imports the game really calls, with exact stdcall arities
+    (the Steam API ones taken from Valve's public headers). Guest memory is one 4
+    GiB mapping. Direct3D 11 is a fake-COM layer over Metal; DXBC shaders go through
+    HLSLcc. XAudio2 goes to CoreAudio, and the videos are decoded natively with libvpx.\n\n-
+    Threads. Guest threads start as coroutines on one host thread, which removes most
+    sources of non-determinism and makes a run replayable. The fast configuration
+    moves the server, the render backend, sound mixing and decoding, and the job workers
+    onto real host threads. ARM is not TSO, so this needed real memory barriers.\n\nThe
+    copy protection is executed, not bypassed. The game hides integrity checks behind
+    hardware exceptions, single-step traps and code it decrypts into the heap. A small
+    x86 machine built on Unicorn (x86_guest_vm.cpp, heap_code.cpp) runs exactly those
+    sequences and hands control back to the recompiled code. No check result is forced
+    and no key is placed by hand.\n\nA hole in the translation is built to cost speed,
+    not a crash. When the game reaches x86 code that was never lifted, the same machine
+    runs its original bytes (interp.cpp) and gives control back to the recompiled
+    code at the next translated block, call or return. Each interpreted address is
+    logged ([INTERP]).\n\nThe online service is answered locally. Zombies and multiplayer
+    expect Demonware; a responder written from the game's own requests (dw_local.cpp)
+    answers the lobby, storage and ticket on your Mac. Nothing leaves the machine.\n\nThey
+    translate Windows calls at run time and keep the x86 code under Rosetta. Here
+    the x86 code itself is gone: it is ARM64 machine code before the game starts.
+    DXVK and DXMT are PE DLLs that reach their native backend through Wine's unixlib
+    mechanism; this port has no Wine, and its Direct3D 11 is its own layer over 32-bit
+    guest memory. Only shader translation was needed from outside, and HLSLcc, a plain
+    C++ library, covers it.\n\n## Findings\n\nEach entry is a symptom seen on screen,
+    the cause that was measured, and the effect of the fix.\n\nF1 · The lifter ignored
+    the x87 rounding mode. In Zombies the prone view shook. fistp rounded to nearest
+    where the game had asked for truncation, inside the network codec of the view
+    height. The height received by the client was wrong on 8 samples out of 8, and
+    on 0 out of 8 after a Remill patch and a re-lift of the codec.\n\nF2 · One reserved
+    bit of the x87 control word. A campaign mission froze in an effects loop, only
+    with real threads. The lifter stored bit 6 of the control word differently from
+    real hardware. A one-line Remill patch and four re-lifted runtime functions fixed
+    it, with no slowdown.\n\nF3 · A CPU feature flag changes the algorithm. Our IsProcessorFeaturePresent
+    answered \"no SSE2\", so the C runtime took its x87 ceil, which rounded to nearest
+    under our runtime. An effect then sampled index −1 forever: two missions froze.\n\nF4
+    · Our own log caused the stutter. Hitches of 170–430 ms were the render thread
+    blocked in write(): our log, redirected to a file on a nearly full disk. Sending
+    it through a pipe to a child process took the hitches per run from 12 and 8 to
+    0 and 0.\n\nF5 · Shader translation moved constants by 4 bytes. HLSLcc placed
+    a float2 after a float at offset 24 where Direct3D reads it at 20. 31 of 2,664
+    shaders were affected, among them the eyes and the reticles.\n\nF6 · The protection
+    has to run. The options menu froze 8 times out of 8. An integrity check rewrites
+    its own return address to "
+  error:
+  fetched_at: '2026-11-11T21:46:47Z'
+archived_at: '2026-11-11T21:46:50Z'

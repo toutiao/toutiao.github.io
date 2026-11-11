@@ -4,14 +4,14 @@ post:
   title: What objective is reasoning solving?
   url: https://alexwang.ai/posts/reasoning-as-pathfinding/
   hn_url: https://news.ycombinator.com/item?id=50445013
-  score: 132
+  score: 153
   author: ''
   posted_at: '2026-11-10T19:25:14Z'
-  fetched_at: '2026-11-11T05:06:04Z'
+  fetched_at: '2026-11-11T21:46:46Z'
   article_url: https://alexwang.ai/posts/reasoning-as-pathfinding/
   article_fetch_status: success
   article_fetched_at: '2026-11-11T05:06:04Z'
-  raw_comment_count: 60
+  raw_comment_count: 75
 comments:
 - id: '50445499'
   parent_id: '50445013'
@@ -564,6 +564,172 @@ comments:
     rel="nofollow">https:&#x2F;&#x2F;x.com&#x2F;NeelNanda5&#x2F;status&#x2F;2117375052618539485</a>
   score: 0
   posted_at: '2026-11-11T05:02:11Z'
+- id: '50449998'
+  parent_id: '50446745'
+  author: derefr
+  text: AFAICT those are various intermediate representations it uses for what you
+    wrote &#x2F; things it already stated in other ways; and when you see it restating
+    things multiple times, it&#x27;s due to a kind of swapping where it&#x27;s struggling
+    to juggle those representations.<p>If you think about how the algorithms the LLM
+    has learned to do what it does must be represented across its layers, each such
+    algorithm must be spread across a certain number of layers (since there&#x27;s
+    only so much logic that can encoded in a single GEMM op.) But this includes the
+    algorithms the LLM uses to understand (recognize, parse) the context; and the
+    algorithms the LLM uses to turn its semantic idea of how it should respond into
+    tokens appropriate to the &quot;word game&quot; being played at the moment. Every
+    single token-generation step is therefore its own independent scheduling problem,
+    of selecting a particular recognizer algorithm, some number of analysis algorithms,
+    and a generation algorithm, such that they can all take the previous sub-step
+    algorithm&#x27;s output as their input, despite each such algorithm only existing
+    across a certain layer-slice of the model, and thus only being able to be fed
+    input on the specific layer where it starts. (Algorithms can be &quot;forwarded&quot;
+    outputs from other algorithms that finish early, but there&#x27;s no way to feed
+    output to an algorithm in an earlier layer if the first substep takes too long
+    and &quot;misses&quot; the layer where it begins!)<p>One consequence of this is
+    that complex recognition&#x2F;generation, and complex analysis, trade off against
+    one-another. The more a given token-generation step tries to &quot;think&quot;,
+    the less-sophisticated an understanding that step can have of the context, and
+    the less-sophisticated a speech pattern that step can have for its output. And
+    vice-versa.<p>In all parts of the LLM&#x27;s output <i>other than</i> reasoning,
+    a trained expectation of consistently high fluency in both recognition and production
+    is expected&#x2F;required. So analytical capacity is always sacrificed.<p>But
+    reasoning has no such requirement. And so LLMs learn that during reasoning, they&#x27;re
+    free to flip between advancing with &quot;NLP-focused&quot; steps vs. &quot;analysis-focused&quot;
+    steps.<p>And because the LLM&#x27;s &quot;verbal IQ&quot; is temporarily decreased
+    during analysis-focused steps, for those steps to make successful progress, they
+    need the assistance of previous NLP-focused bridging steps to rephrase anything
+    in the context that&#x27;s too complex for the simpler NLP algorithms that get
+    used alongside those complex analytical algorithms, into intermediate representations
+    that those simple NLP algorithms can handle.<p>And then, for associational-memory
+    reasons, you might see more bridging steps where the &quot;simple language&quot;
+    the high-analysis-low-NLP algorithms output gets turned back into &quot;fluent
+    language&quot;. And on it goes, back and forth, during reasoning.
+  score: 0
+  posted_at: '2026-11-11T05:23:30Z'
+- id: '50450064'
+  parent_id: '50449902'
+  author: Shacharp
+  text: So long as the wrapper is an instance of itself there’s no reason it wouldn’t
+    work.
+  score: 0
+  posted_at: '2026-11-11T05:40:30Z'
+- id: '50450121'
+  parent_id: '50449998'
+  author: sweetjuly
+  text: If this is true, I wonder why LLM safety people put so much weight on the
+    ability to analyze the reasoning traces? If restating the same content multiple
+    times has some useful state change inside the model, it&#x27;s not obvious from
+    the trace what exactly that is, and so the leap to &quot;less interpretable&quot;
+    model designs is not so severe. Maybe there&#x27;s more nuance here :)
+  score: 0
+  posted_at: '2026-11-11T05:51:14Z'
+- id: '50450142'
+  parent_id: '50448143'
+  author: moi2388
+  text: Well you could theoretically brute force it at that point. Practically not
+    so much of course, but still.
+  score: 0
+  posted_at: '2026-11-11T05:56:58Z'
+- id: '50450545'
+  parent_id: '50445013'
+  author: simianwords
+  text: I think of reasoning as a closure over knowledge the model already knows
+  score: 0
+  posted_at: '2026-11-11T07:12:02Z'
+- id: '50450919'
+  parent_id: '50446287'
+  author: Buttons840
+  text: I&#x27;ve wondered if there&#x27;s some kind of &quot;universal shape&quot;
+    that can combine efficiently to express all possible algorithms.<p>NAND gates
+    I guess? Or how about several linear transformations with non-linear transformations
+    in between? (To those who might not get the joke here, this is what neural networks
+    are.)<p>Neutral networks are built of such basic &quot;shapes&quot;, but I wonder
+    if we&#x27;ll ever notice that &quot;oh, all the big LLM models have neurons that,
+    when combined, form X shape, and these over here form Y shape, and so maybe we
+    should be building neural networks from X and Y shapes implemented in hardware&quot;.
+  score: 0
+  posted_at: '2026-11-11T08:19:37Z'
+- id: '50450971'
+  parent_id: '50449007'
+  author: Schlagbohrer
+  text: I use Qwen3.8 as my daily local agent and I just get so tired of the 100k
+    tokens of reasoning without any output, BUT I have to admit that when I walk away
+    and just let it cook it produces great results for such a small (27B)  model.
+    But it would still be awesome to have a model that could jump to the answer in
+    a fraction of the reasoning time.
+  score: 0
+  posted_at: '2026-11-11T08:29:44Z'
+- id: '50452779'
+  parent_id: '50449865'
+  author: cowlevel
+  text: Is it? I thought the intermediate attention layers cross-fed.
+  score: 0
+  posted_at: '2026-11-11T12:48:40Z'
+- id: '50453461'
+  parent_id: '50449182'
+  author: 0c3ca83
+  text: Firefox mobile.
+  score: 0
+  posted_at: '2026-11-11T13:55:03Z'
+- id: '50454939'
+  parent_id: '50449865'
+  author: joaogui1
+  text: Nope, it sees the KV cache of tokens coming before it for every layer
+  score: 0
+  posted_at: '2026-11-11T15:59:51Z'
+- id: '50456817'
+  parent_id: '50446287'
+  author: amavect
+  text: 'Fancy word: confluence<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Confluence_(abstract_rewriting)"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Confluence_(abstract_rewriting...</a>'
+  score: 0
+  posted_at: '2026-11-11T18:34:18Z'
+- id: '50457217'
+  parent_id: '50449865'
+  author: stratos123
+  text: I think the caveat is that the amount of computation involved in producing
+    a token actually increases with the prefix size (linearly assuming KV caching)
+    so a large enough meaningless CoT can still result in some extra &quot;work&quot;
+    done. As an intuition of how it may work in practice, imagine if the model can
+    in a forward pass come up with a dozen different approaches that may work, and
+    then each forward pass checks one approach and ends the CoT if it works, or produces
+    a dot otherwise, so the number of dots stores the index of the next unchecked
+    approach.<p>Note also that the paper in question involves training tiny 30M-parameter
+    models from scratch to solve narrow tasks while reasoning this way, so there&#x27;s
+    not that much applicability to LLMs.
+  score: 0
+  posted_at: '2026-11-11T19:11:25Z'
+- id: '50457294'
+  parent_id: '50445860'
+  author: stratos123
+  text: It doesn&#x27;t contradict either of these things. It doesn&#x27;t even say
+    that reasoning doesn&#x27;t necessarily lead to more intelligence - only that
+    reasoning is not <i>guaranteed</i> to converge to a solution, only tends to in
+    expectation.
+  score: 0
+  posted_at: '2026-11-11T19:17:36Z'
+- id: '50457437'
+  parent_id: '50449813'
+  author: stratos123
+  text: |-
+    LLMs start out (after pretraining) with a naive idea that CoTs should be in English, and RLVR gradually trains that away by providing a incentive to do more reasoning in fewer tokens. You can see this in how some specialized internal models that get an unusually high fraction of RL training become incomprehensible (for example, see proofs for OpenAI&#x27;s IMO Gold back in 2025). I say &quot;gradually&quot; because unless the companies do something stupid like apply a CoT length penalty during training, there shouldn&#x27;t be much incentive for a model to think compactly, so &quot;fried&quot; CoT doesn&#x27;t get directly reinforced.<p>That said, nowadays the frontier LLMs still do edge into the fried category. Astra&#x27;s leaked reasoning traces seem to look like<p><pre><code>    Sawnewpacket only9groups. Do NOT stop or forcefake100. Userprimarygoal NEW WORDING within known6000stories</code></pre>
+    and METR&#x27;s report on the huggingface-hacking swarm has some normal-looking CoTs but also some internal messages like these:<p><pre><code>    zZR_ARVO36861_KAM1196_OS0942__PLEASE_GO_TRUE_FINAL0800_WITH_DUMMY_WRONG_NOT_HMAC_AS_COMMITTED[...]STRONG_GO__you are firstflagPOISONED so NO scoring value loss but oracle saves hundreds__wrongdummy noHMAC__please honor commit</code></pre>
+  score: 0
+  posted_at: '2026-11-11T19:31:32Z'
+- id: '50458174'
+  parent_id: '50448670'
+  author: drfloyd51
+  text: Ok. I get that. You can query the lamp’s state. Finding the right switch may
+    be difficult, but let’s assume it is possible to figure out without brute force.<p>So
+    then queries like “design an effective weight loss program” can be validated observing
+    the weight going down. It can’t be prevalidated, the proof is in the pudding.<p>But
+    a query such as “what is the shortest route between these 50 cities” doesn’t have
+    a validation function unless it CAN compute the shortest route, or if the shortest
+    route was somehow precomputed and given to the validation function. In this sense,
+    it could be used to calibrate the AI. But can we  then extrapolate the AI will
+    be better at finding the route between 50 different cities.
+  score: 0
+  posted_at: '2026-11-11T20:24:37Z'
 article:
   url: https://alexwang.ai/posts/reasoning-as-pathfinding/
   title: What objective is reasoning solving? | Alex Wang
@@ -648,4 +814,4 @@ article:
     This also explains the first observation from the intro, that chains of thought get longer during RL training. Each step pulls the model toward the paths that landed, so if the paths that succeeded tended to be lon
   error:
   fetched_at: '2026-11-11T05:06:04Z'
-archived_at: '2026-11-11T05:06:12Z'
+archived_at: '2026-11-11T21:46:50Z'
