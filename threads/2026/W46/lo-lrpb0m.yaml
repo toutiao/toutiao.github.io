@@ -5,14 +5,14 @@ post:
   title: For the first time, a C++ standard failed to pass the national bodies
   url: https://herecomesthemoon.net/2026/11/cpp26-failed-the-national-bodies/
   hn_url: https://lobste.rs/s/lrpb0m
-  score: 16
+  score: 33
   author: mond
   posted_at: '2026-11-11T18:49:35Z'
-  fetched_at: '2026-11-12T06:10:51Z'
+  fetched_at: '2026-11-12T17:24:50Z'
   article_url: https://herecomesthemoon.net/2026/11/cpp26-failed-the-national-bodies/
   article_fetch_status: success
-  article_fetched_at: '2026-11-12T06:10:52Z'
-  raw_comment_count: 1
+  article_fetched_at: '2026-11-12T17:24:53Z'
+  raw_comment_count: 9
   tags:
   - c++
 comments:
@@ -20,8 +20,113 @@ comments:
   parent_id: '0'
   author: hmry
   text: That Stroustrup photo is amazing
-  score: 2
+  score: 4
   posted_at: '2026-11-12T03:41:00Z'
+- id: lo-smgrnp
+  parent_id: '0'
+  author: epilys
+  text: "@mond there's a typo: situaation"
+  score: 2
+  posted_at: '2026-11-12T08:51:05Z'
+- id: lo-m61vta
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    There are, roughly, three camps:
+
+    Those that really want P2900.
+    Those that want contracts but don't like P2900.
+    Those that don't want contracts at all.
+    Those that really, really, don't care either way.
+
+    By far the largest group is the last one.  I was in the third category, but using Verus in Rust has moved me to the second: I actually do want contracts, but not ones that look anything like P2900.  Verus is the killer app for Rust (or something like Verus: there are a few things in this space and some of the others look potentially more promising).  Rust vs C++ in systems programming has a bunch of complex tradeoffs.  Rust + Verus vs C++ is not even worth a discussion, it's such a clear win on the Rust side that C++ isn't even worth considering.  With P2900, C++ has explicitly ceded that space in perpetuity.
+    The big structural problem with C++ is that most (probably.  At least many) features are there with a large majority in the 'don't care' camp.  For the good things there's a broad consensus that the thing is desirable and a smaller group with the expertise to build it.  Atomics are a good example of this: memory models are really hard.  At a guess, at least 90% of WG21 (including me!) are not competent to design an atomic memory model (fortunately, it was there before I joined, though some refinements are in flight).  But everyone agreed that being able to write a mutex in pure C++ was actually pretty important and kind-of embarrassing for a systems language that you couldn't.  Lambdas are simpler because they are not new in the abstract machine: C++ already had objects that overloaded the call-as-function operator so most WG21 members understood the necessary compiler transform to add them as syntactic sugar and understood why they're desirable.
+    There are a lot of other things that go in because some small group thinks they're very important and no one else cares.  I think these show a flaw in the process.  These things should be in Boost or other well-supported external libraries.  They don't need to be in the standard library.  I believe the standard library should be:
+
+    Abstraction layers over things CPUs provide, which are necessary for portable code to use these features.
+    Abstraction layers over things most operating systems provide, which are necessary for portable code to use these features (with feature-detection mechanisms for when a platform doesn't support them and fallback code can't be efficient).
+    Functionality that most programs will want internally, to avoid everyone reimplementing the same things.
+    Types that many components will want to expose at their interfaces, where having two different libraries providing different abstractions for the same thing is unhelpful, to allow an ecosystem of compatible libraries.
+
+    A lot of current and proposed things fit none of these categories.
+    Below this, the language should provide two categories of things:
+
+    Things necessary for implementing the lowest-level of the abstract-machine semantics, without which the language can't support its own standard library.
+    Things necessary for ergonomic implementations of common idioms, to allow concise code and transferrable knowledge between codebases.
+
+    The former should be driven by standard-library and external requirements based on experience.  C++11's r-value references are a nice example here: You can't implement smart pointers that can be safely added without them.  There are a few other things that would be very nice to add here (borrowing semantics and viewpoint adaptation would be top of my list, non-local return from constrained lambdas would be near the top) for similar reasons.
+    The latter should be driven by large scale deployment experience.  When people are frequently repeating the same pattern, provide syntactic sugar.  Again, lambdas are a great example here.  They do not add any new abstract-machine semantics.  You can implement lambdas purely as a source-to-source transform that targets C++98.  A lambda is a class with a constructor that takes its captures as arguments, fields that are copies of or references to its captures, and an operator() overload that takes its arguments.  But typing all of that is annoying and lambdas make it easy.
+    P2900 added both things: new abstract-machine semantics (ODR violations that are not ODR violations, ways of running code before and after functions), though not quite enough to constrain contracts to be something you can reason about (defining a subset of the language for contracts was explicitly out of scope, which means contracts are just conditionally-executed code, not something that you can use usefully for any form of analysis).  New syntactic sugar (pre, post, and contract_assert), where the pre- and post-condition syntax is a short form optimising for a specific use case (that every contract has an expression, rather than that contracts are things that you'd apply using reflection-like interfaces to particular API shapes, or want to describe one parameter, or parameter set, at a time) with no large-scale deployments of C++ contracts to motivate these choices (the largest deployments of contracts in other languages have a completely different design of contracts, which was explicitly ruled out of scope in P2900).
+    This has never been the policy for C++ and it does not have an analogous design philosophy against which things could be judged.
+
+    Importantly, it looks to me as though the committee just repeatedly ignored the comments/feedback of the national bodies throughout the process, and then ran face-first into a wall at the vote.
+
+    There is some confusion here because of what 'national body' means.  I am a member of the BSI delegation to JTC1/SC22/WG21.  The BSI position is that all of these representatives are serving in an individual capacity.  I represent myself (and possibly my employer) in discussions around C++.  My opinion and others go into a Draft International Standard (DIS).  This is then voted on by the national body representatives to JTC1/SC22 (the 'Programming languages, their environments and system software interfaces' subcommittee of the 'Information technology' committee in ISO).  When it's approved, it becomes an ISO International Standard (IS).
+    The BSI representatives to SC22 may or may not be members of WG21 (I actually don't know who they are and probably should).  But their remit with the BSI is to represent the BSI in a context that extends to all programming languages and related things.  Their remit is very different from WG21 members.
+    Normally, the national body representatives to SC22 just take whatever the working group agreed and present it because they trust these WGs.  For the first time, various people have been actively talking to their (and other, which is probably against the rules) country's SC22 representatives and asking them to vote against the DIS.
+    I have numerous technical, cultural, and process objections to P2900 and don't think it should be included, but I also don't like the fact that SC22 was lobbied in this way.  I don't think P2900 should have made it as far as it did.  It isn't just a bad solution, it's a bad solution to the wrong problem.
+    There's a lot more in the article that I can't comment on without breaching the confidentiality agreements of various bits of this process.  I agree WG21 has serious structural and process problems.  I agree P2900 should not be in C++26 (and, ideally, nothing like it should be in C++29 - if we're going to do contracts, let's do them based on state of art for 2006, not state of the art for 1986).  I agree that a lot of what's said by the contracts advocates has been disingenuous, misleading and, in some cases, outright false.  I disagree that they are alone in that (there are two very vocal anti-contracts people who have been particularly bad in that).  I agree that lobbying NBs is not the whole story for why the DIS failed and I think the fact that people engaged in it was a symptom of the problem, not anywhere near the root cause.
+  score: 17
+  posted_at: '2026-11-12T11:03:22Z'
+- id: lo-a0dzmt
+  parent_id: '0'
+  author: morj
+  text: |-
+    This has a lot more details than I expected, and I thought I already knew most of the discussion around the contracts
+
+    A different version of Contracts was up for debate around 2018, and was kicked out not too long after
+
+    And maybe they'll return again! Or has the process changed for the worse since 2018? From the quality of things standardized since c++17 I wouldn't be surprised
+  score: 4
+  posted_at: '2026-11-12T11:19:48Z'
+- id: lo-h1ycbc
+  parent_id: '0'
+  author: muvlon
+  text: |-
+    Sorry for not adding anything to 90% of your comment (I'm simply out of my depth there), but thanks for shilling Verus. I was aware of Kani and Creusot in this space, but not Verus. It looks really cool!
+    I think I like their decision to implement their language extensions via a macro that both checks the constraints and then emits valid Rust. You get to have just Rust files, and they actually are valid Rust (in a roundabout, but very technically correct way). This is probably not optimal long-term, in particular because I can see it interacting badly with IDEs and also other language extensions with a similar implementation strategy. However, this is still much preferable over putting a half-baked version of this into the language proper and being stuck with it. This way, you can do all the experimentation you want and gather experience.
+  score: 3
+  posted_at: '2026-11-12T14:16:46Z'
+- id: lo-xmaxmj
+  parent_id: '0'
+  author: hunger
+  text: |-
+    First they killed Safe C++ im such a toxic way that Sean decided to not touch the topic again, now we have the contracts drama.
+    I do not expect contracts to be picked up again. Who wants to work on a proposal that got pulled from the standard once, probably will be pulled again, and where the head people were super toxic towards?
+    Its going to be even harder to find people willing to work on anything with major shitshows like those happening every couple of month.
+  score: 4
+  posted_at: '2026-11-12T14:44:05Z'
+- id: lo-5rtb9x
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    I was aware of Kani and Creusot in this space, but not Verus. It looks really cool!
+
+    I was not aware of Kani, but Creusot was on my list to look at.  It has some advantages relative to Verus but also some differences in approach and interface.
+    One of the things I tried to push the C++ contracts people with P3929 to think about what the minimal set of changes was to the C++ abstract machine to be able to support what they want from contracts.  Their reaction was dismissive.
+    I think something like Verus would need some AST-level reflection, which is very hard to add but also has a lot of big wins if you can add it.
+  score: 3
+  posted_at: '2026-11-12T15:03:13Z'
+- id: lo-qgdkoz
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    First they killed Safe C++ im such a toxic way that Sean decided to not touch the topic again
+
+    I wasn't part of any discussion of that with Sean, but the problem I never saw resolved for Safe C++ was any implementable semantics for the borrow checker.  I really want C++ to get something that can be used to check borrowing at compile time but the Safe C++ approach did not document an algorithm for doing so.
+    It is fine for Rust to say that safe borrows are whatever this week's rustc is able to prove are safe and rustc tests on every cargo crate so rustc n+1 should accept all correct programs that rustc n accepted.  It is not okay for a language specified by an ISO standard with multiple implementations to say the same.  We need the specification to define the list of programs that any compliant C++29 compiler will accept and the set it will reject.  If GCC's borrow checker can handle some cases that Visual Studio and Clang's can't, Clang's can handle some that GCC and VS can't, and VS can handle some that GCC and Clang can't, that's a mess.  No one can write C++ code in that world.
+    For a proposal with a borrow checker to be considered by WG21, it needed to define what the borrow checker did in such a way that VS, Clang, and GCC programmers can all implement the algorithms and ensure that they accept and reject the same set of programs.  And Safe C++ did not do that.
+  score: 4
+  posted_at: '2026-11-12T15:15:36Z'
+- id: lo-v2fsdz
+  parent_id: '0'
+  author: hunger
+  text: I fully agree that the proposal was far from ready to become a future C++
+    standard. I am not even sure that would have been a good idea in the first place.
+    I am just sad that the way this proposal was handled resulted in yet another capable
+    set of hands leaving.
+  score: 1
+  posted_at: '2026-11-12T15:38:59Z'
 article:
   url: https://herecomesthemoon.net/2026/11/cpp26-failed-the-national-bodies/
   title: For the first time, a C++ standard failed to pass the national bodies | MOND←TECH
@@ -119,4 +224,4 @@ article:
     We’ve had multiple votes. Most importantly (Hagenberg, Feb 15th, 2025), the vote to formally add Contracts to the C++26 working draft, turned out 100 in favor, 14 opposed, 12 abstain. The mul
   error:
   fetched_at: '2026-11-12T06:10:52Z'
-archived_at: '2026-11-12T06:10:53Z'
+archived_at: '2026-11-12T17:24:53Z'

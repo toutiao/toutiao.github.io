@@ -4,14 +4,14 @@ post:
   title: A great old-timey game-programming hack (2013)
   url: https://blog.moertel.com/posts/2013-12-14-great-old-timey-game-programming-hack.html
   hn_url: https://news.ycombinator.com/item?id=50448921
-  score: 269
+  score: 278
   author: ''
   posted_at: '2026-11-11T01:56:31Z'
-  fetched_at: '2026-11-12T06:10:44Z'
+  fetched_at: '2026-11-12T17:24:43Z'
   article_url: https://blog.moertel.com/posts/2013-12-14-great-old-timey-game-programming-hack.html
   article_fetch_status: success
   article_fetched_at: '2026-11-11T13:43:56Z'
-  raw_comment_count: 67
+  raw_comment_count: 69
 comments:
 - id: '50449149'
   parent_id: '50448921'
@@ -851,6 +851,53 @@ comments:
     rel="nofollow">https:&#x2F;&#x2F;tlindner.macmess.org&#x2F;document-reproduction&#x2F;the-byte-...</a>
   score: 0
   posted_at: '2026-11-12T05:21:45Z'
+- id: '50465681'
+  parent_id: '50455496'
+  author: whizzter
+  text: 'Not true at all.<p>1: Many tricks worked for outdated CPU&#x27;s more or
+    less weird instructions (and those haven&#x27;t gotten equally much updated as
+    modern C compilers to benefit, and the benefits of modern C compilers is more
+    into control- and data-flow analysis rather than esoteric instruction selection,
+    so even ports of modern compilers to old platforms probably won&#x27;t use it).<p>2:
+    Many x86 tricks would lead to slower code today, already with the Pentium Pro
+    Intel started focusing on optimizing the CPU&#x27;s so that they run code that
+    compilers produce faster and kinda ignored and&#x2F;or &quot;failsafed&quot; certain
+    patterns with slower execution paths.<p>As someone writing software rendered graphics
+    in the 90s you had the trick of 64k-aligning textures and then updating the 8bit
+    parts of 32 bit registeres like AH&#x2F;AL (or CH&#x2F;CL,etc) before loading
+    the texture from the corresponding address in a register (like EAX&#x2F;ECX that
+    contains all 32bits), code that ran fine on a Pentium 133 could behave like a
+    slug on a Pentium Pro 200 if they did that.<p>The Pentium 2 actually added optimizations
+    to handle those cases since some  games,etc suffered on PPro, but I would be surprised
+    if they&#x27;ve retained those fixes in CPU&#x27;s after 2010 since it complicates
+    CPU register tracking and software rendering went the way of the dodo (and software
+    that still used those tricks would be handled by the enormous CPU power of today
+    even if slightly slower), and anyone doing a software renderer after 2005 would
+    probably support more than 256x256 textures and not spend too much optimizing
+    for that particular case (256x256 textures was a very sweet spot, both due to
+    registers but also ram sizes of the 90s).<p>Same thing with the x87 FPU code,
+    it&#x27;s wonderful for sizecoding since the stack based nature makes registers
+    implicit, but the problems like stateful integer conversions (If you remember
+    &#x2F;QIfist) are done away with SSE&#x2F;AVX (iirc modern MSVC doesn&#x27;t even
+    generate code using x87 FPU anymore, it&#x27;s all SSE now).<p>3: I&#x27;d be
+    very surprised to see a compiler use the stack-pointer based tricks mentioned
+    in the article, a C compiler has to respect ABI promises so that stuff is simply
+    too much pain to try to make work in a stable fashion so I really really doubt
+    that any compiler writer has more than entertained the notion of using it before
+    brushing it aside as a bottomless pit of compatbility fixes.'
+  score: 0
+  posted_at: '2026-11-12T11:23:49Z'
+- id: '50465994'
+  parent_id: '50449365'
+  author: ekimekim
+  text: |-
+    A fast memcpy for the Game Boy makes use of pop instructions for the same purpose. Notably not push instructions, because pop is actually faster and you only have one stack pointer so you&#x27;re better off using it for the source address (popping 16 bits into two registers at a time) than the dest.<p>You can also get savings by using the &quot;store and increment HL&quot; combined instruction, which saves time over &quot;inc HL&quot;, but this requires you to move from the popped registers into A (this instruction only works with the A register). You can&#x27;t pop directly into the A register because that pop variant, &quot;pop AF&quot;, pops into A plus the hidden flags register which is not helpful.<p>So it looks like:<p><pre><code>  pop DE
+      ld A, D
+      ld [HL+], A
+      ld A, E
+      ld [HL+], A</code></pre>
+  score: 0
+  posted_at: '2026-11-12T12:06:31Z'
 article:
   url: https://blog.moertel.com/posts/2013-12-14-great-old-timey-game-programming-hack.html
   title: A Great Old-Timey Game-Programming Hack - Tom Moertel’s Blog
@@ -956,4 +1003,4 @@ article:
     a"
   error:
   fetched_at: '2026-11-11T13:43:56Z'
-archived_at: '2026-11-12T06:10:50Z'
+archived_at: '2026-11-12T17:24:49Z'
