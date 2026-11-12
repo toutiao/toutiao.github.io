@@ -1,0 +1,147 @@
+---
+post:
+  id: lo-pdzud6
+  source: lobsters
+  title: Andrew Kensler's permute(), a function for stateless, constant-time pseudorandom-order
+    array iteration
+  url: https://andrew-helmer.github.io/permute/
+  hn_url: https://lobste.rs/s/pdzud6
+  score: 11
+  author: pushcx
+  posted_at: '2026-11-11T20:08:45Z'
+  fetched_at: '2026-11-12T06:10:51Z'
+  article_url: https://andrew-helmer.github.io/permute/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-12T06:10:53Z'
+  raw_comment_count: 2
+  tags:
+  - compsci
+comments:
+- id: lo-bgqllq
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    I knew of cycle-walking but this is my first time seeing a hash function designed for it. It took me a while to see why Kensler's hash stays invertible even when you mask off some of the bits:
+
+    Multiplication does not allow high-order bits to affect low-order bits. So multiplication by an odd number is invertible, but just as importantly you can look at bit suffixes (of any length) in isolation, and they will have the same property.
+    Similarly, whenever idx is XORed with a right-shifted copy of itself, the mask is applied to the right-shifted copy, preventing bits from outside the masked region from changing anything inside the masked region. So this too stays invertible.
+
+    Because each individual step keeps the low-order bits invertible, the hash function as a whole is also invertible over those low-order bits, which means you can use it for efficient cycle walking. Pretty cool stuff!
+  score: 3
+  posted_at: '2026-11-12T02:10:22Z'
+- id: lo-vxdntq
+  parent_id: '0'
+  author: pervognsen
+  text: A lot of these things can be explained in a simple and general way algebraically.
+    E.g. if x is a nilpotent operator (the nth iterate x^n eventually becomes the
+    0 operator) the geometric series 1/(1+x) = 1 - x + x^2 + ... truncates to a finite
+    sum, so the operator 1+x is invertible with that as its inverse. This makes it
+    easy to solve toy cryptanalysis problems like https://cryptopals.com/sets/3/challenges/23.
+  score: 1
+  posted_at: '2026-11-12T03:38:36Z'
+article:
+  url: https://andrew-helmer.github.io/permute/
+  title: Andrew Kensler's permute() – Helmer's Blog
+  fetch_status: success
+  content: "# Andrew Kensler's permute() \nA function for stateless, constant-time
+    pseudorandom-order array iteration\n\n ![](/post_assets/2021-03-22-permute/permute-header.svg)\n\nThat
+    subtitle is a little bit of a mouthful, but I’ve been wanting to talk about Andrew
+    Kensler’s `permute()` function for a while and I wanted to make it clear right
+    off the bat why it’s useful. `permute()` is used some in the graphics community,
+    especially in offline rendering, and the techniques are more widely known in cryptography\\*,
+    but it’s applicable to so much more than graphics and cryptography.\n\nLet’s first
+    talk about the problem it solves. You want to iterate over \\(k\\) items of an
+    array of length \\(n\\), in random order, where \\(k \\leq n\\). Those \\(k\\)
+    items cannot contain duplicates from the original array (they must each correspond
+    to a unique index). Or, you want to get a random sample of \\(k\\) items without
+    replacement.\n\nWhen I say “random”, this is obviously pseudorandom, but there
+    are varying degrees of pseudorandomness. This is unquestionably _not_ cryptographically
+    secure, that’s not its intended use. I can’t say that I know enough about pseudorandomness
+    to say how statistically indistiguishable from random this is or for what applications
+    it will be random enough. It’s good enough to use for computing rendering integrals,
+    and I’d be comfortable using it for a lot of casual statistical analysis.\n\n**Update
+    May 27, 2021:** [I saw what looks to be a nice improvement to the randomness of
+    this](https://github.com/camel-cdr/cauldron/blob/main/tools/random/permute/README.md),
+    and extends it to work for 64-bit integers. I recommend taking a look after reading
+    this post!\n\nAnyway, the canonical way to randomly iterate over an array is to
+    first shuffle it with the Fisher-Yates shuffle, and then iterate over the shuffled
+    array.\n\n\\*I found [this Stack Overflow answer](https://stackoverflow.com/a/1866710/624250)
+    from 2009 that gives the exact same idea, so I should be clear that Andrew Kensler
+    didn't really invent the method I'll talk about here, but I think he popularized
+    the use of it in graphics and certainly created the particular hash function I'll
+    show at the end.\n\n# The Fisher-Yates shuffle (and its limitations)\n\nThe shuffle
+    works something like this:\n\n1. For the first item in the array, randomly swap
+    it with any item (including itself). Whatever is now in the first position is
+    “fixed”.\n2. For the second item in the array, randomly swap it with any of the
+    non-fixed items (i.e. after the first item). The second item is now “fixed”.\n3.
+    For the third item, swap it with any of the non-fixed items (i.e. after the second
+    item).\n4. Etc. until you get to the last item.\n\nThe C++ code looks something
+    like this:\n\n1\n    2\n    3\n    4\n    5\n    6\n    7\n    8\n    \n    template<typename
+    T>\n    void fisher_yates_shuffle(std::vector<T> *vec) {\n      int n = vec->size();\n
+    \     for (int i = 0; i < n-1; i++) {\n        int swap_idx = uniform_rand_int(i,
+    n-1);\n        std::swap((*vec)[i], (*vec)[swap_idx]);\n      }\n    }\n\n`uniform_rand_int(min,
+    max)` is inclusive of both min and max, i.e. \\(\\textnormal{swap\\_idx} \\in
+    \\{i, i+1, \\dots, n-1\\}\\)\n\nObviously this manipulates the array in place,
+    which may not be desirable for a bunch of reasons. In practice you might call
+    this with an array of indices or an array of pointers.\n\n**There are a bunch
+    of situations where the Fisher-Yates shuffle doesn’t work very well, because you
+    need to store the shuffled array.**\n\n1. The rendering case, which is what motivated
+    Kensler. This is when you’re iterating over a LOT of arrays simultaneously, like
+    10s of thousands or millions on one computer. Or maybe iterating over one array
+    in a million different random orders. In other words, rather than fully iterating
+    over one array, then the next array, etc. you want to get the `i`‘th shuffled
+    value of a million arrays, then get the `i+1`‘th shuffled value of those arrays,
+    etc.\n2. The case where you want to draw a “small” random sample (without replacement,
+    i.e. no duplicates) from a huge array. Think, you want to get 10,000 unique random
+    items from an “array” that’s a billion items long, like a database.\n3. You want
+    to compute something, like an average, over a really large random sample from
+    an even huger array, neither of which can fit in memory, and it’s really important
+    that you don’t have duplicate values.\n\nIn the latter two cases there’s obviously
+    a lot more to think about, like the cost of just reading incoherent values from
+    the large array. There are other good ways to solve #2 and #3 too, especially
+    if you’re doing distributed computing. But a lot of the techniques I know share
+    the problem that you need to scan over the entire array at least once. If you
+    have constant-time access into the array, Kensler’s method is always linear only
+    in the size of your random sample, not in the original array.\n\nIn other words,
+    if you want to iterate over \\(k\\) random, unique items from an array of length
+    \\(n\\), then the Fisher-Yates shuffle is \\(O(n)\\) time and \\(O(n)\\) memory.
+    As I’ll show in a second, this can be reduced to \\(O(k)\\) time and \\(O(k)\\)
+    memory. But `permute()` is \\(O(k)\\) time and \\(O(1)\\) memory, the best you
+    could possibly do. Not only that, but with `permute()` you can arbitrarily query
+    random indices in constant time, which means you can use it in parallel across
+    multiple threads or computers.\n\n## Incremental Fisher-Yates shuffle\n\nI think
+    it’s worth mentioning you can extend the Fisher-Yates shuffle to handle #2. You
+    use a sparse map to keep track of swapped indices rather than putting them into
+    the array. When you swap the next index, you check your map to see if the original
+    or swapped locations in the array have already been swapped. If so, you use the
+    values from the map, otherwise you just use the original indices, and then you
+    update the map. Here’s a code snippet to show what that looks like. This will
+    select \\(k\\) random unique integers from the values \\(\\{0,1,\\dots,n-1\\}\\).\n\n1\n
+    \   2\n    3\n    4\n    5\n    6\n    7\n    8\n    9\n    10\n    11\n    12\n
+    \   13\n    14\n    15\n    16\n    17\n    18\n    19\n    20\n    21\n    22\n
+    \   \n    std::vector<int> get_k_indices(int n, int k) {\n      std::vector<int>
+    indices(k);\n      std::unordered_map<int, int> index_map;\n      for (int i =
+    0; i < k; i++) {\n        int swap_idx = uniform_rand_int(i, n-1);\n    \n        //
+    Get the new index and the previous. If they've been swapped before\n        //
+    they'll be in the map.\n        auto swap_val_it = index_map.find(swap_idx);\n
+    \       auto prev_val_it = index_map.find(i);\n        int swap_val = (swap_val_it
+    == index_map.end()) \n            ? swap_idx\n            : swap_val_it->second;\n
+    \       int prev_val = (prev_val_it == index_map.end()) ? i : prev_val_it->second;\n
+    \   \n        indices[i] = swap_val;\n        index_map[swap_idx] = prev_val;\n
+    \       // We don't need to set the prev_idx in the map,\n        // it will never
+    be checked again.\n      }\n      return indices;\n    }\n\nBut still, even this
+    “incremental” Fisher-Yates shuffle requires \\(O(k)\\) memory, which makes it
+    unsuitable for case #1 or case #3.\n\n**Update** : I believe this is equivalent
+    to, but less elegant than, [Floyd's algorithm for random sampling without replacement](https://fermatslibrary.com/s/a-sample-of-brilliance).
+    So if you want to use that (like if you're in case #2 and really care about good
+    randomness), implement Floyd's algorithm, rather than the way I've framed it here.\n\n#
+    Kensler’s permute()\n\nKensler introduced `permute()` in his paper [Correlated
+    Multi-Jittered Sampling](https://graphics.pixar.com/library/MultiJitteredSampling/).
+    I didn’t quite understand how it worked when I first read it, so I also wanted
+    to write this blog post to break it down and hopefully help others appreciate
+    it. However if you just want the code, [skip to the bottom](#final-implementation)!\n\nThe
+    function acts as a “stateless” pseudorandom iterator over an array. It takes in
+    a seed value for a permutation, the length of the arra"
+  error:
+  fetched_at: '2026-11-12T06:10:53Z'
+archived_at: '2026-11-12T06:10:53Z'

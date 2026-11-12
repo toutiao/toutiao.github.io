@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-lrpb0m
+  source: lobsters
+  title: For the first time, a C++ standard failed to pass the national bodies
+  url: https://herecomesthemoon.net/2026/11/cpp26-failed-the-national-bodies/
+  hn_url: https://lobste.rs/s/lrpb0m
+  score: 16
+  author: mond
+  posted_at: '2026-11-11T18:49:35Z'
+  fetched_at: '2026-11-12T06:10:51Z'
+  article_url: https://herecomesthemoon.net/2026/11/cpp26-failed-the-national-bodies/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-12T06:10:52Z'
+  raw_comment_count: 1
+  tags:
+  - c++
+comments:
+- id: lo-fasqot
+  parent_id: '0'
+  author: hmry
+  text: That Stroustrup photo is amazing
+  score: 2
+  posted_at: '2026-11-12T03:41:00Z'
+article:
+  url: https://herecomesthemoon.net/2026/11/cpp26-failed-the-national-bodies/
+  title: For the first time, a C++ standard failed to pass the national bodies | MOND←TECH
+    MAGAZINE
+  fetch_status: success
+  content: |-
+    Bjarne Stroustrup, in the flesh. Toggle original/dithered image
+
+    *Pops cork*.
+
+    It looks like it happened! A historic first, for better or worse.
+
+    This is a sign that C++ is (still) struggling with its governance (see a previous article on cultural issues within C++ here). This is a big deal even if you do not care about programming languages. C++ is arguably the most important programming language in existence.
+
+    Your computer runs on C or C++. The web browser you are using to read this is written in C++. ~All programming languages depend on C++ (often through LLVM). Likewise, ~all websites with performance requirements (e.g. YouTube) depend on C++, ~all data storage, game engines, finance, etc.
+
+    In a world that is drowning in exciting new vulnerabilities in ~all software, the ability of C++ to change and adjust to changing times affects you.
+
+    Let’s take a step back and get an overview. The initial source was a post by Robert Seacord on LinkedIn:
+
+    "Balloting has completed for C++26. Unfortunately it was Disapproved. P-Members voting: 12 in favor out of 20 = 60 % (requirement >= 66.66%) (P-Members having abstained are not counted in this vote.) Member bodies voting: 9 negative votes out of 22 = 41 % (requirement <= 25%). Sort of a sad day for the C++ community. Hopefully we can heal and move on from this in a productive manner." Toggle original/dithered image
+
+    In a comment, J. Daniel García adds: “There were 12 countries that abstained. In several cases because they could not reach to a common position. That is another signal of a contested draft.”
+
+    Now, before we get into the facts: This is not a good look for C++.
+
+    There have been multiple fights over the future direction of the C++ language, but no C++ standard ever failed to be signed off by the national bodies.
+
+    The national body vote is considered to be a formality. By the time the vote reaches the national bodies all disagreements should’ve been sorted out by WG21 (Working Group 21, i.e. the C++ Standards Committee).
+
+    Truly controversial features should never make it this far, since they should never be added to the C++26 working draft in the first place. This is a sign of division in the C++ community, in some form or another, and completely independently of whether you agree with this result or not.
+
+    Here, “Added to the C++26 working draft” is essentially accepting the pull request. Everyone is working towards the C++26 release, and people contribute to it with papers. Papers lead to votes, which then lead to amendments of the draft. Finally (this is where we are) wording passes happen, and it gets signed off, rubber-stamped and released. Phrased like this, the ISO process sounds sensible enough, but trust me, it’s actually kind of a nightmare.
+
+    Needless to say, the debates are raging, with comments on all sides: So many discussions.
+
+    Quick explanation: The national bodies execute a single vote. To pass the national bodies, the draft has to meet two bars:
+
+    - At least two-thirds of the participating voting members have to vote Yes.
+
+    - At most one quarter of all voting members may vote No.
+
+    If the above posts are correct, then the draft failed to meet both bars. Twelve isn’t two-thirds of twenty, and nine is more than a quarter. Visualization:
+
+    In total, there were 20 P-members, and 22 total members (ignoring abstaining). I heard that the US abstained, but take that with a grain of salt.
+
+    ## So, what happened?
+
+    tl;dr: WG21 voted to include Contracts in C++26. Several high-ranking members of WG21 are strongly opposed to Contracts, and so are several national bodies. The national body vote was the ’last resort’ place to prevent Contracts from being canonicalized as part of the C++ standard.
+
+    New keywords that replace assert macros with a standardized way to enforce runtime checks. Most importantly, you can add pre and post checks to ensure that all arguments and return values fulfill certain conditions.
+
+    This ends up looking roughly as follows:
+
+    int wrap_index(int i, const int size) pre (size > 0) // the caller must guarantee this post (r: 0 <= r && r < size) // the function promises this; r is the return value { int r = i % size; if (r < 0) r += size; contract_assert(r >= 0); // a check inside the body return r; }
+
+    Looks simple, right? You’d think so, but no!
+
+    First, due to issues with virtual functions, Contracts for virtual functions were already cut from the proposal.
+
+    Second, it’s not entirely obvious how this will interact with constexpr or function inlining.
+
+    Third, there are compile flags to selectively enable or disable the enforcement. E.g. “If a contract is violated, do you want to 1) kill the program, 2) call a ‘contract-violation handler’ and then kill the program, 3) log an error, 4) ignore completely (and not even perform the check, for performance reasons)?”
+
+    Big question: You compile your code with enforce and are linking a prebuilt library that pulls in the same dependency as you, but with Contracts set to ignore. This is fine according to Contracts. The linker gets to keep one of the copies. What happens? Do Contracts run or not? What if a call is inlined across translation units?
+
+    Is there even a way for the user to guarantee that checks always run? (The answer is no. What? You were hoping that this feature could be used to ensure certain checks guarding against Undefined Behavior would always run, no matter what? Don’t be silly—this is C++.)
+
+    Oh, did I mention that code inside of predicates is just standard C++, so the compiler is allowed to elide checks due to Undefined Behavior?
+
+    But do feel free to take it from the source: The “Contracts paper” can be found here, and if you read closely, you’ll find some funny statements that really ruffled some feathers:
+
+    > It is ill-formed, no diagnostic required (IFNDR) if multiple first declarations for the same function are in different translation units that do not have the same sequence of function contract specifiers.
+
+    It is ill-formed, no diagnostic required (IFNDR) if multiple first declarations for the same function are in different translation units that do not have the same sequence of function contract specifiers.
+
+    All of this leads to so many funny issues, some of which can be poorly summarized as “Well, who even knows whether your Contracts are even going to be enforced, this is C++, the compiler can do whatever it wants lol”.
+
+    If you think “Gee, this proposal looks rather complex and messy”, keep in mind that the Contracts paper was explicitly designed to be a minimal viable product that everyone would be able to agree on.
+
+    If you only faintly paid attention to C++, you might be going into this assuming that Profiles (aka Bjarne Stroustrup’s initiative to make C++ safer via magical fairy dust, also controversial and considered to be ‘impossible to implement’ by some) are the sticking point, but no, Profiles did not make it into C++26.
+
+    How do we know that it’s Contracts?
+
+    Oh, y’know, it’s just because that’s all everyone has been talking about.
+
+    Most obviously, the pro-Contracts camp released “Do not remove Contracts from C++26” on Oct 23rd, i.e. around the time when the national body ballot closed. Vinnie Falco (the most outspoken voice against Contracts) countered with “Do Remove Contracts From C++26” on the very same day1.
+
+    If you’ve been paying attention, there’s a whole trail of papers and events here.
+
+    We’ve got talks, and Bjarne Stroustrup, the creator of C++ himself, saying “it’s claimed to be a minimum viable product. It is not minimal. I don’t think it’s viable”.
+
+    We’ve got multiple papers, say “Contract Concerns”, “Contracts make C++ less safe — full stop!”, or “Contracts’ fundamental flaws” (all reasonably short) opposing the behemoth that’s the Contracts paper and its rationale document (put together, almost 300 pages).
+
+    We’ve had multiple votes. Most importantly (Hagenberg, Feb 15th, 2025), the vote to formally add Contracts to the C++26 working draft, turned out 100 in favor, 14 opposed, 12 abstain. The mul
+  error:
+  fetched_at: '2026-11-12T06:10:52Z'
+archived_at: '2026-11-12T06:10:53Z'

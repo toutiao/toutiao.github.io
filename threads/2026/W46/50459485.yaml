@@ -1,0 +1,412 @@
+---
+post:
+  id: '50459485'
+  title: Lock Your GitHub Actions
+  url: https://hugovk.dev/blog/2026/lock-github-actions/
+  hn_url: https://news.ycombinator.com/item?id=50459485
+  score: 196
+  author: ''
+  posted_at: '2026-11-11T22:16:41Z'
+  fetched_at: '2026-11-12T06:10:45Z'
+  article_url: https://hugovk.dev/blog/2026/lock-github-actions/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-12T06:10:45Z'
+  raw_comment_count: 36
+comments:
+- id: '50459589'
+  parent_id: '50459485'
+  author: Already__Taken
+  text: Quoting someone else&#x27;s blog I&#x27;ve forgotten but you&#x27;re trading
+    the trust in the repo owner not moving a tag for trusting whoever merges the commit
+    hash to have checked that&#x27;s a release in the repo you want and not _some_
+    forks commit. All forks on github are the same repo you can pin any commit, merged
+    upstream or not.<p>IMO Github should make Immutable tags mandatory to publish
+    on <a href="https:&#x2F;&#x2F;github.com&#x2F;marketplace" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;marketplace</a>
+  score: 0
+  posted_at: '2026-11-11T22:23:50Z'
+- id: '50459686'
+  parent_id: '50459485'
+  author: SchemaLoad
+  text: Are people finding a real need for importing and updating git actions? Aren&#x27;t
+    they usually just running a one line bash command? I&#x27;d just copy paste the
+    action in to your config so it&#x27;s fully locked and under your control rather
+    than importing some opaque script from a no name github user.
+  score: 0
+  posted_at: '2026-11-11T22:29:42Z'
+- id: '50459698'
+  parent_id: '50459485'
+  author: ezekg
+  text: Does this prevent one of the locked dependencies not locking their own dependencies
+    and pulling in a malicious and replaced tag?
+  score: 0
+  posted_at: '2026-11-11T22:30:44Z'
+- id: '50459824'
+  parent_id: '50459698'
+  author: eddythompson80
+  text: It does not. Obviously if you lock a “foo&#x2F;setup-latest-go” action, it’s
+    still going to (and you’d probably expect it to) pull in the latest go. Actions
+    are expected to start running though. Like GitHub isn’t gonna do an `npm install`
+    for you, it’ll just run the entry point of the action, and the entry point can
+    do whatever it was written to do.
+  score: 0
+  posted_at: '2026-11-11T22:39:26Z'
+- id: '50459919'
+  parent_id: '50459485'
+  author: woodruffw
+  text: The advice here is really great (as I&#x27;d expect from Hugo), but as the
+    maintainer of zizmor I want to note some caveats with the current iteration of
+    workflow lockfiles:<p>- They only lock normal action calls. If your workflows
+    invoke other reusable workflows, you need to keep those hash-pinned manually for
+    now.<p>- Composite actions are not <i>themselves</i> locked. Instead, they get
+    locked transitively through their callsites i.e. the workflows that call them.
+    This makes any individual caller that uses lockfiles safe, but it also makes the
+    current `gh actions-lock` default <i>unsafe</i> (since it removes hash-pins from
+    the composite action itself, meaning that any external caller that invokes the
+    action loses their transitive pinning).<p>- Other forms of `uses:` clauses, like
+    Docker images, are also not currently locked via the lockfile. And the same for
+    forms of interior mutability (like an action running `npx ...` under the hood,
+    although the latter is fully outside of GitHub&#x27;s control to prevent. But
+    these mean that you <i>can&#x27;t</i> assume that a fully locked Actions setup
+    is in fact 100% immutable.<p>I hope they address these gaps soon, because it&#x27;s
+    otherwise an excellent (and long-awaited) feature.
+  score: 0
+  posted_at: '2026-11-11T22:45:26Z'
+- id: '50459931'
+  parent_id: '50459589'
+  author: woodruffw
+  text: Actions lockfiles prevent this. They won&#x27;t allow you to lock an impostor
+    commit, which is the right default.<p>(The previous way to provide general actions
+    immutability, i.e. hash-pinning, had this issue and thus required additional checks.)
+  score: 0
+  posted_at: '2026-11-11T22:46:33Z'
+- id: '50460169'
+  parent_id: '50459485'
+  author: lukasschwab
+  text: Are there clear reasons to prefer this over just pinning a commit SHA?
+  score: 0
+  posted_at: '2026-11-11T23:03:10Z'
+- id: '50460291'
+  parent_id: '50459589'
+  author: OptionOfT
+  text: One could write an action that executes a shell script that does docker pull
+    abc:latest.<p>As the consumer of an action that becomes really hard to find out
+    unless I take the whole codebase apart.
+  score: 0
+  posted_at: '2026-11-11T23:12:10Z'
+- id: '50460400'
+  parent_id: '50459485'
+  author: aleaph
+  text: So &quot;SHA pinning with version reference in a comment&quot; with extra
+    steps, got it
+  score: 0
+  posted_at: '2026-11-11T23:22:33Z'
+- id: '50460461'
+  parent_id: '50459485'
+  author: gbraad
+  text: I undrrstand this looks cleaner and more intuitive, but you still have the
+    risk of running a workflow with malicious&#x2F;compromised actions, like manually,
+    or locally with act, if you do not verify the lockfile as part of the workflow
+    or preceded by an extra workflow step. This should be something that the runner
+    ideally should handle (as part of the platform). This still is a workaround, just
+    like the sha pinning. I only use vendor upstream  actions, like github&#x27;s
+    or forks in our own org.
+  score: 0
+  posted_at: '2026-11-11T23:28:07Z'
+- id: '50460494'
+  parent_id: '50460400'
+  author: OptionOfT
+  text: Enforced through GitHub Actions that is :)
+  score: 0
+  posted_at: '2026-11-11T23:30:58Z'
+- id: '50460502'
+  parent_id: '50459589'
+  author: chrisweekly
+  text: I almost forgot about that completely outrageous treatment of forks -- just
+    bonkers.
+  score: 0
+  posted_at: '2026-11-11T23:31:25Z'
+- id: '50460808'
+  parent_id: '50459485'
+  author: latexr
+  text: I remember reading (but haven’t verified) that even using a specific SHA instead
+    of a tag isn’t a guarantee with GitHub Actions, because the Action itself may
+    have a dependency which does not pin to a SHA, thus making you vulnerable all
+    the same. This lock file strategy does not appear to guard agains that, it seems
+    to be what we had before but trades a bit more readability in one file for an
+    extra (more complex) lock file. Not a trade-off I want to make (but you do you).<p>Personally
+    I found the risk of running someone else’s GitHub Action in my repo to not be
+    worth it. Even GitHub’s own Action to checkout repos is <i>way</i> more complex
+    than I need it to be and last I checked had dependencies which could be targeted.
+    I opt instead to not run any third-party Actions (not even GitHub’s official ones)
+    in my repos.
+  score: 0
+  posted_at: '2026-11-11T23:56:38Z'
+- id: '50460831'
+  parent_id: '50460169'
+  author: Arbortheus
+  text: Presumably it’s for the transitive dependencies. You pin action X, but that
+    (third party) action doesn’t correctly pin the SHA of action Y, so you still get
+    owned if the mutable tag gets moved to a compromised commit.<p>But with a lockfile,
+    direct and indirect dependencies both get pinned.  (I presume, and haven’t checked
+    yet, but otherwise this feature would be useless)
+  score: 0
+  posted_at: '2026-11-11T23:58:02Z'
+- id: '50460900'
+  parent_id: '50459824'
+  author: computerfriend
+  text: I think they mean specifically sub-actions as dependencies.
+  score: 0
+  posted_at: '2026-11-12T00:04:26Z'
+- id: '50460909'
+  parent_id: '50459485'
+  author: klodolph
+  text: I think my main advice is to avoid GH actions at all, unless avoiding them
+    is somehow painful. There is just a long bad history here.
+  score: 0
+  posted_at: '2026-11-12T00:05:47Z'
+- id: '50461007'
+  parent_id: '50460909'
+  author: jaggederest
+  text: These days setting up a proper system on your build orchestrator of choice
+    is pretty easy, cheaper, and you basically only lose a tiny bit of UI niceness
+    if they report to github anyway
+  score: 0
+  posted_at: '2026-11-12T00:14:42Z'
+- id: '50461373'
+  parent_id: '50459485'
+  author: carterschonwald
+  text: at this point im seriously pondering how to build a dvcs code forge thats
+    not dog shit, versions its own state, and actually is semantically grounded rather
+    than a rails app gone awry
+  score: 0
+  posted_at: '2026-11-12T00:47:33Z'
+- id: '50461771'
+  parent_id: '50460831'
+  author: esafak
+  text: |-
+    <p><pre><code>     Use the gh actions-lock extension for the GitHub CLI to generate .github&#x2F;workflows&#x2F;actions.lock for actions and their transitive dependencies.
+    </code></pre>
+    <a href="https:&#x2F;&#x2F;github.blog&#x2F;changelog&#x2F;2026-10-28-github-actions-workflow-lockfiles-are-generally-available&#x2F;" rel="nofollow">https:&#x2F;&#x2F;github.blog&#x2F;changelog&#x2F;2026-10-28-github-actions-work...</a>
+  score: 0
+  posted_at: '2026-11-12T01:25:32Z'
+- id: '50461844'
+  parent_id: '50459686'
+  author: comradesmith
+  text: Github actions are not that simple. Not even close
+  score: 0
+  posted_at: '2026-11-12T01:33:35Z'
+- id: '50461950'
+  parent_id: '50460400'
+  author: sleepytimetea
+  text: |-
+    Yes, I scratched my head trying to understand what this accomplishes. It just puts a tag back instead of a SHA but now moves the SHA (locked in) to a separate file that now needs to be verified ?
+    I fail to see how this is better or needed.
+  score: 0
+  posted_at: '2026-11-12T01:46:02Z'
+- id: '50462207'
+  parent_id: '50459485'
+  author: transitivebs
+  text: 'big fan of actions-up for doing this: <a href="https:&#x2F;&#x2F;github.com&#x2F;azat-io&#x2F;actions-up"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;azat-io&#x2F;actions-up</a>'
+  score: 0
+  posted_at: '2026-11-12T02:13:29Z'
+- id: '50462262'
+  parent_id: '50459485'
+  author: edelbitter
+  text: So instead of specifying a SHA1 hash of <i>some</i> commit and change it rarely
+    enough to just check manually, now every developer needs to unsafe-eval some 476
+    transitive dependencies of the helper that fixes the lockfile? I wonder at which
+    point it gets easier to just have a nice stdlib again, and not deal with tons
+    and tons of version changes in packages across 3 different language ecosystems.
+  score: 0
+  posted_at: '2026-11-12T02:21:21Z'
+- id: '50462309'
+  parent_id: '50460400'
+  author: edelbitter
+  text: SHA pinning on GitHub does not always imply account pinning, even where the
+    account name is explicitly specified along with it.<p>So some of the extra steps
+    are meaningful. Though I am still not convinced they could not have been implemented
+    in a deliberately backwards-incompatible way to Github action in general, keeping
+    the syntax and removing only the special case that is never both intentional and
+    non-malicious at the same time.
+  score: 0
+  posted_at: '2026-11-12T02:28:19Z'
+- id: '50462358'
+  parent_id: '50460909'
+  author: dirtbag__dad
+  text: What would you suggest instead?
+  score: 0
+  posted_at: '2026-11-12T02:33:23Z'
+- id: '50462430'
+  parent_id: '50459485'
+  author: numbsafari
+  text: Shouldn’t we all just be vibe coding our own actions instead of using the
+    marketplace ones? Is SaaS dead yet, or what?<p>&#x2F;s<p>This is a step in the
+    right direction, but it’s not even close to a complete solution. And what am I
+    doing installing a plugin to use this? It should just be part of GH, so I can
+    install that and not have yet another source of dependency management to lock
+    down.
+  score: 0
+  posted_at: '2026-11-12T02:46:15Z'
+- id: '50462441'
+  parent_id: '50461007'
+  author: ethin
+  text: Only if your not on GH free, which I use for my OSS projects for example.
+  score: 0
+  posted_at: '2026-11-12T02:49:02Z'
+- id: '50462778'
+  parent_id: '50462358'
+  author: klodolph
+  text: Just about anything else, tbh. Jenkins is the option I would go for, but that’s
+    a reflection of my personal preferences for self-hosting. Self-hosting has gotten
+    way easier since LLMs can debug things so well, so I’m self-hosting more than
+    ever before even though I have less time available.<p>You don’t have to go Jenkins,
+    it’s just that GitHub Actions are uniquely bad and I would avoid them.<p>If you
+    are relying on the free version of GitHub actions for small projects, I would
+    consider just running something on a NUC or Pi at home.
+  score: 0
+  posted_at: '2026-11-12T03:39:42Z'
+- id: '50462930'
+  parent_id: '50462778'
+  author: pie_flavor
+  text: A Pi is not going to make your Windows and macOS builds. It&#x27;s also going
+    to have a miserable time running the Rust compiler on your five hundred dependencies.
+  score: 0
+  posted_at: '2026-11-12T04:00:17Z'
+- id: '50462945'
+  parent_id: '50459485'
+  author: insanitybit
+  text: |-
+    ctrl + f &quot;zizmor&quot;
+    8 found<p>I endose this article.
+  score: 0
+  posted_at: '2026-11-12T04:03:12Z'
+- id: '50463026'
+  parent_id: '50459686'
+  author: Pxtl
+  text: A lot of things that <i>should</i> be one bash command turn out to be dozens
+    of lines of incantations and handling edge cases.  Microsoft I&#x27;m looking
+    in your direction.<p>For those things an action helps.
+  score: 0
+  posted_at: '2026-11-12T04:18:26Z'
+- id: '50463044'
+  parent_id: '50461844'
+  author: knocte
+  text: Still, I prefer to copy their action.yml into my repo.<p>(I simply put a comment
+    with the upstream URL in my repo in case I want to update in the future.)
+  score: 0
+  posted_at: '2026-11-12T04:21:35Z'
+- id: '50463051'
+  parent_id: '50459485'
+  author: Pxtl
+  text: If GitHub really cared about security they could fix this tomorrow by declaring
+    any tag linked to an action immutable.<p>They don&#x27;t because they don&#x27;t.<p>Anybody
+    who&#x27;s ever moved a git tag knows the ergonomics of doing so are so awful
+    that you&#x27;re obviously not supposed to be doing it.
+  score: 0
+  posted_at: '2026-11-12T04:22:34Z'
+- id: '50463349'
+  parent_id: '50460808'
+  author: hobofan
+  text: Does nobody read the blog post and liked Github release annoucment anymore?<p>This
+    is a new first-party feature by Github to allow locking of transitive dependencies.
+  score: 0
+  posted_at: '2026-11-12T05:19:09Z'
+- id: '50463364'
+  parent_id: '50461950'
+  author: hobofan
+  text: You can still use the SHA if you want to. What it achieves is transitive pinning
+    (which this post doesn&#x27;t properly highlight).<p>Lack of transitive pinning
+    support was the biggest supply-chain security criticism against GHA and I&#x27;m
+    glad they are finally tackling it!
+  score: 0
+  posted_at: '2026-11-12T05:22:36Z'
+- id: '50463627'
+  parent_id: '50462930'
+  author: klodolph
+  text: 'Here’s my take: if you don’t personally have a Mac, you should not be making
+    Mac builds of your software.<p>Same for Windows.<p>I may be a little old-school
+    about this.'
+  score: 0
+  posted_at: '2026-11-12T06:08:11Z'
+article:
+  url: https://hugovk.dev/blog/2026/lock-github-actions/
+  title: Lock your GitHub Actions · Hugo van Kemenade
+  fetch_status: success
+  content: |-
+    GitHub Actions now supports workflow lockfiles.
+
+    Because GitHub Actions are fetched from Git, the previous advice was to pin to a full SHA instead of a tag. This is because tags are mutable and susceptible to supply-chain attacks where an attacker points a previously safe tag at malicious code.
+
+    For example, an old workflow looks like:
+
+    name: Lint on: [push, pull_request, workflow_dispatch] permissions: {} env: FORCE_COLOR: 1 RUFF_OUTPUT_FORMAT: github jobs: lint: runs-on: ubuntu-latest steps: - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 with: persist-credentials: false - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
+
+    Here’s how I set up lockfiles.
+
+    ## Install #
+
+    Install the gh-actions-lock extension to the gh CLI:
+
+    $ gh extension install github/gh-actions-lock ✓ Installed extension github/gh-actions-lock
+
+    ## Lock ’em #
+
+    In your repo, run:
+
+    $ gh actions-lock ✓ All 1 workflows valid
+
+    The workflow now uses vX.Y.Z tags and looks like this:
+
+    diff --git a/.github/workflows/lint.yml b/.github/workflows/lint.yml index 946971c..3503607 100644 --- a/.github/workflows/lint.yml +++ b/.github/workflows/lint.yml @@ -13,7 +13,7 @@ jobs: runs-on: ubuntu-latest steps: - - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 + - uses: actions/checkout@v7.0.1 with: persist-credentials: false - - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0 + - uses: j178/prek-action@v3.1.0
+
+    And it generates a lockfile at .github/workflows/actions.lock:
+
+    # This file is machine-generated by `gh actions-lock`. # Do not edit by hand; run `gh actions-lock` to update. # Docs: https://gh.io/actions-lockfile version: 'v0.0.3' workflows: '.github/workflows/lint.yml': - 'actions/checkout@v7.0.1' - 'j178/prek-action@v3.1.0' dependencies: 'actions/checkout@v7.0.1': ref: 'v7.0.1' commit: 'sha1-3d3c42e5aac5ba805825da76410c181273ba90b1' owner_id: 44036562 repo_id: 197814629 'j178/prek-action@v3.1.0': ref: 'v3.1.0' commit: 'sha1-44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d' owner_id: 10510431 repo_id: 1052387486
+
+    Commit modified workflows and the new lockfile.
+
+    ## Renovate and Dependabot #
+
+    Good news, both already support lockfiles! Your periodic updates will also update the lockfile. Remember to use cooldowns.
+
+    ## Validate #
+
+    GitHub also recommends verifying lockfiles in CI to ensure it’s up-to-date and not corrupt.
+
+    They suggest copying this verify-lockfile.yml into your repo. I decided to put it into my existing lint workflow, but in its own job so it runs independently and in parallel:
+
+    name: Lint on: [push, pull_request, workflow_dispatch] permissions: {} env: FORCE_COLOR: 1 RUFF_OUTPUT_FORMAT: github jobs: lint: runs-on: ubuntu-latest steps: - uses: actions/checkout@v7.0.1 with: persist-credentials: false - uses: j178/prek-action@v3.1.0 # Fails when .github/workflows/actions.lock is out of sync with the # workflows or a locked pin no longer verifies upstream. lockfile: runs-on: ubuntu-slim env: GH_TOKEN: ${{ github.token }} steps: - uses: actions/checkout@v7.0.1 with: persist-credentials: false - run: gh extension install github/gh-actions-lock --pin v0.4.1 - run: gh actions-lock --verify
+
+    Note I’m using the lightweight ubuntu-slim runner here. Also, it’s pinning to v0.4.1; we’ll have to update that at some point or figure out a way to automate it. That’s for another time.
+
+    Don’t forget that we just modified the actions in a workflow, so need to relock with gh actions-lock. Nothing actually changes if adding to lint.yml because it’s already locking actions/checkout. But if you created a new file like verify-lockfile.yml, you’ll need to relock for that. The CI will let you know.
+
+    ## zizmor #
+
+    zizmor is a security linter for GitHub Actions and strongly recommended. If you don’t use it, please do.
+
+    Versions before v1.32.0 tell you to hash-pin actions, and v1.32.0 is the first to support lockfiles.
+
+    I use zizmor in prek, so add/update zizmor in .pre-commit-config.yaml:
+
+    - repo: https://github.com/zizmorcore/zizmor-pre-commit rev: v1.32.0 hooks: - id: zizmor
+
+    ## Locked! #
+
+    OK, commit and push!
+
+    ## Examples #
+
+    - python-pillow/Pillow#10428
+
+    - python/release-tools#477
+
+    - python/miss-islington#758
+
+    - python/cpython#161811
+
+    Header photo: Slaymaker Barry Co. Sprocket Locks in The Bearings (vol. XII no. 23, 2nd January 1896) in the Smithsonian Libraries and Archives, with no known copyright restrictions.
+  error:
+  fetched_at: '2026-11-12T06:10:45Z'
+archived_at: '2026-11-12T06:10:50Z'

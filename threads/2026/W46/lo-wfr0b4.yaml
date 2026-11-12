@@ -1,0 +1,165 @@
+---
+post:
+  id: lo-wfr0b4
+  source: lobsters
+  title: About the downtime and security incident
+  url: https://danbooru.donmai.us/forum_topics/38685.html
+  hn_url: https://lobste.rs/s/wfr0b4
+  score: 17
+  author: ettolrach
+  posted_at: '2026-11-11T16:58:45Z'
+  fetched_at: '2026-11-12T06:10:51Z'
+  article_url: https://danbooru.donmai.us/forum_topics/38685.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-12T06:10:53Z'
+  raw_comment_count: 6
+  tags:
+  - security
+comments:
+- id: lo-4yuzqc
+  parent_id: '0'
+  author: pointlessone
+  text: |-
+    This is fascinating. Must be tough getting owned by Flash of all things in 2026.
+    Another interesting thing is that usually a discovered bug gets the attacker a way in. In this case attacker actually fixed a bug to enable the attack.
+  score: 11
+  posted_at: '2026-11-11T17:50:54Z'
+- id: lo-jpvqyn
+  parent_id: '0'
+  author: legoktm
+  text: Here's the PR in question from the attacker.
+  score: 3
+  posted_at: '2026-11-11T22:20:57Z'
+- id: lo-x5n1za
+  parent_id: '0'
+  author: rebane2001
+  text: I'm curious how it worked on a technical level, did it use something like
+    Ruffle to make same-site fetch requests?
+  score: 3
+  posted_at: '2026-11-11T23:04:35Z'
+- id: lo-c3bnca
+  parent_id: '0'
+  author: amiantos
+  text: |-
+    I don't understand how getting your username and IP would allow someone to 'create a backdoor API key', which wasn't used anyway, and still allowed them to upload files as you. Am I lacking the imagination or knowledge to understand how that was possible? I would think username + IP does not give anyone access to anything...?
+    Can someone explain? I guess my assumption is that there's an unspoken 'it also stole your auth cookie in addition to username and IP'?
+  score: 2
+  posted_at: '2026-11-11T23:25:41Z'
+- id: lo-qkuaql
+  parent_id: '0'
+  author: winter
+  text: |-
+    Sounds like it:
+
+    We didn't sandbox the Ruffle player used for playing Flash videos. We didn't do this because we didn't recognize the need for it at the time, since new Flash uploads had already been disabled.
+  score: 5
+  posted_at: '2026-11-12T00:36:58Z'
+- id: lo-i66bxv
+  parent_id: '0'
+  author: yuriks
+  text: Yeah, this is only mentioned in passing, but the exploit was a XSS. This allowed
+    it to use JavaScript to execute any actions on the website that your browser would
+    have access to. Opening the external resource so that they can log your IP was
+    one of those actions, it isn't what granted the access.
+  score: 3
+  posted_at: '2026-11-12T01:38:08Z'
+article:
+  url: https://danbooru.donmai.us/forum_topics/38685.html
+  title: About the downtime and security incident | Danbooru
+  fetch_status: success
+  content: "# About the downtime and security incident \n\nPosted under [General](/forum_topics?search%5Bcategory_id%5D=0)\n\n[evazion](/users/52664)\n\nOn
+    November 4th there was a security incident where someone found a way to upload
+    a malicious Flash post. Since then the site has been down for a week while we
+    responded. This is what happened.\n\nThe short version is that someone found an
+    exploit that let them upload a [Flash](/wiki_pages/flash) file that contained
+    an [XSS worm](https://en.wikipedia.org/wiki/XSS_worm). The worm tried to spread
+    itself across the site and steal the IP address of anyone viewing the infected
+    posts. The site was shut down within about 6 minutes, so the actual damage was
+    very limited. The main thing it did was grab the IPs of anyone who viewed the
+    posts.\n\nThe exploit itself was quickly fixed, but it was clear that the attacker
+    had used LLMs to find this exploit, and that they were targeting us and would
+    use LLMs to find other exploits if we brought the site back up too soon. So we
+    spent the next week fixing every security issue we could find and generally beefing
+    up security to make sure this kind of thing couldn't happen again. We also used
+    the downtime to do some much-needed server maintenance and upgrades that we had
+    been putting off for a long time, which also took a couple of days.\n\n######
+    What happened?\n\nAn attacker uploaded a malicious [Flash](/wiki_pages/flash)
+    post that, among other things, grabbed your IP address and hijacked your account
+    to spread the file.\n\nThe servers themselves weren't hacked, and the file itself
+    didn't hack your computer or anything like that. It just let the attacker take
+    over your account while you were viewing an infected post. It only affected those
+    who viewed it in the 6-minute window the site was up.\n\n###### What exactly did
+    it do?\n\nThis is what it did:\n\n- First it showed a video from hxxps://domain2doamin.duckdns.org/cdn/worm-video.flv.
+    This grabbed your IP address (this is the attacker's site, so don't visit that
+    site without a VPN, it's an IP grabber).\n- If you were a logged-in user, it would
+    log your username, so it would get your username and IP.\n- Next it tried to create
+    a backdoor API key for your account.\n\n  - This only worked if you had entered
+    your password in the last hour. It was only able to do this for 7 people who had
+    recently logged in. These API keys were never used and have been deleted.\n- Next
+    it used your account to post copies of itself, upvote other copies of itself,
+    and post links to itself in the forum.\n- If you were an approver level user,
+    it would also approve copies of itself.\n- If you were a moderator, it would try
+    to harvest the email addresses of users. It also tried to promote other accounts.\n\n
+    \ - Neither of these things worked because the site was shut down before any mods
+    had their accounts hacked.\n- Lastly, it tried to delete all your favorites. These
+    have been restored.\n\n###### Who was affected?\n\n- The infected posts got about
+    600 page views. Not all of these views actually triggered the worm.\n- About 300
+    people actually ran the worm. 200 of them were logged out and 100 logged in.\n-
+    The 200 logged-out users had their IPs harvested.\n- The 100 logged-in users had
+    their username and IPs harvested, and had their accounts temporarily hijacked
+    to spread the worm.\n- 48 users had a total of 1000 favorites deleted. These have
+    been restored.\n- 7 users had backdoor API keys created. These have been deleted.\n-
+    68 copies of the worm were posted. They have all been deleted.\n- The infected
+    posts were upvoted a total of about 5000 times. \n- 129 forum posts were created
+    to help spread the worm.\n\n###### How did they upload it?\n\nThe ability to upload
+    Flash files was disabled in 2021. It was accidentally enabled again after the
+    upload process was reworked in 2022. But you still couldn't upload Flash files,
+    because another bug prevented it.\n\nOn 2026-10-28, someone submitted a pull request
+    to fix a bug that uploads would fail if they couldn't generate thumbnails. It
+    turned out that this was the attacker, and that by fixing this bug we were inadvertently
+    allowing Flash files to be uploaded again.\n\nThe pull request itself didn't contain
+    any malicious code. It was a genuine one-line fix for a genuine bug. The problem
+    was that unbeknownst to us, the bug it was fixing was the only thing preventing
+    Flash files from being uploaded.\n\n###### What went wrong?\n\nIt was a chain
+    of failures:\n\n- The test suite wasn't thorough enough. When Flash uploads were
+    first disabled, a test wasn't added to verify that they were disabled. Then when
+    they were accidentally enabled again, it went unnoticed.\n- We didn't sandbox
+    the Ruffle player used for playing Flash videos. We didn't do this because we
+    didn't recognize the need for it at the time, since new Flash uploads had already
+    been disabled.\n- We got social engineered into accepting a malicious pull request.\n-
+    The biggest one was: we weren't using LLMs to audit the codebase soon enough.
+    Attackers adopted LLMs to look for exploits faster than we did, and we had to
+    catch up fast. In the last six months or so AI has gotten really good at finding
+    exploits, to the point where now people with no knowledge can pull off exploits
+    that in the past would haven taken a lot of expertise.\n\n###### How do I make
+    sure my account is secure?\n\nThere is no reason to believe anyone's accounts
+    have been hacked. But if you want to be sure:\n\n- Go to your [Settings](/settings)
+    page.\n- Click \"Security\".\n- Change your password.\n- Enable two-factor authentication
+    (2FA).\n- Check your login history for anything suspicious.\n- Go to your [Profile](/profile)
+    page, click on API keys, and check for any you don't recognize.\n\nAgain, the
+    servers themselves weren't hacked and there are no indications any accounts have
+    been persistently compromised. But it doesn't hurt to check your account and enable
+    2FA.\n\nUpdated by [evazion](/users/52664)\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[HyphenSam](/users/521113)\n\n[![](https://cdn.donmai.us/720x720/62/f4/62f4a12142701c5dcc8486e26bc3b6c3.webp)](/media_assets/50765703)\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[evazion](/users/52664)\n\nPS: The tag limit
+    has been raised to 3 for logged-in users, and Gold users now have the same benefits
+    as Platinum.\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n- [Copy ID](#)\n-
+    [Copy Link](#)\n\n[zxcw79](/users/1524461)\n\nwelcome back!\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[HTTNETS](/users/1312875)\n\nSo glad to be back!\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[STRIKE GUNDAM1](/users/151259)\n\nI missed
+    you guys.\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n- [Copy ID](#)\n-
+    [Copy Link](#)\n\n[ngo enthusiast](/users/1303946)\n\nnot announcing this in the
+    discord is diabolical\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[vknifelygod](/users/1235372)\n\nFinally\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[petertan303](/users/1014119)\n\nwelcome back!\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[Kawakijin](/users/699804)\n\n[We're back!](https://www.youtube.com/watch?v=mz5l0NHfj3Q)\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[Veraducks](/users/455054)\n\n:egg:\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[Dostedt](/users/895395)\n\nI just checked on
+    a whim, and I'm somehow this early. Welcome back!\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[Miller12](/users/1040342)\n\nGlad the site
+    is up and running again\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[B1GB0SS](/users/1641893)\n\nFinally!\n\n[Reply](/login?url=%2Fforum_topics%2F38685.html)\n\n-
+    [Copy ID](#)\n- [Copy Link](#)\n\n[Brynica](/users/899238)\n\nIt'"
+  error:
+  fetched_at: '2026-11-12T06:10:53Z'
+archived_at: '2026-11-12T06:10:53Z'
