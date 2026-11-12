@@ -1,0 +1,219 @@
+---
+post:
+  id: '50471761'
+  title: 22-Year-Old PostgreSQL Bug Turned into Remote Code Execution
+  url: https://mehmetince.net/part-3-6-how-i-ended-up-turning-a-22-year-old-postgresql-type-confusion-primitive-into-rce-cve-2026-6460/
+  hn_url: https://news.ycombinator.com/item?id=50471761
+  score: 119
+  author: ''
+  posted_at: '2026-11-12T18:22:22Z'
+  fetched_at: '2026-11-12T23:17:55Z'
+  article_url: https://mehmetince.net/part-3-6-how-i-ended-up-turning-a-22-year-old-postgresql-type-confusion-primitive-into-rce-cve-2026-6460/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-12T23:17:55Z'
+  raw_comment_count: 13
+comments:
+- id: '50473264'
+  parent_id: '50471761'
+  author: igbanam
+  text: Thanks for actually sharing your path to the zero-day. The context and story
+    helps
+  score: 0
+  posted_at: '2026-11-12T19:56:13Z'
+- id: '50473721'
+  parent_id: '50471761'
+  author: NeuraCryption
+  text: Is this exploitable? If it is, this is very serious and if this is an unpatched
+    disclosure millions of Businesses around the world will be affected.
+  score: 0
+  posted_at: '2026-11-12T20:28:06Z'
+- id: '50473918'
+  parent_id: '50473721'
+  author: mattashii
+  text: Yes, once you have logged in on a primary.
+  score: 0
+  posted_at: '2026-11-12T20:39:56Z'
+- id: '50473999'
+  parent_id: '50471761'
+  author: sailfast
+  text: Amazing write-up. A great look at DB internals and your thought process.
+  score: 0
+  posted_at: '2026-11-12T20:44:33Z'
+- id: '50474019'
+  parent_id: '50473721'
+  author: mdaniel
+  text: Isn&#x27;t that only true if &quot;millions of businesses&quot; choose to
+    hang their PG port out on the Internet with &quot;allow 0&#x2F;0&quot;? In the
+    spirit of being constructive, <a href="https:&#x2F;&#x2F;www.shodan.io&#x2F;search?query=postgresql"
+    rel="nofollow">https:&#x2F;&#x2F;www.shodan.io&#x2F;search?query=postgresql</a>
+    shows 516,000 which is definitely not none but pretty far from millions and based
+    on skimming the results pretty far from the businesses part, too
+  score: 0
+  posted_at: '2026-11-12T20:46:07Z'
+- id: '50474040'
+  parent_id: '50471761'
+  author: jmuguy
+  text: I would call this more of a privilege escalation attack than RCE.
+  score: 0
+  posted_at: '2026-11-12T20:47:27Z'
+- id: '50474237'
+  parent_id: '50474019'
+  author: mgiampapa
+  text: I would consider it a more useful lateral movement vector inside an existing
+    org than anything else. Lots and lots of old postgress with weak acls inside networks.
+  score: 0
+  posted_at: '2026-11-12T21:02:48Z'
+- id: '50474380'
+  parent_id: '50471761'
+  author: logophobia
+  text: Correct me if I&#x27;m wrong, but those all look like sql exploits. Don&#x27;t
+    those already require some sort of authenticated remote access. They are security
+    issues, but calling them remote code exploitation make them seem more dangerous
+    than they are.<p>These seem more like privilege escalation, you have access through
+    a database account and use that to gain full access to the whole server. So an
+    issue for multi-tenant databases mostly.
+  score: 0
+  posted_at: '2026-11-12T21:14:57Z'
+- id: '50474440'
+  parent_id: '50474380'
+  author: knorker
+  text: It&#x27;s RCE even if it&#x27;s not pre-auth.
+  score: 0
+  posted_at: '2026-11-12T21:19:14Z'
+- id: '50474528'
+  parent_id: '50474380'
+  author: vfosnar
+  text: ppl host open Postgres instances, one I can think of is <a href="https:&#x2F;&#x2F;postpass.geofabrik.de&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;postpass.geofabrik.de&#x2F;</a> where you can
+    query OpenStreetMap data in a Postgres instance exposed over plain HTTP API
+  score: 0
+  posted_at: '2026-11-12T21:26:59Z'
+- id: '50475045'
+  parent_id: '50474380'
+  author: kccqzy
+  text: |-
+    You can do authentication and authorization inside sql. For example you could have something like<p><pre><code>    CREATE ROLE initial LOGIN NOINHERIT NOCREATEDB NOCREATEROLE NOSUPERUSER;
+    </code></pre>
+    And then you run SQL to validate any credentials and then check the database for any permissions, ending with<p><pre><code>    SET LOCAL ROLE someuser;
+    </code></pre>
+    It is uncommon but some people appreciate the simplicity of making the application layer do as little work as possible while pushing work into the database. It’s the logical conclusion after years of telling developers about the N+1 query problem.
+  score: 0
+  posted_at: '2026-11-12T22:10:35Z'
+- id: '50475421'
+  parent_id: '50475045'
+  author: mistrial9
+  text: that requires additional privelages plus login.. I agree with the pp, sensationalism
+  score: 0
+  posted_at: '2026-11-12T22:39:30Z'
+- id: '50475587'
+  parent_id: '50474528'
+  author: veqq
+  text: Wow, that is... I would have never believed in such a thing.
+  score: 0
+  posted_at: '2026-11-12T22:55:58Z'
+article:
+  url: https://mehmetince.net/part-3-6-how-i-ended-up-turning-a-22-year-old-postgresql-type-confusion-primitive-into-rce-cve-2026-6460/
+  title: Part 3/6 | How I Ended Up Turning a 22-Year-Old PostgreSQL Type-Confusion
+    Primitive into RCE (CVE-2026-6460) - Mehmet Ince @mdisec - Vulnerability Researcher
+    | Building security products | Security Advisor | Amateur Muay Thai fighter
+  fetch_status: success
+  content: "![Cover image for Part 3 of 6 in a PostgreSQL security series, titled
+    \"Turning a 22-Year-Old Type Confusion Primitive into RCE\". A diagram shows a
+    composite-type row stored as int4, int4 and int8, then read back with the wrong
+    layout so the first 8 bytes become a pointer, leading to remote code execution.](https://mehmetince.net/wp-content/uploads/2026/11/postgresql-composite-type-confusion-primitive-rce-cve-2026-6460.png)\n\n#
+    Part 3/6 | How I Ended Up Turning a 22-Year-Old PostgreSQL Type-Confusion Primitive
+    into RCE (CVE-2026-6460)\n\nIf you had told me in April 2026 one question “Mehmet,
+    can we use managed PostgreSQL for this project?” would send me into the deepest
+    rabbit hole of my life, I would have laughed.\n\nMonths later, I finally found
+    the bottom of that rabbit hole. It was a 22-year-old zero-day in PostgreSQL core.\n\nIn
+    this blog post you will read a story of how I ended up uncovering a new class
+    of type-confusion vulnerabilities in PostgreSQL.\n\nThis is the 3rd part of blog
+    post series named “[Systemic Risks in the Managed PostgreSQL Industry](https://mehmetince.net/tag/postgresql/)”.
+    For those who have missed the first two part, feel free to start from 1st and
+    2nd which will give you a complete context of this madness.\n\n> I gave PostgreSQL
+    a value inside a composite type, changed the type of one of its fields, and asked
+    it to read the value back. That type confusion led to one of the most reliable
+    memory-corruption exploit I have seen. But I did not start by looking for a PostgreSQL
+    core vulnerability.\n> \n> I was exploiting pg\\_clickhouse, and getting that
+    exploit to work left me with a question about how PostgreSQL understands its own
+    data. With an AI agent as my teacher, I worked through the internals one question
+    at a time. Then a seemingly unrelated conversation gave me the idea that connected
+    it all, and eventually I found myself staring at a primitive that had been there
+    for for awhile.\n> \n> This is the full true story of how those pieces came together,
+    I am sure you will enjoy this story.\n\n## **Beginning of August 2026**\n\nDuring
+    June and July, I had been exploiting memory-corruption vulnerabilities across
+    several PostgreSQL extensions. One of the extensions that I achieved code execution
+    was `pg_clickhouse`. That case study has its own story, which I will share in
+    the future.\n\nWhat matters here is what that exploit forced me to learn. `pg_clickhouse`
+    translates ClickHouse values into native PostgreSQL values. A ClickHouse Array
+    is not a PostgreSQL array, right ? So the extension had to rebuild its elements
+    as `Datum` values in the format that PostgreSQL expected. A mistake in that conversion
+    was what eventually gave me a code execution.\n\nThis was my first time meeting
+    with things like `Datum`, `OIDs` etc in the PostgreSQL universe. I learned only
+    enough to finish the exploit, but one question remained in the back of my mind:\n\n>
+    How does PostgreSQL itself decide what a value is? And how does it process and
+    represent it?\n\nSomewhere around late July, I finally got my head out of the
+    extensions and just followed that question into PostgreSQL core.\n\n> Disclaimer:
+    I reported pg\\_clickhouse oob write + read chain to the vendor and they fixed
+    it at Jun 23.&nbsp;\n\n## PostgreSQL Types 101\n\nI started learning with a very
+    simple query. What happens when I run the simplest query SELECT 1337?\n\nWhile
+    I avoided all the black magic in Postgres internals, I kept this crash course
+    on the basics of data types.\n\nI start with this query.\n\n    \n\n    SET debug_print_parse
+    = on;\n    SELECT 1337;\n\nThe database scanner looks at the query, recognises
+    SELECT as a keyword, and 1337 as an integer token. Then it creates a parse tree
+    for the query. Next, PostgreSQL walks the tree and transforms it into a typed
+    query tree.\n\n    \n\n    {QUERY\n       :commandType 1\n       :targetList (\n
+    \         {TARGETENTRY\n             :expr\n                {CONST\n                   :consttype
+    23 \n                   :consttypmod -1 \n                   :constlen 4 \n                   :constbyval
+    true \n                   :constisnull false \n                   :location 7
+    \n                   :constvalue 4 [57 5 0 0 0 0 0 0]\n                }\n          }\n
+    \      )\n    }\n\nParse tree looks like above. But I just wanted to better understand
+    things like what is the `consttype 23` ? why `constvalue` has `[57 5 0 0 0 0 0
+    0]` &nbsp;and where is my `1337` value ? At this point, I asked Opus 5 to prepare
+    me a full deep-dive course on PostgreSQL types. &nbsp;Spending a few days around
+    there and talking with my agent, whom I named `pg_expert` taught me these:\n\n
+    \   \n\n    consttype = 23 → int4\n    constlen = 4 → four-byte payload\n    constbyval
+    = true → stored by value\n    constisnull = false → this is not NULL\n\n`constvalue
+    4 [57 5 0 0 0 0 0 0]` can be converted to hexadecimal, making the value easier
+    to recognize:\n\n    \n\n    57 decimal = 0x39 \n    5 decimal = 0x05\n\nOn my
+    little-endian system, the bytes were stored least-significant first:\n\n    \n\n
+    \   39 05 00 00  →  0x00000539  →  1337\n\nSo `1337` had not disappeared. &nbsp;But
+    why do we even have `8 bytes` [57 5 0 0 0 0 0 0] instead of simply 4 bytes ?\n\nThat
+    was because `constvalue` was not declared as an `int32`. It was declared as a
+    `Datum`, which was `8 bytes` Our value `1337::int4` value stored at the lower
+    four bytes of that generic carrier.\n\nHow can that same 8-byte `Datum` represent
+    a `text`, an `array`, or custom types ?\n\n## A Datum Does Not Know What It Is\n\nChatting
+    with my pg\\_expert agent taught me more. A Datum does NOT know what it represents.\n\nThe
+    eight bytes carrying `1337` did not contain a hidden label saying “I am an integer.”.
+    PostgreSQL knew its type only because of this `consttype = 23`.\n\nThat number
+    is an OID (Object IDentifiers) pointing to a row in the `pg_type` system catalog\n\n
+    \   \n\n    SELECT\n        oid,\n        typname,\n        typlen,\n        typbyval,\n
+    \       typalign,\n        typinput::regproc,\n        typoutput::regproc\n    FROM
+    pg_type\n    WHERE oid = 23;\n    \n    \n     oid | typname | typlen | typbyval
+    | typalign | typinput | typoutput\n    -----+---------+--------+----------+----------+----------+-----------\n
+    \     23 | int4 | 4 | t | i | int4in | int4out\n\nThat means the `pg_type` row
+    shows what the value means and how PostgreSQL will use it. So far, it’s brilliant
+    and easy to understand. But what about the `text` type ?\n\n    \n\n    SELECT\n
+    \       oid,\n        typname,\n        typlen,\n        typbyval,\n        typinput::regproc,\n
+    \       typoutput::regproc\n    FROM pg_type\n    WHERE oid IN ('int4'::regtype,
+    'text'::regtype) // <== HERE FILTERIN THE INT4 and TEXT only\n    ORDER BY oid;\n
+    \   \n    \n    typname | typlen | typbyval | typinput | typoutput\n    ---------+--------+----------+----------+-----------\n
+    \    int4 | 4 | true | int4in | int4out\n     text | -1 | false | textin | textout\n\nFor
+    text, `typlen = -1` means that the representation have a variable length. And
+    `typbyval = false` means that the Datum carried a pointer.\n\n    \n\n    Datum
+    ──> pointer ──> variable-length text representation\n\nSo the same `8-byte` value
+    stores a memory address for the text. Datum can pass the value either by value
+    itself or by reference to it. Nice, I love the elegant abstraction Datums provides!\n\n###
+    Unknown is a type!\n\nSo far everything makes sense, but I wanted to better understand
+    the &nbsp;`typinput` and `typoutput` columns too. These functions convert the
+    value provided by the query into a native Datum or vice versa. So I ran this again.\n\n
+    \   \n\n    SELECT 1337, pg_typeof(1337), pg_column_size(1337);\n    \n     ?column?
+    | pg_typeof | pg_column_size\n    ----------+-----------+----------------\n         1337
+    | integer | 4\n\nBut then I added quotation marks to see if PostgreSQL has dynamic
+    type casting/recognition or something:\n\n    \n\n    SELECT pg_typeof('1337');\n
+    \   \n     pg_typeof\n    -----------\n     unknown\n\nI was a bit confused at
+    this moment. I initially thought unknown meant “PostgreSQL does not know the type.”
+    So I went back to chat"
+  error:
+  fetched_at: '2026-11-12T23:17:55Z'
+archived_at: '2026-11-12T23:17:57Z'

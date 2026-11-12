@@ -1,17 +1,17 @@
 ---
 post:
   id: '50465352'
-  title: Why Writing Correct Software Is Hard
+  title: Why writing correct software is hard and why math (alone) won’t help us (2016)
   url: https://pron.github.io/posts/correctness-and-complexity
   hn_url: https://news.ycombinator.com/item?id=50465352
-  score: 267
+  score: 344
   author: ''
   posted_at: '2026-11-12T10:28:26Z'
-  fetched_at: '2026-11-12T17:24:43Z'
+  fetched_at: '2026-11-12T23:17:51Z'
   article_url: https://pron.github.io/posts/correctness-and-complexity
   article_fetch_status: success
   article_fetched_at: '2026-11-12T17:24:43Z'
-  raw_comment_count: 113
+  raw_comment_count: 164
 comments:
 - id: '50465517'
   parent_id: '50465352'
@@ -1131,6 +1131,319 @@ comments:
     from bugs that predate vibe coding."
   score: 0
   posted_at: '2026-11-12T17:14:08Z'
+- id: '50471170'
+  parent_id: '50470123'
+  author: kodoman
+  text: My point was that file systems don&#x27;t lend themselves to being able to
+    easily reason about in such a way. I used to try and illustrate how many considerations
+    have to be made when interacting with these sort of operating system services
+    and when deploying the program you need to make sure the assumptions hold.<p>The
+    sort of model you suggested does not map every possible state of the file system
+    to a model state structure so one could have various problems with results of
+    the proof.<p>I guess the difficulty of formal methods depends on how much and
+    what you want to prove, there is no real formal definition as to when something
+    becomes formal methods is a spectrum and includes algo&#x2F;c type type systems
+    to CoC proofs and extracted programs.
+  score: 0
+  posted_at: '2026-11-12T17:44:39Z'
+- id: '50471483'
+  parent_id: '50470379'
+  author: kodoman
+  text: The example you gave is maybe one of the ones where this is least applicable.
+    For systems with MMU&#x27;s one would tend to use microkernels (like sel4) and
+    then write driver servers for different components and the driver servers should
+    be where hardware errors are handled. sel4 is only for systems with MMU and it&#x27;s
+    pointless outside of it.
+  score: 0
+  posted_at: '2026-11-12T18:05:28Z'
+- id: '50471484'
+  parent_id: '50471170'
+  author: Veserv
+  text: The model I suggested is intentionally as simple and trivial as possible to
+    point out how we can not even reasonably solve the simplest and most trivial problems
+    even if we get to just assume that complicated considerations do not apply.<p>You
+    are doing the metaphorical equivalent of arguing how using antimatter for power
+    is hard because we can not efficiently harness gamma rays when the harder and
+    more immediate problem is that we do not have antimatter.
+  score: 0
+  posted_at: '2026-11-12T18:05:39Z'
+- id: '50471552'
+  parent_id: '50465768'
+  author: WorldMaker
+  text: 'It&#x27;s the same boolean value that you are testing: does it &quot;halt&quot;
+    because it completed its computation successfully or does it &quot;halt&quot;
+    because it failed? If Program A terminates on success and Program B terminates
+    on failure you can generally rewrite one to be the other (run Program A in a busy
+    loop after a success; monitor Program B in another process and report the first
+    success then kill B). Ultimately, you have the same decidability problem asking
+    &quot;does it halt?&quot; and if you could solve it for one case you could solve
+    it for the other.<p>In fact, it&#x27;s generally considered a <i>harder</i> problem
+    to include the second boolean &quot;does it halt successfully?&quot; Does it stop
+    at all is a hard enough question before asking if it stops with a success or a
+    failure&#x2F;crash. In practice this is often the easier problem to debug: once
+    it stops we generally know if it was successful or failed. But that doesn&#x27;t
+    help to answer the questions like &quot;will it <i>always</i> stop successfully?&quot;
+    or &quot;will it &#x27;forever&#x27; run successfully without ever stopping for
+    a failure&#x2F;crash&#x2F;hang&#x2F;deadlock?&quot;'
+  score: 0
+  posted_at: '2026-11-12T18:10:03Z'
+- id: '50471955'
+  parent_id: '50471484'
+  author: kodoman
+  text: The problem is part of the domain of the program is the file system. It seems
+    you agree with me in your previous point but only say that you don&#x27;t want
+    to consider it then claim it is fair easier.<p>My point is exactly file systems
+    are the problem you layout as much, the thing is simpler models would not be.
+    Consider a simple look up table with the key being a name and the content being
+    a resizable array that the program can fork off to other processes by value and
+    not reference (kind of like let binding in common lisp) this is much easier to
+    reason about and simpler.<p>What you can not do is start with something as complex
+    as a file system and then say &#x27;I am going to draw up simplified model and
+    just assume my program will behave as so&#x27; You have to show that your program
+    will treat the more complex thing in a way such that you can draw a mapping between
+    the the state of the file system and the simplified model.<p>I don&#x27;t think
+    this is just me being overly pedantic, if I just assume my simplified models apply
+    I scarcely prove anything.<p>I am also saying the solution is to use something
+    simpler then a file system (from an interface point of view).
+  score: 0
+  posted_at: '2026-11-12T18:33:31Z'
+- id: '50472072'
+  parent_id: '50465978'
+  author: SoftTalker
+  text: In cases like that you also will generally have three (or some odd number)
+    of sensors and require a majority of them to agree to determine what your input
+    is. Still not guaranteed to be correct, but the odds are better.
+  score: 0
+  posted_at: '2026-11-12T18:41:02Z'
+- id: '50472408'
+  parent_id: '50467534'
+  author: awsglkhj
+  text: Except programming isn&#x27;t &quot;building&quot; in the first place. It&#x27;s
+    just really detailed design work. My toolchain does the construction.
+  score: 0
+  posted_at: '2026-11-12T19:00:44Z'
+- id: '50472488'
+  parent_id: '50471955'
+  author: Veserv
+  text: A “simple” lookup table is also nearly impossible. Any “service” in another
+    process more complex than a array pointing at non-moving data where the client
+    interacts with it exclusively using integer handles is extremely hard and strains
+    the limits of modern proof systems.
+  score: 0
+  posted_at: '2026-11-12T19:05:27Z'
+- id: '50472765'
+  parent_id: '50472408'
+  author: win311fwg
+  text: The toolchain does the detailed design work too. The job is more like driving
+    a train — engineering, if you will. The toolchain can do its thing, but it can
+    go off the rails, so you still have to know when to hit the breaks.
+  score: 0
+  posted_at: '2026-11-12T19:23:22Z'
+- id: '50473248'
+  parent_id: '50466661'
+  author: w4der
+  text: He wasn&#x27;t Dijkstra, but he did know him.
+  score: 0
+  posted_at: '2026-11-12T19:55:06Z'
+- id: '50473439'
+  parent_id: '50465768'
+  author: ngruhn
+  text: Computability is a property of a problem; not a program. Was that the last
+    HTTP request I&#x27;ll ever receive? That&#x27;s not computable. But that&#x27;s
+    not the problem a server is solving. Any program that exists solves  some kind
+    of computable problem by definition.
+  score: 0
+  posted_at: '2026-11-12T20:09:56Z'
+- id: '50474156'
+  parent_id: '50472765'
+  author: awsglkhj
+  text: I think the closer analog is developing schematics for circuitry, where one
+    might design in terms of existing ICs or adhere to a specification about input
+    and output signals. Turning the schematic into a real device would then involve
+    a host of processes, of varying degrees of automation.<p>In the case of software
+    engineering, source code occupies roughly the same position as a schematic, with
+    all the &quot;production&quot; completely automated and highly reproducible. Yes,
+    the toolchain can make decisions about the emitted machine code, but we expect
+    the output to be stable, in all consequential ways, for a given input and constant
+    optimization settings. (Even in manufacturing, there is allowance for variation
+    due to process, and untold money has been spent variously trying to exorcise or
+    neutralize it. We have it easy.) Importantly, while no single person can know
+    everything about the operation of modern toolchains, we know that there exist
+    people with the education and the inclination to understand anything about them.
+    Compilers and linkers and analyzers are not mysterious black boxes that defy investigation.
+  score: 0
+  posted_at: '2026-11-12T20:56:37Z'
+- id: '50474775'
+  parent_id: '50472488'
+  author: kodoman
+  text: I am sorry it seems we have been talking past each other, you are talking
+    about using SMT solvers and such, It took me a while to realize. I was speaking
+    of Curry-Howard isomorphism style proofs using Coq and stuff. In the case of SMT
+    solvers my suggestions are pointless but in the case of some kind of program as
+    proof my suggestions are useful.<p>look up tables are not challenging to formally
+    prove in Coq and they are well behaved monoids with respect to union, you can
+    reason about insertion and deleting or modifying content, this is so much simpler
+    then a file system. It does not matter if it&#x27;s a hash table or binary tree
+    underneath you can normalize an interface quite simply.<p>&gt; Any “service” in
+    another process.<p>Not what I meant by service, I was thinking about either a
+    library implement this data structure and behavior guaranteed by forking, I meant
+    it as in an operating system or runtime implementing a service. My point was just
+    to show something that one can reason about quite easily.<p>&gt; in another process
+    more complex than a array pointing at non-moving data.<p>the suggestion was to
+    forks so essentially clones the values of the table, this does not make a reference
+    that was my point hence why I said it was kind of like a let bind. For fork think
+    a simpler version of unix fork with various bits stripped. All I was trying to
+    show is the sort of direction one could go with this sort of thing, this would
+    be too simple to a lot of things but you can see the direction of travel, these
+    primitives are easy to reason about.<p>I was not really wanting to go into parallelism
+    or IPC (that stuff is more difficult but there exists primitives) rather the point
+    of threads was that one can have a primitive of isolating code in it&#x27;s own
+    context, I said nothing about communication but you could indeed have many different
+    strategies from the more simple waiting for a child thread to yield allowing you
+    to use Virtual memory and helping you reason about the code and you could allow
+    the thread to &#x27;join&#x27; not a normal join but just a well defined function
+    that takes a bit of the yielded threads code and puts it back into the called
+    processes user space in a well defined way. The point is this allows for reasoning
+    about values and passing values in a predictable well defined way.<p>&gt; extremely
+    hard and strains the limits of modern proof systems.<p>I realized at that point
+    you where talking about SMT indeed this would not be useful to a developer wanting
+    to use SMT, a program as proof style formal verification would benefit greatly
+    from this sort of thing greatly Idris, Coq, etc. I am sorry I did not realize
+    this earlier I should have realized as the topic of the article was not such proofs
+    I apologize.<p>Additionally you are absolutely right that working with a SMT is
+    easier then a lot of people think and beneficial.
+  score: 0
+  posted_at: '2026-11-12T21:45:52Z'
+- id: '50474812'
+  parent_id: '50472408'
+  author: pjmlp
+  text: Yes it is, brick layers in this analogy are those that are only coders.<p>Then
+    we have the whole team of engineers, architects, solution architects, that lay
+    down the work for the coders, more often than not, some offshoring team.
+  score: 0
+  posted_at: '2026-11-12T21:49:49Z'
+- id: '50474925'
+  parent_id: '50472408'
+  author: Jtsummers
+  text: Engineering mostly isn&#x27;t building either. AEs don&#x27;t build the planes,
+    they design them. EEs may prototype some boards, but as a profession it&#x27;s
+    also mostly design (intended for manufacture). Unless you&#x27;re an EE working
+    primarily on one-offs, and small ones at that, you don&#x27;t build most of the
+    products of your mind. MEs don&#x27;t build the cars. CEs don&#x27;t build the
+    dams or bridges.<p>Engineering is principally a design discipline, with a small
+    fraction actually doing the hands-on building of their designs at least once they
+    hit a certain scale of manufacture or get past prototyping. Technicians, skilled
+    and unskilled labor, and machines do the vast majority of the building of those
+    designs.
+  score: 0
+  posted_at: '2026-11-12T21:59:47Z'
+- id: '50474973'
+  parent_id: '50474925'
+  author: awsglkhj
+  text: 'I think we&#x27;re in violent agreement: Source code is detailed design,
+    and programming is an engineering design process.<p>We can and do design at higher
+    levels, too.'
+  score: 0
+  posted_at: '2026-11-12T22:04:02Z'
+- id: '50475016'
+  parent_id: '50466304'
+  author: toast0
+  text: Totally, nobody can call themselves an engineer unless they wear a stripey
+    hat.
+  score: 0
+  posted_at: '2026-11-12T22:07:59Z'
+- id: '50475185'
+  parent_id: '50466344'
+  author: wahern
+  text: Capsicum did this for the POSIX model, and they have rigorous analyses (and
+    maybe proofs). But of course the first thing they did was remove the filesystem
+    namespaces from the process, requiring significant rearchitectures of existing
+    software. You can still use file descriptor passing to give file and even directory
+    access, but it still requires some significant work.<p>Linux never accepted the
+    Capsicum patches, but they eventually added process descriptors and some important
+    openat flags so that almost all the difficult pieces are effectively in place.<p>I
+    don&#x27;t know how far along they&#x27;ve gotten (presumably not as nearly far
+    as OpenBSD has gotten with pledge+unveil refactorings), but FreeBSD reworked many
+    of their utilities and services to utilize Capsicum.
+  score: 0
+  posted_at: '2026-11-12T22:21:55Z'
+- id: '50475215'
+  parent_id: '50466216'
+  author: aDyslecticCrow
+  text: Most modern software is 5-10% algorithmic and mathematical precision, and
+    90-95% sticky glue. Most software developers write glue their whole life, importing
+    the precision in the libraries, database engines, languages, or system calls.<p>Verifying
+    a bunch of glue is more trouble than worth, though i think still a worthwhile
+    exercise to explore. Even static code analysis engines are basically free bug
+    hunting yet not used by most projects.
+  score: 0
+  posted_at: '2026-11-12T22:23:51Z'
+- id: '50475279'
+  parent_id: '50466371'
+  author: aDyslecticCrow
+  text: Well actually... home fridges sure; but having the fridges connected may be
+    legally required to grantee the safety of the food they hold. Imagine a fridge
+    thermostat dropping below legal fridge level for 3 hours each night, causing a
+    3 costumers to contract food poisoning<p>Now imagine being able to point to a
+    monitoring system that report no errors from their ISO certified fridge fleet
+    instead; they ate old leftovers on their own.<p>One could argue the fridge should
+    just expose their temperature over a MQTT or Bluetooth mesh publisher protocol
+    to a local data aggregator, rather than be connected directly to the local notwork
+    with a out-of-date Linux computer.<p>But the contractor firm probably had a cheap
+    development rate when they submitted their application for the work package and
+    won the contract.
+  score: 0
+  posted_at: '2026-11-12T22:29:12Z'
+- id: '50475412'
+  parent_id: '50475016'
+  author: pjmlp
+  text: As long as they have the ring.
+  score: 0
+  posted_at: '2026-11-12T22:38:25Z'
+- id: '50475420'
+  parent_id: '50474156'
+  author: win311fwg
+  text: "<i>&gt; In the case of software engineering, source code occupies roughly
+    the same position as a schematic</i><p>That is a reasonable take, but software
+    engineers don&#x27;t work at such a low level. They start the agent and their
+    job is to make sure that the agent doesn&#x27;t go off the rails. It is like driving
+    a train. Hence why we call them engineers."
+  score: 0
+  posted_at: '2026-11-12T22:39:20Z'
+- id: '50475469'
+  parent_id: '50475185'
+  author: kodoman
+  text: |-
+    Capsicum was an amazing project. I am not familiar with where it is at the moment and not freeBSD user (though looks more and more tempting) and I thought a lot of it went largely unused, if you have any links on how they built stuff around it I would be very interested.<p>&gt; OpenBSD pledge+unveil
+    This was one of those things that now seem obvious, and is elegant albeit in that unixy way. From what I can tell one could built something on linux with seccomp or openbsds pledge to implement a runtime that could allow for implementing such structures all in usersapce not just process isolation but creating IPC that allows for determinism and other things. (I think it&#x27;s more seccomp with filtering syscalls though where this becomes feasible I don&#x27;t know if anyone has done this before)
+  score: 0
+  posted_at: '2026-11-12T22:43:45Z'
+- id: '50475472'
+  parent_id: '50474775'
+  author: Veserv
+  text: Yes, a dynamic sized hash table is hard to prove unless you just take it axiomatically.<p>How
+    are you demonstrating that Insert(“Alice”, True) followed by Insert(“John”, True)
+    does not result in memory stores that cause Get(“Alice”) to not return True? Or
+    result in Get(“Blorg”) giving a different value?<p>How are you proving that you
+    can lift this generically so you can reason about non-interference considering
+    only the abstract interface? So you can generically reason that Insert(x, _) allows
+    you to continue to assume that Get(y) is unchanged if x != y even in the presence
+    of dynamic resizing and copying of the underlying data in a hash table implementation?
+    How are you proving that about the keys the leaf piece of code does not even know
+    about even though it may have changed the memory locations previously used in
+    the Get(unknown y) calculation?<p>How are you proving that no other operation
+    violates that abstract data model and can thus be ignored for the purposes of
+    your proof? And as a corollary, how do your proofs start failing if a violating
+    operation is added?<p>Sure, if you just assume you have a magical key-value map
+    that does not interact with the concrete data model, then life is easy because
+    you skipped the hard part. Being able to easily encapsulate a data model into
+    a higher-abstraction data model is the thing that is largely missing. It is why
+    formal proofs generally stop in the low hundreds of lines proving a single data
+    structure and its operations.<p>Building and proving you implement usable abstractions
+    that can be reasoned about by your proof system at the abstract level is extremely
+    hard with current systems.
+  score: 0
+  posted_at: '2026-11-12T22:44:15Z'
 article:
   url: https://pron.github.io/posts/correctness-and-complexity
   title: Why Writing Correct Software Is Hard
@@ -1235,4 +1548,4 @@ article:
     so there exists "
   error:
   fetched_at: '2026-11-12T17:24:43Z'
-archived_at: '2026-11-12T17:24:49Z'
+archived_at: '2026-11-12T23:17:57Z'

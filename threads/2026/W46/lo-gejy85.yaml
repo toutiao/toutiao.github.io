@@ -1,0 +1,140 @@
+---
+post:
+  id: lo-gejy85
+  source: lobsters
+  title: Adapting CPython for yk
+  url: https://tratt.net/laurie/blog/2026/adapting_cpython_for_yk.html
+  hn_url: https://lobste.rs/s/gejy85
+  score: 17
+  author: ltratt
+  posted_at: '2026-11-12T12:29:56Z'
+  fetched_at: '2026-11-12T23:17:58Z'
+  article_url: https://tratt.net/laurie/blog/2026/adapting_cpython_for_yk.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-12T23:18:02Z'
+  raw_comment_count: 2
+  tags:
+  - compilers
+  - python
+comments:
+- id: lo-f2ycvk
+  parent_id: '0'
+  author: vbernat
+  text: The article is pretty captivating. There is also an interesting comment from
+    Ken Jin (who is working on JIT for cPython). This supports my opinion that comments
+    are an important part of a blog. :)
+  score: 1
+  posted_at: '2026-11-12T21:01:48Z'
+- id: lo-ufevwh
+  parent_id: '0'
+  author: kenjin
+  text: |-
+    I posted a comment directly on the blog so I guess I'll do so here as well (with minor edits):
+    Hi Laurie, I think yk is really impressive work. However, I think the methodology and reporting is very flawed. IIUC the premise of yk is that you take a interpreter with some modifications and you get a JIT. This isn't doing just that. ykcpython is not deriving a JIT from an existing interpreter, but using the existing CPython 3.15 JIT. I looked at the code and ykcpython is using the already-optimized uop stream from the CPython 3.15 JIT tracer + optimizer, just leaving out the Copy-and-Patch backend. The high-level Python optimizations are already done by the existing CPython JIT pipeline at that point, and we know that yk (for now) cannot do most of these optimizations. This article is not actually comparing JITs but instead JIT backends. Also, the tier 2 interpreter is not an actual CPython interpreter we use or ship, it's purely for differential testing of the JIT. I don't think pure interpreters include a JIT optimizer normally, a JIT bytecode tracer, or a differential testing interpreter for their JIT IR. All of which ykcpython uses. Would ykcpython even be able to effectively JIT CPython without leveraging its pre-existing JIT infrastructure? It's hard to conclude from this article.
+    This is significant, because last I measured, about >90% of 3.15's own JIT speedups came from the 3.15 JIT optimizer, and only 10% of that was from the JITting to machine code. In fact, without the JIT optimizer, the 3.15 JIT is usually outright slower than the interpreter. There are probably gains from the indirect function call inlining. However, it is hard to say how the entire system will perform.
+    To expound further, 3.15's JIT optimizer traces bytecodes to uops and optimizes that. ykcpython is taking the stream of uops directly from the JIT optimizer. Most of the high-level optimizations the CPython JIT optimizer does cannot be done by yk as they require knowledge of Python semantics. Unlike what you may have seen in 3.14, the 3.15 JIT optimizer actually does quite a bit of reference counting elimination, unique reference tracking, top-of-stack caching, type check removal via callback insertion, and general high-level Python semantic-aware optimizations. yk (for now) cannot reason about any of these Python semantics, and so this implementation outsourced all the work that yk cannot do to the CPython JIT optimizer + tracer, and then effectively compares the yk optimizer vs the non-optimizing Copy-and-Patch backend, which is not as interesting. Again, the JIT tracer+optimizer is responsible for the vast majority of 3.15's speedups.
+    On top of that, the CPython JIT tracer is itself, a bytecode tracing engine. Which means that it already traces and linearizes all the high-level Python control-flow + performs stitching/trace-trace transitions which cuts out the bulk of the work of region selection for the yk tracer. I think that's also an important factor as tracing JITs are highly-dependent on the quality of their traces. The JIT trace builder is again a part of 3.15's JIT, not by default with its interpreter.
+    A suggestion for a more interesting and accurate comparison would be to turn off the specializing interpreter and yk trace+compile that (the most apples-to-apples comparison). I expect in this case, ykcpython (for the time being) will perform significantly worse just by tracing the bytecode interpreter than it currently does, potentially even worse than the specializing interpreter. I say for the time being, because I am confident that yk will improve so I make no pronouncements on future results.
+    If this article were about comparing JIT backends or producing an interesting JIT infrastructure, I would agree with it. However, I cannot agree with the original yk premise that this is taking a mostly unmodified interpreter and deriving a JIT from that to get good results. This piggybacks off an existing JIT's trace recorder and optimizer. So I think yk's original claim doesn't hold at all in this case. If CPython's JIT infrastructure were completely removed in 3.16, ykcpython would (as the current implementation stands) be ineffective and not be able to handle the specializing interpreter at all.
+  score: 3
+  posted_at: '2026-11-12T21:05:14Z'
+article:
+  url: https://tratt.net/laurie/blog/2026/adapting_cpython_for_yk.html
+  title: 'Laurence Tratt: Adapting CPython for yk'
+  fetch_status: success
+  content: "| \n\n[` ` Home](/laurie/)[`>` Blog](/laurie/blog/)\n\n | [Bluesky](https://bsky.app/profile/ltratt.bsky.social)&nbsp;&nbsp;[Mastodon](https://mastodon.social/@ltratt)&nbsp;&nbsp;[X](https://twitter.com/laurencetratt)
+    |\n\n# Adapting CPython for yk\n\nRSS feed: [whole site](/laurie/news.rss) or
+    [just the blog](/laurie/blog/blog.rss)\n\nRecent posts\n\n[Adapting CPython for
+    yk](/laurie/blog/2026/adapting_cpython_for_yk.html)\n\n[Local Reasoning for Global
+    Properties](/laurie/blog/2026/local_reasoning_for_global_properties.html)\n\n[Test-case
+    Reducers Are Underappreciated Debugging Tools](/laurie/blog/2026/test_case_reducers_are_underappreciated_debugging_tools.html)\n\n[Retrofitting
+    JIT Compilers into C Interpreters](/laurie/blog/2026/retrofitting_jit_compilers_into_c_interpreters.html)\n\n[PLISS
+    2026](/laurie/blog/2026/pliss_2026.html)\n\n[Upcoming Talk in London](/laurie/blog/2025/upcoming_talk_in_london.html)\n\n[Async
+    and Finaliser Deadlocks](/laurie/blog/2025/async_and_finaliser_deadlocks.html)\n\n[What
+    Context Can Bring to Terminal Mouse Clicks](/laurie/blog/2025/what_context_can_bring_to_terminal_mouse_clicks.html)\n\n[Why
+    Firsts Matter](/laurie/blog/2025/why_firsts_matter.html)\n\n[LLM Inflation](/laurie/blog/2025/llm_inflation.html)\n
+    \ \n[Blog archive](/laurie/blog/archive.html)\n\nEarlier this year I [wrote a
+    post on yk](/laurie/blog/2026/retrofitting_jit_compilers_into_c_interpreters.html),
+    which can automatically add JIT compilers to C interpreters. Since then we’ve
+    applied yk to more interpreters, fixed various bugs, and improved performance
+    notably. Towards the end of October I showed some data where on our benchmark
+    suite[1](javascript:;) yklua is 2× faster than the PUC Lua interpreter it takes
+    as a base.\n\nI was quite pleased with myself until someone brought me down to
+    earth by asking “how do you know if this works for large interpreters?” It’s a
+    fair question: PUC Lua is at least an order of magnitude smaller[2](javascript:;)
+    than CPython or CRuby and who’s to say if it would work with much bigger interpreters?
+    We had looked at CPython a year or so ago, but at that point yk was missing several
+    obvious things that CPython would need, so we quickly moved on. A lot has changed
+    since then, and a quick LLM experiment got far enough to suggest it would be worth
+    looking again.\n\nHappily, having taken a deeper look, CPython not only works
+    when adapted for yk as [ykcpython](https://github.com/ykjit/ykcpython)[3](javascript:;),
+    but there are meaningful performance gains to be had — not only relative to normal
+    CPython, but also relative to Python’s experimental JIT[4](javascript:;). Roughly
+    speaking, this is the result of 3-4 days’ work on ykcpython directly; there was
+    a separate week and a half of generic yk bug fixing necessary to get to the point
+    that I could look at ykcpython itself.\n\nHere are the “final” numbers from my
+    brief odyssey on ykcpython and the AWFY benchmark suite:\n\n| | cpython | cpython\\_jit
+    | ykcpython |\n| --- | --- | --- | --- |\n| Bounce | 19.27±0.20 | 11.09±0.05 |
+    **10.09±0.04** |\n| CD | 32.21±0.23 | **26.10±0.08** | 29.33±0.16 |\n| DeltaBlue
+    | 7.43±0.02 | **6.21±0.02** | 7.62±0.04 |\n| Json | 11.81±0.08 | 10.93±0.05 |
+    **9.98±0.03** |\n| List | 15.01±0.22 | **8.10±0.05** | 10.44±0.09 |\n| Mandelbrot
+    | 11.66±0.28 | 6.94±0.27 | **4.20±0.07** |\n| NBody | 18.97±0.13 | 12.77±0.12
+    | **10.98±0.02** |\n| Permute | 22.97±0.34 | **17.95±0.13** | 21.04±0.05 |\n|
+    Queens | 13.18±0.14 | 9.65±0.11 | **8.32±0.03** |\n| Richards | 54.80±0.20 | 40.56±0.40
+    | **33.18±0.17** |\n| Sieve | 23.34±0.06 | 17.02±0.07 | **13.74±0.06** |\n| Storage
+    | 22.03±0.19 | 19.94±0.08 | **19.67±0.04** |\n| Towers | 20.46±0.25 | **12.65±0.05**
+    | 13.67±0.04 |\n\nIn this table `cpython` is “normal” CPython 3.15.1; `cpython_jit`
+    is CPython 3.15.1 with the experimental JIT turned on; and `ykcpython` is commit[31b4d387](https://github.com/ykjit/ykcpython/commit/31b4d3875a9a63184546d7065863d42b4e24c2fc).
+    Times are in seconds (lower is better) with means and 99% confidence intervals
+    bootstrapped from 30 process executions, running on a 64 core AMD EPYC 7773X Debian
+    machine in `performance`mode ([download the repeatable experiment and the raw
+    data](/laurie/blog/extra/2026/adapting_cpython_for_yk/adapting_experiment.tgz)).
+    On each row the fastest entry(s) are shown in bold.\n\nA simple summary of the
+    table is: `ykcpython` is faster than `cpython` on every benchmark except DeltaBlue
+    (where it’s about 2.5% slower); and faster than`cpython_jit` on 8 out of 13 benchmarks.\n\nThe
+    point of this post is not to pretend that ykcpython is in any way ready for people
+    to use — it definitely is not! Nor is it to pretend that one can expect performance
+    on a wider set of programs to be as good as the numbers above — it definitely
+    won’t! My view is that benchmark suite performance is a hoop to jump through rather
+    than an end in itself: a system which benchmarks well might perform poorly in
+    the real world; but a system which benchmarks poorly nearly always performs poorly
+    in the real world.\n\nRather, I wanted to use this post as a way of showing what
+    it’s like to adapt an interpreter for yk[5](javascript:;): the stages I went through;
+    and to give a sense of how the just under 450LoC I added were enough to achieve
+    a meaningful effect. Luckily I had a sense that this might be a useful journey,
+    so I was able to write enough stuff down to be able to flesh out this full post.\n\n##
+    A quick refresher\n\nIf you haven’t read [the earlier yk post](/laurie/blog/2026/retrofitting_jit_compilers_into_c_interpreters.html),
+    here’s a very brief refresher. Given a lightly modified C interpreter[6](javascript:;)as
+    input, yk produces a VM with a meta-tracing JIT compiler as output[7](javascript:;).
+    yk doesn’t aim to produce the fastest possible JIT compiling language implementation:
+    rather, it aims to make the language implementation you know and love somewhat
+    faster while retaining 100% compatibility. Put another way a “ykified” interpreter
+    is a fork of the existing C version of the interpreter, with (hopefully!) a handful
+    of adjustments.\n\nAs with any meta-tracing JIT compiler, yk identifies _hot_
+    loops in the _guest_language (e.g. Lua or Python), and _traces_ the interpreter
+    (i.e. records what the C code is executing while it is interpreting the guest
+    language). It then optimises those traces and converts them to machine code.\n\nyk
+    requires interpreters to tell it where potential loops in the guest language are
+    via the `YkLocation` struct. Optionally – though if you want to get good performance,
+    definitely necessary! – interpreter authors can add _optimisation hints_ that
+    embed knowledge about the language or its common idioms of use such as “at this
+    point this seemingly dynamic value almost never changes”. In general, working
+    out where to put `YkLocation`s is relatively easy, but working out where to put
+    hints requires a much greater understanding of the interpreter, and careful measurement
+    to understand which do and don’t help.\n\nThe challenge I face when adapting an
+    interpreter for yk is that I rarely know the interpreter well, if at all. Rather
+    than trying to do everything at once, I have learnt to start off as simple as
+    possible: I try and do the minimum changes that lead to some traces being recorded
+    and compiled to machine code. This can be trickier than it seems: I’ve got to
+    understand the build system[8](javascript:;), and work out where to put some semi-sensible
+    `YkLocation`s. I’ve also learnt to make sure that the language’s test suite works
+    from this very first step: keeping it working thereafter is not only much easier,
+    but it lessens the number of times one attempts optimisations that are unsound.\n\nFor
+    a simple interpreter, you might get a basic JIT compiler from an interpreter with
+    fewer than 10LoC (Lines-of-Code) changed. For somewhat bigger interpreters, a
+    few more changes tend to be necessary. For example, yk doesn’t like “threaded”
+    interpreters that use `goto` between opcodes, because it doesn’t give it enough
+    opportunities to intercede and see"
+  error:
+  fetched_at: '2026-11-12T23:18:02Z'
+archived_at: '2026-11-12T23:18:03Z'

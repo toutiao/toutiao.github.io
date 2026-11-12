@@ -1,0 +1,630 @@
+---
+post:
+  id: '50278645'
+  title: 'noalloc: Tooling and libraries to enforce zero heap allocations in Golang'
+  url: https://github.com/theconsensuslabs/noalloc
+  hn_url: https://news.ycombinator.com/item?id=50278645
+  score: 81
+  author: g0xA52A2A
+  posted_at: '2026-10-28T18:29:25Z'
+  fetched_at: '2026-11-12T23:18:05Z'
+  raw_comment_count: 70
+comments:
+- id: '50292051'
+  parent_id: '50278645'
+  author: zinodaur
+  text: I love it. Any thoughts on allowing (value type) Pointers into a Region?
+  score: 0
+  posted_at: '2026-10-29T16:47:58Z'
+- id: '50293009'
+  parent_id: '50278645'
+  author: andrewla
+  text: The end state of every garbage collected language is a suite of tools to prevent
+    garbage collection at all costs.<p>I think we can learn something here.
+  score: 0
+  posted_at: '2026-10-29T17:41:33Z'
+- id: '50293220'
+  parent_id: '50293009'
+  author: vatsachak
+  text: I think that people hyperoptimize for no reason though. How many applications
+    are there that require no GC? I feel like you can write the no-gc code in Rust
+    and then just use it from the C ABI from any GC language.
+  score: 0
+  posted_at: '2026-10-29T17:55:42Z'
+- id: '50293267'
+  parent_id: '50293009'
+  author: Gys
+  text: Maybe. Go code is designed to be readable and stable. My guess is that most
+    Go code is running fine with garbage collection. There are always edge cases and
+    then just choose another language.
+  score: 0
+  posted_at: '2026-10-29T17:59:12Z'
+- id: '50293330'
+  parent_id: '50293009'
+  author: kvemkon
+  text: 'Similar with malloc in C &#x2F; new in C++, especially for short-living,
+    repeating, in hot path. And then you hear: avoid allocations, use constant-size
+    buffers or memory pools. Avoid spawning threads, use thread pools.'
+  score: 0
+  posted_at: '2026-10-29T18:04:20Z'
+- id: '50293378'
+  parent_id: '50278645'
+  author: kvemkon
+  text: Go compiler has an advanced escaping analyzer. Wouldn&#x27;t it be easier
+    and better to add this noalloc-analyzer feature to golang directly?
+  score: 0
+  posted_at: '2026-10-29T18:07:30Z'
+- id: '50293461'
+  parent_id: '50293220'
+  author: treyd
+  text: This is a viable approach for many scenarios.  Uniffi is a tool&#x2F;library
+    from Mozilla that makes this a lot easier across platforms.<p>After a few rounds
+    of this though it might end up seeming like it&#x27;s not worth the hassle and
+    it&#x27;s easier to build the whole application in Rust.
+  score: 0
+  posted_at: '2026-10-29T18:12:25Z'
+- id: '50293462'
+  parent_id: '50293220'
+  author: hoppp
+  text: I agree. If the use-case requires no GC then Rust or Zig or C++ is a better
+    fit.<p>I don&#x27;t see much point in choosing a language just to bypass it&#x27;s
+    features.
+  score: 0
+  posted_at: '2026-10-29T18:12:25Z'
+- id: '50293701'
+  parent_id: '50293462'
+  author: cpgxiii
+  text: Coming from an environment in which we extensively use mixed codebases (C++
+    and Python) to combine performance and ease of prototyping, one of the pain points
+    is that there is almost always some impedance mismatch between the lifetime&#x2F;ownership
+    models of the two languages. When something goes wrong here, it&#x27;s usually
+    a real pain to debug and resolve, and often the resolution involves imposing constraints
+    from one language onto the other (e.g. C++ that would idiomatically use unique_ptr
+    instead needs to use shared_ptr because unique_ptr is essentially impossible to
+    completely capture in Python).<p>Given the issues involved in mixing languages,
+    there <i>can</i> be cases where sticking with one &quot;good enough&quot; GC&#x27;d
+    language and having to write a few performance-sensitive parts in very unidiomatic
+    form to minimize&#x2F;eliminate GC work is preferable.
+  score: 0
+  posted_at: '2026-10-29T18:26:38Z'
+- id: '50293844'
+  parent_id: '50293009'
+  author: iguessthislldo
+  text: That observation checks out. About a decade ago, one of my former coworkers
+    areas of interests was making Java applications and frameworks that didn&#x27;t
+    use the any additional heap beyond app initialization. This was apparently for
+    embedded&#x2F;low power devices. It was neat to hear about as a C++ dev, but I&#x27;m
+    not sure how much of a business or technical advantage it had beyond that.
+  score: 0
+  posted_at: '2026-10-29T18:37:21Z'
+- id: '50293932'
+  parent_id: '50293701'
+  author: revengerwizard
+  text: I feel like that may be more of an issue with how Python&#x27;s C API is designed,
+    leaking basically most of its internals, and then having to remember to manage
+    (increment&#x2F;decrement) Python objects correctly.
+  score: 0
+  posted_at: '2026-10-29T18:43:37Z'
+- id: '50293947'
+  parent_id: '50293461'
+  author: vatsachak
+  text: Lifetime and smart pointer hell is real though.
+  score: 0
+  posted_at: '2026-10-29T18:44:54Z'
+- id: '50293964'
+  parent_id: '50293947'
+  author: treyd
+  text: Once you internalize it it&#x27;s really not a problem.  That&#x27;s why I
+    said &quot;after a few rounds of this&quot;.
+  score: 0
+  posted_at: '2026-10-29T18:46:15Z'
+- id: '50293975'
+  parent_id: '50293844'
+  author: prophet_margin
+  text: The big one that comes to mind is MISRA.
+  score: 0
+  posted_at: '2026-10-29T18:47:34Z'
+- id: '50294066'
+  parent_id: '50293009'
+  author: raggi
+  text: The end state of inappropriate use of garbage collected languages.<p>Go&#x2F;GC
+    are mostly fine for medium frequency medium scale mid stack problems.<p>It’s bad
+    for high frequency computing. It’s bad for very small targets, for very large
+    targets, and by association software that lives at the very bottom of the stack.<p>Go
+    is a high efficiency framework for writing mid sized servers, not a systems language.
+    The runtimes hard opinions and closed interface are the reason for this enclosing
+    definition and the GC is one part of that.
+  score: 0
+  posted_at: '2026-10-29T18:53:21Z'
+- id: '50294084'
+  parent_id: '50293378'
+  author: raggi
+  text: Historically that was rejected.<p>Tides have shifted somewhat, but I suspect
+    this may still be rejected.<p>Unfortunately a lot of people’s experience with
+    such proposals was also historically getting gaslit by a brigade, so a lot of
+    folks moved on and won’t bother trying again.
+  score: 0
+  posted_at: '2026-10-29T18:54:23Z'
+- id: '50294088'
+  parent_id: '50278645'
+  author: eatonphil
+  text: Hey folks, this is my project. I really liked OxCaml&#x27;s zero_alloc feature
+    [0], something you don&#x27;t get in Rust or Zig or Go*, and have been trying
+    to get a handle on allocations in The Consensus&#x27;s code search engine.<p>It&#x27;s
+    an extremely early project but it&#x27;s been helping me out a bunch already.
+    Would love to hear your bug reports or requests if you try running it on your
+    codebase.<p>[0] <a href="https:&#x2F;&#x2F;theconsensus.dev&#x2F;p&#x2F;2026&#x2F;06&#x2F;27&#x2F;the-feature-in-oxcaml-more-languages-should-steal.html?focus=1"
+    rel="nofollow">https:&#x2F;&#x2F;theconsensus.dev&#x2F;p&#x2F;2026&#x2F;06&#x2F;27&#x2F;the-feature-in-oxcaml-...</a><p>*
+    I think you can get this in Clang and maybe GCC with `__attribute__((nonallocating))`
+    though.
+  score: 0
+  posted_at: '2026-10-29T18:54:31Z'
+- id: '50294109'
+  parent_id: '50293378'
+  author: eatonphil
+  text: I agree this isn&#x27;t the absolute ideal form. I&#x27;d rather it be built
+    in as a language directive or something. noalloc does parse compiler escapes emitted
+    by the Go compiler with `-gcflags=-m -S`. One problem is that these are not really
+    a standard format. But I hope that with testing across versions (over time anyway,
+    I only run this on Go 1.27) it&#x27;ll be stable enough.
+  score: 0
+  posted_at: '2026-10-29T18:56:31Z'
+- id: '50294116'
+  parent_id: '50293964'
+  author: vatsachak
+  text: I&#x27;ve been writing Rust for a year and change professionally, also as
+    a hobby, and even though I love it, it&#x27;s really annoying to choose the allocation
+    model and lifetime model at every step.<p>For example,<p>- A field in a struct
+    cannot borrow another field so now you&#x27;d have to create two structs. I guess
+    you could write an impl to borrow that field instead of storing the borrow.<p>-
+    In simulation software I wrote I found that mimalloc does just as good as bumpalo
+    (within 5%) so carrying a bump everywhere was useless. Not really a rust issue
+    but rather a loss of faith in manual memory management for me.<p>- Eventually
+    over time you start adding Arc&lt;Fn(Blah)-&gt;Foo&gt; everywhere and Box, Arc
+    and friends start coming in. But you can&#x27;t have cyclical references there
+    so you have to use Weak. And you have to use OnceCell or LazyCell or LazyLock
+    for things that should run at start time.<p>Rust is really great for the crates,
+    but ...<p>For applications which are not absolutely performance critical and cannot*
+    be stated pretty easily in linear logic + clone + drop you can get away with Haskell
+  score: 0
+  posted_at: '2026-10-29T18:57:32Z'
+- id: '50294165'
+  parent_id: '50278645'
+  author: gritzko
+  text: If you don&#x27;t allocate, why do you even need Go or Rust? LLMs handle less
+    elegant syntax just as well. I use a zero-malloc C dialect with slices and bounds-checking.<p>Just
+    recently I was sketching a smallish database in zero-malloc C. <a href="https:&#x2F;&#x2F;replicated.live&#x2F;blog&#x2F;db"
+    rel="nofollow">https:&#x2F;&#x2F;replicated.live&#x2F;blog&#x2F;db</a> That was
+    partly because most LSM data structures are read-only, so mmap was good enough
+    and concurrent access was safe for the bulk of the data.<p>The &quot;hot zone&quot;
+    (memtable) then requires some intricate engineering, but that is the case either
+    way.<p>You can go quite far with zero-malloc C.
+  score: 0
+  posted_at: '2026-10-29T19:00:45Z'
+- id: '50294183'
+  parent_id: '50293220'
+  author: ted_dunning
+  text: Embedded systems benefit substantially from decreased GC, especially in the
+    context of non-relocating collectors (as with Go) in machines without memory management
+    units. The problem is not the overhead, it is the effect of memory fragmentation.<p>The
+    OP article here is nice because it allows selective enforcement of allocation
+    free code. If you have code that has some discipline about heap allocation such
+    as having all small allocations then you are OK on the fragmentation front.
+  score: 0
+  posted_at: '2026-10-29T19:02:17Z'
+- id: '50294220'
+  parent_id: '50294084'
+  author: ted_dunning
+  text: The Go community has not been very welcoming for embedded applications, for
+    sure.<p>That might be changing (slightly) because of the Tamago work on NOOS.
+  score: 0
+  posted_at: '2026-10-29T19:04:32Z'
+- id: '50294256'
+  parent_id: '50294165'
+  author: steveklabnik
+  text: Rust doesn&#x27;t have heap allocation in the language at all. It still has
+    useful features regardless.
+  score: 0
+  posted_at: '2026-10-29T19:08:39Z'
+- id: '50294450'
+  parent_id: '50294220'
+  author: wahern
+  text: Goroutines and lexical closures create a dilemma for embedded targets. Go
+    was designed around the notion that using goroutines (threading, basically) should
+    be effortless and employed without hesititation. Lexical closures is a critical
+    aspect of that, and by extension GC. Both goroutines and lexical closures require
+    dynamic allocation, at least when combined with some other Go design decisions
+    (e.g. seamless recursion, dynamic method invocation, etc).<p>Go does a great job
+    of making these impose minimal cost, both technically and cognitively, on typical
+    platforms, from server (including many &quot;embedded&quot; server environments)
+    to desktop to smartphone. That&#x27;s why it has such a sophisticated yet largely
+    transparent user space threading layer. But it&#x27;s very difficult and usually
+    impractical for Go to target extremely resource constrained environments without
+    exposing and crippling it&#x27;s core abstractions. Some people are willing to
+    contort Go to fit that space, but perhaps that&#x27;s because their vision of
+    what makes Go, Go, differs from the creators&#x27; and core maintainers&#x27;
+    understanding of Go.
+  score: 0
+  posted_at: '2026-10-29T19:22:58Z'
+- id: '50294535'
+  parent_id: '50294256'
+  author: gritzko
+  text: 'Technically, malloc() is a library function, not core C. My point is this:
+    guarantees cost complexity, and you always have to keep in mind the assumptions
+    and how much of it is theater. So, neither way is strictly better. It depends.
+    For immutable data, lifetimes don&#x27;t buy much, for example.'
+  score: 0
+  posted_at: '2026-10-29T19:30:15Z'
+- id: '50294580'
+  parent_id: '50293009'
+  author: pjmlp
+  text: Anti GC folks forget that these workarounds are only required in GC languages
+    that don&#x27;t offer explicit language features for stack and native heap allocations,
+    like Cedar, Modula-3, all Oberon variants, C#, F#, D, Swift,..<p>Like everything
+    else in Go, its designers have decided to ignore learnings in GC systems languages.
+  score: 0
+  posted_at: '2026-10-29T19:33:52Z'
+- id: '50294592'
+  parent_id: '50294183'
+  author: pjmlp
+  text: Real time Java is doing just fine with PTC and Aicas still in business.
+  score: 0
+  posted_at: '2026-10-29T19:34:33Z'
+- id: '50294623'
+  parent_id: '50293844'
+  author: pjmlp
+  text: Job pool, memory safety and lower development costs versus C++ tooling.<p>&quot;Why
+    we chose Java for our High-Frequency Trading application&quot;<p><a href="https:&#x2F;&#x2F;medium.com&#x2F;@jadsarmo&#x2F;why-we-chose-java-for-our-high-frequency-trading-application-600f7c04da94"
+    rel="nofollow">https:&#x2F;&#x2F;medium.com&#x2F;@jadsarmo&#x2F;why-we-chose-java-for-our-high-...</a>
+  score: 0
+  posted_at: '2026-10-29T19:36:46Z'
+- id: '50294626'
+  parent_id: '50294183'
+  author: bootsmann
+  text: "Isn’t writing Go for embedded systems kinda like eating soup with a fork
+    tho?  \nThis language was designed to write multithreaded asynchronous code to
+    power microservice meshes."
+  score: 0
+  posted_at: '2026-10-29T19:36:55Z'
+- id: '50294693'
+  parent_id: '50294109'
+  author: kvemkon
+  text: Thanks for clarification! I&#x27;m glad, that you&#x27;re using the golang
+    compiler capabilities. And now I see:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;theconsensuslabs&#x2F;noalloc#the-compilers-output"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;theconsensuslabs&#x2F;noalloc#the-compilers-ou...</a>
+  score: 0
+  posted_at: '2026-10-29T19:41:10Z'
+- id: '50294864'
+  parent_id: '50293461'
+  author: Mawr
+  text: Switching out the entire ecosystem, libraries, tooling; rewriting the entire
+    codebase; learning the new language and its idioms; and then giving up the unknown
+    benefits of the previous language that the new language lacks (for Go-&gt;Rust
+    this could e.g. be compile times)—generally, trading known downsides of a language
+    for unknown downsides of another—is a huge undertaking and therefore <i>very</i>
+    unlikely to ever be  worth the hassle.
+  score: 0
+  posted_at: '2026-10-29T19:54:49Z'
+- id: '50294970'
+  parent_id: '50293220'
+  author: eptcyka
+  text: Go really sucks at calling into C code.
+  score: 0
+  posted_at: '2026-10-29T20:03:06Z'
+- id: '50295083'
+  parent_id: '50293844'
+  author: jcelerier
+  text: i&#x27;m developing apps that do real-time audio and video and any allocation
+    or anything that may end up in a system call directly or indirectly (for instance
+    accessing swapped or mapped but not yet loaded memory) on the hot path is a complete
+    no-go and will instantly cause very audible glitches for audio, and visual frame
+    pacing issues
+  score: 0
+  posted_at: '2026-10-29T20:10:04Z'
+- id: '50295243'
+  parent_id: '50293009'
+  author: bayindirh
+  text: I don&#x27;t think so. People love to see how far they can go in some aspect
+    sometimes. If I had the same amount of free time 5 years ago, I&#x27;d have tried
+    the same thing with Go, because I like the language, and love the act of programming
+    and seeing things.<p>Also, I also agree that people optimize without proper testing
+    and profiling. If there&#x27;s a real bottleneck here, trying to optimize it is
+    the right call. OTOH, optimizing without profiling opens a lot of unnecessary
+    cans.<p>Lastly, Go doesn&#x27;t like constant allocation and deallocation of variables,
+    that&#x27;s true, but I believe knowing this and optimizing hot-loops for that
+    goes a very long way as a start.
+  score: 0
+  posted_at: '2026-10-29T20:18:55Z'
+- id: '50295852'
+  parent_id: '50293378'
+  author: Gibbon1
+  text: Maybe having a way to enforce that on the compiler. So you can force the compiler
+    to tell you it couldn&#x27;t eliminate heap allocations.
+  score: 0
+  posted_at: '2026-10-29T20:58:37Z'
+- id: '50296059'
+  parent_id: '50293009'
+  author: legulere
+  text: Zero allocation is also a thing in rust. What you can learn is to reduce allocations
+    in your critical paths.
+  score: 0
+  posted_at: '2026-10-29T21:11:08Z'
+- id: '50296472'
+  parent_id: '50294088'
+  author: MrBuddyCasino
+  text: Rust has a mode where no allocator is available.
+  score: 0
+  posted_at: '2026-10-29T21:39:05Z'
+- id: '50296498'
+  parent_id: '50296472'
+  author: eatonphil
+  text: No allocator available isn&#x27;t the same as being able to enforce no allocations.
+  score: 0
+  posted_at: '2026-10-29T21:41:16Z'
+- id: '50296713'
+  parent_id: '50294626'
+  author: Groxx
+  text: If it&#x27;s within like 90% of your targets and it&#x27;s a far easier development
+    experience, but you need to optimize a small bit to fit in the budget, tools like
+    this can be <i>fantastically</i> useful.  Rewriting the whole thing in, like,
+    C, complete with a coroutine stack, would be a hell of a lot more work than &quot;avoid
+    allocations here&quot;.
+  score: 0
+  posted_at: '2026-10-29T21:57:06Z'
+- id: '50296861'
+  parent_id: '50293220'
+  author: fpoling
+  text: I worked on a project with a network server written in Go with soft realtime
+    requirements. In theory Go should be very good fit for it especially given GC
+    tuning towards low latency, not throughoutput. In practice the latency spikes
+    from GC were bad and there were no good options to resolve those given the deployment
+    constrains and the amount of third-party libraries used.
+  score: 0
+  posted_at: '2026-10-29T22:07:44Z'
+- id: '50296911'
+  parent_id: '50294592'
+  author: fpoling
+  text: GC in Java is the best in world with a lot options and knobs that allows to
+    tune to particular application requirements. Still some trading platforms using
+    it disable GC and just ensure enough memory is available so memory leaks during
+    the trading hours would not matter before the application will be restarted.
+  score: 0
+  posted_at: '2026-10-29T22:11:51Z'
+- id: '50297205'
+  parent_id: '50296498'
+  author: dlahoda
+  text: that option in rust allows to set own allocator, which may be disabled after
+    initial allocation, may be per thread.
+  score: 0
+  posted_at: '2026-10-29T22:36:03Z'
+- id: '50297730'
+  parent_id: '50293932'
+  author: cpgxiii
+  text: I don&#x27;t think that&#x27;s the problem, at least not directly for us.
+    The immediate interface between the languages is handled by a binding layer (e.g.
+    pybind11 or nanobind), but that rarely lets you fully express object relationships
+    (something that would be more possible without the binding layer) so it is very
+    easy to either not capture ownership (and thus the C++ object is destroyed out
+    from underneath you) or express a cycle that cpython can&#x27;t understand (and
+    thus the C++ objects are never destroyed and can leak a significant amount of
+    memory). Explicit manual control would avoid that, but at a level of work that
+    would be prohibitive of having extensive bindings in the first place.
+  score: 0
+  posted_at: '2026-10-29T23:29:32Z'
+- id: '50297863'
+  parent_id: '50293009'
+  author: kristianp
+  text: That some people think in black and white?
+  score: 0
+  posted_at: '2026-10-29T23:44:18Z'
+- id: '50297876'
+  parent_id: '50296911'
+  author: pjmlp
+  text: Just like plenty of C and C++ deployment scenarios have special purpose memory
+    allocators, or forbid memory allocations other than at startup.<p>Yet one still
+    needs to account with processes like MISRA to account for safety.
+  score: 0
+  posted_at: '2026-10-29T23:45:47Z'
+- id: '50297921'
+  parent_id: '50278645'
+  author: kristianp
+  text: Interesting difference between Go and Python, `c.counts[name] += n` can allocate
+    if name isn&#x27;t already present, whereas in Python you get a key error.
+  score: 0
+  posted_at: '2026-10-29T23:51:33Z'
+- id: '50300443'
+  parent_id: '50297921'
+  author: NewJazz
+  text: Isn&#x27;t that mainly because Go has a somewhat insane behavior of default
+    values?<p>Also I&#x27;m fairly sure you can accomplish the same thing in python
+    with a defaultdict.
+  score: 0
+  posted_at: '2026-10-30T06:21:43Z'
+- id: '50301899'
+  parent_id: '50294626'
+  author: pjmlp
+  text: There are commercial products using Go in embedded systems already, via TinyGo
+    and TamaGo compilers.<p>Even ESP32 is much better than any MS-DOS PC, we have
+    to update our understanding of embedded platforms, not everyone is writing Assembly
+    or C dialects to PIC like microcontrollers.
+  score: 0
+  posted_at: '2026-10-30T10:12:22Z'
+- id: '50301932'
+  parent_id: '50294970'
+  author: pjmlp
+  text: Nah, for all Go design decisions that I usually complain about, CGO is actually
+    rather nice.<p>It feels quite similar to using C++ on .NET via C++&#x2F;CLI.<p>There
+    is some cargo cult against CGO, I could not care less.
+  score: 0
+  posted_at: '2026-10-30T10:16:08Z'
+- id: '50301951'
+  parent_id: '50295083'
+  author: pjmlp
+  text: This DAW uses a mix of Java and C++ for good effect, so at least some people
+    are rather happy with the approach<p><a href="https:&#x2F;&#x2F;www.bitwig.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.bitwig.com&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-30T10:18:17Z'
+- id: '50301998'
+  parent_id: '50295852'
+  author: pjmlp
+  text: Basically you can run the Go compiler with the escape analysis output flags,
+    and have a script process its output, breaking the build if there are too many
+    of them, or whatever condition you feel like.<p>Don&#x27;t folks brag about UNIX
+    philosophy all the time around here?<p>Here is a good scenario for some pipelining
+    with Make, awk, sed, perl and co.
+  score: 0
+  posted_at: '2026-10-30T10:25:21Z'
+- id: '50303920'
+  parent_id: '50301951'
+  author: jcelerier
+  text: AFAIK all the core of bitwig (e.g. what has the hot path) is a separate native
+    process with no java in it, communicating with shmem or sockets with the java
+    gui
+  score: 0
+  posted_at: '2026-10-30T13:53:28Z'
+- id: '50303954'
+  parent_id: '50303920'
+  author: pjmlp
+  text: I have not said otherwise, <i>&quot;This DAW uses a mix of Java and C++ for
+    good effect&quot;</i>.<p>The point being that it does not need to be a black and
+    white approach, one language to rule them all, as many tend to advocate for.
+  score: 0
+  posted_at: '2026-10-30T13:56:14Z'
+- id: '50305680'
+  parent_id: '50293009'
+  author: flavio81
+  text: |-
+    &gt;The end state of every garbage collected language is a suite of tools to prevent garbage collection at all costs.
+    &gt;I think we can learn something here.<p>You&#x27;re making two mistakes here:<p>1. Confusing &quot;no allocation&quot; with &quot;avoiding the garbage collector&quot;. In non-GC languages like Rust or C there are instances you want to avoid allocation too.<p>2. Being oblivious that in the past many GC&#x27;d languages also had mechanisms for circunventing the garbage collector. Since long, long, long ago. Common Lisp for example (1981-). This is not a modern &quot;realization&quot; or &quot;revelation&quot;.
+  score: 0
+  posted_at: '2026-10-30T15:51:38Z'
+- id: '50305722'
+  parent_id: '50305680'
+  author: robotresearcher
+  text: The parent did not make either of these mistakes.
+  score: 0
+  posted_at: '2026-10-30T15:53:35Z'
+- id: '50306493'
+  parent_id: '50294535'
+  author: steveklabnik
+  text: Yeah, I&#x27;m not saying C does, just that Rust&#x27;s features aren&#x27;t
+    limited to &quot;helping you with heap memory.&quot; Rust is also more than lifetimes.
+  score: 0
+  posted_at: '2026-10-30T16:43:34Z'
+- id: '50309837'
+  parent_id: '50301998'
+  author: Gibbon1
+  text: 'I&#x27;m reminded of tail call recursion in C.<p>Compiler noid: We added
+    tail call recursion. Is super you should use it!<p>Me: Can I guarantee it will
+    actually do tail call recursion?<p>Compiler Noid: If course not!<p>Me: Nope.'
+  score: 0
+  posted_at: '2026-10-30T20:39:24Z'
+- id: '50312600'
+  parent_id: '50301932'
+  author: 80fj0348i
+  text: It&#x27;s fine if you&#x27;re only targeting one OS with maybe a small handful
+    of architectures. Doing anything cross platform is terrible.
+  score: 0
+  posted_at: '2026-10-31T02:12:19Z'
+- id: '50312605'
+  parent_id: '50294165'
+  author: 80fj0348i
+  text: It can be useful to have zero-alloc libraries in Go, for use in larger programs
+    that do allocate. See <a href="https:&#x2F;&#x2F;github.com&#x2F;rs&#x2F;zerolog"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rs&#x2F;zerolog</a> for example.
+  score: 0
+  posted_at: '2026-10-31T02:13:23Z'
+- id: '50314196'
+  parent_id: '50312600'
+  author: pjmlp
+  text: I thought C was a cross platform language.
+  score: 0
+  posted_at: '2026-10-31T08:30:54Z'
+- id: '50315509'
+  parent_id: '50301932'
+  author: eptcyka
+  text: Calling C functions is not free, compilation becomes a lot more difficult,
+    Go tooling is not as helpful. Signal handling is still a mess. It works in the
+    happy path where the FFI is not on the hot path.
+  score: 0
+  posted_at: '2026-10-31T12:25:25Z'
+- id: '50315635'
+  parent_id: '50315509'
+  author: pjmlp
+  text: I think it is more a skill issue than anything else.<p>Yes, marshaling has
+    a visible impact, hence why one should think how to actually make it happen, not
+    much different from using FFI in any other programming language, there is always
+    an impact over staying in the same programming language.<p>Compilation being harder,
+    only if the developer is not acquainted with C, which seems to be something harder
+    to learn nowadays.<p>Signal handling is a mess even in pure C, especially since
+    all UNIX implementations added threading support.
+  score: 0
+  posted_at: '2026-10-31T12:40:31Z'
+- id: '50316320'
+  parent_id: '50314196'
+  author: 80fj0348i
+  text: Maybe the syntax is, but setting up the compiler and build system and linkers
+    is very much not, especially for cross-compilation.<p>One of Go&#x27;s major selling
+    points is cross-compilation to other OSes and architectures is incredibly simple
+    and fast, and _the same short build command works across every OS._<p>I maintain
+    a CGO app that targets Windows macOS and multiple Linuxes and oh boy the build
+    system is probably more complex than the app itself at this point.
+  score: 0
+  posted_at: '2026-10-31T14:04:24Z'
+- id: '50316767'
+  parent_id: '50315635'
+  author: eptcyka
+  text: Go makes signal handling harder. Further, there is no FFI call overhead in
+    Rust, C++, Swift. It isn’t marshalling, a function with no args will still incur
+    an overhead.
+  score: 0
+  posted_at: '2026-10-31T14:58:00Z'
+- id: '50320894'
+  parent_id: '50316767'
+  author: pjmlp
+  text: Because Rust, C++ don&#x27;t have a GC, while Swift does have a GC (RC is
+    a GC algorithm) it was designed to be compatible with Objective-C runtime, thus
+    C.
+  score: 0
+  posted_at: '2026-10-31T22:30:36Z'
+- id: '50320915'
+  parent_id: '50316320'
+  author: pjmlp
+  text: I started coding with Timex 2068, developed for embedded in a past life, thus
+    I fail to see how complicated doing a simple cross compiler in C happens to be.<p>I
+    also have developed C and C++ native libraries for Tcl, Python, .NET, Java JVM&#x2F;ART
+    (JNI), Node.js.
+  score: 0
+  posted_at: '2026-10-31T22:33:05Z'
+- id: '50325740'
+  parent_id: '50320915'
+  author: 80fj0348i
+  text: Yeah I think this is a case of an old timer not having the perspective of
+    the younger generation<p>`GOOS=windows go build .&#x2F;...` versus all the jank
+    you have to do with C is just not at all comaprable
+  score: 0
+  posted_at: '2026-11-01T13:57:03Z'
+- id: '50334133'
+  parent_id: '50325740'
+  author: pjmlp
+  text: Try to do that for a Windows UWP, iOS,  Android or z&#x2F;OS application,
+    in pure Go.<p>Yes it is super easy, in a few selected workflows of Linux,  BSD,
+    Windows, macOS, everything else is just as &quot;complicated&quot; as regular
+    C cross compilation.
+  score: 0
+  posted_at: '2026-11-02T07:43:48Z'
+- id: '50338541'
+  parent_id: '50320894'
+  author: eptcyka
+  text: Having to swap stacks has not much to do with GC.
+  score: 0
+  posted_at: '2026-11-02T15:52:23Z'
+- id: '50341966'
+  parent_id: '50334133'
+  author: 80fj0348i
+  text: Good thing I don&#x27;t write code for those platforms! :P
+  score: 0
+  posted_at: '2026-11-02T19:08:53Z'
+article:
+archived_at: '2026-11-12T23:18:16Z'
