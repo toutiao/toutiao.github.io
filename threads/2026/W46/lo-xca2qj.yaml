@@ -1,0 +1,131 @@
+---
+post:
+  id: lo-xca2qj
+  source: lobsters
+  title: Probabilistic data structures in Go
+  url: https://antonz.org/probabilistic-data-structures/
+  hn_url: https://lobste.rs/s/xca2qj
+  score: 17
+  author: cgrinds
+  posted_at: '2026-11-13T16:03:44Z'
+  fetched_at: '2026-11-13T21:14:27Z'
+  article_url: https://antonz.org/probabilistic-data-structures/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T21:14:29Z'
+  raw_comment_count: 1
+  tags:
+  - go
+comments:
+- id: lo-umkjnb
+  parent_id: '0'
+  author: Doctor-X
+  text: These are so cool! I know Bloom filters, so thank you for introducing me to
+    the others.
+  score: 2
+  posted_at: '2026-11-13T17:47:12Z'
+article:
+  url: https://antonz.org/probabilistic-data-structures/
+  title: Probabilistic data structures in Go
+  fetch_status: success
+  content: "Probabilistic data structures give you approximate answers to questions
+    about the data they handle. Does the set contain a certain item? How many unique
+    items are in the collection? Which items appear most often? Unlike deterministic
+    structures like sets and frequency tables, the answers might not be exact, but
+    in return, you can drastically reduce memory usage.\n\nIn this post, we'll talk
+    about what probabilistic structures are, how they work, and what kinds of guarantees
+    they provide. I'll also introduce [**unsure**](https://github.com/nalgeon/unsure)
+    — a package that implements these structures in Go. It's simple (the core logic
+    for each data structure is 100–300 LOC), fast (usually several times faster than
+    other implementations), and has no dependencies except for the standard library.\n\n[Bloom
+    filter](#bloom-filter) •[Count-min sketch](#count-min-sketch) •[HyperLogLog](#hyperloglog)
+    •[T-digest](#t-digest) •[Top-k](#top-k-sketch)\n\n## [#](#bloom-filter)Bloom filter\n\nA
+    Bloom filter is a set that trades certainty for space. It can tell you that an
+    item is _definitely not_ in the set, or that it _probably is_ (which might be
+    a false positive). The filter doesn't actually store the items, so it's much more
+    compact than a regular set.\n\nFor example, a regular set with 1,000,000 distinct
+    8-byte strings takes about 64 MB. A Bloom filter for the same strings, with a
+    1% false positive rate, uses only 1.24 MB (about 10 bits per item) — that's 50
+    times smaller. The size of the filter doesn't depend on the item size, so the
+    difference gets even bigger with longer strings.\n\nA Bloom filter often resides
+    in memory and helps minimize expensive I/O operations such as disk reads or network
+    calls. You check if an item is in the filter, and if the answer is \"no\", you
+    skip the costly lookup. If the answer is \"yes\", you still have to perform the
+    lookup because it might be a false positive.\n\n    // A filter for 1000 items
+    with a 1% false positive rate.\n    filter := bloom.New(1000, 0.01)\n    \n    filter.Add([]byte(\"alice\"))\n
+    \   filter.Add([]byte(\"bob\"))\n    \n    filter.Contains([]byte(\"alice\"))
+    // true\n    filter.Contains([]byte(\"carol\")) // false (or, rarely, true)\n\nThe
+    filter is sized for the given number of items with a given false positive rate.
+    You can add more, but the false positive rate will go up.\n\nYou can add an item
+    to a Bloom filter and check if an item is in the filter, but you cannot delete
+    an item, count the number of items, or iterate over them.\n\n### How it works\n\n**Bloom
+    filter** is a large array of _m_ bits, all set to zero at first. To add an item,
+    you compute _k_ hash values for it and set the k bits at those positions:\n\n
+    \   ┌──────┐ ┌───────┐\n    item ──►│ hash │──► h1, h2, ..., hk ──►│ mod m │──►
+    i1, i2, ..., ik\n            └──────┘ └───────┘\n    \n              i1 i2 ik\n
+    \   ┌───┬───┬─▼─┬───┬───┬─▼─┬───┬───┬───┬───┬─▼─┬───┐\n    │ 0 │ 0 │ 1 │ 0 │ 0
+    │ 1 │ 0 │ 0 │ 0 │ 0 │ 1 │ 0 │\n    └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘\n
+    \     0 1 2 m-1\n\nTo check if an item is in the filter, you compute the same
+    k hashes and check if all k bits are set:\n\n- If any of the bits is not set,
+    the item definitely was never added.\n- If all the bits are set, the item was
+    probably added, but it's not guaranteed (the bits could have been set by other
+    items).\n\n    i1 i2 ik\n    ┌───┬───┬─▼─┬───┬───┬─▼─┬───┬───┬───┬───┬─▼─┬───┐\n
+    \   │ 1 │ 0 │ 1 │ 0 │ 0 │ 1 │ 1 │ 0 │ 1 │ 0 │ 1 │ 0 │ all 1 → probably in the
+    set\n    └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘\n    \n    ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐\n
+    \   │ 1 │ 0 │ 1 │ 0 │ 0 │ 0 │ 1 │ 0 │ 1 │ 0 │ 1 │ 0 │ any 0 → definitely not\n
+    \   └───┴───┴───┴───┴───┴─▲─┴───┴───┴───┴───┴───┴───┘ in the set\n                         (!)\n\nThe
+    k bits are randomly distributed throughout the entire array. When the filter is
+    larger than the CPU cache, each bit access could result in a cache miss, so a
+    lookup may wait on memory k times.\n\n**Unsure** uses a blocked Bloom filter.
+    The bit array is divided into 512-bit blocks, each matching the size of a CPU
+    cache line. When you add or check an item, it is hashed once: part of the hash
+    selects a block, and the rest selects k bits within that block. Each add or check
+    only accesses one cache line, so the filter stays fast even when it's very large.\n\n
+    \   ┌──────┐ ┌──► high 32 bits ──► block\n    item ──►│ hash │──► h ───┤ ┌─────────┐\n
+    \           └──────┘ └──► low 32 bits ──►│ × salts │──► i1, i2, ..., ik\n                                                 └─────────┘\n
+    \   \n              block\n    ┌───────┬───▼───┬───────┬───────┬───────┬───────┐\n
+    \   │ 0 │ 1 │ 2 │ 3 │ ... │ n-1 │\n    └───────┴───────┴───────┴───────┴───────┴───────┘\n
+    \           │ │\n    ┌───────┘ └───────────────────────────────┐\n    │ i1 i2
+    ik │\n    ├───┬───┬─▼─┬───┬───┬─▼─┬───┬───┬───┬───┬─▼─┬───┤\n    │ 0 │ 0 │ 1 │
+    0 │ 0 │ 1 │ 0 │ 0 │ 0 │ 0 │ 1 │ 0 │\n    └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘\n
+    \     0 1 2 511\n\nIn a blocked Bloom filter, some blocks end up with more items
+    than others, which increases the false positive rate. To make up for this, the
+    filter needs to be a bit larger. Compared to a standard Bloom filter, it uses
+    about 3% more memory at a 1% false positive rate, 8% more at 0.1%, and 15% more
+    at 0.01%.\n\nThe filter uses the local _wyhash_ implementation for hashing. It
+    performs roughly the same as _xxh3_ but has a much simpler implementation, without
+    SIMD or assembly.\n\n### Benchmarks\n\nHere's an excerpt from the full benchmarks,
+    comparing _unsure_ to _bits-and-blooms_ (a classic Bloom filter) and _gloom_ (a
+    blocked one) (ns/op, lower is better):\n\n| Operation | Items | unsure | bits-and-blooms
+    | gloom |\n| --- | --- | --- | --- | --- |\n| Add | 10K | **9** | 37 | 17 |\n|
+    | 1M | **10** | 36 | 19 |\n| | 50M | **38** | 170 | 63 |\n| Contains, hit | 10K
+    | **8** | 32 | 16 |\n| | 1M | **9** | 32 | 18 |\n| | 50M | **34** | 129 | 60 |\n|
+    Contains, miss | 10K | **8** | 41 | 27 |\n| | 1M | **9** | 48 | 33 |\n| | 50M
+    | **34** | 113 | 60 |\n\nMemory, bits per item at 10M items (lower is better):\n\n|
+    False positive rate | unsure | bits-and-blooms | gloom |\n| --- | --- | --- |
+    --- |\n| 10% | 4.84 | **4.80** | 5.39 |\n| 1% | 9.90 | **9.59** | 10.79 |\n| 0.1%
+    | 15.49 | **14.38** | 16.18 |\n\n_Unsure_ is about 4× faster than _bits-and-blooms_
+    and 2× faster than _gloom_, using 1–8% more memory than _bits-and-blooms_ and
+    4–10% less than _gloom_.\n\n## [#](#count-min-sketch)Count-min sketch\n\nA count-min
+    sketch is a frequency table that trades accuracy for space. It tells you approximately
+    how many times each item has appeared. The estimate is _never less_ than the actual
+    count, but it can be _higher_. The sketch doesn't actually store the items, so
+    it's much more compact than a regular map of per-item counts.\n\nFor example,
+    a regular map counting 1,000,000 distinct 8-byte strings takes about 64 MB. A
+    count-min sketch for the same strings, with estimates within 0.01% of the total
+    count (with 99% probability), uses only 0.55 MB — that's 116 times smaller. The
+    size of the sketch doesn't depend on the number of distinct items or their size,
+    only on the accuracy you choose. So the difference gets even bigger with more
+    or longer strings.\n\nA count-min sketch is useful when you want to track how
+    many times an item shows up in a large stream of events. It's often used to check
+    if something has happened a certain number of times, like rate-limiting an IP
+    after X requests or sending an alert after an error happens Y times. A sketch
+    can also help decide if a key is worth keeping in the cache given how often it
+    was requested.\n\n    // Estimates within 0.1% of the total count, with 99% probability.\n
+    \   sketch := countmin.New(0.001, 0.01)\n    \n    sketch.Add([]byte(\"alice\"))\n
+    \   sketch.Add([]byte(\"bob\"))\n    sketch.AddN([]byte(\"alice\"), 2)\n    \n
+    \   sketch.Count([]byte(\"alice\")) // 3 (or, rarely, more)\n    sketch.Count([]byte(\"bob\"))
+    // 1 (or, rarely, more)\n    sketch.Count([]byte(\"carol\")) // 0 (or, rarely,
+    more)\n    sketch.Total() // 4\n\nThe sketch uses two sett"
+  error:
+  fetched_at: '2026-11-13T21:14:29Z'
+archived_at: '2026-11-13T21:14:29Z'

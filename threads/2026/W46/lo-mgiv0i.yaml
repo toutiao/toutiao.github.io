@@ -1,0 +1,176 @@
+---
+post:
+  id: lo-mgiv0i
+  source: lobsters
+  title: ML Modules for Mere Mortals
+  url: https://thunderseethe.dev/posts/ml-modules-for-mere-mortals/intro/
+  hn_url: https://lobste.rs/s/mgiv0i
+  score: 18
+  author: abhin4v
+  posted_at: '2026-11-13T11:33:56Z'
+  fetched_at: '2026-11-13T21:14:27Z'
+  article_url: https://thunderseethe.dev/posts/ml-modules-for-mere-mortals/intro/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T21:14:29Z'
+  raw_comment_count: 5
+  tags:
+  - ml
+  - plt
+comments:
+- id: lo-nnmguv
+  parent_id: '0'
+  author: eschew
+  text: |-
+    The Fox project (FoxNet) used SML modules to organize their networking stack in the mid 90s.
+    More recently, OCaml modules have been used in the MirageOS unikernel, for its network stack and more broadly, and in the VPNKit networking subsystem of Docker (see section 4.1.1).
+    I am not an expert but there do seem to be a lot of subtle concerns that ML-style modules introduce, both in the theory/metatheory and pragmatic sides of language design: generativity, full vs partial functorized styles, translucency, etc. Plus the desire to reduce the extent to which the module system duplicates a large subset of the base language; see 1ML.
+  score: 3
+  posted_at: '2026-11-13T15:43:59Z'
+- id: lo-prkzxx
+  parent_id: '0'
+  author: icefox
+  text: |-
+    (Mostly for the sake of other readers)... IME there absolutely are a lot of subtle concerns, but that's also the case of just about anything that combines interfaces and generics in any way.  (Just look at the design morass you can get out of Java/C#/C++-style OO code.)
+    I also believe that the theoretical concerns are mostly overblown, and the pragmatic sides are hampered more by poor UI and inconsistent design than anything else.  There's been papers written on the design choices between generative and applicative functors for example, when the solution to me is obviously "you want to be able to write both".  Translucency is a large and complicated idea that large and complicated Python programs implement as "private fields are prefixed by _, if you touch them you'll deserve what you get".  Stuff like that.
+    Haskell's traits were in many ways originally devised as "ML modules: the good parts", so "why is this so hard" is very much not a new thought on the subject.  :D
+  score: 4
+  posted_at: '2026-11-13T16:21:13Z'
+- id: lo-8lly0z
+  parent_id: '0'
+  author: jyounker
+  text: So, ML modules are classes with structural typing.
+  score: 1
+  posted_at: '2026-11-13T17:09:22Z'
+- id: lo-fea9sj
+  parent_id: '0'
+  author: thunderseethe
+  text: "Oh yeah ML Modules have a ton of complexity in theory. They also have, in
+    my opinion annoying, quality that theoretically there's this tantalizing implementation
+    of modules that very cleanly divides into a static module language that assembles
+    all your code and then compiles away, leaving you with fast tightly linked code
+    at runtime. In theory this is reachable, but in practice most module systems have
+    some amount of runtime functionality they have to assume due to how tricky the
+    semantics get.\nI cut a whooooole a lot about \"hey how do you tell when abstract
+    types are equal\" because it was gonna dominate the post, but I'd like to talk
+    about some of the more advanced module stuff. Especially around Fing Modules (a
+    bit of precursor to 1ML) and mixin modules, and 1ML ofc, and backpack style modules...\U0001F605.
+    There's so much ground to cover around modules"
+  score: 2
+  posted_at: '2026-11-13T17:10:26Z'
+- id: lo-jh6y3u
+  parent_id: '0'
+  author: christine
+  text: |-
+    A class Foo introduces both a particular type (we can have instances x : Cat) and a set of methods & associated types (a.k.a. type members in Scala).
+    To get from classes to ML modules, we can notice that the job of introducing a new type x : Cat is kind of redundant, since that could just have been another associated type x : Cat.cat. (In OCaml/SML, this associated type is conventionally just called t, so we would write x : Cat.t).
+    If we do this, we lose the idea that the methods in Cat "belong" exclusively and inalienably to the receiver type Cat.t. The downside is we lose out on some type-directed name resolution; the upside is that I can define my own set of functionality Cat2 for the same underlying type (Cat2.t = Cat.t), and we don't have any of the weirdness of "extension methods", downstream code can just choose to use my module with no trouble.
+  score: 3
+  posted_at: '2026-11-13T19:47:21Z'
+article:
+  url: https://thunderseethe.dev/posts/ml-modules-for-mere-mortals/intro/
+  title: ML Modules for Mere Mortals · Thunderseethe's Devlog
+  fetch_status: success
+  content: "I think everyone can agree code needs to be modular. Modularity lets us
+    reason locally about our code no matter how big it grows. However, no one seems
+    to agree on how code should be modular. There are a bunch of different approaches
+    and each new language seems to bring their own spin on it.\n\nToday we’re going
+    to talk about a pretty old spin: ML Modules. ML here stands for Meta Language,
+    as seen in SML and OCaml (and not machine learning). Despite SML first appearing
+    in 1983, ML Modules have not caught on. OCaml is the sole production language
+    you’ll find with an ML module system, and at the height of its popularity it’s
+    niche.\n\nThis is a shame because ML modules have a lot to offer. We’re going
+    to talk about what ML modules are and then touch a little on why ML modules are.
+    Who better after all to explain modules, than the guy who doesn’t know what’s
+    in a module ?&mldr;On second thought, don’t answer that.&mldr;I already wrote
+    the blog post.\n\nModules exist to make our code modular, duh, but what does that
+    mean in practice? I think most programmers have some intuitive sense of modularity:\n\n-
+    Bundle up related logic as one “thing”\n\n- Encapsulate invariants\n\n- Decouple
+    from dependencies\n\nMost languages have a way to do this, and if they don’t,
+    one gets created for them (looking at you JavaScript).\n\n## Modules Bundle Functions
+    Link to heading\n\nML modules achieves this with, you guessed it, the Module.
+    ML modules, however, are a little different from the modules we know and love.
+    To explain their differences, we’ll lean on a made-up Rust-inspired syntax. It
+    will start off looking a little weird and gradually, as we introduce concepts,
+    end up looking really weird (but hopefully more familiar than SML syntax). We’ll
+    start by defining a module with just functions:\n\nmod AModule { fn add(a: i32,
+    b: i32) -> i32 { a + b } fn sub(a: i32, b: i32) -> i32 { a - b } // mult, div,
+    etc... }\n\nAModule bundles together related arithmetic functions as one thing
+    we can reason about. Each function can see every other function in the module.
+    This is useful, but any language with namespaces offers this.\n\n## Modules (also)
+    Bundle Types Link to heading\n\nA little more unique is that ML modules will let
+    us put not only function definitions in modules, but also type definitions:\n\nmod
+    Set { type Set = Vec<i32>; fn new() -> Set { vec![] } fn index_of(this: &Set,
+    ele: &i32) -> Result<usize, usize> { this.binary_search(ele) } fn insert(this:
+    Set, ele: i32) -> Set { match index_of(&ele) { Ok(_) => {} // we're done the element
+    is already present Err(indx) => { this.insert(indx, ele); } } this } fn contains(this:
+    &Set, ele: &i32) -> bool { index_of(this, ele).is_ok() } fn remove(this: Set,
+    ele: &i32) -> Set { match index_of(this, ele) { Err(_) => {}, // we're done the
+    element is already removed Ok(indx) => { this.remove(indx) } } this } }\n\nHere
+    we have a Set module with a Set type, which is a sorted Vec<i32>. Our module’s
+    functions can refer to the type definitions much the same way they can refer to
+    their module’s function definitions. Okay but that’s not that crazy, still well
+    within the realm of Rust modules.\n\n## The Type of a Module is a Signature Link
+    to heading\n\nNot only can modules contain type definitions. Modules themselves
+    have types. A module type is called a signature (so we don’t get it confused with
+    “normal” types). The signature of our Set module is:\n\nsig FullSetSig { type
+    Set = Vec<i32>; fn new() -> Set; fn index_of(&Set, &i32) -> Result<usize, usize>;
+    fn insert(Set, i32) -> Set; fn contains(&Set, &i32) -> bool; fn remove(&Set, &i32)
+    -> Set }\n\nA module signature declares every definition of a module alongside
+    its type. This might look similar to the way we define a trait in Rust. That’s
+    because much like traits act as interfaces in Rust, signatures act as interfaces
+    in ML Modules. Modules having signatures is the single most important thing to
+    understand about ML Modules. All the complexity and expressiveness of modules
+    results from them having signatures and the wonderful wacky things that enables.\n\n#
+    Signatures Support Encapsulation Link to heading\n\nSignatures resemble the way
+    a C/C++ implementation file conforms to its header. Modules, unlike .cc files,
+    aren’t in a 1:1 relationship with signatures. Our Set module can conform to any
+    signature that it matches. A module matches a signature when it defines every
+    declaration in the signature and they agree on type.\n\nMatching a signature provides
+    Encapsulation , hiding internal details of our module from our public API. Take
+    a look at FullSetSig. Do callers of Set really need to know about index_of? Encapsulation
+    advocates shout a resounding no: index_of is an implementation detail of Set.Set
+    being a Vec<i32> and not integral to our Set API.\n\nWe can encapsulate index_of
+    by matching our Set module to a new signature:\n\nsig SetSig { type Set = Vec<i32>;
+    fn new() -> Set; // index_of is missing. fn insert(Set, i32) -> Set; fn contains(&Set,
+    &i32) -> bool; fn remove(&Set, &i32) -> Set }\n\nSetSig removes index_of, hiding
+    the implementation detail. We can then ascribe our signature to our Set module:\n\nmod
+    Set : SetSig { // Our module implementation stays unchanged... }\n\nNow the rest
+    of our code sees Set as SetSig without index_of. Importantly, our Set module hasn’t
+    changed. index_of is still available inside the module. Ascribing the signature
+    only changes the public view of the module, similar to a private function in Rust.\n\nA
+    module’s definition isn’t the only place we can ascribe a signature. We can also
+    make a “new” module by matching an old module to a new signature. Let’s say we
+    want an InsertOnlySet (never you mind why I need that):\n\nsig InsertOnlySetSig
+    { type Set = Vec<i32>; fn new() -> Set; fn insert(Set, i32) -> Set; }\n\nWe can
+    create that from our Set module purely by matching the signature:\n\nmod InsertOnlySet:
+    InsertOnlySetSig = Set;\n\nNow InsertOnlySet is effectively a whole new module,
+    despite the underlying implementation being shared with Set. This is what’s cool
+    about modules. We can repurpose modules “for free” simply by giving them a different
+    signature. If we want to do this in an OO language, we’d have to add a new interface
+    in our class definitiion. But we can slap one of these bad boys anywhere in our
+    codebase.\n\n## Sealed Types Seal Encapsulation Link to heading\n\nAscribing a
+    signature to a module lets us hide implementation details, but there’s a bit of
+    a glaring hole here. Sure we’ve hidden away index_of, but our module broadcasts
+    to the world that type Set is a Vec<i32>! Set relies on our vector being kept
+    in sorted order, but anybody is free to write a function:\n\nfn whoops() { let
+    mut set = Set::new(); // teehee set.extend([3, 2, 1]); // \U0001F4A5 let uh_oh
+    = Set::insert(set, 1); // Now our set is [1, 3, 2, 1] }\n\nNothing but a small
+    flesh wound in our encapsulation. Fortunately, ML modules foresaw this problem
+    and provided a solution using signatures.\n\nMuch the same way a signature lets
+    us hide functions, it also lets us hide types. ML Modules call this an abstract
+    type. If we update SetSig to be:\n\nsig SetSig { type Set; fn new() -> Set; fn
+    insert(Set, i32) -> Set; fn contains(&Set, &i32) -> bool; fn remove(&Set, &i32)
+    -> Set }\n\nOur signature no longer broadcasts that type Set is Vec<i32>. Within
+    the Set module we’re free to use type Set as Vec<i32>, but everywhere outside
+    the module type Set is now some unknown type. Because callers know nothing about
+    our newly abstract Set type, all they can do is pass it to and from the methods
+    provided by the Set module. As long as we keep our underlying Vec<i32> sorted
+    within Set, we know no one else is able to mess with it. They simply don’t know
+    enough about the type!\n\n## Module’s Version of Generics Link to heading\n\nOur
+    Set module is nearing perfection, but it still leaves a little to be desired:
+    it only works for i32. Now we could of course write a new module SetU64, SetString,
+    on and on everytime we need one, but c’mon there’s gotta be a better way. This
+    isn’t Go.\n\nGeneri"
+  error:
+  fetched_at: '2026-11-13T21:14:29Z'
+archived_at: '2026-11-13T21:14:29Z'

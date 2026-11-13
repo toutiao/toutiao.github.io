@@ -1,0 +1,1008 @@
+---
+post:
+  id: '50483611'
+  title: Why Zig over C for Systems Programming
+  url: https://www.mtsoukalos.eu/2026/11/why-zig-over-c-for-systems-programming/
+  hn_url: https://news.ycombinator.com/item?id=50483611
+  score: 201
+  author: ''
+  posted_at: '2026-11-13T14:01:13Z'
+  fetched_at: '2026-11-13T21:14:21Z'
+  article_url: https://www.mtsoukalos.eu/2026/11/why-zig-over-c-for-systems-programming/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T21:14:21Z'
+  raw_comment_count: 178
+comments:
+- id: '50484345'
+  parent_id: '50483611'
+  author: llm_nerd
+  text: I wrote recently about a weird issue I encountered with Zig, though to be
+    fair it was related to using Zig to compile C code, humorously in a Rust project
+    (which touches on all of the languages mentioned in this post).<p><a href="https:&#x2F;&#x2F;dennisforbes.ca&#x2F;blog&#x2F;microblog&#x2F;2026&#x2F;10&#x2F;the_accidental_12000x_sqlite_slowdown&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;dennisforbes.ca&#x2F;blog&#x2F;microblog&#x2F;2026&#x2F;10&#x2F;the_accidenta...</a><p>While
+    I did just dismiss it as an edge issue, it turns out that this same rather clumsy
+    sort of mistake has happened repeatedly in Zig&#x27;s pure rewrite of MUSL. And
+    despite being an absolutely catastrophically bad problem, by my judgment, the
+    problem is still in main at this moment, across a wide number of musl function
+    rewrites.<p>Which gives me pause about the whole zig project. If you&#x27;re rewriting
+    a critical library, making such simple but consequential mistakes shouldn&#x27;t
+    happen, and if they do happen it should be a red alert type situation.
+  score: 0
+  posted_at: '2026-11-13T14:49:56Z'
+- id: '50484577'
+  parent_id: '50484345'
+  author: dnautics
+  text: "&gt; Which gives me pause about the whole zig project<p>The whole zig project
+    is like six people in a trenchcoat.  You can&#x27;t expect them to prioritize
+    your one thing after 3 weeks<p>Did you make a PR?"
+  score: 0
+  posted_at: '2026-11-13T15:03:02Z'
+- id: '50484632'
+  parent_id: '50484577'
+  author: llm_nerd
+  text: It isn&#x27;t my thing though. It&#x27;s quite literally, by choice, <i>their</i>
+    thing. They are the ones who decided that rewriting musl in zig was something
+    they need to do and was such a priority. Only it&#x27;s a serious regression.<p>But
+    I mean, the six people in a trenchcoat comment is basically precisely what should
+    give people pause. In my project I simply eliminated zig from the stack entirely
+    because even if I worked around the problems, what comes next? What&#x27;s the
+    next showstopper that gets waved away as oh well six people in a trenchcoat...<p>Eh,
+    whatever.
+  score: 0
+  posted_at: '2026-11-13T15:07:14Z'
+- id: '50484665'
+  parent_id: '50484577'
+  author: MonstraG
+  text: I&#x27;m not the poster, but I found the related issue:<p><a href="https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;issues&#x2F;37402"
+    rel="nofollow">https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;issues&#x2F;37402</a>
+  score: 0
+  posted_at: '2026-11-13T15:09:33Z'
+- id: '50484741'
+  parent_id: '50484345'
+  author: stateoff
+  text: Why not adding the link to the issue in the blog post?<p><a href="https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;issues&#x2F;37402"
+    rel="nofollow">https:&#x2F;&#x2F;codeberg.org&#x2F;ziglang&#x2F;zig&#x2F;issues&#x2F;37402</a><p>Looks
+    like it is being worked on.<p>Personally I think it&#x27;s not that catastrophic
+    for zig &lt; 1.0. Just a performance regression, and one can always link to other
+    libc implementations, or is their own implementation enforced now?
+  score: 0
+  posted_at: '2026-11-13T15:14:37Z'
+- id: '50484747'
+  parent_id: '50484632'
+  author: nvme0n1p1
+  text: It&#x27;s a 0.x project, let them cook. Building things takes time.<p><a href="https:&#x2F;&#x2F;ziglang.org&#x2F;documentation&#x2F;master&#x2F;std&#x2F;#std.mem.findSentinel"
+    rel="nofollow">https:&#x2F;&#x2F;ziglang.org&#x2F;documentation&#x2F;master&#x2F;std&#x2F;#std.mem.findSe...</a>
+    didn&#x27;t exist then, now it does.<p>And if i may quote from <a href="https:&#x2F;&#x2F;ziglang.org&#x2F;download&#x2F;0.17.0&#x2F;release-notes.html"
+    rel="nofollow">https:&#x2F;&#x2F;ziglang.org&#x2F;download&#x2F;0.17.0&#x2F;release-notes.html</a>:<p>&gt;
+    Zig has known bugs, miscompilations, and regressions.<p>&gt; Even with Zig 0.17.x,
+    working on a non-trivial project using Zig may require participating in the development
+    process.<p>&gt; When Zig reaches 1.0.0, Tier 1 support will gain a bug policy
+    as an additional requirement.<p>If you&#x27;re not willing to participate in the
+    development process, then you should wait or use something else.
+  score: 0
+  posted_at: '2026-11-13T15:15:05Z'
+- id: '50484783'
+  parent_id: '50484741'
+  author: dleslie
+  text: If errors like this are acceptable because of the version number of an otherwise
+    decade old project, then that&#x27;s ample evidence of why Zig is not ready and
+    should not be used for any software that needs surety.
+  score: 0
+  posted_at: '2026-11-13T15:17:42Z'
+- id: '50484834'
+  parent_id: '50483611'
+  author: nvme0n1p1
+  text: AI slop. Every article on this site has &quot;The honest tradeoff&quot; as
+    a header. Looks like it was generated to promote a book which is no doubt also
+    just slop.
+  score: 0
+  posted_at: '2026-11-13T15:20:27Z'
+- id: '50484873'
+  parent_id: '50484783'
+  author: nvme0n1p1
+  text: When you&#x27;re setting expectations about a project, it&#x27;s never a bad
+    idea to listen to the creators themselves.<p><a href="https:&#x2F;&#x2F;ziglang.org&#x2F;download&#x2F;0.17.0&#x2F;release-notes.html"
+    rel="nofollow">https:&#x2F;&#x2F;ziglang.org&#x2F;download&#x2F;0.17.0&#x2F;release-notes.html</a><p>&gt;
+    Zig has known bugs, miscompilations, and regressions.<p>&gt; Even with Zig 0.17.x,
+    working on a non-trivial project using Zig may require participating in the development
+    process.<p>&gt; When Zig reaches 1.0.0, Tier 1 support will gain a bug policy
+    as an additional requirement.
+  score: 0
+  posted_at: '2026-11-13T15:23:05Z'
+- id: '50484925'
+  parent_id: '50484783'
+  author: stateoff
+  text: <a href="https:&#x2F;&#x2F;blog.jetbrains.com&#x2F;blog&#x2F;2026&#x2F;06&#x2F;05&#x2F;why-zig-isn-t-1-0-yet&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;blog.jetbrains.com&#x2F;blog&#x2F;2026&#x2F;06&#x2F;05&#x2F;why-zig-isn-t-1-0...</a><p>I
+    did not say it&#x27;s acceptable, just not catastrophic, especially since workarounds
+    exist.<p>I&#x27;ve used zig in similar capacity in production in the past and
+    personally I would take the slowdown just to avoid dealing with MSVC :)
+  score: 0
+  posted_at: '2026-11-13T15:25:43Z'
+- id: '50484936'
+  parent_id: '50484783'
+  author: Joker_vD
+  text: You know that GNU libc to this day essentially calls strlen() on every call
+    to sscanf(), which is pretty much the same issue? And that this behaviour, present
+    in many other implementations of standard C library (including Microsoft&#x27;s),
+    was responsible for e.g. slow JSON parsing in some <i>very</i> popular online
+    games [0]? Does that mean glibc is still not production-ready?<p>[0] <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=26296339">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=26296339</a>
+  score: 0
+  posted_at: '2026-11-13T15:27:01Z'
+- id: '50484972'
+  parent_id: '50483611'
+  author: raverbashing
+  text: Yeah<p>The lack of a native slice is the most glaring C fault I think exists<p>(And
+    of course the committees won&#x27;t implement it, and of course C is going to
+    remain broken)
+  score: 0
+  posted_at: '2026-11-13T15:30:02Z'
+- id: '50484994'
+  parent_id: '50484345'
+  author: drdexebtjl
+  text: strchr has no time complexity guarantees, by the way. This behavior is strictly
+    correct.
+  score: 0
+  posted_at: '2026-11-13T15:31:18Z'
+- id: '50485040'
+  parent_id: '50483611'
+  author: pron
+  text: Also, Zig is as at least as expressive as C++ (but without the implicitness
+    and general language complexity that makes reviewing some sensitive code, where
+    you need to see exactly what operations are performed, hard), and it supports
+    arenas better than C&#x2F;C++&#x2F;Rust.
+  score: 0
+  posted_at: '2026-11-13T15:35:03Z'
+- id: '50485186'
+  parent_id: '50484747'
+  author: simonask
+  text: Isn&#x27;t that exactly what they&#x27;re saying?<p>Some people (not its creators)
+    talk about Zig as if it&#x27;s anywhere near production ready. It&#x27;s fine
+    to be excited about it (there&#x27;s a lot to be excited about), but we gotta
+    be realistic.
+  score: 0
+  posted_at: '2026-11-13T15:44:49Z'
+- id: '50485199'
+  parent_id: '50484834'
+  author: ibn_khaldun
+  text: "&gt; Every article on this site has &quot;The honest tradeoff&quot; as a
+    header.<p>This is a hallucination. I&#x27;m sorry. This is what we call these
+    kind of statements these days. Unless you can prove your humanhood, that&#x27;s
+    how it is now."
+  score: 0
+  posted_at: '2026-11-13T15:45:33Z'
+- id: '50485229'
+  parent_id: '50483611'
+  author: program
+  text: "&gt; Errors you cannot ignore<p>It&#x27;s okay for me to declare a macro
+    with `__attribute__((warn_unused_result))` for GCC and Clang, and `[[nodiscard]]`
+    when the C code is later compiled with C++ (or nothing)."
+  score: 0
+  posted_at: '2026-11-13T15:47:18Z'
+- id: '50485258'
+  parent_id: '50484936'
+  author: dleslie
+  text: sscanf is quadratic in the worst case, and has been flagged along with the
+    bulk of the rest of the libc string support as being hazardous or potentially
+    harmful. Its continued existence is for compatibility, but new projects should
+    not use it.
+  score: 0
+  posted_at: '2026-11-13T15:49:25Z'
+- id: '50485271'
+  parent_id: '50483611'
+  author: mogoh
+  text: Is Zig stable yet? No.
+  score: 0
+  posted_at: '2026-11-13T15:50:22Z'
+- id: '50485291'
+  parent_id: '50485040'
+  author: coolThingsFirst
+  text: show me operator overloading in Zig
+  score: 0
+  posted_at: '2026-11-13T15:52:00Z'
+- id: '50485314'
+  parent_id: '50484747'
+  author: diffxx
+  text: They have been cooking for over ten years. It is more than fair to say at
+    this point that they are not capable of shipping a stable, reliable, fast and
+    efficient compiler. It is fundamentally flawed and I could easily write thousands
+    of words explaining why from the architectural design to the development process.<p>Zig
+    hides behind its pre 1.0 status to justify poor decision making while simultaneously
+    actively trying to attract attention through marketing. That attention translates
+    to resources and influence that are undeserved on the technical merits.
+  score: 0
+  posted_at: '2026-11-13T15:52:47Z'
+- id: '50485315'
+  parent_id: '50484747'
+  author: acedTrex
+  text: The dudes name is &quot;llm_nerd&quot; its not worth engaging lol. These are
+    the same people that saw the bun rewrite in rust break tls and fail open and shrugged.
+  score: 0
+  posted_at: '2026-11-13T15:52:48Z'
+- id: '50485317'
+  parent_id: '50485271'
+  author: ginko
+  text: I like Zig but having to fix a bunch of version issues each time I touch an
+    old zig project of mine really put a damper on my enthusiasm.
+  score: 0
+  posted_at: '2026-11-13T15:52:49Z'
+- id: '50485328'
+  parent_id: '50485186'
+  author: dnautics
+  text: No, the framing &quot;give pause&quot; is the sort of framing that people
+    create FUD create
+  score: 0
+  posted_at: '2026-11-13T15:53:10Z'
+- id: '50485337'
+  parent_id: '50485040'
+  author: positive-spite
+  text: To anyone interested in arena allocators.<p>Rust just stabilized its `Allocator`
+    API in version 1.100.0. Definitely worth checking out!
+  score: 0
+  posted_at: '2026-11-13T15:53:25Z'
+- id: '50485424'
+  parent_id: '50485186'
+  author: nvme0n1p1
+  text: 'Zig team: &quot;Zig is 0.x and has known bugs&quot;<p>llm_nerd: &quot;I found
+    a bug. This gives me pause about the whole zig project&quot;<p>I don&#x27;t see
+    how the latter is a fair reaction given the former. Especially since they only
+    recently started working on the libc port (although it had been talked about for
+    much longer)'
+  score: 0
+  posted_at: '2026-11-13T15:58:23Z'
+- id: '50485434'
+  parent_id: '50485291'
+  author: nvme0n1p1
+  text: Yes! And exceptions and inheritance and RTTI too. Bring back all the mistakes!
+    Let&#x27;s party like it&#x27;s c++99
+  score: 0
+  posted_at: '2026-11-13T15:58:40Z'
+- id: '50485438'
+  parent_id: '50484345'
+  author: lukaslalinsky
+  text: When working with Zig, you are a beta tester. The development process is unfortunately
+    not great, so bugs slip in fairly easily. You need to be ready for it and test
+    your application properly. Large Zig projects don&#x27;t target the latest version.
+    That said, if you can deal with that, you get a great language that is fun to
+    use and very practical. I think it&#x27;s worth it, even if it can be frustrating
+    at times.
+  score: 0
+  posted_at: '2026-11-13T15:59:15Z'
+- id: '50485504'
+  parent_id: '50484834'
+  author: raincole
+  text: 'I don&#x27;t know if this Zig over C article is generated, but the Zig over
+    Rust one [0] is painfully AI-written.<p>I&#x27;m not ideologically against AI,
+    but I&#x27;d certainly not buy a book from someone who needs to use AI to write
+    an article like that...<p>[0]: <a href="https:&#x2F;&#x2F;www.mtsoukalos.eu&#x2F;2026&#x2F;04&#x2F;why-zig-over-rust-for-systems-programming&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.mtsoukalos.eu&#x2F;2026&#x2F;04&#x2F;why-zig-over-rust-for-syst...</a>'
+  score: 0
+  posted_at: '2026-11-13T16:03:35Z'
+- id: '50485511'
+  parent_id: '50483611'
+  author: kombine
+  text: D and Nim have had the same features for years btw.
+  score: 0
+  posted_at: '2026-11-13T16:04:00Z'
+- id: '50485535'
+  parent_id: '50485291'
+  author: u8080
+  text: please no
+  score: 0
+  posted_at: '2026-11-13T16:05:39Z'
+- id: '50485551'
+  parent_id: '50484834'
+  author: eatonphil
+  text: Pangram says 99% AI.<p><a href="https:&#x2F;&#x2F;www.pangram.com&#x2F;history&#x2F;5f3d749c-713c-447a-82cc-d3a692b80067"
+    rel="nofollow">https:&#x2F;&#x2F;www.pangram.com&#x2F;history&#x2F;5f3d749c-713c-447a-82cc-d3a6...</a>
+  score: 0
+  posted_at: '2026-11-13T16:06:54Z'
+- id: '50485557'
+  parent_id: '50485314'
+  author: nvme0n1p1
+  text: "&gt; I could easily write thousands of words explaining why from the architectural
+    design to the development process.<p>Alright then go for it, hotshot. We&#x27;re
+    waiting."
+  score: 0
+  posted_at: '2026-11-13T16:07:00Z'
+- id: '50485572'
+  parent_id: '50485291'
+  author: pron
+  text: In critical low-level code, any kind of overloading - operator or otherwise
+    - is something you&#x27;d rather not have.<p>By expressivity I don&#x27;t mean
+    what characters you use in the conrecte syntax, but the number of lines needed
+    to express an algorithm (up to a small constant). C doesn&#x27;t have C++&#x27;s
+    expressivity because it lacks templates, and while you can sort of express that
+    kind of thing with macros, it&#x27;s not all the way there. Zig, however, gets
+    you all the way there (you might need to write matrix_plus instead of +, but the
+    expressivity is the same).
+  score: 0
+  posted_at: '2026-11-13T16:07:56Z'
+- id: '50485589'
+  parent_id: '50485337'
+  author: Bigpet
+  text: "Seems like a long way to walk though. Retrofitting this will take time (if
+    it&#x27;ll ever complete). \nZig made it a core part of the language and library.
+    I&#x27;ll assume Rust will make it farther than C++ ever made it, but just take
+    a look at how retrofitting custom allocators is going there.<p>Seems like it will
+    be useful for use-cases like embedded where you&#x27;re restricted to certain
+    parts of the library anyway. But the battle is kind of already lost for support
+    at the level of Zig or Odin. Even if they retrofitted support for the whole standard
+    library, they&#x27;ll never be able retrofit all crates or make people even bother
+    adding support for all new crates."
+  score: 0
+  posted_at: '2026-11-13T16:09:09Z'
+- id: '50485594'
+  parent_id: '50483611'
+  author: fithisux
+  text: |-
+    C is far behind the sate-of-art in C and Go families. True, but not bad.<p>It is what it is, but can work on what it already has, while keeping its tradition.
+    Small changes, add common extensions, conservative additions, improve coherence and correctness of the standard while keeping easy to implement and small.<p>No crazy things.<p>Keep in mind that it is standardized and targets things others do not target.
+  score: 0
+  posted_at: '2026-11-13T16:09:23Z'
+- id: '50485616'
+  parent_id: '50485291'
+  author: melodyogonna
+  text: Many people are against operator overloading, imo my only issue with C++ operator
+    overloading is that you&#x27;re allowed to overload the the assignment operator.
+    From what I can see this is the root of many issues
+  score: 0
+  posted_at: '2026-11-13T16:11:21Z'
+- id: '50485625'
+  parent_id: '50485317'
+  author: mi_lk
+  text: to save your enthusiasm, tell your clanker to fix version issues instead
+  score: 0
+  posted_at: '2026-11-13T16:11:55Z'
+- id: '50485630'
+  parent_id: '50484834'
+  author: ivanjermakov
+  text: Doesn&#x27;t read AI generated at all.
+  score: 0
+  posted_at: '2026-11-13T16:12:18Z'
+- id: '50485641'
+  parent_id: '50485511'
+  author: tcoff91
+  text: God I loved playing around with D back in the day when I was in high school.
+    It seemed like a no-brainer that it was going to be huge. It&#x27;s such a shame
+    it never took off. Incredible language.
+  score: 0
+  posted_at: '2026-11-13T16:13:20Z'
+- id: '50485724'
+  parent_id: '50484972'
+  author: brabel
+  text: I don’t get it, C arrays can be used as slices, no?? Given a pointer and a
+    length, which is how C does any array, works just as well (I mean if you consider
+    arrays without a length a fine thing) as a slice!
+  score: 0
+  posted_at: '2026-11-13T16:19:49Z'
+- id: '50485751'
+  parent_id: '50484972'
+  author: uecker
+  text: 'You could help? <a href="https:&#x2F;&#x2F;www.open-std.org&#x2F;jtc1&#x2F;sc22&#x2F;wg14&#x2F;www&#x2F;contributing.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.open-std.org&#x2F;jtc1&#x2F;sc22&#x2F;wg14&#x2F;www&#x2F;contributing.htm...</a><p>But
+    I am also quite happy about how far one already gets with variably modified types
+    and a custom span type: <a href="https:&#x2F;&#x2F;godbolt.org&#x2F;z&#x2F;rPen5Movd"
+    rel="nofollow">https:&#x2F;&#x2F;godbolt.org&#x2F;z&#x2F;rPen5Movd</a>'
+  score: 0
+  posted_at: '2026-11-13T16:21:11Z'
+- id: '50485796'
+  parent_id: '50485511'
+  author: giancarlostoro
+  text: I like both of those, I like the idea of Zig, it does seem to be striving
+    to be pure in some areas where C is &quot;king&quot; that other languages gloss
+    over, but Zig is always changing, and its got some elitist people in its ranks
+    that left me not wanting to bother with it. Imagine a programming language maintained
+    and used by geohot clones.
+  score: 0
+  posted_at: '2026-11-13T16:24:14Z'
+- id: '50485818'
+  parent_id: '50484345'
+  author: chandlore
+  text: Andrew Kelley had a comment re this bug over at lobste.rs:<p>&gt; I made the
+    judgement call to let this slide in the review. I&#x27;m still not sure whether
+    it was the right or wrong call.<p><a href="https:&#x2F;&#x2F;lobste.rs&#x2F;s&#x2F;lh1j0e&#x2F;shlemiel_painter_is_back_how_zig_s_libc#c_elunhb"
+    rel="nofollow">https:&#x2F;&#x2F;lobste.rs&#x2F;s&#x2F;lh1j0e&#x2F;shlemiel_painter_is_back_how_zig_...</a>
+  score: 0
+  posted_at: '2026-11-13T16:25:20Z'
+- id: '50485819'
+  parent_id: '50485641'
+  author: giancarlostoro
+  text: It&#x27;s so damn nice, its a shame it&#x27;s never taken off the way it could.
+    I think there&#x27;s still time to make it attractive to companies, but with people&#x27;s
+    increasing use of AI I don&#x27;t think anyone even cares what language their
+    model writes in, look at the insane uptick in Rust programming.
+  score: 0
+  posted_at: '2026-11-13T16:25:24Z'
+- id: '50485838'
+  parent_id: '50485572'
+  author: Ygg2
+  text: BS. Using operator overloading with SIMD makes it easier to translate algorithms
+    into code. I wrote my own U8x32 wrappers and a + b is way better than a.add(b).
+  score: 0
+  posted_at: '2026-11-13T16:26:48Z'
+- id: '50485869'
+  parent_id: '50485589'
+  author: treyd
+  text: Rust&#x27;s Allocator APIs have been around since 2016, less than a year after
+    1.0, they&#x27;re just now <i>stabilized</i>.<p>The stdlib types that allocate
+    have been generic (with default generic parameters) over the underlying Allocator
+    used for a very long time.  All widely-used data structure libraries where it&#x27;s
+    feasible&#x2F;reasonable to use other allocators also are already generic over
+    the Allocator.<p>It won&#x27;t &quot;take time to retrofit&quot; because the language
+    and ecosystem have already been prepared for it for 10 years.  For context, async
+    syntax was introduced a few years after that and if you just started learning
+    the language today you wouldn&#x27;t notice it wasn&#x27;t there in 1.0.
+  score: 0
+  posted_at: '2026-11-13T16:29:27Z'
+- id: '50485873'
+  parent_id: '50484747'
+  author: forgotpwd16
+  text: It has been 0.x for 10y+. At this point won&#x27;t be off if considered 0ver
+    (<a href="https:&#x2F;&#x2F;0ver.org" rel="nofollow">https:&#x2F;&#x2F;0ver.org</a>)
+    and permanently beta.
+  score: 0
+  posted_at: '2026-11-13T16:29:39Z'
+- id: '50485941'
+  parent_id: '50485511'
+  author: sergiotapia
+  text: <a href="https:&#x2F;&#x2F;github.com&#x2F;nim-lang&#x2F;nimony" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nim-lang&#x2F;nimony</a><p>Check
+    out Nimony effectively Nim 3.0 from the author. It&#x27;s a top to bottom rethinking
+    of Nim with all the lessons learned. I&#x27;m so hyped about it tbh<p><a href="https:&#x2F;&#x2F;nim-lang.org&#x2F;araq&#x2F;nimony.html"
+    rel="nofollow">https:&#x2F;&#x2F;nim-lang.org&#x2F;araq&#x2F;nimony.html</a>
+  score: 0
+  posted_at: '2026-11-13T16:34:10Z'
+- id: '50486028'
+  parent_id: '50485819'
+  author: vips7L
+  text: I try D almost every year, but I&#x27;ve never really gotten a working IDE
+    environment with it. I&#x27;m not sure if it&#x27;s issues with being on Windows
+    or just the LSP not being that great. I really wish D was adopted as widely as
+    Go.
+  score: 0
+  posted_at: '2026-11-13T16:39:39Z'
+- id: '50486076'
+  parent_id: '50486028'
+  author: giancarlostoro
+  text: Which IDE are you trying to setup with D? I&#x27;ve not had any issues...
+    You may try DlangIDE possibly?<p><a href="https:&#x2F;&#x2F;github.com&#x2F;buggins&#x2F;dlangide"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;buggins&#x2F;dlangide</a>
+  score: 0
+  posted_at: '2026-11-13T16:43:31Z'
+- id: '50486119'
+  parent_id: '50485869'
+  author: Bigpet
+  text: 'Seems like I&#x27;ve misread the recent Rust version announcement:<p>&gt;
+    This release brings about the stabilization of the core parts of allocator_api,
+    enabling library authors to define custom allocators that can be used together
+    with certain standard library types - currently Vec and Box. These are enabled
+    through the newly-stabilized Allocator trait.<p>That made it sound like it was
+    rather limited currently.<p>I asked an LLM (because it&#x27;s outside my expertise)
+    and it said:<p>&gt; It is fair to say that the heaviest architectural lifting
+    is already done: adding a defaulted type parameter (A: Allocator = Global) preserves
+    backward compatibility for existing code, and the core data structures already
+    store and thread the allocator internally. However, plumbing that generic parameter
+    through String, HashMap&#x27;s std wrapper, and hundreds of standard library methods
+    still represents substantial retrofitting work rather than a completed state.<p>Looks
+    like The patch notes lead me a bit astray. But it&#x27;s also not at an &#x27;already
+    all there&#x27; state either.'
+  score: 0
+  posted_at: '2026-11-13T16:46:11Z'
+- id: '50486134'
+  parent_id: '50485630'
+  author: ibn_khaldun
+  text: The prosody and the headline style is a dead giveaway but compared to other
+    AI generated text this article is far more tolerable.<p>Meanwhile no one&#x27;s
+    pointing out any technical errors.
+  score: 0
+  posted_at: '2026-11-13T16:47:30Z'
+- id: '50486161'
+  parent_id: '50485317'
+  author: ACCount39
+  text: I like the idea of Zig too - &quot;better C&quot; sounds just up my valley
+    - but the actual implementation leaves a lot to be desired.
+  score: 0
+  posted_at: '2026-11-13T16:49:21Z'
+- id: '50486182'
+  parent_id: '50485328'
+  author: llm_nerd
+  text: This <i>submission</i> is advocating Zig over C for system programming. I
+    pointed out a pretty significant reason why maybe you should pause that decision
+    for a bit, and the response have been much more significant reasons why you should
+    be wary.<p>Now it&#x27;s &quot;FUD&quot;, also it&#x27;s a beta and you&#x27;re
+    a beta tester, and it&#x27;s 0.x, and look they disclaim that you shouldn&#x27;t
+    trust it, and barely anyone works on it, and... By the advocates for the language,
+    it should be noted.<p>This is a bizarre thread. These very comments are <i>precisely</i>
+    why it should give pause (which isn&#x27;t remotely &quot;FUD&quot;, and what
+    an utterly asinine claim). Zig looks neat and it might get there, but this absurd
+    apologism and goalpost moving is not convincing to adopt the language.<p>Again,
+    in a submission advocating using Zig for system programming.
+  score: 0
+  posted_at: '2026-11-13T16:50:43Z'
+- id: '50486221'
+  parent_id: '50485838'
+  author: pron
+  text: I&#x27;m not disputing that some people like <i>user-controlled</i> operator
+    overloading (Zig does have + etc. for vectors), but clearly others prefer no user-controlled
+    overloading of any kind (don&#x27;t know what the LLMs prefer, if they have any
+    preferences at all). In the safety-critical space where I once worked, where people
+    could get hurt or die if there&#x27;s a stack overflow, the more common preference
+    was against (user-controlled) overloads or any implicitness. That&#x27;s why we
+    need options.
+  score: 0
+  posted_at: '2026-11-13T16:53:36Z'
+- id: '50486227'
+  parent_id: '50485291'
+  author: ogogmad
+  text: Is there a way to support varying the meaning of &quot;+&quot; etc without
+    introducing a lot of complexity? I suppose if Zig had nested functions, and the
+    ability to define a nested function called &quot;+&quot;, then you could have
+    name shadowing instead of &quot;overloading&quot;.<p>OCaml basically gives you
+    operator overloading this way without actually doing overloading. I&#x27;m wondering
+    why we can&#x27;t have these OCaml-isms in other languages - without needing to
+    use OCaml - which sadly comes with other commitments.
+  score: 0
+  posted_at: '2026-11-13T16:54:01Z'
+- id: '50486282'
+  parent_id: '50485511'
+  author: bowsamic
+  text: It’s pretty obvious why they didn’t, they’re GC by default. That’s already
+    enough to put people off, even if it’s “not a problem” in reality, people will
+    just avoid it for systems programming if they hear that, they will assume all
+    the good features need the GC
+  score: 0
+  posted_at: '2026-11-13T16:57:08Z'
+- id: '50486291'
+  parent_id: '50484783'
+  author: Zak
+  text: A version number starting with 0 is not just evidence, but a direct statement
+    by the maintainer that software is unstable&#x2F;pre-release no matter how long
+    it has been in development.
+  score: 0
+  posted_at: '2026-11-13T16:57:43Z'
+- id: '50486336'
+  parent_id: '50485838'
+  author: cornstalks
+  text: You can do a+b in Zig with SIMD vectors. No operator overloading required
+  score: 0
+  posted_at: '2026-11-13T17:00:14Z'
+- id: '50486458'
+  parent_id: '50485625'
+  author: dralley
+  text: Heretic! Exile the clanker enthusiast for heresey!
+  score: 0
+  posted_at: '2026-11-13T17:08:55Z'
+- id: '50486496'
+  parent_id: '50485229'
+  author: uecker
+  text: "[[nodiscard]] is in C23."
+  score: 0
+  posted_at: '2026-11-13T17:11:06Z'
+- id: '50486502'
+  parent_id: '50484345'
+  author: senderista
+  text: Zig can be a hobby&#x2F;learning project (in which case these elementary mistakes,
+    and the lax development process that allowed them, are totally acceptable), or
+    it can be a project that targets critical applications (like TigerBeetle, which
+    handles REAL MONEY), but it can&#x27;t be both.
+  score: 0
+  posted_at: '2026-11-13T17:11:34Z'
+- id: '50486507'
+  parent_id: '50485438'
+  author: brabel
+  text: I agree Zig can be fun but for real projects people should stick with Rust
+    or even D which is just as fun!
+  score: 0
+  posted_at: '2026-11-13T17:11:59Z'
+- id: '50486552'
+  parent_id: '50484994'
+  author: senderista
+  text: The best kind of correct!
+  score: 0
+  posted_at: '2026-11-13T17:15:04Z'
+- id: '50486565'
+  parent_id: '50485589'
+  author: tialaramex
+  text: "&gt; Seems like it will be useful for use-cases like embedded where you&#x27;re
+    restricted to certain parts of the library anyway. But the battle is kind of already
+    lost for support at the level of Zig or Odin.<p>Odin in particular does a simply
+    terrible job here. Take the most common need for allocations, a growable array
+    type, in Rust Vec&lt;T&gt; and in Odin dynamic[T]<p>In Rust we only pay extra
+    to store the allocator metadata if there <i>is</i> allocator metadata. If we&#x27;re
+    content using the general purpose allocator Global with global metadata it&#x27;s
+    free. In Odin we always need to pay to store an &quot;allocator proc&quot; function
+    pointer and a (possibly unused) metadata pointer, so that&#x27;s 2x machine word
+    worse for Odin. We pay this even if we never allocate, and indeed even if we <i>can&#x27;t</i>
+    allocate, whereas of course in Rust that&#x27;s free.<p>But then when we do need
+    to allocate, in Rust that&#x27;s a static dispatch <i>unless</i> our allocator
+    specifically wants dynamic dispatch. So again for Global it&#x27;s just a static
+    dispatch. But in Odin it&#x27;s <i>always</i> a slower dynamic dispatch.<p>The
+    upside? To the extent there is one it&#x27;s probably the New Jersey style, ie
+    it was simpler to implement Odin. Which is a benefit to Ginger Bill, but not to
+    you as an Odin programmer."
+  score: 0
+  posted_at: '2026-11-13T17:15:42Z'
+- id: '50486576'
+  parent_id: '50486336'
+  author: ogogmad
+  text: Sure. But doesn&#x27;t it still lack autodiff, quaternions, etc?
+  score: 0
+  posted_at: '2026-11-13T17:16:38Z'
+- id: '50486580'
+  parent_id: '50484577'
+  author: senderista
+  text: If their resources are so limited, why have they decided that rewriting libc
+    from scratch is a top priority?
+  score: 0
+  posted_at: '2026-11-13T17:17:16Z'
+- id: '50486647'
+  parent_id: '50485869'
+  author: tialaramex
+  text: Although it&#x27;s true that all of Rust&#x27;s standard library collections
+    are generic over Allocator, Rust 1.100 only stabilizes useful allocator APIs for
+    Box and Vec<p>If you want to use your MyCustomAllocator with a HashMap or a BinaryHeap
+    or you&#x27;ve lost your mind and want a LinkedList none of that was stabilized
+    yet.<p>Personally I am slightly interested in HashMap, VecDeque and String but
+    I think Vec is much more heavily used than any of those and will illustrate just
+    how thin the pickings are in this space for real.
+  score: 0
+  posted_at: '2026-11-13T17:22:26Z'
+- id: '50486648'
+  parent_id: '50485616'
+  author: vnorilo
+  text: overloading the comma is also a special flavor. everyone should try it once.
+  score: 0
+  posted_at: '2026-11-13T17:22:28Z'
+- id: '50486653'
+  parent_id: '50485838'
+  author: bunderbunder
+  text: The example you choose is rather telling, though. It indicates that the use
+    case you have in mind is not at all the one that Zig is targeting.<p>A more humble
+    critique would be to just acknowledge that you don’t seem to be a member of Zig’s
+    target audience, and move on.
+  score: 0
+  posted_at: '2026-11-13T17:22:42Z'
+- id: '50486716'
+  parent_id: '50485572'
+  author: tialaramex
+  text: C++ destroyed the good will here by simultaneously insisting that you&#x27;re
+    only supposed to use this feature to give types their natural operators (makes
+    sense) and then inventing implausible new &quot;natural&quot; operators so that
+    Bjarne can show off his new toy with the I&#x2F;O streams.<p>I actually don&#x27;t
+    like Rust&#x27;s choice to implement + for Strings but most people seem to accept
+    that, however C++ goes ludicrously far beyond &quot;I don&#x27;t like it but some
+    people do&quot; and straight off the cliff into &quot;Nobody thinks that&#x27;s
+    OK&quot; leaving you to wonder why there was effort to <i>implement</i> this bad
+    idea. For example C++ can overload the short-circuiting boolean operators... but
+    the overloaded versions don&#x27;t short circuit. So now you&#x27;ve made things
+    dramatically worse!
+  score: 0
+  posted_at: '2026-11-13T17:27:59Z'
+- id: '50486790'
+  parent_id: '50486221'
+  author: clhodapp
+  text: Fair, but don&#x27;t conflate custom operators with overloading just because
+    C++ happened to have one very specific way of implementing custom operators.
+  score: 0
+  posted_at: '2026-11-13T17:32:50Z'
+- id: '50486850'
+  parent_id: '50485504'
+  author: hn_submit
+  text: How can you tell? I just scanned it but it doesn&#x27;t feel like being generated.
+  score: 0
+  posted_at: '2026-11-13T17:36:08Z'
+- id: '50486917'
+  parent_id: '50485258'
+  author: Joker_vD
+  text: First of all, sscanf doesn&#x27;t need to be quadratic in the worst case;
+    it absolutely can work without finding the NUL-terminator first. Second, I&#x27;d
+    like to see that list of &quot;flagged along with the bulk of the rest of the
+    libc string support as being hazardous or potentially harmful&quot; functions.
+    Does this list include strchr()? Because if yes, your original argument fails
+    to stand.
+  score: 0
+  posted_at: '2026-11-13T17:39:23Z'
+- id: '50487009'
+  parent_id: '50485616'
+  author: bunderbunder
+  text: I’ve also experienced some unnecessary shenanigans related to blurring the
+    distinction between primitive operations, and stuff that happens dynamically at
+    run time such as method calls.<p>For a somewhat different example of the same
+    general idea, look at how Java handles primitives and their boxed counterparts.
+    = on two ints always compares their value. = on two Integers compares their pointers.
+    But it uses flyweight instances for values up to 256, so in Java, whether two
+    Integers with the same numeric value are equal according to the = operator depends
+    on what that value is.<p>Then throw autoboxing and generics into the mix, and
+    it suddenly becomes very easy to do refactorings that work fine in the unit tests
+    (which tend to use small numbers) but fails in confusing ways in production.<p>This
+    isn’t an example of operator overloading, of course. But I hope it more simply
+    illustrates why, at least in certain problem domains, there’s value in being able
+    to visually tell when surprising runtime shenanigans are and are not possible.
+    And also to make it impossible to cross that boundary without touching all code
+    that falls within the blast radius of that change.
+  score: 0
+  posted_at: '2026-11-13T17:43:54Z'
+- id: '50487312'
+  parent_id: '50486282'
+  author: arc619
+  text: Nim is stack allocated by default, and you annotate types explicitly with
+    `ref` to use the GC. Even then, the compiler elides reference counting using borrow
+    checks, you can choose different GC options, and the GC isn&#x27;t stop the world
+    like most. You don&#x27;t need to touch reference counting if you don&#x27;t want
+    to, and Nim fits embedded dev pretty well for that reason.
+  score: 0
+  posted_at: '2026-11-13T18:03:57Z'
+- id: '50487525'
+  parent_id: '50485724'
+  author: jandrese
+  text: Sure you can do that, but you end up having to re-implement all of the standard
+    library functions that expect to work with zero terminated arrays.
+  score: 0
+  posted_at: '2026-11-13T18:18:57Z'
+- id: '50487542'
+  parent_id: '50486716'
+  author: pron
+  text: 'Note that it&#x27;s not that Zig is opposed to (user-controlled) <i>operator</i>
+    overloading; it&#x27;s opposed to (user-controlled) <i>overloading</i> of all
+    symbols: The resolution of `foo` in `foo(x)` should not depend on the type of
+    `x`. The issue is not the operators but the overloading, and Zig wants to prevent
+    (user-controlled) overloading of any kind. This makes some things less convenient
+    and other things more convenient.'
+  score: 0
+  posted_at: '2026-11-13T18:20:00Z'
+- id: '50487640'
+  parent_id: '50487009'
+  author: wpollock
+  text: "&gt; But it uses flyweight instances for values up to 256, so in Java, whether
+    two Integers with the same numeric value are equal according to the = operator
+    depends on what that value is. ...<p>I believe Java caches Integer objects for
+    values -128..+128, not 256. But that may be an implementation detail, and not
+    something to count on."
+  score: 0
+  posted_at: '2026-11-13T18:25:44Z'
+- id: '50487779'
+  parent_id: '50487640'
+  author: gf000
+  text: And since java 28&#x27;s value types, == will work identically for all Integers,
+    finally.
+  score: 0
+  posted_at: '2026-11-13T18:34:10Z'
+- id: '50487894'
+  parent_id: '50487640'
+  author: bunderbunder
+  text: No, you’re right. I misremembered.
+  score: 0
+  posted_at: '2026-11-13T18:43:10Z'
+- id: '50487934'
+  parent_id: '50486576'
+  author: cornstalks
+  text: Yes, there are definitely other use cases that Zig doesn&#x27;t support (which
+    some may view as a good or bad thing). I just wanted to respond to the comment
+    about basic SIMD since the example was U8x32 and operator+, which Zig can do.
+  score: 0
+  posted_at: '2026-11-13T18:46:16Z'
+- id: '50487993'
+  parent_id: '50485314'
+  author: alexrp
+  text: "&gt; It is fundamentally flawed and I could easily write thousands of words
+    explaining why from the architectural design to the development process.<p>Always
+    happy to learn."
+  score: 0
+  posted_at: '2026-11-13T18:50:49Z'
+- id: '50488030'
+  parent_id: '50486076'
+  author: vips7L
+  text: I&#x27;ve tried the intellij plugin and vscode extension. It never seems to
+    work right. I remember there being lots of issues about not finding phobos&#x2F;the
+    standard library.
+  score: 0
+  posted_at: '2026-11-13T18:53:37Z'
+- id: '50488042'
+  parent_id: '50487312'
+  author: bowsamic
+  text: GC was the default in the earlier versions of Nim and ARC is still default
+    today. That’s why people ignore it
+  score: 0
+  posted_at: '2026-11-13T18:54:27Z'
+- id: '50488061'
+  parent_id: '50486336'
+  author: Ygg2
+  text: Same goes for any bitwise operation &lt;&lt;, &gt;&gt;, &amp;, |, %.<p>Can
+    I write my SIMD&#x2F;number abstraction and have it work?<p>Let&#x27;s say I need
+    rotors. With six dimensions. Can I overload it&#x27;s basic numeric operations?
+  score: 0
+  posted_at: '2026-11-13T18:55:45Z'
+- id: '50488123'
+  parent_id: '50484834'
+  author: schaefer
+  text: Up until about a week ago, I had no sympathy for people complaining about
+    &quot;AI writing style&quot; in articles - and then all of a sudden it hit me.  Kind
+    of like unexpectedly developing an allergy to sawdust.
+  score: 0
+  posted_at: '2026-11-13T18:59:39Z'
+- id: '50488134'
+  parent_id: '50486653'
+  author: Ygg2
+  text: I am in the target audience. I do want low level systems programming.<p>Saying
+    &quot;you don&#x27;t want operator overloading&quot; in such cases is a reductionist
+    view of how systems programming should look.
+  score: 0
+  posted_at: '2026-11-13T19:00:17Z'
+- id: '50488185'
+  parent_id: '50485941'
+  author: Fervicus
+  text: Intriguing. How usable is it right now?
+  score: 0
+  posted_at: '2026-11-13T19:03:29Z'
+- id: '50488362'
+  parent_id: '50485941'
+  author: seanw444
+  text: If they can get the tooling situation handled better with 3.0, Nim will be
+    probably the best all-around programming language in my book. The only reason
+    I tend to opt for Zig instead (and the reason the library ecosystem is pretty
+    small) is that it just feels a little unpolished all over the place. But the core
+    principles are just so good.<p>I don&#x27;t mean that as an insult to Zig. Zig
+    is amazing. But the ergonomics of Nim are just unbeatable.
+  score: 0
+  posted_at: '2026-11-13T19:16:46Z'
+- id: '50488441'
+  parent_id: '50487934'
+  author: Ygg2
+  text: Point wasn&#x27;t about SIMD, but defining my wrapper for it and giving it
+    operations I needed.<p>Which seems to be something Zig can&#x27;t do.<p>Hell,
+    you can define operators for generic length SIMD lane.
+  score: 0
+  posted_at: '2026-11-13T19:22:54Z'
+- id: '50488499'
+  parent_id: '50485511'
+  author: bmandale
+  text: Many GCed languages have any number of useful features. But when the discussion
+    is focused on systems programming, they are quite off topic.
+  score: 0
+  posted_at: '2026-11-13T19:27:54Z'
+- id: '50488681'
+  parent_id: '50486647'
+  author: atiedebee
+  text: Perhaps custom allocators could be interesting for BTreeMap and BTreeSet?
+    I am not familiar with their internal implementation, but as I understand it those
+    should allocate fixed-size blocks, which would benefit from a specialized fixed-size
+    allocator.
+  score: 0
+  posted_at: '2026-11-13T19:43:24Z'
+- id: '50488846'
+  parent_id: '50487894'
+  author: wpollock
+  text: |-
+    &gt; No, you’re right. I misremembered.<p>We both misremembered.  I found where this is documented and the range is -128..127 inclusive:
+    &lt;<a href="https:&#x2F;&#x2F;docs.oracle.com&#x2F;en&#x2F;java&#x2F;javase&#x2F;27&#x2F;docs&#x2F;api&#x2F;java.base&#x2F;java&#x2F;lang&#x2F;Integer.html#valueOf(int)" rel="nofollow">https:&#x2F;&#x2F;docs.oracle.com&#x2F;en&#x2F;java&#x2F;javase&#x2F;27&#x2F;docs&#x2F;api&#x2F;java.base...</a>&gt;
+  score: 0
+  posted_at: '2026-11-13T19:59:47Z'
+- id: '50488943'
+  parent_id: '50487779'
+  author: wpollock
+  text: Note that value types will still be a &quot;preview&quot; feature in Java  28.<p>I&#x27;m
+    looking forward to structured concurrency in Java 28.  I already thought of a
+    title for my article &quot;Java Concurrency - Past, Present, and Futures&quot;.
+  score: 0
+  posted_at: '2026-11-13T20:08:21Z'
+- id: '50489004'
+  parent_id: '50487542'
+  author: tialaramex
+  text: |-
+    &gt; The resolution of `foo` in `foo(x)` should not depend on the type of `x`<p>This depends on how you&#x27;re squinting at this word &quot;resolution&quot;.<p>Remember on a modern CPU an XOR R1 R1 does not result in an ALU operation, the decoder <i>understands this idiom</i> and just renames a zero&#x27;d register as R1, whereas of course it can&#x27;t do that for say XOR R2 R3 because that&#x27;s an actual XOR operation. So if &quot;resolution&quot; means &quot;exactly what happens on the CPU&quot; apparently there is no such facility provided even in assembler.<p>So apparently we mean only that it should have, in some sense, the same effect. I think the fact Rust is OK with<p><pre><code>  assert!(&quot;Goose&quot;.contains(&#x27;o&#x27;))
+      assert!(&quot;Goose&quot;.contains(&quot;Goo&quot;))
+      assert!(&quot;Goose&quot;.contains(&amp;[&#x27;a&#x27;, &#x27;e&#x27;, &#x27;i&#x27;, &#x27;o&#x27;, &#x27;u&#x27;]))
+    </code></pre>
+    .. meets this criterion, whereas presumably you do not agree.
+  score: 0
+  posted_at: '2026-11-13T20:13:05Z'
+- id: '50489062'
+  parent_id: '50486565'
+  author: Bigpet
+  text: Sounds like the Odin implementation isn&#x27;t particularly optimal. My point
+    wasn&#x27;t about speed or good implementations. My point was about which languages
+    make it practical to consistenly use custom allocators as a user of the language.
+    Not just across your own code, but also code from the standard library and external
+    packages.<p>I have no practical Odin experience, I just looked at the core concepts.
+    I tried a bit of Zig and there&#x27;s significant discipline in the standard library
+    to enable allocator use. But in 3rd Party libraries this discipline is hard to
+    enforce because it also makes it harder to design easy to use interfaces.<p>I&#x27;m
+    interested where on the spectrum of allocator usability Rust will end up at. I&#x27;d
+    expect it somewhere between Zig and C++
+  score: 0
+  posted_at: '2026-11-13T20:18:44Z'
+- id: '50489133'
+  parent_id: '50489004'
+  author: pron
+  text: It&#x27;s not about okay or not okay. Zig is designed to prevent any user
+    code from being implicitly called, or for the resolution of user code to be done
+    implicitly. It&#x27;s not about what the CPU does internally, but whether you&#x27;re
+    able to tell, from reading the code of a single subroutine, which operations could
+    be done, whether stack frames can be created etc.. This has pros and cons, and
+    for some people the pros outweigh the cons and for others, the other way around,
+    and that&#x27;s why different programming languages need to prioritise different
+    things when they target different users. Just as Rust clearly isn&#x27;t supposed
+    to be best for all uses, neither is Zig, or any other language for that matter.
+    Every language is meant to appeal to some and not others.
+  score: 0
+  posted_at: '2026-11-13T20:24:02Z'
+- id: '50489525'
+  parent_id: '50488134'
+  author: hitekker
+  text: To be fair, the impression is that you want to do low level systems programming
+    in Rust. It&#x27;s a fine preference but it does put you in a different audience
+  score: 0
+  posted_at: '2026-11-13T20:55:22Z'
+article:
+  url: https://www.mtsoukalos.eu/2026/11/why-zig-over-c-for-systems-programming/
+  title: Why Zig Over C for Systems Programming · Mihalis Tsoukalos | Μιχαλης Τσουκαλος
+  fetch_status: success
+  content: |-
+    After I wrote Why Zig Over Rust for Systems Programming, the obvious next question was C. The Rust question was about safety and how much ceremony I was willing to accept for it. The C question is different, because Zig and C want the same things. Both are small languages without a Garbage Collector and both stay close to what the machine does. So this post is not about leaving C for something completely different. It is about the parts of C that cost me time and how Zig deals with them. All the code was compiled on a Mac with Zig 0.17 and clang.
+
+    ## What C gets right Link to heading
+
+    C is the language of UNIX. The kernels, the C libraries and most of the system libraries that every other language calls in the end are written in C and the man pages describe them with C prototypes and C examples. A C program from the 1990s still compiles today and there is a C compiler for almost every CPU that was ever made. The language is small enough that one book, The C Programming Language by Kernighan and Ritchie, covers all of it. Zig itself does not try to replace any of that. It talks to C libraries directly and it uses the C ABI when it needs to. I am not writing this post because I think C is bad; C is my favorite programming language! I am writing it because I do not want to write new code in C any more.
+
+    ## Cleanup without goto Link to heading
+
+    The C code that I like the least is a function that acquires several resources and has to release them in reverse order when something fails halfway. The usual answer, which is also the one the Linux kernel uses, is goto:
+
+    struct user *user_new(const char *name, size_t n_groups) { struct user *u = malloc(sizeof *u); if (u == NULL) goto fail; u->name = strdup(name); if (u->name == NULL) goto fail_user; u->groups = calloc(n_groups, sizeof *u->groups); if (u->groups == NULL) goto fail_name; return u; fail_name: free(u->name); fail_user: free(u); fail: return NULL; }
+
+    It works, but the cleanup is far away from the allocation and the order of the labels has to match the order of the allocations by hand. The same function in Zig looks like this:
+
+    fn newUser(allocator: std.mem.Allocator, name: []const u8, n_groups: usize) !*User { const u = try allocator.create(User); errdefer allocator.destroy(u); u.name = try allocator.dupe(u8, name); errdefer allocator.free(u.name); u.groups = try allocator.alloc(u32, n_groups); return u; }
+
+    Each errdefer sits right below the allocation it undoes and runs only if the function returns an error. Zig runs them in reverse order, so there are no labels to keep in order. What I like even more is that I can test every failure path. The std.testing.FailingAllocator type fails on the first, second or third allocation, depending on the value of fail_index. The testing allocator below it reports any memory that is not freed:
+
+    test "newUser does not leak when an allocation fails" { for (0..3) |i| { var failing = std.testing.FailingAllocator.init(std.testing.allocator, .{ .fail_index = i }); try std.testing.expectError(error.OutOfMemory, newUser(failing.allocator(), "mihalis", 4)); } }
+
+    $ zig test user.zig 1/1 user.test.newUser does not leak when an allocation fails...OK All 1 tests passed.
+
+    Testing the same three paths in the C version needs a wrapper around malloc() or an external tool.
+
+    ## A slice knows its length Link to heading
+
+    In C an array that goes to a function becomes a pointer and the length travels separately, if at all. The following C function has an off-by-one error, <= instead of <:
+
+    int sum(const int *a, size_t n) { int total = 0; for (size_t i = 0; i <= n; i++) total += a[i]; return total; }
+
+    With an array of {1, 2, 3} it prints sum = 7 on my Mac and exits with 0. The extra 1 came from whatever was in memory after the array. Neither clang with -Wall -Wextra nor the program itself complains. In Zig a slice carries its length, so the same mistake stops the program in the debug and safe modes:
+
+    fn sum(a: []const i32) i32 { var total: i32 = 0; for (0..a.len + 1) |i| total += a[i]; return total; }
+
+    $ zig run sum.zig thread 1278459 panic: index out of bounds: index 3, len 3 sum.zig:5:38: 0x1023c5b4b in sum (sum) for (0..a.len + 1) |i| total += a[i]; ^
+
+    In real Zig code you would write for (a) |x| and the mistake cannot happen at all. Strings work the same way. A Zig string is a slice of bytes with a length, so there is no strlen() call that walks the memory looking for a 0 byte and no buffer that is one byte short because somebody forgot the terminator.
+
+    ## Errors you cannot ignore Link to heading
+
+    In C a function reports an error by returning -1 or NULL and setting errno, or by returning an error code, or in some other way that the man page describes. Nothing forces you to check. A lot of C code calls close() and fclose() without looking at the return value and the compiler is fine with it. In Zig an error is part of the return type and the compiler refuses to compile a call whose error you ignore. You have to use try, catch or if. The failure path is in the source code, right next to the call, which is also what I liked about Go.
+
+    ## comptime instead of the preprocessor Link to heading
+
+    The C preprocessor works with text and knows nothing about C. The classic #define MAX(a, b) ((a) > (b) ? (a) : (b)) evaluates one of its arguments twice and a big C project usually has a lot of #ifdef lines for every Operating System it supports. In Zig, code that runs at compile time is ordinary Zig code. Instead of #ifdef __linux__ I write if (builtin.os.tag == .linux) and the compiler drops the branch that does not apply. Generic data structures are functions that take a type and return a type. The compiler checks all of it like the rest of the program. I wrote about this in Zig comptime.
+
+    ## Fewer undefined surprises Link to heading
+
+    In C the overflow of a signed integer is undefined behavior. The following C program adds 1 to INT_MAX:
+
+    int add(int a, int b) { return a + b; } int main(void) { printf("%d\n", add(INT_MAX, 1)); return 0; }
+
+    Compiled with clang it prints -2147483648 and exits with 0, but the C standard allows the compiler to do anything, including removing code that it decides can never run. In Zig the overflow of any integer, signed or unsigned, is checked in the debug and safe modes and the program stops with panic: integer overflow and the line where it happened. When I want wrapping, I write +% and when I want the result to stop at the maximum value, I write +|.
+
+    ## Zig is also a C compiler Link to heading
+
+    The zig cc command is a C compiler that you can use instead of gcc or clang. It also cross compiles out of the box. On my Mac, zig cc -target x86_64-linux-musl -o sum sum.c creates a static Linux executable without installing anything else. In the debug mode zig cc also turns on the undefined behavior sanitizer, so the add() program above compiled with zig cc stops with panic: signed integer overflow: 2147483647 + 1 cannot be represented in type 'int'. A build.zig file can compile C files next to Zig files, so you can move a C project to Zig one file at a time and keep using the same build. If your Zig code needs C header files, Zig 0.17 removed @cImport() and you use zig translate-c instead. I wrote about that in @cImport() Is gone in Zig 0.17.
+
+    ## The honest tradeoff Link to heading
+
+    Zig is not C with all the problems solved. It does not stop you from using memory after you free it or from keeping a pointer to a stack variable that no longer exists. In the fast and small modes most safety checks are turned off and you are back to undefined behavior, just as in C. C is also stable in a way that Zig is not yet. When Zig 0.17 came out, I had to change 35 of the 152 Zig files of my book, while C code from decades ago still compiles. C has more tools, more books, more people who know it and compilers for chips that Zig does not support. If you write code for a microcontroller that only has a vendor C compiler, the choice is made for you.
+
+    ## Conclusion Link to heading
+
+    C is not
+  error:
+  fetched_at: '2026-11-13T21:14:21Z'
+archived_at: '2026-11-13T21:14:26Z'

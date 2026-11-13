@@ -1,0 +1,97 @@
+---
+post:
+  id: lo-kb3fs1
+  source: lobsters
+  title: Beating the frontier on NetHack
+  url: https://antithesis.com/blog/2026/nethack/
+  hn_url: https://lobste.rs/s/kb3fs1
+  score: 16
+  author: hwayne
+  posted_at: '2026-11-13T14:34:57Z'
+  fetched_at: '2026-11-13T21:14:27Z'
+  article_url: https://antithesis.com/blog/2026/nethack/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T21:14:29Z'
+  raw_comment_count: 2
+  tags:
+  - games
+  - testing
+comments:
+- id: lo-wndvef
+  parent_id: '0'
+  author: evrimzone
+  text: |-
+    I find the idea of games that only humans can master, and are not 'solvable,' to be extremely fascinating.
+    Even more fascinating is the Antithesis team's relentless pursuit of dissolving the notion of unsolvable. Remarkable results, and very enjoyable blog post!
+  score: 4
+  posted_at: '2026-11-13T18:35:09Z'
+- id: lo-nltmsl
+  parent_id: '0'
+  author: fzakaria
+  text: |-
+    one on hand: I really like the depth and whimsy of the article explaining NetHack to me; on the other I wish my attention span was that good :)
+    I thought this quote summarized my own internal dialogue though:
+
+    tbh I still have zero clue on how to play nethack after all this.
+
+    Fun read overall; really fun to see an idea span 6 years.
+  score: 3
+  posted_at: '2026-11-13T18:37:40Z'
+article:
+  url: https://antithesis.com/blog/2026/nethack/
+  title: Beating the frontier on NetHack | Antithesis
+  fetch_status: success
+  content: |-
+    November 13, 2026 | Paul Ryan, Member of Technical Staff | Mikail Khan, Research intern | Will Wilson, Co-founder and CEO
+
+    # Beating the frontier on NetHack
+
+    ## [Prologue](#prologue)
+
+    Will WilsonCo-founder and CEO
+
+    In the beginning, there was NetHack.
+
+    That’s not quite true for computer game history (though NetHack was [very early and very influential](https://en.wikipedia.org/wiki/NetHack)), but it’s true for the history of Antithesis. The company started when I got lunch with Dave and said: “let’s make [the FDB simulator but for everything](https://antithesis.com/blog/is_something_bugging_you/)” and he was like: “no, let’s make a fuzzer so smart it can beat NetHack,” and then we gradually realized that we were actually talking about the same thing.
+
+    In the years that followed, NetHack continued to inspire and challenge us. The first Antithesis VCS repo (long since deleted) was called “fuzzhack” because it was a fuzzer for NetHack. Before we built our [deterministic hypervisor](https://antithesis.com/blog/deterministic_hypervisor/), we tried [Hermit-style](https://github.com/facebookexperimental/hermit) deterministic Linux userland because it’s the bare minimum you need to beat NetHack. NetHack inspired our thinking about the [importance of strategy](https://antithesis.com/blog/sdtalk/), about the importance of code coverage and also about its inadequacy, and about why you need intrinsic curiosity rewards to have any hope of applying AI to this problem. NetHack inspired many of our early experiments in visualization. Wanting to interactively explore NetHack performance and coverage maps is why we wrote the first version of the [reactive notebook](https://antithesis.com/blog/notebook_interfaces/) that now powers our UI. Processing reams of NetHack data that wouldn’t fit in memory was why we decided to put a GCP subscription on my credit card so we could crunch the data in BigQuery, which later led us to invent [skip trees](https://antithesis.com/blog/2026/skiptrees/), and finally [Pangolin](https://antithesis.com/blog/2025/testing_pangolin/).
+
+    All of this is because it was a worthy adversary – perhaps even what my colleague David MacIver likes to call [a “dragon problem.”](https://drmaciver.substack.com/p/dragon-problems) NetHack is famously difficult for human beings because it combines permadeath, extreme information scarcity (reading the source code of the game to figure out how to beat it is practically a rite of passage for aficionados), and a brutal intolerance for error. But it’s also very difficult for autonomous systems like fuzzers and AI agents due to its sprawling state space and to the need for long-horizon planning to make any real progress. People have [written bots](https://nethackwiki.com/wiki/Bot) that have successfully beaten the game, but despite Meta’s investment in the [NetHack Learning Environment](https://github.com/facebookresearch/nle), AI agents have struggled with it. The wins that both the hardcoded bots and the AIs (most recently GPT-6 Astra) have eked out have been skin-of-their-teeth affairs involving lucky seeds and “beginner-friendly” roles. Nobody has produced a system that can reliably and quickly beat the game over and over again as any character build.
+
+    “Beginner-friendly” by NetHack standards, at least.
+
+    Until now.
+
+    Antithesis can now find a path to victory within 5 wall-clock minutes on nearly 80% of NetHack seeds. Moreover, the median time to victory within the seeds that finish is under 2 minutes. To explain how we did this, we need to let you in on a secret: Antithesis is not _just_ a system for unopinionated state space exploration, it is also something akin to a probabilistic programming language, a new computing paradigm for partially describing tests or other tasks and letting search and optimization fill in the rest. When you put this tool in the hands of capable AI agents, they can do things like beat NetHack in 30 seconds. But first… back to our story.
+
+    ## [Act I: Learning to hold the tool](#act-i-learning-to-hold-the-tool)
+
+    ### [Prior art: bots and black puddings](#prior-art-bots-and-black-puddings)
+
+    Paul RyanMember of Technical Staff
+
+    > _The game is considered one of the hardest games in the world, with winning episodes lasting hundreds of thousands of steps, and a permadeath setting that starts agents at the beginning in a whole new world if they die in the dungeon. – [Insights from the NeurIPS 2021 NetHack Challenge](https://discovery.ucl.ac.uk/id/eprint/10177325/1/hambro22a.pdf), Hambro et al._
+
+    The overall goal of NetHack is straightforward to state, if not to achieve. You begin on the top floor of a dungeon; your objective, the Amulet of Yendor, is at the bottom, in Moloch’s Sanctum. To beat the game, you must descend to Sanctum, take the Amulet from the High Priest of Moloch, and make your way back to the top. Upon exiting the dungeon with the Amulet in your possession, you are transported to the Elemental Planes; from here, you must travel to the Astral Plane, seek out the high altar of your god, and offer the Amulet there, for which your god will grant you immortality and ascension to demigodhood. (Beating the game is called _ascending._)
+
+    When I started working on fuzzing NetHack in 2020, there was minimal prior art. We were a new company, building new tools and learning in real time how best to hold them, and previous bot ascensions were few. Two, to be precise, both targeting an earlier version of the game.
+
+    [SWAGGINZZZ](https://pellsson.github.io/), an RNG-predicting bot, had speed-ascended a Tourist in 2019 using zero-turn RNG manipulations that were quickly patched out. (This remains the fastest ascension on NAO, a popular NetHack server, in both real time and turn count.)
+
+    [BotHack](https://github.com/krajj7/BotHack), an earlier (2015) hand-rolled expert system made of about 16,000 lines of Clojure, had [ascended](https://www.reddit.com/r/nethack/comments/2tluxv/yaap_fullauto_bot_ascension_bothack/) a Valkyrie (the easiest role in NetHack and standard beginner recommendation, with strong melee and intrinsic cold resistance and stealth), and later a Samurai and a Knight, using a technique known as _pudding farming_.
+
+    In NetHack, there’s a monster called a _black pudding_, which can divide when hit with iron weapons. When BotHack was written, a black pudding could leave a corpse when slain, which could produce a _death drop:_ a random item on the corpse square that the monster didn’t have while alive – any item, from the weak orcish dagger to the coveted amulet of life saving. Consequently, a player who could hit black puddings for minimal damage could divide and kill them indefinitely, producing effectively unbounded black pudding corpses (which could be sacrificed at an altar to gain favor with the player’s god) and effectively unbounded random items. A player willing to grind through thousands of turns of pudding farming could generate as many amulets of life saving as they wanted.
+
+    BotHack didn’t sacrifice puddings at altars – its game plan didn’t need to – but it relied on pudding farming for experience and items. A player must reach experience level (XL) 14 to become worthy of the Quest, whose completion is required to beat the game; BotHack’s fifty thousand turns of pudding farming took it from XL 11 to XL 22. It assembled much of its _ascension kit_ (a shopping list of items that experienced players will collect before entering the late game) from pudding farming: a full kit of armor, an assortment of scrolls and magical rings, a pair of gauntlets of power – and a Hawaiian shirt, which provides no value by itself but can be enchanted to +7.
+
+    In the subsequent version of NetHack, 3.6.0, pudding farming was removed.
+
+    Will and Dave had started with 3.6.0, all the way back in 2017. We didn’t want to downgrade. So pudding farming was out.
+
+    ### [Infinite loops and falling newts](#infinite-loops-and-falling-newts)
+
+    Fruit is now ".._.._L_{_qx}_%7$iOD./g".
+        Set fruit to what? ��_���
+  error:
+  fetched_at: '2026-11-13T21:14:29Z'
+archived_at: '2026-11-13T21:14:29Z'
