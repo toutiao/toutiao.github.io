@@ -1,0 +1,166 @@
+---
+post:
+  id: lo-akdy9z
+  source: lobsters
+  title: Terminal borders that don't cost a cell
+  url: https://www.joshka.net/cell-borders/
+  hn_url: https://lobste.rs/s/akdy9z
+  score: 13
+  author: joshka
+  posted_at: '2026-11-13T12:03:19Z'
+  fetched_at: '2026-11-13T14:05:30Z'
+  article_url: https://www.joshka.net/cell-borders/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T14:05:30Z'
+  raw_comment_count: 3
+  tags:
+  - design
+  - graphics
+  - programming
+comments:
+- id: lo-ilmdkf
+  parent_id: '0'
+  author: pointlessone
+  text: |-
+    What would people do to not use a proper GUI library.
+    I mean, it’s cool but we’re like this close to adding inset, outset, groove, and ridge styles and it’ll be basically Motif/win95, only on a grid.
+  score: 4
+  posted_at: '2026-11-13T13:10:28Z'
+- id: lo-bbqdwu
+  parent_id: '0'
+  author: joshka
+  text: |-
+    I grew up in the the 80s/90s and some of my first terminal GUIs were things like DOSShell and such prior to windows being a thing. Not a massive fan of going as far as building a full GUI, but I do want stuff to look good and get some of the usability stuff that comes from GUI research, this feels like a small step in the right direction.
+    GUIs definitely have their place. I much prefer them for coding agents for example (I say this as someone that worked on the Codex TUI).
+    There's lots of things that make sense as a TUI though, but this feels like it's one of those things that holds it back a bit. Raph (Rio maintainer) has a custom glyphs proposal that does a bunch of fun things as well. https://x.com/raphamorims/status/2120887890129388001
+  score: 1
+  posted_at: '2026-11-13T13:25:30Z'
+- id: lo-5bzlam
+  parent_id: '0'
+  author: chrismorgan
+  text: "I really don’t understand why people keep on doing frames with gaps between
+    them. It’s just ridiculously wasteful. In terminals, increasingly in window managers
+    (I feel like it happened first as a tiling window manager gimmick under Linux,
+    though maybe it was macOS, which was always really bad about wasting space in
+    full-sized windows), even Firefox is now succumbing to this latest stupid design
+    trend which has a terrible tendency to completely undermine content hierarchies.\nWhy
+    this?\n┌──────┐ ┌──────┐\n│ Text │ │ Text │\n└──────┘ └──────┘\n┌──────┐ ┌──────┐\n│
+    Text │ │ Text │\n└──────┘ └──────┘\n\nYou don’t need the outer borders, and you
+    can collapse the inner borders. Now, taking the same lines and columns, it can
+    now even be ridiculously overspaced:\n        │       \n  Text  │  Text \n        │
+    \      \n────────┼────────\n        │       \n  Text  │  Text \n\nIn this article:
+    the panes example doesn’t feel like it needs extra borders and gaps, and the fallback
+    behaviour isn’t entirely how you could reasonably expect it to be done: the header
+    line could be integrated into the border (┌─███████░░░░░░──────┐ with text on
+    the shaded areas). The chart example shows how it’s already abusing things (see
+    how obviously it’s irregular); why not go fixing that with some addition? Or just
+    rendering an image for the entire thing? You honestly might as well at that point.\nI
+    would also just like people to stop trying to turn terminals into compositors;
+    TUIs (as distinct from CLIs) are all kinds of problematic. The cellness of it
+    all is a fairly extreme limitation, and we really should stop trying to force
+    GUI-shaped objects into terminal-shaped holes. Keep it simple, generally try to
+    limit yourself to stuff that would still work with a proportional font, and embrace
+    the very limited colour palette you get given. Or else make a GUI.\nTerminal emulation
+    is already way too complex.\nYours sincerely,\nA dyed-in-the-wool vim user\n(who
+    would nonetheless like to be able to code in a proportional font without having
+    to switch editor)"
+  score: 2
+  posted_at: '2026-11-13T13:54:56Z'
+article:
+  url: https://www.joshka.net/cell-borders/
+  title: Terminal borders that don't cost a cell | Joshka.net
+  fetch_status: success
+  content: |-
+    # [Terminal borders that don't cost a cell](https://www.joshka.net/cell-borders/)
+
+    2026-11-13
+     :: tags:&nbsp; [#Ghostty](https://www.joshka.net/tags/ghostty/)&nbsp; [#Ratatui](https://www.joshka.net/tags/ratatui/)&nbsp; [#TUI](https://www.joshka.net/tags/tui/)&nbsp; [#Terminals](https://www.joshka.net/tags/terminals/)
+
+    _This post (and the code behind it) was written with a lot of help from AI. I'm not going to apologize for that. If that bothers you, feel free to close the tab._
+
+    I maintain [Ratatui](https://ratatui.rs), so I see a lot of the TUIs people build. Many of them end up looking fairly same-ish: plain boxes on a boring background, missing a bunch of the things that good design in other mediums brings us.
+
+    Borders are part of the problem. They have to take up space, so they become part of the panels people want to build. One option is to drop them and just use color, but borders are really nice for delineating and surrounding things. There are lots of ways to sort of get borders in a terminal, but none that are 100% good. I've drawn enough `┌──┐` by hand to have opinions about this.
+
+    The usual way is the Unicode Box Drawing block, which has 128 characters for lines, corners and joins. Somehow that's still not enough:
+
+    [![The Unicode Box Drawing block, U+2500 to U+257F, rendered in Ghostty](https://www.joshka.net/cell-borders/box-drawing-block.png)](https://www.joshka.net/cell-borders/box-drawing-block.png)
+
+    So I've been working on a terminal protocol that draws thin lines on the edges of cells instead. I've got it working as [a patch to Ghostty](https://github.com/joshka/ghostty/tree/joshka/cell-borders) (and [an earlier version in Rio](https://github.com/raphamorim/rio/pull/1947) before that), and I've built demo apps for it with Ratatui. I'd like feedback from terminal and TUI authors.
+
+    [![A tiling window manager demo built with Ratatui, using cell borders for panes, tabs, form fields and buttons](https://www.joshka.net/cell-borders/panes.png)](https://www.joshka.net/cell-borders/panes.png)
+
+    Every line in that screenshot is a cell border. None of them use up a row or column. The tab labels sit on the top edge of each pane, the text fields are underlined right under the text, and the buttons are one row tall and rounded.
+
+    Here's the same app in a terminal without cell borders, falling back to box-drawing characters:
+
+    [![The same demo drawn with box-drawing characters](https://www.joshka.net/cell-borders/panes-box.png)](https://www.joshka.net/cell-borders/panes-box.png)
+
+    Each pane loses a row and a column on every side, so the log pane shows two fewer lines and the notes wrap differently. The tab labels move inside the frame. The text fields use the underline attribute instead, and the checkbox and buttons turn into brackets.
+
+    ## What I'd use it for
+
+    - Borders, obviously. Panes and panels that don't eat a row and column on every side.
+    - Menus and popups that sit on top of other content and still look like they're on top.
+    - Panel style apps, where the layout is a set of regions that each want an edge.
+    - Widgets like text fields, buttons and checkboxes, which want a line right up against their text.
+    - Making things look neater in general. A border on the outer edge of a panel's background looks a lot cleaner, and text can run right up to it.
+
+    ### Up close
+
+    The settings form, with cell borders and then with the box-drawing fallback:
+
+    [![A form with underlined text fields, a checkbox and rounded buttons drawn with cell borders](https://www.joshka.net/cell-borders/zoom-form.png)](https://www.joshka.net/cell-borders/zoom-form.png)
+
+    [![The same form with the underline attribute and bracketed buttons](https://www.joshka.net/cell-borders/zoom-form-box.png)](https://www.joshka.net/cell-borders/zoom-form-box.png)
+
+    The tabs are the same story. With cell borders they sit on the pane's top edge. With box characters they need their own row inside the frame:
+
+    [![Pane tabs drawn on the top edge of the pane with cell borders](https://www.joshka.net/cell-borders/zoom-tabs.png)](https://www.joshka.net/cell-borders/zoom-tabs.png)
+
+    [![The same tabs inside a box-drawing frame](https://www.joshka.net/cell-borders/zoom-tabs-box.png)](https://www.joshka.net/cell-borders/zoom-tabs-box.png)
+
+    ### Charts
+
+    Lines between cells also work for charts. btop-style braille graphs fill every cell with dots, so there's nowhere to put a gridline or an average line without giving up a row. With cell borders they sit on the cell edges between the dots. Here's a monitor in that style, built with Ratatui:
+
+    [![A braille CPU graph with gridlines and an average line drawn on the cell edges](https://www.joshka.net/cell-borders/chart.png)](https://www.joshka.net/cell-borders/chart.png)
+
+    And the fallback, which has to drop the gridlines:
+
+    [![The same braille graph without gridlines](https://www.joshka.net/cell-borders/chart-box.png)](https://www.joshka.net/cell-borders/chart-box.png)
+
+    ### In motion
+
+    Here's the tiling panes demo moving panes around, opening menus and the about dialog:
+
+    [![An animation of panes being dragged, split and retiled, with a menu and dialog](https://www.joshka.net/cell-borders/tour.webp)](https://www.joshka.net/cell-borders/tour.webp)
+
+    Partway through, it turns on a checkerboard of the cells, which shows how everything lines up with the grid. Toggle it here:
+
+    [![Two panes drawn with cell borders](grid-off.png)](grid-off.png)[![The same panes with alternate cells shaded, showing the borders on cell edges](grid-on.png)](grid-on.png)
+
+    ## What box characters can't do
+
+    The root of it is that box-drawing characters are text. Each line is a glyph that takes up a whole cell, and pretty much everything annoying about them falls out of that.
+
+    Space is the obvious one. On my 16" laptop with a font I can actually read, the terminal is something like 200x50 (your prefs will move that around a bit). Columns are mostly fine at that size. Rows aren't. A layout with a couple of levels of nested panels can easily spend 6 or 8 of those 50 rows on nothing but lines. That's a lot of screen to give up for decoration.
+
+    You also can't put a line between two cells that both have something in them. So there's no way to underline a text field right under its text, or to outline a button, without adding padding around it. Rounded corners sort of work, except the corner glyph has one background color, and when the panel's background is different from what's around it you get a little square of the wrong color in each corner. And the line itself is whatever the font decides it is, weight and position included.
+
+    Then there's copy and paste. Select some text inside a box and you get the box too. Everyone who's pasted from a TUI into Slack knows the little `│` cleanup dance. Sometimes you do want the box (pasting a table into a chat, say), but mostly it's junk. Cell borders aren't text, so they never get copied, which cuts both ways.
+
+    ## How it works
+
+    A cell border is a cell attribute, like a background color. Each cell can carry up to twelve line segments: the two halves of each of its four edges, and four arms from its center. Each segment has its own color, width, placement and style, and the terminal draws them over the cell grid. Borders are stored in the cells, so they scroll, erase, insert and reflow with the text. What happens on erase or scroll already has an answer, the same one as for colors.
+
+    The edges are split into halves so borders line up with quadrant block characters (`▖▗▘▝` and friends). That makes it easy to draw a shape that's a half cell in from the grid and still put a neat border around it. Yes, that still uses a character for the fill, and there might be a better way to do that part. One problem at a time.
+
+    The same idea could stretch to sextants and octants, or to quarter and eighth widths, if designs need them.
+
+    ### Styles and joints
+
+    [![The gallery script showing solid, double, dashed and dotted lines, rounded corners, forks and junctions](https://www.joshka.net/cell-bo
+  error:
+  fetched_at: '2026-11-13T14:05:30Z'
+archived_at: '2026-11-13T14:05:30Z'

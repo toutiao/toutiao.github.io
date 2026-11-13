@@ -1,0 +1,141 @@
+---
+post:
+  id: lo-8kdcdd
+  source: lobsters
+  title: Let’s Write a PostScript Interpreter
+  url: https://beyondloom.com/blog/postscript.html
+  hn_url: https://lobste.rs/s/8kdcdd
+  score: 18
+  author: janerik
+  posted_at: '2026-11-12T22:17:32Z'
+  fetched_at: '2026-11-13T14:05:30Z'
+  article_url: https://beyondloom.com/blog/postscript.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T14:05:32Z'
+  raw_comment_count: 2
+  tags:
+  - concatenative
+comments:
+- id: lo-khwlwu
+  parent_id: '0'
+  author: tentacloids
+  text: |-
+    human-scale: languages which a single user could reasonably write from scratch on some readily-available computational substrate.
+
+    Yes! A thousand times yes. I am trying to do this. I think a promising antidote to the "taught helplessness"[0] that modern tech has instilled in most of its users is to show just how easy it can be to take control of your own computer for yourself (with a community of mutual teaching and learning of course, like this post).
+    Also nobody told me PS is this easy. Damn it, I didn't need more stuff to try out!
+    [0] I just made this up but I reckon it fits
+  score: 2
+  posted_at: '2026-11-13T09:42:07Z'
+- id: lo-j4jtdj
+  parent_id: '0'
+  author: rbca
+  text: it's certainly nonstandard but i really enjoy the way this person writes javascript.
+    not a character is wasted; it's very refreshing to read
+  score: 1
+  posted_at: '2026-11-13T12:31:45Z'
+article:
+  url: https://beyondloom.com/blog/postscript.html
+  title:
+  fetch_status: success
+  content: "# Let’s Write a PostScript Interpreter\n\nI think the most trustworthy
+    programming languages are those which are _human-scale_: languages which a single
+    user could reasonably write from scratch on some readily-available computational
+    substrate. Knowing how to make your own tools provides a satisfying [feeling of
+    power](https://en.wikipedia.org/wiki/The_Feeling_of_Power).\n\nToday I’d like
+    to take you on a brisk journey through the process of implementing an interesting
+    subset of the [PostScript](https://en.wikipedia.org/wiki/PostScript) programming
+    language. We will ignore or simplify many features of the language, and we will
+    elide most error-handling for simplicity, but every PostScript example we discuss
+    will be a well-formed PostScript program which has the same behavior in our toy
+    subset and a standard PostScript interpreter like [Ghostscript](https://en.wikipedia.org/wiki/Ghostscript).\n\n##
+    The Elements of PostScript\n\nPostScript is primarily designed for describing
+    printed documents: it has a rich vocabulary of features for creating and manipulating
+    raster and vector graphics. For the purposes of this article I will narrowly focus
+    on its mechanics as a general-purpose programming language.\n\nPostScript programs
+    are composed of a series of whitespace-delimited tokens, plus a few special characters
+    (`% / ( ) < > [] { }`) which immediately terminate the preceding token and begin
+    a new one. The `%` character begins a line-comment. The `/` character can prefix
+    a _literal name_, which we’ll discuss in more detail momentarily. The `( )` and
+    `< >` characters enclose PostScript _strings_, which we will omit from our interpreter
+    for simplicity. The `[`, `]`, `{` and `}` characters are used to enclose PostScript
+    _arrays_ and _procedures_, respectively, but are ordinary self-delimiting tokens.
+    Given a PostScript program fragment:\n\n    % This is a line comment\n    /double
+    {2 mul} def\n    \n    3 double\n\nThe tokens are:\n\n    ['/double','{','2','mul','}','def','3','double']\n\nThe
+    PostScript execution model centers around several _stacks_: chiefly, an _operand
+    stack_ which is used to pass arguments between operators and a _dictionary stack_
+    which is used to associate names with values.\n\nThe above program fragment is
+    executed as follows:\n\n1. The name `/double` begins with a `/` prefix, so it
+    is pushed onto the operand stack.\n2. The token `{` collects the tokens up to
+    the matching `}` into a _procedure_ without executing them, and the resulting
+    procedure `{2 mul}` is pushed onto the operand stack.\n3. The name `def` does
+    not begin with a `/` prefix, so it is looked up in the dictionary stack, starting
+    with the topmost dictionary and searching deeper dictionaries until a match is
+    found. This name is associated with an _operator_- a primitive provided by the
+    language. The `def` operator pops a procedure from the operand stack (`{2 mul}`)
+    as well as a name (`/double`) and associates the name with the procedure in the
+    topmost dictionary on the dictionary stack.\n4. The number `3` is pushed onto
+    the operand stack.\n5. The name `double` does not begin with a `/` prefix, so
+    it is looked up in the dictionary stack. This retrieves the procedure we previously
+    associated with the name. When a procedure is retrieved from the dictionary stack
+    in this manner, its contents (`2 mul`) are executed in sequence.\n6. The number
+    `2` is pushed onto the operand stack.\n7. The name `mul` does not begin with a
+    `/` prefix, so it is looked up in the dictionary stack. The `mul` operator pops
+    two values from the operand stack- `2` and `3`- multiplies them, and then pushes
+    the result- `6`- onto the operand stack.\n\nIt’s also worth taking a moment to
+    touch on PostScript _arrays_. The `[` operator pushes a special value called `mark`
+    onto the operand stack, and the `]` operator pops all of the values of the operand
+    stack down to the topmost `mark` and builds an array from them:\n\n    [] % an
+    empty array\n    [1 2] % an array of two values\n    [[1 2][3 4]] % an array of
+    two values, each of which is an array\n    [2 3 add] % equivalent to [5]\n\nWe’ll
+    discuss programming in PostScript in more detail later, but this is enough to
+    get building.\n\n## Code and Data\n\nOur PostScript interpreter will be written
+    in a very concise style of JavaScript that is influenced by the philosophy of
+    [Forth](https://en.wikipedia.org/wiki/Forth_(programming_language)), an influential
+    ancestor of PostScript:\n\n- We will _factor_ our program apart into many short
+    routines, generally single lines.\n- We will prefer routines which are “pure”
+    functions without side effects, but we will use global state when it simplifies
+    our code.\n- Each routine should express a single idea, and contain no more than
+    one control structure.\n\nHere are a few routines which illustrate this style:\n\n
+    \   last =x=\\>x[x.length-1]\n    iota =x=\\>Array.from(Array(x)).map((\\_,i)=\\>i)\n
+    \   mod =(x,y)=\\>x-y*Math.floor(x/y)\n\nIf you’re finding yourself struggling
+    to “skim” code in this style, try to slow down and read each definition carefully,
+    character-by-character. You may also find it useful to experiment with each definition
+    in your browser’s JavaScript console as you go along.\n\nThe first step in writing
+    any interpreter is determining how we’ll represent data, in this case describing
+    PostScript datatypes in terms of JavaScript datatypes:\n\n| PostScript | Example
+    | JavaScript | Example |\n| --- | --- | --- | --- |\n| number | `37` | Number
+    | `37` |\n| boolean | `true` | Boolean | `true` |\n| name | `a` | String | `\"a\"`
+    |\n| literal | `/a` | String | `\"/a\"` |\n| dictionary | `<</a 11>>` | Map |
+    `new Map([['/a',11]])` |\n| array | `[11 22]` | Array | `[11,22]` |\n| procedure
+    | `{1 add}` | Object-wrapped Array | `{t:'proc',v:[1,'add']}` |\n| operator |
+    `add` | Function | `(x,y)=>x+y` |\n| mark | `mark` | Singleton Object | `MARK`
+    |\n\nUsing primitive JavaScript values to represent most of these types will be
+    particularly helpful for writing the definitions of all the operators.\n\nHere
+    are a set of definitions for constructing, accessing, and identifying various
+    PostScript values:\n\n    MARK= {}\n    proc =x=\\>({t:'proc',v:x})\n    procval
+    =x=\\>x.visproc =x=\\>x&&x.t=='proc'isarray =x=\\>Array.isArray(x)\n    isfunc
+    =x=\\>'function'==typeofx\n    isname =x=\\>'string'==typeofx&&`/`!=x[0]\n    litval
+    =x=\\>x.slice('/'==x[0])\n\nNext, we need to translate PostScript syntax into
+    the above data representations. We can use a JavaScript RegExp to split an input
+    program into a sequence of tokens- line-comments (which can be discarded), special
+    delimiters (`[]{}`), names, and numbers (which can be coerced into JavaScript
+    numbers). While it is possible to implement `{` and `}` as PostScript operators,
+    it is simpler for our purposes to cluster the tokens of procedures together as
+    we parse the program:\n\n    parse =x=\\>{\n     constt=x.trim().match(/(%[^\\n]\\*\\n)|(\\[|\\]|\\{|\\})|(\\/?[^\\[\\]\\{\\}\\/%
+    \\n]+)|(-?\\d+)/gm).filter(x=\\>x[0]!='%')\n     constnext=()=>t.shift()\n     constpeek=()=>t[0]\n
+    \    constisnum=x=>+x==+x\n     constrec=()=>peek()=='{'?(next(),seq()):isnum(peek())?+next():next()\n
+    \    constseq=()=>{constr=[];while(peek()&&peek()!='}')r.push(rec());returnnext(),proc(r)}\n
+    \    returnseq()\n    }\n\nGiven a PostScript program like\n\n    [10 20 30] {2
+    mul} forall\n\nThe `parse(x)` routine will break it down into\n\n    {t:'proc',v:['[',10,20,30,']',
+    {t:'proc',v:[2,'mul']},'forall']}\n\n## The Interpreter\n\nThe PostScript operand
+    stack and dictionary stack can be represented as simple JavaScript global arrays-
+    `o` and `d`, respectively:\n\n    o=[]\n    d=[]\n\nSome simple routines for manipulating
+    these stacks:\n\n    push =x=\\>o.push(x)\n    pop =x=\\>o.pop()\n    popn =x=\\>{constr=[];while(x-->0)r.unshift(pop());returnr}\n
+    \   popmark =()=\\>{constr=[];while(o.length&&MARK!=last(o))r.unshift(pop());pop();returnr}\n
+    \   load =x=\\>{constv=litval(x);returnd.findLast(s=\\>s.has(v)).get(v)}\n\nExecuting
+    pre-tokenized PostScript programs is very simple: we execute each token in sequence.
+    Names are looked up in the dictionary stack and the correspondi"
+  error:
+  fetched_at: '2026-11-13T14:05:32Z'
+archived_at: '2026-11-13T14:05:32Z'
