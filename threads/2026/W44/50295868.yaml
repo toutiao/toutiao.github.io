@@ -1,0 +1,229 @@
+---
+post:
+  id: '50295868'
+  title: 'Sylphide OS: a general-purpose OS for microcontroller-based computers'
+  url: https://projects.freehackers.org/sylphide-os/
+  hn_url: https://news.ycombinator.com/item?id=50295868
+  score: 76
+  author: iamnothere
+  posted_at: '2026-10-29T20:59:55Z'
+  fetched_at: '2026-11-13T05:32:09Z'
+  raw_comment_count: 23
+comments:
+- id: '50296551'
+  parent_id: '50295868'
+  author: irdc
+  text: 'If it&#x27;s running on MMU-less systems, I&#x27;d be interested in how it
+    loads multiple programs into memory: does it need to relocate each program binary?
+    If so, doesn&#x27;t that preclude using execute-in-place (XIP)?'
+  score: 0
+  posted_at: '2026-10-29T21:45:51Z'
+- id: '50297262'
+  parent_id: '50296551'
+  author: Arelius
+  text: Generally, running in a MMU without static task config would require relocatable
+    binaries. I&#x27;m not sure why it&#x27;d preclude execute-in-place. As a relocatable
+    binary should be executable from generally any address space. However I suspect
+    that hardware without an MMU is not super likely to be able to support XIP.<p>It
+    is based on FreeRTOS, so it should be fairly well documented.
+  score: 0
+  posted_at: '2026-10-29T22:41:20Z'
+- id: '50297560'
+  parent_id: '50295868'
+  author: NooneAtAll5
+  text: |-
+    &gt; On top of that, Sylphide OS adds:<p>&gt;    drivers for mouse, keyboard, display, storage and network<p>and couple lines later<p>&gt; What you don&#x27;t have yet, but definitely planned:<p>&gt;    storage (microsd, usb)
+    &gt;    network (ethernet, wifi)<p>I&#x27;m not gonna be angry at false advertising, but OS attempts only become appropriate to discuss once you made drivers and actually ran stuff on physical hardware<p>Before that point it&#x27;s just one of the many dozens and dozens other half-efforted attempts at OS that have been done over and over to death by now
+  score: 0
+  posted_at: '2026-10-29T23:10:30Z'
+- id: '50297565'
+  parent_id: '50297262'
+  author: dvdkon
+  text: "&gt; I suspect that hardware without an MMU is not super likely to be able
+    to support XIP.<p>This seems strange to me. Don&#x27;t <i>most</i> microcontrollers
+    support executing directly from flash? Some even can&#x27;t execute from RAM.<p>Though
+    I agree with the main point, you can compile code as &quot;PIC&quot; - position
+    independent code, and not bother with (ELF) relocations except for linking."
+  score: 0
+  posted_at: '2026-10-29T23:10:46Z'
+- id: '50297935'
+  parent_id: '50297560'
+  author: iamnothere
+  text: Well, given that it’s built on FreeRTOS, this stuff should be fairly cheap
+    to implement. I think you’re being a little overly critical for an early stage
+    project that fills an interesting niche (GUI OS for MCUs).
+  score: 0
+  posted_at: '2026-10-29T23:52:55Z'
+- id: '50298045'
+  parent_id: '50295868'
+  author: Rochus
+  text: "&gt; Olimex esp32-p4-pc, the flagship product: new, powerful<p>That&#x27;s
+    a very cool board, but pretty tricky. Great idea to run an old Mac OS on it. I
+    try on and off to port the Oberon System 3 to this board since I received it in
+    February. The display already works pretty good, but still a lot of road blocks."
+  score: 0
+  posted_at: '2026-10-30T00:05:25Z'
+- id: '50298124'
+  parent_id: '50298045'
+  author: iamnothere
+  text: Oberon would be a great fit for this board, your efforts are appreciated.<p>It’s
+    amazing how these inexpensive “MCUs” (not even sure you can call them that) are
+    overtaking old PCs now.
+  score: 0
+  posted_at: '2026-10-30T00:10:24Z'
+- id: '50298293'
+  parent_id: '50298124'
+  author: Rochus
+  text: Thanks, I hope I&#x27;ll be able to get it done in a timely manner. Currently
+    I have to decompose the statically linked inner core because it doesn&#x27;t fit
+    into the dedicated memory slot anymore. Did you also have issues with the ttyACM0
+    connection which starts to drop regularly under certain conditions?<p>It&#x27;s
+    indeed amazing that these MCUs essentially correspond to or even exceed the performance
+    of the original Ceres systems in the nineties. The Oberon System and also the
+    later AOS&#x2F;Bluebottle multi core system are particularly suited for today&#x27;s
+    MCUs because they don&#x27;t assume an MMU.
+  score: 0
+  posted_at: '2026-10-30T00:27:35Z'
+- id: '50298321'
+  parent_id: '50298293'
+  author: iamnothere
+  text: Oh, I’m not the developer of this, I just follow these sorts of projects because
+    I’m interested in alternative OSes and particularly OSes that run under constrained
+    environments. I haven’t personally tested it. There’s several of these under development
+    now, as well as many emulators; the ESP CYD (and clones) seems to be a favored
+    target.
+  score: 0
+  posted_at: '2026-10-30T00:31:21Z'
+- id: '50298481'
+  parent_id: '50297565'
+  author: ranger_danger
+  text: "&gt; Don&#x27;t most microcontrollers support executing directly from flash?<p>Yes...
+    I presume they meant XIP for multiple programs at once, since you&#x27;d need
+    an MMU for that."
+  score: 0
+  posted_at: '2026-10-30T00:48:00Z'
+- id: '50298547'
+  parent_id: '50298481'
+  author: actionfromafar
+  text: Or the program use relative addressing.
+  score: 0
+  posted_at: '2026-10-30T00:54:53Z'
+- id: '50298945'
+  parent_id: '50296551'
+  author: topspin
+  text: "&quot;COM&quot; programs as seen in MS DOS and earlier CP&#x2F;M systems
+    contain only relative addresses, and can run from any &quot;segment&quot; of RAM,
+    as the addresses are relative to the value of a segment register.  This was used
+    to load &quot;background&quot; services, typically servicing hardware devices.<p>MCUs
+    with MMUs are starting to appear, such as the ESP32-S31."
+  score: 0
+  posted_at: '2026-10-30T01:55:40Z'
+- id: '50299017'
+  parent_id: '50295868'
+  author: karlkloss
+  text: 'On one hand: Cool!<p>On the other hand: I have a lot of old hardware in my
+    &#x27;too good to go&#x27; garbage bin that can run a full fledged Linux, so what.'
+  score: 0
+  posted_at: '2026-10-30T02:07:26Z'
+- id: '50300242'
+  parent_id: '50297935'
+  author: skew-aberration
+  text: It&#x27;s so platform dependent though, for many FreeRTOS targets I think
+    you&#x27;re just gonna be integrating against a vendor specific stack
+  score: 0
+  posted_at: '2026-10-30T05:41:00Z'
+- id: '50300335'
+  parent_id: '50298481'
+  author: dmitrygr
+  text: "&gt; since you&#x27;d need an MMU for that.<p>Or PIC code... PalmOS 5 &amp;
+    6 allowed multiple programs in same memory and they were simply compiled pic.
+    MMU was not used<p>Some architectures (ARM, RISCV, aarch64) are well suited for
+    this kind of code. Others are extremely poorly suited (x86, MIPS), but all CAN
+    do it"
+  score: 0
+  posted_at: '2026-10-30T05:57:25Z'
+- id: '50300970'
+  parent_id: '50298045'
+  author: exe34
+  text: Hi, Could you say a few words what makes this board tricky? I&#x27;ve wanted
+    to get one for a similar reason as the OP, although I&#x27;m thinking a scheme-like
+    VM with GUI.
+  score: 0
+  posted_at: '2026-10-30T07:58:17Z'
+- id: '50301831'
+  parent_id: '50300970'
+  author: Rochus
+  text: There were dozens of pretty complex challenges, too many to describe here.
+    So just a few examples. First of all, I&#x27;m fully bare-metal, with no ESP-IDF
+    (though I use it for studying). A major annoyance is the USB-JTAG flapping which
+    is the same on both board copies and different hosts; so debugging is even more
+    difficult; partly worked around by logging via additional TTL UART connection.
+    It&#x27;s worse right after power-on and after EN pulses, then stabilizes for
+    ~tens of minutes; could be thermal&#x2F;supply settling, or simply the burst of
+    re-enumerations any reset causes. Then the LT8912B I2C is shared with HDMI DDC;
+    a lot of time went to find the right drive strength so the LT inits with the cable
+    is in. Also a couple of rev v1.0 silicon issues, e.g two-step cache writeback,
+    dead GPSPI clock, etc. For the display, the Olimex demo was very helpful; dumping
+    all DSI&#x2F;bridge&#x2F;GDMA&#x2F;clock registers over JTAG became an important
+    debugging tool. Now the SD card and display work more or less. Right now, I&#x27;m
+    really struggling with the USB keyboard, which is a low-speed device behind the
+    onboard FE1.1s hub; both ways of reaching it fail identically with a bare chhltd
+    and no cause bit.
+  score: 0
+  posted_at: '2026-10-30T10:02:42Z'
+- id: '50302721'
+  parent_id: '50300242'
+  author: iamnothere
+  text: Fair, but that’s still probably easier than building for all the various targets
+    from scratch. And people said ARM SBC boards were a mess, lol! (They were&#x2F;are
+    but the ESP “platform” is even less coherent. Thank you to the people doing the
+    heavy lifting here.)
+  score: 0
+  posted_at: '2026-10-30T11:54:49Z'
+- id: '50305621'
+  parent_id: '50297935'
+  author: NooneAtAll5
+  text: "&gt; you’re being a little overly critical for an early stage project<p>no,
+    I&#x27;m exactly critical *because* it is early-stage<p>&quot;early-stage OSes&quot;
+    are dime a dozen, just as ideas without code they are worth nothing."
+  score: 0
+  posted_at: '2026-10-30T15:47:13Z'
+- id: '50310713'
+  parent_id: '50301831'
+  author: exe34
+  text: Thanks! I too am going baremetal, as I prefer 5 second builds to 45 minutes
+    - but yes the board sounds like a bit of a pain...
+  score: 0
+  posted_at: '2026-10-30T22:01:17Z'
+- id: '50311000'
+  parent_id: '50310713'
+  author: Rochus
+  text: And that was only the summary of a selection ;-)<p>I&#x27;m using my OP2 Oberon
+    compiler version and also my Micron compiler, and both indeed just need a few
+    seconds for the build of the whole Oberon or Micron System 3 and only a few megabytes
+    of source code. Version 6 of IDF didn&#x27;t even work on my host.
+  score: 0
+  posted_at: '2026-10-30T22:34:06Z'
+- id: '50317905'
+  parent_id: '50311000'
+  author: exe34
+  text: 'Claude managed to get idf v6 to work in a docker container, but I&#x27;ve
+    ripped that out now. would you say that most of the issues you had with the p4
+    was the board, rather than the underlying cpu? the one I have in mind is more
+    this sort of thing: <a href="https:&#x2F;&#x2F;www.aliexpress.com&#x2F;item&#x2F;1005009278783008.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.aliexpress.com&#x2F;item&#x2F;1005009278783008.html</a>
+    (as opposed to a SBC like the rpi).'
+  score: 0
+  posted_at: '2026-10-31T17:03:36Z'
+- id: '50317965'
+  parent_id: '50317905'
+  author: Rochus
+  text: "&gt; would you say that most of the issues you had with the p4 was the board<p>Both.
+    The USB-JTAG flapping is probably a board issue, as is the HDMI integration; and
+    they use the 1.0 version of the P4 which also has its issues. Your link doesn&#x27;t
+    work from my location, and I don&#x27;t have experience with other P4 versions
+    so far."
+  score: 0
+  posted_at: '2026-10-31T17:10:37Z'
+article:
+archived_at: '2026-11-13T05:32:19Z'

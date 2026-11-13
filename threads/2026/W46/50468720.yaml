@@ -1,0 +1,390 @@
+---
+post:
+  id: '50468720'
+  title: Fitting Four 32 GB Resizable Bars Behind a PCIe Switch on Linux
+  url: https://doug.sh/posts/gpu-bars-behind-a-pcie-switch/
+  hn_url: https://news.ycombinator.com/item?id=50468720
+  score: 82
+  author: ''
+  posted_at: '2026-11-12T15:14:52Z'
+  fetched_at: '2026-11-13T05:32:01Z'
+  article_url: https://doug.sh/posts/gpu-bars-behind-a-pcie-switch/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-13T05:32:01Z'
+  raw_comment_count: 32
+comments:
+- id: '50468779'
+  parent_id: '50468720'
+  author: dougcalobrisi
+  text: This is my post. Basically, I needed P2P between four R9700s for tensor parallel
+    serving, which means a 32 GB BAR on each card. With all six GPUs in, the BIOS
+    couldn&#x27;t map them, and Linux sized the switch&#x27;s window too small, so
+    only two cards got their BARs. The module in the post works around that. With
+    P2P off, prefill was about half as fast.
+  score: 0
+  posted_at: '2026-11-12T15:17:44Z'
+- id: '50469602'
+  parent_id: '50468720'
+  author: bombela
+  text: The word or acronym BAR is mentioned 34 times but never defined.
+  score: 0
+  posted_at: '2026-11-12T16:03:30Z'
+- id: '50469652'
+  parent_id: '50468720'
+  author: kkaske
+  text: The bottleneck with AI and hardware is really pushing things.<p>Even with
+    six capable GPUs that have plenty of VRAM with enough PCIe bandwidth, you then
+    discover that memory address allocation is preventing the hardware from doing
+    what it&#x27;s physically capable of.
+  score: 0
+  posted_at: '2026-11-12T16:06:26Z'
+- id: '50469759'
+  parent_id: '50469602'
+  author: dougcalobrisi
+  text: thanks, fixed
+  score: 0
+  posted_at: '2026-11-12T16:13:00Z'
+- id: '50470378'
+  parent_id: '50468720'
+  author: jeffbee
+  text: 'It feels ridiculous that a person has to go to these kind of lengths to do
+    what is in the end a trivial thing: assigning little pieces of a gigantic virtual
+    address space to specific peripherals.<p>The only thing that&#x27;s complex here
+    is having to influence a bunch of hidden software through three layers of indirection.
+    The software is all standing in the way of a person just writing some values to
+    registers.'
+  score: 0
+  posted_at: '2026-11-12T16:54:49Z'
+- id: '50470470'
+  parent_id: '50468779'
+  author: WarOnPrivacy
+  text: 'sidebar: Why don&#x27;t your posts include pics of your rig?<p>Asking because
+    I really want to see your kit.'
+  score: 0
+  posted_at: '2026-11-12T17:01:22Z'
+- id: '50470487'
+  parent_id: '50468720'
+  author: InsidiousWombat
+  text: Most CPUs can address 48 bits of physical memory (hundreds of terabytes),
+    why is that even a problem ? Is it just some hardware limitation somewhere else
+    or badly written firmware ?
+  score: 0
+  posted_at: '2026-11-12T17:02:40Z'
+- id: '50470654'
+  parent_id: '50470470'
+  author: iririririr
+  text: because the llm who wrote and illustrated it doesn&#x27;t have a camera
+  score: 0
+  posted_at: '2026-11-12T17:11:46Z'
+- id: '50470653'
+  parent_id: '50470487'
+  author: dougcalobrisi
+  text: Yeah, it&#x27;s the firmware. It&#x27;s an AM4 board, and the BIOS only gives
+    PCI devices the space from the top of RAM up to 512 GB. Each 32 GB BAR has to
+    start on a 32 GB boundary, and its small doorbell BAR spills into the next slot,
+    so each card needs 64 GB. Six won&#x27;t fit. So I turn Resizable BAR off in the
+    BIOS and resize the four R9700s from Linux, where I hit the kernel bug.
+  score: 0
+  posted_at: '2026-11-12T17:11:46Z'
+- id: '50470676'
+  parent_id: '50470470'
+  author: dougcalobrisi
+  text: I&#x27;ll get a post together with some photos of the rat&#x27;s nest soon.
+    It&#x27;s definitely not fancy. :-)<p>I think a lot of folks use open air aluminum
+    extrusion frames that were once meant for mining.
+  score: 0
+  posted_at: '2026-11-12T17:13:42Z'
+- id: '50470755'
+  parent_id: '50470378'
+  author: ethersteeds
+  text: Another important benefit is that transfers between cards flow across the
+    switch and bypass the CPU, that ain&#x27;t nothing. At least for the AMD cards.
+    Nvidia firmware refuses nach
+  score: 0
+  posted_at: '2026-11-12T17:19:13Z'
+- id: '50470851'
+  parent_id: '50470653'
+  author: InsidiousWombat
+  text: "&quot;640kB ought to be enough for everyone&quot; moment.<p>I wonder if AI
+    could RE the BIOS enough to fix that limit"
+  score: 0
+  posted_at: '2026-11-12T17:25:13Z'
+- id: '50471024'
+  parent_id: '50470676'
+  author: tucnak
+  text: You into liquid cooling?
+  score: 0
+  posted_at: '2026-11-12T17:34:46Z'
+- id: '50471062'
+  parent_id: '50468720'
+  author: zir_blazer
+  text: |-
+    These kind of things should be fun to test in Coreboot. When Dasharo was released for the MSI PRO Z690-A DDR4 more than four years ago, I had issues with two Radeon 5600XT installed that was fixed after developer tuned some MMIO related parameters: <a href="https:&#x2F;&#x2F;github.com&#x2F;Dasharo&#x2F;dasharo-issues&#x2F;issues&#x2F;245" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;Dasharo&#x2F;dasharo-issues&#x2F;issues&#x2F;245</a>
+    How many PCIe Switches you could chain and how many cards with absurd MMIO requeriments you can get working would be an interesing experiment.<p>In the last decade or so I have seen plenty of Firmware MMIO related issues. I remember certain SR-IOV supporting NICs (Usually Intel ones like i350 and other enterprise parts) not being able to reserve enough MMIO to create all the supported SR-IOV Virtual Functions in consumer Motherboards, in many cases you could get SR-IOV working but were limited to create like 4 VFs even if hardware supported 16 because that is what you could fit. This was essentially all a Firmware issue, not Hardware, but few people has the required skills to do any BIOS modding to fix rather convoluted things like MMIO allocation. Basically, you&#x27;re trying to workaround Firmware issues elsewhere.
+  score: 0
+  posted_at: '2026-11-12T17:36:53Z'
+- id: '50471162'
+  parent_id: '50470487'
+  author: wtallis
+  text: There was never a concerted effort in the PC ecosystem to force all peripherals
+    and firmware to drop 32-bit compatibility. At some point after a decade or two
+    of x86-64 CPUs, we should have started making GPUs that simply exposed all of
+    their VRAM to be mapped by the host <i>by default</i>, instead of retaining compatibility
+    hacks like only mapping 256MB by default. Resizable BARs should have happened
+    at least a decade earlier, and should have been phased out by now in favor of
+    just always mapping all the VRAM.
+  score: 0
+  posted_at: '2026-11-12T17:43:54Z'
+- id: '50471285'
+  parent_id: '50468779'
+  author: jacquesm
+  text: 'Interesting. This sort of thing is highly bios specific, I&#x27;m running
+    240G of VRAM on a single box using a very simple config:<p>GRUB_CMDLINE_LINUX_DEFAULT=&quot;pcie_aspm=off
+    amd_iommu=on iommu=pt pci=realloc,firmware  noapic nomodeset  pci=nommconf gpu_unlock.targets=0000:66:00.0,0000:69:00.0,0000:6d:00.0,0000:6e:00.0&quot;<p>The
+    gpu_unlock is a bit hacky (but I have many GPUs that the unlock won&#x27;t work
+    on and that will cause issues), and there are two BIOS settings that matter: above
+    4GB decode enabled and resizeable bar enabled. That&#x27;s it.'
+  score: 0
+  posted_at: '2026-11-12T17:52:12Z'
+- id: '50471320'
+  parent_id: '50470653'
+  author: jacquesm
+  text: The problem is that with P2P <i>every</i> card will map <i>every other card</i>
+    into its address space. So you&#x27;re not mapping 128G but likely 512! It depends
+    a bit on what software you use, some software is smart about this and uses a smaller
+    sliding window if it can&#x27;t use all of it at once and some software is really
+    rigid.
+  score: 0
+  posted_at: '2026-11-12T17:54:28Z'
+- id: '50471415'
+  parent_id: '50468720'
+  author: kodoman
+  text: What are you running on this? I have a very similar set up to you, a skylake
+    beast 32GiB of DDR4 goodness and a monster 8GB RX570.<p>All jokes aside I would
+    love to know more about your set up and what you do with it and what speeds you
+    get token wise.
+  score: 0
+  posted_at: '2026-11-12T18:00:44Z'
+- id: '50471985'
+  parent_id: '50470378'
+  author: luckystarr
+  text: Feels nostalgic. Kind of like Linux in the 90s. :)
+  score: 0
+  posted_at: '2026-11-12T18:35:31Z'
+- id: '50472283'
+  parent_id: '50468779'
+  author: SillyUsername
+  text: Odd. I&#x27;m using 7 GPUs (8 if you include the onboard AST2500) and haven&#x27;t
+    had this issue, but these are directly connected to the mainboard<p>I did disable
+    CSM which used base memory resources needed by REBAR, but aside from that I&#x27;ve
+    6x Tesla P4s, 1x 750TI, and the AST2500 all happily working together.<p>My board
+    is a Cloud Star C612 (6x DDR4 variant), 2 PCIE ports bifurcated (so 4 GPUs in
+    total, the others sit on dedicated ports), with a Xeon E5 2696v3 and TBU.
+  score: 0
+  posted_at: '2026-11-12T18:53:57Z'
+- id: '50472789'
+  parent_id: '50472283'
+  author: zir_blazer
+  text: That is because you are using a server Xeon E5 Motherboard at a time when
+    Teslas and Large BARs were becoming a thing whereas he is using a consumer ASUS
+    TUF GAMING X570-PLUS with a PCIe Switch hooked in that makes the MMIO resources
+    from a single PCIe Port suddently becoming gigantic. Unlikely to have ever been
+    tweaked, much less tested, by vendor for that use case.
+  score: 0
+  posted_at: '2026-11-12T19:25:00Z'
+- id: '50472852'
+  parent_id: '50472789'
+  author: azalemeth
+  text: I am literally also using an X570 ASUS TUF motherboard and run into resize
+    BAR issues with Linux able to deal with and the bios -- which seems RGB fan optimised
+    rather than memory bandwidth optimised -- unable to directly help.<p>Cool!
+  score: 0
+  posted_at: '2026-11-12T19:28:21Z'
+- id: '50472990'
+  parent_id: '50470676'
+  author: sandworm101
+  text: "&gt;&gt; I think a lot of folks use open air aluminum extrusion frames that
+    were once meant for mining.<p>That is what i am using. It works well enough, and
+    is much much quieter than the server rackmount case I started with, but mining
+    rigs do not fit AI very well.  The full PCI risers need more space than the USB-PCI
+    things used in mining rigs. So, anyone reading this, make sure to buy a frame
+    that is a couple inches taller than the standard squat mining rigs.<p>Before anyone
+    asks, my rig is 3x5060ti(16gb) for 48GB VRAM, then 64GB DDR4 and a 1000w power
+    supply.<p>I alternate between Ollama for LLMs and ComfyUI for image&#x2F;video
+    creation."
+  score: 0
+  posted_at: '2026-11-12T19:37:22Z'
+- id: '50474678'
+  parent_id: '50471162'
+  author: ChocolateGod
+  text: "&gt; we should have started making GPUs that simply exposed all of their
+    VRAM to be mapped by the host by default<p>Believe this is what Intel GPUs already
+    do.<p>&gt; Resizable BARs should have happened at least a decade earlier<p>We
+    have had &quot;Above 4G Decoding&quot; for years."
+  score: 0
+  posted_at: '2026-11-12T21:39:20Z'
+- id: '50476482'
+  parent_id: '50471162'
+  author: InsidiousWombat
+  text: I don&#x27;t think it&#x27;s related to any of the 32 bit limits
+  score: 0
+  posted_at: '2026-11-13T00:27:43Z'
+- id: '50476844'
+  parent_id: '50474678'
+  author: undersuit
+  text: The 256MB BAR is a leftover from AGP GPUs. They are talking about when we
+    moved to PCI Express GPUs.
+  score: 0
+  posted_at: '2026-11-13T01:15:59Z'
+- id: '50477857'
+  parent_id: '50468779'
+  author: MrDrMcCoy
+  text: Thank you for posting this! I&#x27;ve been fighting with this exact issue
+    for days and didn&#x27;t know what it was until now. Going to try your module,
+    and what luck that I also run the PVE kernel!
+  score: 0
+  posted_at: '2026-11-13T03:30:58Z'
+- id: '50478358'
+  parent_id: '50471285'
+  author: MrDrMcCoy
+  text: This affects me and I&#x27;m on an older Epyc server. It had &gt;4G decode
+    and resizable BAR already, and IOMMU disabled (not running any VMs). I&#x27;m
+    hoping that with the aforementioned workaround, I&#x27;ll finally be able to get
+    P2P DMA working for my R9700s.
+  score: 0
+  posted_at: '2026-11-13T04:32:15Z'
+- id: '50478421'
+  parent_id: '50470851'
+  author: MrDrMcCoy
+  text: Please let us know if AI patches to your firmware does anything other than
+    brick your hardware. I&#x27;m willing to let an LLM handle a lot of things, but
+    the firmware I need to boot is not among them.
+  score: 0
+  posted_at: '2026-11-13T04:39:13Z'
+- id: '50478456'
+  parent_id: '50470676'
+  author: MrDrMcCoy
+  text: I&#x27;m also using a mining frame. Not really happy with it because it does
+    very little to secure my GPUs, so they aren&#x27;t properly spaced and are prone
+    to falling. I wish there were decent case options that I could properly rackmount.
+  score: 0
+  posted_at: '2026-11-13T04:44:20Z'
+- id: '50478472'
+  parent_id: '50472990'
+  author: MrDrMcCoy
+  text: MCIO 8i cables are easier to deal with than the big ribbon riser cables, and
+    also help with airflow. I&#x27;m glad I was forced to switch to them to work with
+    my switch, even though they&#x27;re pricey.<p>Also, insert obligatory &quot;friends
+    don&#x27;t let friends use Ollama&quot; speech here.
+  score: 0
+  posted_at: '2026-11-13T04:48:12Z'
+- id: '50478720'
+  parent_id: '50468779'
+  author: spawrks
+  text: |-
+    This is amazing, I&#x27;m curious about two things
+    1.  How does one find motherboards that are compatible with this technique
+    2.  What&#x27;s your take on TinyBox, as they have been pushing and playing with AMD early with limitations of getting things like this running?
+  score: 0
+  posted_at: '2026-11-13T05:25:16Z'
+article:
+  url: https://doug.sh/posts/gpu-bars-behind-a-pcie-switch/
+  title: Fitting Four 32 GB Resizable BARs Behind a PCIe Switch on Linux | doug.sh
+  fetch_status: success
+  content: "# Fitting Four 32 GB Resizable BARs Behind a PCIe Switch on Linux\n\nMy
+    PCIe switch is a Broadcom PEX88096 in the board’s one x16 slot, with four AMD
+    Radeon AI PRO R9700s and the two RTX 3090s from my PCIe splitter post behind it,
+    and the build post has the whole box.\n\nThe switch gives each card eight lanes
+    and lets the cards copy to each other without going through the CPU. AMD’s ROCm
+    calls that peer-to-peer (P2P), and it only turns it on when each card’s whole
+    32 GB is mapped. On Linux, that means a 32 GB Resizable BAR on every card. A base
+    address register, or BAR, maps a range of the CPU’s address space onto a device’s
+    memory. Resizable BAR is the BIOS option that lets a card’s BAR be the full 32
+    GB instead of the default 256 MB.\n\nA few people asked for the module after the
+    build post, so it’s on GitHub as gpu-rebar-layout. It leans on kernel internals
+    that could change in any release, so read the README before you load it. A patch
+    series on the mailing list fixes the sizing bug, but this board will still need
+    the module’s resize and rescan after it lands, with its padding turned off (pad=0).\n\n##
+    Why the BIOS can’t map six 32 GB BARs \U0001F517\n\nWith the 3090s added, the
+    board stopped at the white VGA light on its POST LEDs, because every 32 GB BAR
+    takes up 64 GB of the BIOS’s address space. The address space post has the math.\n\n##
+    Linux 7.0’s bridge window sizing bug: can’t assign; no space \U0001F517\n\nThis
+    board’s BIOS has no per-card Resizable BAR setting. Linux can give large BARs
+    to some cards and leave others small, as long as it does it before any GPU driver
+    loads. With all six cards in and Resizable BAR off, I wanted Linux to do the allocation.
+    The plan was to set each R9700’s BAR size register to 32 GB, remove the CPU port
+    the switch hangs off, and rescan, so the kernel lays out the whole switch again
+    from the new sizes.\n\nEach R9700’s 32 GB BAR is followed by a doorbell BAR, for
+    registers the driver writes to tell the card there’s new work. With Resizable
+    BAR on, the BIOS makes it 256 MB. Linux leaves it at 2 MB.\n\nThe kernel gave
+    the switch a window of about 128.6 GB. With the doorbell placed after each BAR,
+    the way Linux 7.0 lays them out, the four windows span 224 GB (three 64 GB slots
+    plus the last card’s 32 GB and its doorbell). Two R9700s got their BARs, and the
+    rest of the switch got nothing.\n\npci 0000:1b:00.0: bridge window [mem size 0x800200000
+    64bit pref]: can't assign; no space\n\nThat was on 7.0.6. The unpatched v7.4-rc1
+    kernel placed three of the four in the control run that the Linux kernel patch-testing
+    post (coming soon) covers.\n\n0x800200000 is 32 GB plus 2 MB, one card’s window.
+    The kernel had sized the switch’s window as the plain sum of its children: four
+    of those plus the two 3090s’ 288 MB windows.\n\nThe function is pbus_size_mem()
+    in drivers/pci/setup-bus.c. For each child of a bridge it adds the child’s size,
+    or its alignment if that’s bigger, to the total.\n\nr_size = resource_size(r);
+    size += max(r_size, align);\n\nThat leaves no gap when every child’s size is a
+    multiple of its alignment, which is true for ordinary BARs because they’re powers
+    of two. A GPU’s window here is 32 GB plus 2 MB with a 32 GB alignment, so the
+    sum leaves out the gap of almost 32 GB between one card’s doorbell and the next
+    card’s start.\n\nIt’s a known regression. Nikolas Britton reported it on linux-pci
+    in September, and the thread’s title describes my problem almost word for word.\n\nIlpo
+    Järvinen, who maintains this code, has a fix in a 14-patch series of resource
+    placement fixes, at v5 as of November 6 and not merged yet. I tested it and sent
+    a Tested-by to the linux-pci mailing list. With it, all four R9700s get their
+    32 GB.\n\nEven with the fix, this board still needs something to set the BAR sizes
+    and rescan before the GPU drivers load, because amdgpu’s resize at load time can’t
+    grow a window that other cards already sit in.\n\n## A kernel module that pads
+    the BARs \U0001F517\n\nThe kernel already knows how to raise a BAR’s alignment
+    without changing its size, but naming a device in the pci=resource_alignment=
+    boot option uses the resizing mode instead. Asking for 32 GB alignment on an R9700
+    would also grow its small BARs, including the 512 KB register BAR, which can’t
+    be aligned to 32 GB below 4 GB.\n\nThe workaround is an out-of-tree module that
+    runs from the initramfs, the tiny early-boot filesystem the kernel starts from,
+    before any GPU driver loads. For each matching card it sets the BAR size register,
+    then it removes the root port above the switch and rescans.\n\nBetween the scan
+    and the address assignment it walks every bus segment under the switch. It raises
+    each smaller 64-bit prefetchable BAR’s alignment to the size of the largest 64-bit
+    prefetchable BAR on that segment, and does the same for the other memory BARs
+    as a separate group. Each R9700 window becomes exactly 64 GB and each 3090 window
+    exactly 512 MB. Once every window is a multiple of its alignment, the kernel’s
+    allocator does the rest.\n\nAfter a reboot the R9700s sat at 160, 224, 288, and
+    352 GB, the 3090s just above them, and amdgpu reported the whole card.\n\namdgpu
+    0000:14:00.0: [drm] Detected VRAM RAM=32624M, BAR=32768M\n\nWith the ACS redirect
+    setting the box already had (pci=disable_acs_redir= on the R9700 switch ports),
+    P2P between the R9700s ran at 14.0 GB/s for every pair, which is what an eight-lane
+    gen4 link delivers in practice, and all four copying in a ring at once moved 54.7
+    GB/s.\n\n## If your GPUs won’t all get their BARs \U0001F517\n\n- Search the linux-pci
+    mailing list for your can't assign error first. Someone may have already reported
+    it, or even fixed it.\n\n- Resize the BARs and rescan before the GPU drivers load,
+    which means doing it from the initramfs.\n\n- Don’t remove or rescan a GPU that
+    already has its driver loaded. That locked up my box.\n\n- If one card gets its
+    BARs and the next one doesn’t, look at the small BARs next to the big ones.\n\n-
+    Check the cards again a few minutes after boot, in case they go to sleep and don’t
+    wake back up.\n\nI had help with this one. Claude wrote the module with me, ran
+    the commands and tests on the box over SSH, and helped me draft this post. I did
+    the physical work, read all the words, checked the numbers, and rewrote anything
+    that sounded like a chatbot, so the mistakes are mine.\n\n## Sources \U0001F517\n\n-
+    gpu-rebar-layout, the module’s source and README\n\n- PCI: bridge window undersized
+    when child bridge windows are larger than their alignment, the linux-pci thread
+    with the regression report and Ilpo Järvinen’s reply\n\n- PCI: Resource placement
+    algorithm fixes (v5), Ilpo’s series, including “PCI: Fix composite resource sizing”
+    and “PCI: Place resources to either edge of the window”\n\n- drivers/pci/setup-bus.c,
+    pbus_size_mem()\n\n- pci_request_resource_alignment(), the two alignment modes
+    behind pci=resource_alignment=\n\nLeave this empty:\n\nLiked this? Get new posts
+    by email. Unsubscribe any time. Or use RSS.\n\n## More in the Multi-GPU builds
+    series\n\n- PCIe Bifurcation vs PCIe Switches and Retimers for Multi-GPU Builds\n\n-
+    Six GPUs on One x16 Slot: R9700s and RTX 3090s Behind a PCIe Switch\n\n- Counting
+    PCI Address Space for Resizable BAR on Six GPUs\n\n- GPU P2P On vs Off: Tensor
+    Parallel LLM Serving on Four R9700s\n\n- gpu-unlock on Two RTX 3090s: Faster Prefill,
+    No Decode Gain\n\n## Related posts\n\n- Six GPUs on One x16 Slot: R9700s and RTX
+    3090s Behind a PCIe Switch\n\n- GPU P2P On vs Off: Tensor Parallel LLM Serving
+    on Four R9700s\n\n- Counting PCI Address Space for Resizable BAR on Six GPUs"
+  error:
+  fetched_at: '2026-11-13T05:32:01Z'
+archived_at: '2026-11-13T05:32:03Z'

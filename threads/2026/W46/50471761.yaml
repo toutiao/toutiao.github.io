@@ -1,17 +1,17 @@
 ---
 post:
   id: '50471761'
-  title: 22-Year-Old PostgreSQL Bug Turned into Remote Code Execution
+  title: Turning a 22-year-old Postgres type-confusion primitive into RCE
   url: https://mehmetince.net/part-3-6-how-i-ended-up-turning-a-22-year-old-postgresql-type-confusion-primitive-into-rce-cve-2026-6460/
   hn_url: https://news.ycombinator.com/item?id=50471761
-  score: 119
+  score: 160
   author: ''
   posted_at: '2026-11-12T18:22:22Z'
-  fetched_at: '2026-11-12T23:17:55Z'
+  fetched_at: '2026-11-13T05:31:59Z'
   article_url: https://mehmetince.net/part-3-6-how-i-ended-up-turning-a-22-year-old-postgresql-type-confusion-primitive-into-rce-cve-2026-6460/
   article_fetch_status: success
   article_fetched_at: '2026-11-12T23:17:55Z'
-  raw_comment_count: 13
+  raw_comment_count: 29
 comments:
 - id: '50473264'
   parent_id: '50471761'
@@ -111,6 +111,148 @@ comments:
   text: Wow, that is... I would have never believed in such a thing.
   score: 0
   posted_at: '2026-11-12T22:55:58Z'
+- id: '50475939'
+  parent_id: '50471761'
+  author: amluto
+  text: Wow, in my mind this is beyond “code smell” and into code reek!<p>According
+    to the article, Postgres has an internal Datum that might be a pointer or not
+    a pointer. Okay, this is already a bit risky.<p>Datum comes along with a small-integer
+    type id.  That id is stored separately, presumably for efficiency? Maybe you have
+    lots of Datums and one id and you do this for efficiency. Okay, as long as there
+    is a clear story for why the id stays correctly bound to the datum. The “internal”
+    thing where a bogus AST will cause type confusion makes me think the story here
+    isn’t great.<p>But then I learn that the type id is something that the code <i>looks
+    up in a system table in the database</i>.  I’m speechless.  This is the kind of
+    thing that <i>can’t</i> be represented in any safe language because <i>the indication
+    of whether a value is a pointer isn’t even in application memory.</i><p>Eww.  Maybe
+    the AIs can exhaustively enumerate every code path that might get it wrong and
+    rule them all out in a particular release. Maybe there’s even a Lean program that
+    can verify it. But this is still the kind of design that is wrong by construction
+    and is only okay if every single detail avoids the giant foot-cannon.
+  score: 0
+  posted_at: '2026-11-12T23:32:29Z'
+- id: '50476309'
+  parent_id: '50475939'
+  author: koolba
+  text: "&gt; This is the kind of thing that can’t be represented in any safe language
+    because the indication of whether a value is a pointer isn’t even in application
+    memory.<p>Welcome to the wonderful world of high performance low level optimization.<p>Storing
+    type ids everywhere would double the size small fields and quadruple tiny ones
+    like booleans. It’s also not necessary for most persisted data as you know the
+    columns for a table.<p>Smaller representation makes reading and writing faster,
+    and it also makes more data fit in memory."
+  score: 0
+  posted_at: '2026-11-13T00:07:18Z'
+- id: '50476316'
+  parent_id: '50475939'
+  author: mistrial9
+  text: its an abstraction in the software architecture
+  score: 0
+  posted_at: '2026-11-13T00:07:35Z'
+- id: '50476468'
+  parent_id: '50473721'
+  author: InsidiousWombat
+  text: Eh, any sensible one would have DB only accessible to app that uses it
+  score: 0
+  posted_at: '2026-11-13T00:26:23Z'
+- id: '50476829'
+  parent_id: '50471761'
+  author: feralcortex
+  text: |-
+    The age isn&#x27;t the surprising part. What&#x27;s interesting is that the bug lived in a code path
+    that needs specific privileges or an extension to reach, which is exactly the kind of path
+    fuzzing harnesses skip because they target the parser and the wire protocol. Most of these
+    &quot;decades-old&quot; findings sit in reachable-but-unfuzzed middle layers, not in the hot paths.
+  score: 0
+  posted_at: '2026-11-13T01:13:22Z'
+- id: '50476902'
+  parent_id: '50471761'
+  author: nikeee
+  text: So apparently, we got an RCE in every layer of the entire LAMP stack in like
+    a month? Yes, M is not Postgres here, but I guess MySQL&#x2F;MariaDB will follow
+    soon.
+  score: 0
+  posted_at: '2026-11-13T01:24:15Z'
+- id: '50477054'
+  parent_id: '50475045'
+  author: somat
+  text: 'As an interesting thought experiment, if you do something like this and give
+    your end users a full sql connection almost by definition you can&#x27;t have
+    a sql injection vulnerability, the database itself limits what access the clients
+    have.<p>Now as to if this is actually a good idea and the database internal security
+    is robust enough to handle full access, Well I have my doubts, It is a complicated
+    poorly tested interface and results as disclosed by the article in question are
+    probably not surprising.<p>I do run a toy application, where the experiment was
+    to see if I could push all authentication and access control into the database,
+    It is actually sort of neat not needing an auth layer in the application, but
+    attacks like this were half expected.<p>see also: the schemaverse.  A multiplayer
+    space game where the game engine is postgres. <a href="https:&#x2F;&#x2F;github.com&#x2F;Abstrct&#x2F;Schemaverse"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;Abstrct&#x2F;Schemaverse</a>'
+  score: 0
+  posted_at: '2026-11-13T01:48:10Z'
+- id: '50477140'
+  parent_id: '50474019'
+  author: insanitybit
+  text: I&#x27;ve had people tell me that they trust postres RLS as their security
+    boundary and that it&#x27;s fine to expose.
+  score: 0
+  posted_at: '2026-11-13T02:02:27Z'
+- id: '50477179'
+  parent_id: '50475421'
+  author: NooneAtAll5
+  text: who&#x27;s pp?
+  score: 0
+  posted_at: '2026-11-13T02:07:51Z'
+- id: '50477352'
+  parent_id: '50476309'
+  author: amluto
+  text: Great. So you store a type id separately.  But you make that typeid define
+    how to safely read (maybe not interpret, but still read) the data without needing
+    to cross-reference to anything else.<p>I’ve written plenty of high performance
+    code. You can have safety and high performance at the same timetime.
+  score: 0
+  posted_at: '2026-11-13T02:31:03Z'
+- id: '50477686'
+  parent_id: '50476902'
+  author: cwnyth
+  text: This comment is how I found out about Apache&#x27;s RCE.
+  score: 0
+  posted_at: '2026-11-13T03:11:58Z'
+- id: '50477880'
+  parent_id: '50477179'
+  author: 14u2c
+  text: priginal poster.
+  score: 0
+  posted_at: '2026-11-13T03:32:57Z'
+- id: '50478228'
+  parent_id: '50474040'
+  author: somat
+  text: I would say ACE, there is code executing out of the proscribed execution environment,
+    (the rdbms). but it&#x27;s not remote(needs existing authenticated access to the
+    rdbms), so going with Arbitrary Code Execution.
+  score: 0
+  posted_at: '2026-11-13T04:15:19Z'
+- id: '50478348'
+  parent_id: '50477880'
+  author: paustint
+  text: What&#x27;s that?
+  score: 0
+  posted_at: '2026-11-13T04:30:45Z'
+- id: '50478354'
+  parent_id: '50475045'
+  author: dprkh
+  text: Why use SQL for authentication and authorization? I understand that the point
+    of SQL is so that the query optimizer can create an efficient execution plan,
+    but there is no need for that when it comes to configuring auth, right?
+  score: 0
+  posted_at: '2026-11-13T04:31:11Z'
+- id: '50478445'
+  parent_id: '50478354'
+  author: simcop2387
+  text: It can severely simplify a lot of patterns like row level security and other
+    things inside the database that need tigher access controls.
+  score: 0
+  posted_at: '2026-11-13T04:42:51Z'
 article:
   url: https://mehmetince.net/part-3-6-how-i-ended-up-turning-a-22-year-old-postgresql-type-confusion-primitive-into-rce-cve-2026-6460/
   title: Part 3/6 | How I Ended Up Turning a 22-Year-Old PostgreSQL Type-Confusion
@@ -216,4 +358,4 @@ article:
     So I went back to chat"
   error:
   fetched_at: '2026-11-12T23:17:55Z'
-archived_at: '2026-11-12T23:17:57Z'
+archived_at: '2026-11-13T05:32:03Z'
