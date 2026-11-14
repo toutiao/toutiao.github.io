@@ -5,14 +5,14 @@ post:
   title: Probabilistic data structures in Go
   url: https://antonz.org/probabilistic-data-structures/
   hn_url: https://lobste.rs/s/xca2qj
-  score: 17
+  score: 34
   author: cgrinds
   posted_at: '2026-11-13T16:03:44Z'
-  fetched_at: '2026-11-13T21:14:27Z'
+  fetched_at: '2026-11-14T05:23:32Z'
   article_url: https://antonz.org/probabilistic-data-structures/
   article_fetch_status: success
-  article_fetched_at: '2026-11-13T21:14:29Z'
-  raw_comment_count: 1
+  article_fetched_at: '2026-11-14T05:23:33Z'
+  raw_comment_count: 9
   tags:
   - go
 comments:
@@ -21,8 +21,82 @@ comments:
   author: Doctor-X
   text: These are so cool! I know Bloom filters, so thank you for introducing me to
     the others.
-  score: 2
+  score: 5
   posted_at: '2026-11-13T17:47:12Z'
+- id: lo-8kwie5
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    [For HyperLogLog,] Unsure uses the improved estimator by Otmar Ertl
+
+    Oh interesting, I haven't seen that approach yet! I'll have to read up on it.
+    I wonder how it compares to the Martingale transform for HyperLogLog. If you don't need the ability to merge HyperLogLog sketches, it's supposed to give a more accurate result than estimating directly from the counters:
+
+    Track the current cardinality = 0.0.
+    p is the probability that a newly-observed input will cause one of the HyperLogLog counters to change.
+    When a HyperLogLog counter changes, update cardinality += 1/p, then update p.
+  score: 2
+  posted_at: '2026-11-13T21:21:05Z'
+- id: lo-atgyok
+  parent_id: '0'
+  author: fanf
+  text: |-
+    When I investigated quantile statistics a few years ago, I came to the conclusion that a histogram with log-linear bucketing is much simpler to implement than a T-digest, and more useful and easier to understand from an operational point of view. Log-linear bucketing corresponds to the kind of scientific notation x.yz * 10^e that is taught in high school, so 3 s.f. or a max 0.1% value error is reasonably straightforward and familiar. This kind of histogram can record outliers fairly cheaply, which is helpful because those are usually the most interesting values.
+    By contrast quantile sketches such as T-digest target a rank error (as opposed to a value error). The effect is that if you care about the 99.9% or 99.99% oddities, the sketches get big and waste space on the middle ranks, and you still lose information about the value of the outliers. It ends up not being competitive in terms of space or speed or precision compared to a histogram.
+  score: 5
+  posted_at: '2026-11-13T21:40:42Z'
+- id: lo-eagjjj
+  parent_id: '0'
+  author: fanf
+  text: There’s a relatively new and simpler alternative to HyperLogLog for cardinality
+    estimation that Knuth called the CVM algorithm (after its authors) https://buttondown.com/jaffray/archive/the-cvm-algorithm/
+  score: 10
+  posted_at: '2026-11-13T21:46:35Z'
+- id: lo-rydkyw
+  parent_id: '0'
+  author: chai
+  text: |-
+    Probabilistic data structures feel magical when you work with them! The one I wish I had seen discussed/implemented here is a Cuckoo filter, which allows both deletion, and counting. Though the drawback is when the filter's capacity is nearly full, writing becomes significantly slower.
+    This post also provides a less dense technical overview of Bloom vs Cuckoo, and has previously been submitted here. 3 years ago, 8 years ago
+  score: 3
+  posted_at: '2026-11-13T22:38:19Z'
+- id: lo-gttjb7
+  parent_id: '0'
+  author: justinpombrio
+  text: |-
+    Knowing only that this is a cardinality estimation that's really simple, I'm going to make a guess at what the algorithm could be.
+    If you pick n numbers each generated uniformly at random between 0 and 1, their minimum is 1/(n+1) in expectation, but with a bunch of variance. If you repeat this process k times and take the average, you should get something pretty close to 1/(n+1). So an algorithm could be:
+
+    Assume you have k independent hash functions h_0..h_k. Define p_i(x) to be h_i(x)/H where H is the largest possible hash. This normalizes hash outputs to be between 0.0 and 1.0. For each input x, we will compute p_0(x)..p_k(x).
+    For each i=0..k, track the minimum p_i(x) for all inputs x seen so far.
+    To get a cardinality estimate, let p be the average of the minimum p_is, and compute (1-p)/p (the inverse of 1/(n+1)).
+
+    EDIT: Nope, different. I was looking for something vaguely like hyper-log-log but simpler, while CVM impressively manages not to use hashes at all!
+  score: 1
+  posted_at: '2026-11-13T22:48:04Z'
+- id: lo-x1arbs
+  parent_id: '0'
+  author: fanf
+  text: Oh, another classic (1970s) probabilistic algorithm is Robert Morris’s “Counting
+    Large Numbers of Events in Small Registers” abstract pdf
+  score: 1
+  posted_at: '2026-11-13T23:12:59Z'
+- id: lo-kxubh2
+  parent_id: '0'
+  author: bitshift
+  text: IIRC, cuckoo filters also get you closer to the theoretical lower bound of
+    log2(1/e) bits per item stored, whereas Bloom filters are at best 1.44 times that.
+    So even though inserts slow down as you reach capacity, you could get back the
+    performance by increasing capacity 10% or 20%, and you'd still be smaller than
+    the equivalent Bloom filter.
+  score: 3
+  posted_at: '2026-11-13T23:26:01Z'
+- id: lo-xmtijo
+  parent_id: '0'
+  author: jo3_l
+  text: Wow, this algorithm is beautiful!
+  score: 2
+  posted_at: '2026-11-14T00:02:41Z'
 article:
   url: https://antonz.org/probabilistic-data-structures/
   title: Probabilistic data structures in Go
@@ -128,4 +202,4 @@ article:
     more)\n    sketch.Total() // 4\n\nThe sketch uses two sett"
   error:
   fetched_at: '2026-11-13T21:14:29Z'
-archived_at: '2026-11-13T21:14:29Z'
+archived_at: '2026-11-14T05:23:34Z'
