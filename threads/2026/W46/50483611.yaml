@@ -7,11 +7,11 @@ post:
   score: 217
   author: ''
   posted_at: '2026-11-13T14:01:13Z'
-  fetched_at: '2026-11-14T13:07:03Z'
+  fetched_at: '2026-11-14T19:46:53Z'
   article_url: https://www.mtsoukalos.eu/2026/11/why-zig-over-c-for-systems-programming/
   article_fetch_status: success
   article_fetched_at: '2026-11-13T21:14:21Z'
-  raw_comment_count: 224
+  raw_comment_count: 231
 comments:
 - id: '50484345'
   parent_id: '50483611'
@@ -1097,6 +1097,119 @@ comments:
     even worse with glibc because it&#x27;s four times as old as zig.
   score: 0
   posted_at: '2026-11-14T13:02:21Z'
+- id: '50497768'
+  parent_id: '50491466'
+  author: pron
+  text: 'Neither operators nor overloading are abstractions, and they offer no operation
+    at a higher level. An abstraction is something that creates an equivalence class
+    among multiple implementations, and that&#x27;s not the case here.<p>First, operators
+    are clearly not an abstraction because they offer a 1-1 correspondence: Instead
+    of `x + y` you write `plus(x, y)`. It&#x27;s just a different notation.<p>Overloading
+    also isn&#x27;t an abstraction because, as you pointed out, the resolution is
+    statically known, and again, there&#x27;s a 1-1 relationship. Indeed, it&#x27;s
+    just name mangling. Instead of writing `plus_int_int(x, y)` you write `plus(x,y)`
+    and the compiler adds the `int_int` for you.<p>There&#x27;s no doubt operators
+    and&#x2F;or overloading have some convenience advantages, but there&#x27;s also
+    no doubt they have some disadvantages, which is why some languages disallow one
+    or both, regardless of how high or low-level they are. But Zig also has some special
+    reasons to prevent overloading, because the language is built around compile-time
+    introspection. So you can have just a single `plus` for multiple types, but the
+    <i>static</i> dispatch is explicitly controlled by the implementation of `plus`.
+    This means that all resolution is always local or uses unique names.<p>I&#x27;m
+    not saying you have to personally like it. Zig and Rust both aim at different
+    preferences so that people may prefer one over the other. But there is no difference
+    in expressivity (but there very much is between assembly or even C and either
+    one of Zig or Rust). Rust, like C++, chooses to favour implicitness over explicitness,
+    and Zig chooses the opposite. Both have pros and cons, and neither is universally
+    superior to the other.'
+  score: 0
+  posted_at: '2026-11-14T15:26:22Z'
+- id: '50497825'
+  parent_id: '50491312'
+  author: pron
+  text: 'This is fine, but surely you recognise that Rust is very far from an ideal
+    language for many other people, because there are no universal rules here. There&#x27;s
+    nothing more obvious than the fact that every programming language aims for an
+    audience with specific preferences and tastes who like it, while others, with
+    different preferences and tastes don&#x27;t like it. This is how programming languages
+    work when there are no universals: they make choices that appeal to some but not
+    others.<p>For example, I find Rust a particularly unappealing language because
+    it&#x27;s too complicated as a high-level language (it elevates too many low-level
+    details and offers poor abstraction compared to high-level languages) while offering
+    me few advantages, and it&#x27;s too complicated for a low-level language, as
+    it favours implicitness where I want explicitness. Clearly, there are many people
+    who think like me, and many people who don&#x27;t, and that is as it should be.
+    It&#x27;s perfectly fine for you and others to like Rust so much - it appeals
+    to your particular tastes - just as it&#x27;s perfectly fine for me and others
+    to dislike it, because I tend to like simpler, smaller, and more focused languages.
+    This is why I prefer Java over C#, Clojure over Scala, Haskell over Idris, and
+    TLA+ over Lean, while being aware that many have similar preferences and many
+    others have the opposite ones. Your preferences, like mine, are all valid and
+    all far from universal. No language even tries to have a universal appeal, and
+    none comes close.'
+  score: 0
+  posted_at: '2026-11-14T15:33:34Z'
+- id: '50498328'
+  parent_id: '50495855'
+  author: pron
+  text: That&#x27;s not what I wrote. I said Zig is carefully designed to disallow
+    overloading because that&#x27;s what some of us want (and there are Zig-specific
+    reasons to want that even more). You, however, seem to be of the mindset that
+    if some set of people want a feature, every language should have it, but that
+    is clearly untrue. Something many of us value (especially in low-level programming,
+    but not just there) is simplicity, which is the one feature you can never add
+    to a language once you lose it. In every product, including programming languages,
+    what features you don&#x27;t allow in is just as important as the features you
+    have. What made the iPhone the iPhone wasn&#x27;t that it had a touchscreen, but
+    that it didn&#x27;t have a physical keypad.<p>In the case of Zig this is especially
+    glaring and a core aspect of its design. In my low-level work, partial evaluation
+    (or &quot;compile-time code generation&quot;) is very important, and both C++
+    and Rust have it, albeit inelegantly. The problem is that they both bring with
+    them the complexity I try to avoid. Zig is special because it offers all that
+    power in a simple language, which is what many people want.<p>Different programmers
+    want <i>contradictory</i> things out of programming languages, and it&#x27;s impossible
+    to satisfy all of them. Some people want to use a language with operator overloading,
+    while others want to use a language that doesn&#x27;t offer operator overloading.
+    They can&#x27;t be using the same language.
+  score: 0
+  posted_at: '2026-11-14T16:32:19Z'
+- id: '50498451'
+  parent_id: '50493810'
+  author: pron
+  text: Maybe it will add that. But just how important that is, though, I&#x27;m not
+    so sure. Languages like Java, C, and Go don&#x27;t currently offer custom infix
+    operators, and they are more popular than many languages that do.<p>Note that
+    there are some complexities, though, to infix operators regarding the order of
+    operations (e.g. + vs * in ordinary mathematical notation) and associativity (e.g.
+    is `(x &lt;+&gt; y) &lt;+&gt; z` equal to `x &lt;+&gt; (y &lt;+&gt; z)`?). They
+    can be dealt with, of course, but not without adding complexity that may or may
+    not be worth it.
+  score: 0
+  posted_at: '2026-11-14T16:48:08Z'
+- id: '50498576'
+  parent_id: '50488061'
+  author: pron
+  text: You need to understand that the things you want to do are the very things
+    that others want their language to ensure cannot be done. For example, the question
+    I&#x27;m asking is, can your preferred language ensure that operators are <i>not</i>
+    overloaded? You want a language with an operator overloading feature, and I want
+    a language with an operator-overloading-prevention feature. My preferred language
+    lacks the feature you want, and your preferred language lacks the feature I want.
+    The same language cannot give us both what we want, because what we want is contradictory.
+    This is why we prefer different languages; some cater to your preferences and
+    others to mine.
+  score: 0
+  posted_at: '2026-11-14T17:02:07Z'
+- id: '50499304'
+  parent_id: '50496702'
+  author: dleslie
+  text: It&#x27;s not a problem in isolation. And like I said, the c standard string
+    library is generally considered harmful and dangerous; it does not get a pass.<p>And
+    besides the stability issues, their response to Bun was enough to make it clear
+    that it is a user hostile project. I would never trust a vendor that behaved in
+    that manner to a long standing user, financier and advocate.
+  score: 0
+  posted_at: '2026-11-14T18:13:11Z'
 article:
   url: https://www.mtsoukalos.eu/2026/11/why-zig-over-c-for-systems-programming/
   title: Why Zig Over C for Systems Programming · Mihalis Tsoukalos | Μιχαλης Τσουκαλος
@@ -1169,4 +1282,4 @@ article:
     C is not
   error:
   fetched_at: '2026-11-13T21:14:21Z'
-archived_at: '2026-11-14T13:07:10Z'
+archived_at: '2026-11-14T19:46:59Z'

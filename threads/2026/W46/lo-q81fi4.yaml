@@ -1,0 +1,130 @@
+---
+post:
+  id: lo-q81fi4
+  source: lobsters
+  title: Solving the fox game
+  url: http://blog.sesse.net/blog/tech/2026-11-13-19-51_solving_the_fox_game.html
+  hn_url: https://lobste.rs/s/q81fi4
+  score: 12
+  author: dracarys_18
+  posted_at: '2026-11-14T10:32:33Z'
+  fetched_at: '2026-11-14T19:46:59Z'
+  article_url: http://blog.sesse.net/blog/tech/2026-11-13-19-51_solving_the_fox_game.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-14T19:47:01Z'
+  raw_comment_count: 1
+  tags:
+  - math
+comments:
+- id: lo-jdnm0h
+  parent_id: '0'
+  author: nelhage
+  text: |-
+    I bet using some variant of proof-number search would help a ton here -- either for doing the search, or probably for finding a winning line now that you have the tablebase.
+    I'm always happy when I get a chance to bring up PN search -- it's not widely known, but it dramatically outperforms minimax specifically for proving position values.
+  score: 2
+  posted_at: '2026-11-14T16:43:04Z'
+article:
+  url: https://blog.sesse.net/blog/tech/2026-11-13-19-51_solving_the_fox_game.html
+  title: Steinar H. Gunderson
+  fetch_status: success
+  content: "# [Steinar H. Gunderson](http://blog.sesse.net/blog)\n\n## Fri, 13 Nov
+    2026 - Solving the fox game\n\nChristoffer Stjernlöf [posted about the Fox Game](https://entropicthoughts.com/what-the-fox-say),
+    an old Norse asymmetric board game (seemingly also called “halatafl”) where twenty
+    sheep try to outsmart two foxes and get to the other side. His AI uncovered some
+    interesting insights, but left the question open as of whether the foxes or the
+    sheep actually win with perfect play (the general sentiment in his family was
+    that winning with the foxes was easy). This was too tempting for me to leave on
+    the table, so I set out to make a strong solve.\n\nSince I don't know this game
+    myself, I've stayed with the rules he describes even when they differ from e.g.
+    [Wikipedia](https://en.wikipedia.org/wiki/Fox_games)(in particular, I do not use
+    forced fox jumps, or multi-jumps); the only real change is that I don't have a
+    40-move draw rule, any position that is a forced win for one of the sides would
+    be a win no matter how long it would take. (I consider this just an implementation
+    detail in his AI, although morally, I consider a draw a loss for the sheep.) You
+    might want to read his post to get the full rules, because I'm not going to repeat
+    them here.\n\nThe results first: The sheep win with perfect play, even with only
+    19 sheep (remove one on the flank), or 18 if they are allowed to go first. Even
+    with only 9 sheep (the minimum possible that isn't an instant win for the foxes),
+    the sheep can force a draw right from the start. With one fox, 11 sheep suffice
+    for a forced win. (The draw margin is seemingly so large because one fox can just
+    camp in the last spot in the pen, and it's hard to force it away without getting
+    harassed by the other fox, unless you have lots of sheep.)\n\nThe rest is about
+    the implementation. I'll skip over a lot of wrong turns, and unsurprisingly, there
+    were a lot of bugs to iron out, but hopefully, it got to a good place in the end.
+    :-) I started out trying to make something very simple, and it worked for the
+    first few cases, but then things got more complicated than I would have liked
+    in the end. Still only at ~1000 lines of code, though, with no dependencies.\n\n##
+    Board representation\n\nThe board has 33 squares. I tried a few different ways
+    of represent the state of the game, and ended up on a simple bitboard representation:
+    There's a 64-bit bitmap representing where there are sheep, and another bitmap
+    representing where there are foxes. Since there's plenty of room in there, I use
+    a spare bit to represent side-to-move. This is compact (which mattered a lot earlier
+    on, but not as much later), easy to iterate over, and has little redundancy, so
+    it's easy to keep valid. You need fast 64-bit population count and bit-scan instructions,
+    but a) that's common now everywhere, and b) I decided fairly early that I wanted
+    to require BMI2 anyway.\n\nThe bit order mostly doesn't matter; I just started
+    at top-left and went from there. All it really influences is square iteration
+    order. There's a small tweak in that I store the right half of the board mirrored
+    (reverse x order) for symmetry purposes; more on that below.\n\n## Move generation\n\nI
+    just typed in every possible move from every square into an array, then verified
+    by generating some SVGs that I hadn't made any typos (I had). In retrospect, I
+    should have done something more automated; it would have been less painful.\n\nThe
+    moves for sheep are just “you can go to X, Y or Z”. The moves for foxes are “you
+    can go to X or Y, or you can go to Z if there's a sheep at W (which will be eaten)”.
+    The move generator mostly just looks up the source square and tests every move.
+    For the sheep, I make an easy test using bitboards; for the foxes, I could probably
+    do something similar, but the jump moves proved a bit tricky (even with PEXT/PDEP)
+    and I didn't end up using it.\n\nThis is the part that really determines the geometry
+    of the board (apart from debugging display). Everything else is pretty much geometry-agnostic.\n\n##
+    Result storage\n\nThere's a little over 2^41 possible board states (this includes
+    some illegal positions as well as some situations that could never arise during
+    actual gameplay, such as a fox being stuck at C1 with a row of sheep ahead of
+    it), and I want to remember all of them. With that many positions, I figured I
+    needed a fairly compact representation. I needed to store that a position could
+    be sheep win, fox win or a draw, and then there was a fourth “invalid” state that
+    was useful for internal reasons, so that maps exactly to two bits per position.
+    (A tablebase intended for distribution could be compressed to less using the usual
+    tricks of entropy coding, skipping half of the positions, or similar.)\n\nThis
+    means we need to give a number to every possible position, ideally one with no
+    collisions and no holes. I learned about[combinatorial number systems](https://en.wikipedia.org/wiki/Combinatorial_number_system)which
+    fit the bill exactly; given e.g. “we have 33 squares and 15 pieces”, it gives
+    a dense mapping of positions from board to ID (ranking) and the opposite (unranking).
+    (I made some fairly fast ranking and unranking algorithms, which may or may not
+    have been novel, but it turned out I didn't actually need fast unranking after
+    some other optimizations.) There are some extra complications in that there are
+    two types of pieces, but you can solve them in a number of ways.\n\nOn a macro
+    level, I store everything with 9 sheep and 1 fox first, then 9 sheep and 2 foxes,
+    10 sheep and 1 fox, and so on. This gives beautiful locality (a single move can
+    never remove more than one sheep, and only extremely rarely more than one fox),
+    allowing me to just mmap everything and let the kernel deal with it, even though
+    I only had 256GB of RAM and the total set was larger (329,870,110,455 bytes after
+    the symmetry optimizations below).\n\nmmap is almost never the right answer, but
+    again, I was trying to go for simplicity. It certainly brought me pain, though,
+    and perhaps some more explicit I/O would have been better.\n\n## Symmetry\n\nThe
+    board is left-right symmetric (with an odd number of columns, so that there is
+    a middle column that is neither “left” nor “right”). I had hoped to just ignore
+    this, but eventually the gains became too important to ignore, so I conceded.\n\nThe
+    basic idea is that I ranked the board twice, both as itself and mirrored (mirroring
+    is just a couple of masks and shifts, given my representation), and picked the
+    key that was the smaller as canonical. This reduced the number of positions I
+    needed to look at to a bit over 50%, as expected, but it does nothing to the storage/RAM
+    requirements; the new rank is not dense and the “illegal” (non-canonical) positions
+    are spread out a bit all over the place (although of course near the low and high
+    ends of values, it works much better).\n\nAs a tweak, I chose to compute all 33+281
+    canonical fox positions and renumbered using those placements as an assumption.
+    This slashes ~95% of the waste, which is good enough; you can still rank a nonconical
+    position if the foxes are symmetric about the center (or if there's only one fox
+    and it's in the middle!), though.\n\nYou can improve on this by making the macro-splitting
+    finer; instead of having a chunk for e.g. “10 sheep, 2 foxes”, you could have
+    one with “5 sheep in left, 0 foxes in left, 1 sheep center, 1 fox center, 4 sheep
+    in right, 1 fox in right” and demand that there are more sheep in left than right.
+    However, you still get problems when the number is balanced, you'd need finer
+    splitting etc.. The gains are small enough that I didn't see the point in doing
+    this, and it tends to be a place where it's easy to introduce bugs.\n\nI imagined
+    calculating the exact number of positions up to symmetry would be an interesting
+    exercise somehow, but I suppose it just immediately falls to [Burnside's lemma](https://en.wikipedia.org/wiki/Burnside%27s_lemma)as
+    soon as you know how to count positions at all.\n\n## Searching\n\nNow that "
+  error:
+  fetched_at: '2026-11-14T19:47:01Z'
+archived_at: '2026-11-14T19:47:02Z'

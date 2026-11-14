@@ -1,0 +1,95 @@
+---
+post:
+  id: '50276613'
+  title: Double Buffering with Cloudflare Queues
+  url: https://bellone.com/technical/double-buffering-with-cloudflare-queues
+  hn_url: https://news.ycombinator.com/item?id=50276613
+  score: 57
+  author: b_llc
+  posted_at: '2026-10-28T16:48:23Z'
+  fetched_at: '2026-11-14T19:47:05Z'
+  raw_comment_count: 8
+comments:
+- id: '50276614'
+  parent_id: '50276613'
+  author: b_llc
+  text: A stateless pattern I use to batch telemetry at the edge while driving Cloudflare
+    write costs to zero.
+  score: 0
+  posted_at: '2026-10-28T16:48:23Z'
+- id: '50313043'
+  parent_id: '50276614'
+  author: fwlr
+  text: |-
+    Cool pattern. Critics will say “falsehoods programmers believe about time” but it’s a cloud service, any time oddity that would break this would also break a lot more important stuff, so it’s fine.<p>Ugly code though.<p><pre><code>  &#x2F;&#x2F; env
+      QUEUES = [EVEN_QUEUE, ODD_QUEUE]
+
+      &#x2F;&#x2F; producers
+      env.QUEUES[hour % 2].send …
+
+      &#x2F;&#x2F; consumer
+      env.QUEUES[1 + hour % 2]</code></pre>
+  score: 0
+  posted_at: '2026-10-31T03:50:16Z'
+- id: '50313814'
+  parent_id: '50276614'
+  author: raffraffraff
+  text: Can you explain the pricing here?
+  score: 0
+  posted_at: '2026-10-31T06:48:25Z'
+- id: '50314231'
+  parent_id: '50313043'
+  author: danhite
+  text: "&gt; env.QUEUES[1 + hour % 2]<p>&#x2F;&#x2F; results in index 1 or 2 as js
+    has precedence for *&#x2F;% over +-<p>So something like the following, for your
+    desired visual succinctness? ...<p>env.QUEUES[hour % 2 ^ 1]<p>&#x2F;&#x2F; results
+    in desired js index 0 or 1<p>I wonder if any of you using AI code assistance regularly
+    might tell an old hack like me if your code review tools would have caught such
+    a bug?"
+  score: 0
+  posted_at: '2026-10-31T08:40:35Z'
+- id: '50314734'
+  parent_id: '50313814'
+  author: b_llc
+  text: Cloudflare R2 bills on writes ($4.50&#x2F;M), reads ($0.36&#x2F;M), and storage
+    ($0.015&#x2F;GB&#x2F;mo). The free tier gives you 1M writes, 10M reads, and 10GB
+    per month. If you batch uploads hourly, you only make ~720 writes a month. That
+    completely eliminates write costs, leaving storage as the only expense.
+  score: 0
+  posted_at: '2026-10-31T10:36:41Z'
+- id: '50316044'
+  parent_id: '50276613'
+  author: 8organicbits
+  text: I think this is a clever happy path solution, but it isn&#x27;t very defensive
+    against problems. If the cloud cron doesn&#x27;t fire on time or the consumer
+    fails then the queue won&#x27;t be drained in time. That will cause the events
+    to be batched in the wrong hour.<p>I don&#x27;t see how you are building the batches,
+    but there&#x27;s a lot of complexity around batch sizes, acknowledging that the
+    messages were consumed, etc. Having a single dataset.json.gz per hour feels like
+    a hint this isn&#x27;t done safely. I&#x27;d double check that carefully to avoid
+    losing data.<p>One tip about compression, I&#x27;ve been really pleased with zstd
+    compression of json&#x2F;jsonl data.
+  score: 0
+  posted_at: '2026-10-31T13:32:06Z'
+- id: '50316601'
+  parent_id: '50276613'
+  author: vivzkestrel
+  text: '- your blog page has errored out<p>- <a href="https:&#x2F;&#x2F;bellone.com&#x2F;blog"
+    rel="nofollow">https:&#x2F;&#x2F;bellone.com&#x2F;blog</a>'
+  score: 0
+  posted_at: '2026-10-31T14:37:52Z'
+- id: '50321172'
+  parent_id: '50314231'
+  author: fwlr
+  text: |-
+    Ah, the perils of programming in plain text.<p>I couldn’t tell you if AI code assistants would write this, or catch it - ironically enough, “the perils of programming in plain text” is one of my stated reasons for eschewing AI assistance.<p>Given that the succinctness just bit me, I’m inclined to sacrifice it and go with<p><pre><code>  &#x2F;&#x2F; over the range 0..23, +1 gives the same result%2 as -1, and also handles edge case of 0
+      const lastHour = new Date().getUTCHours() + 1
+      …
+      env.QUEUES[lastHour % 2]
+
+    </code></pre>
+    Fundamentally I guess I was just objecting to doing arithmetic in the time domain to achieve negating a boolean.
+  score: 0
+  posted_at: '2026-10-31T23:15:23Z'
+article:
+archived_at: '2026-11-14T19:47:18Z'

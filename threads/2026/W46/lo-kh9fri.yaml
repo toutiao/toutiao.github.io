@@ -1,0 +1,111 @@
+---
+post:
+  id: lo-kh9fri
+  source: lobsters
+  title: Writing a DSL for high performance parallel programming in OxCaml
+  url: https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/
+  hn_url: https://lobste.rs/s/kh9fri
+  score: 10
+  author: typesanitizer
+  posted_at: '2026-11-14T02:57:49Z'
+  fetched_at: '2026-11-14T19:46:59Z'
+  article_url: https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-14T19:47:03Z'
+  raw_comment_count: 0
+  tags:
+  - performance
+  - plt
+comments: []
+article:
+  url: https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/
+  title: Jane Street Blog - Writing a DSL for high performance parallel programming
+    in OxCaml
+  fetch_status: success
+  content: |-
+    ### Writing a DSL for high performance parallel programming in OxCaml
+
+    Nov 06, 2026 | 21 min read
+    - [Share on Facebook](https://www.facebook.com/sharer.php?u=https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/ "Share on Facebook")
+    - [Share on Twitter](https://twitter.com/intent/tweet?source=https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/&text=Jane%20Street%20Blog%20-%20Writing%20a%20DSL%20for%20high%20performance%20parallel%20programming%20in%20OxCaml%20https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/ "Tweet")
+    - [Share on LinkedIn](http://www.linkedin.com/shareArticle?mini=true&url=https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/&title=Jane%20Street%20Blog%20-%20Writing%20a%20DSL%20for%20high%20performance%20parallel%20programming%20in%20OxCaml&summary=The%20following%20is%20part%20of%20a%20series%20of%20posts%20about%202026%20summer%20intern%20projects%E2%80%94for%20more,%20see%20%E2%80%9CWhat%20the%20interns%20have%20wrought,%20special%20jumbo%202026%20edition%E2%80%9D%20We%20have%20a%20lot%20of%20performance-critical%20SIMD%20code%20(single-instruction,%20multiple-data)%20running%20on%20CPUs%20across%20the%20firm.%20These%20are%20highly%20parallel%20programs%20where%20you%20run%20the...&source=https://blog.janestreet.com/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/ "Share on LinkedIn")
+
+     ![spmd.png](/writing-a-dsl-for-high-performance-parallel-programming-in-oxcaml/spmd.png)
+
+    By: [Nicholas Yang](/author/niyang)
+
+    _The following is part of a series of posts about 2026 summer intern projects—for more, see [“What the interns have wrought, special jumbo 2026 edition”](https://blog.janestreet.com/wrought-2026/)_
+
+    We have a lot of performance-critical SIMD code (single-instruction, multiple-data) running on CPUs across the firm. These are highly parallel programs where you run the same computation across arrays of data, in our case for options pricing or for low-latency risk checks. Because OCaml hasn’t historically exposed SIMD instructions, these programs often involve an inner loop written in fairly esoteric C. Writing these loops requires implementers to think carefully about hardware, and doing performance tuning, such as modifying unroll factors or vector widths, can require major changes to the code. Moreover, these programs are constrained to a specific instruction set. If we were to target a different architecture or a newer processor, we’d have to rewrite the program.
+
+    For his summer internship, Sai Konkimalla built a compiler for a domain specific language (DSL) that makes SIMD more ergonomic and widely accessible. The compiler takes advantage of [OxCaml](https://oxcaml.org/) features that were only very recently added to the language, such as runtime metaprogramming, to enable users to write a kernel just once as a regular-ish OxCaml function, then compile and run it on multiple architectures.
+
+    ## Single Program, Multiple Data
+
+    To help solve the problem of SIMD code being rather difficult to write and maintain, our DSL uses the S **P** MD, or “single **program** , multiple data” programming model. As opposed to SIMD intrinsics, SPMD is higher level and not tied to a specific instruction set. We might normally think of higher-level languages as slower, but with SPMD, a higher level of abstraction lets the compiler make better decisions about how to optimally use the underlying hardware. This ability can lead to significantly faster code.
+
+    SPMD was popularized by CUDA (for Nvidia GPUs) and ISPC (for Intel CPUs). In this model, you write a program describing what happens at each index of a loop, then the compiler converts it into a parallel computation. For example, in CUDA:
+
+        __global__ void kernel(const float* x, float* out, int n) {
+            int idx = blockIdx.x * blockDim.x + threadIdx.x;
+            if (idx < n) {
+                out[idx] = 2.0f * x[idx] + idx;
+            }
+        }
+
+    Notice how there’s no loop here: you only define the loop body, and the compiler decides how to run it. In CUDA, when you launch a kernel on a GPU, you can declare how many blocks of threads to run and the GPU will schedule them accordingly.
+
+    In ISPC, `foreach` also abstracts away how the loop is actually executed:
+
+        export void kernel(uniform float x[], uniform float out[], uniform int n) {
+            foreach (i = 0 ... n) {
+                out[i] = 2.0f * x[i] + i;
+            }
+        }
+
+    In both cases, the compiler translates the code into low-level SIMD instructions. Not specifying the exact instructions also means SPMD programs can benefit from future hardware improvements. If we get a new, faster CPU with a different instruction set, the SPMD compiler can seamlessly compile existing code to it.
+
+    ## A quick overview of the DSL
+
+    Let’s go over an example of the DSL that Sai implemented. We start by defining the kernel’s signature, including its output type, input types, and the dimension of the output:
+
+        Spmd.Kernel.create
+         F32 (* output element type *)
+         [F32; F32] (* input slice types *)
+         [()] (* one output dimension *)
+         (fun graph [x; scale] [Dim i] -> exclave_
+           ...)
+
+    In this example, we’re writing a kernel that takes in two `F32` slices and returns one`F32` slice.
+
+    Future work on a ppx syntax extension will make it possible to rewrite the above simply as:
+
+        let%spmd kernel (x : f32 slice) (scale : f32) (i : dim) : f32 =
+
+    Next, we write the actual computation:
+
+        Spmd.Kernel.create
+          F32 (* output element type *)
+          [F32; F32] (* input slice types *)
+          [()] (* one output dimension *)
+          (fun graph [x; scale] [Dim i] -> exclave_
+             let open (val Spmd.open_ graph) in
+             let i = index i in
+             F32.((x.!(i) *. broadcast scale.!(I32.lit #0l)) +. of_i32 i))
+
+    Note the `let open (val Spmd.open_ graph) in`. This brings the DSL operations which construct a computational graph into scope. You can think of the `graph` value as proof that you’re in the graph-construction phase, not the runtime of the generated program. ([Bonsai](https://github.com/janestreet/bonsai) uses a [similar trick](https://github.com/janestreet/bonsai_web/blob/master/docs/guide/thinking_in_bonsai.md#what-is-bonsaigraph)for creating its incremental graph.)
+
+    Like CUDA, we don’t write the kernel as a loop. Instead, the developer writes a function that computes a single entry of the output slice, and the SPMD compiler generates code to loop over the output slice and compute the value at each index.
+
+    You may wonder why we loop over the _output_ and not the inputs. Looping over the output is easier to model because each iteration writes to exactly one location, so iterations can be easily vectorized, reordered, or parallelized. If we were to loop over the inputs, different iterations could write to the same output entry. The compiler would then have to reason about whether the writes could be re-ordered. By guaranteeing that each output entry is written exactly once, we can avoid this complexity.
+
+    ## Where runtime metaprogramming comes in
+
+    One wrinkle with Sai’s project is that we wanted to execute the SPMD compiler at runtime. Runtime compilation (often called just-in-time or JIT compilation) is when the compiler generates code while the program is running. This gives us two main advantages: we don’t have to worry about building for all potential target architectures at compile time, and we can use data obtained at runtime for optimizations.
+
+    That latter point is especially important for generating high-performance code. When executing at runtime, the compiler has more data that it can use to optimize the code than it would when executing ahead-of-time. For example, our compiler can use runtime data to compile away branch instructions, which can slow down execution by consuming CPU resources.
+
+    To implement our JIT compiler, we used runtime metaprogramming, a fe
+  error:
+  fetched_at: '2026-11-14T19:47:03Z'
+archived_at: '2026-11-14T19:47:04Z'

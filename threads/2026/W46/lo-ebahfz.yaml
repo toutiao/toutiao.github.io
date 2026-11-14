@@ -1,0 +1,119 @@
+---
+post:
+  id: lo-ebahfz
+  source: lobsters
+  title: Creating a self booting ZIP archive
+  url: https://goliath32.com/blog/ziphead.html
+  hn_url: https://lobste.rs/s/ebahfz
+  score: 12
+  author: rw-rw-rw-
+  posted_at: '2026-11-14T10:01:58Z'
+  fetched_at: '2026-11-14T19:46:59Z'
+  article_url: https://goliath32.com/blog/ziphead.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-14T19:47:02Z'
+  raw_comment_count: 0
+  tags:
+  - assembly
+comments: []
+article:
+  url: https://goliath32.com/blog/ziphead.html
+  title: goliath32.com - Creating a self booting ZIP archive
+  fetch_status: success
+  content: "# Creating a self booting ZIP archive\n[![](../img/return.gif)Back to
+    the Blog Index ](index.html)\n* * *\n\n## Introduction\n\nSo, after a debugging
+    session the other day, I was having some shower thoughts regarding early userspace
+    and initrd.\n\nLinux initramfs supports unpacking CPIO, a stupid, simple, standardized
+    format. In the discussion on whether to support TAR instead, much emphasize has
+    been put on the fact that CPIO is standardized and less fragmented.\n\nLuckily,
+    Linux (the kernel) includes its own tool to produce the specific variant of the
+    standard that it happens to implement. The standard CPIO tool is possibly the
+    most cursed archiver under the SUN.\n\nIn the old DOS/WinDOS world, ZIP was probably
+    the most wide spread and well known archive format, being displaced to some extend
+    by the rise of RAR during the 2000s.\n\nBecause of the design of the format, ZIP
+    lends itself to all kinds of polyglot trickery. Way back when, self extracting
+    ZIP archives where a thing, EXE/ZIP polyglots that can be run and unpack themselves,
+    which is useful if you don't have an archiver installed.\n\nI don't think I need
+    to explain where I am going with this, here is the resulting ZIP archive I built:\n\n[![](../img/download.gif)Download
+    boot.zip ](../sw/boot.zip)\n\nIt is a completely normal ZIP archive, containing
+    its own source code needed to build itself from scratch:\n\n    $ unzip -t boot.zip\n
+    \   Archive: boot.zip\n        testing:OK\n        testing: boot/MESSAGE.TXT OK\n
+    \       testing: common/asm.h OK\n        testing: common/multiboot.h OK\n        testing:
+    common/zip.h OK\n        testing: multiboot/console.c OK\n        testing: multiboot/console.h
+    OK\n        testing: multiboot/multiboot.c OK\n        testing: multiboot/string.S
+    OK\n        testing: setup/a20.S OK\n        testing: setup/disk.S OK\n        testing:
+    setup/entry16.S OK\n        testing: setup/entry32.S OK\n        testing: setup/mbload.S
+    OK\n        testing: setup/mem.S OK\n        testing: setup/setup.ld OK\n        testing:
+    util/fixhdr.c OK\n        testing: util/zipglue.c OK\n        testing: util/zippack.c
+    OK\n        testing: mk.sh OK\n        testing: README.txt OK\n        testing:
+    MESSAGE.txt OK\n        testing: LICENSE.txt OK\n    No errors detected in compressed
+    data of boot.zip.\n\nA particularly interesting file here is **boot/ZIPHEAD.COM**
+    , that contains executable code that is run when booting the archive.\n\nYou need
+    to fix the execute permissions of after unpacking, and you will need a copy of
+    installed for the tools. Running from it's directory should leave you with a fresh
+    copy of the bootable ZIP archive.\n\nThe simplest way to run it, is to just pass
+    it to Qemu direct kernel boot:\n\n    $ qemu-system-i386 -kernel boot.zip\n\n\"That's
+    easy\" you might say, \"Qemu supports Multiboot, that ZIPHEAD.COM is uncompressed,
+    at the beginning of the archive and has a Multiboot header in it!\"\n\nYes, that's
+    all true! But this ZIP archive also brings it's own boot loader along. You can
+    try putting it on a floppy and throw that in front of Qemu:\n\n    $ dd if=/dev/zero
+    of=floppy.img count=2880\n    $ dd if=boot.zip of=floppy.img conv=notrunc\n    $
+    qemu-system-i386 -fda floppy.img\n\nThe first 512 bytes of the archive contain
+    a valid boot sector that loads some more code from the second sector and then
+    bootstraps itself into highmem with the A20 enabled and 32 bit protected mode
+    set up.\n\nYou can also put it on a hard drive too, it detects what **INT 13h**
+    drive it's been loaded from and dutifully queries the disk geometry.\n\nIf you
+    care to try, you can also dump it on a real floppy and stuff it into a PC:\n\n[![](../img/prev/blog/ziphead/0.jpg)](../img/photo/blog/ziphead/0.jpg)\n\nThat's
+    a Pentium MMX by the way, but I also tried an i486 DX2 and an Am386DX-40, just
+    to be sure. My 486 had me hold my breath for a moment, it has a spectacularly
+    slow floppy drive. The text on screen is from the file **boot/MESSAGE.TXT**\n\n\"But
+    that's not special either\" you might respond, \"ZIPs are read from the back,
+    you can just put anything you want in front, so you put a boot sector there!\"\n\nThat
+    is sadly _not quite true_ anymore, I'll get to that. But for now, lets take a
+    look at the first couple bytes of that archive together and we'll see the real
+    party trick:\n\n    $ xxd -g 1 -l 128 boot.zip\n    00000000:0a 00 02 80 00 00
+    eb 44 e4 2e 41 0f.......D..A.\n    00000010: 01 8f 0a 09 00 00 0a 09 00 00 10
+    00 00 00..............00000020:00 90..\n    00000030:03 00 01 00 fb 4f 51 e4 30
+    00 10 00.....OQ.0...\n    00000040: 00 00 10 00 bd 72 10 00 bd 72 10 00 31 03
+    10 00 .....r...r..1...\n    00000050: fa fc 31 c0 89 c4 8e d8 8e c0 8e d0 ea 61
+    7c 00 ..1..........a|.\n    00000060: 00 bf 00 06 b9 00 02 f3 aa 88 16 98 06 be
+    0f 7d ...............}\n    00000070: e8 8c 00 b8 00 f0 89 c1 50 9d 9c 58 a8 02
+    74 4a ........P..X..tJ\n\nThe ASCII **P** stands for Phil ([not Picard](https://memory-alpha.fandom.com/wiki/Lonely_Among_Us_(episode)#Act_Five)),
+    as in [Phil Katz](https://en.wikipedia.org/wiki/Phil_Katz), followed by **03h**
+    and **04h**. What you are looking at, is a completely valid ZIP local file header
+    for **boot/ZIPHEAD.COM**\n\nOh, and those other bytes there after the ZIP header:
+    **02 b0 ad 1b** , if you flip them around to human endian, it reads **1BADB002**.
+    That's the Multiboot magic :-)\n\nThe 16 bit real mode code starts right after
+    the Multiboot header, at offset **00000050**. If you are feeling a little confused,
+    so is the utility:\n\n    $ file boot.zip\n    boot.zip: DOS/MBR boot sector;
+    partition 1 : ID=0xd, active 0xcd, start-CHS (0x7\n    2,19,7), end-CHS (0x388,254,6),
+    startsector 2147916342, 243810273 sectors; parti\n    tion 2 : ID=0x60, active
+    0x9c, start-CHS (0x366,6,3), end-CHS (0x3f7,49,18), sta\n    rtsector 2298911798,
+    4154016209 sectors; partition 4 : ID=0xf8, active 0xe1, sta\n    rt-CHS (0x2,184,1),
+    end-CHS (0x313,6,13), startsector 3277940231, 0 sectors\n\nIf you take a closer
+    look at the first line of the hex dump, you might be able to spot the jump instruction
+    that makes this little magic trick possible. Luckily, Phil Katz' initials are
+    valid opcodes. The Multiboot entry point is much further into the file at offset
+    **00000331**.\n\n## ZIP Archives Revisited\n ![](../img/blog/ziphdr.svg)\n\nHere's
+    a picture you probably recognize from [the Wikipedia article about the ZIP format](https://en.wikipedia.org/wiki/ZIP_(file_format)).
+    This here is a local copy, Wikimedia Commons hosts [the original with attribution
+    and licensing information](https://commons.wikimedia.org/wiki/File:ZIP-64_Internal_Layout.svg).\n\nMuch
+    like a TAR or CPIO archive, a ZIP file is an amalgamation of tightly packed files
+    with a short header in front, specifying the full file path and other meta data:\n\n
+    \   typedef struct{uint32\\_tmagic;uint16\\_tversion;uint16\\_tflags;uint16\\_tmethod;uint16\\_tmodtime;uint16\\_tmoddate;uint32\\_tchecksum;uint32\\_tcompsize;uint32\\_torigsize;uint16\\_tnamelength;uint16\\_textralength;charname[namelength];uint8\\_textra[extralength];}\\_\\_attribute\\_\\_((packed))zip_entry_t;\n\nThe
+    timestamps are DOS datetime, the checksum is a CRC-32, there are no attributes
+    or permission bits, we are thoroughly in DOS land. Directories are implied by
+    the file paths.\n\nNit pick Yes, I know, the central directory has a field where
+    \"internal\" and \"external\" attributes can be stored, whose meaning depends
+    on the OS ID byte in the version field. Later versions of the format added an
+    extension to support directories. Good luck making use of that in a portable way
+    that can be understood by different archivers across different WinDOS versions
+    and Unix clones. \n\nUnlike TAR or CPIO, there is a **central directory** in the
+    end, with a listing of all of the file headers and back references to the file
+    in the archive. Unlike traditional file formats that have are **started by a header**
+    , ZIP is **terminated by a footer**.\n\nThe reason for this is twofold:\n\n- the
+    archive can be generated in a single, forward pass (collecting the directory in
+    memory).\n- Accessing a single file in the archive can be done "
+  error:
+  fetched_at: '2026-11-14T19:47:02Z'
+archived_at: '2026-11-14T19:47:03Z'
