@@ -4,14 +4,14 @@ post:
   title: Live-migration support in FreeBSD and bhyve coming
   url: https://gyptazy.com/blog/freebsd-bhyve-live-migration-support-rfc/
   hn_url: https://news.ycombinator.com/item?id=50488835
-  score: 83
+  score: 118
   author: ''
   posted_at: '2026-11-13T19:58:42Z'
-  fetched_at: '2026-11-14T05:23:29Z'
+  fetched_at: '2026-11-14T13:07:07Z'
   article_url: https://gyptazy.com/blog/freebsd-bhyve-live-migration-support-rfc/
   article_fetch_status: success
   article_fetched_at: '2026-11-14T05:23:29Z'
-  raw_comment_count: 21
+  raw_comment_count: 29
 comments:
 - id: '50488836'
   parent_id: '50488835'
@@ -193,6 +193,94 @@ comments:
     as 6.4 is already 4 years old."
   score: 0
   posted_at: '2026-11-14T05:17:02Z'
+- id: '50494756'
+  parent_id: '50491053'
+  author: wyager
+  text: Out of curiosity, what required docker that wasn&#x27;t better suited by jails?
+    I know such things exist (e.g. software projects that are only distributed as
+    dockerfiles), but not sure how common they are.
+  score: 0
+  posted_at: '2026-11-14T07:09:20Z'
+- id: '50494919'
+  parent_id: '50493514'
+  author: bigstrat2003
+  text: I feel you. Good programmers still care about those things, but it turns out
+    there are a whole lot of people who never cared about the craft and were just
+    in the profession because it was lucrative. It&#x27;s a shame.
+  score: 0
+  posted_at: '2026-11-14T07:39:48Z'
+- id: '50495467'
+  parent_id: '50494756'
+  author: hnlmorg
+  text: Laziness. I ran Jails for years and was largely happy with it. But I didn’t
+    want to handle the jails upgrades manually. I just wanted to run “docker pull”.
+  score: 0
+  posted_at: '2026-11-14T09:26:20Z'
+- id: '50495789'
+  parent_id: '50493514'
+  author: pmooney
+  text: "&gt; Now no one even cares how something is implemented ...<p>&gt; The &quot;good&quot;
+    ones today are looking exclusively at external properties rather than internal
+    ones.<p>To provide a little additional context here: This effectively was an external
+    property of the system (just to the userspace VMM).  One of the significant challenges
+    for those implementing a feature live migration is how you&#x27;ll deal with multiple
+    version of the software (older and newer) interacting in the future.  A primary
+    use case for live migration is moving workloads around to permit software updates,
+    making that multiple version issue even &quot;worse&quot;.<p>Abstracting the implementation
+    details of those in-kernel emulated devices was helpful in two ways.  Firstly,
+    it reduced (hopefully) the chances that a later change to the internal implementation
+    would be visible in the exported&#x2F;imported state.  Secondly, that the act
+    itself of doing that state abstraction required a much more intentional and thorough
+    examination of the emulation logic itself, resulting in a cleaner and simpler
+    artifact.<p>So while it may seem like it was driven by a desire to take pride
+    in the craft (undeniably _a_ factor), the main motivation was avoiding a versioning
+    mess in the future.<p>&gt; Thank you for the comment.<p>My pleasure!"
+  score: 0
+  posted_at: '2026-11-14T10:23:00Z'
+- id: '50496087'
+  parent_id: '50491987'
+  author: pacija
+  text: I have FreeBSD directly on metal, with just ZFS datastore and vm-bhyve [1]
+    directly on it. All my services are in separate bhyve VMs. Most of those are also
+    FreeBSD-based but some that require docker are Linux-based (my radio [2] is azuracast
+    [3] in docker inside Ubuntu as a bhyve vm on FreeBSD). This way I can setup zrepl
+    [4] on host to periodically snapshot whole VMs and send them to another box or
+    to external USB disk, and I&#x27;m backed up.<p>[1] <a href="https:&#x2F;&#x2F;github.com&#x2F;freebsd&#x2F;vm-bhyve"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;freebsd&#x2F;vm-bhyve</a><p>[2]
+    <a href="https:&#x2F;&#x2F;www.dno.rs&#x2F;radio" rel="nofollow">https:&#x2F;&#x2F;www.dno.rs&#x2F;radio</a><p>[3]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;AzuraCast&#x2F;AzuraCast" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;AzuraCast&#x2F;AzuraCast</a><p>[4]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;zrepl&#x2F;zrepl" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;zrepl&#x2F;zrepl</a>
+  score: 0
+  posted_at: '2026-11-14T11:19:29Z'
+- id: '50496322'
+  parent_id: '50495789'
+  author: genxy
+  text: By your storing of a more abstract representation of the emulated device state,
+    could you potentially live migrate to tape or object storage?
+  score: 0
+  posted_at: '2026-11-14T11:58:33Z'
+- id: '50496327'
+  parent_id: '50491053'
+  author: genxy
+  text: We run Linux in a bhyve VM for podman support but backed by FreeBSD ZFS. Migrate
+    back!
+  score: 0
+  posted_at: '2026-11-14T11:59:41Z'
+- id: '50496441'
+  parent_id: '50491987'
+  author: bionsystem
+  text: If you need Linux compatibility layer AND ZFS without a hypervisor, unfortunately
+    it&#x27;s hard to get close to a Linux host. I&#x27;ve never used FreeBSD or SmartOS
+    in production (I did use Solaris and zones in the past) and I know ZFS support
+    is first class in those. But I&#x27;ve been using both zfs-dkms and kmod-zfs in
+    RockyLinux and the experience has been pretty pleasant (ended up chosing kmod
+    because we only follow OS releases anyway and install time is better there). I&#x27;m
+    sure the story is similar for OSes like AlmaLinux (which also get upgrades sooner
+    than Rocky, and I would prefer to use it instead of Rocky, but it is a requirement
+    for us).<p>On my desktop I also use ZFS with kmod on cachy and updates have been
+    seamless so far.
+  score: 0
+  posted_at: '2026-11-14T12:17:50Z'
 article:
   url: https://gyptazy.com/blog/freebsd-bhyve-live-migration-support-rfc/
   title: 'FreeBSD bhyve Live Migration: Moving VMs Between Hosts | gyptazy'
@@ -271,4 +359,4 @@ article:
     - github.com/gy
   error:
   fetched_at: '2026-11-14T05:23:29Z'
-archived_at: '2026-11-14T05:23:31Z'
+archived_at: '2026-11-14T13:07:10Z'

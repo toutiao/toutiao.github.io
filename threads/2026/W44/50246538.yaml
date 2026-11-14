@@ -1,0 +1,321 @@
+---
+post:
+  id: '50246538'
+  title: Compile-Time Dependent Types
+  url: https://thenumb.at/Syl-Intro/
+  hn_url: https://news.ycombinator.com/item?id=50246538
+  score: 79
+  author: ibobev
+  posted_at: '2026-10-26T16:28:06Z'
+  fetched_at: '2026-11-14T13:07:17Z'
+  raw_comment_count: 28
+comments:
+- id: '50305738'
+  parent_id: '50246538'
+  author: superxpro12
+  text: I wonder how well LTO optimizes for these sorts of things, vs doing all of
+    the legwork to compile-time resolve polymorphic functions and objects.
+  score: 0
+  posted_at: '2026-10-30T15:54:53Z'
+- id: '50306231'
+  parent_id: '50305738'
+  author: uecker
+  text: In my experience, compilers are very good at this.
+  score: 0
+  posted_at: '2026-10-30T16:25:46Z'
+- id: '50306496'
+  parent_id: '50246538'
+  author: nextaccountic
+  text: |-
+    &gt; Compile-Time Dependent Types<p>&gt; It seems inevitable that compile-time dependent types will come to systems programming.
+    C++ has templates and constexpr. Rust has const generics. Zig has comptime. Even C has _Generic. However, these features tend to be highly restricted, lack a proper type system, or both.<p>Those language features are not examples of dependent types, though...<p>&gt; That is, Syl is dependently typed at compile time and simply typed at runtime.<p>&gt; This is the core idea of Staged Compilation with Two-Level Type Theory <a href="https:&#x2F;&#x2F;andraskovacs.github.io&#x2F;pdfs&#x2F;2ltt.pdf" rel="nofollow">https:&#x2F;&#x2F;andraskovacs.github.io&#x2F;pdfs&#x2F;2ltt.pdf</a> though it’s not presented as a modal type system.<p>But dependent types (and static types in general) don&#x27;t exist at runtime!<p>But I guess you mean that Syl implement dependent types them with no overhead, like no dictionary passing. So you can have full type erasure. Is that accurate? (will read the paper)
+  score: 0
+  posted_at: '2026-10-30T16:43:52Z'
+- id: '50306749'
+  parent_id: '50306496'
+  author: Ericson2314
+  text: Yeah I think this project could use a little guidance.<p>The real magic with
+    types parameters is that they can both be dynamic and erased!<p>&gt; That is,
+    Syl is dependently typed at compile time and simply typed at runtime.<p>This is
+    not full dependent types. And there is no reason to limit oneself this way for
+    performance, because again dynamic + erased has no overhead.
+  score: 0
+  posted_at: '2026-10-30T16:59:13Z'
+- id: '50307171'
+  parent_id: '50306496'
+  author: wahern
+  text: "&gt; Those language features are not examples of dependent types, though...<p>Ironically
+    C is the only language in that list with a dependent type. It&#x27;s not _Generic,
+    of course, but variable-length arrays (VLAs), which neither C++, Rust, nor Zig
+    have."
+  score: 0
+  posted_at: '2026-10-30T17:24:12Z'
+- id: '50307493'
+  parent_id: '50307171'
+  author: WalterBright
+  text: D has variable length arrays as a builtin type. They are extremely useful.<p>C
+    VLAs are a terribly clumsy design. Here&#x27;s the right way to do it in C:<p><a
+    href="https:&#x2F;&#x2F;www.digitalmars.com&#x2F;articles&#x2F;C-biggest-mistake.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.digitalmars.com&#x2F;articles&#x2F;C-biggest-mistake.html</a>
+  score: 0
+  posted_at: '2026-10-30T17:44:15Z'
+- id: '50307793'
+  parent_id: '50246538'
+  author: carterschonwald
+  text: very cool! ive a long running back burner project that overlaps in the same
+    design and influence space, but takes it in a very different direction
+  score: 0
+  posted_at: '2026-10-30T18:02:08Z'
+- id: '50307858'
+  parent_id: '50306496'
+  author: solomonb
+  text: "&gt; But dependent types (and static types in general) don&#x27;t exist at
+    runtime!<p>That isn&#x27;t entirely true when it comes to dependent types and
+    can be seen as a design choice. Types can depend on values and those values can
+    often exist at runtime. Erasure only applies to parts we can determine are not
+    computationally relevant.<p>For example `Vec n a`. The `n` is a natural number
+    you may need at runtime, such as to get the length without walking the list. A
+    dependent pair `Sigma(n : Nat). Vec n a` carries that `n` at runtime as ordinary
+    data.<p>In fact many dependently typed languages have techniques, such as quantitative
+    type theory, to assert what is needed at runtime."
+  score: 0
+  posted_at: '2026-10-30T18:06:32Z'
+- id: '50307927'
+  parent_id: '50306496'
+  author: TheNumbat
+  text: "&gt; Those language features are not examples of dependent types<p>They are
+    dependent in the sense that types can depend on (compile-time) values, but indeed
+    they&#x27;re not conventionally dependent types. I mentioned them because they&#x27;re
+    popular features that can be implemented with compile-time dependent types.<p>&gt;
+    But I guess you mean that Syl implement dependent types them with no overhead,
+    like no dictionary passing.<p>Yes. In 2LTT terms, the meta language is dependently
+    typed, the object language is simply typed, and all types are erased at runtime."
+  score: 0
+  posted_at: '2026-10-30T18:11:46Z'
+- id: '50308210'
+  parent_id: '50306749'
+  author: TheNumbat
+  text: "&gt; And there is no reason to limit oneself this way for performance, because
+    again dynamic + erased has no overhead.<p>Not entirely, since Syl uses static
+    data to describe types&#x27; runtime layout. Allowing dynamic there would require
+    overhead (e.g. a uniform representation).<p>That said, there&#x27;s not a good
+    reason to prevent types from ever mentioning dynamic values. I didn&#x27;t include
+    it in the post as I haven&#x27;t entirely thought it through, but with OxCaml-style
+    modalities, you should be able to mention runtime data in types under a dynamic
+    modality."
+  score: 0
+  posted_at: '2026-10-30T18:30:02Z'
+- id: '50308678'
+  parent_id: '50307858'
+  author: mkehrt
+  text: |-
+    You&#x27;ve exactly described the answer, but to people who don&#x27;t know much about dependent types, this may be a little unclear.  The point is that there are two sorts of dependent types.<p>When people who don&#x27;t know much about them think of dependent types, they are probably thinking of functions, which can take a value on the left hand side to be used in the type on the right.  Confusingly, these are normally called &quot;dependent products&quot; in the type theory. However since this is confusing and they are generally written with a capital Pi, they are often just referred to as &quot;Pis&quot;.  For example<p><pre><code>    Pi x:nat . Vec x string
+    </code></pre>
+    is a function that takes a nat (non-negative number) and returns a Vector whose length is that nat and which is encoded in the type.<p>On the other hand, you are talking about pairs (confusingly: &quot;dependent sums&quot;, here &quot;sum&quot; being something like a union&#x2F;enum in type theory), often called &quot;Sigmas&quot;.  These are pairs (2-tuples) of values in which the type of the second value depends on the value of the first.  So, your example, a pair where the vector length is held in the first element and the vector itself in the second. In this contrived example, Vector may not know its own length at runtime, so we need to package them up together.<p><pre><code>        Sigma x: nat . Vec x string
+    </code></pre>
+    These are both &quot;dependent types&quot;, but people who are only passingly familiar with them might mostly know about the first.<p>(Why are functions &quot;dependent products&quot; and pairs &quot;dependent sums&quot;? I&#x27;ve never understood this but I&#x27;ve heard hand-wavy explanations that infintitary products are functions and infinitary sums are products ¯\(ツ)&#x2F;¯)
+  score: 0
+  posted_at: '2026-10-30T19:04:08Z'
+- id: '50308883'
+  parent_id: '50307171'
+  author: Someone
+  text: |-
+    C also ‘supports’ fixed-length arrays. You can write<p><pre><code>  int foo(int bar[10]) {
+        …
+      }
+    </code></pre>
+    and you can tweak that to generate warnings when users pass arguments of the wrong size. See <a href="https:&#x2F;&#x2F;lwn.net&#x2F;Articles&#x2F;1046840&#x2F;" rel="nofollow">https:&#x2F;&#x2F;lwn.net&#x2F;Articles&#x2F;1046840&#x2F;</a>
+  score: 0
+  posted_at: '2026-10-30T19:18:14Z'
+- id: '50308976'
+  parent_id: '50307493'
+  author: wahern
+  text: 'That was basically Dennis Ritchies&#x27; proposal as well: Dennis Ritchie,
+    Variable-Size Arrays in C, September 1990, <a href="http:&#x2F;&#x2F;jclt.iecc.com&#x2F;Jct22.pdf#page=5"
+    rel="nofollow">http:&#x2F;&#x2F;jclt.iecc.com&#x2F;Jct22.pdf#page=5</a><p>IIRC,
+    one of the problems there is how to generalize it to, e.g., struct members. (Maybe
+    you can speak to that.) The approach adopted by C99[1], being based on dependent
+    typing, was I think better conceptually. But despite dependent typing being awesome,
+    it manifestly was and still remains a tough sell to compiler implementors, so
+    VLAs&#x2F;VMTs have languished in C and have yet to be fully developed. I think
+    I&#x27;d agree C would have been better off with the approach you suggest. Adoption
+    likely would have been quicker, and it could have been implemented in full almost
+    immediately.[2] The consolation prize is that <i>hopefully</i> C will soon see
+    some progression on the VMT front, specifically the proposals under discussion
+    on the committee for forward-referencing in function parameter VMTs and VMT struct
+    array members. The final piece of that puzzle would be addressing the scary syntax
+    for VLA passing, which feels error prone (C2y countof operator semantics help
+    a little bit).<p>[1] Tom MacDonald, Variable Length Arrays, December 1989, <a
+    href="http:&#x2F;&#x2F;jclt.iecc.com&#x2F;Jct13.pdf#page=67" rel="nofollow">http:&#x2F;&#x2F;jclt.iecc.com&#x2F;Jct13.pdf#page=67</a><p>[2]
+    Ironically GCC already had nascent VLA support, which may have helped nudge the
+    C99 committee toward that instead of adopting Ritchie&#x27;s approach. But the
+    fat pointer approach has a more obvious and straight-forward implementation.'
+  score: 0
+  posted_at: '2026-10-30T19:25:58Z'
+- id: '50309310'
+  parent_id: '50308883'
+  author: wahern
+  text: |-
+    That particular syntax has far too many caveats to be safely employed, IMO. It would be better to use variably-modified types (VMTs), which currently is more-or-less[1] a pointer to a VLA:<p><pre><code>  int foo(int (*bar)[10])
+    </code></pre>
+    In particular, sizeof(*bar) and (in C2y) countof(*bar) will do the correct thing. But you need to dereference bar almost every to use it properly, and unfortunately sizeof(bar) instead of sizeof(*bar) will compile cleanly, though countof(bar) is guaranteed to fail.<p>The dilemma is C&#x27;s array to pointer decaying semantics. C2y will try to roll that back somewhat (a[i] will no longer be identical to i[a] via the a[i] == a + i == i + a transitive relation), but there&#x27;s only so much you can do in that regard, especially for array passing, without new syntax or silently breaking alot of valid, proper, carefully written C code. There&#x27;s too much that can fall through the cracks by relying on non-standard compiler heuristics to substitute for proper typing.<p>[1] Strictly speaking a VLA can only be created as automatic storage objects, but a VMT can type dynamically allocated (malloc&#x27;d) memory. But the syntax looks like a pointer to a VLA because it originates from the need to pass actual VLAs as parameters.
+  score: 0
+  posted_at: '2026-10-30T19:54:51Z'
+- id: '50309318'
+  parent_id: '50308678'
+  author: n923263
+  text: Pairs in general (ie binary products) are always sums. A pair type `X * Y`
+    is a multiplication, which is equivalent to `enum {Y y_x0,Y y_x1,Y y_x2,...}`
+    or `Y + Y + Y + ...`, effectively a sum type where the descriminant of the enum
+    is a X, and each case of the enum contains a Y. This is equivalent to how 3 *
+    7 = 7 + 7 + 7, where you have three terms of size seven.<p>Similarly, functions
+    in general (ie (binary) exponentiations) are always products. A function type
+    `X -&gt; Y` (or `Y ^ X`) is a exponentiation, which is equivalent to `struct {Y
+    y_x0,Y y_x1,Y y_x2,...}` or `Y * Y * Y * ...`, effectively a product (or latent
+    array) type where the index of the &#x27;array&#x27; is a X, and each element
+    of the &#x27;array&#x27; is a Y. This is equivalent to how 7 ^ 3 = 7 * 7 * 7,
+    where you have three factors of size seven. (Note that functions have the exponent&#x2F;argument
+    first and the base&#x2F;result second.)<p>All of the above applies without dependent
+    types. Dependent types let the `Y` type depend on <i>which</i> value of type X
+    is involved. (That is, the Y <i>type</i> depends on the X <i>value</i>.)
+  score: 0
+  posted_at: '2026-10-30T19:55:25Z'
+- id: '50309590'
+  parent_id: '50308210'
+  author: Ericson2314
+  text: "&gt; Not entirely, since Syl uses static data to describe types&#x27; runtime
+    layout. Allowing dynamic there would require overhead (e.g. a uniform representation).<p>This
+    is where it is crucial to distinguish types from layouts. &quot;uniform representation&quot;
+    means the layout is static while the type is dynamic. But this isn&#x27;t an overhead
+    in the sense of dynamic checks or lack of erasure.<p>Having static (erased) layout
+    parameter and dynamic (erased) type parameter is the fully-general solution: monomorphization
+    per <i>layout</i>, not type. And the <i>caller</i> decided whether to thread a
+    layout parameter, or fix a single layout."
+  score: 0
+  posted_at: '2026-10-30T20:19:26Z'
+- id: '50309628'
+  parent_id: '50309318'
+  author: mkehrt
+  text: Aha, thanks!
+  score: 0
+  posted_at: '2026-10-30T20:22:18Z'
+- id: '50310332'
+  parent_id: '50309628'
+  author: n923263
+  text: 'A good mnemonic is that that if X and Y are finite types[0], sum, product
+    and exponent types are just doing the relevant arithmetic on the types.<p>(Bool-&gt;Bool,Uint8+())
+    is just a verbose way of saying (2^2 * (256+1)), where 1,2, and 256 are types
+    with the appropriate number of elements.<p>The cases involving infinite types
+    are just a (straightforward?) generalization of that.<p>0: eg 0=noreturn [1],1=void,2=Bool,256=uint8_t<p>1:
+    Much like in set theory, zero is the empty set.'
+  score: 0
+  posted_at: '2026-10-30T21:23:20Z'
+- id: '50310565'
+  parent_id: '50309590'
+  author: TheNumbat
+  text: Yeah, I&#x27;m aware, but wanted to avoid the complexity.
+  score: 0
+  posted_at: '2026-10-30T21:45:53Z'
+- id: '50310745'
+  parent_id: '50310565'
+  author: Ericson2314
+  text: 'I don&#x27;t think you want to avoid this complexity:<p>- OOP is existential
+    types where the layouts share some sort of shared prefix (e.g. pointer to vtable,
+    fields in common, etc.). To accurately model such things (and they occur in FFI),
+    you need to separate types from layout, and hold the &quot;supertype&#x27;s layout&quot;
+    fixed.<p>- A classic use-case of dependent types is dynamically-sized arrays,
+    and &quot;tensors&quot;. When you have a pair (L: Nat, V: Pointer(Array(N, T))),
+    you have a layout behind the pointer that is dynamic, but you don&#x27;t want
+    to conflate this with arbitrary types of the pointee.<p>Failure to deal with this
+    in fully generality will force you to go down Rust&#x27;s path of ad-hoc arrays
+    and &quot;dyn trait&quot;, which is actually more complexity.'
+  score: 0
+  posted_at: '2026-10-30T22:04:04Z'
+- id: '50311131'
+  parent_id: '50310745'
+  author: TheNumbat
+  text: |-
+    I think those can be modeled without explicitly separating layouts from types (not that doing so is necessarily a bad idea).<p>For arrays:<p><pre><code>  let dyn_array = fn (erased t : type) -&gt; record { len : int @@ dynamic, data : pointer(array(len, t)) }
+    </code></pre>
+    For &quot;dyn trait&quot;:<p><pre><code>  let vtable = fn (erased t : type) -&gt; record { print : pointer(t) -&gt; string, ... }
+
+      let dyn_print = record { t : type @@ dynamic erased, vtable : pointer(vtable(t)), data : pointer(t) }
+    </code></pre>
+    Both use dependent records and the dynamic modality I mentioned above. dyn_print doesn&#x27;t match C++ since it doesn&#x27;t inline the data, and giving that a static layout would require parameterizing on the layout of t, so I see your point. However, it might be fine to give dyn_print an &quot;incomplete&quot; layout that can only appear behind a pointer.
+  score: 0
+  posted_at: '2026-10-30T22:51:02Z'
+- id: '50312028'
+  parent_id: '50308976'
+  author: WalterBright
+  text: FWIW, I was not aware of Ritchie&#x27;s proposal until after my article was
+    published, and after the variable sized arrays were in D for many, many years.<p>&gt;
+    how to generalize it to, e.g., struct members. (Maybe you can speak to that.)<p>I
+    don&#x27;t know what you mean by that?
+  score: 0
+  posted_at: '2026-10-31T00:34:18Z'
+- id: '50313643'
+  parent_id: '50307493'
+  author: uecker
+  text: One issue with D&#x27;s design is that it uses<p>char a[..]<p>as syntax for
+    a pointer, not an array. C has the same confusing issues in prototypes where it
+    allows char[] notation for pointers, but this as it is widely seen as a mistake.<p>I
+    do not agree that C VLAs are a terribly clumsy design. Especially from the point
+    of dependent typing, C&#x27;s design is the right one, e.g. you can  express something
+    such as<p>void transpose(int X, int Y, double (<i>out)[X][Y], const double (</i>in)[Y][X]);<p>If
+    you only have existential types and not the fully dependent form, then this is
+    not possible.
+  score: 0
+  posted_at: '2026-10-31T06:14:19Z'
+- id: '50314601'
+  parent_id: '50313643'
+  author: uecker
+  text: the pointer stars got lost, sorry.<p><pre><code>  void transpose(int X, int
+    Y, double (*out)[X][Y], const double (*in)[Y][X]);</code></pre>
+  score: 0
+  posted_at: '2026-10-31T10:10:56Z'
+- id: '50318519'
+  parent_id: '50313643'
+  author: WalterBright
+  text: |-
+    D does not use `char a[..]` as syntax for anything.<p>A pointer is declared as `char* p`, and an array as `char[] p`.<p>A two dimensional array parameter is declared as:<p><pre><code>    void transpose(double[][] a);
+    </code></pre>
+    Having to specify the dimensions as separate parameters is an unfortunate design choice:<p>1. It&#x27;s clumsy to have to carry the dimensions around as separate items, rather than as one item<p>2. If the wrong X or Y is supplied, you have a massive memory corruption problem
+  score: 0
+  posted_at: '2026-10-31T18:16:09Z'
+- id: '50318857'
+  parent_id: '50318519'
+  author: uecker
+  text: I took the syntax from your article, maybe it is not what D is using now.<p>It
+    is more expressive to pass the dimensions as separate variables. This is also
+    exactly what other dependently typed languages do.  The memory corruption can
+    be avoided by having the compiler check this.   I agree though that fat pointers
+    are more convenient and would should also have them as syntax sugar on top of
+    it.
+  score: 0
+  posted_at: '2026-10-31T18:49:28Z'
+- id: '50328346'
+  parent_id: '50318857'
+  author: WalterBright
+  text: The syntax in the article is what I proposed for C. Sorry that wasn&#x27;t
+    clear.<p>Yes, the separate variables is more expressive. It&#x27;s also clumsy,
+    inelegant, and error-prone. It also only works for function calls - not fields
+    in a struct.
+  score: 0
+  posted_at: '2026-11-01T18:38:05Z'
+- id: '50343531'
+  parent_id: '50311131'
+  author: Ericson2314
+  text: |-
+    &gt; [code below]<p><pre><code>    let dyn_array = fn (erased t : type) -&gt; record { len : int @@ dynamic, data : pointer(array(len, t)) }
+    </code></pre>
+    Yes, but array(len, t) has a dynamic layout. Your system needs to understand that that is OK because `pointer(array(len, t))` still has a static layout. You need to understand that pointee-monomorphization is not necessary. You can do special hacks for the `pointer` type constructor, but then you cannot eta-expand it (i.e. wrap in a one field struct). To make this work in a first-class way, so custom data types can have type parameters that do not need to be monomorphized, you need your type system to be layout-aware.<p>Also, you can do<p><pre><code>    let dyn_array = fn (dynamic erased t : type) -&gt; record { len : int @@ dynamic, data : pointer(array(len, t)) }
+    </code></pre>
+    There is no need to force the element type to be static. The array itself doesn&#x27;t care. The pointee is already dynamic-layout either way.<p>&gt; [code below]<p><pre><code>    let vtable = fn (erased t : type) -&gt; record { print : pointer(t) -&gt; string, ... }
+
+        let dyn_print = record { t : type @@ dynamic erased, vtable : pointer(vtable(t)), data : pointer(t) }
+    </code></pre>
+    The problem with this is that `vtable` is being called with a dynamic-erased argument, but it itself requires a static type. That means the whole thing is dynamic (well, depending on exactly how the modalities work). But do want to statically know it is a record with a print field, etc.<p>&gt; static layout would require parameterizing on the layout of t, so I see your point<p>:) See <a href="https:&#x2F;&#x2F;docs.rs&#x2F;stack_dst&#x2F;latest&#x2F;stack_dst&#x2F;" rel="nofollow">https:&#x2F;&#x2F;docs.rs&#x2F;stack_dst&#x2F;latest&#x2F;stack_dst&#x2F;</a> for example, which tries to hack it in Rust. It would be much nicely to do it safely!
+  score: 0
+  posted_at: '2026-11-02T20:51:20Z'
+article:
+archived_at: '2026-11-14T13:07:31Z'
