@@ -1,0 +1,150 @@
+---
+post:
+  id: '50416011'
+  title: Reverse engineering a vintage diode-transistor logic chip
+  url: https://www.righto.com/2026/11/signetics-st680a-dtl-nand.html
+  hn_url: https://news.ycombinator.com/item?id=50416011
+  score: 90
+  author: ''
+  posted_at: '2026-11-08T19:03:48Z'
+  fetched_at: '2026-11-15T00:50:12Z'
+  article_url: https://www.righto.com/2026/11/signetics-st680a-dtl-nand.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T00:50:12Z'
+  raw_comment_count: 5
+comments:
+- id: '50416603'
+  parent_id: '50416011'
+  author: kens
+  text: Author here for your DTL questions...
+  score: 0
+  posted_at: '2026-11-08T20:04:30Z'
+- id: '50500344'
+  parent_id: '50416603'
+  author: java-man
+  text: Write a book please!<p>But seriously, is it possible to analyze the modern
+    chips like Apple M1 using the same methods?  To find out, for instance, why there
+    are so much more efficient than Intel CPUs?
+  score: 0
+  posted_at: '2026-11-14T20:11:41Z'
+- id: '50500962'
+  parent_id: '50416603'
+  author: MeteorMarc
+  text: Why is DTL slower than TTL?
+  score: 0
+  posted_at: '2026-11-14T21:22:11Z'
+- id: '50501466'
+  parent_id: '50500962'
+  author: adrian_b
+  text: The reason is not seen in the schematics from TFA, because these are some
+    early DTL gates, which are even slower, but for other motives, i.e. because they
+    use a pull-up resistor at output.<p>To improve their speed, one must use a totem-pole
+    output, where at the output the pull-up resistor is replaced by a transistor,
+    so that the output can charge quickly a capacitive load, ensuring fast transitions
+    from low to high.<p>Then only 1 of the 2 output transistors is on, depending on
+    the logic state.<p>So those 2 transistors must have inputs of opposite polarities.
+    This is done by connecting the pull-up transistor to the collector of the driver
+    transistor and the pull-down transistor to the emitter of the driver transistor.<p>In
+    the gate with totem-pole output, there must be a level-shifting diode connected
+    to the base of the driver transistor, to ensure that the threshold between &quot;0&quot;
+    and &quot;1&quot; is the same at input and at output, i.e. the threshold is equal
+    with 2 silicon diode voltage drops (the 2 diodes are the emitter junction of the
+    driver transistor in series with the emitter junction of the pull-down output
+    transistor), i.e. approximately 1.4 volt (which is the midpoint between the levels
+    that are defined as the limits for &quot;0&quot; and &quot;1&quot;, i.e. 0.8 volt
+    and 2.0 volt, leaving a margin for noise that will not cause a wrong logic value).<p>When
+    an input to the totem-pole DTL goes from high to low, the level-shifting diode
+    becomes reverse biased, so current cannot pass through it, so the driver transistor
+    remains with an open base. Bipolar transistors that are blocked by leaving their
+    base open, become off only very slowly, because there is no path to evacuate the
+    charge carriers from their base region, and until all mobile charge carriers from
+    the base decay by recombination, the transistor remains on, which may take many
+    microseconds.<p>In TTL, the difference from totem-pole DTL is that the input diodes
+    and the level-shifting diode are no longer separated by an isolation diffusion
+    and they are close enough so that the bipolar transistor effect appears between
+    them.<p>Thus the input diodes become multiple emitter junctions of a bipolar transistor,
+    while the level-shifting diode becomes the collector junction of that transistor.<p>The
+    bipolar transistor effect consists in the fact that if there exists an emitter
+    current, it passes through the collector junction, despite the fact that it is
+    reverse biased, which in an isolated diode would prevent the passing of any current.<p>Thus
+    the transistor effect ensures that when the input goes from high to low, there
+    is a current through the level-shifting diode, which removes the mobile charge
+    carriers from the base of the driver transistor, ensuring that it becomes off
+    immediately, so the TTL gate switches faster than the DTL gate when the input
+    goes from high to low (and the output goes from low to high, because the simplest
+    TTL and DTL gates are inverting gates).<p>After TTL gates with a power supply
+    of 5 volt replaced the DTL gates in computers, there was a DTL variant that survived
+    until the mid seventies. That DTL variant used a higher supply voltage, typically
+    of 15 volt, to ensure a high noise immunity in industrial applications, where
+    the lower speed also did not matter much. That variant of DTL was eventually replaced
+    by the CMOS 4000 series of logic circuits, initially introduced by RCA, which
+    used the same power supply, but which had a much lower power consumption.
+  score: 0
+  posted_at: '2026-11-14T22:07:35Z'
+- id: '50502679'
+  parent_id: '50416603'
+  author: iberator
+  text: Do you know schemes for any DTL cpus&#x2F;mcus?
+  score: 0
+  posted_at: '2026-11-15T00:36:17Z'
+article:
+  url: https://www.righto.com/2026/11/signetics-st680a-dtl-nand.html
+  title: Reverse engineering a vintage diode-transistor logic chip
+  fetch_status: success
+  content: |-
+    ### Reverse engineering a vintage diode-transistor logic chip
+
+    Going through a collection of old parts, CuriousMarc encountered some ICs that he couldn't identify. He opened up one of these ICs, and I studied it under the microscope. After some reverse engineering, I determined that it was a logic chip that implemented four NAND gates using old-fashioned diode-transistor logic (DTL).[1](#fn:tubetime)The chip turned out to be the ST680A, a member of the Signetics 600 series of chips from 1965. In this article, I discuss the circuitry in this chip and how diode-transistor logic works.
+
+    [![The die of the ST680A under the microscope.](https://static.righto.com/images/st680a/die-w500.jpg "The die of the ST680A under the microscope.")](https://static.righto.com/images/st680a/die.jpg)
+
+    The die of the ST680A under the microscope.
+
+    Integrated circuits can be packaged in many ways. One of the most popular is the plastic DIP (Dual In-line Package), a black rectangle of epoxy with two rows of metal pins. This type of package was[invented](https://archive.org/details/signetics-corporation-condensed-catalog-spring-1969/page/n6/mode/1up) by Signetics: "Introduced in late 1965, the 600 series was the first integrated circuit family to be offered in a solid, plastic, dual in-line package (DIP)." Earlier integrated circuits were packaged in round metal cans or in small flat-packs. In 1965, engineers at Fairchild invented the DIP, which had two rows of pins on 0.1" spacing. Unlike the surface-mounted flat-pack, the DIP had pins that were inserted into holes, making manual or automated assembly quick and easy. Because the pins of a DIP were on a regular grid, rather than the circular pattern of a metal can, circuit board design and manufacturing were also easier ([details](https://www.computerhistory.org/siliconengine/package-is-the-first-to-accommodate-system-design-considerations/)). The first DIP chips had ceramic packages. The plastic DIP, introduced by Signetics, was much cheaper and became very popular.
+
+    [![An advertisement for the Signetics 600 series. From Electronics, March 21, 1966.](https://static.righto.com/images/st680a/signetics-ad-w700.jpg "An advertisement for the Signetics 600 series. From Electronics, March 21, 1966.")](https://static.righto.com/images/st680a/signetics-ad.jpg)
+
+    An advertisement for the Signetics 600 series. From [_Electronics_](https://www.worldradiohistory.com/Archive-Electronics/60s/66/Electronics-1966-03-21%20(Original).pdf#page=50), March 21, 1966.
+
+    The plastic DIP is less popular with me, however, because it is harder to open. With a ceramic package, I can simply tap it with a chisel and pop it open, but that doesn't work with epoxy packages. An epoxy package can be dissolved with nitric or sulfuric acid, but I try to avoid dangerous acids. Instead, CuriousMarc used [Antoine's hot air](https://www.youtube.com/watch?v=ZQeHHYJYWXo)decapping method. Unfortunately, the hot air technique doesn't always work. In this case, tiny bits of epoxy were stuck to the die, obscuring the circuitry. I used a few drops of boiling sulfuric acid to clean the die. (I'm okay with sulfuric acid in tiny quantities.)
+
+    [![The die on its metal frame.](https://static.righto.com/images/st680a/die-package-w500.jpg "The die on its metal frame.")](https://static.righto.com/images/st680a/die-package.jpg)
+
+    The die on its metal frame.
+
+    The photo above shows the silicon die on its metal frame, the lead frame. The golden blobs are where the bond wires were attached to the die. You can see the doped silicon regions that form diodes and bipolar NPN transistors, as well as 16 resistors in the center, forming serpentine paths.
+
+    Most chips have a passivation layer—a thin layer of silicon dioxide—over the chip. Inconveniently, this old chip didn't have a passivation layer, so the acid also stripped off the metal layer. (A few remnants are visible in the upper left.) Without the metal layer, I had to guess at how the components were connected to form logic gates. The die has very faint color differences where the silicon was protected by the metal, so that helped. Eventually, I came up with the diagram below, showing how the metal layer was probably configured. This wiring reveals that the chip implements four DTL NAND gates, which I'll describe in more detail below. One puzzle was that the chip has two unused diodes, indicated with question marks below.
+
+    [![The metal layer for a quad NAND chip. I desaturated the image to make the labels clearer.](https://static.righto.com/images/st680a/quad-nand-w500.jpg "The metal layer for a quad NAND chip. I desaturated the image to make the labels clearer.")](https://static.righto.com/images/st680a/quad-nand.jpg)
+
+    The metal layer for a quad NAND chip. I desaturated the image to make the labels clearer.
+
+    ## Transistors, diodes, and resistors
+
+    In this section, I'll explain how the patterns in the image correspond to components of the circuit. The silicon die is doped with various impurities to form regions with different electrical characteristics. These regions appear red or green under the microscope due to thin-film effects. As a result, the chip's transistors, diodes, and resistors are visible.
+
+    The chip is made from bipolar NPN transistors, which have a completely different construction from the MOS transistors in modern ICs. In an NPN transistor, the current from the collector to the emitter is controlled by the current through the base. The collector is a large region of N-type silicon, silicon that is doped with atoms such as phosphorus or arsenic. Since these elements have one more valence electron than silicon, they give the silicon more negative charge carriers, so it is called N for negative. The N-type silicon happens to appear reddish.
+
+    On top of the collector, the base is a thin region of P-type silicon, which appears green. This silicon has been doped with atoms such as boron or gallium, which have one fewer valence electron than silicon. The missing electrons form "holes", which act as positive charge carriers. Finally, the emitter is N-type silicon, on top of the base layer. These layers work together through semiconductor magic, amplifying the base current.
+
+    [![Two NPN transistors on the chip. The second transistor is a larger output transistor.](https://static.righto.com/images/st680a/transistors-w400.jpg "Two NPN transistors on the chip. The second transistor is a larger output transistor.")](https://static.righto.com/images/st680a/transistors.jpg)
+
+    Two NPN transistors on the chip. The second transistor is a larger output transistor.
+
+    The chip's output transistors are slightly larger so they can sink more current. In the transistor on the right above, note that the collector contact wraps around three sides of the transistor. The emitter is also larger, with an L-shaped contact. According to the datasheet, each output transistor can sink 2.5 mA of current.
+
+    The chip uses many diodes since it is diode-transistor logic. The structure of a diode is similar to a transistor, but without the emitter. In a diode, current flows from the cathode (P-type silicon) to the anode (N-type).
+
+    [![A diode and a resistor on the chip.](https://static.righto.com/images/st680a/components-w300.jpg "A diode and a resistor on the chip.")](https://static.righto.com/images/st680a/components.jpg)
+
+    A diode and a resistor on the chip.
+
+    The chip uses 16 resistors, located in the middle of the die. A resistor is constructed from a long, thin region of doped silicon. Since silicon has moderately high resistance, a long strip of silicon acts as a resistor. Most of the resistors have a serpentine layout to fit a long resistor into a smaller area. These resistors consist of P-type silicon (green) in a "tub" of N-type silicon (red). The tub is connected to the positive voltage supply; since current doesn't flow from N-type silicon to P-type silicon, this isolates the resistors from each other.
+
+    ## Operation of a DTL gate
+
+    Logic gates can be created in
+  error:
+  fetched_at: '2026-11-15T00:50:12Z'
+archived_at: '2026-11-15T00:50:30Z'

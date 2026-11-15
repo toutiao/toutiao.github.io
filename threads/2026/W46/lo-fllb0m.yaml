@@ -1,0 +1,190 @@
+---
+post:
+  id: lo-fllb0m
+  source: lobsters
+  title: Let Me Let You Own Your Data
+  url: https://www.willett.io/posts/data/
+  hn_url: https://lobste.rs/s/fllb0m
+  score: 23
+  author: thomas0
+  posted_at: '2026-11-14T16:08:27Z'
+  fetched_at: '2026-11-15T00:50:30Z'
+  article_url: https://www.willett.io/posts/data/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T00:50:31Z'
+  raw_comment_count: 15
+  tags:
+  - databases
+  - privacy
+comments:
+- id: lo-ppyoy0
+  parent_id: '0'
+  author: jaculabilis
+  text: |-
+    Most people, if required to determine the hosting for their own data, would prefer to hand that responsibility off to another party that specializes in things like availability, redundancy, resilience, etc. Even self-hosters tend to entrust their remote backups to a commercial party like Backblaze.
+
+    Besides, all of these options compromise on the data model anyway, being KV or blob storage when all I really want is an API to run SQL queries
+
+    Very silly option, but there's prior art for running SQLite on top of blob storage like S3 by presenting a VFS to SQLite that interfaces with the blob storage backend.
+  score: 11
+  posted_at: '2026-11-14T16:40:51Z'
+- id: lo-8tgyhl
+  parent_id: '0'
+  author: thomas0
+  text: |-
+    Most people, if required to determine the hosting for their own data, would prefer to hand that responsibility off to another party that specializes in things like availability, redundancy, resilience, etc. Even self-hosters tend to entrust their remote backups to a commercial party like Backblaze.
+
+    I tend to agree with you, I self host a couple of things but it's a constant stream of work (even though it might be as simple as running apt update && apt upgrade.
+
+    Very silly option, but there's prior art for running SQLite on top of blob storage like S3 by presenting a VFS to SQLite that interfaces with the blob storage backend.
+
+    This led me to lookup what you were talking about and found that SQLite supports Azure and Google blob storage (but no AWS?), https://sqlite.org/cloudsqlite/doc/trunk/www/index.wiki
+    SQLite constantly surprises me with what it can support!
+  score: 5
+  posted_at: '2026-11-14T16:55:16Z'
+- id: lo-zx2ytp
+  parent_id: '0'
+  author: rkaw92
+  text: |-
+    I was working on something related as a hobby project. My thinking was exactly this:
+
+    People enjoy the cloud as a "place" where their data lives safely, over the relative pain of managing files and folders locally on-disk, making backups, etc. The average user isn't even that good at finding a file they themselves saved.
+    Data should be portable by default, not vendor locked-in. You should be able to inspect the entirety of it, and edit as needed. This realizes the GDPR automatically (can request, correct, delete).
+    Web apps generally store and access two kinds of data: records (strong consistency, maybe relational?) and blobs (images etc.). They are different by nature, and this duo covers 90% of all use cases.
+    Database access should be mediated by an RDBMS for consistency, instead of "upload an SQLite file to overwrite your previous work".
+
+    What I got working was a "personal data server" (a bit like Solid Project's), but the API was generally just SQL, instead of a semantic Web layer. This seemed most practical. Under the hood, it was a Go server that spawned HTTP adapters to hold open an SQLite database on behalf of the user's app. It would close the DB when not needed to conserve resources, and was built as multi-tenant from the ground up, so each user/app pair would get their requests routed to their respective "shard".
+    It never really got anywhere, because by the time I got the implementation underway, two things dawned on me:
+
+    Transactions over HTTP suck and a sane API around them is going to be very hard.
+    This execution model does not support collaboration very well, and any sharing scenario would necessarily feel bolted-on.
+
+    I haven't really dabbled in this for some months, but it is an area I'm likely to revisit some day.
+  score: 6
+  posted_at: '2026-11-14T17:37:09Z'
+- id: lo-lv1tdt
+  parent_id: '0'
+  author: james
+  text: |-
+    An API to run SQL queries isn't compatible with people hosting their own data. If people host their own data any time soon it's going to be in simple JSON blobs with extremely basic formats that are shared across consumers of this new type of thing.
+    It's a bit like SQL/NoSQL. If you want the speed advantage of NoSQL, you lose the power of being able to run arbitrary SQL queries. If you want complete arbitrary localisation and distribution of data, you're not going to be able to query it, search or index in it in any way that's recognisable to web apps today.
+  score: 1
+  posted_at: '2026-11-14T17:56:48Z'
+- id: lo-z2yma9
+  parent_id: '0'
+  author: fazalmajid
+  text: There was WebSQL Database, but Mozilla and Microsoft conspired to kill it
+    and replace it with the far, far inferior IndexedDB back when they still had some
+    relevance to web standards. But in any case an in-browser database is not something
+    durable enough (e.g. proper backups) to rely on for users' critical data.
+  score: 2
+  posted_at: '2026-11-14T18:05:30Z'
+- id: lo-dsda9l
+  parent_id: '0'
+  author: '0x2ba22e11'
+  text: |-
+    Offhand I know that Azure blob storage happens to include an API for block IO (i.e. like a SAN or like EBS) and some other primitives you could use for a VFS but I can't remember what they all are
+    but S3 only does immutabl-ish object storage, by which I mean you can overwrite an object but iirc you have to overwrite the entire thing; last I checked you can't just overwrite part of an object in S3
+  score: 2
+  posted_at: '2026-11-14T18:43:26Z'
+- id: lo-bwz9xd
+  parent_id: '0'
+  author: boramalper
+  text: 'Related: https://0data.app/en/'
+  score: 2
+  posted_at: '2026-11-14T19:49:38Z'
+- id: lo-iqb4gt
+  parent_id: '0'
+  author: simonw
+  text: |-
+    One option that's worth considering here is GitHub. Private repos are free, and you can OAuth with a user's GitHub account and store data directly in their own repo.
+    The downside is that most non-technical users don't know what "GitHub" is and sending them through that signup is weird.
+    If your users are likely to have GitHub accounts already it could make an excellent backend for storing data.
+  score: 2
+  posted_at: '2026-11-14T19:56:35Z'
+- id: lo-zejgfg
+  parent_id: '0'
+  author: landon
+  text: |-
+    I feel like there's a contradiction in requirements here. Either the user lets us hold their data (i.e. we throw it all in a DB), or they hold it on their device (and lose cross device sync), or they tell you how to get it (and log in/provide keys for some other provider).
+    I bet it could be done with cryptography somehow, but that has its own issues.
+  score: 3
+  posted_at: '2026-11-14T20:03:48Z'
+- id: lo-xudlmc
+  parent_id: '0'
+  author: deivid
+  text: |-
+    Couldn't you store the user's data as an encrypted blob in some public place?
+    Queries like sqlite/duckdb can run locally on the browser.
+    Cross device sync is a QR or a way to share the private key (+password optinally?)
+  score: 1
+  posted_at: '2026-11-14T20:14:25Z'
+- id: lo-yebnga
+  parent_id: '0'
+  author: ramblurr
+  text: |-
+    Not advocating for it (never used it) but a user being able to "have" their own data is party of Tim Berners-Lee's Solid project.
+    https://solidproject.org/about
+    I've always meant to spend some time looking into it.
+  score: 5
+  posted_at: '2026-11-14T21:10:10Z'
+- id: lo-gylsid
+  parent_id: '0'
+  author: pscanf
+  text: |-
+    I've been banging my head against this problem for the past year as well, trying to make my app store and sync data through whatever file syncing service the user (probably) already uses (Dropbox, Google Drive, iCloud, etc).
+    Alas, I didn't really manage to make it work. One challenge is that file syncing is quite unpredictable (when files sync, in which order they sync, etc), and another is that it's not easily accessible on mobile, which is why I want syncing between devices in the first place.
+    The approach I now landed on is syncing through any S3-compatible service, which is not really accessible to "normal" end users (not my target audience anyway), but at least it's more or less a standard with lots of implementations, and other than creating a bucket the user then doesn't have to host anything.
+  score: 4
+  posted_at: '2026-11-14T21:41:51Z'
+- id: lo-s0m1vu
+  parent_id: '0'
+  author: beto
+  text: My understanding is that WebSQL was killed because the spec was just "whatever
+    SQLite does", so it was hard to have it be a web standard.
+  score: 2
+  posted_at: '2026-11-14T22:25:57Z'
+- id: lo-50tqbv
+  parent_id: '0'
+  author: beto
+  text: |-
+    I built a proof-of-concept social network where data was stored locally on IndexedDB, but it was also kept in encrypted form by any friends you had on the network. If you lost your laptop you were able to login with the public key (the sign up page generated a PDF and would tell the user to confirm having printed it), and retrieve your data from your friends whenever they were back online (using WebRTC).
+    I think this approach solves the problem where people don't want to host their own data because they could lose it -- or is at least a good compromise, since all the user needs to save is the public key.
+  score: 2
+  posted_at: '2026-11-14T22:31:08Z'
+- id: lo-h7iyou
+  parent_id: '0'
+  author: fazalmajid
+  text: That could have been addressed by documenting what it is SQLite does. Going
+    from WebSQL to IndexedDB is like going from SQLite to gdbm or BerkeleyDB, except
+    IndexedDB itself is implemented on top of SQLite so you get all the overhead and
+    none of the expressiveness.
+  score: 1
+  posted_at: '2026-11-14T22:46:17Z'
+article:
+  url: https://www.willett.io/posts/data/
+  title: Let Me Let You Own Your Data — willett dot io
+  fetch_status: success
+  content: |-
+    Why do I have to choose between my web app respecting people’s privacy and it, like… having basic functionality?
+
+    When I was working on [Cheapskate](/posts/cheapskate), I realized after a few weeks that there was a fundamental issue. The app relies on Supabase for the unsexy parts of its architecture: authentication and a SQL datastore. All of it is bog-standard and all of it I happily handed off to be someone else’s problem. To be clear, I love Supabase – if I had to run all that boilerplate myself, I never would have made Cheapskate.
+
+    But… the _shape_ of it is wrong. I don’t want to own this data. This is a person’s financial details! Shouldn’t that live with them, and not with me? Is it even possible to make a web app like this, with anything close to the same convenience and functionality (durable, works across devices, shareable with friends) as Supabase allows?
+
+    Well, I really wanted to. I spent a lot of time trying. Here are all the things that don’t work:
+
+    - [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage): the easiest one to try, and doesn’t require user accounts, but the inability to access data across devices or share with someone else makes it a non-starter
+    - [showDirectoryPicker](https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker): cool, and durable (unlike localStorage), but not yet supported by all browsers, and sharing (while possible) requires an extra service, e.g. Dropbox or iCloud
+    - [CloudKit Private Database](https://developer.apple.com/documentation/cloudkit/ckcontainer/privateclouddatabase): Apple’s obscure BaaS! Locks us into Apple SSO, requires a $99 Apple Developer subscription, and the JS library doesn’t implement sharing anyway
+    - [SQLite in Google Drive](https://developers.google.com/workspace/drive/picker/guides/web-picker): cute, but it similarly locks us into Google SSO, and I actually tried this, it was miserable to set up both as a user and a developer
+    - [B-Y-O-DynamoDB](https://aws.amazon.com/dynamodb/): this is actually how I made [Cardi](https://github.com/pickledish/cardi) a few years ago! It works great… other than how it is insane to ask people to “log in” using AWS keys lol
+    - [remoteStorage](https://remotestorage.io/rs.js/docs/): really cool, and the Platonic ideal of this concept, but support is thin, and the docs explicitly call out collaboration as [unsupported](https://remotestorage.io/rs.js/docs/getting-started/share-public-data.html)
+    - [CRDT / “local-first”](https://www.inkandswitch.com/essay/local-first/): again cool, but I haven’t seen a mature “Firebase for CRDTs” like the one proposed, and it’s unclear if it would even solve the privacy aspect
+
+    Besides, all of these options compromise on the data model anyway, being KV or blob storage when all I really want is an API to run SQL queries. You know, like any normal app?
+
+    Argh!
+  error:
+  fetched_at: '2026-11-15T00:50:31Z'
+archived_at: '2026-11-15T00:50:31Z'

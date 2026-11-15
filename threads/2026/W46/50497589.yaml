@@ -1,0 +1,272 @@
+---
+post:
+  id: '50497589'
+  title: 'Show HN: DeepSeek V3 in ~200 lines of pure Jax'
+  url: https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax
+  hn_url: https://news.ycombinator.com/item?id=50497589
+  score: 157
+  author: ''
+  posted_at: '2026-11-14T15:04:15Z'
+  fetched_at: '2026-11-15T00:50:09Z'
+  article_url: https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T00:50:09Z'
+  raw_comment_count: 8
+comments:
+- id: '50497618'
+  parent_id: '50497589'
+  author: VaibhaavTiwari
+  text: 'I wanted to understand what actually makes DeepSeek V3 different, so I rebuilt
+    its three main ideas from scratch in pure JAX: Multi-head Latent Attention, mixture-of-experts
+    with bias-based load balancing instead of an auxiliary loss, and multi-token prediction.
+    The model is about 190 lines.<p>It’s a 36.2M-parameter version trained on a MacBook
+    Air M5 (24 GB) with jax-metal, on 207 old detective novels. 12,000 steps took
+    about 2.6 hours.<p>Full write-up with diagrams and results: <a href="https:&#x2F;&#x2F;vaibhaav.in&#x2F;writing&#x2F;deepseek-v3-jax&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;vaibhaav.in&#x2F;writing&#x2F;deepseek-v3-jax&#x2F;</a><p>The
+    trained checkpoint and exact data are in the v1.0 release, so you can generate
+    text without training.<p>Would love corrections if I got anything wrong :)'
+  score: 0
+  posted_at: '2026-11-14T15:07:31Z'
+- id: '50499902'
+  parent_id: '50497589'
+  author: armcat
+  text: I love this, there is nothing like recreating a model from first principles,
+    plus makes me want to revisit Jax again (I&#x27;ll do it after I spend enough
+    time with Zig). Thanks for this!
+  score: 0
+  posted_at: '2026-11-14T19:18:41Z'
+- id: '50499974'
+  parent_id: '50497589'
+  author: nico
+  text: "&gt; to asking a language model to create a 3D end-to-end working model for
+    me to capture the nuances<p>Love this! Yes, having a visual of the system makes
+    it a lot easier to reason about and understand<p>I wish all AI models came with
+    interactive animated workflows of their architecture<p>&gt; so I wanted it to
+    be different just for the sake of it and used various books by…<p>That’s cool
+    and great for your own project. At the same time it helps to use datasets that
+    others have used, because then you can compare results more directly<p>Excellent
+    write up, I really appreciate all the detail and the sample outputs at the end.
+    Excited to see what I could apply for  this to the small &lt;10M models I’ve been
+    training"
+  score: 0
+  posted_at: '2026-11-14T19:27:27Z'
+- id: '50500124'
+  parent_id: '50497589'
+  author: joebarbere
+  text: 'Thanks for this! I&#x27;ve been trying to get local training working on Fedora
+    with ROCm for a while now, and this is the first project that ran end-to-end on
+    my RX 7600 XT 16GB.<p>The whole reason for me buying the card was to play around
+    with deep learning and models, so it&#x27;s awesome to have a stepping off point
+    now!<p>No CUDA meant ROCm surprisingly just worked with JAX.<p>Gotchas for anyone
+    with a 7600 XT: it needed two env vars, HSA_OVERRIDE_GFX_VERSION=11.0.0 because
+    JAX&#x27;s plugin rejects gfx1102, and XLA_FLAGS=--xla_gpu_enable_triton_gemm=false
+    to stop a GPU hang.<p>I&#x27;m on Fedora 45 with the in-kernel amdgpu driver,
+    rootless podman and AMD&#x27;s rocm&#x2F;jax image (ROCm 10.1, JAX 0.11.1). Nothing
+    ROCm is installed on the host, which is nice.<p>Container setup is in a PR if
+    it helps anyone: <a href="https:&#x2F;&#x2F;github.com&#x2F;Vaibhaav-Tiwari&#x2F;deepseek-v3-jax&#x2F;pull&#x2F;1"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;Vaibhaav-Tiwari&#x2F;deepseek-v3-jax&#x2F;pull&#x2F;1</a>'
+  score: 0
+  posted_at: '2026-11-14T19:45:50Z'
+- id: '50500641'
+  parent_id: '50497618'
+  author: wg0
+  text: This is very illustrative. I&#x27;m sure a great learning experience for you
+    but so much more for so many others.<p>Respect and thanks.
+  score: 0
+  posted_at: '2026-11-14T20:44:17Z'
+- id: '50500767'
+  parent_id: '50497589'
+  author: mattfrommars
+  text: Post like these always drives a motivation to understand how inference or
+    what OP did.<p>For folks who are more familiar in this space, is there a good
+    road map how to build and understand the intuition behind this? I’m comfortable
+    in Java and Python and do vanilla SWE work.
+  score: 0
+  posted_at: '2026-11-14T21:01:35Z'
+- id: '50501111'
+  parent_id: '50500767'
+  author: rhdunn
+  text: 'Intuition: there are YouTube videos from 3blue1brown [1] and Welch Labs [2]
+    on neural networks, LLMs, and related tech that are good.<p>Building: the videos&#x2F;tutorials
+    from Andrej Karpathy in Python [3] are considered to be very good at building
+    and understanding the basics, from a small&#x2F;toy neural network engine to transformers
+    and tokenizers.<p>There was a post here a few weeks ago [4] on reasoning models
+    using Python&#x2F;PyTorch with links to an older series on non-reasoning transformers.<p>[1]
+    <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;playlist?list=PLZHQObOWTQDNU6R1_6700...</a><p>[2]
+    <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;@WelchLabs&#x2F;videos" rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;@WelchLabs&#x2F;videos</a><p>[3]
+    <a href="https:&#x2F;&#x2F;karpathy.ai&#x2F;zero-to-hero.html" rel="nofollow">https:&#x2F;&#x2F;karpathy.ai&#x2F;zero-to-hero.html</a><p>[4]
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50245138">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50245138</a>'
+  score: 0
+  posted_at: '2026-11-14T21:34:05Z'
+- id: '50502367'
+  parent_id: '50500767'
+  author: JBits
+  text: I&#x27;m not an expert but there&#x27;s <a href="https:&#x2F;&#x2F;jaxformer.com"
+    rel="nofollow">https:&#x2F;&#x2F;jaxformer.com</a>, <a href="https:&#x2F;&#x2F;github.com&#x2F;karpathy&#x2F;nanochat"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;karpathy&#x2F;nanochat</a> and,
+    of course, the original &quot;Attention is all you need&quot; paper at <a href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;1706.03762"
+    rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;1706.03762</a>.
+  score: 0
+  posted_at: '2026-11-14T23:57:26Z'
+article:
+  url: https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax
+  title: 'GitHub - Vaibhaav-Tiwari/deepseek-v3-jax: DeepSeek V3 (MLA, DeepSeekMoE,
+    aux-loss-free balancing, MTP) in 190 lines of pure JAX, trained on a MacBook Air.
+    Write-up: vaibhaav.in/writing/deepseek-v3-jax · GitHub'
+  fetch_status: success
+  content: |-
+    ## Latest commit
+
+    ## History
+
+    ## Folders and files
+
+    ## Repository files navigation
+
+    # DeepSeek V3 in pure JAX
+
+    The architecture from the DeepSeek-V3 technical report in 190 lines of pure JAX, pretrained from scratch on a MacBook Air on public-domain detective fiction.
+
+    No Flax, no Equinox, no PyTorch. Params are plain dicts of arrays and every part of the model is a function you can read top to bottom in deepseek_v3.py.
+
+    Read the write-up: DeepSeek V3 in 190 lines of pure JAX, with diagrams, the code explained piece by piece, and the results.
+
+    ## What's in the 190 lines
+
+    ## Results
+
+    One run of the default config on a MacBook Air M5 (24 GB):
+
+    With balancing on and off, validation loss at step 2000 was the same (3.921 vs 3.923). The bias evens out the experts without costing anything, which is the paper's claim.
+
+    Its own words, from the prompt "The fog came in off the":
+
+    > The fog came in off the bay, and the great trees were spreading and the stars were shining.
+
+    The fog came in off the bay, and the great trees were spreading and the stars were shining.
+
+    This is an architecture demo, not a strong language model. See the write-up for what worked, what didn't, and what's missing.
+
+    ## Try the trained model
+
+    The v1.0 release has the exact checkpoint and data from the published run. After installing (step 1):
+
+    mkdir -p data runs/main curl -L -o runs/main/ckpt.pkl https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax/releases/download/v1.0/ckpt.pkl # 138 MB curl -L -o data/tokenizer.json https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax/releases/download/v1.0/tokenizer.json .venv/bin/python sample.py --prompt "The fog came in off the" --num 3
+
+    The checkpoint is a Python pickle, which can run code when loaded. Only load checkpoints from sources you trust.
+
+    ## Reproduce it
+
+    You need an Apple Silicon Mac, Python 3.12 and uv. The published run used 24 GB of memory. No Mac? See Running on CPU.
+
+    1. Install
+
+    git clone https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax.git && cd deepseek-v3-jax uv venv -p 3.12 .venv uv pip install --python .venv/bin/python -r requirements.txt
+
+    Every version in requirements.txt is pinned. jax-metal 0.1.1 only works with jax==0.4.34, so don't upgrade JAX.
+
+    2. Check your setup
+
+    JAX_PLATFORMS=cpu .venv/bin/pytest tests.py -q # 39 passed .venv/bin/python smoke_metal.py # optional: what jax-metal supports on your Mac
+
+    In smoke_metal.py, "grad through 2-axis contraction" fails on jax-metal 0.1.1. That's expected, and the model is written to avoid it.
+
+    3. Build the dataset
+
+    .venv/bin/python prepare_data.py
+
+    This downloads the 207 books in sources.txt (~120 MB, about 7 minutes), cleans them, trains an 8,192-token BPE tokenizer and writes data/train.bin, data/val.bin and data/tokenizer.json. It should print:
+
+    train: 211 docs, 83.4M chars, 21.69M tokens val: 4 docs, 1.1M chars, 0.30M tokens
+
+    The published run's data had these hashes:
+
+    shasum -a 256 data/train.bin data/val.bin data/tokenizer.json
+
+    d37aca97e707bb81b6e4d266cc1adfd1f3e3556457c6eb724e495118a734e0bb data/train.bin b7ac285b115e6793b5d36aa5b4bc6e81a5fccfc7af0908a306d3828ebca9c31c data/val.bin c5a142b4006a967c880dda44ad792719d53c16d947da3b6c2332d6132d9967cc data/tokenizer.json
+
+    You will most likely get different hashes. The Hammett books are pinned to exact Standard Ebooks commits and come out identical, but Project Gutenberg files can't be pinned, and Gutenberg has since re-issued 28 of the 203 books with small edits (mostly accents stripped, like "José" → "Jose"). The token counts come out the same, so training should behave the same.
+
+    To train on the exact same bytes, skip prepare_data.py and download the published data instead:
+
+    mkdir -p data for f in train.bin val.bin tokenizer.json; do curl -L -o data/$f https://github.com/Vaibhaav-Tiwari/deepseek-v3-jax/releases/download/v1.0/$f; done shasum -a 256 data/*.bin data/tokenizer.json # should match the hashes above
+
+    4. Train
+
+    .venv/bin/python train.py # the main run: 12k steps, ~2.6 h .venv/bin/python train.py --steps 2000 --out runs/bias_on # balancing ablation, with the bias .venv/bin/python train.py --steps 2000 --out runs/bias_off --no-bias # ...and without it
+
+    Each run writes metrics.jsonl (loss, validation loss, per-expert load, biases, tokens/s) and ckpt.pkl (saved at every evaluation) into its --out folder, which defaults to runs/main. Seeds are fixed, but GPU math on Metal isn't bit-for-bit deterministic, so expect your numbers to land close to the ones above rather than match them exactly.
+
+    5. Generate
+
+    .venv/bin/python sample.py --prompt "The fog came in off the" --num 3
+
+    Defaults: temperature 0.8, top-k 50, 300 new tokens per sample (--temp, --top-k, --n).
+
+    6. Make the figures
+
+    .venv/bin/python plots.py # needs runs/main, runs/bias_on, runs/bias_off JAX_PLATFORMS=cpu .venv/bin/python charts.py # the rest of the write-up's charts
+
+    Both write into post/figures/.
+
+    To redraw the figures without training, download the logs from the release: metrics-main.jsonl, metrics-bias_on.jsonl and metrics-bias_off.jsonl go into runs/main/, runs/bias_on/ and runs/bias_off/ as metrics.jsonl. charts.py also needs the checkpoint and the data.
+
+    ### Running on CPU
+
+    Everything runs without jax-metal. It's much slower, so use the smaller config:
+
+    JAX_PLATFORMS=cpu .venv/bin/python train.py --config small
+
+    --config small (4 layers, 8 experts, top-2, 128-token context) is meant for 8–16 GB Macs too. It has only been checked for a couple of steps, not trained to the end.
+
+    ## Files
+
+    "190 lines" counts the non-blank, non-comment lines of deepseek_v3.py after its docstring:
+
+    tail -n +5 deepseek_v3.py | grep -cvE '^\s*(#|$)' # 190
+
+    ## What's simplified
+
+    - Dense MoE compute. Every expert runs on every token and the unpicked ones are zeroed. The routing math is exact, but there's no sparse dispatch or expert parallelism.
+
+    - No weight absorption in MLA. The latent is decompressed explicitly, which is easier to read and slower at inference.
+
+    - Not included: FP8 training, DualPipe, node-limited routing, YaRN context extension, and any post-training.
+
+    - Scale. 36.2M parameters vs 671B, 6 layers vs 61, a 256-token context vs 128K.
+
+    ## Data and licensing
+
+    All training text is public domain in the United States: Dashiell Hammett's Red Harvest, The Dain Curse, The Maltese Falcon and Continental Op stories (CC0 editions from Standard Ebooks), plus about 200 detective and crime novels from Project Gutenberg. Every source is listed in sources.txt. Public-domain status outside the US may differ.
+
+    ## Reference
+
+    DeepSeek-AI, DeepSeek-V3 Technical Report, 2024.
+
+    ## License
+
+    Code: MIT. The training text is public domain in the US (see above).
+
+    ## About
+
+    DeepSeek V3 (MLA, DeepSeekMoE, aux-loss-free balancing, MTP) in 190 lines of pure JAX, trained on a MacBook Air. Write-up: vaibhaav.in/writing/deepseek-v3-jax
+
+    ### Resources
+
+    ### Stars
+
+    ### Watchers
+
+    ### Forks
+
+    ## Releases
+
+    ## Packages
+
+    ## Contributors
+
+    ## Languages
+  error:
+  fetched_at: '2026-11-15T00:50:09Z'
+archived_at: '2026-11-15T00:50:30Z'
