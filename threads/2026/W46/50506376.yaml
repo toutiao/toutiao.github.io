@@ -1,0 +1,178 @@
+---
+post:
+  id: '50506376'
+  title: Understanding Positional Embeddings in Modern LLMs
+  url: https://magazine.sebastianraschka.com/p/understanding-positional-embeddings
+  hn_url: https://news.ycombinator.com/item?id=50506376
+  score: 136
+  author: ''
+  posted_at: '2026-11-15T12:14:06Z'
+  fetched_at: '2026-11-15T18:35:03Z'
+  article_url: https://magazine.sebastianraschka.com/p/understanding-positional-embeddings
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T18:35:03Z'
+  raw_comment_count: 3
+comments:
+- id: '50508006'
+  parent_id: '50506376'
+  author: programjames
+  text: 'This article is only about understanding the implementation of positional
+    embeddings, but to really understand positional embeddings you have to understand
+    the theory. Positional embeddings are group representations. This is how you find
+    them, and this is also how you parameterize them to make them differentiable&#x2F;learnable.
+    To give a few examples:<p>1. Rotary positional embeddings are representations
+    of the translation group. The n-dimensional translation group ℝⁿ is abelian, so
+    its irreducible representations are all one-dimensional ρ: ℝⁿ → ℂ, specified by
+    a momentum vector m: ρₘ(x) = exp(i⟨m, x⟩). You can get a multi-dimensional representation
+    by choosing several m, which are your learnable parameters.<p>2. If you wanted
+    RoPE embeddings to also preserve rotation (perhaps you have scenes viewed at arbitrary
+    angles), you are looking for representations of the special Euclidean group. The
+    irreducible representations in four dimensions are your familiar particles: electrons,
+    protons, etc., and in general are parameterized by a momentum vector and a discrete
+    spin vector. You would have to do some kind of annealing process to train the
+    spin vector (or you could just make it constant).<p>3. If you want to do attention
+    on quadtrees, well, what is the group? Suppose every node in the quadtree has
+    local coordinates scaled to [0, 1]. Moving up&#x2F;down&#x2F;to a neighbor in
+    the quadtree requires an affine transformation of the local coordinates, which
+    compose, so we can label every node by its affine transformation to the root (x,
+    d): y → x + 2⁻ᵈy, where x is the node&#x27;s translation in the image and d is
+    its depth in the tree. The finite-dimensional irreducible representations are
+    parameterized by momentum vectors m as well as a modulus M and basis vectors {e₁,
+    e₂, ..., eₖ} where k = ord₂(M) and look like ρₘ,ₑ(x, d) = DPᵈ where D is the diagonal
+    matrix with entries Dⱼⱼ = exp(2πi⟨2ʲm, x⟩ &#x2F; M) and P permutes the basis vectors.'
+  score: 0
+  posted_at: '2026-11-15T16:08:06Z'
+- id: '50508554'
+  parent_id: '50508006'
+  author: augment_me
+  text: I dont think the target audience for the blog is abstract algebra grad students<p>However
+    would be good to add that the solution can be structural(like in NoPE), then you
+    dont need explicit representations and it just falls out of your architecture.
+  score: 0
+  posted_at: '2026-11-15T17:07:41Z'
+- id: '50508685'
+  parent_id: '50508554'
+  author: programjames
+  text: When I see a title &quot;Understanding...&quot; I assume it will be about
+    understanding theory not implementation or the theory of implementation. When
+    I see a title &quot;Surveying...&quot; or &quot;Understanding Implementation...&quot;
+    I assume it will be about surveying the implementation of that theory. There was
+    just a title mismatch so I felt it was prudent to fill in the gap in understanding
+    the blog did not cover.<p>Also, I expect the target audience of the blog is ML
+    researchers, since he goes into some of the math, and umm... the kind of ML researcher
+    that is not at least aware of the basics of abstract algebra is closer to an alchemist
+    than a researcher.
+  score: 0
+  posted_at: '2026-11-15T17:18:35Z'
+article:
+  url: https://magazine.sebastianraschka.com/p/understanding-positional-embeddings
+  title: Understanding Positional Embeddings in Modern LLMs
+  fetch_status: success
+  content: |-
+    # Understanding Positional Embeddings in Modern LLMs
+
+    ### The Methods Behind How LLMs Represent Token Positions
+
+    [
+
+    ](https://substack.com/@rasbt)
+
+    [Sebastian Raschka, PhD](https://substack.com/@rasbt)
+
+    This article explains how LLMs encode and process token position information by covering classic and contemporary methods like RoPE. It’s essentially a comprehensive journey where we will work through the mechanisms with visual examples, a little math, and a small PyTorch implementation. And, of course, we will then also look at how modern architectures adapt or omit explicit positional encodings.
+
+    Below, you can find a preview of which positional embedding choices are used in 2026 open-weight models. We will discuss these choices later after covering the underlying mechanisms.
+
+    [
+
+    ](https://substackcdn.com/image/fetch/$s_!8RKL!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb461a2cb-11ab-474a-affe-0ee99e5a8782_2850x2777.png)
+    _Figure 1: A preview of the gallery’s 2026 architectures, grouped by positional encoding. Architecture figures taken from my LLM gallery._
+
+    But why spending so much time writing/reading about this rather minor building block? LLMs keep evolving, and as I was preparing a new article on the latest LLM architecture trends this year, I realized that I never covered the positional information methods used in LLMs in any article so far. So, instead of letting the other article get out of hand, I thought it might make sense to publish this as a standalone building block for the upcoming LLM architecture and trends analysis.
+
+    Also, over the years, many readers have asked me for a tutorial on relative positional embeddings (aka RoPE) to follow up on the learned absolute embeddings used in GPT. It’s been on my TODO list for a long time, so I finally revisited my old draft and put this walkthrough together, which will cover
+
+    - different positional methods in LLMs;
+
+    - (finally) how RoPE works;
+
+    - what methods are used by recent open LLMs.
+
+    Note that this article assumes some familiarity with basic LLM architectures and works well as a follow-up to [Build a Large Language Model (From Scratch)](https://sebastianraschka.com/books/#build-a-large-language-model-from-scratch). If the concepts and computation of the attention internals, particularly query, key, and value vectors, are a little fuzzy, I recommend checking my [self-attention walkthrough](https://magazine.sebastianraschka.com/p/understanding-and-coding-self-attention) as a refresher:
+
+    [
+
+    #### Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs
+
+    January 14, 2024
+
+    [
+    Read full story
+    ](https://magazine.sebastianraschka.com/p/understanding-and-coding-self-attention)
+
+    ](https://magazine.sebastianraschka.com/p/understanding-and-coding-self-attention)
+
+    The article is also very technical and likely too detailed for some. However, I really wanted to have this foundation out there for future articles to reference. And no worries, the next one will return to a more comfortable style.
+
+    **PS: I started experimenting with Substack’s new “perks” system. As a thank-you to supporters, I’ve added [image exports and metadata](https://magazine.sebastianraschka.com/perks) from the architecture gallery for you to use in your own analyses.**
+
+    PPS: If you are already familiar with how position embeddings work, feel free to fast-forward to Section 6, _Positional choices in modern architectures_.
+
+    Note that this article may be best read in a web browser than an email client. I recommend checking out the [web view here](https://magazine.sebastianraschka.com/p/understanding-positional-embeddings), which also has a navigation bar on the left side.
+
+    ## 1. Where position information enters an LLM
+
+    Let’s start with the overall architecture. A tokenizer encodes the input text into token IDs. Next, the input token embedding layer of an LLM maps each of these IDs to a vector of numbers. We usually refer to these entries in that vector as “features” (similar to classic ML). The transformer blocks inside the LLM then modify these vectors using attention and feedforward layers. Lastly, the model’s output layer produces logit scores (converted into probabilities) for the next token.
+
+    The following shows this path in GPT-2 (a relatively classic LLM) and MiniMax-M3 (a more recent LLM released this year; a placeholder for most other recent LLMs). As we can see, the architectures are not too different from each other, but before we get to the positional information parts, let’s focus on the orange blocks for now (the token embedding layers) and the transformer blocks above them; the other architecture differences aren’t needed for this explanation.
+
+    [
+
+    ](https://substackcdn.com/image/fetch/$s_!3vjo!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4ab287c2-c3ba-46db-9ed0-1e6eacf78f43_2592x2521.png)
+    _Figure 2: Token embedding layers in GPT-2 and MiniMax-M3, highlighted in orange. (Side note: M3’s first three out of 60 feedforward layers are dense not MoEs.)_
+
+    A token embedding layer, shown in the figure above, maps each token ID to a vector. Position information is then added afterward. Concretely, and as we will discuss in more detail later, GPT-2 adds a position vector to each token embedding before the modified embedding enters the first transformer block. On the other hand, MiniMax-M3 adds the positional information in each transformer block using a method called RoPE inside attention.
+
+    We will talk about these methods in more detail later, but first, let’s start with the big picture information explaining why explicit positional information is added or needed.
+
+    ### 1.1 Why add positional information?
+
+    Consider the following two input sentences as a simple example:
+
+    1. “The red fox jumps over the gray fox.”
+
+    2. “The gray fox jumps over the red fox.”
+
+    Changing the word order changes which fox does the jumping, as illustrated in the following figure.
+
+    [
+
+    ](https://substackcdn.com/image/fetch/$s_!KoQ2!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb8ff5039-8ec8-447c-a444-0345619c8b7b_1846x1304.png)
+    _Figure 3: Changing the word order changes which fox jumps._
+
+    For the examples in this article, we will treat each word as one token for simplicity. (As you know, real tokenizers can split words into smaller subword tokens.) The first sentence then has eight token positions, from 0 through 7.
+
+    _Figure 4: Token IDs and positions in the toy sentence._
+
+        # Assume the following small vocabulary.
+        # Real vocabularies typically have 50k to 200k entries
+        vocab = {
+            "The": 0,
+            "red": 1,
+            "fox": 2,
+            "jumps": 3,
+            "gray": 4,
+            "over": 5,
+            "the": 6,
+        }
+
+    (If you are interested in how vocabularies are built, check out my [tokenizer materials on GitHub](https://github.com/rasbt/LLMs-from-scratch/tree/main/ch02/05_bpe-from-scratch).)
+
+    Note that “fox”, which appears twice in the input sentence, gets the same token ID 2 in both cases. And since they both have the same token ID, irrespective of the position in the input sentence, they would get the same embedding vector from the embedding layer.
+
+    Now, let’s consider a regular self-attention mechanism with no positional encoding (and no causal mask), where every input token can attend to every other token in the input. In this scenario, swapping any two words, like “red” and “gray”, would still result in the same embeddings and attention scores between each token pair.
+
+    GPT-style models do use a causal (autoregressive) mask, which restricts each token to itself and earlier tokens. Interestingly, this causal mask gives the computation some implicit order information. In our example, “jumps” can attend to “red” in the first sentence and “gray” in the second. So, a causal LLM can theoretically already d
+  error:
+  fetched_at: '2026-11-15T18:35:03Z'
+archived_at: '2026-11-15T18:35:22Z'

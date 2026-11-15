@@ -1,0 +1,144 @@
+---
+post:
+  id: lo-bwjt1b
+  source: lobsters
+  title: Periodic-Oriented Programming for FIRST Robotics
+  url: https://bvisness.me/periodic-oriented-programming/
+  hn_url: https://lobste.rs/s/bwjt1b
+  score: 18
+  author: robalex
+  posted_at: '2026-11-15T03:16:42Z'
+  fetched_at: '2026-11-15T18:35:23Z'
+  article_url: https://bvisness.me/periodic-oriented-programming/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T18:35:25Z'
+  raw_comment_count: 2
+  tags:
+  - programming
+comments:
+- id: lo-w83ix1
+  parent_id: '0'
+  author: juliaaa
+  text: |-
+    FRC is quite weird from a software point of view. I would say that probably 75% of teams struggle to design/build the hardware reliable enough to play the game. For these teams (I was on one of them) it doesn't really matter what software is running, you can't patch bad hardware. This is where a lot of the bits of advice in the article make less sense - it's impossible to not store arm position in software (estimation) if you want to attempt autonomous period work if you don't have a sensor (well, you can also do it purely on time here too). It's also impossible to be position-based instead of time-based without various sensors for position.
+    For the next 20% of teams that have competent hardware, then I would totally agree that dead simple periodic code without commands is the most appropriate fit. And these teams generally end up well funded enough to have sensors to be able to measure these and use it. (It seems like this is where you fit from a look at the blue alliance). But this is what I also see a lot of, though often quite spaghetti (these are high schoolers, after all).
+    I'll add here that WPILib (especially Tyler of 3512? iirc) has done a lot of wonderful work here on bringing a lot control theory beyond PID to be easier to implement for these teams, and having a lot of turnkey components for this, something previously limited to the top teams (or people using LABVIEW). Kudos also to Dalton (who I think works for CTRE now?) for doing a lot of work on documentation.
+    The top 5% of teams is where this changes. Listed in the advanced section of documentation, Command-based makes significantly more sense when your robot is heavily automated, and you have half a dozen different preplanned trajectories for your (hypothetical) double arm grabber claw mechanism for the different goals. You have a desire to do the many different "modes" of operation this article describes because you are doing many different things. This is mostly driven by team factors, and the current year's game, not software.
+    I'll add also that I believe command-based waz significantly reworked by (iirc) someone rom one of the top-scoring Israel teams. This is where it fits and makes sense.
+    Maybe this has changed, as I haven't been involved in a few years, but I do not recall seeing many command-based teams in the wild.
+  score: 3
+  posted_at: '2026-11-15T10:17:11Z'
+- id: lo-yoy4n4
+  parent_id: '0'
+  author: taciturnaxolotl
+  text: |-
+    I graduated last year and it very well might just have been the teams I was interacting with and looking at their code but command based seems to have become far more common and at least for our team was the default choice. I am quite curious what the rewrite will look like as I graduated before we got to use it (and systemcore which is very sad). The WpiLib team has done a really good job trying to make it intuitive to use but the main issue from my standpoint was too many very similarly named options and very few docs beyond just javadoc. There are very different options that are all setup as commands almost identically to each other.
+    I may be coming at this from the 5% angle though. Our team was never super competitive but we did always have a workable bot that let us push for autonomous control (which was also very much my hobby. At least from the limited set of regional competitions I went to it seemed like most of them had a pretty good grasp on hardware. I’ve been really surprised how fast the manufacturing techniques have advanced for a lot of teams as it is largely not feeling possible be competitive without having a large metal shop and people who can design custom parts.
+    edit:
+    This post seemed super familiar to me and I went digging back through our team slack and we discussed this approach about a year ago. It honestly would be a good idea to simplify a lot of frc code. I personally loved my baby of an amalgamation that was the codebase but that is a pretty terrible argument against simplicity
+  score: 1
+  posted_at: '2026-11-15T13:53:10Z'
+article:
+  url: https://bvisness.me/periodic-oriented-programming/
+  title: Periodic-Oriented Programming for FIRST Robotics | Ben Visness
+  fetch_status: success
+  content: "I recently retired from mentoring my [_FIRST_ Robotics Competition](https://www.firstinspires.org/programs/frc/)
+    (FRC) team. I started as a student in 2010, and went straight into mentoring upon
+    graduation, so in total I have been writing FRC programs for about 17 years.\n\nOver
+    time though I've become more and more dismayed with how FRC programs are typically
+    written. For decades, I feel that _FIRST_ and [WPILib](https://docs.wpilib.org/en/stable/docs/software/what-is-wpilib.html)
+    have encouraged students to severely overengineer their robot programs. As time
+    has gone on, I have become more and more frustrated with the state of FRC programming,
+    and our team's code style has drifted further and further away from the norm.\n\nTo
+    be clear, I have the utmost respect for the time and effort that _FIRST_ and the
+    WPILib maintainers put in every year, and it is thanks to their efforts that FRC
+    teams have reliable and complete libraries every year. But I think the accepted
+    programming practices in FRC are leading students astray and ought to be corrected.\n\nSo
+    as I step away from _FIRST_, I decided I should write down my philosophy of robot
+    programming in FRC, which I have decided to give the pithy name of **Periodic-Oriented
+    Programming**.\n\n## What is Periodic-Oriented Programming?\n\nPeriodic-Oriented
+    Programming is very simple: Do as much as possible in your `periodic` function.
+    Uses very few abstractions, and write most of your logic in one big function,
+    top to bottom. This is so simple and beginner-like that it seems like it shouldn't
+    work for serious programs. But it does, as long as you carefully establish a few
+    simple boundaries and practices.\n\nFor context, the essential structure of an
+    FRC program is typically to use the `TimedRobot` framework provided by WPILib.
+    To use it, you simply implement `periodic` functions and the robot framework calls
+    them 50 times per second. For example, here's a complete \"tank drive\" robot
+    program in Python:\n\n    import wpilib\n    import rev\n    \n    class MyRobot(wpilib.TimedRobot):\n
+    \     def robotInit(self):\n        self.gamepad = wpilib.XboxController(0)\n
+    \       self.leftMotor = rev.SparkMax(10, rev.SparkLowLevel.MotorType.kBrushless)\n
+    \       self.rightMotor = rev.SparkMax(11, rev.SparkLowLevel.MotorType.kBrushless)\n
+    \   \n      def teleopPeriodic(self):\n        self.leftMotor.set(self.gamepad.getLeftY())\n
+    \       self.rightMotor.set(self.gamepad.getRightY())\n\n50 times per second,
+    the left and right motor speeds will be updated to use the left and right gamepad
+    axes. The robot framework and hardware abstraction layers do the rest.\n\nIn essence,
+    every FRC program does the following work in `periodic`:\n\n- Get user inputs
+    (or autonomous state)\n- Compute the desired state of the hardware (motor speeds,
+    actuator positions, etc.)\n- Enforce safety constraints, smooth signals, or otherwise
+    process the outputs\n- Update hardware outputs\n\nIn Periodic-Oriented Programming,
+    I basically encourage my students to lean into this pattern. POP code should have
+    few abstractions, and most of the logic should be written top-to-bottom in a single
+    function. And to the greatest extent possible, everything should be run on every
+    `periodic`—no modes, no commands, no state.\n\nAs programs get larger, more structure
+    is needed, but the core philosophy remains the same. The most important piece
+    of structure is **subsystems**.\n\n## Hardware lives in subsystems\n\nThe use
+    of \"subsystem\" classes will be familiar to most FRC teams, but the specifics
+    are what matter here:\n\n1. **Every subsystem has a `periodic` method.** This
+    is called from `robotPeriodic` so it runs 100% of the time.\n2. **Hardware is
+    never accessible outside the subsystem.** All access to the hardware must be mediated
+    through subsystem methods.\n\nThese rules extend the Periodic-Orientation into
+    the subsystem code. For each subsystem, all of its logic should be centralized
+    in one function and readable top to bottom. In most cases, the subsystem `periodic`
+    is the only place in the entire program that actually touches the hardware. This
+    has many advantages: it ensures by construction that hardware is only touched
+    once per tick, that safety constraints are respected 100% of the time, and that
+    logging and telemetry are run consistently.\n\nCentralizing most logic in `periodic`
+    also provides a nice platform for both autonomous and teleoperated code. The subsystem's
+    API surface can be comprised of very high-level functions like `driveFieldRelative(vx,
+    vy)` or `goToElevatorPreset(coralOrAlgae, level)`, which basically just set instance
+    variables to be read later in `periodic`. These subsystem functions also provide
+    a consistent place to validate inputs (e.g. impossible speeds, angles, or presets),
+    convert units, etc.\n\nBy the way, don't be afraid to combine two subsystems if
+    their logic is intertwined. For example, in 2025 our robot had an arm on an elevator,
+    and the safe angles for the arm were dependent on the height of the elevator.
+    Therefore, we made a combined `ElevatorAndArm` subsystem. (If you've heard advice
+    that classes should be about \"one thing\", ignore that advice, it is wrong.)\n\n##
+    Chase the desired state\n\nAs I described earlier, every FRC program computes
+    the desired state of the hardware, then updates the outputs to move in that direction.
+    This is most obviously true of closed-loop control (PID, typically), where you
+    simply set a target value (e.g. \"elevator at 6 feet\") and then compute outputs
+    that will move the hardware toward that target.\n\nSuccessful Periodic-Oriented
+    programs apply this philosophy to the entire robot program. **What hardware state
+    do I want, and how do I get there?** This way of thinking applies at the actuator
+    level (e.g. motor speeds), the mechanism level (e.g. arm angles), and the whole-robot
+    level (e.g. safety constraints like \"arm can only go out when elevator is down\").
+    It is universal to all robot control.\n\nThe question of \"What hardware state
+    do I want?\" falls naturally into `teleopPeriodic` and `autonomousPeriodic`. They
+    naturally define answers to questions like: Where on the field? What velocity?
+    What elevator position? What arm angle? What shooter RPM?\n\nThe question of \"How
+    do I get there?\" then falls naturally into a subsystem `periodic`. Often it is
+    as simple as `elevatorMotor.setReference(elevatorHeight)`, deferring the actual
+    closed-loop behavior to your motor controllers. But extra behaviors can easily
+    be layered in here too; for example, the whole-robot constraint described earlier
+    can be as simple as:\n\n    def periodic(self):\n      newArmAngle = self.desiredArmAngle\n
+    \     if self.getElevatorHeight() > constants.kMaxElevatorHeightForArm:\n        newArmAngle
+    = 0 # pull arm in if elevator is up\n      self.armMotor.setReference(newArmAngle)\n\nOr
+    you could do a \"state machine\" approach, where attempting to put the arm out
+    will actually drop the elevator to a safe position first:\n\n    def periodic(self):\n
+    \     newArmAngle = self.desiredArmAngle\n      newElevatorHeight = self.desiredElevatorHeight\n
+    \     if self.getElevatorHeight() > constants.kMaxElevatorHeightForArm:\n        newArmAngle
+    = 0 # pull arm in if elevator is up\n      if self.desiredArmAngle > 0:\n        newElevatorHeight
+    = 0 # move elevator down if arm wants to be out\n      self.armMotor.setReference(newArmAngle)\n
+    \     self.elevatorMotor.setReference(newElevatorHeight)\n\nIn a Periodic-Oriented
+    program, complex behaviors like this are easy to debug, robustly uphold safety
+    constraints, never produce conflicting outputs to hardware, and often require
+    less state than other approaches. Speaking of:\n\n## Minimize state\n\nRobots
+    have enough state to deal with in the real world. So don't add extra state to
+    your program!\n\nFor the beginners in the audience, \"state\" in programming is
+    data in your program that changes over time. Common sources of state in FRC programs
+    include:\n\n- Physical robot state (e.g. location on field, velocity, mechanism
+    positions)\n- User inputs (e.g. joystick axis values and button states)\n- M"
+  error:
+  fetched_at: '2026-11-15T18:35:25Z'
+archived_at: '2026-11-15T18:35:26Z'

@@ -1,0 +1,552 @@
+---
+post:
+  id: '50297068'
+  title: 'Much Ado About None: Sentinel Values in Python'
+  url: https://florianwilhelm.info/2026/10/sentinel_values/
+  hn_url: https://news.ycombinator.com/item?id=50297068
+  score: 78
+  author: sebg
+  posted_at: '2026-10-29T22:24:56Z'
+  fetched_at: '2026-11-15T18:35:28Z'
+  raw_comment_count: 51
+comments:
+- id: '50319616'
+  parent_id: '50297068'
+  author: chowells
+  text: I like it. I can&#x27;t see how to do better while remaining compatible with
+    Python idioms.
+  score: 0
+  posted_at: '2026-10-31T20:07:15Z'
+- id: '50319696'
+  parent_id: '50297068'
+  author: RantyDave
+  text: "&quot;A simple cache returns None both for a missing key and for a key that
+    maps to None.&quot;<p>No, it returns KeyError. Or at least it should."
+  score: 0
+  posted_at: '2026-10-31T20:16:05Z'
+- id: '50319796'
+  parent_id: '50319696'
+  author: lyorig
+  text: Perhaps the author has had their fair share of run-ins with libraries that
+    didn&#x27;t think their API through like that. But yes, they should.
+  score: 0
+  posted_at: '2026-10-31T20:26:37Z'
+- id: '50319854'
+  parent_id: '50297068'
+  author: lpghatguy
+  text: When I was writing a bunch of Lua, I was a big fan of having a None sentinel
+    value (Lua uses &#x27;nil&#x27; for representing absence) and it was useful for
+    a lot of things similar to Pydantic&#x27;s MISSING.<p>This distinction is something
+    that I think is actually handy about JavaScript, and distinguishing between &#x27;null&#x27;
+    and &#x27;undefined&#x27; is sometimes useful for similar reasons.
+  score: 0
+  posted_at: '2026-10-31T20:31:27Z'
+- id: '50319992'
+  parent_id: '50319696'
+  author: travisd
+  text: it’s maybe less “pythonic” but at $dayjob we’ve very actively moved away from
+    exceptions for things in favor of things that are statically type checked. too
+    many things that become runtime bugs instead of type checking bugs.<p>with match
+    now being available, we even return explicit error objects and the ergonomics
+    are pretty good (reminds me of rust).
+  score: 0
+  posted_at: '2026-10-31T20:42:13Z'
+- id: '50320195'
+  parent_id: '50297068'
+  author: pwdisswordfishq
+  text: So much trouble to avoid introducing the optional monad.
+  score: 0
+  posted_at: '2026-10-31T21:01:52Z'
+- id: '50320235'
+  parent_id: '50320195'
+  author: woodruffw
+  text: Python’s type system has union types (including Option), and using them is
+    pretty ergonomic. As TFA points out the problem is that `None` gets contextually
+    reused in all kinds of places where a proper sentinel type is more appropriate.
+  score: 0
+  posted_at: '2026-10-31T21:06:18Z'
+- id: '50320260'
+  parent_id: '50320195'
+  author: Waterluvian
+  text: I’m curious what that would practically look like in Python.<p>I bet this
+    would be a good use of vibe coding. Experiment with what-ifs. I can imagine being
+    able to “show not tell” and reduce the signal-to-noise of comment opinions.
+  score: 0
+  posted_at: '2026-10-31T21:08:32Z'
+- id: '50320352'
+  parent_id: '50319696'
+  author: 0cf8612b2e1e
+  text: |-
+    The author’s example chose to use the syntax that returns None on missing. If they wanted clarity the standard API does raise.<p><pre><code>  cache = {“key”: “value”, “some input”: None}
+      cache.get(“missing_key”)
+    </code></pre>
+    Vs<p><pre><code>  cache[“missing_key”]
+    </code></pre>
+    There are better examples that could have been highlighted.
+  score: 0
+  posted_at: '2026-10-31T21:19:33Z'
+- id: '50320383'
+  parent_id: '50320235'
+  author: aw1621107
+  text: Pretty sure Python&#x27;s union types don&#x27;t nest, though. If you could
+    nest optionals then I feel that reduces the need for separate sentinel types since
+    e.g., you can distinguish between &quot;value not present&quot; (None) and &quot;null
+    value present&quot; (Some(None))
+  score: 0
+  posted_at: '2026-10-31T21:23:44Z'
+- id: '50320404'
+  parent_id: '50320383'
+  author: ozyschmozy
+  text: Can you explain or give an example of nested optional types? I don&#x27;t
+    quite see how that makes sense
+  score: 0
+  posted_at: '2026-10-31T21:27:25Z'
+- id: '50320627'
+  parent_id: '50320404'
+  author: aw1621107
+  text: |-
+    The idea is that optional values are either some value or no value, but sometimes the inner &quot;some value&quot; bit can itself be an optional value (in Rust this would be Option&lt;Option&lt;T&gt;&gt;, in C++ it&#x27;d be std::optional&lt;std::optional&lt;T&gt;&gt;, in Python it&#x27;d hypothetically be Option[Option[T]], etc.). Such a situation gives you three possible states:<p>- You have an inner value and the inner value is something non-null (an integer, a string, another optional, etc.)<p>- You have an inner value and the inner value is null<p>- You do not have an inner value<p>The problem, from what I understand, is that Option[T] in Python is equivalent to the union type T | None, and union types are flattened (e.g., (T | U) | V is equivalent to T | U | V) and duplicates are ignored (e.g., T | U | T is equivalent to T | U). As a result, Option[Option[T]] is equivalent to (T | None) | None, which is equivalent to T | None | None, which is finally equivalent to T | None, which means you lose the distinction between &quot;No inner value&quot; and &quot;Inner value is present but is None&quot;.<p>As a more concrete (albeit somewhat contrived) example, say there&#x27;s some API you can query for the owner of a particular document ID where the document ID may or may not refer to an actual document (e.g., maybe you got it from a cache and the document has since been deleted). One way to express this would be (using Rust syntax)<p><pre><code>    fn get_owner(id: DocumentId) -&gt; Option&lt;Option&lt;UserId&gt;&gt; { ... }
+    </code></pre>
+    So if you get None, the document does not exist; if you get Some(None), the document exists but it has no owner; and if you get Some(&lt;id&gt;) the document exists and it has an owner.<p>(This can probably be done better by creating new enums, but it&#x27;s an example so give me a bit of slack)<p>A naive port of this signature to Python would be<p><pre><code>    def get_owner(id: DocumentId) -&gt; Option[Option[UserId]]: pass
+    </code></pre>
+    But to type checkers this is equivalent to<p><pre><code>    def get_owner(id: DocumentId) -&gt; UserId | None: pass
+    </code></pre>
+    So now you&#x27;re in the pickle the OP describes: you can end up with a None, but you no longer knonw whether it means &quot;no document&quot; or &quot;no owner&quot;. The Python solution is to basically create a different name for either the outer None (e.g., MISSING as in the OP) or the inner one (e.g., NO_OWNER or the like).
+  score: 0
+  posted_at: '2026-10-31T21:55:19Z'
+- id: '50320667'
+  parent_id: '50319616'
+  author: michalc
+  text: You could even say you never knew what you were… MISSING ;-)
+  score: 0
+  posted_at: '2026-10-31T21:59:52Z'
+- id: '50320712'
+  parent_id: '50320404'
+  author: __s
+  text: Say you select nullable column into vec, Vec&lt;Option&lt;T&gt;&gt;. vec.get
+    returns Option&lt;Option&lt;T&gt;&gt;, which distinguishes null from out of bounds<p>I&#x27;d
+    like nested Nullable in ClickHouse to use CoalescingMergeTree to support postgres
+    unchanged TOAST values easily without getting mixed up on nulls
+  score: 0
+  posted_at: '2026-10-31T22:05:13Z'
+- id: '50320746'
+  parent_id: '50320404'
+  author: yccs27
+  text: 'If you have a map, get(key) returns Option[ValueT]: None if the key is missing,
+    Some(value) otherwise. If the value type itself is, say, Optional[String], your
+    return type is Optional[Optional[String]]. Here None still always means the key
+    is missing, while Some(None) means the value is just None.'
+  score: 0
+  posted_at: '2026-10-31T22:10:25Z'
+- id: '50320765'
+  parent_id: '50320383'
+  author: amluto
+  text: Indeed.  Option[Foo] really just means Foo | None - you can’t have an Option[Foo]
+    at runtime.  Fundamentally, Python’s static typing system describes a language
+    that is a sort of mediocre match for Python.<p>Another fun one is List[Foo].  Runtime
+    Python has lists but you can’t ask a list what type of list it is, and you can’t
+    write isinstance(a, List[Foo]).
+  score: 0
+  posted_at: '2026-10-31T22:12:43Z'
+- id: '50320778'
+  parent_id: '50320260'
+  author: amluto
+  text: It would look like a very different language that would be thoroughly incompatible
+    with the existing ecosystem.
+  score: 0
+  posted_at: '2026-10-31T22:14:29Z'
+- id: '50320788'
+  parent_id: '50320627'
+  author: what
+  text: This seems really silly to me. Why does get_owner need to differentiate between
+    the document exists and maybe has an owner or the document doesn’t exist and thus
+    has no owner. In both cases getting no owner should suffice? Why are you using
+    get_owner to try and figure out if the document exists? Can you give an example
+    where this distinction actually matters?
+  score: 0
+  posted_at: '2026-10-31T22:16:21Z'
+- id: '50320859'
+  parent_id: '50320788'
+  author: aw1621107
+  text: "&gt; In both cases getting no owner should suffice?<p>Depends on what exactly
+    you plan on doing with the information, I&#x27;d imagine. I don&#x27;t think it&#x27;s
+    necessarily a given that &quot;no document&quot; and &quot;no owner&quot; should
+    be handled identically (e.g., searching for the updated document to try again
+    vs. returning an operation-not-allowed error).<p>&gt; Why are you using get_owner
+    to try and figure out if the document exists?<p>Potential TOCTOU issues, perhaps?
+    As I mentioned the document could have vanished out from under you so detecting
+    this situation could let handle things appropriately (though to be fair that argument
+    could probably extend to future operations as well).<p>Maybe a versioned filesystem
+    would have made a bit more sense, where None would indicate a new version is available?
+    Another example I&#x27;ve seen mentioned is trying to get a key-value pair from
+    a JSON where the key may be missing.<p>But in any case, I <i>did</i> say it was
+    a bit of a contrived example, so cut me a bit of slack :P It was just the first
+    thing that came to mind.<p>The examples sibling comments give are probably more
+    practical."
+  score: 0
+  posted_at: '2026-10-31T22:25:31Z'
+- id: '50321154'
+  parent_id: '50319854'
+  author: nomel
+  text: 'I feel like faster exceptions would be a better solution for this sort of
+    thing. Leave functions returning the happy path with excepted values. Exceptional
+    things, like missing values being handled at the level where of abstraction that
+    actually cares to catch it:'
+  score: 0
+  posted_at: '2026-10-31T23:11:01Z'
+- id: '50321171'
+  parent_id: '50319796'
+  author: nomel
+  text: Very many people have been taught that exceptions are bad and should be avoided,
+    because google avoids them.
+  score: 0
+  posted_at: '2026-10-31T23:15:21Z'
+- id: '50321192'
+  parent_id: '50319992'
+  author: nomel
+  text: How are these two things related? If you don&#x27;t use exceptions, you just
+    have to implement them yourself by manually bubbling up the error, all the way
+    up the stack, rather than using the dedicated side channel to do so.<p>The problem
+    I see is there&#x27;s no way to enforce the check that you actually handled&#x2F;bubbled
+    up the error. With exceptions, you just crash if you don&#x27;t handle it, which
+    is much preferred if determinism is the goal. Is there some way to use the type
+    system to do this? Maybe incoming are UnhandledResult outgoing are some HandledResult
+    or something like that?
+  score: 0
+  posted_at: '2026-10-31T23:17:21Z'
+- id: '50321201'
+  parent_id: '50297068'
+  author: throwaway2037
+  text: |-
+    Here is the sample code from the article:<p><pre><code>    &gt; MISSING = sentinel(&quot;MISSING&quot;)
+
+        &gt; def update_email(user_id: int, email: str | None | MISSING = MISSING) -&gt; None:
+        &gt;     if email is MISSING:
+        &gt;         return  # nothing to update
+        &gt;     elif email is None:
+        &gt;         db.delete_email(user_id)
+        &gt;     else:
+        &gt;         db.set_email(user_id, email.lower())  # narrowed to str
+    </code></pre>
+    I see this style frequently from long time Python programmers.  The language is so dynamic that people begin to think this is a good way to program.  Hot take: It is not.  Why not two different functions called delete_email() and set_email()?  That would be more clear.
+  score: 0
+  posted_at: '2026-10-31T23:18:08Z'
+- id: '50321257'
+  parent_id: '50320859'
+  author: what
+  text: "&gt; I don&#x27;t think it&#x27;s necessarily a given that &quot;no document&quot;
+    and &quot;no owner&quot; should be handled identically (e.g., searching for the
+    updated document to try again vs. returning an operation-not-allowed error).<p>If
+    you care whether a document exists or not, you should use an API that exclusively
+    tells you that instead of expecting everything related to documents telling you
+    if the document exists or not. Otherwise you’re overloading the meaning. A non
+    existent document has no owner. An API to fetch the owner of the document should
+    not care if it exists or not, it does not matter."
+  score: 0
+  posted_at: '2026-10-31T23:27:05Z'
+- id: '50321309'
+  parent_id: '50321201'
+  author: tlonny
+  text: I think this sort of pattern makes more sense when the fn is update_user and
+    allows the caller to mutate multiple fields at once.
+  score: 0
+  posted_at: '2026-10-31T23:35:53Z'
+- id: '50321316'
+  parent_id: '50321257'
+  author: aw1621107
+  text: As I said, that sounds like a recipe for potential TOCTOU errors.<p>But again,
+    this was an off-the-cuff example that I explicitly described as contrived from
+    the start. I could probably flesh it out to make more sense, but I think it&#x27;d
+    be easier just to refer to sibling comments rather than bikeshed this to death.
+  score: 0
+  posted_at: '2026-10-31T23:37:01Z'
+- id: '50321518'
+  parent_id: '50321192'
+  author: aw1621107
+  text: 'If you&#x27;re going to use the returned value you&#x27;d probably return
+    the moral equivalent of Rust&#x27;s Result&#x2F;Haskell&#x27;s Either&#x2F;etc.
+    types. As long as the returned types don&#x27;t happen to share the necessary
+    API(s) the type checker should yell at you if you don&#x27;t branch on the returned
+    value.<p>I don&#x27;t think Python has the equivalent of C++&#x27;s [[nodiscard]]
+    or Rust&#x27;s #[must_use], though, so if there are cases where the return value
+    can legitimately be ignored then return values risk missing errors that would
+    show up under exceptions.'
+  score: 0
+  posted_at: '2026-11-01T00:09:36Z'
+- id: '50321859'
+  parent_id: '50297068'
+  author: est
+  text: I just return a customized Exception type. Works about the same.
+  score: 0
+  posted_at: '2026-11-01T01:14:35Z'
+- id: '50321949'
+  parent_id: '50320788'
+  author: Akronymus
+  text: Maybe a different example works better for your mental model:<p>A user can
+    set custom settings, and those settings may or may not have a value assigned to
+    them. For example, one setting is optimization level, another option is a debug
+    flag.<p>You want to have a unified interface to get information about settings,
+    queried through some intermediate system. (lets just say it is limited to querying
+    specific settings, rather than getting the entire list, due to legacy constraints
+    in this case) Because for some settings you just care about them existing and
+    for others you care about the actual value, you have to differentiate between
+    a setting that contains something, a setting that contains nothing, and one that
+    doesnt exist.
+  score: 0
+  posted_at: '2026-11-01T01:32:16Z'
+- id: '50321967'
+  parent_id: '50319696'
+  author: jMyles
+  text: "&gt; No, it returns KeyError. Or at least it should.<p>Surely you meant _raises_?
+    \ Or did you literally mean to return an exception class?"
+  score: 0
+  posted_at: '2026-11-01T01:35:31Z'
+- id: '50321972'
+  parent_id: '50297068'
+  author: jMyles
+  text: I have a library that&#x27;s approximately half joking that I use for (sentinel
+    and other) special value constants.  If you like reading test suites, this one
+    will get ya:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;nucypher&#x2F;constantSorrow&#x2F;blob&#x2F;master&#x2F;tests&#x2F;test_the_whole_story.py"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nucypher&#x2F;constantSorrow&#x2F;blob&#x2F;master&#x2F;tests...</a>
+  score: 0
+  posted_at: '2026-11-01T01:36:53Z'
+- id: '50322100'
+  parent_id: '50320260'
+  author: evolve-maz
+  text: Python makes it very easy to do these experiments without changing cpython
+    itself. For example, a lot of the cases for the &quot;not set&quot; Sentinel can
+    be handled by making it MyClass | None. Treat None as &quot;not set&quot;. If
+    you need a &quot;no-op&quot; then you can give MyClass a field or something which
+    implies it does nothing. And then override the bool dunder method to make it return
+    false if the no op field is set to true. If you really want, you can have a classmethod
+    which returns a &quot;no op&quot; instance of MyClass so people can easily call
+    your func with MyClass.no_operation() when you want no op, and null when its not
+    actually set.<p>Sentinels just help you wrap that up nicely and for more general
+    use cases, but theres value in stepping back and thinking about where the unset
+    vs no op case matters.
+  score: 0
+  posted_at: '2026-11-01T02:03:03Z'
+- id: '50322110'
+  parent_id: '50321171'
+  author: deathanatos
+  text: The adverse knee-jerk hate for exceptions far predates Google also saying
+    they&#x27;re bad, but certainly that didn&#x27;t help.
+  score: 0
+  posted_at: '2026-11-01T02:04:51Z'
+- id: '50322160'
+  parent_id: '50321316'
+  author: what
+  text: Not really? It returns no owner if the document is deleted or just does not
+    exist, which is accurate. Why do you need get_owner to tell you if the document
+    exists or not? If anything it should be an error if the document doesn’t exist
+    because you’ve violated a precondition.
+  score: 0
+  posted_at: '2026-11-01T02:17:11Z'
+- id: '50322210'
+  parent_id: '50320195'
+  author: _ZeD_
+  text: Or, you know, you can use the exceptions
+  score: 0
+  posted_at: '2026-11-01T02:29:18Z'
+- id: '50322433'
+  parent_id: '50320788'
+  author: lanyard-textile
+  text: It&#x27;s analogous to how we use undefined and null in JS.<p>Undefined =
+    No value known. Think 0 rows found, the 1st row&#x27;s column is undefined.<p>Null
+    = Value known. It is void of value. The 1st row is populated, and this column
+    has no value.
+  score: 0
+  posted_at: '2026-11-01T03:22:05Z'
+- id: '50322438'
+  parent_id: '50320404'
+  author: david2ndaccount
+  text: The answer is they don&#x27;t in practical code but they come up in generic
+    code, where you want to wrap something that is already returning an optional in
+    your optional. In languages that do support optional[optional[whatever]], if you
+    every actually write that you know you&#x27;ve messed up your API.
+  score: 0
+  posted_at: '2026-11-01T03:23:18Z'
+- id: '50322494'
+  parent_id: '50320788'
+  author: setr
+  text: You run into this issue any time you do a LEFT JOIN in sql and the field you
+    care about is nullable.<p>The right side value could be null because it was missing,
+    or because it was literally null. You resolve by checking the join key, and if
+    that is itself nullable, you’re forced to introduce a sentinel
+  score: 0
+  posted_at: '2026-11-01T03:37:39Z'
+- id: '50322658'
+  parent_id: '50297068'
+  author: shepherdjerred
+  text: 'I hate sentinel values. Even&#x2F;especially with AI-generated code.<p>1.
+    If your date does not have a value, do not return 0, an empty string, or None.
+    Use a discriminated union and model your domain rigorously.<p>2. If your data
+    model accepts None&#x2F;undefined as a value, that should translate to your business
+    model as well. For example<p>3. Do not make your `name` field as `string | undefined`
+    just because there might be an intermediate loading or processing state. It&#x27;s
+    better to model that as something like `Loaded&lt;string&gt;` where Loaded is
+    something like a Result or Optional type (though ideally more rigorously defined)<p>Here
+    is what I&#x27;ve done for years in TypeScript, though now in a nice package thanks
+    for AI: <a href="https:&#x2F;&#x2F;github.com&#x2F;shepherdjerred&#x2F;monorepo&#x2F;blob&#x2F;main&#x2F;packages&#x2F;loaded&#x2F;src&#x2F;index.ts#L50-L63"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;shepherdjerred&#x2F;monorepo&#x2F;blob&#x2F;main&#x2F;package...</a>'
+  score: 0
+  posted_at: '2026-11-01T04:15:03Z'
+- id: '50322786'
+  parent_id: '50320627'
+  author: FreakLegion
+  text: |-
+    Most languages can do this if it&#x27;s what you want. In Python it would be:<p><pre><code>    class Some[T]:
+            value: T
+
+        type Option[T] = Some[T] | None
+
+        def get_owner(id: DocumentId) -&gt; Option[Option[UserId]]: ...
+
+        match get_owner(document_id):
+            case None:
+                ...
+            case Some(None):
+                ...
+            case Some(Some(x)):
+                ...</code></pre>
+  score: 0
+  posted_at: '2026-11-01T04:46:42Z'
+- id: '50322939'
+  parent_id: '50322160'
+  author: aw1621107
+  text: "&gt; It returns no owner if the document is deleted or just does not exist,
+    which is accurate.<p>&quot;I don&#x27;t know&quot; is not the same as &quot;definitely
+    no owner&quot;. You may handle the two answers the same for a particular scenario,
+    but then again you may not.<p>Again, consider the case where get_owner is working
+    on some kind of cache (in which case sure, the function name could stand to be
+    improved). If the document is no longer in the cache it could be because it was
+    actually deleted or because it was simply evicted to make room for other entries.
+    In general you cannot assume that a missing cache entry is equivalent to the document
+    existing and having no owner.<p>Or similarly (and also yet again), consider the
+    case where get_owner is working on a versioned filesystem, in which case the outer
+    optional could indicate that the (generational) document ID is out of date. In
+    such a case treating &quot;I don&#x27;t know&quot; and &quot;no owner&quot; the
+    same is incorrect because the owner could have been updated from &quot;no owner&quot;
+    to something else (such a case would likely be more realistically handled by returning
+    a Result&lt;Option&lt;UserId&gt;, SomeErrorKind&gt;, though, given the myriad
+    other ways a file system handle can go stale)<p>&gt; Why do you need get_owner
+    to tell you if the document exists or not?<p>Because sometimes there is no good
+    alternative. Asking a cache whether it has an entry and then trying to get the
+    entry value in a separate operation (particularly in a concurrent environment)
+    is a classic setup for TOCTOU errors. You can say something similar for the versioned
+    file system example.<p>&gt; If anything it should be an error if the document
+    doesn’t exist because you’ve violated a precondition.<p>I mean, enabling that
+    kind of handling is precisely the point of the outer optional?"
+  score: 0
+  posted_at: '2026-11-01T05:28:43Z'
+- id: '50322991'
+  parent_id: '50322786'
+  author: aw1621107
+  text: Yeah, that&#x27;s more like what you would do if you wanted to translate the
+    entire concept to Python instead of just the signature, and I probably should
+    have mentioned that alternative as well (or should have said &quot;A Python solution&quot;).
+    Can&#x27;t say I&#x27;ve seen this approach used in practice, interestingly, though
+    I&#x27;m probably not nearly as familiar with the Python that exists out there
+    as most other commenters here.<p>The name clash is unfortunate, but luckily naming
+    things is famously one of the easiest problems in CS so that should be trivial
+    to solve :P
+  score: 0
+  posted_at: '2026-11-01T05:42:00Z'
+- id: '50323237'
+  parent_id: '50322438'
+  author: masklinn
+  text: They absolutely do in practical non-generic code. A case I personally encounter
+    regularly is json APIs which distinguish between a key being missing and one being
+    set to null in a structure.
+  score: 0
+  posted_at: '2026-11-01T06:44:09Z'
+- id: '50323274'
+  parent_id: '50320627'
+  author: ozyschmozy
+  text: I see, thanks. Though this feels like something that would always have a better
+    alternative than returning Some(None). Probably a new enum, or in Python&#x27;s
+    case, exceptions (e.g. instead of returning a value if the document is missing,
+    you&#x27;d raise DocumentMissingError or something)
+  score: 0
+  posted_at: '2026-11-01T06:55:12Z'
+- id: '50323759'
+  parent_id: '50321171'
+  author: IshKebab
+  text: Very many people have learnt that exceptions are bad and should be avoided,
+    because they <i>are</i> bad and should be avoided. Some of those people work at
+    Google.
+  score: 0
+  posted_at: '2026-11-01T08:54:10Z'
+- id: '50324405'
+  parent_id: '50297068'
+  author: DarkNova6
+  text: Ah Python. The leaking sieve that keeps on giving problems to solve.
+  score: 0
+  posted_at: '2026-11-01T10:49:47Z'
+- id: '50330167'
+  parent_id: '50323759'
+  author: flowilhelm
+  text: Author here. Especially in Python, I think exceptions are not evil in any
+    way but when it comes to typing they are a pain. Once gave a somewhat provocative
+    talk about this that exceptions are gotos in a way :-) <a href="https:&#x2F;&#x2F;florianwilhelm.info&#x2F;2025&#x2F;04&#x2F;evolution_of_goto&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;florianwilhelm.info&#x2F;2025&#x2F;04&#x2F;evolution_of_goto&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-01T21:38:09Z'
+- id: '50330797'
+  parent_id: '50330167'
+  author: IshKebab
+  text: I wouldn&#x27;t go as far as <i>evil</i> but they are bad for code quality
+    because they obscure the behaviour of functions. You never know what exceptions
+    can be thrown. Can a function even fail? Impossible to tell. (Don&#x27;t say &quot;documentation&quot;
+    lol)<p>The standard answer is checked exceptions, which I&#x27;m on the fence
+    about, but they don&#x27;t seem to be very popular in any case. Python doesn&#x27;t
+    have them. C++ <i>removed support for them</i> which shows you how unpopular they
+    were. Java has them and IIRC they were kind of ok to use in Android. Kotlin doesn&#x27;t
+    have them though so I guess the Java people didn&#x27;t really like them either.
+  score: 0
+  posted_at: '2026-11-01T23:00:34Z'
+- id: '50330941'
+  parent_id: '50321518'
+  author: travisd
+  text: "Yeah, this is basically what we do. It ends up a bit more ergonomic to not
+    have explicit result types because union types are pretty easy in Python. For
+    example, we have functions like<p><pre><code>    # courses.py\n    def create(...)
+    -&gt; Course | ErrInvalid:\n</code></pre>\nand they get used like<p><pre><code>
+    \   match courses.create(...):\n        case courses.Course() as course:\n            #
+    We use `course` below.\n            pass\n        case courses.ErrInvalid() as
+    err:\n            # Error conditions are usually translated into early returns\n
+    \           raise fastapi.HTTPException(\n                status.HTTP_422_UNPROCESSABLE_ENTITY,
+    err.message\n            )\n    \n    return APICourseCreateResponse(id=course.id,
+    ...)\n</code></pre>\nIt has worked (for us at least) pretty well to reduce the
+    number of unhandled errors that make their way into Sentry. The granularity of
+    the error types depends on the need (e.g., sometimes we just have an `ErrInvalid`
+    that returns a message which gets displayed to the user, but sometimes we&#x27;ll
+    have ErrInvalidAddress or ErrInvalidTaxCode to be more specific for the context).<p>And
+    yeah, without nodiscard, we try™ to only do this on functions that return values
+    that the caller will definitely need to use. Also combined with exhaustiveness
+    checks on switch statements by default."
+  score: 0
+  posted_at: '2026-11-01T23:20:46Z'
+- id: '50359389'
+  parent_id: '50321967'
+  author: RantyDave
+  text: Yes, raises. My bad.
+  score: 0
+  posted_at: '2026-11-03T22:54:43Z'
+- id: '50383299'
+  parent_id: '50321154'
+  author: lpghatguy
+  text: I went back and forth on this for a long time. Lua&#x27;s exception mechanism
+    is actually pretty fast but they&#x27;re just strings, so there&#x27;s no useful
+    information unless you match on those strings (eek!)<p>I think encoding these
+    things into a better type signature is the way to go. In Go and Lua, that means
+    multiple return values like `success, result` or `result, err`. It&#x27;s pretty
+    clunky and verbose in both of those languages though and so my years of Lua made
+    me instantly skeptical of Go doing the same thing.<p>Languages with cheap data-carrying
+    enums like Rust are my favourite these days. No unhandled exceptions, super obvious
+    where the failure is, and Rust has a lot of niceties for handling, mapping, and
+    adding context to errors without a lot of runtime cost.
+  score: 0
+  posted_at: '2026-11-05T19:28:11Z'
+article:
+archived_at: '2026-11-15T18:35:52Z'

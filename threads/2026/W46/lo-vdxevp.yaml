@@ -1,0 +1,66 @@
+---
+post:
+  id: lo-vdxevp
+  source: lobsters
+  title: Memory management in 40 major C projects, a survey
+  url: https://theconsensus.dev/p/2026/11/08/c-memory-management-survey.html
+  hn_url: https://lobste.rs/s/vdxevp
+  score: 26
+  author: eatonphil
+  posted_at: '2026-11-15T12:50:03Z'
+  fetched_at: '2026-11-15T18:35:23Z'
+  article_url: https://theconsensus.dev/p/2026/11/08/c-memory-management-survey.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T18:35:23Z'
+  raw_comment_count: 1
+  tags:
+  - c
+comments:
+- id: lo-wcocdj
+  parent_id: '0'
+  author: Student
+  text: Good but under analysed. It looks like programming languages mostly are using
+    garbage collectors or reference counting; regions seem to used by postgres, and
+    forks and extensions, and https and nginx. The rest are mostly doing it raw. There’s
+    more to this story.
+  score: 9
+  posted_at: '2026-11-15T13:41:36Z'
+article:
+  url: https://theconsensus.dev/p/2026/11/08/c-memory-management-survey.html
+  title: Memory management in 40 major C projects, a survey - The Consensus
+  fetch_status: success
+  content: |-
+    # Memory management in 40 major C projects, a survey
+
+    A survey of 40 major C projects tracked by The Consensus shows only 8 projects allocate solely with malloc/free, only 2 projects allocate without ever using malloc/free, 15 projects make use of regions at some point, 7 projects primarily use regions to allocate, 5 primarily use garbage collection to allocate, and 3 primarily use reference counting to allocate.
+
+    You are getting early access to this article as a subscriber. Your support makes articles like this possible. Thank you.
+
+    C is well known for requiring manual memory management with malloc and free. And while many major projects do actually manage memory like this, many projects also implement higher-level memory management primitives such as regions (where objects allocated within a region need not be manually freed, freeing a region frees all objects allocated within the region at once), reference counting (manually incrementing and decrementing outstanding references, freeing an object only when its references go to zero), scope-based cleanup using compiler extensions, and a number of major C projects even actually implement garbage collection (fully automatic memory management).
+
+    Programmers sometimes assume that projects famous for diligence lean away from purely manual memory management. But SQLite, famous for correctness, allocates 100% manually while cURL and Redis allocate mostly manually (94% and 79%), reference counting only some of their objects. Another surprising finding is that Linux and QEMU in the last few years have been starting to use scope cleanup rules (i.e. compiler extensions) to automatically clean up memory, such as Linux's __free(kfree) and QEMU's g_autofree.
+
+    The Consensus tracks and indexes code for over 400 major software infrastructure projects. This article surveys 40 of the C projects within this group, excluding test code, third-party code, and examples.
+
+    ## Majority allocation strategy#
+
+    To discover majority allocation we count allocation call sites (which is certainly a limited metric, not accounting for sub-region or size of allocation, etc.). seL4 is an exception to much of this article since it has no heap at all.
+
+    8 projects solely allocate with malloc, implementing no other general higher-level strategy for allocating. These projects are: brotli, FreeRTOS, HAProxy, libdeflate, lz4, SQLite, xz-utils, and zlib.
+
+    16 projects primarily, but not exclusively, allocate with malloc.
+
+    7 projects primarily, if not all exclusively, allocate with a region system. With region based allocators, objects are allocated within a region. Freeing the region frees all objects within the region. Sometiems regions can be nested. And sometimes you might still manually free an object allocated within a region.
+
+    And 5 projects primarily allocate with a garbage collector.
+
+    3 projects primarily allocate reference-counted objects.
+
+    ## All projects#
+
+    Across all surveyed projects, with links to their various allocation strategies by example.
+
+    Noticed a mistake? Have a question or comment? Write to the editor.
+  error:
+  fetched_at: '2026-11-15T18:35:23Z'
+archived_at: '2026-11-15T18:35:23Z'
