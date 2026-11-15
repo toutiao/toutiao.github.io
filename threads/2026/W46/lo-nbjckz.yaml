@@ -1,0 +1,129 @@
+---
+post:
+  id: lo-nbjckz
+  source: lobsters
+  title: Parsing nested lists in BQN
+  url: https://saltysylvi.github.io/blog/parsing-nested-lists-in-bqn.html
+  hn_url: https://lobste.rs/s/nbjckz
+  score: 11
+  author: veqq
+  posted_at: '2026-11-15T01:59:26Z'
+  fetched_at: '2026-11-15T10:29:17Z'
+  article_url: https://saltysylvi.github.io/blog/parsing-nested-lists-in-bqn.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T10:29:19Z'
+  raw_comment_count: 1
+  tags:
+  - apl
+comments:
+- id: lo-vgzebl
+  parent_id: '0'
+  author: slot
+  text: |-
+    This approach to parsing, and wrangling with trees in array languages in general, have been really eye-opening for me! Plus, it's really quite a lot of fun.
+    It's also worth noting that CBQN's performance characteristics seem to have changed quite a bit since that post, as for me the nested array-based version is faster than the recursive descent approach.
+  score: 2
+  posted_at: '2026-11-15T08:55:18Z'
+article:
+  url: https://saltysylvi.github.io/blog/parsing-nested-lists-in-bqn.html
+  title: Parsing nested lists in BQN
+  fetch_status: success
+  content: "# Parsing nested lists in BQN\n\n01/23/2023\n\nThree ways to parse the
+    nested lists from Advent of Code 2022 day 13 in BQN.\n\n* * *\n\n[Advent of Code
+    2022 day 13](https://adventofcode.com/2022/day/13) requires you to parse nested
+    lists like\n\n    [1,[2,[3,[4,[5,6,7]]]],8,9]\n\nThis post covers three different
+    ways to handle the problem:  \n1. \"Cheating\" by using `•BQN` to do the heavy
+    lifting  \n2. Writing a conventional recursive descent parser  \n3. Writing an
+    array-style parser\n\nWe'll also do some simple benchmarking to compare the three
+    approaches.\n\n## The Data\n\nWe'll be using my advent of code input file to test
+    the different approaches on. Here's the first six lines:\n\n    •Show¨ 6 ↑ input
+    ← •FLines \"13.txt\"\n    \"[[[[8,7,8,5,4],6,[4,6]]],[6,[[]]],[]]\"\n    \"[[[[8,0,0,7,1],[1],8]]]\"\n
+    \   ⟨⟩\n    \"[[[5,8,[4,9,2],7,[8,0]],[9,5,[5,5]],[9,[3,3,8,4,8],[0,6]],5,3],[8,10,[[8,7,6,1,8],5,0,6,[5,1]],[7,[1],6],[6,2,1,[],[1,0,6,5]]],[1,1,[[2]]],[]]\"\n
+    \   \"[[10,4,[],7,[[10,1]]],[[4,2]],[[[5],[],[],[]],[4,5,[2,4,9]]],[[8,[],[1,3,9,7]],4,7]]\"\n
+    \   ⟨⟩\n\nThe lists come in pairs, with each pair separated by a blank line. Since
+    the problem requires you to compare pairs of lists, a suitable format for working
+    with the data is to parse it all into one list of pairs of lists. Thus we can
+    turn the problem into parsing one giant list.\n\n    data ← ']'∾˜ '['∾ ¯1↓∾(3|↕≠input)
+    {0\U0001D54A\U0001D569: ∾'['‿\U0001D569‿','; 1\U0001D54A\U0001D569: \U0001D569∾\"],\";
+    2\U0001D54A\U0001D569: \U0001D569}¨ input\n\nThe lines come in groups of three:
+    the first list, the second list, and then a blank line. The first line of each
+    group needs an opening bracket added to the beginning (to open the pair) and a
+    comma added to the end (to separate the two lists in the pair). The second line
+    of each group needs a closing bracket at the end (to close the pair) and a comma
+    after (to separate it from the next pair). The blank lines are fine as is. Then
+    we join all the lines together and drop the final trailing comma. Finally, we
+    need to wrap the whole thing in one more set of brackets, to make it all one big
+    list.\n\n## Using `•BQN`\n\nThis approach is undoubtedly the easiest, and it's
+    what I used to solve the problem in December. The idea is that the notation is
+    almost valid BQN; we just need to replace the square brackets with angle brackets.
+    Then we can use the system function `•BQN` to \"eval\" the string into a BQN list.\n\n
+    \   a ← \"[1,2,[],[3,4]]\"\n       a + ('⟨'-'[') × '['=a\n    \"⟨1,2,⟨],⟨3,4]]\"\n
+    \      \"[⟨\" (⊢ + -˜´∘⊣ × ⊏⊸=) a\n    \"⟨1,2,⟨],⟨3,4]]\"\n\nHere's the idea behind
+    replacing a character with another character using a small example. I've written
+    both an explicit expression and a tacit function. We take the difference between
+    the new character and the old character, since adding this to the old character
+    changes it into the new one. Then we use a mask of old character locations to
+    make sure the addition happens only at those locations.\n\nNow to write our parser,
+    we just replace both kinds of square brackets with the respective angle brackets
+    and call `•BQN`.\n\n    R ← ⊢ + -˜´∘⊣ × ⊏⊸=\n       Parser1 ← •BQN \"]⟩\" R \"[⟨\"
+    R ⊢\n\nLet's try it out.\n\n    Parser1 data\n    Segmentation fault (core dumped)\n\nUh
+    oh! Well, here's a strike against this approach.\n\nI'm not sure what's going
+    on to be honest. When I solved the problem in Decemeber I didn't do the \"turn
+    it all into one giant list\" approach, and instead parsed the individual lines.
+    So let's do that here.\n\n    data2 ← (<¯1⊸↓)˘∘‿3⥊input∾<\"\"\n\nThis complicated-looking
+    line just works the data into a list of pairs of strings. First we append a blank
+    line to the end, to complete the last group of 3 lines. Then we use a computed
+    reshape to make an array with 3 columns. Finally, on each row of the array we
+    drop the the blank line and enclose the two remaining lines.\n\nNow we just have
+    to parse each string to get the final result.\n\n    bqn ← Parser1¨¨ data2\n       ⊑bqn\n
+    \   ┌─\n    · ┌─ ┌─\n      · ┌─ ┌─ ⟨⟩ · ┌─\n        · ⟨ ⟨ 8 7 8 5 4 ⟩ 6 ⟨ 4 6
+    ⟩ ⟩ · 6 ⟨ ⟨⟩ ⟩ · ⟨ ⟨ 8 0 0 7 1 ⟩ ⟨ 1 ⟩ 8 ⟩\n                                      ┘
+    ┘ ┘\n                                                        ┘ ┘\n                                                                                            ┘\n
+    \       2↑input\n    ⟨ \"[[[[8,7,8,5,4],6,[4,6]]],[6,[[]]],[]]\" \"[[[[8,0,0,7,1],[1],8]]]\"
+    ⟩\n\nLooks alright! Let's do a quick benchmark.\n\n    100 Parser1¨¨•_timed data2\n
+    \   0.074279465\n\nAround 3/4 of a second for each run. So slow!\n\n## Recursive
+    descent\n\nThis is not meant to be an introductory tutorial on recursive descent
+    parsing. Rather, I want to show that \"normal\" algorithms are applicable in BQN.
+    In fact, [Singeli](https://github.com/mlochbaum/Singeli) uses a [recursive descent
+    parser](https://github.com/mlochbaum/Singeli/blob/master/singeli.bqn#L147).\n\nWe
+    assume that the input is error-free and proceed in a classic two-stage tokenize-then-parse
+    fashion.\n\n### Tokenizing\n\nThe token types are opening brackets, closing brackets,
+    and numbers. We get rid of the commas, after we've used them to delimit the numbers.
+    The tokenizer is actually array-style, I guess, since we just use `⊔` to split
+    the string up.\n\nBehold!\n\n    T ← (1-˜≠⟜','×·+`∊⟜\"[]\"∨·(»⊸<)∊⟜('0'+↕10))⊸⊔\n
+    \      a ← \"[999,2,[],[31,4167]]\"\n       T a\n    ⟨ \"[\" \"999\" \"2\" \"[\"
+    \"]\" \"[\" \"31\" \"4167\" \"]\" \"]\" ⟩\n\nOkay, okay, springing that tacit
+    tokenizer on you is a joke. Let's break it down. The overall strategy is to create
+    a mask of token starting points. Then we're pretty much a sum scan and a group
+    away from success.\n\nEach opening bracket and closing bracket starts a new group.
+    However, a digit starts a new group iff it is not preceded by a digit.\n\n    d
+    ← '0'+↕10\n    \"0123456789\"\n       a∊d\n    ⟨ 0 1 1 1 0 1 0 0 0 0 0 1 1 0 1
+    1 1 1 0 0 ⟩\n\nWe start by finding a mask of digits in the string.\n\n    (»a∊d)≍a∊d\n
+    \   ┌─\n    ╵ 0 0 1 1 1 0 1 0 0 0 0 0 1 1 0 1 1 1 1 0\n      0 1 1 1 0 1 0 0 0
+    0 0 1 1 0 1 1 1 1 0 0\n                                              ┘\n       (»a∊d)<a∊d\n
+    \   ⟨ 0 1 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 ⟩\n       »⊸<a∊d\n    ⟨ 0 1 0 0
+    0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 ⟩\n       a≍»⊸<a∊d\n    ┌─\n    ╵ '[' '9' '9'
+    '9' ',' '2' ',' '[' ']' ',' '[' '3' '1' ',' '4' '1' '6' '7' ']' ']'\n      0 1
+    0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0\n                                                                                      ┘\n\nComparing
+    with the shifted mask lets us check if the preceding character was also a digit.
+    The use of `<` is a little BQN trick. For booleans `p` and `q`, `p<q` is true
+    iff `p` is 0 and `q` is 1. So now we have the start points of the number tokens.\n\n
+    \   (a∊\"[]\")∨»⊸<a∊d\n    ⟨ 1 1 0 0 0 1 0 1 1 0 1 1 0 0 1 0 0 0 1 1 ⟩\n       a≍(a∊\"[]\")∨»⊸<a∊d\n
+    \   ┌─\n    ╵ '[' '9' '9' '9' ',' '2' ',' '[' ']' ',' '[' '3' '1' ',' '4' '1'
+    '6' '7' ']' ']'\n      1 1 0 0 0 1 0 1 1 0 1 1 0 0 1 0 0 0 1 1\n                                                                                      ┘\n\nTo
+    get the rest of the token start points, we just `∨` in all the bracket locations.\n\n
+    \   +`(a∊\"[]\")∨»⊸<a∊d\n    ⟨ 1 2 2 2 2 3 3 4 5 5 6 7 7 7 8 8 8 8 9 10 ⟩\n       a≍+`(a∊\"[]\")∨»⊸<a∊d\n
+    \   ┌─\n    ╵ '[' '9' '9' '9' ',' '2' ',' '[' ']' ',' '[' '3' '1' ',' '4' '1'
+    '6' '7' ']' ']'\n      1 2 2 2 2 3 3 4 5 5 6 7 7 7 8 8 8 8 9 10\n                                                                                      ┘\n\nTaking
+    a sum scan gives us a different number for each token, but each comma gets lumped
+    in with the previous token.\n\n    (','≠a)×+`(a∊\"[]\")∨»⊸<a∊d\n    ⟨ 1 2 2 2
+    0 3 0 4 5 0 6 7 7 0 8 8 8 8 9 10 ⟩\n       a≍(','≠a)×+`(a∊\"[]\")∨»⊸<a∊d\n    ┌─\n
+    \   ╵ '[' '9' '9' '9' ',' '2' ',' '[' ']' ',' '[' '3' '1' ',' '4' '1' '6' '7'
+    ']' ']'\n      1 2 2 2 0 3 0 4 5 0 6 7 7 0 8 8 8 8 9 10\n                                                                                      ┘\n\nMultiplying
+    by a mask of non-commas zeros out the commas.\n\n    1-˜(','≠a)×+`(a∊\"[]\")∨»⊸<a∊d\n
+    \   ⟨ 0 1 1 1 ¯1 2 ¯1 3 4 ¯1 5 6 6 ¯1 7 7 7 7 8 9 ⟩\n       (1-˜(','≠a)×+`(a∊\"[]\")∨»⊸<a∊d)⊔a\n
+    \   ⟨ \"[\" \"999\" \"2\" \"[\" \"]\" \"[\" \"31\" \"4167\" \"]\" \"]\" ⟩\n\nWe
+    subtract 1 to drop the commas when we group and give the first"
+  error:
+  fetched_at: '2026-11-15T10:29:19Z'
+archived_at: '2026-11-15T10:29:19Z'

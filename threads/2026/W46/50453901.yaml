@@ -1,0 +1,541 @@
+---
+post:
+  id: '50453901'
+  title: Seagate's new hybrid drive raises some old questions
+  url: https://arstechnica.com/gadgets/2026/11/seagate-resurrects-the-ssd-hdd-hybrid-drive/
+  hn_url: https://news.ycombinator.com/item?id=50453901
+  score: 97
+  author: ''
+  posted_at: '2026-11-11T14:32:09Z'
+  fetched_at: '2026-11-15T10:29:03Z'
+  article_url: https://arstechnica.com/gadgets/2026/11/seagate-resurrects-the-ssd-hdd-hybrid-drive/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T10:29:03Z'
+  raw_comment_count: 48
+comments:
+- id: '50499582'
+  parent_id: '50453901'
+  author: linsomniac
+  text: I&#x27;ve often wondered why there aren&#x27;t any (that I&#x27;m aware of
+    anyway) Linux hierarchical storage managers (HSM).  I realize they are typically
+    used in big iron with things like tape as the base level of storage, but especially
+    when it looked like Optane was going to be a thing it seemed like spinning&lt;-&gt;SSD&lt;-&gt;Optane&lt;-&gt;RAM
+    could be a huge performance opportunity.  Though, I guess that&#x27;s a &quot;layering
+    violation&quot;...  Honestly, at this point we&#x27;ve gone almost entirely SSD
+    except for our ZFS backup servers, and that layering violation already has an
+    SSD and RAM cache in it...
+  score: 0
+  posted_at: '2026-11-14T18:41:29Z'
+- id: '50499736'
+  parent_id: '50499582'
+  author: uniqueuid
+  text: When you&#x27;re running ZFS (or probably some other clever layering violation
+    like bcachefs) on <i>heterogeneous</i> workloads, you will quickly run into the
+    limits of built-in assumptions. At least that&#x27;s my experience:<p>- ARC may
+    require manual tuning for size and metadata size to accommodate page cache, in-app
+    caches, file count etc<p>- L2ARC and SLOGs are very obviously useful for some
+    clear workloads, but have some cliffs you don&#x27;t expect, such as ram required
+    for L2ARC mapping, unexpected cold&#x2F;hot&#x2F;boot behavior<p>- Reasoning about
+    reliability becomes harder the more tiers you have<p>Just imagine, to pick a simple
+    example, you&#x27;re running postgres, thousands of sqlite3 dbs and one huge duckdb
+    (larger-than-ram) on a single such system - it would perhaps manage to adapt to
+    one such workload at a time, but would it balance all three at the same time?<p>So
+    much as I&#x27;d love to see this direction, I can also imagine the pains coming
+    with it.
+  score: 0
+  posted_at: '2026-11-14T18:58:21Z'
+- id: '50499770'
+  parent_id: '50499582'
+  author: Schlaefer
+  text: RAM cache is already layered in front of persistent storage. When it comes
+    to easy hybrid SSD&#x2F;HDD setups bcachefs was close to deliver, but then things
+    jumped the shark.
+  score: 0
+  posted_at: '2026-11-14T19:02:19Z'
+- id: '50499869'
+  parent_id: '50499736'
+  author: bilegeek
+  text: The best solution is metadata-only caching, as that&#x27;s mostly random I&#x2F;O
+    and would leave the mechanical bandwidth fully for the data itself. The downside
+    is that L2ARC won&#x27;t have everything, as it isn&#x27;t proactive; there is
+    the special device, but then the metadata is SSD-only, with that one failure point
+    unless you run mirrors.<p>If they&#x27;d get around to merging Special Failsafe
+    [1] and hybrid drives could address the flash space separately like under SAS,
+    it would be a no-brainer.<p>[1]<a href="https:&#x2F;&#x2F;github.com&#x2F;openzfs&#x2F;zfs&#x2F;pull&#x2F;16185"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;openzfs&#x2F;zfs&#x2F;pull&#x2F;16185</a>
+  score: 0
+  posted_at: '2026-11-14T19:14:55Z'
+- id: '50499903'
+  parent_id: '50453901'
+  author: mikae1
+  text: <i>&gt; According to PCServerParts, a Seagate Exos 24TB drive that sold for
+    $298.99 in the summer of 2025 was priced at $699.99 by August 2026.</i><p>Spoiled
+    Americans. That drive is $1393 (14160 SEK) here in Sweden now[1]. A year ago it
+    was 4160 SEK...<p>Three times as expensive in 12 months seems true for most drives.<p>I&#x27;m
+    just praying no drives in my NAS are going to crap out anytime soon...<p>[1] <a
+    href="https:&#x2F;&#x2F;www.prisjakt.nu&#x2F;produkt.php?p=12519318" rel="nofollow">https:&#x2F;&#x2F;www.prisjakt.nu&#x2F;produkt.php?p=12519318</a>
+  score: 0
+  posted_at: '2026-11-14T19:18:41Z'
+- id: '50499991'
+  parent_id: '50499903'
+  author: robin_reala
+  text: Yeah, wow. I hadn’t realised that the prices had gone up that much on hard
+    disks as well. A pair of Synology 4TBs I bought for 2500SEK 18 months ago are
+    now 3400SEK each from the same vendor.
+  score: 0
+  posted_at: '2026-11-14T19:29:12Z'
+- id: '50499998'
+  parent_id: '50499903'
+  author: rwmj
+  text: 'Worse than that, sellers on Amazon all seem to be scams now[1], and my trusted
+    local supplier (who has genuine parts) is only selling one hard disk per customer.  Good
+    luck populating a NAS.<p>[1] example from when I was trying to buy NAS drives
+    a few weeks back: <a href="https:&#x2F;&#x2F;www.amazon.co.uk&#x2F;sp?marketplaceID=A1F83G8C2ARO7P&amp;seller=A2OP4KH3E6Z6BR"
+    rel="nofollow">https:&#x2F;&#x2F;www.amazon.co.uk&#x2F;sp?marketplaceID=A1F83G8C2ARO7P&amp;sel...</a>'
+  score: 0
+  posted_at: '2026-11-14T19:29:51Z'
+- id: '50500021'
+  parent_id: '50453901'
+  author: robotnikman
+  text: I used to have one of their 2.5in hybrid drive in a laptop. Seemed to work
+    well for games. But once SSD&#x27;s became cheap the tech was not longer worth
+    it. Also, 2.5in drives topped out at 2TB of storage, while NVME and 2.5 Sata SSD&#x27;s
+    continued to grow in size.
+  score: 0
+  posted_at: '2026-11-14T19:34:13Z'
+- id: '50500060'
+  parent_id: '50453901'
+  author: kotaKat
+  text: "&quot;According to Seagate’s press release, the Alkemi intelligent storage
+    platform takes a different approach. Where Apple’s Fusion Drives used tiering
+    managed by macOS, Alkemi manages the storage pool directly from the enclosure.&quot;<p>Soooooo...
+    it&#x27;s gonna be like the old days of Drobo, where a little VXworks box did
+    all the heavy lifting of BeyondRAID and transparently exposed it as a big ol&#x27;
+    block device to your OS? Good times."
+  score: 0
+  posted_at: '2026-11-14T19:38:31Z'
+- id: '50500079'
+  parent_id: '50499736'
+  author: ssl-3
+  text: 'Right now at the ZFS-using desktop PC I write this with:<p>640GB of total
+    L2ARC, 66% utilized (34% available).  664MB of RAM is used to keep track of this.<p>The
+    machine only has an uptime of a little over a week right now, but over that period
+    L2ARC had a 93% hit rate.<p>L2ARC would fill more-completely but the machine is
+    low on free RAM right now; Firefox is being a pig, and that means that some things
+    get ejected from ARC before they can be sent to L2ARC.<p>It&#x27;s generally quite
+    responsive despite being a box that exclusively uses spinning rust as primary
+    storage.<p>In terms of absolute reliability:  RAIDZ2 is in-use, which allows two
+    drives to fail without data loss.  Adding the L2ARC did not change this:  Either
+    or both of L2ARC devices could die in an instant and the machine would keep moving
+    along (at reduced performance).<p>(I&#x27;d planned to upgrade the hard drives
+    to something bigger, which is a simple process with ZFS, and also add more RAM,
+    but the market moved faster than I did and I&#x27;ll be stuck with this for awhile.)'
+  score: 0
+  posted_at: '2026-11-14T19:41:03Z'
+- id: '50500309'
+  parent_id: '50453901'
+  author: debrisontrack
+  text: The only relevant question seems to be &quot;will these prices ever go down?&quot;
+  score: 0
+  posted_at: '2026-11-14T20:07:28Z'
+- id: '50500524'
+  parent_id: '50499582'
+  author: lostmsu
+  text: That&#x27;s exactly why I keep Windows on my NAS. You can configure storage
+    tiering with arbitrary redundancy. You can have different redundancy on SSD and
+    HDD tiers. As far as I am concerned ReFS gives me all the features of ZFS and
+    doesn&#x27;t eat my RAM. Also BitLocker + Secure Boot aren&#x27;t pain in the
+    ass there.
+  score: 0
+  posted_at: '2026-11-14T20:31:26Z'
+- id: '50500614'
+  parent_id: '50453901'
+  author: liquid_thyme
+  text: Isn&#x27;t this (architecture) basically like a NAS w&#x2F; SSD caching ?
+    (w&#x2F; the caveat of not being on the network obviously)
+  score: 0
+  posted_at: '2026-11-14T20:41:11Z'
+- id: '50500877'
+  parent_id: '50499903'
+  author: mistyvales
+  text: I have 6x unused 6TB SAS drives I bought for $50 each in 2024. I assume they
+    are $150 each now. I can&#x27;t afford cold storage right now so I rely on raidz2
+    and can replace drives as they die.. But they have 2 years and no SMART errors.
+  score: 0
+  posted_at: '2026-11-14T21:13:26Z'
+- id: '50500921'
+  parent_id: '50500060'
+  author: rbanffy
+  text: I’m not sure it’s realistic to expect an ordinary user to manage and tune
+    tiered storage, so making it opaque to the OS, or even somewhat aware of the OS
+    running on the computer via a device or filesystem driver, might be a sensible
+    decision.
+  score: 0
+  posted_at: '2026-11-14T21:18:46Z'
+- id: '50500929'
+  parent_id: '50499582'
+  author: arjie
+  text: It’s just easier done at the application layer. At a previous engagement,
+    in the Before AI era, we originally had a block-level tiering solution that went
+    from RAM to local nvme to NAS on striped flash to S3. It worked okay, but the
+    application-level tiering worked better.<p>Would have loved a read-through union
+    filesystem but you pretty much had to do your own.
+  score: 0
+  posted_at: '2026-11-14T21:19:26Z'
+- id: '50500943'
+  parent_id: '50499582'
+  author: nielsole
+  text: Besides the trivial caching on SSD there&#x27;s also ways to do write buffering
+    quite easily. I did that once a long time back when SSDs were too expensive for
+    getting a 2TB disk. So probably ~10 years back.
+  score: 0
+  posted_at: '2026-11-14T21:20:47Z'
+- id: '50500971'
+  parent_id: '50499582'
+  author: rythie
+  text: There is LVM Cache which uses dm-cache. That allows you to use SSDs to cache
+    HDDs. Either can be RAIDed too. You can choose your file system because it happens
+    at the block layer.
+  score: 0
+  posted_at: '2026-11-14T21:22:49Z'
+- id: '50500989'
+  parent_id: '50453901'
+  author: dabinat
+  text: "&gt; …comes in 8TB ($699) or 20TB ($899) HDD configurations—neither of which
+    includes the required SSD.<p>The 8TB version seems like very poor value for money.
+    For comparison, Amazon is selling 24 TB Seagate Exos drives for $799."
+  score: 0
+  posted_at: '2026-11-14T21:24:48Z'
+- id: '50501318'
+  parent_id: '50499582'
+  author: vbezhenar
+  text: Isn&#x27;t bcache that thing you&#x27;re looking for?<p>RAM is always used
+    first for caching, so it&#x27;s a given.
+  score: 0
+  posted_at: '2026-11-14T21:53:07Z'
+- id: '50501385'
+  parent_id: '50500021'
+  author: 31rf89e1f5e6
+  text: No? Plenty of 2.5&quot; drives in 4TB size and bigger, for example the ST5000LM000
+    or a WD50NPZZ are 5TB ones. Unless you mean strictly newer laptops, that take
+    9.5mm or 7mm drives. Which are slim ones.
+  score: 0
+  posted_at: '2026-11-14T22:00:23Z'
+- id: '50501455'
+  parent_id: '50500989'
+  author: PorciiVorbesc
+  text: "<i>&gt; Amazon is selling 24 TB Seagate Exos drives for $799</i><p>Might
+    be a scam, you might get a used or a refurb drive. I wouldn&#x27;t&#x27; trust
+    Amazon for such purchases, if the price feels too good."
+  score: 0
+  posted_at: '2026-11-14T22:06:17Z'
+- id: '50501521'
+  parent_id: '50500989'
+  author: choppaface
+  text: nice find!  ServerPartDeals seems to be cheaper than Amazon tho. Sadly Amazon
+    blocks agentic price watching but <a href="https:&#x2F;&#x2F;instinct.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;instinct.com&#x2F;</a>  has otherwise been great
+    at watching HD prices.
+  score: 0
+  posted_at: '2026-11-14T22:13:52Z'
+- id: '50501565'
+  parent_id: '50501521'
+  author: Marsymars
+  text: There are existing price watch services for amazon (e.g. camelcamelcamel)
+    that work very well... if you need agentic price watching in your workflow, just
+    have your agent watch your email for price alerts.
+  score: 0
+  posted_at: '2026-11-14T22:19:48Z'
+- id: '50501575'
+  parent_id: '50500989'
+  author: hinkley
+  text: I will never buy electronics off of Amazon ever again. Whether they’ve fixed
+    their mingling or not, they did it for years with no regrets. That level of contempt
+    for customers deserves to be boycotted in perpetuity.
+  score: 0
+  posted_at: '2026-11-14T22:21:13Z'
+- id: '50501613'
+  parent_id: '50501385'
+  author: Marsymars
+  text: Kinda, but I don&#x27;t think there are any non-discontinued, 2.5&quot; PMR
+    drives larger than 2TB, regardless of physical size.
+  score: 0
+  posted_at: '2026-11-14T22:25:05Z'
+- id: '50501698'
+  parent_id: '50501318'
+  author: ThatPlayer
+  text: bcache is just the block level caching, with a different filesystem running
+    on top of it. There&#x27;s bcachefs. I&#x27;m using it on a computer exactly for
+    this purpose.
+  score: 0
+  posted_at: '2026-11-14T22:34:15Z'
+- id: '50501770'
+  parent_id: '50499582'
+  author: j_not_j
+  text: |-
+    Even the corporate&#x2F;enterprise multi-level HSMs has had to compete with rapid improvement in disk drive capacity.<p>Buying a Sony or IBM HSM with 20GB tapes backing a 5TB store (built with 2GB disks) soon looks pretty stupid when drives exceeded 40 and 80GB.  (Adjust your calendar or drive scaling to match your expectations.)<p>Back in the day I worked on a quote for a European weather agency who wanted a CD-ROM archive built with robots.  CD-ROM!  DVD-R was just coming up in those days.  The effective product lifespan would only have been 2 or 3 years until large scale enterprise disk would have superceded it.<p>Nowadays with multi-TB tapes the minimum viable archivable unit is in the gigabytes.  Nobody would be 2million files on a single LTO tape.<p>HSM is really a product category: do you want write-only archive (think weather data, satellite images, etc).  Are some files expirable so you want to actually eventually &quot;delete&quot; files by re-writing tapes with only valid data?  What&#x27;s the allowable time-to-first-byte on retrieval?   What kind of redundancy is appropriate?  What is the operating cost vs capital cost tradeoff?  And, importantly, what database is supporting the metadata and how is it maintained?<p>Antipatterns:<p>- grep on a caching filesystem backed with a tape library
+    - monthly retrievals of the same file year after year (even LTO has a limited tape operation lifetime)
+    - management failure&#x2F;refusal to migrate to newer tech every 4 years
+    - buying 10 years of capacity in advance<p>You can get a lot done with tar, mt, and bash in a grow-your-own nearline archive with a tape technology of your choice.
+  score: 0
+  posted_at: '2026-11-14T22:43:24Z'
+- id: '50501911'
+  parent_id: '50500989'
+  author: zx8080
+  text: Make sure it&#x27;s not amazon.DE as those are usually scam.
+  score: 0
+  posted_at: '2026-11-14T22:58:28Z'
+- id: '50501927'
+  parent_id: '50500989'
+  author: bajard
+  text: But you have to buy a pair, so the price is double.<p>You need a pair because
+    if one HDD starts failing, you need to recover the data. Reading a 20 TB HDD takes
+    an entire day of continuous reads, and a failing HDD can&#x27;t handle that, so
+    you need RAID 1 or a backup.
+  score: 0
+  posted_at: '2026-11-14T22:59:48Z'
+- id: '50501931'
+  parent_id: '50499582'
+  author: lizknope
+  text: There is bcache and dm-cache.  bcache was the basis for bcachefs but I don&#x27;t
+    know anyone who uses them or dm-cache<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Bcache"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Bcache</a><p><a
+    href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Dm-cache" rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Dm-cache</a><p>Sometimes
+    I shoot over 100GB of raw photos and don&#x27;t finish processing it all in 1
+    session.  It would be nice if that got cached in an SSD rather than having to
+    read the hard drive every time.  But it&#x27;s not a big enough issue for me test
+    one of the caching layers.
+  score: 0
+  posted_at: '2026-11-14T23:00:14Z'
+- id: '50502068'
+  parent_id: '50501770'
+  author: lubitelpospat
+  text: I was lucky to find you comment about how a lot can be done with tar mt and
+    bash, I was doing something along the lines of trying to fit as much data as possible
+    into a single tape without writing there more than it can be fit into one if possible,
+    would you kind internet stranger happen to have a few wise words pointing me towards
+    the solution or maybe a GitHub gist with an example of something along these lines?
+    Thank you very much upfront!
+  score: 0
+  posted_at: '2026-11-14T23:14:45Z'
+- id: '50502086'
+  parent_id: '50453901'
+  author: Grombobulous
+  text: If you have to provide your own SSD, I would think that the target audience
+    already knows how to set up a cache disk in their NAS solution of choice, and
+    they&#x27;d save a bunch of money that way.
+  score: 0
+  posted_at: '2026-11-14T23:17:23Z'
+- id: '50502304'
+  parent_id: '50501385'
+  author: justsomehnguy
+  text: These are SMR. Thanks, no.
+  score: 0
+  posted_at: '2026-11-14T23:47:07Z'
+- id: '50502323'
+  parent_id: '50499998'
+  author: justsomehnguy
+  text: "&gt; is only selling one hard disk per customer<p>The dreaded <i>communism</i>
+    came to the capitalistic states but not the way capitalists expected."
+  score: 0
+  posted_at: '2026-11-14T23:49:52Z'
+- id: '50502353'
+  parent_id: '50453901'
+  author: kogasa240p
+  text: Hybrid drives are back? Thought they faded into obscurity a decade ago but
+    it makes sense that they&#x27;re returning.<p>&gt;Users will have to bring their
+    own SSD<p>uhhhhhhhh
+  score: 0
+  posted_at: '2026-11-14T23:54:08Z'
+- id: '50502435'
+  parent_id: '50453901'
+  author: GaryBluto
+  text: It&#x27;s neat, but isn&#x27;t it more of mixed-medium RAID-like setup than
+    a &quot;hybrid&quot; drive? Especially since the SSD isn&#x27;t included.
+  score: 0
+  posted_at: '2026-11-15T00:05:47Z'
+- id: '50502854'
+  parent_id: '50499582'
+  author: InsidiousWombat
+  text: There is bcache which is basically SSD cache for slower backend.<p>It&#x27;s
+    just pretty niche. And in cases where you want it it&#x27;s often better to have
+    the hot&#x2F;caching tier be application data aware, for example for caching web
+    requests you might want to cache different objects for different duration, or
+    selectively purge them when app invalidates some data.
+  score: 0
+  posted_at: '2026-11-15T00:59:24Z'
+- id: '50502973'
+  parent_id: '50500021'
+  author: Nexxxeh
+  text: You&#x27;re lucky you swapped it out. Those Seagate SSHD hybrid drives seemed
+    to fail at higher vastly rates than HDDs or SSDs, and were an absolute nightmare.
+  score: 0
+  posted_at: '2026-11-15T01:16:28Z'
+- id: '50504039'
+  parent_id: '50499903'
+  author: bajard
+  text: You can buy from Amazon USA and have it shipped internationally.
+  score: 0
+  posted_at: '2026-11-15T04:31:56Z'
+- id: '50504168'
+  parent_id: '50453901'
+  author: Eric_WVGG
+  text: Apple’s “Fusion Drives” were great!<p>I had a 2009-ish 17&quot; Macbook Pro
+    (the Cafeteria Tray), removed the optical drive and replaced it with an SSD, then
+    reformatted the whole thing using a bit of voodoo to turn it into an unsupported
+    Fusion Drive. Gave it to my father when I upgraded a few years later and forgot
+    about it. One day he took it in to the Genius Bar for some kind of service, drew
+    a whole crowd of Apple Store employees who had never seen a Macbook modified under-the-hood
+    before…
+  score: 0
+  posted_at: '2026-11-15T05:06:39Z'
+- id: '50504585'
+  parent_id: '50453901'
+  author: Dylan16807
+  text: "&gt; According to data collected by Tom’s Hardware, some solid-state drives
+    now cost two to three times their historic lows, and it’s not just SSDs.<p>The
+    1-2TB TLC drives that were the best deal before are more like 4x their lowest
+    price."
+  score: 0
+  posted_at: '2026-11-15T06:41:21Z'
+- id: '50504938'
+  parent_id: '50499736'
+  author: rendaw
+  text: What do you mean by clever layering violation?
+  score: 0
+  posted_at: '2026-11-15T07:51:33Z'
+- id: '50505292'
+  parent_id: '50501927'
+  author: ddorian43
+  text: If you think like that, you should know that they both might fail together
+    at the same time too! Like your second drive may fail while recovering from the
+    first failure (rebuilding the raid with a new drive).
+  score: 0
+  posted_at: '2026-11-15T09:09:57Z'
+- id: '50505583'
+  parent_id: '50499991'
+  author: reeredfdfdf
+  text: There are still okay deals to be made in the used market. I can find slightly
+    used 4TB drives for about 80 euros a piece, or 8TB for 120. Obviously no warranty,
+    but if the drive has lasted a year or two, there&#x27;s a good chance it will
+    last many years more.
+  score: 0
+  posted_at: '2026-11-15T09:59:20Z'
+- id: '50505672'
+  parent_id: '50499582'
+  author: cowlevel
+  text: Because nobody wrote one. It&#x27;s the curse of open source.
+  score: 0
+  posted_at: '2026-11-15T10:16:41Z'
+- id: '50505684'
+  parent_id: '50501770'
+  author: cowlevel
+  text: to be fair a CD archive would&#x27;ve also supported DVD and BluRay with no
+    mechanical changes, since the disks and drives are the same size.
+  score: 0
+  posted_at: '2026-11-15T10:18:30Z'
+- id: '50505712'
+  parent_id: '50500989'
+  author: cowlevel
+  text: Note the dark pattern here - even if you only needed 8TB and would have paid
+    $699 for it because you need it (that&#x27;s expensive for 8TB) you&#x27;re more
+    likely to buy the 20TB option and give them an extra $200.<p>In fact you&#x27;re
+    so much more likely, you&#x27;re more likely to buy the 20TB option than if it
+    was the only option you had!<p>This is well known in marketing but I&#x27;m struggling
+    to find its name with Google - it&#x27;s close to the &quot;decoy effect&quot;,
+    which is a form of &quot;menu dependence&quot;.
+  score: 0
+  posted_at: '2026-11-15T10:21:33Z'
+article:
+  url: https://arstechnica.com/gadgets/2026/11/seagate-resurrects-the-ssd-hdd-hybrid-drive/
+  title: Seagate's new hybrid drive raises some old questions - Ars Technica
+  fetch_status: success
+  content: "Story text\n\n\\* Subscribers only  \n &nbsp;&nbsp;[Learn more](/store/product/subscriptions/)\n\nSeagate
+    doesn’t think hybrid drives are done just yet. On Tuesday, the company announced
+    the launch of the new FireCuda Forge line of storage drives. The new drives combine
+    the high capacity of a traditional plattered HDD with the speed and responsiveness
+    of a user-supplied solid-state drive (SSD). The new hybrid storage solution is
+    Seagate’s first to be powered and managed by the new Alkemi intelligent storage
+    platform.\n\nThe FireCuda Forge is available right now through [Seagate’s web
+    store](https://www.seagate.com/products/gaming-drives/pc-gaming/firecuda-forge/),
+    and comes in 8TB ($699) or 20TB ($899) HDD configurations—neither of which includes
+    the required SSD. Users will have to bring their own SSD, with some specific restrictions.
+    The FireCuda Forge is compatible with M.2 2280 NVMe drives that are PCIe Gen3
+    or higher. The maximum supported NVMe capacity is 1TB, which means that’s as much
+    data as you’ll be able to dedicate to storage on the “fast side” of the hybrid
+    setup. The NVMe will require minimum speeds of 2,400MB/s read and 2,000MB/s write,
+    and a unit with DRAM cache is recommended. Seagate claims 2,500MB/s read and 2,000MB/s
+    write speeds for the combined system, along with USB4 and support for Windows
+    11 and macOS 26+.\n\n[![What's included with the new Seagate FireCuda Forge drives.](https://cdn.arstechnica.net/wp-content/uploads/2026/11/Seagate_FireCuda_Forge_Specs.pdf.png)](https://cdn.arstechnica.net/wp-content/uploads/2026/11/Seagate_FireCuda_Forge_Specs.pdf.png)\n\n
+    Credit: [Seagate](https://www.seagate.com/content/dam/seagate/en/content-fragments/products/datasheets/firecuda-forge/firecuda-forge-DS37-1-2609US-en_US.pdf)\n\n_Credit:\n\n
+    \                     \n          \n          Seagate_\n\nAfter dipping to historical
+    lows earlier in the decade, storage pricing per TB has exploded amid the AI boom.
+    According to data collected by [Tom’s Hardware](https://www.tomshardware.com/pc-components/ssds/ssd-price-tracking-2026-lowest-price-on-every-m-2-ssd),
+    some solid-state drives now cost two to three times their historic lows, and it’s
+    not just SSDs. Mechanical drives haven’t been immune either. According to [PCServerParts](https://pcserverandparts.com/news/hard-drive-shortage-2026-what-to-do/),
+    a Seagate Exos 24TB drive that sold for $298.99 in the summer of 2025 was priced
+    at $699.99 by August 2026.\n\nHybrid drives had largely fallen out of fashion
+    since their heyday in the early to mid 2010s. The promise then was similar to
+    what Seagate is offering now. A large HDD is combined with a smaller SSD and handed
+    to the user as a single storage pool. Apple introduced its own hybrid solution
+    back in 2012 with the Mac mini’s Fusion Drive. When [Ars opened up a unit](https://arstechnica.com/gadgets/2012/11/achieving-fusion-with-a-service-training-doc-ars-tears-open-apples-fusion-drive/),
+    the Fusion Drive system was found to write in 128KB tiered blocks. Information
+    was generally written to the SSD first, and was then migrated to the HDD as needed.
+    If the files were frequently used, they might find a more permanent home on the
+    SSD side of things.\n\nAs solid-state storage continued getting cheaper, the hybrid
+    approach was largely abandoned. Fast-forward to our current storage cost predicament
+    in 2026, and Seagate’s line of thinking that everything old is new again starts
+    to hold water. All storage costs have exploded, but the 2012 math still works
+    today. NAND flash is still fast, but expensive, and traditional mechanical drives
+    are at least comparatively cheaper per TB for higher capacity storage.\n\nThe
+    problem with Apple’s Fusion solution was its fragility. If one of the two drives
+    failed, that was likely it. Recovery depended on both drives coming together as
+    a single volume. If one of those two disks experienced a physical failure, recovery
+    became difficult since the remaining working drive depended on the now broken
+    drive’s data to rebuild the full system picture.\n\nAccording to Seagate’s press
+    release, the Alkemi intelligent storage platform takes a different approach. Where
+    Apple’s Fusion Drives used tiering managed by macOS, Alkemi manages the storage
+    pool directly from the enclosure. Seagate says, “Alkemi learns and adapts over
+    time to keep high-demand content fast and accessible on a user’s SSD, while the
+    HDD provides space for growing libraries. Behind the scenes, Alkemi manages data
+    placement, giving users the simplicity of a single storage drive.” The product
+    data sheet PDF from the FireCuda Forge website describes the Alkemi system as
+    a two-tier storage system, but doesn’t elaborate any further on whether the system
+    uses SSD caching, automated tiering, a combination of the two, or something else
+    entirely.\n\nThe announcement doesn’t address how the Alkemi platform manages
+    the data between the two drives. The old [Intel Smart Response Technology](https://arstechnica.com/gadgets/2014/05/new-intel-chipsets-speed-up-your-storage-but-theyre-missing-new-cpus/)
+    kept failure risks low by mirroring data from the mechanical HDD to the faster
+    SSD, with the HDD retaining the authoritative copy. The optional write-back mode
+    could still hold new data on the SSD, though. Apple’s Fusion Drive instead tiered
+    data in 128KB blocks across the storage pool, storing data on both drives. The
+    distinction matters, and is probably why [Ars asked the same question](https://arstechnica.com/gadgets/2012/11/achieving-fusion-with-a-service-training-doc-ars-tears-open-apples-fusion-drive/)
+    after Apple’s hybrid announcement 14 years ago.\n\nSeagate’s announcement speaks
+    of “intelligent data tiering” without further explanation. The data system promises
+    that your most accessed files will be quickest to access via intelligent storage
+    management, but stops short of explaining whether one drive going down means failure
+    for the whole system. There’s also no mention of how the Alkemi system distributes
+    data on first boot. Does all the new written data go directly to the SSD until
+    the 1TB cap is crossed, and then the system starts determining which files are
+    important enough to remain on the speedier drive? Seagate seems to be keeping
+    things mum for the moment, but as the drives have already launched for sale, there
+    should be answers to all of these questions coming soon.\n\nSeagate hasn’t published
+    technical documentation regarding how the Alkemi system handles drive failure
+    or repair. Until it does, the new FireCuda Forge drives offer the same appeal
+    as Apple’s old Fusion Drives: SSD speed with HDD capacity, along with the same
+    questions Ars was asking about hybrid storage [years ago](https://arstechnica.com/gadgets/2012/11/achieving-fusion-with-a-service-training-doc-ars-tears-open-apples-fusion-drive/).\n\n[![Photo
+    of Nick Indge](https://cdn.arstechnica.net/wp-content/uploads/2026/10/5814.jpg)](https://arstechnica.com/author/nickindge/)\n[Nick
+    Indge](https://arstechnica.com/author/nickindge/)Senior Technology Reporter\n\n[Nick
+    Indge](https://arstechnica.com/author/nickindge/)Senior Technology Reporter\n\n
+    Nick Indge is a Senior Technology Reporter at Ars Technica covering hardware,
+    embedded systems, and self-hosted infrastructure. A former security investigator
+    turned tech writer, he writes to help readers escape subscription traps and regain
+    ownership of their digital lives. He lives in Chicagoland with his family and
+    a goofball husky. \n\n[92 Comments](https://arstechnica.com/gadgets/2026/11/seagate-resurrects-the-ssd-hdd-hybrid-drive/#comments
+    \"92 comments\")\n\n[Prev story](https://arstechnica.com/space/2026/11/the-us-military-seems-to-be-getting-nervous-about-the-launch-supply-crunch/
+    \"Go to: The US military seems to be getting nervous about the launch supply crunch\")\n\n[Next
+    story](https://arstechnica.com/ai/2026/11/signals-encryption-just-passed-an-ai-powered-mathematical-checkup/
+    \"Go to: Google DeepMind just mathematically verified key parts of Signal\")\n\n1.
+    [![Listing image for first story in Most Read"
+  error:
+  fetched_at: '2026-11-15T10:29:03Z'
+archived_at: '2026-11-15T10:29:17Z'

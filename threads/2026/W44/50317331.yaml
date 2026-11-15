@@ -1,0 +1,440 @@
+---
+post:
+  id: '50317331'
+  title: 'Show HN: A USB-C LTE modem that gives my computer a phone line'
+  url: https://github.com/Koppar-AI/koppar-lte-modem
+  hn_url: https://news.ycombinator.com/item?id=50317331
+  score: 62
+  author: abijahkaj
+  posted_at: '2026-10-31T15:56:41Z'
+  fetched_at: '2026-11-15T10:29:20Z'
+  raw_comment_count: 44
+comments:
+- id: '50317342'
+  parent_id: '50317331'
+  author: abijahkaj
+  text: 'I wanted a real phone line on my computer: calls and texts on a physical
+    SIM, answered through my headset at my desk, or by a script or an AI agent when
+    I&#x27;m away. Cloud numbers get treated as VoIP, and old Android phones give
+    you no clean way to get call audio in and out over USB.<p>So this is a 4-layer
+    USB-C board around a Quectel EC25-EUX. Behind a USB hub, the computer sees an
+    LTE network adapter, the modem&#x27;s AT serial ports (caller ID, SMS, answer),
+    and an RP2040 acting as a USB sound card. The RP2040 bridges the modem&#x27;s
+    1.8 V PCM audio through a level shifter. There&#x27;s a 3.8 V buck sized for the
+    2 A GSM bursts, and no battery.<p>I wrote the spec as one page of text, and Koppar,
+    the tool I&#x27;m building, generated the schematic and the board. Then I reviewed
+    it against the datasheets. The review found a 35 Ω antenna feed that hopped layers,
+    a buck 60 mm from its inductor, and a SIM socket facing into the board. The parts
+    matching would have bought an 18 µH inductor for a 4.7 µH slot. REVIEW.md in the
+    repo has all of it with the numbers.<p>Status: the boards aren&#x27;t built yet.
+    The repo is the design as I&#x27;m ordering it: KiCad 10 project, Gerbers, JLCPCB
+    BOM and placement files. Bring-up and the sound-card firmware come next.<p>Happy
+    to answer anything about the audio path or the power design, and I&#x27;d like
+    to hear what you&#x27;d change before the first bring-up.'
+  score: 0
+  posted_at: '2026-10-31T15:58:12Z'
+- id: '50318605'
+  parent_id: '50317331'
+  author: mycall
+  text: Will LTE continue to work when 6G rolls out in 3 years?
+  score: 0
+  posted_at: '2026-10-31T18:25:40Z'
+- id: '50319589'
+  parent_id: '50318605'
+  author: j45
+  text: Probably for a while - lots of IoT uses it, especially with the push away
+    from 3G.
+  score: 0
+  posted_at: '2026-10-31T20:04:22Z'
+- id: '50319590'
+  parent_id: '50317331'
+  author: Vaushite
+  text: Obviously AI vibed, which means the project probably has never been built
+    and wouldn&#x27;t work if you built it.
+  score: 0
+  posted_at: '2026-10-31T20:04:29Z'
+- id: '50319601'
+  parent_id: '50317342'
+  author: j45
+  text: I believe there are VOIP phones that are sim card based.  Imagine a country
+    that doesn&#x27;t have land lines but folks want a home phone.
+  score: 0
+  posted_at: '2026-10-31T20:05:17Z'
+- id: '50319688'
+  parent_id: '50319590'
+  author: abijahkaj
+  text: |-
+    I mentioned in the top comment that Koppar generated the board and that the first batch is about to be ordered, so no detective work needed there.<p>I&#x27;m just as skeptical of blind AI hardware output as you are, which is why I audited every net against the datasheets and put all the flaws in REVIEW.md in the repo before ordering:
+    - The 0.33 mm RF trace came out to ~35 Ω instead of 50 Ω and hopped layers through vias (I included Pi-matching pads to tune it on the bench).
+    - The 3.8 V buck converter was placed too far from its inductor, and the 1.37 mm power trace is narrower than Quectel&#x27;s 2 mm recommendation (~100 mV drop at 3 A).   - The SIM socket (J2) is oriented inward, which is annoying mechanically.<p>5 bare boards + 2 PCBA units are currently being ordered at JLCPCB, and I&#x27;ll order the EC25-EUX modules separately to hand-solder onto U8 since JLC was out of stock.<p>Since the KiCad files are in the repo, if you spot a specific net or pinout error that will brick bring-up, let me know so I can bodge-wire it next week.
+  score: 0
+  posted_at: '2026-10-31T20:15:11Z'
+- id: '50319757'
+  parent_id: '50318605'
+  author: wolrah
+  text: "&gt; Will LTE continue to work when 6G rolls out in 3 years?<p>A significant
+    change that came with LTE is the use of OFDM as the base of the air interface,
+    which means that cellular providers no longer need to allocate large segments
+    of spectrum to one protocol or another.  Towers that were upgraded from 4G to
+    5G didn&#x27;t need to disable 4G or consistently split their spectrum between
+    the two they way they did when upgrading from 2G to 3G or 3G to 4G, they can dynamically
+    allocate subchannels in each mode based on the immediate needs of their users.<p>It
+    seems unlikely that whatever technologies come in the future will regress in this
+    way, so there shouldn&#x27;t be a need for a hard cutoff at any point and I&#x27;d
+    expect LTE devices to keep working for many generations to come."
+  score: 0
+  posted_at: '2026-10-31T20:22:41Z'
+- id: '50319806'
+  parent_id: '50319601'
+  author: wolrah
+  text: There are SIP to cellular gateways which have historically been very popular
+    in regions where landline to mobile calls cost money but mobile to mobile do not,
+    but they mostly don&#x27;t exist in the US market other than high-density devices
+    mostly used by SMS spammers.<p>The only actual VoIP phone with a SIM card I&#x27;m
+    aware of is the Yealink T74LTE which for a long time was exclusive to Verizon&#x27;s
+    business phone service but has recently become available for general purchase,
+    those can support both SIM over LTE data and VoLTE (which is also basically SIP
+    but over a prioritized channel).
+  score: 0
+  posted_at: '2026-10-31T20:27:03Z'
+- id: '50319828'
+  parent_id: '50319688'
+  author: drum55
+  text: The PCB looks super weird, what is going on here?<p><a href="https:&#x2F;&#x2F;files.catbox.moe&#x2F;nijoin.png"
+    rel="nofollow">https:&#x2F;&#x2F;files.catbox.moe&#x2F;nijoin.png</a><p><a href="https:&#x2F;&#x2F;files.catbox.moe&#x2F;suazr4.png"
+    rel="nofollow">https:&#x2F;&#x2F;files.catbox.moe&#x2F;suazr4.png</a><p>They sort
+    of look sensible until you look closer and then the whole board is fever dream
+    autorouting.
+  score: 0
+  posted_at: '2026-10-31T20:29:05Z'
+- id: '50319990'
+  parent_id: '50317331'
+  author: mcculley
+  text: This is great. Apple needs to figure out how to fit one into a 16&quot; MacBook
+    Pro.
+  score: 0
+  posted_at: '2026-10-31T20:42:06Z'
+- id: '50320109'
+  parent_id: '50319757'
+  author: retatop
+  text: I don&#x27;t think your conclusion is correct. 4G -&gt; 5G will result in
+    5G networks completely consuming the 4G ones. T-Mobile has already been talking
+    about shutting down LTE in a few years. The reason afaik that 4G and 5G are seemingly
+    compatible right now is that most networks are in 5G NSA mode (non standalone)
+    which means that LTE is actually used for negotiation and orchestration stuff,
+    with 5G only used for the actual data pipe. I have been told that most of the
+    benefit of 5G comes with 5G SA (standalone), but that requires not supporting
+    the LTE stuff
+  score: 0
+  posted_at: '2026-10-31T20:53:57Z'
+- id: '50320110'
+  parent_id: '50319757'
+  author: gruez
+  text: It&#x27;s not just spectrum, though. The core network is totally different
+    than 5G SA or whatever 6G has. Maintaining all of that will eventually be considered
+    not worth the trouble, and it&#x27;ll be decommissioned. If anything decommissioning
+    will be faster for LTE because unlike 2G&#x2F;3G (which were needed because VoLTE
+    support was flakely and had device whitelists) there isn&#x27;t much point in
+    keeping LTE around for legacy reasons.
+  score: 0
+  posted_at: '2026-10-31T20:54:03Z'
+- id: '50320208'
+  parent_id: '50319990'
+  author: wlesieutre
+  text: They could if they wanted to, I’m a bit surprised that they didn’t add it
+    with this big new MBP generation.<p>Especially now that they have their own modem
+    and wouldn’t need to pay whatever royalties Qualcomm would demand, which I’ve
+    read are based on the device price and would get very high on a premium laptop.
+  score: 0
+  posted_at: '2026-10-31T21:03:08Z'
+- id: '50320243'
+  parent_id: '50317331'
+  author: efren6
+  text: Er
+  score: 0
+  posted_at: '2026-10-31T21:06:43Z'
+- id: '50320246'
+  parent_id: '50319757'
+  author: OJFord
+  text: "&gt; they can dynamically allocate subchannels in each mode based on the
+    immediate needs of their users.<p>Right, so if I&#x27;m still rocking 4G only
+    while &#x27;everyone&#x27; else in the area is using 6G with some other stragglers
+    on 5G, ..."
+  score: 0
+  posted_at: '2026-10-31T21:07:10Z'
+- id: '50320266'
+  parent_id: '50320246'
+  author: cowlevel
+  text: They&#x27;re (mostly) the same channels shared by all of them. It&#x27;s not
+    like an ethernet address (where everyone on the network speaks the same protocol
+    and just ignores packets not for it), it&#x27;s a radio frequency timeslice that&#x27;s
+    allocated to you, and you and your nearby tower can speak any radio modulation
+    they want in that timeslice, even ones that other phones or other towers don&#x27;t
+    support.<p>However new technologies sometimes also bring new spectrum blocks like
+    mmwave 5G.
+  score: 0
+  posted_at: '2026-10-31T21:09:29Z'
+- id: '50320278'
+  parent_id: '50320109'
+  author: cowlevel
+  text: Ironic given that LTE, literally called Long-Term Evolution, was supposed
+    to make future backwards incompatible changes unnecessary.
+  score: 0
+  posted_at: '2026-10-31T21:10:53Z'
+- id: '50320286'
+  parent_id: '50319828'
+  author: cowlevel
+  text: they answered with AI and got flagged for being AI. You can turn on showdead
+    in settings to see it but there&#x27;s nothing of value in their comment really.
+  score: 0
+  posted_at: '2026-10-31T21:12:09Z'
+- id: '50320291'
+  parent_id: '50320110'
+  author: cowlevel
+  text: What are the differences between 4G and 5G core networks?
+  score: 0
+  posted_at: '2026-10-31T21:12:54Z'
+- id: '50320307'
+  parent_id: '50320208'
+  author: drum55
+  text: There was a prototype macbook pro on ebay from 20 years ago with a 3G modem
+    in it, the retail MBP from the time even has the space for a SIM card near the
+    battery door. Presumably they decided against it for a good reason.<p><a href="https:&#x2F;&#x2F;www.macrumors.com&#x2F;2011&#x2F;08&#x2F;14&#x2F;photos-of-a-prototype-macbook-pro-with-integrated-3g-cellular-data&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.macrumors.com&#x2F;2011&#x2F;08&#x2F;14&#x2F;photos-of-a-prototype-m...</a>
+  score: 0
+  posted_at: '2026-10-31T21:14:41Z'
+- id: '50320326'
+  parent_id: '50320291'
+  author: gruez
+  text: <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;5G#Core_network_architecture"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;5G#Core_network_architecture</a><p>Big
+    enough that most carriers can&#x27;t even launch 5G with its associated core network
+    (&quot;5G standalone&quot;), and had to use the kludge of 5G + 4G core network
+    (&quot;5G non-standalone)
+  score: 0
+  posted_at: '2026-10-31T21:16:37Z'
+- id: '50320331'
+  parent_id: '50319806'
+  author: Scoundreller
+  text: I&#x27;d like this kind of setup because my VoIP provider charges a couple
+    bucks a month for 9-1-1 while sending 9-1-1 over cellular would be free
+  score: 0
+  posted_at: '2026-10-31T21:17:15Z'
+- id: '50320356'
+  parent_id: '50317331'
+  author: gruez
+  text: "&gt;Where 2G and 3G are switched off, calls need a module firmware with VoLTE
+    and a carrier that allows it; ask the seller.<p>This is a huge caveat. OP, does
+    your setup even support VoLTE? Otherwise this might become a brick in a few years
+    as your carrier shuts down 2G&#x2F;3G, as many carriers around the world have
+    already done"
+  score: 0
+  posted_at: '2026-10-31T21:20:09Z'
+- id: '50320364'
+  parent_id: '50319828'
+  author: abijahkaj
+  text: 'yeah it&#x27;s raw output from the router i&#x27;m coding without a trace
+    smoothing pass yet, so it draws ugly jagged steps. looks bad to a human layout
+    engineer, no argument there. either way it won&#x27;t stop it from working, the
+    electrons don&#x27;t care how ugly the bend is at 2 MHz. just want to see if it
+    boots when the jlcpcb parcel lands.<p>edit: idk why my comments are being [flagged],
+    i&#x27;ve written to hn but the issue is apparently still there'
+  score: 0
+  posted_at: '2026-10-31T21:20:56Z'
+- id: '50320617'
+  parent_id: '50320356'
+  author: abijahkaj
+  text: 'Yes, the Quectel EC25-EUX supports VoLTE natively on the modem baseband,
+    and from the board&#x27;s perspective the audio path is identical: the modem handles
+    the IMS&#x2F;SIP registration and AMR codec internally and outputs standard 1.8V
+    PCM digital audio to the RP2040 whether the call is over VoLTE or 2G&#x2F;3G fallback.<p>I
+    put that caveat in the README because VoLTE support in practice depends on carrier
+    whitelisting and having the right carrier MBN profile loaded on the Quectel module
+    (AT+QMBNCFG), not on the rest of the PCB. Here in Europe, 2G&#x2F;3G is still
+    up for a few more years, and major carriers have MBN profiles in the standard
+    EC25-EUX firmware, so testing both VoLTE registration and CSFB fallback will be
+    part of bring-up when the board lands.'
+  score: 0
+  posted_at: '2026-10-31T21:53:16Z'
+- id: '50320640'
+  parent_id: '50317331'
+  author: whalesalad
+  text: I’d love one of these as a framework module
+  score: 0
+  posted_at: '2026-10-31T21:56:29Z'
+- id: '50320672'
+  parent_id: '50319990'
+  author: DaiPlusPlus
+  text: 'They don’t want to: it helps deuce demand for the iPhone via the macOS&#x2F;iPhone
+    tethering integration, and for calls taken via FaceTime.'
+  score: 0
+  posted_at: '2026-10-31T22:00:26Z'
+- id: '50320749'
+  parent_id: '50320278'
+  author: DaiPlusPlus
+  text: "&gt; was supposed to make future backwards incompatible changes unnecessary<p>I
+    struggle to think of any system&#x2F;scheme&#x2F;protocol&#x2F;spec&#x2F;etc that
+    promised this to have actually delivered. One can never predict the future."
+  score: 0
+  posted_at: '2026-10-31T22:10:53Z'
+- id: '50320823'
+  parent_id: '50319806'
+  author: j45
+  text: I recall seeing some that were offered in Asia but might not be elsewhere.<p>It
+    looked like an office desk phone but instead of Ethernet, a SIM card goes only.  Some
+    came with a cordless handset with it too.  seeing
+  score: 0
+  posted_at: '2026-10-31T22:20:00Z'
+- id: '50320938'
+  parent_id: '50319757'
+  author: ChocolateGod
+  text: 6G will likely replace 5G rather than 4G.<p>4G has become the new 2G when
+    it comes to IoT etc.
+  score: 0
+  posted_at: '2026-10-31T22:36:23Z'
+- id: '50320965'
+  parent_id: '50320208'
+  author: kotaKat
+  text: They&#x27;re not fully confident yet on the mmWave to go in the Macbook.<p>There&#x27;s
+    a reason they carefully have been bringing their own modem in via &quot;weird&quot;
+    devices. The C1 came in on the 16e, C1X was the Air (phone+iPad), and they&#x27;re
+    finally confident enough to bring C2 to the mainline iPhones, but it seems like
+    maybe not ready until C3 comes around next fall.
+  score: 0
+  posted_at: '2026-10-31T22:41:29Z'
+- id: '50321480'
+  parent_id: '50319990'
+  author: sellmesoap
+  text: If they can hack one into a hardware crypto wallet why not a MacBook <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50054092">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50054092</a>
+  score: 0
+  posted_at: '2026-11-01T00:03:19Z'
+- id: '50322008'
+  parent_id: '50320246'
+  author: wolrah
+  text: "&gt; Right, so if I&#x27;m still rocking 4G only while &#x27;everyone&#x27;
+    else in the area is using 6G with some other stragglers on 5G, ...<p>You will
+    keep receiving service until it becomes unprofitable to do so, same as always,
+    but that time will be a lot further down the road than it used to be because there&#x27;s
+    basically no reason to care outside of congested cells where making the most of
+    every bit of airtime matters.<p>If you&#x27;re in a congested area, prepare for
+    newer tech to be prioritized, often legitimately because the newer modes tend
+    to be better at sharing the air and thus more users can be better served by prioritizing
+    them on limited spectrum."
+  score: 0
+  posted_at: '2026-11-01T01:43:49Z'
+- id: '50322181'
+  parent_id: '50320823'
+  author: wolrah
+  text: "&gt; It looked like an office desk phone but instead of Ethernet, a SIM card
+    goes only.<p>Eww, I hate that such a thing exists.  Everyone involved in its development
+    needs their decision-making privileges revoked for anything more consequential
+    than breakfast.<p>There is no good reason for an internet connected device to
+    be cellular-only unless it&#x27;s intended to effectively never be in &quot;home
+    territory&quot;.  Every other such device should at least have WiFi so it&#x27;s
+    useful in areas where there is no cell service and doesn&#x27;t need to use limited
+    cellular spectrum even wheb there is service.<p>There is also no good reason for
+    an internet connected device that&#x27;s not expected to move while in operation
+    to not have an ethernet port.  It&#x27;s unfortunately common amongst consumer-targeted
+    devices (e.g. Nintendo Wii and a surprisingly large number of printers) but it&#x27;s
+    bad nonetheless.  If it can reasonably be wired it <i>should</i> be wired, period.
+    \ If it doesn&#x27;t move and isn&#x27;t in a weird spot, you need to have a really
+    good reason why it can&#x27;t be wired to justify using WiFi and &quot;I don&#x27;t
+    like wires&quot; has never been and will never be such a reason."
+  score: 0
+  posted_at: '2026-11-01T02:21:26Z'
+- id: '50322755'
+  parent_id: '50320326'
+  author: cowlevel
+  text: Doesn&#x27;t sound incompatible. So far these new architectures have just
+    been different ways of describing mostly the same thing. E.g. the NodeB from 3G
+    becomes the eNodeB in 4G, and it&#x27;s not actually a different thing, it just
+    describes one that has been upgraded with 4G support. In practice the exact same
+    device is both NodeB and eNodeB in a 3G&#x2F;4G network.
+  score: 0
+  posted_at: '2026-11-01T04:39:22Z'
+- id: '50322902'
+  parent_id: '50320364'
+  author: mh-
+  text: Probably because of some of them appear to be LLM-authored.<p><a href="https:&#x2F;&#x2F;www.pangram.com&#x2F;history&#x2F;67234835-58ff-4603-ba17-2234051c5f05"
+    rel="nofollow">https:&#x2F;&#x2F;www.pangram.com&#x2F;history&#x2F;67234835-58ff-4603-ba17-2234...</a>
+  score: 0
+  posted_at: '2026-11-01T05:15:46Z'
+- id: '50323057'
+  parent_id: '50319990'
+  author: Vaushite
+  text: Just buy a different laptop - not an ultra-thin one. The WiFi card is usually
+    on a separate module that plugs in by a standard connector and can be swapped
+    to a cellular module.
+  score: 0
+  posted_at: '2026-11-01T05:59:33Z'
+- id: '50325768'
+  parent_id: '50320364'
+  author: Neywiny
+  text: It&#x27;s not about your clock speed, it&#x27;s about your edge rate. Anyone
+    who&#x27;s had to lower drive strength or slew rate can tell you that even at
+    0.0000...1 Hz clock speed, if your routing is trash it can ring to the point of
+    detecting multiple edges or interfering with other signals.<p>Also some of the
+    issues were on USB lines which hopefully aren&#x27;t running at 2MHz.<p>Lastly,
+    since you&#x27;re coding it, maybe make it pull reference layouts+routing for
+    power supplies from the datasheets. That&#x27;s step 1 for any real eCAD student.
+  score: 0
+  posted_at: '2026-11-01T14:00:51Z'
+- id: '50326047'
+  parent_id: '50322181'
+  author: j45
+  text: Everything doesn’t have to be for everyone.<p>The reason why this product
+    exists is for homes in places where there is no telephone or cable tv wiring to
+    the house.<p>This is a massive part of the world and part of why the countries
+    that didn’t have a wired setup in many cars jumped straight to wireless.
+  score: 0
+  posted_at: '2026-11-01T14:29:12Z'
+- id: '50328654'
+  parent_id: '50320749'
+  author: mycall
+  text: IPv6?
+  score: 0
+  posted_at: '2026-11-01T19:09:42Z'
+- id: '50328678'
+  parent_id: '50319589'
+  author: mycall
+  text: Yeah, LTE is good enough for lower bandwidth applications.
+  score: 0
+  posted_at: '2026-11-01T19:11:32Z'
+- id: '50332790'
+  parent_id: '50328654'
+  author: DaiPlusPlus
+  text: Thing is, IPv6 has not replaced IPv4 yet ;)
+  score: 0
+  posted_at: '2026-11-02T03:23:37Z'
+- id: '50336281'
+  parent_id: '50321480'
+  author: ProllyInfamous
+  text: This is a terrifying exploit (&quot;yes, absolutely&quot;), but it is a one-time
+    exploit that is not intended for sustained data xfer. It steals your initial cryptoseed
+    (via SPI display linkage; no cryptographic exploit of ledger device is publicly-known,
+    yet), and only has to broadcast <i>one time from its literally-hand-wound antenna</i>.<p>I
+    believe one million+ devices are &quot;suspected.&quot;<p>----<p>I&#x27;m just
+    beginning to play around with Docker, and I have a spare eWaste Intel 4xxx (with
+    dual PCI slots and two 56k modems!~); hoping that my own MacBook can &quot;dock&quot;
+    in to my landline&#x27;s RJ-11 &quot;virtually&quot; – that I can figure this
+    out with LLMS as a dumbass electrician is incredible! – exciting stuff to learn&#x27;bout.
+  score: 0
+  posted_at: '2026-11-02T13:03:46Z'
+- id: '50359771'
+  parent_id: '50326047'
+  author: wolrah
+  text: If you have more than one device at all it&#x27;s still better to have a single
+    cellular router than to have a bunch of individual cellular devices, so having
+    the ability to operate on WiFi or ethernet is a benefit to literally everyone
+    who&#x27;s not using it as the sole device at a booth or something at very little
+    BOM cost.  That also makes it useful in locations that don&#x27;t have good cell
+    service as long as some kind of network can be accessed.<p>Making something intentionally
+    significantly worse to save pennies on the BOM is not something that should ever
+    be defended.<p>If it has a cellular internet connection there&#x27;s no good reason
+    to not at least also have WiFi, and if it&#x27;s the kind of device that isn&#x27;t
+    expected to be moving around while in use there&#x27;s no good reason to not also
+    have ethernet.
+  score: 0
+  posted_at: '2026-11-03T23:41:30Z'
+article:
+archived_at: '2026-11-15T10:29:23Z'

@@ -1,0 +1,907 @@
+---
+post:
+  id: '50478701'
+  title: Memory Safety Bugs in Rust Standard Library
+  url: https://forge-blog.github.io/posts/rust-std-memory-safety/
+  hn_url: https://news.ycombinator.com/item?id=50478701
+  score: 146
+  author: ''
+  posted_at: '2026-11-13T05:22:08Z'
+  fetched_at: '2026-11-15T10:29:02Z'
+  article_url: https://forge-blog.github.io/posts/rust-std-memory-safety/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-15T10:29:02Z'
+  raw_comment_count: 85
+comments:
+- id: '50504356'
+  parent_id: '50478701'
+  author: nektro
+  text: "&gt; Notes from  Microsoft Security&#x27;s Frontier Offensive Research &amp;
+    Generative Exploitation Lab."
+  score: 0
+  posted_at: '2026-11-15T05:49:51Z'
+- id: '50504393'
+  parent_id: '50478701'
+  author: not_a_bot_4sho
+  text: A good use for AI
+  score: 0
+  posted_at: '2026-11-15T06:00:08Z'
+- id: '50504442'
+  parent_id: '50478701'
+  author: senderista
+  text: I sure wish they&#x27;d rewrite the Azure Linux VM Agent in Rust. That thing
+    normally burns 10-15% of a core, and also blocks VM restart for tens of minutes,
+    god knows why.
+  score: 0
+  posted_at: '2026-11-15T06:13:17Z'
+- id: '50504448'
+  parent_id: '50478701'
+  author: nektro
+  text: '&gt; Pattern 2: Trusting user-provided implementations to be correct<p>reminds
+    me of the tales from <a href="https:&#x2F;&#x2F;oxide.computer&#x2F;blog&#x2F;iddqd-unsafe"
+    rel="nofollow">https:&#x2F;&#x2F;oxide.computer&#x2F;blog&#x2F;iddqd-unsafe</a>'
+  score: 0
+  posted_at: '2026-11-15T06:14:07Z'
+- id: '50504529'
+  parent_id: '50504442'
+  author: loeg
+  text: I&#x27;ve seen certain MSFT engineers get a lock ordering warning from taking
+    mutexes in a wrong order and &quot;fix&quot; it by using a spin loop + try lock
+    instead.
+  score: 0
+  posted_at: '2026-11-15T06:30:04Z'
+- id: '50504566'
+  parent_id: '50478701'
+  author: hingler36
+  text: I&#x27;ve always felt that parts of the Rust standard library to be weirdly
+    un-rusty. Like indexing a vector panicking instead of returning a Some(T) in case
+    the index is out of bounds. It&#x27;s easy to avoid if you put the effort in of
+    course, but it did always feel weird that one of the first data structures you
+    learn has this behavior right out of the gate.
+  score: 0
+  posted_at: '2026-11-15T06:37:56Z'
+- id: '50504619'
+  parent_id: '50504566'
+  author: Chai-T-Rex
+  text: That&#x27;s not really a memory safety bug, due to the fact that it panics
+    rather than doing something unsafe.<p>The `variable[i]` notation is intended to
+    function like in other languages, where it returns an unwrapped value. It would
+    be ugly, noisy, unergonomic, and annoying to have to properly handle `Some` (like
+    in `variable[i].unwrap()`) every single time you ever used it. Imagine doing `c[i].unwrap()[j].unwrap()
+    += a[i].unwrap()[k].unwrap() * b[k].unwrap()[j].unwrap();`.<p>If you really want
+    the result to be wrapped in `Some`, you can use `variable.get(i)`.
+  score: 0
+  posted_at: '2026-11-15T06:49:53Z'
+- id: '50504625'
+  parent_id: '50504393'
+  author: rurban
+  text: No, a good use to fix their specs.<p>Rust is unsafe by spec, not just by implementation.
+    For memory and type safety. concurrency safety is impossible to get with their
+    blocking IO approach.
+  score: 0
+  posted_at: '2026-11-15T06:50:18Z'
+- id: '50504648'
+  parent_id: '50504566'
+  author: suresk
+  text: I think it is a reasonable tradeoff, especially since `get(i)` is available
+    to do what you want. An array index oob error is usually a logic issue, not some
+    recoverable error, and in a lot of cases you&#x27;re doing it where it is impossible
+    to be wrong, so it is a lot of error-checking (and giving up things like x[0]
+    += 1) to have the Index trait return an Option instead of a direct reference.
+  score: 0
+  posted_at: '2026-11-15T06:54:52Z'
+- id: '50504744'
+  parent_id: '50504619'
+  author: cube00
+  text: "&gt; That&#x27;s not really a memory safety bug, due to the fact that it
+    panics rather than doing something unsafe.<p>The ? operator can be nicer to read
+    then all those .unwraps() as an alternative and doesn&#x27;t panic.<p>I guess
+    the concern with panics is you&#x27;re not forced to think about how you want
+    to handle them like you do when you get a `Result` or `Option` returned.<p>As
+    a result it could be used as a DDOS against your app if it&#x27;s network accessible."
+  score: 0
+  posted_at: '2026-11-15T07:12:49Z'
+- id: '50504781'
+  parent_id: '50504566'
+  author: saagarjha
+  text: "&gt; Like indexing a vector panicking instead of returning a Some(T) in case
+    the index is out of bounds.<p>If you are doing this then you&#x27;ve made a mistake
+    in your code. Rust is consistent in catching these early."
+  score: 0
+  posted_at: '2026-11-15T07:18:49Z'
+- id: '50504829'
+  parent_id: '50504744'
+  author: aslilac
+  text: gotta remember tho that ? didn’t exist in 1.0, and now we can’t break existing
+    code
+  score: 0
+  posted_at: '2026-11-15T07:29:36Z'
+- id: '50504862'
+  parent_id: '50504529'
+  author: senderista
+  text: I work on a commercial database marketed as &quot;lock-free&quot; and I can&#x27;t
+    tell you how many CAS spin loops I&#x27;ve seen with no backoff or iteration bounds.
+  score: 0
+  posted_at: '2026-11-15T07:37:36Z'
+- id: '50504875'
+  parent_id: '50504744'
+  author: adwn
+  text: Applying the <i>?</i> operator to an <i>Option&lt;_&gt;</i> doesn&#x27;t work
+    inside a function returning <i>io::Result&lt;_&gt;</i>, for example, and turning
+    the <i>None</i> from an out-of-bounds vector access into some <i>io::Result::Err</i>
+    usually wouldn&#x27;t make sense.<p>I would go so far as to say that an out-of-bounds
+    index is <i>always</i> a logic error (to be handled by panicking), not an input
+    error (to be handled with <i>Result</i>). And if the out-of-bounds access was
+    caused by invalid input, then logic error consists of not checking the input before
+    indexing.
+  score: 0
+  posted_at: '2026-11-15T07:40:24Z'
+- id: '50504889'
+  parent_id: '50504781'
+  author: uecker
+  text: There is also the idea that the language is so good because such things are
+    caught at compile time via the type system. (But this is generally not done for
+    the same reason it is not done in C.)
+  score: 0
+  posted_at: '2026-11-15T07:42:54Z'
+- id: '50504896'
+  parent_id: '50478701'
+  author: Panzerschrek
+  text: "&gt; But many operations in Rust can panic, from out-of-bounds indexing to
+    calls into user-provided code, and by default a panic unwinds<p>That&#x27;s why
+    I think having unwinding in Rust is a mistake. It gives a false sense of safety,
+    but it&#x27;s very hard to write unwinding-correct code. So, it would be better
+    to handle panics as immediate process termination instead."
+  score: 0
+  posted_at: '2026-11-15T07:44:13Z'
+- id: '50504915'
+  parent_id: '50504619'
+  author: rendaw
+  text: GP didn&#x27;t say it was a memory safety bug.
+  score: 0
+  posted_at: '2026-11-15T07:47:38Z'
+- id: '50504923'
+  parent_id: '50478701'
+  author: simonask
+  text: 'Just because emotions seem to be always boiling whenever Rust is mentioned,
+    I want to clarify for people who only follow casually that there is nothing unusual
+    or scandalous about these finds.<p>The Rust project as a whole currently has 178
+    open issues with the tag I-unsound[1]. Many of these describe issues that only
+    exist in the nightly compiler, of course, but it does happen that bugs are not
+    caught before shipping. That&#x27;s software.<p>[1]: <a href="https:&#x2F;&#x2F;github.com&#x2F;rust-lang&#x2F;rust&#x2F;issues?q=is%3Aissue+state%3Aopen+label%3AI-unsound"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rust-lang&#x2F;rust&#x2F;issues?q=is%3Aissue+state%...</a>'
+  score: 0
+  posted_at: '2026-11-15T07:48:32Z'
+- id: '50504934'
+  parent_id: '50504923'
+  author: fsckboy
+  text: "&gt;<i>that there is nothing unusual or scandalous about these finds</i><p>that
+    there is nothing unusual <i>is</i> the scandal"
+  score: 0
+  posted_at: '2026-11-15T07:50:16Z'
+- id: '50504951'
+  parent_id: '50504934'
+  author: simonask
+  text: Why would you think that? Bugs exist in complex software no matter how hard
+    you try, including software written in Rust such as the Rust compiler and standard
+    library. Did you expect the highly competent people working on these projects
+    to just one-shot everything?
+  score: 0
+  posted_at: '2026-11-15T07:53:50Z'
+- id: '50504977'
+  parent_id: '50504889'
+  author: pjmlp
+  text: As shown in PL&#x2F;I or NEWP, C could have done it both ways, checked and
+    unchecked when really required, e.g. <i>PREFIX(SUBSCRIPTRANGE)</i>, <i>PREFIX(NOSUBSCRIPTRANGE)</i>.<p>Likewise
+    regarding the storage for the length, if one is willing to go the way C went down
+    a few years later, declare a pointer and make the array storage be pointer based,
+    e.g. <i>BASED(MY_ARRAY_PTR)</i>.
+  score: 0
+  posted_at: '2026-11-15T07:58:57Z'
+- id: '50505017'
+  parent_id: '50504977'
+  author: uecker
+  text: Can you explain what you mean by &quot;make the array storage be pointer based&quot;?
+  score: 0
+  posted_at: '2026-11-15T08:07:32Z'
+- id: '50505058'
+  parent_id: '50504896'
+  author: Xirdus
+  text: But that would make Rust unsuitable for writing anything that wants to keep
+    the program running even if something does panic - say, test harness, or a plugin
+    system.
+  score: 0
+  posted_at: '2026-11-15T08:15:30Z'
+- id: '50505063'
+  parent_id: '50504442'
+  author: arccy
+  text: no amount of rust will fix the problems in azure that lead to <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=47616242">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=47616242</a>
+  score: 0
+  posted_at: '2026-11-15T08:16:45Z'
+- id: '50505064'
+  parent_id: '50504951'
+  author: teiferer
+  text: You may have noticed the wave of &quot;rewritten in rust&quot; software in
+    recent years, whose only (?) selling point was that this makes the software somehow
+    automatically safe and if not bug free then at least significantly lower on bugs.<p>This
+    finding is just yet another nail in the coffin of that myth.
+  score: 0
+  posted_at: '2026-11-15T08:16:52Z'
+- id: '50505085'
+  parent_id: '50505064'
+  author: irealis
+  text: I have never understood this argument. Rust, by default, is safer. This is
+    trivially true. But it also is not perfect.<p>This entire argument against Rust
+    hinges on it somehow invalidating all of the improvements it does have, all the
+    safety it does guarantee, just because it also has a few bugs. It&#x27;s neither
+    a myth that Rust is safer, nor is it a nail in the coffin for it.<p>Otherwise
+    you must make the argument that just because unsafe exists, and is used, it is
+    automatically as bad as let&#x27;s say C - a language that has proven time and
+    time again how trivial it is to make mistakes with. Something that just doesn&#x27;t
+    happen in Rust.
+  score: 0
+  posted_at: '2026-11-15T08:22:35Z'
+- id: '50505088'
+  parent_id: '50505064'
+  author: Certhas
+  text: Because?
+  score: 0
+  posted_at: '2026-11-15T08:23:38Z'
+- id: '50505104'
+  parent_id: '50505058'
+  author: masklinn
+  text: OTOH that panics are ok and easy to reach for and unwind is why you have to
+    handle them and keep the program running.<p>I don’t think that an unwind-less
+    rust would have fit within the weirdness budget 10 years ago, today it would definitely
+    be something to consider. Although it would have an unwind effect to contend with.
+  score: 0
+  posted_at: '2026-11-15T08:26:08Z'
+- id: '50505124'
+  parent_id: '50505085'
+  author: Galanwe
+  text: The annoyance comes from the fact that your kind of _reasonable_ discourse
+    on safety is always thrown when there is a bug, but never when there is a claim
+    that rust is 100% by construction. I.e. It&#x27;s always a defensive argument,
+    but I never see someone step up to mention it on overly optimistic claims.
+  score: 0
+  posted_at: '2026-11-15T08:30:57Z'
+- id: '50505132'
+  parent_id: '50504923'
+  author: Sytten
+  text: Even more, the fact that unsafe blocks are a thing allows for this kind of
+    deep scrutiny of the STD.
+  score: 0
+  posted_at: '2026-11-15T08:33:02Z'
+- id: '50505133'
+  parent_id: '50505085'
+  author: pseudony
+  text: Funny. I would think a GCed language was safer - maybe Haskell being the safest
+    of all (outside even more niche languages) for its ability to encode so much in
+    the type system.<p>Yet, for some curious reason, a substantial group of snake
+    oil salesmen insist that only this one particularly cut puzzle piece (rust) fits
+    the bill.
+  score: 0
+  posted_at: '2026-11-15T08:33:39Z'
+- id: '50505135'
+  parent_id: '50504862'
+  author: masklinn
+  text: Does the system provide ready made backoff and &#x2F; or bounded CAS loop
+    primitives? Because if you have to write the entire thing in full every time I
+    can see why it’s get skipped.
+  score: 0
+  posted_at: '2026-11-15T08:33:53Z'
+- id: '50505165'
+  parent_id: '50505124'
+  author: simonask
+  text: I can&#x27;t be defending the statements of whoever says this, but I do think
+    that the reasonable way to understand it is that the fundamental model that the
+    Rust compiler and standard library attempt to implement is safe and correct by
+    construction, rather than as a statement about the concrete implementation.<p>Among
+    software developers, we shouldn&#x27;t need to provide a &quot;assuming there
+    are no bugs&quot; caveat with every statement about how something works, because
+    we know that bugs are essentially unavoidable at scale. We can say that Rust makes
+    it much easier to avoid bugs, but nobody serious has ever claimed that they are
+    100% eliminated.<p>It&#x27;s not like C or C++ compilers are bug free either,
+    despite implementing much weaker models.
+  score: 0
+  posted_at: '2026-11-15T08:42:02Z'
+- id: '50505166'
+  parent_id: '50478701'
+  author: gspr
+  text: 'Very interesting finds for sure. But taking the &quot;trusting user-provided
+    code&quot; as an example: isn&#x27;t this just a case of malicious code being
+    malicious? I understand the point that the malicious act comes through memory
+    unsafety, and it&#x27;s a big gotcha that <i>safe</i> Rust (i.e. Rust without
+    `unsafe`) can trigger memory unsafe behavior. But the code doing it is still acting
+    maliciously (by having an `AsRef` implementation that returns different slices
+    at different times). And the code being abused (the one that does the unsafe indexing)
+    <i>does</i> have `unsafe` – so this is a case of the user writing unsafe Rust
+    that interacts with <i>malicious</i> safe Rust.<p>I don&#x27;t know if it&#x27;s
+    ever been in Rust&#x27;s threat model to handle malicious code.'
+  score: 0
+  posted_at: '2026-11-15T08:42:04Z'
+- id: '50505176'
+  parent_id: '50478701'
+  author: eptcyka
+  text: An effect system could gelp us reason about code by making calls to panic-capable
+    functions marked as such. Maybe we could mark some types as panic unsafe?
+  score: 0
+  posted_at: '2026-11-15T08:44:53Z'
+- id: '50505187'
+  parent_id: '50505133'
+  author: simonask
+  text: Who, exactly?<p>It has been known for decades that GC was one way to achieve
+    memory safety. That was one of the main selling point of Java back in the 90s
+    - no more segfaults.<p>Rust was an absolute breakthrough, because it provides
+    a second way to gain memory safety, this time without the significant drawbacks
+    of a garbage collector, bringing memory safety to systems programming. That&#x27;s
+    materially different.<p>The only other previous attempt at this was Ada, which
+    for a variety of reasons never quite fit the bill despite its obvious strengths.
+  score: 0
+  posted_at: '2026-11-15T08:47:24Z'
+- id: '50505225'
+  parent_id: '50504951'
+  author: thesz
+  text: 'From the article: &quot;The findings reveal three recurring patterns of misplaced
+    trust in unsafe code: <i>trusting code not to panic,</i> trusting user-provided
+    implementations to be correct, and trusting the underlying system.&quot;<p>The
+    call to &quot;panic&quot; is an effect and can be checked at compile time. Haskell
+    does this with MonadError class, marking up code that may throw.<p>Rust has Turing
+    complete type system for years and still does not have effects of any kind.<p>To
+    be fair, &quot;trusting user provided implementation&quot; is also has something
+    to do with effects. Proper type system would require user-provided implementation
+    to use only certain effects and nothing else.<p>So two of of found shortcomings
+    are directly related to the type system and, specifically, to the choice of original
+    Rust implementors to not to distinguish between pure and effectful computations.<p>Do
+    Rust implementors highly competent? Yes, of course! They work on Turing complete
+    type system. Will they eliminate two of three recurring patterns? I strongly doubts
+    so. It is a design decision and these are especially hard to change. Changing
+    it will also break all Rust source code produced to that point of time.<p>Is it
+    a scandalous situation? For me, it is. The situation is so dire, actually, that
+    &quot;highly competent people working&quot; has to be defended with trivially
+    true fact that &quot;bugs exist in complex software no matter how hard you try,&quot;
+    instead of addressing core problem.'
+  score: 0
+  posted_at: '2026-11-15T08:56:59Z'
+- id: '50505235'
+  parent_id: '50505104'
+  author: Xirdus
+  text: It would be entirely unsuitable for the kind of project I work on in my day
+    job, which requires running user-provided code (trusted code, but one that may
+    contain many bugs) in 100 different worker threads, and if one of them crashes  the
+    other 99 must keep running. Without unwinding and recovery, we&#x27;d have to
+    completely redesign the whole application, probably to multiprocess architecture
+    with all its downsides.
+  score: 0
+  posted_at: '2026-11-15T08:59:28Z'
+- id: '50505249'
+  parent_id: '50505133'
+  author: JuniperMesos
+  text: Also you gotta write the garbage collector itself in some language that isn&#x27;t
+    itself garbage collected - usually C or C++, before Rust existed.<p>Anyway, it&#x27;s
+    basically slander to say that people advocating Rust are snake oil salesman. Rust
+    is a genuine improvement to systems languages over the existing options (primarily
+    C&#x2F;C++) in multiple respects, not just memory safety; it is not a panacea
+    that solves every problem or eliminates every possible bug, and no one involved
+    with the project ever claimed that it did.
+  score: 0
+  posted_at: '2026-11-15T09:02:42Z'
+- id: '50505252'
+  parent_id: '50504923'
+  author: cowlevel
+  text: That there&#x27;s nothing unusual about these finds, the Drop static lifetime
+    bug, or cve-rs is proof that Rust is not, and probably never will be, memory-safe.
+    It&#x27;s still an improvement though.
+  score: 0
+  posted_at: '2026-11-15T09:03:24Z'
+- id: '50505259'
+  parent_id: '50504951'
+  author: cowlevel
+  text: Actually, software that probably has no bugs does exist, starting with the
+    seL4 microkernel. Such software is usually pretty simplistic because that goes
+    a long way towards proving an absence of bugs.<p>More practically, however, Rust
+    has proven to have more memory safety bugs than GC languages. If you want memory
+    safety you should go GC. If you want consistent performance or tight control over
+    memory, and pretty good memory safety, then you should go Rust.
+  score: 0
+  posted_at: '2026-11-15T09:04:38Z'
+- id: '50505265'
+  parent_id: '50505064'
+  author: no-name-here
+  text: "&gt; automatically safe<p>&gt; bug free<p>In most discussions involving Rust
+    I hear those “counter” criticisms, but is it a common claim by Rust proponents
+    that Rust makes software bug free, etc.? I feel like I don’t regularly encounter
+    the original claim that others regularly argue against."
+  score: 0
+  posted_at: '2026-11-15T09:05:17Z'
+- id: '50505266'
+  parent_id: '50478701'
+  author: petterroea
+  text: Is it just me or is it painful that they format their product name like that
+    in the blog text.
+  score: 0
+  posted_at: '2026-11-15T09:05:21Z'
+- id: '50505278'
+  parent_id: '50504566'
+  author: cowlevel
+  text: Wrapping everything in optional does lead to optional fatigue, and people
+    just unwrap each optional they get since they know the index is inbounds, missing
+    the one instance where it really is possible to get None.<p>Maybe optional fatigue
+    is Rusty but it&#x27;s not a good style in any language
+  score: 0
+  posted_at: '2026-11-15T09:07:22Z'
+- id: '50505285'
+  parent_id: '50504829'
+  author: cowlevel
+  text: Is that Rust&#x27;s guarantee? I know that Go avoids breaking changes but
+    I thought they were normal in Rust.
+  score: 0
+  posted_at: '2026-11-15T09:08:53Z'
+- id: '50505295'
+  parent_id: '50505176'
+  author: cowlevel
+  text: That&#x27;s literally what returning optional does.<p>Effect systems usually
+    fail because effects are very different from each other and can&#x27;t be generalised.
+  score: 0
+  posted_at: '2026-11-15T09:10:18Z'
+- id: '50505311'
+  parent_id: '50478701'
+  author: shevy-java
+  text: |-
+    The best AI language has not used AI to find all bugs yet?<p>I don&#x27;t quite like AI, but I think from an objective point of
+    view one can reason that AI led to the discovery of more bugs,
+    if we deduct the non-bugs from those reports.
+  score: 0
+  posted_at: '2026-11-15T09:13:08Z'
+- id: '50505317'
+  parent_id: '50505064'
+  author: dcminter
+  text: Yes, that&#x27;s a myth.<p>I, like many others, still think that a language
+    that requires a bug in the compiler for a certain category of error to be exhibited
+    is preferable to one that has no such guarantees. I like C but it&#x27;s not <i>crazy</i>
+    to <i>consider</i> rewriting a tool in Rust for memory safety reasons.
+  score: 0
+  posted_at: '2026-11-15T09:14:09Z'
+- id: '50505318'
+  parent_id: '50504923'
+  author: shevy-java
+  text: "&gt; there is nothing unusual or scandalous about these finds<p>I would not
+    go so far. I just mentioned in a separate comment, a minute before writing this
+    here, that it is rather\noutrageous that the premier language for AI these days
+    (aka Rust), \nhas not used AI to find these bugs before. Would you not\nalso consider
+    that it should follow from simple logic that\na language that is the premier AI
+    language now, also would\nuse AI as it preaches for it, to find bugs?"
+  score: 0
+  posted_at: '2026-11-15T09:14:16Z'
+- id: '50505320'
+  parent_id: '50505085'
+  author: nopurpose
+  text: In addition to that, many of reported soundness issues rely on adversarial
+    implementations for stdlib&#x27; traits by user&#x27;s types, like Borrow::borrow
+    or as_ref returning different value between back to back calls. You would do that
+    if you try to break compiler,  but not when writing regular programs.
+  score: 0
+  posted_at: '2026-11-15T09:14:43Z'
+- id: '50505328'
+  parent_id: '50505187'
+  author: dcminter
+  text: "&gt; Who, exactly?<p>I&#x27;m on your side of this, but there <i>are</i>
+    Rust zealots out there and they&#x27;re incredibly annoying.<p>(Edit to add:)<p>As
+    a longtime Java guy (after a decade or so as a C++ guy) what drew me to Rust wasn&#x27;t
+    actually memory safety; that was table-stakes for me and Go might have lured me
+    in if that was all I wanted. The low-cost (cognitive complexity is a cost) of
+    memory safety  was a factor, but it was the expressive type system that sealed
+    the deal."
+  score: 0
+  posted_at: '2026-11-15T09:16:34Z'
+- id: '50505338'
+  parent_id: '50504566'
+  author: namjh
+  text: 'That&#x27;s just a design decision orthogonal to memory safety:<p>For &quot;fallible&quot;
+    variant indexing, you have `the_slice.get(index)`: <a href="https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;stable&#x2F;std&#x2F;primitive.slice.html#method.get"
+    rel="nofollow">https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;stable&#x2F;std&#x2F;primitive.slice.html#me...</a><p>Although
+    its method signature is kind of cursed due to generics, it matches your requirement
+    that allows graceful OOB handling.<p>If the default indexing behavior were like
+    `.get()` it would be too cumbersome to express repeated use of indexing, or multi-dimensional
+    array indexing, etc.<p>Also there is get_unchecked which is unsafe. Trivially
+    you&#x27;ll trigger OOB access when misused.'
+  score: 0
+  posted_at: '2026-11-15T09:18:59Z'
+- id: '50505350'
+  parent_id: '50504875'
+  author: ablob
+  text: The former issue arises from post-hoc thinking. Of course it&#x27;s hard to
+    retrofit into the language, but I see no reason why there shouldn&#x27;t be facilities
+    for the ? operator to turn a None into an appropriate error type.<p>The latter
+    is a subjective matter. There are reasons to never want a panic (hello there,
+    Linux kernel) and reasons to do more sophisticated stuff (core dump, cleanup or
+    notifications) before crashing. And maybe one thread shouldn&#x27;t lead to process
+    death. I think most of these decisions should be kept to the user&#x27;s discretion.
+  score: 0
+  posted_at: '2026-11-15T09:21:06Z'
+- id: '50505359'
+  parent_id: '50505318'
+  author: WOTERMEON
+  text: Are you paddling some? I’ve never seen rust described as premier language
+    for AI
+  score: 0
+  posted_at: '2026-11-15T09:22:48Z'
+- id: '50505375'
+  parent_id: '50505166'
+  author: pwdisswordfishq
+  text: Sufficiently deniable malice is indistinguishable from incompetence.  If a
+    condition can be triggered &quot;maliciously&quot;, then it can probably be also
+    triggered inadvertently.  There&#x27;s no point in saying &quot;that&#x27;s malicious
+    so it doesn&#x27;t count&quot;.
+  score: 0
+  posted_at: '2026-11-15T09:25:42Z'
+- id: '50505381'
+  parent_id: '50505165'
+  author: csande17
+  text: '&gt; the fundamental model that the Rust compiler and standard library attempt
+    to implement is safe and correct by construction<p>This comes up a lot as a defensive
+    argument too, but it&#x27;s also pretty frustrating, because Rust&#x27;s &quot;fundamental
+    model&quot; is not a thing that really exists. There are project proposals to
+    create one (such as <a href="https:&#x2F;&#x2F;goals.rust-lang.org&#x2F;2026&#x2F;roadmap-project-zero.html#"
+    rel="nofollow">https:&#x2F;&#x2F;goals.rust-lang.org&#x2F;2026&#x2F;roadmap-project-zero.html#</a>),
+    but at the moment it&#x27;s just a vague set of vibes people gesture towards to
+    dismiss all the problems with Rust-as-actually-implemented.'
+  score: 0
+  posted_at: '2026-11-15T09:27:13Z'
+- id: '50505383'
+  parent_id: '50505058'
+  author: cowlevel
+  text: This is already the case for any other non-JVM language though, and they usually
+    manage to deal with it by separating operating system processes. A lot of C programs
+    have plugins (even the kernel!) and don&#x27;t crash because the plugins aren&#x27;t
+    buggy (by which I don&#x27;t mean they have no bugs).<p>Your plugin can still
+    crash in ways other than a panic, like a segfault inside an unsafe block.<p>It&#x27;s
+    also likely possible to DoS the application from a plugin in ways other than a
+    crash, e.g. add a billion entries to the right-click menu.<p>And if you&#x27;re
+    loading a plugin, how do you know the plugin was actually written in Rust, anyway?
+    It could be written in C and scribble over all your stack memory as soon as you
+    load it.<p>It&#x27;s very hard to guarantee stability in the presence of arbitrary
+    extensions, and you might not even want to because someone might have a real use
+    case for an extremely large right-click menu (probably not a billion though).
+    I don&#x27;t think even language server protocol guarantees it.
+  score: 0
+  posted_at: '2026-11-15T09:27:29Z'
+- id: '50505392'
+  parent_id: '50505235'
+  author: cowlevel
+  text: What do you do if they segfault on raw pointers? Does Rust&#x27;s runtime
+    catch SIGSEGV and translate it to a panic?<p>You can also get SIGBUS by mapping
+    a file beyond the end of the file and then trying to read the extra bytes. If
+    Rust&#x27;s version of mmap checks this, you can still do it by truncating the
+    file while it&#x27;s mapped.
+  score: 0
+  posted_at: '2026-11-15T09:29:58Z'
+- id: '50505396'
+  parent_id: '50505318'
+  author: arijun
+  text: 'I’m having a hard time understanding you here. Are you saying that since
+    rust is a good language for AI to write code in, it says something about the (lack
+    of) power of AI, that it wasn’t what found the bug? Because the logic there seems
+    twisted: “F1 drivers, the biggest users of F1 cars, almost never make improvements
+    to F1 engines”.'
+  score: 0
+  posted_at: '2026-11-15T09:30:48Z'
+- id: '50505406'
+  parent_id: '50504862'
+  author: cowlevel
+  text: If it only retries because a different thread made progress, it&#x27;s lock-free
+    and total work is bounded - even though one particular thread could get very unlucky,
+    system-wide luck is conserved.<p>How much code&#x27;s inside the CAS loop? If
+    it&#x27;s being held for less than (sticks finger in the wind) a few thousand
+    of instructions then backoff or limits are actively counterproductive. That&#x27;s
+    how you&#x27;re <i>supposed</i> to use a CAS loop.<p>If it&#x27;s more, you shouldn&#x27;t
+    try to invent a more clever CAS loop, you should replace it with a mutex.
+  score: 0
+  posted_at: '2026-11-15T09:32:34Z'
+- id: '50505407'
+  parent_id: '50505252'
+  author: hmry
+  text: Is a language only memory-safe if its implementations are completely bug-free?
+    I guess no language can ever be memory-safe then, might as well throw out the
+    concept.
+  score: 0
+  posted_at: '2026-11-15T09:32:49Z'
+- id: '50505418'
+  parent_id: '50505135'
+  author: cowlevel
+  text: Normally if you find yourself needing something like that, it means a CAS
+    loop is the wrong tool for the job.
+  score: 0
+  posted_at: '2026-11-15T09:34:25Z'
+- id: '50505422'
+  parent_id: '50504625'
+  author: cowlevel
+  text: Rust doesn&#x27;t have a spec, last I heard. The compiler is the spec.
+  score: 0
+  posted_at: '2026-11-15T09:35:10Z'
+- id: '50505423'
+  parent_id: '50505285'
+  author: chiffaa
+  text: Rust does VERY limited breaking changes, the largest one probably being the
+    `!` type inference change that was very carefully vetted, deemed a necessity <i>and
+    saw contributions to fix the issue in all crates in the official registry</i>
+  score: 0
+  posted_at: '2026-11-15T09:35:38Z'
+- id: '50505439'
+  parent_id: '50505407'
+  author: cowlevel
+  text: Last I heard, Rust has no independent spec so the compiler is the spec.
+  score: 0
+  posted_at: '2026-11-15T09:38:30Z'
+- id: '50505441'
+  parent_id: '50505166'
+  author: dist-epoch
+  text: Only JavaScript partially supports this, based on the domain where the code
+    originated from, so your website code is not infected by the Javascript run by
+    an ad you embed.
+  score: 0
+  posted_at: '2026-11-15T09:38:53Z'
+- id: '50505444'
+  parent_id: '50505017'
+  author: pjmlp
+  text: In PL&#x2F;I you can declare arrays with a length descriptor, thus allocating
+    storage for the length, like in mostly safe systems languages.<p>Alternatively
+    when allocating the array storage define its access to be pointer based.<p>This
+    means no length descriptor will be stored alongside the array, and the access
+    to array elements will be done via the given pointer.<p>It is up to the programmer
+    not to mess up then.<p>Unfortunately C authors never added a way to do the former,
+    given their experience with PL&#x2F;I and Multics.<p>I am aware we are finally
+    going into that direction.
+  score: 0
+  posted_at: '2026-11-15T09:39:19Z'
+- id: '50505463'
+  parent_id: '50505166'
+  author: mswphd
+  text: Rust&#x27;s goal is no UB in safe Rust. That includes in (incorrect) impls
+    of safe traits.<p>Note that incorrect code can still cause<p>1. incorrect outputs,
+    or<p>2. arbitrary performance degredations<p>safe rust doesn&#x27;t have to work
+    magic. All it must do is prevent UB.
+  score: 0
+  posted_at: '2026-11-15T09:42:41Z'
+- id: '50505466'
+  parent_id: '50505225'
+  author: simonask
+  text: You&#x27;re pointing out that there can exist a language other that Rust that
+    is even safer, and prevents even more classes of bugs. That&#x27;s trivially true,
+    of course, but this language doesn&#x27;t currently exist.
+  score: 0
+  posted_at: '2026-11-15T09:42:52Z'
+- id: '50505470'
+  parent_id: '50505439'
+  author: dxdm
+  text: So? I don&#x27;t understand how that matters here.
+  score: 0
+  posted_at: '2026-11-15T09:43:46Z'
+- id: '50505474'
+  parent_id: '50505285'
+  author: throwawayqqq11
+  text: Rust editions exist for handling breaking changes. I dont get why so many
+    people treat them as unthinkable&#x2F;impossible.
+  score: 0
+  posted_at: '2026-11-15T09:44:12Z'
+- id: '50505481'
+  parent_id: '50505285'
+  author: arijun
+  text: They do break backwards compatibility at edition boundaries, but if they do
+    that too much without a good enough reason they could end up with a python2-&gt;python3
+    situation, with low uptake.
+  score: 0
+  posted_at: '2026-11-15T09:45:14Z'
+- id: '50505482'
+  parent_id: '50505259'
+  author: saagarjha
+  text: Neither of these is true lmao
+  score: 0
+  posted_at: '2026-11-15T09:45:15Z'
+- id: '50505483'
+  parent_id: '50505350'
+  author: orf
+  text: "&gt; no reason why there shouldn&#x27;t be facilities for the ? operator
+    to turn a None into an appropriate error type<p>There are facilities for this.<p><pre><code>
+    \  option.ok_or(MyError::new())?</code></pre>"
+  score: 0
+  posted_at: '2026-11-15T09:45:26Z'
+- id: '50505493'
+  parent_id: '50505133'
+  author: stymaar
+  text: A GCed language wouldn&#x27;t be safe from the kinds of bugs exhibited in
+    the OP, all it takes is a bug in the runtime.
+  score: 0
+  posted_at: '2026-11-15T09:46:30Z'
+- id: '50505533'
+  parent_id: '50478701'
+  author: codeflo
+  text: The community-driven quest for &quot;panic safety&quot; in Rust is the same
+    curse that befell C++ in terms of &quot;exception safety&quot;, maybe worse because
+    at least more C++ shops are sensible enough to disable exceptions. It&#x27;s an
+    exercise put forth by language lawyers that increases program complexity beyond
+    comprehension, often without achieving the stated goal. It&#x27;s simply not practical
+    to think through 20 convoluted edge cases for every innocent little function,
+    which means that no realistic program will safely recover from a panic. It&#x27;s
+    best to admit this and engineer your system accordingly.
+  score: 0
+  posted_at: '2026-11-15T09:52:27Z'
+- id: '50505535'
+  parent_id: '50505381'
+  author: simonask
+  text: 'Calling it &quot;vibes&quot; is just so unserious.<p>If you would like the
+    Rust language to have a formal specification, I would suggest you look at ways
+    to help that happen. There is already the Ferrocene[1] project.<p>The safety model
+    of Rust is extremely well described in detail. It&#x27;s not particularly hard
+    to understand, either. Are you worried that there is some kind of fundamental
+    flaw in the design, we&#x27;re just waiting to discover it, and it will all come
+    crumbling down? My suggestion would be to start by understanding Rust&#x27;s type
+    system and why it works the way it does, and you will very quickly build an intuition
+    (&quot;vibes&quot;) that it obviously works.<p>[1]: <a href="https:&#x2F;&#x2F;ferrocene.dev&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;ferrocene.dev&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-15T09:52:56Z'
+- id: '50505537'
+  parent_id: '50505381'
+  author: saagarjha
+  text: I mean it would be nice to make one of those, but I also don&#x27;t really
+    see the point of doing so besides shutting up the guys who like to talk about
+    how Rust doesn&#x27;t have a spec, most of whom do not even seem involved in the
+    language really? Nobody really has an issue with the current situation, they are
+    all clearly bugs and they more or less get triaged appropriately.
+  score: 0
+  posted_at: '2026-11-15T09:52:58Z'
+- id: '50505549'
+  parent_id: '50505328'
+  author: simonask
+  text: "&gt; I&#x27;m on your side of this, but there are Rust zealots out there
+    and they&#x27;re incredibly annoying.<p>I mean, I keep hearing about them, and
+    they just literally <i>never</i> show up anywhere I am, and I&#x27;m pretty active
+    in the Rust community."
+  score: 0
+  posted_at: '2026-11-15T09:54:25Z'
+- id: '50505551'
+  parent_id: '50504889'
+  author: saagarjha
+  text: The language can catch a lot of things via the type system, but there are
+    always going to be some things that are just not in scope and must be asserted
+    via precondition. This is one of them.
+  score: 0
+  posted_at: '2026-11-15T09:54:31Z'
+- id: '50505560'
+  parent_id: '50505311'
+  author: saagarjha
+  text: "&quot;The best AI language&quot;?"
+  score: 0
+  posted_at: '2026-11-15T09:55:46Z'
+- id: '50505591'
+  parent_id: '50505533'
+  author: simonask
+  text: 'This is such a deep topic with literally decades of discourse behind it.<p>I
+    tend to agree with the general principle that panicking or throwing an exception
+    should terminate the process in most cases. But those last microseconds of a process&#x27;
+    lifetime matter quite a lot: Are you able to save the user&#x27;s work? Are you
+    able to log the error so the crash can be diagnosed?<p>With Undefined Behavior
+    in the picture, you cannot do anything. The whole process is toast, and its entire
+    memory state is invalid.'
+  score: 0
+  posted_at: '2026-11-15T10:02:11Z'
+- id: '50505662'
+  parent_id: '50505407'
+  author: catlifeonmars
+  text: I think it only has to be free of memory soundness bugs.
+  score: 0
+  posted_at: '2026-11-15T10:15:38Z'
+- id: '50505669'
+  parent_id: '50478701'
+  author: ozgrakkurt
+  text: Do not ever use with anything other than panic = abort.<p>It is just the sketchiest
+    feature in a very realiable language.<p>It doesn&#x27;t make sense to me why anyone
+    whould use rust with panic handling.<p>And the of course the language trusts the
+    operating system, how else can you program?<p>This kind of thing is basically
+    why all projects blocked AI issues, it is just slop that kind of makes sense if
+    you don&#x27;t know what you are doing.
+  score: 0
+  posted_at: '2026-11-15T10:16:00Z'
+- id: '50505721'
+  parent_id: '50505470'
+  author: lelanthran
+  text: It means that the language and implementation are one and the same,  so a
+    bug in the compiler is a bug in the language.
+  score: 0
+  posted_at: '2026-11-15T10:22:48Z'
+article:
+  url: https://forge-blog.github.io/posts/rust-std-memory-safety/
+  title: Memory Safety Bugs in Rust Standard Library · FORGE Lab
+  fetch_status: success
+  content: "Microsoft’s FORGE Lab found several memory safety issues in Rust’s standard
+    library (`std` and `core`), including cases where code written entirely in safe
+    Rust can trigger undefined behavior. The research used Hyenas, FORGE’s frontier
+    research version of codename MDASH, an AI-powered vulnerability-scanning system.
+    The findings reveal three recurring patterns of misplaced trust in unsafe code:
+    trusting code not to panic, trusting user-provided implementations to be correct,
+    and trusting the underlying system.\n\nRust’s safety guarantees are precisely
+    what make these findings interesting. Its rich type system and ownership model
+    rule out whole classes of memory-safety issues, but much of the standard library
+    relies on unsafe code underneath its safe APIs. When that code breaks its safety
+    contract, even safe Rust can encounter behavior the language is designed to prevent.\n\nRust’s
+    memory-safety guarantees are increasingly important as the language becomes part
+    of software that billions of people rely on every day. Billions of people are
+    estimated to interact with Rust-based software or operating systems daily, often
+    without knowing it. Microsoft made Rust a[Tier-1 internal language](https://rustfoundation.org/media/guest-post-rust-is-tier-1-language-at-microsoft/)alongside
+    C++, C#, and TypeScript, GitHub[rewrote the Copilot agent runtime in Rust](https://github.blog/ai-and-ml/generative-ai/migrating-the-github-copilot-runtime-to-rust-using-copilot/),
+    and [Bun](https://bun.com/blog/bun-in-rust),[Android](https://blog.google/security/rust-in-android-move-fast-fix-things/),
+    the [Linux kernel](https://lwn.net/Articles/1050174/), and[Cloudflare](https://blog.cloudflare.com/20-percent-internet-upgrade/)
+    are moving code to it as well. Much of this software relies on Rust’s foundational
+    libraries, `core` and `std`, and the safety guarantees of the APIs they provide.
+    Bugs in those libraries can have consequences well beyond the code where they
+    originate.\n\nUnsafe Rust has been a long-running interest for us. Our team includes
+    the people behind [Rudra](https://dl.acm.org/doi/10.1145/3477132.3483570), a static
+    analyzer that looked for memory-safety bugs across the Rust ecosystem in 2021.
+    We also write many of our own tools in Rust, so its safety is more than a research
+    topic for us. This year, we took a closer look at the standard library to see
+    what kinds of mistakes still show up in its unsafe code today.\n\nIn this post,
+    we share some of the bugs we reported to the Rust issue tracker. We use them to
+    discuss what Rust does and doesn’t guarantee, why writing correct unsafe Rust
+    is so difficult, and why Rust’s safety model still matters even though its memory
+    safety isn’t perfect.\n\n## How we found and validated the bugs\n\nAt [Microsoft
+    FORGE Lab](https://www.microsoft.com/en-us/security/blog/2026/10/07/3-lessons-from-frontier-ai-vulnerability-research/),
+    we study vulnerabilities in complex software, including the Rust standard library.
+    Our team combines years of experience in vulnerability research with AI-assisted
+    tools that help us investigate code and find bugs that are difficult to uncover
+    through traditional analysis alone.\n\nSome of the bugs in this post were found
+    with help from Hyenas, our research version of [codename MDASH](https://www.microsoft.com/en-us/security/blog/2026/05/12/defense-at-ai-speed-microsofts-new-multi-model-agentic-security-system-tops-leading-industry-benchmark/).
+    Our researchers investigated the underlying code, reproduced the bugs, assessed
+    their potential security impact, and worked with Rust maintainers to report and
+    fix them.\n\nThis post focuses on soundness bugs in the standard library’s unsafe
+    code. Bugs in the compiler itself, such as miscompilations and holes in the type
+    system, are a different topic that we don’t cover here.\n\n## Patterns of Rust’s
+    Safety Bugs\n\nAt the lowest level, Rust uses[`unsafe` blocks](https://doc.rust-lang.org/book/ch20-01-unsafe-rust.html)
+    to work with raw pointers and interact directly with the operating system. Much
+    of the standard library, including `Vec` and `String`, is built from small unsafe
+    pieces wrapped in safe APIs. Inside an `unsafe` block, the programmer takes responsibility
+    for the guarantees the compiler can’t check, and that responsibility extends to
+    the safe API built around it. That API must be[sound](https://doc.rust-lang.org/nomicon/safe-unsafe-meaning.html):
+    no matter how safe code uses it, it must be impossible to trigger undefined behavior.\n\nUpholding
+    that promise is harder than it looks. Consider a function that returns the byte
+    at `idx` from any type that can be viewed as a byte slice, skipping the redundant
+    bounds check after doing its own:\n\n    pub fn get<S: AsRef<[u8]>>(s: &S, idx:
+    usize) -> Option<u8> {\n        if idx < s.as_ref().len() {\n            // SAFETY:
+    we just checked that `idx` is in bounds.\n            Some(unsafe { *s.as_ref().get_unchecked(idx)
+    })\n        } else {\n            None\n        }\n    }\n\nThe hard part of unsafe
+    Rust is knowing what you can trust. The function above looks correct, but it assumes
+    that two calls to `as_ref` return the same slice. Because `S` is chosen by the
+    caller, a safe `AsRef`implementation can return a long slice the first time and
+    an empty one the second, and `get` reads out of bounds. Unsafe code must be careful
+    with every call it makes, and the bugs we found fall into three patterns of misplaced
+    trust: trusting code not to panic, trusting user-provided implementations to be
+    correct, and trusting the underlying system.\n\n### Pattern 1: Trusting code not
+    to panic\n\nUnsafe code often breaks an invariant for a moment and restores it
+    afterward; for example, it may allocate an uninitialized buffer and fill it directly,
+    avoiding redundant writes to zero the memory first. That’s fine as long as the
+    function runs to the end. But many operations in Rust can panic, from out-of-bounds
+    indexing to calls into user-provided code, and by default a panic unwinds: it
+    leaves the function early while still running destructors. Unwinding inside that
+    window becomes an invisible exit that exposes the broken invariant to code that
+    trusts it. Bugs of this kind are called panic safety bugs.\n\n![Flow diagram:
+    a function breaks an invariant, calls code that may panic, and restores the invariant
+    before returning. If the call panics, unwinding skips the restore step and runs
+    a destructor on the broken state, causing undefined behavior.](panic-safety.svg)\n\n####
+    `MapWindows::clone` (#156501)\n\nWe identified[a panic safety issue in `MapWindows::clone`](https://github.com/rust-lang/rust/issues/156501).[`Iterator::map_windows`](https://doc.rust-lang.org/nightly/std/iter/trait.Iterator.html#method.map_windows),
+    a nightly API, yields overlapping windows of `N` items. It keeps the current window
+    in a `Buffer` whose destructor drops the `N` items starting at `start`. In Rust
+    1.97.0,[`library/core/src/iter/adapters/map_windows.rs`](https://github.com/rust-lang/rust/blob/1.97.0/library/core/src/iter/adapters/map_windows.rs#L37-L43)defines
+    it as:\n\n    37struct Buffer<T, const N: usize> {\n    38 // Invariant: `self.buffer[self.start..self.start
+    + N]` is initialized,\n    39 // with all other elements being uninitialized.
+    This also\n    40 // implies that `self.start <= N`.\n    41 buffer: [[MaybeUninit<T>;
+    N]; 2],\n    42 start: usize,\n    43}\n\n[`Buffer::clone`](https://github.com/rust-lang/rust/blob/1.97.0/library/core/src/iter/adapters/map_windows.rs#L195-L203),
+    in the same file, built the new buffer first and filled it afterward:\n\n    195impl<T:
+    Clone, const N: usize> Clone for Buffer<T, N> {\n    196 fn clone(&self) -> Self
+    {\n    197 let mut buffer = Buffer {\n    198 buffer: [[const { MaybeUninit::uninit()
+    }; N], [const { MaybeUninit::uninit() }; N]],\n    199 start: self.start,\n    200
+    };\n    201 buffer.as_uninit_array_mut().write(self.as_array_ref().clone());\n
+    \   202 buffer\n    203 }\n    204}\n\nAfter line 197, `buffer` breaks its own
+    invariant: its slots are uninitialized, but its "
+  error:
+  fetched_at: '2026-11-15T10:29:02Z'
+archived_at: '2026-11-15T10:29:17Z'

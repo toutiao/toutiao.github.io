@@ -4,14 +4,14 @@ post:
   title: Terminal borders that don't cost a cell
   url: https://www.joshka.net/cell-borders/
   hn_url: https://news.ycombinator.com/item?id=50491423
-  score: 403
+  score: 414
   author: ''
   posted_at: '2026-11-13T23:06:40Z'
-  fetched_at: '2026-11-15T00:50:02Z'
+  fetched_at: '2026-11-15T10:28:54Z'
   article_url: https://www.joshka.net/cell-borders/
   article_fetch_status: success
   article_fetched_at: '2026-11-14T05:23:28Z'
-  raw_comment_count: 185
+  raw_comment_count: 203
 comments:
 - id: '50491626'
   parent_id: '50491423'
@@ -1260,6 +1260,125 @@ comments:
     my history to find it pehaps."
   score: 0
   posted_at: '2026-11-15T00:41:44Z'
+- id: '50502856'
+  parent_id: '50494001'
+  author: joshka
+  text: The big ones I see are:<p>- When you write cells, you don&#x27;t have an area
+    of the screen that you can treat as the current area, which makes screen readers
+    have to treat the screen as characters and recompose those back into words to
+    read. You lose any rectangular area concept and treat lines in the terminal as
+    lines that the screen reader reads. Semantically you throw away all the layout
+    information by writing to the terminal.<p>- When you write stuff to the screen
+    and then write enough lines to the screen to push lines into the scrollback, you
+    lose the ability to change those lines in future. You can move the cursor anywhere
+    in the screen viewport, but not anywhere outside of it. Scrollback is dead text
+    once written there. This is fine for most apps that need append logic, but less
+    so where you have reasons to treat the terminal as a space where you update it
+    or gain access to things like expanding info. e.g. pick up claude code or codex
+    and think about how you collapse a diff or command output to headers and then
+    expand it, in the viewport, not a problem, in the scrollback it&#x27;s dead text
+    written once.<p>- There&#x27;s a mismatch in the way that wrapping works when
+    applied to the screen. If you&#x27;re wrapping text at the screen boundary, and
+    letting the terminal select across lines, it hits the edge of the terminal, and
+    wraps to the next line. There&#x27;s no concept of the edge of a block, because
+    cells are the base level primitive. This affects selecting text, copying it, etc.<p>-
+    Resizing terminals after stuff has written requires repainting the existing screen
+    and then taking care about what was written to the scrollback history. E.g. if
+    you have 200x50 and resize to 200x49, the top line just entered the scrollback
+    and is now part of the history that you can&#x27;t edit. Unless you clear the
+    entire scrollback and repaint. Again similar problem and reasons. Resizing to
+    199x50 is worse, because you lose a character on each line, and push stuff into
+    scrollback. And also the opposite 200x51, you just pulled a line from the scrollback
+    now, so now you have to consider what to write back to that line later - what
+    was dead is now alive again. These problems make writing terminal coding agents
+    that rely on having interactive parts of the screen and history parts of the screen
+    tough.<p>- Scrolling in general. If you look at how each terminal scrolls, and
+    how many lines it maps to each mouse scroll wheel action, it differs per terminal,
+    and it differs based on mouse &#x2F; trackpad use as well. The events you get
+    are not standardized in count, frequency, acceleration, ... This makes doing anything
+    related to scrolling when you own the entire screen and scroll state a pain as
+    you&#x27;re trying to emulate the terminal&#x27;s native feel and that differs
+    a bunch. So there&#x27;s a strong missing abstraction over scroll state things
+    instead of just plain mouse events. Having a terminal and app level collaborate
+    to tell where the scroll is up to is the approach that seems to be necessary here.<p>A
+    lot of this comes from the fact that terminals are a mix of standards tracing
+    back many years, stacked on top of each other, implemented poorly or not at all,
+    ECMA, VT, DEC, iTerm, Kitty, OSC, ASC, DCS, SGR, ... and they all deal in cells
+    being the basic primitive rather than the higher level semantic thing you need
+    to do a TUI that is region aware. That&#x27;s a impedance mismatch that is hard
+    to bridge without a new standard that just sidesteps it completely.<p>If you look
+    at the history of Codex &#x2F; Gemini &#x2F; Claude Code, they&#x27;ve each run
+    into this problem a bunch over time and solved various bits of it &#x2F; ignored
+    other bits of it.
+  score: 0
+  posted_at: '2026-11-15T00:59:30Z'
+- id: '50502879'
+  parent_id: '50495547'
+  author: joshka
+  text: By &quot;find&quot;, I meant &quot;expose&quot; - i.e. terminal coding agents
+    tend to make these flaws evident because they&#x27;re trying to do the right combination
+    of things in the TUI where there are painful annoyances and tradeoffs that can&#x27;t
+    be easily resolved at the application level.
+  score: 0
+  posted_at: '2026-11-15T01:03:03Z'
+- id: '50502887'
+  parent_id: '50496059'
+  author: joshka
+  text: Thanks - will take a watch
+  score: 0
+  posted_at: '2026-11-15T01:04:13Z'
+- id: '50504034'
+  parent_id: '50498172'
+  author: lenkite
+  text: "&gt; Unicode is a lot more concerned with what a character means vs how it
+    displays<p>This was only true before emojis. Unicode introduced specific code
+    points <i>purely</i> to alter visual display, such as skin-tone modifiers, etc.
+    Now that the mission was already diluted for emo-fluff, you might as well add
+    actually useful fluff."
+  score: 0
+  posted_at: '2026-11-15T04:30:08Z'
+- id: '50504112'
+  parent_id: '50492355'
+  author: dpc_01234
+  text: I&#x27;m so happy to see someone also recognize that cells are holding terminal
+    back.
+  score: 0
+  posted_at: '2026-11-15T04:50:47Z'
+- id: '50504151'
+  parent_id: '50504034'
+  author: graypegg
+  text: 'Nahhh, they refuse a LOT of emoji proposals specically because they&#x27;re
+    just asking for a specific image. Here&#x27;s that graveyard: <a href="https:&#x2F;&#x2F;unicode.org&#x2F;emoji&#x2F;emoji-proposals-status.html"
+    rel="nofollow">https:&#x2F;&#x2F;unicode.org&#x2F;emoji&#x2F;emoji-proposals-status.html</a><p>The
+    ones they DO let through, must have some sort of useful distinction in meaning
+    to be given a code point(s). It can&#x27;t just be useful as a little image of
+    a thing. It has to provide some sort of linguistic concept that extends the emoji...
+    language? <a href="https:&#x2F;&#x2F;unicode.org&#x2F;emoji&#x2F;proposals.html#factors_inclusion"
+    rel="nofollow">https:&#x2F;&#x2F;unicode.org&#x2F;emoji&#x2F;proposals.html#factors_inclusion</a><p>The
+    skintone modifiers are meaningful because it can look more like someone you&#x27;re
+    talking about. &quot;S with a left border&quot; isn&#x27;t disambiguating any
+    sort of meaning from &quot;S with a bottom and right border&quot;.'
+  score: 0
+  posted_at: '2026-11-15T05:03:43Z'
+- id: '50504402'
+  parent_id: '50495710'
+  author: eviks
+  text: that&#x27;s a cool one, thanks!
+  score: 0
+  posted_at: '2026-11-15T06:03:12Z'
+- id: '50505678'
+  parent_id: '50493536'
+  author: iainmerrick
+  text: I think that’s actually less elegant. Adding a targeted fix for one feature
+    is giving somebody a fish; the elegant solution is one that gives them a fishing
+    rod to build their own preferred solution.<p>It reminds me of the early days of
+    Gchat, when people started using status messages for micro-blogging. The PM response
+    to this was “status messages aren’t meant for that, we need to add a real micro-blogging
+    feature so people can use status messages properly”. But I think it should have
+    been “people are finding creative ways of using status messages, that’s great!
+    How else can we encourage creativity?”
+  score: 0
+  posted_at: '2026-11-15T10:17:35Z'
 article:
   url: https://www.joshka.net/cell-borders/
   title: Terminal borders that don't cost a cell | Joshka.net
@@ -1357,4 +1476,4 @@ article:
     [![T
   error:
   fetched_at: '2026-11-14T05:23:28Z'
-archived_at: '2026-11-15T00:50:30Z'
+archived_at: '2026-11-15T10:29:17Z'

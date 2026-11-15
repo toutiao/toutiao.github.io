@@ -4,14 +4,11 @@ post:
   title: Azure's Weakest Link – Five Full Cross-Tenant Compromises
   url: https://www.binarysecurity.no/posts/2026/10/one-root-case
   hn_url: https://news.ycombinator.com/item?id=50301854
-  score: 331
+  score: 340
   author: swq115
   posted_at: '2026-10-30T10:06:15Z'
-  fetched_at: '2026-10-31T21:07:59Z'
-  article_url: https://www.binarysecurity.no/posts/2026/10/one-root-case
-  article_fetch_status: success
-  article_fetched_at: '2026-10-30T14:49:53Z'
-  raw_comment_count: 60
+  fetched_at: '2026-11-15T10:29:20Z'
+  raw_comment_count: 64
 comments:
 - id: '50303214'
   parent_id: '50301854'
@@ -543,6 +540,108 @@ comments:
     Put money in, maybe, if you&#x27;re lucky, get food out. Maybe.
   score: 0
   posted_at: '2026-10-31T19:26:53Z'
+- id: '50324617'
+  parent_id: '50311522'
+  author: unddoch
+  text: I am a service provider. I have an Azure app registered so that clients can
+    connect my app to their Azure environment.<p>Client A connected their Azure env
+    to my service. Now an attacker creates a different tenant at my service and goes
+    through the integration flow. Then he sends a request to my callback that says
+    &quot;admin consent configured for client A&#x27;s tenant&quot; and wants to steal
+    Client A&#x27;s data. How do I protect against that? Should I validate that the
+    user who started the flow belongs to the same Azure tenant id? In itself it&#x27;s
+    not enough, what if it&#x27;s just a random user without actual permissions to
+    go through admin consent? What if a client legitimately has multiple tenants in
+    my service that need to connect to the same azure tenant?
+  score: 0
+  posted_at: '2026-11-01T11:30:48Z'
+- id: '50341705'
+  parent_id: '50324617'
+  author: wibartle
+  text: "&gt; Should I validate that the user who started the flow belongs to the
+    same Azure tenant id?<p>Yeah. Basically, I&#x27;d expect most services are responding
+    to the admin consent callback by saying &quot;Admin consent flow complete. Redirecting
+    to previous page&quot; (usually some setup flow page). Then that page does whatever
+    it normally does (presumably OpenID Connect sign-in with a cache in cookies &#x2F;
+    localStorage &#x2F; sessionStorage) to authenticate the user.<p>So in a typical
+    flow, the user is already signed in, and your service just reads their identity
+    out of storage after the admin consent flow. If your service receives an unsolicited
+    admin consent callback (and so there is no &quot;previous page&quot; and no user
+    is signed in), I&#x27;d expect it goes to your service home page which either
+    tries to sign the user in or shows an unauthenticated experience.<p>That&#x27;s
+    to say - most services setup flows are multi-step anyway. First the customer provides
+    some information, then they sign a contract, then they pay, then they admin consent,
+    then they configure your service&#x27;s primary configuration. If admin consent
+    is launced from &#x2F;setupwizard&#x2F;step4, then after admin consent, you go
+    on to &#x2F;setupwizard&#x2F;step5. The normal thing step5 does (presumably, checking
+    that the user is signed in, and then show the primary configuration user interface)
+    should be good enough, just the same as if somebody randomly hit step5 without
+    hitting step4 previously."
+  score: 0
+  posted_at: '2026-11-02T18:53:18Z'
+- id: '50348939'
+  parent_id: '50341705'
+  author: unddoch
+  text: 'I want to first say thanks for engaging with me on this issue so directly,
+    much appreciated.<p>As I said earlier - validating that the customer controls
+    an azure user doesn&#x27;t necessarily mean that they have permissions to grant
+    admin consent.<p>Further, I think you perhaps kind of implicitly assume that when
+    I authenticate users I do that by their Azure identity. In practice that can be
+    a whole spectrum - whether I have my own user management system, and whether I
+    couple it to Entra or not is not something you can rely on. Customers expect their
+    preferred IdP to work with your service.<p>Btw, I just found a short article referencing
+    this issue, offering the same solution with the same &quot;vulnerable to inside
+    org privesc&quot; gap: <a href="https:&#x2F;&#x2F;medium.com&#x2F;@dipakkrdas&#x2F;microsoft-adminconsent-can-lead-you-to-trouble-if-not-done-right-66997d789913"
+    rel="nofollow">https:&#x2F;&#x2F;medium.com&#x2F;@dipakkrdas&#x2F;microsoft-adminconsent-can-le...</a><p>Making
+    this inherently secure is just not that hard here - you could easily make this
+    a bit more PKCE like with an additional service-&gt;azure call before redirecting
+    the user to the flow or by adding a symmetrical signature to the callback and
+    a new API to verify the signature.'
+  score: 0
+  posted_at: '2026-11-03T07:00:42Z'
+- id: '50359992'
+  parent_id: '50348939'
+  author: wibartle
+  text: '&gt; I want to first say thanks for engaging with me on this issue so directly,
+    much appreciated.<p>Of course :)<p>&gt; As I said earlier - validating that the
+    customer controls an azure user doesn&#x27;t necessarily mean that they have permissions
+    to grant admin consent.<p>I think what I&#x27;m trying to say is: you don&#x27;t
+    really care if they have permissions to grant admin consent - you care if admin
+    consent was granted. In step4, you show the link to the admin consent flow, and
+    if they are an admin, they click it, and if not, they click skip. In step5, you
+    check if an admin consent is present. It might have come from the prior step,
+    but it also might have come from something else - who cares.<p>&gt; whether I
+    couple it to Entra or not is not something you can rely on<p>I think, if we&#x27;re
+    talking about the Entra admin consent flow, some degree of Entra usage can be
+    assumed. The admin consent flow requires an Entra identity.<p>&gt; PKCE<p>PKCE
+    would actually not be a solve here. I don&#x27;t know why so many people think
+    PKCE solves problems that it doesn&#x27;t solve, but it&#x27;s very a common thing.
+    Using browser dev tools, I can just change the tenant parameter with the appropriate
+    cookies&#x2F;state in place, and PKCE would verify fine. Even with confidential
+    client PKCE, it just becomes a confused deputy based on the cookies.<p>&gt; a
+    new API<p>If you want to verify whether admin consent is present, the existing
+    [oauth2permissiongrant](<a href="https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;graph&#x2F;api&#x2F;resources&#x2F;oauth2permissiongrant?view=graph-rest-beta"
+    rel="nofollow">https:&#x2F;&#x2F;learn.microsoft.com&#x2F;en-us&#x2F;graph&#x2F;api&#x2F;resources&#x2F;oauth2...</a>)
+    API exposes that information. Though admittedly I think we&#x27;ve left that thing
+    in beta for a decade.<p>Don&#x27;t get me wrong, I see what you&#x27;re saying.
+    We could OpenID Connect-ify it and emit an id token that has some sort of claim
+    xms_adminconsent=1, which could be verified by the app. Actually, that&#x27;s
+    what the v1 endpoint does if you use the deprecated prompt=admin_consent parameter
+    (minus xms_adminconsent=1, whose lack caused its own set of headaches). Directionally
+    though, we felt that separating the auth flows from the provisioning flows simplified
+    them both, and building special auth-ified variations for every provisioning flow
+    (not just admin consent, but also sign-up, and authorize customer support guy,
+    and ...) was over coupling. It&#x27;s just unnatural to overload the authentication
+    stack with all those random responsibilities. Having bog-standard REST+JSON APIs
+    (i.e. MS Graph) for provisioning flows (and maybe also a default guided user interface
+    like &#x2F;adminconsent) provides a clean separation.<p>Edit: I think, if I were
+    to make a change, it&#x27;d be a very small change - renaming `tid` to `tid_hint`.
+    It&#x27;s already a common practice to pass `login_hint` as a user indicator between
+    services - and nobody gets confused and thinks that user is signed in, just because
+    you have their username in a form post parameter. Maybe the explicit signposting
+    of &quot;hint&quot; does the trick, socially.'
+  score: 0
+  posted_at: '2026-11-04T00:10:21Z'
 article:
   url: https://www.binarysecurity.no/posts/2026/10/one-root-case
   title: Azure's Weakest Link - Five Full Cross-Tenant Compromises
@@ -643,4 +742,4 @@ article:
     is a bit more involved. For `DynamicList`, you "
   error:
   fetched_at: '2026-10-30T14:49:53Z'
-archived_at: '2026-10-31T21:08:21Z'
+archived_at: '2026-11-15T10:29:21Z'
