@@ -1,0 +1,383 @@
+---
+post:
+  id: '50509837'
+  title: 'Protomaps: Self-hosting map tiles has gotten cheap and easy'
+  url: https://bruceroettgers.eu/blog/protomaps/
+  hn_url: https://news.ycombinator.com/item?id=50509837
+  score: 142
+  author: ''
+  posted_at: '2026-11-15T19:26:22Z'
+  fetched_at: '2026-11-16T00:49:24Z'
+  article_url: https://bruceroettgers.eu/blog/protomaps/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T00:49:24Z'
+  raw_comment_count: 32
+comments:
+- id: '50510849'
+  parent_id: '50509837'
+  author: pluto_modadic
+  text: okay, but what clients work with this approach?
+  score: 0
+  posted_at: '2026-11-15T21:16:26Z'
+- id: '50510895'
+  parent_id: '50510849'
+  author: bcye
+  text: There is an npm library that integrates the format into MapLibre (fork of
+    Mapbox) and Leaflet.
+  score: 0
+  posted_at: '2026-11-15T21:21:29Z'
+- id: '50510948'
+  parent_id: '50510849'
+  author: perrygeo
+  text: You can use the pmtiles:&#x2F;&#x2F; protocol in Maplibre GL, requires protomaps.js
+    and a few lines of setup [1]<p>My experience with it is ... ok. It works. But
+    going directly to cloud storage (s3 in my case) is unpredictable latency and neither
+    the browser nor most servers really cache HTTP range requests granularly, so every
+    tile is another high-latency round trip. Not worth it - I ended up putting Martin
+    tile server in front of it.<p>I assume someone could write a protomaps adapter
+    in WASM with some smart caching? Until then, Standard GET requests are just easier
+    to cache and perform much better in practice. The downside being you have to run
+    a server or statically generate files.<p>[1]- <a href="https:&#x2F;&#x2F;docs.protomaps.com&#x2F;pmtiles&#x2F;maplibre"
+    rel="nofollow">https:&#x2F;&#x2F;docs.protomaps.com&#x2F;pmtiles&#x2F;maplibre</a>
+  score: 0
+  posted_at: '2026-11-15T21:25:39Z'
+- id: '50510950'
+  parent_id: '50510849'
+  author: pstuart
+  text: 'A quick search showed that this should work with HTTP range requests: <a
+    href="https:&#x2F;&#x2F;maplibre.org&#x2F;" rel="nofollow">https:&#x2F;&#x2F;maplibre.org&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-15T21:25:49Z'
+- id: '50510960'
+  parent_id: '50510849'
+  author: cr125rider
+  text: Protomaps, pmtiles, are actually pretty ubiquitous. Even has a GDAL driver
+    <a href="https:&#x2F;&#x2F;gdal.org&#x2F;en&#x2F;stable&#x2F;drivers&#x2F;vector&#x2F;pmtiles.html"
+    rel="nofollow">https:&#x2F;&#x2F;gdal.org&#x2F;en&#x2F;stable&#x2F;drivers&#x2F;vector&#x2F;pmtiles.html</a>
+  score: 0
+  posted_at: '2026-11-15T21:26:42Z'
+- id: '50511042'
+  parent_id: '50510948'
+  author: bcye
+  text: For what it&#x27;s worth I think latency&#x2F;reliability varies a lot with
+    provider. Bunny Storage has quite good latency in my experience (100-300ms) and
+    their CDN supports Range caching (from my understanding Cloudflare does too they
+    just limit the size of the file regardless of the Range)
+  score: 0
+  posted_at: '2026-11-15T21:34:54Z'
+- id: '50511176'
+  parent_id: '50509837'
+  author: doodlebugging
+  text: I visited the link and Malwarebytes warned of a potentially malicious site:<p>p
+    - proxy - tp8ez dot bunny dot run<p>so I closed that window.<p>What else you got?
+  score: 0
+  posted_at: '2026-11-15T21:47:49Z'
+- id: '50511212'
+  parent_id: '50511176'
+  author: bcye
+  text: It&#x27;s my API endpoint for Plausible (private website analytics), not sure
+    why it would get flagged
+  score: 0
+  posted_at: '2026-11-15T21:51:48Z'
+- id: '50511302'
+  parent_id: '50510948'
+  author: wkrp
+  text: I&#x27;ve had success with using a cache in front of my buckets for great
+    performance. In my case I have raster tiles so they get turned into z&#x2F;x&#x2F;y
+    tile filenames and a cloudflare worker pulls that from the full file and caches
+    the result in the region.
+  score: 0
+  posted_at: '2026-11-15T22:01:09Z'
+- id: '50511304'
+  parent_id: '50509837'
+  author: neomantra
+  text: |-
+    We&#x27;re doing something like this behind Cloudflare R2, same concept of owning the map infra (for privacy and access-control) and reducing load on public infrastructure.<p>If you are into this stuff, you can view PMTiles from the CLI with &quot;gloss&quot;, or try to drag-and-drop on its web interface [1].   It seems large tiles (&gt;128M) and some raster formats are failing; plus it would be nice to load from URL there.  Will fix that...<p>(AI warning).  ntmaps [2] is a Golang library that lets you use different tile providers, deployable in terminal or browser.  ntplaygrounds [3] uses that and nt3d and ntactor to make a city simulation.  Data is pulled from OpenStreetMap in those.<p>[1] <a href="https:&#x2F;&#x2F;nimbleterminal.com&#x2F;gloss&#x2F;app.html" rel="nofollow">https:&#x2F;&#x2F;nimbleterminal.com&#x2F;gloss&#x2F;app.html</a>
+    [2] <a href="https:&#x2F;&#x2F;nimbleterminal.com&#x2F;ntmaps" rel="nofollow">https:&#x2F;&#x2F;nimbleterminal.com&#x2F;ntmaps</a>
+    [3] <a href="https:&#x2F;&#x2F;nimbleterminal.com&#x2F;ntplaygrounds" rel="nofollow">https:&#x2F;&#x2F;nimbleterminal.com&#x2F;ntplaygrounds</a>
+  score: 0
+  posted_at: '2026-11-15T22:01:17Z'
+- id: '50511312'
+  parent_id: '50511212'
+  author: doodlebugging
+  text: Yeah, me neither. I opened the link along with several other article links
+    from the front page so it sat idle in a separate private tab waiting for me to
+    get to it and just as I clicked on it MWB popped the warning. I&#x27;m using LibreOffice
+    with container tabs and MWB Pro under Win10 Pro. Probably nothing.<p>Thanks for
+    the explanation.<p>Protomaps sounds interesting.
+  score: 0
+  posted_at: '2026-11-15T22:02:09Z'
+- id: '50511502'
+  parent_id: '50511304'
+  author: cldellow
+  text: R2 is amazing for this.<p>Cloudflare, generally, is amazing for this, actually.
+    It serves my personal hiking map for about $2&#x2F;mo, using R2, D1 and Workers.<p>Building
+    the map itself is free via GitHub Actions.<p>It&#x27;s bonkers how the map world
+    has changed over the last 20 years.
+  score: 0
+  posted_at: '2026-11-15T22:26:04Z'
+- id: '50511616'
+  parent_id: '50509837'
+  author: edumucelli
+  text: Really cool, did not know about it!
+  score: 0
+  posted_at: '2026-11-15T22:37:39Z'
+- id: '50511637'
+  parent_id: '50511304'
+  author: jamessb
+  text: '&gt; If you are into this stuff, you can view PMTiles from the CLI with &quot;gloss&quot;,
+    or try to drag-and-drop on its web interface<p>The official PMTiles viewer [1,
+    2, 3] is also pretty good.<p>[1]: <a href="https:&#x2F;&#x2F;pmtiles.io&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;pmtiles.io&#x2F;</a><p>[2]: <a href="https:&#x2F;&#x2F;github.com&#x2F;protomaps&#x2F;PMTiles&#x2F;tree&#x2F;main&#x2F;app"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;protomaps&#x2F;PMTiles&#x2F;tree&#x2F;main&#x2F;app</a><p>[3]:
+    <a href="https:&#x2F;&#x2F;protomaps.com&#x2F;blog&#x2F;new-pmtiles-io&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;protomaps.com&#x2F;blog&#x2F;new-pmtiles-io&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-15T22:40:48Z'
+- id: '50511750'
+  parent_id: '50511502'
+  author: is_true
+  text: That&#x27;s mostly for the storage not the bandwidth right?
+  score: 0
+  posted_at: '2026-11-15T22:52:16Z'
+- id: '50511762'
+  parent_id: '50511502'
+  author: kellpossible2
+  text: how are you using D1 and Workers with this?
+  score: 0
+  posted_at: '2026-11-15T22:53:40Z'
+- id: '50511835'
+  parent_id: '50509837'
+  author: maelito
+  text: Checkout the new PRs submitted to Tilemaker. It appears building the planet
+    could soon take less than 5 minutes.
+  score: 0
+  posted_at: '2026-11-15T23:03:53Z'
+- id: '50511847'
+  parent_id: '50511750'
+  author: cldellow
+  text: It&#x27;s pretty much all storage.
+  score: 0
+  posted_at: '2026-11-15T23:05:25Z'
+- id: '50511852'
+  parent_id: '50509837'
+  author: motoroco
+  text: yeah, basemaps are small enough to store and host cost effectively, but high
+    res satellite imagery gets big and expensive fast as you go up in zoom level.
+    I built my own satellite mosaic of North America for my app so I can offer users
+    offline access to the tiles and had to stop at z17 because of projected storage
+    requirements. high res global coverage can get you into the hundreds of TB range
+    which is no longer in the &quot;stick it on r2 and serve it with a worker&quot;
+    or &quot;download and upload the entire dataset sequentially over your residential
+    internet&quot; territory<p>the fun&#x2F;hard parts of the project weren&#x27;t
+    really scale dependent, although downloading source imagery and building the tile
+    pyramids did take literally weeks to run. actually, the hardest part was getting
+    demosaicing right, e.g. making the quilt seamless. filtering out cloudy and smokey&#x2F;hazy
+    tiles while picking alternatives from the same time of year so groundcover &amp;
+    crops are in a consistent growth stage so you don&#x27;t end up with checkerboard
+    patterns or cloud silhouettes randomly across your map. and there were other problems
+    that came up more or less just because of how &amp; when the satellite took the
+    images that require exposure correction and more filtering<p>I also have a pelias
+    index with 170M records for search and self-host valhalla for routing. the open
+    source mapping ecosystem has really impressed me the more I learn with each project
+  score: 0
+  posted_at: '2026-11-15T23:05:47Z'
+- id: '50511863'
+  parent_id: '50509837'
+  author: maelito
+  text: For Cartes.app we used to pay Maptiler. While great, recommanded to start,
+    without client revenue it was impossible to scale, we&#x27;ve hit 150 €&#x2F;month
+    bills way too fast.<p>Hence Protomaps. Hosting costs almost nothing.<p>The main
+    problem though is that once you host your tiles, why not put what you want inside
+    ?<p>Tune Tilemaker&#x27;s processing.lua to your envy. Spend hours designing maps
+    and building a Typescrpt dynamic Maplibre style.
+  score: 0
+  posted_at: '2026-11-15T23:07:16Z'
+- id: '50511872'
+  parent_id: '50511852'
+  author: maelito
+  text: Have you check Mapterhorn&#x27;s next project ? Funded by Nlnet.
+  score: 0
+  posted_at: '2026-11-15T23:08:25Z'
+- id: '50511892'
+  parent_id: '50511762'
+  author: cldellow
+  text: Two small uses:<p>1. The app is a remix app, workers do server-side rendering,
+    so that a vanilla `curl` shows the actual payload, not just a script tag that
+    loads the app.<p>2. I&#x27;m a great big nerd, so I recently added the ability
+    to post reviews&#x2F;photos&#x2F;GPX traces to your AT protocol PDS. The app has
+    a Worker cron job that subscribes to Bluesky&#x27;s Jetstream for events in its
+    namespace, and indexes these into D1 in order to answer certain API calls like
+    &quot;get traces in this area&quot; or &quot;get reviews for this hike&quot;.
+    So the app itself isn&#x27;t the primary source of truth, a person&#x27;s PDS
+    (which they control) is. The app just maintains a cache&#x2F;index that can be
+    rebuilt.
+  score: 0
+  posted_at: '2026-11-15T23:12:11Z'
+- id: '50511971'
+  parent_id: '50509837'
+  author: joshstrange
+  text: I use Protomaps and absolutely love it. After getting hit with a Google Maps
+    bill that was larger than I ever would have expected, I swapped it out for Protomaps
+    instead and I’ve loved it ever since.<p>Dirt cheap to run, theme-able, easy to
+    use.
+  score: 0
+  posted_at: '2026-11-15T23:23:15Z'
+- id: '50512011'
+  parent_id: '50511872'
+  author: motoroco
+  text: yeah, I heard about them for the first time a few weeks ago. they have a fantastic
+    data set just judging with my bare eyes. I built my topo map from terrain tiles
+    on aws + gebco et al for the bathymetry data which is just personal preference
+    (I love me an old globe with the tactile mountains and seafloor)
+  score: 0
+  posted_at: '2026-11-15T23:29:06Z'
+- id: '50512020'
+  parent_id: '50509837'
+  author: boramalper
+  text: 'OpenFreeMap is a similar project:<p><a href="https:&#x2F;&#x2F;openfreemap.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;openfreemap.org&#x2F;</a><p>&gt; <i>What is OpenFreeMap?</i><p>&gt;
+    OpenFreeMap lets you display custom maps on your website and apps for free.<p>&gt;
+    Using our public instance is completely free: there are no limits on the number
+    of map views or requests. There’s no registration, no user database, no API keys,
+    and no cookies. We aim to cover the running costs of our public instance through
+    donations.<p>&gt; <i>What is the tech stack?</i><p>&gt; There is no tile server
+    running; only nginx serving a Btrfs image with 300 million hard-linked files.
+    This was my idea; I haven’t read about anyone else doing this in production, but
+    it works really well.'
+  score: 0
+  posted_at: '2026-11-15T23:30:35Z'
+- id: '50512027'
+  parent_id: '50511304'
+  author: tjwebbnorfolk
+  text: same, we use pmtiles on R2 for landstats.com parcel map. it&#x27;s very easy
+    to set up and cheap to serve<p>and we have a CF worker than turns them into rasters
+    on the fly if that&#x27;s how people want to get them
+  score: 0
+  posted_at: '2026-11-15T23:31:55Z'
+- id: '50512075'
+  parent_id: '50512020'
+  author: bcye
+  text: I didn&#x27;t know they just served it straight from disk, that&#x27;s pretty
+    cool!
+  score: 0
+  posted_at: '2026-11-15T23:37:02Z'
+- id: '50512110'
+  parent_id: '50509837'
+  author: perks_12
+  text: Deploying this as I am typing this. The problem I have with Mapbox is that
+    there is no way to limit spending. When the public key gets abused, it&#x27;s
+    a potentially enormous bill.
+  score: 0
+  posted_at: '2026-11-15T23:41:12Z'
+- id: '50512117'
+  parent_id: '50509837'
+  author: nchmy
+  text: I was very grateful to find protomaps recently for a project where I want
+    to allow people to download custom regional subsections of the global map for
+    offline usage.<p>After evaluating maplibre vs the somewhat-abandonned protomaps-leaflet
+    library, I decided to go with the latter as I don&#x27;t really need the fancy
+    3d gpu and custom layers functionality of maplibre. Plus leaflet is releasing
+    a long-awaited v2 right now.
+  score: 0
+  posted_at: '2026-11-15T23:42:10Z'
+- id: '50512146'
+  parent_id: '50509837'
+  author: eruci
+  text: I deployed self-hosted protomaps on geocode.xyz and it works like a charm.
+    I wish it had more customization options though ( <a href="https:&#x2F;&#x2F;geocode.xyz&#x2F;415%20C&#x27;WEALTH%20AVE%20WEST%20Singapore"
+    rel="nofollow">https:&#x2F;&#x2F;geocode.xyz&#x2F;415%20C&#x27;WEALTH%20AVE%20WEST%20Singapore</a>
+    )
+  score: 0
+  posted_at: '2026-11-15T23:45:57Z'
+- id: '50512174'
+  parent_id: '50511835'
+  author: rafram
+  text: Any in particular? That’s pretty cool. I switched my own workflow to Planetiler
+    because Tilemaker had too many bugs and quirks for my liking, but I might be tempted
+    to switch back if it’s that much faster.
+  score: 0
+  posted_at: '2026-11-15T23:49:30Z'
+- id: '50512335'
+  parent_id: '50511502'
+  author: tracerbulletx
+  text: R2 is kind of too good, it makes me nervous about how long such a good thing
+    can last.
+  score: 0
+  posted_at: '2026-11-16T00:07:34Z'
+article:
+  url: https://bruceroettgers.eu/blog/protomaps/
+  title: 'Protomaps: Self-hosting map tiles has gotten cheap and easy — Bruce Röttgers'
+  fetch_status: success
+  content: "[blog](/blog/)//[dev](/blog/tags/dev/)//[projects](/blog/tags/projects/)\n\n#
+    Protomaps: Self-hosting map tiles has gotten cheap and easy\n\nPMTiles is a tile
+    format which works via HTTP Range requests and can be deployed as a single file
+    to a storage bucket.\n\n//4 min read\n\n//contents\n1. [1Getting some Maps](#getting-some-maps)\n2.
+    [2Deploying to Bunny.net](#deploying-to-bunnynet)\n3. [3Embedding the Map](#embedding-the-map)\n4.
+    [·Notes](#notes)\n\nI came across Protomaps in research for my latest project,
+    [Mapboard](https://mapboard.bruceroettgers.eu). For most non-commercial projects,
+    commercial APIs become prohibitively expensive if you ever go viral (Mapbox, for
+    instance, charges [$5 per 1k map loads](https://www.mapbox.com/pricing) once you’ve
+    exhausted the free tier).\n\nPMTiles, part of the [Protomaps](https://protomaps.com/)
+    ecosystem, is a tile format that ships in a single file, accessible via Range
+    requests, and is thus extremely portable and easy to deploy. For CDNs that support
+    caching Range requests of large files, it requires no effort besides down- and
+    uploading it to storage. For others, like Cloudflare, you can [utilize an edge
+    function](https://docs.protomaps.com/deploy/cloudflare) to translate between the
+    traditional x/y/z URL path and Range requests.\n\n## Getting some Maps\n\nIf all
+    you want is the world map, getting it is as simple as going to the [build page](https://maps.protomaps.com/builds/)
+    and downloading the latest daily build.\n\nHowever, more fun can be had with the
+    [CLI](https://github.com/protomaps/go-pmtiles). For example, you can [extract
+    data](https://docs.protomaps.com/guide/getting-started#_3-extract-any-area) for
+    only a bounding box or specific zoom levels, to get a significantly smaller file.\n\n##
+    Deploying to Bunny.net\n\nOne great CDN for deploying this is [Bunny.net](https://bunny.net?ref=9o9z1a5ws8)
+    _(affiliate link)_. They support HTTP Range requests, don’t collect personal data
+    by default, are headquartered in the EU, and offer low-cost access to a global
+    network of CDN and edge storage servers.\n\n[Pricing](https://bunny.net/pricing/)
+    varies based on region and replication factor of the edge storage. But generally
+    you pay $0.01/GB ($0.005/GB on the smaller Volume network) for bandwidth to Europe
+    and North America, and $0.01/GB/month (no replication) to $0.055/GB/month (maximum
+    replication) for storage. A high degree of replication mostly matters for latency
+    in case of a cache miss (as the data is further replicated when it’s cached at
+    the CDN PoPs).\n\nIn practical terms, storing the 139GB world map with replication
+    to most continents (5x) will run you about $5/month in storage fees. Loading a
+    map of Europe on a laptop and zooming in on a city causes about 5MB of data to
+    be transmitted, which would be $0.00005 — further navigations and reloads will
+    be less expensive as more of the map gets cached locally. At $0.05/1k map loads
+    that could be 100x cheaper than Mapbox. However, the actual bandwidth of course
+    varies (less for people that bounce immediately, possibly tens of MB for heavy
+    users). For Mapbox you only pay a flat fee per visit.\n\n### Uploading the file\n\nIt’s
+    a good idea to create a storage zone with S3 compatibility enabled, as uploading
+    via the HTTP API timed out after 15 minutes for me.\n\nThen, with [rclone](https://rclone.org/)
+    installed, you can download and stream the file to the Bunny storage zone. Preferably
+    in [tmux](https://en.wikipedia.org/wiki/Tmux) or from a temporary VPS, if your
+    connection isn’t great.\n\n    rclone config create bunnycdn s3 \\\n      provider=Other
+    \\\n      access_key_id=\"<zone-name>\" \\\n      secret_access_key=\"<storage-key>\"
+    \\\n      endpoint=\"https://<primary-region>-s3.storage.bunnycdn.com\"\n    \n
+    \   rclone copyurl \"<build-url>\" \"bunnycdn:<zone-name>/<filename>.pmtiles\"
+    \\\n      --s3-chunk-size 256M \\\n      --progress\n\n### Configuring the pull
+    zone\n\nTheoretically, at this point you just need to create a pull zone, select
+    the storage zone as an origin, and you’re done. Practically, it would be sensible
+    to change some settings.\n\nAllowed CORS origins can be configured under Security
+    \\> General \\> Allowed referrers, so that other websites cannot embed your tiles.\n\nYou’ll
+    also want to verify under Caching that “Optimize for large object delivery” is
+    enabled, as this makes it possible to cache Range requests.\n\nYou might also
+    want to dissuade people from downloading the whole file and leaving you with a
+    large CDN bill. The most practical way I’ve found for this is limiting the download
+    speed to 10kB/s after 10MB transmitted in a single request (using the “Download
+    speed limits” and “Limit after” settings under “Network limits”). Regular usage
+    should never reach this amount. You may further want to introduce a requests/second
+    limit (do note that legitimate usage can also quickly reach high numbers here)
+    or a monthly bandwidth limit for the pull zone.\n\n## Embedding the Map\n\nWith
+    the tiles deployed, the only thing left to do is to embed them in your website
+    via MapLibre GL, for example. To do this, you’ll need to install the `pmtiles`
+    npm package and add the protocol and a style to MapLibre as detailed in the [official
+    installation guide](https://docs.protomaps.com/pmtiles/maplibre).\n\nCongratulations,
+    you now host your own cost-effective and highly available map of the world!\n\n//notes
+    (2)\n1. Basically, Excalidraw but on a map for travel planning. Launch post coming
+    soon. [↑](#user-content-fnref-1)\n\n2. The last octet of IP addresses is dropped.
+    If you transmit personal data via the CDN, that is of course still processed.
+    [↑](#user-content-fnref-2)"
+  error:
+  fetched_at: '2026-11-16T00:49:24Z'
+archived_at: '2026-11-16T00:49:40Z'

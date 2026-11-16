@@ -1,0 +1,180 @@
+---
+post:
+  id: lo-dxxvek
+  source: lobsters
+  title: A datetime library for Rust
+  url: https://burntsushi.net/jiff/
+  hn_url: https://lobste.rs/s/dxxvek
+  score: 19
+  author: refi64
+  posted_at: '2026-11-15T22:39:34Z'
+  fetched_at: '2026-11-16T00:49:41Z'
+  article_url: https://burntsushi.net/jiff/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T00:49:43Z'
+  raw_comment_count: 5
+  tags:
+  - rust
+comments:
+- id: lo-rzryip
+  parent_id: '0'
+  author: simonw
+  text: |-
+    Jiff is pronounced like “gif” with a soft “g,” as in “gem.”
+
+    That's very funny.
+  score: 5
+  posted_at: '2026-11-15T22:46:11Z'
+- id: lo-us80mb
+  parent_id: '0'
+  author: thiht
+  text: As a Go developer, can someone explain to me why this is not part of Rust's
+    standard library? This is not a criticism, I know languages have different philosophies,
+    I'd just like to understand better the rationale for not adding things like datetime,
+    random, base64, etc. to the standard library. I know finding a definite design
+    is hard and once it's committed to the standard library, it's forever, but wouldn't
+    it be better for the ecosystem to rely on an official (or at least officially
+    blessed, like letting jiff live as a separate repo but part of the Rust Foundation)
+    implementation for basic building blocks? I know I always get a particular thrill
+    when something is added to the Go stdlib and I can remove an external dependency
+    (HTTP router improvements, or UUIDs for the last examples I have in mind)
+  score: 3
+  posted_at: '2026-11-15T23:14:18Z'
+- id: lo-p2ioqu
+  parent_id: '0'
+  author: burntsushi5
+  text: |-
+    An early version of the time crate actually used to be shipped as part of the Rust distribution prior to Rust 1.0. That's ancient history now, but we explicitly kicked it out of the distribution because we knew it was a huge and complex domain whose modeling is difficult to get right. What if we had standardized on it? No good. What if we waited a few years and standardized instead on chrono? Still no good. (You can see more of my thoughts on why in Jiff's comparison and design documentation.)
+    It really wasn't until the Temporal folks invested many person years of effort into modeling the domain that I think we've arrived at a real nice answer to the question of, "How does one design a datetime library?" But that only happened recently. Jiff really wouldn't be what it is without it.
+    Is Jiff the final answer? Who knows. 1.0 was just released. It's already used in production across many applications, but we'll see what happens as more folks adopt it.
+    Also, Jiff is way bigger and more complex than Go's standard library time package. By an order of magnitude at minimum. There are lots of reasons for this:
+
+    Jiff has a stronger focus on using types to prevent domain errors. Go's time.Time is like a jiff::Timestamp combined with some kind of ZonedDateTime.
+    Rust APIs are usually inherently more complex because of its approach to polymorphism and because their tends to be a stronger cultural focus on performance.
+    Go has only one basic duration type. Jiff has a similar duration type but also a Span that combines calendar and physical time units all into one type.
+    Jiff support civil time. Go's time package doesn't support this at all.
+
+    There's probably more stuff too. But that's from a quick look (and memory, since I used to use Go a lot).
+    In principle it would be nice for something like Jiff to be in std. But its API surface area makes it a huge risk. I don't want to release Jiff 2.0, but I can if the need really arises.
+  score: 7
+  posted_at: '2026-11-15T23:29:32Z'
+- id: lo-vporoq
+  parent_id: '0'
+  author: thiht
+  text: |-
+    What if we had standardized on it? No good. What if we waited a few years and standardized instead on chrono? Still no good.
+
+    I don't know how/if deprecations live in Rust's stdlib, but could something like datetime -> datetime::v2 -> datetime::v3 have been useful for the ecosystem as a whole? Even if they end up being deprecated, they still exist forever in the stdlib and a clear migration path could be made possible (like Go did with encoding/json -> encoding/json/v2)
+
+    Jiff is way bigger and more complex than Go's standard library time package
+
+    Yeah, the comparison was not the best, it indeed covers a lot more than Go's time. I guess it's more of a general question regarding "basic" (in the sense of "expected", not that they're necessarily easy to implement) building blocks: maybe Jiff would be to big to add to Rust's stdlib (although Temporal is somewhat part of JS stdlib haha) but I'd imagine some more "bare" version, or some types/traits would make sense as a standard
+  score: 2
+  posted_at: '2026-11-15T23:42:13Z'
+- id: lo-6c1lsh
+  parent_id: '0'
+  author: hjvt
+  text: Really the whole argument comes down to the thing you mentioned, about how
+    lifting into std means committing to indefinite support. In case of datetime libraries,
+    the design is far from settled, as can be gleamed from the fact that there's IIRC
+    3 competing third party crates, all with very different API styles.
+  score: 3
+  posted_at: '2026-11-15T23:54:54Z'
+article:
+  url: https://burntsushi.net/jiff/
+  title: A datetime library for Rust - Andrew Gallant's Blog
+  fetch_status: success
+  content: "# A datetime library for Rust\nNov 15, 2026  \n\n[Jiff](https://github.com/BurntSushi/jiff)
+    is a datetime library for Rust that encourages you to jump into the[pit of success](https://blog.codinghorror.com/falling-into-the-pit-of-success/).
+    Jiff automatically handles many common problems related to daylight saving time
+    by putting time zone handling front and center into the API. Jiff has already
+    seen widespread [adoption](https://crates.io/crates/jiff/reverse_dependencies)
+    in the Rust ecosystem.\n\nJiff is pronounced like “gif” with a soft “g,” as in
+    “gem.”\n\nThis blog announces the Jiff 1.0 release by giving a tour of its API.\n\n**Target
+    audience** : Rust programmers who need convenient datetime handling.\n\n## Table
+    of Contents\n\n- [The Jiff 1.0 Commitment](#the-jiff-10-commitment)\n- [Introduction](#introduction)\n
+    \ - [Follow Along](#follow-along)\n  - [Terms](#terms)\n  - [The DateTime Onion](#the-datetime-onion)\n
+    \ - [Defining a time zone](#defining-a-time-zone)\n  - [Durations](#durations)\n
+    \ - [When should I use Jiff?](#when-should-i-use-jiff)\n- [Parsing and Formatting](#parsing-and-formatting)\n
+    \ - [`FromStr` and `Display`](#fromstr-and-display)\n  - [The “friendly” Duration
+    Format](#the-friendly-duration-format)\n  - [`strptime` and `strftime`](#strptime-and-strftime)\n
+    \ - [The `jiff::fmt` module](#the-jifffmt-module)\n  - [Locale Sensitive Formatting
+    via ICU4X Integration](#locale-sensitive-formatting-via-icu4x-integration)\n-
+    [Date Manipulation](#date-manipulation)\n  - [Date Basics](#date-basics)\n  -
+    [Date Arithmetic](#date-arithmetic)\n  - [Date Rounding](#date-rounding)\n  -
+    [Other Calendars](#other-calendars)\n  - [Which DateTime Type Do I Use?](#which-datetime-type-do-i-use)\n-
+    [Span Manipulation](#span-manipulation)\n- [Conclusion](#conclusion)\n  - [Motivation](#motivation)\n
+    \ - [Inspiration](#inspiration)\n\n## The Jiff 1.0 Commitment\n\nJiff is already
+    used in production in many projects: uv, Cargo, Starship, fd, Nushell, mise, Jujutsu,
+    uutils/coreutils and even as the basis for a Temporal implementation in AWS LLRT.
+    It is time to call it 1.0.\n\nUnless some significant defect is found in Jiff’s
+    API, my plan is to commit to Jiff 1.0 indefinitely. This is important because
+    the intent is for Jiff to be an ecosystem building block that appears in the public
+    API of other libraries. This makes Jiff an attractive _public_ dependency, which
+    means semver incompatible releases are likely to cause significant pain in the
+    ecosystem. They will not be made lightly.\n\nTo see a list of breaking changes
+    between Jiff 0.2 and Jiff 1.0, please consult the [CHANGELOG](https://github.com/BurntSushi/jiff/blob/master/CHANGELOG.md#100-2026-11-15).\n\n##
+    Introduction\n\nIn programming, a datetime library’s core functionality rests
+    at the intersection of a computer system’s concept of time and a human’s concept
+    of time. The prevailing notion of system time is [Unix time](https://en.wikipedia.org/wiki/Unix_time).
+    A human’s concept of time is far more complex, but the most popular such model
+    is the [Gregorian calendar](https://en.wikipedia.org/wiki/Gregorian_calendar)
+    coupled with either a 12-hour or 24-hour clock. At the core of every datetime
+    library rests some routine for converting between these concepts.\n\nA datetime
+    library typically provides much more than this. Indeed, datetime handling has
+    [historically been very difficult](https://infiniteundo.com/post/25326999628/falsehoods-programmers-believe-about-time).
+    My own belief is that the difficulty comes from _poor modeling of the domain_.
+    Instead of encapsulating the complexity inside a reusable bundle of code, many
+    datetime libraries pass some or all of the complexity on to its users. Jiff instead
+    tries hard to encapsulate the complexity and make it difficult for users to do
+    something wrong. ([Jiff is not the first to do this!](#inspiration))\n\nIn this
+    section of the blog, we’ll do some very basic introductions.\n\n### Follow Along\n\nTo
+    follow along with the examples in this blog, create a new Cargo project with dependencies
+    on `jiff` and `anyhow`:\n\n    mkdir jiff-playground\n    cd jiff-playground\n
+    \   cargo init --bin\n    cargo add jiff anyhow\n    $EDITOR src/main.rs\n\nMost
+    examples are a complete self-contained Rust program. Just copy the code and replace
+    whatever is in `src/main.rs`. Then run the program:\n\n    cargo run\n\n### Terms\n\nI
+    am loath to present a dictionary. However, the datetime domain is littered with
+    confusable terms, so I think it’s important to orient ourselves on a shared vocabulary.
+    I’ve kept this section as small as possible. (Some terms, like “time zone,” are
+    omitted here because they are best defined through exploration in the sections
+    that follow.)\n\n- [Civil time](https://en.wikipedia.org/wiki/Civil_time): The
+    time you see on your clock. And in general, the time that the humans in your approximate
+    geographic vicinity also see. That is, civil time is a human coordinated agreement
+    for communicating time in a particular geographic region. Civil time is also known
+    as: local time, plain time, naive time, clock time and others.\n- [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time):
+    An abbreviation for _Coordinated Universal Time_; it is a time standard that serves
+    as the basis for civil time around the world. It was originally intended to roughly
+    correspond to [mean solar time](https://en.wikipedia.org/wiki/Solar_time#Mean_solar_time).\n-
+    [TAI](https://en.wikipedia.org/wiki/International_Atomic_Time): An abbreviation
+    for _International Atomic Time_; it is a time standard as measured by atomic clocks.
+    It isn’t directly connected to mean solar time.\n- [Leap second](https://en.wikipedia.org/wiki/Leap_second):
+    An adjustment to TAI to bring it closer to mean solar time and thus forming the
+    basis of UTC.\n- [Unix time](https://en.wikipedia.org/wiki/Unix_time): UTC, but
+    ignoring leap seconds.\n\nTAI and leap seconds won’t be a feature of this blog,
+    but they are listed here in order to convey the difference between Unix time and
+    UTC.\n\n### The DateTime Onion\n\nAs a way to transition into some of the core
+    types of Jiff, I’ve come to think of its datetime types like an onion. In reverse
+    order, we can build up its layers all the way to a `ZonedDateTime`. So let’s start
+    with more terms, but this time, they are also types in Jiff:\n\n- A [`civil::Date`](https://docs.rs/jiff/1.*/jiff/civil/struct.Date.html)
+    is a plain Gregorian date, unattached to any specific location.\n- A [`civil::Time`](https://docs.rs/jiff/1.*/jiff/civil/struct.Time.html)
+    is a plain time on a clock, to nanosecond precision, unattached to any specific
+    location.\n- A [`civil::DateTime`](https://docs.rs/jiff/1.*/jiff/civil/struct.DateTime.html)
+    combines a `civil::Date` and a `civil::Time` to provide both a Gregorian date
+    and a time on a clock. It is also unattached to any specific location.\n- A [`Timestamp`](https://docs.rs/jiff/1.*/jiff/struct.Timestamp.html)
+    is an unambiguous specific instant in time regardless of geographic location,
+    represented as the number of nanoseconds since the Unix epoch.\n- A [`TimeZone`](https://docs.rs/jiff/1.*/jiff/tz/struct.TimeZone.html)
+    is a set of rules for mapping a `Timestamp` to a`civil::DateTime`, and vice versa,
+    in a specific geographic region.\n- A [`ZonedDateTime`](https://docs.rs/jiff/1.*/jiff/struct.ZonedDateTime.html)
+    combines a `Timestamp`, a `civil::DateTime` and a`TimeZone` to represent a specific
+    instant in time in a specific geographic location.\n\nTo make this a bit more
+    concrete, we can see what this looks like in code. Since a time zone can map from
+    a civil datetime to an instant in time, one way to create a zoned datetime requires
+    only a civil datetime and a time zone:\n\n    use jiff::civil;\n    \n    fn main()
+    -> anyhow::Result<()> {\n        let date = civil::date(2026, 11, 1);\n        let
+    time = civil::time(17, 30, 0, 0);\n        let datetime = date.to_datetime(time);\n
+    \       // zdt is an initialism for \"ZonedDateTime\"\n        let zdt = datetime.in_tz(\"America/New_York\")?;\n
+    \   \n        assert_eq!(zdt.timestamp().as_second(),"
+  error:
+  fetched_at: '2026-11-16T00:49:43Z'
+archived_at: '2026-11-16T00:49:44Z'

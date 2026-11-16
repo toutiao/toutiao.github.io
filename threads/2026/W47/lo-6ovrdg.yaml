@@ -1,0 +1,140 @@
+---
+post:
+  id: lo-6ovrdg
+  source: lobsters
+  title: Disk encryption on NetBSD achieving secrecy
+  url: https://netbsd.org/~nia/disk-encrypt/
+  hn_url: https://lobste.rs/s/6ovrdg
+  score: 13
+  author: jaypatelani
+  posted_at: '2026-11-15T05:30:28Z'
+  fetched_at: '2026-11-16T00:49:41Z'
+  article_url: https://netbsd.org/~nia/disk-encrypt/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T00:49:46Z'
+  raw_comment_count: 2
+  tags:
+  - netbsd
+comments:
+- id: lo-onqapi
+  parent_id: '0'
+  author: johnklos
+  text: Simple how-tos like these are excellent at giving a good picture about how
+    things work. It's much better than how-tos that don't explain why we're doing
+    things.
+  score: 3
+  posted_at: '2026-11-15T19:20:29Z'
+- id: lo-wujtpm
+  parent_id: '0'
+  author: demiguru
+  text: |-
+    I like the reasoning for staying on the stock boot path instead of going full cgdroot. One thing stood out though: crash dumps are given as a reason to move /var into the cgd, but in the example layout wd0b is still a plain swap partition. The kernel writes the panic dump into the swap partition and savecore only copies it into /var/crash on the next boot, so the memory image sits unencrypted on disk until something overwrites it. Same goes for anything that got paged out.
+    Putting swap on its own cgd with urandomkey would cover that, at the cost of not being able to recover dumps after a reboot. Or turn dumps off with swapctl -D none or kern.dump_on_panic=0 if you don't need them.
+  score: 1
+  posted_at: '2026-11-15T23:38:41Z'
+article:
+  url: https://netbsd.org/~nia/disk-encrypt/
+  title: Disk encryption on NetBSD - achieving secrecy
+  fetch_status: success
+  content: "# Disk encryption on NetBSD - achieving secrecy\n\nTable of Contents\n\n##
+    Threat models\n\nThese are two threat models for which disk encryption is the
+    answer:\n\n1. The device is stolen or lost and its contents must remain secret.
+    \n\n2. The device is tampered with, and all attempts at tampering must render
+    it unusable. \n\nRight now, we will focus on the first threat model. It is very
+    difficult to build a tamper-proof system, and you need to worry about tamper-proofing
+    your hardware, depending on what kind of actor is a realistic threat.\n\nIf we
+    want to keep data on the system secret, we must first consider which data is worth
+    protecting. On a NetBSD system, our data can be grouped into two broad categories:\n\n1.
+    System files (open source software) \n\n2. User-modified files \n\nDoes the `/bin/sh`
+    executable downloaded from the NetBSD FTP server contain any sensitive information?\n\nOn
+    a BSD system, due to the separation of the base system and packages, many root
+    file system directories are mostly unmodified outside of upgrades. In a properly
+    configured system, nearly all system daemons and user applications are not going
+    to be running as `root`, so won’t have permission to modify or create files in
+    `/bin`.\n\nWe can reasonably assume that `/bin/sh` is the same binary that every
+    other NetBSD user is running. A user may even opt to make directories containing
+    such system files read-only.\n\n## Problems with disk encryption\n\nThe operating
+    system needs to be able to load files to boot. This makes \"true\" full disk encryption
+    difficult to achieve without specialized hardware, since the user needs some way
+    to enter a password or an encryption key, and can’t do so without some form of
+    software running on their computer. NetBSD also needs to store some amount of
+    metadata about the encrypted partition on the disk, such as information on how
+    to generate a secure 256-bit key from a 24 character password.\n\nIt is common
+    for Unix systems to use shared libraries, which are loaded by programs to access
+    system functionality. If these become unavailable, for example, by `/usr/lib`
+    going missing, it becomes much harder to use the system. Familiarize yourself
+    with the standard utilities in `/rescue` which don’t need working shared libraries
+    to be useful.\n\nThe cryptographic algorithms that get standardized by the US
+    government tend to be [slow when implemented in software](https://www.imperialviolet.org/2012/10/21/nist.html).
+    This carries a performance penalty. As a result, many modern CPUs include implementations
+    of ciphers like AES in hardware. For those that don’t, there’s alternative ciphers
+    like [Adiantum](https://en.wikipedia.org/wiki/Adiantum_(cipher)).\n\n## Which
+    directories are sensitive?\n\nAnd which are necessary for the OS to load?\n\nOn
+    a normal NetBSD system, several directories have a high chance of being modified
+    during system operation:\n\n- `/home` - user-specific files \n\n- `/var` - log
+    files, system-wide databases (e.g. mail notifications), crash dumps… \n\n- `/root`
+    - configuration files relevant to the root user account \n\n- `/usr/pkg` and `/usr/local`
+    - where third-party software is installed \n\n- `/etc` - init scripts, system-wide
+    configuration for the base system \n\nA simple approach might be to encrypt `/home`.
+    However, this might not be enough for some users. Although the crash directory
+    can be easily changed with [sysctl](https://man.netbsd.org/sysctl.8), a crash
+    dump contains a snapshot of system memory which might be sensitive. If any servers
+    have been run on the system, the log files might be sensitive. Mail sent to users
+    (e.g. about their interrupted vi sessions and associated backups) might reveal
+    sensitive file names.\n\nSome users opt for the [cgdroot](https://wiki.netbsd.org/security/cgdroot/)
+    approach, which uses only a small unencrypted ramdisk to pivot to an encrypted
+    file system. However, this modifies the system startup routines significantly
+    and may make certain rescue options harder. So, it’s worth asking whether there’s
+    an approach that is somewhere in the middle, and still uses the standard NetBSD
+    installation and boot process. Many BSD systems use separate file system partitions
+    for `/usr` and `/var`, and this is a standard configuration supported by the NetBSD
+    installer.\n\n`/etc` is a harder problem to solve, since it contains files necessary
+    to boot the system. However, on a typical desktop system, many files in `/etc`
+    remain untouched. Passwords in `/etc` are generally stored only in hash form,
+    _except_ for Wi-Fi access points and certain VPN configurations (although it’s
+    easy to reconfigure `wpa_supplicant_flags` to use a different configuration file
+    from the default one in `/etc`). Many configuration files are only loaded much
+    later in the boot process, after `/usr` is already mounted, and can easily be
+    replaced with symbolic links to files on another file system.\n\n## The installation
+    process\n\nThe NetBSD installer has basic functionality, but gets the job done
+    quickly. In this configuration, we’re going to install NetBSD to a small unencrypted
+    root file system. When you start to ignore the growth that can occur in `/usr`
+    and `/var` and `/home`, even a complete NetBSD installation with development tools
+    included is tiny. 4 GB should be more than enough.\n\nFor example purposes, I
+    am going to use a sparc64 virtual machine, but the process is basically the same
+    for more mainstream CPU architectures like amd64.\n\nThe installer detects that
+    we already have a partitioned disk. We’re going to pick the \"e: Delete everything\"
+    option so we have a fresh disk to start with:\n\n ![installer1.png](installer1.png)\n\nNext,
+    we’re going to choose \"Set sizes of NetBSD partitions\". This will allow us to
+    have a small root, and reserve a large encrypted partition:\n\n ![installer2.png](installer2.png)\n\nHere,
+    I’ve decided I want a 4096 MB (4 GB) root file system, and a 11263 MB (11 GB)
+    partition allocated for `/var`. Later, we’ll make `/usr` and `/var` share a disk
+    partition, so don’t worry about this too much. Select \"Go on\".\n\nOn the next
+    screen, I’ve changed the type of the secondary partition to \"cgd\" (listed under
+    \"Other type\"), NetBSD’s encrypted device driver. I’ve also set its mount point
+    to \"-\" so we can reconfigure it later:\n\n ![installer4.png](installer4.png)\n\nI
+    tell the installer I want to do a Full Installation and it completes as normal,
+    installing everything into the small root partition.\n\nWhen we reboot and log
+    in as `root`, we enter a new world… our 4 GB unencrypted root partition.\n\n##
+    Post-installation setup (disklabel)\n\n| \nNote\n | Disklabel partitions are supported
+    by every NetBSD port, and are required by some ports, such as sparc64 in our example.
+    However, if your system uses UEFI, or you opted to use GPT partitions in the installer,
+    your system has disk wedges instead. Ignore this section and read the section
+    below for information about wedges. |\n\nSince I’m on sparc64, the disk is partitioned
+    into disklabels. `wd0` is the primary drive, and the `disklabel` command shows
+    that `/dev/wd0d` is the partition reserved for our encrypted file system:\n\n
+    \   # disklabel wd0\r\n    # size offset fstype [fsize bsize cpg/sgs]\r\n     a:
+    8389584 0 4.2BSD 0 0 0 # (Cyl. 0 - 8322)\r\n     b: 2097152 8389584 swap # (Cyl.
+    8323 - 10403*)\r\n     c: 33554432 0 unused 0 0 # (Cyl. 0 - 33288*)\r\n     d:
+    23067072 10487232 cgd # (Cyl. 10404 - 33287)\n\nWe can go directly ahead with
+    creating a parameters file for the `cgd`:\n\n    # cgdconfig -g -k argon2id -o
+    /etc/cgd/wd0d adiantum 256\n\nAnd then load the configuration and set our password:\n\n
+    \   # cgdconfig -V re-enter cgd0 /dev/wd0d\n\nNow `cgd0` appears to the system
+    as yet another disk, but all attempts to access that disk will be automatically
+    encrypted/decrypted by the kernel.\n\nThe next time we enter our password, we
+    want to be able to verify that the password was correct, to avoid reading or writing
+    invalid data.\n\nThis is done by choosing a verification method based on the contents
+    of the encrypted partition. For flexibility’s sake, we’re going to put"
+  error:
+  fetched_at: '2026-11-16T00:49:46Z'
+archived_at: '2026-11-16T00:49:46Z'
