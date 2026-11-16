@@ -1,0 +1,118 @@
+---
+post:
+  id: lo-hgicaq
+  source: lobsters
+  title: Please Implement A Quorum Database
+  url: https://transactional.blog/talk/please-implement-a-quorum-database
+  hn_url: https://lobste.rs/s/hgicaq
+  score: 12
+  author: eatonphil
+  posted_at: '2026-11-15T22:44:13Z'
+  fetched_at: '2026-11-16T10:44:58Z'
+  article_url: https://transactional.blog/talk/please-implement-a-quorum-database
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T10:45:02Z'
+  raw_comment_count: 0
+  tags:
+  - databases
+  - distributed
+comments: []
+article:
+  url: https://transactional.blog/talk/please-implement-a-quorum-database
+  title: Please Implement A Quorum Database
+  fetch_status: success
+  content: "[↑ Talks ↑](/talk/)[Enough With All The Raft ↦](/talk/enough-with-all-the-raft.html)\n\n*
+    * *\n\n# Please Implement A Quorum Database\n\nI return with part two of the replication
+    rants series. This talk was given at HPTS'26 and fleshes out the argument for
+    quorum-based replication in [Enough With All The Raft](enough-with-all-the-raft.html),
+    and continues to build off of the work that went into writing [Data Replication
+    Design Spectrum](/blog/2024-data-replication-design-spectrum.html).\n\nI think
+    we tend to view quorum replication as generally impractical for production use.\n\nI
+    think that is an outdated view.\n\n## Video\n\nIf you want the links to papers,
+    find the corresponding slide below.\n\n## Transcript\n\n ![slide 01](/images/talk/please-implement-a-quorum-database/slide_01-3cae56e6.png)\n\nThis
+    is a replication talk that I gave at HPTS 2026.\n\n* * *\n\n ![slide 02](/images/talk/please-implement-a-quorum-database/slide_02-75022493.png)\n\nI
+    once did a survey of what type of replication algorithm databases in production
+    are using, and the result looks like this. Raft is the giant pacman, eating the
+    primary-backup and quorum slices. The Quorum slice is small enough that we can
+    just fully enumerate it right now.\n\n* * *\n\n ![slide 03](/images/talk/please-implement-a-quorum-database/slide_03-3b132153.png)\n\nUpper
+    left are OSS majority quorum databases.  \nUpper right are proprietary ones that
+    used or are using it for data replication.  \nBottom left are proprietary ones
+    using consensus for a log.  \nBottom right are technically true but carry caveats.\n\n*
+    * *\n\n ![slide 04](/images/talk/please-implement-a-quorum-database/slide_04-c68e76d9.png)\n\nIf
+    we filter that list by how they’re doing now:\n\n- Riak is long past hedge fund
+    dead.\n\n- Voldemort is so dead all that all of you forgot it existed until the
+    previous slide.\n\n- InfluxDB and Grafana Mimir had previous iterations which
+    used quorums, and then they re-architected.\n\n- Weviate does quorum for data
+    and raft for metadata, and I won’t be shocked if they re-architected too.\n\n-
+    Google Megastore is basically dead.\n\n- Tencent PaxosStore is super internal
+    in chinese bigtech, so I have no idea.\n\n- CouchDB was more meant for eventual
+    consistency but has a clustered mode, and I have no idea who uses it other than
+    cloudant?\n\n- OG Dynamo, which someone here can tell me about, but I’m assuming
+    is/has been phased out?\n\n_Note: the HPTS audience head shaking agreed with my
+    assessment of Dynamo._\n\n* * *\n\n ![slide 05](/images/talk/please-implement-a-quorum-database/slide_05-42018f0b.png)\n\nWhich
+    leaves me with this awkward feeling that if I say implement a quorum database,
+    the only good example I have to point to is Cassandra?!?\n\nHPTS says submit your
+    spicy takes, so brace yourself: I think we should be credibly building more than
+    one good example of a quorum database.\n\nWhich we are! I’m holding out 3 very
+    recent examples on you.\n\n* * *\n\n ![slide 06](/images/talk/please-implement-a-quorum-database/slide_06-fcb4f79a.png)\n\nBut
+    first, for the next 16 minutes I will be CEO and utterly delusional founder of
+    CashDB, because I need a running example for this talk. CashDB is a database specialized
+    for whatever your splitting-the-bill-with-friends app that you use.\n\nIt has
+    two major limitations.\n\n* * *\n\n ![slide 07](/images/talk/please-implement-a-quorum-database/slide_07-386994fb.png)\n\nFirst,
+    it only supports a very limited set of operations:\n\n1. debit account X, add
+    to account(s) Y\n\n2. Read account value(s)\n\n* * *\n\n ![slide 08](/images/talk/please-implement-a-quorum-database/slide_08-d7c40375.png)\n\n1.
+    Add a receipt to the group log\n\n2. Read group transaction log\n\n* * *\n\n ![slide
+    09](/images/talk/please-implement-a-quorum-database/slide_09-099a2b30.png)\n\nThe
+    second constraint is that I told a coding agent to make CashDB as reliable as
+    possible and now it has my AWS keys, is rebooting one of my VMs once a minute
+    in the name of chaos testing, and has replicated itself. I cannot stop it. We
+    must now design CashDB around this. I need a replicated CashDB.\n\n* * *\n\n ![slide
+    10](/images/talk/please-implement-a-quorum-database/slide_10-b75f8cae.png)\n\nIf
+    I use a reconfiguration-based replication protocol that does a view change on
+    every failure, my users are going to see latency spikes every minute and I will
+    have to answer uncomfortable questions.\n\n* * *\n\n ![slide 11](/images/talk/please-implement-a-quorum-database/slide_11-9fb86323.png)\n\nIf
+    I use raft, then expected value is that they see a latency spike every five minutes
+    when the leader is affected, but the other failures get masked.\n\n* * *\n\n ![slide
+    12](/images/talk/please-implement-a-quorum-database/slide_12-ea35142d.png)\n\nThis
+    is perfect.\n\nThis is the motivation I’m pitching for being leaderless. You should
+    get better latency,\n\nI’m not saying availability, because availability is just
+    a latency SLO.\n\n* * *\n\n ![slide 13](/images/talk/please-implement-a-quorum-database/slide_13-1b209792.png)\n\nSo,
+    what if we try to build CashDB in the style of our long-established examples?\n\n*
+    * *\n\n ![slide 14](/images/talk/please-implement-a-quorum-database/slide_14-7ef836b7.png)\n\nFirst
+    we have everything that came out of the ABD paper doing standard majority quorums.\n\n*
+    * *\n\n ![slide 15](/images/talk/please-implement-a-quorum-database/slide_15-c20b9112.png)\n\nThink
+    OG cassandra. We get a nice 1 or 2 RTT writes. We get 1-2 RTT reads. Life is great.\n\n*
+    * *\n\n ![slide 16](/images/talk/please-implement-a-quorum-database/slide_16-3e1826bf.png)\n\nCAN.
+    IT. CASHDB???\n\nNo.\n\n* * *\n\n ![slide 17](/images/talk/please-implement-a-quorum-database/slide_17-bd760f50.png)\n\nIt
+    implements only distributed read/write register, thus the implicit atomic read-modify-write
+    for account debit/credit operations doesn’t work. Append to transaction log would
+    also be a struggle.\n\nI think we view majority quorums slightly worse than it
+    deserves because it came from the eventual consistency era read repair + LWW +
+    anti-entropy gives a lot of opportunities to resurrect failed writes.\n\nBut,
+    unless you very knowingly fit the register model with linearizable-but-sujectively-worse
+    consistency, I do not think majority quorums are the path forward.\n\n* * *\n\n
+    ![slide 18](/images/talk/please-implement-a-quorum-database/slide_18-aea8c4b3.png)\n\nLet
+    us instead consider if building a system like Megastore would work.\n\n* * *\n\n
+    ![slide 19](/images/talk/please-implement-a-quorum-database/slide_19-794ee153.png)\n\nMegastore
+    replicates a log per entity group, and a proposer targets the next available slot
+    in the log with its proposal. This is just multi-paxos without the time-based
+    leader election. Consensus gives us State Machine Replication, and thus we can
+    model debits and credits as increments and decrements, and log appends as appends.
+    That’s great.\n\n* * *\n\n ![slide 20](/images/talk/please-implement-a-quorum-database/slide_20-3e06c545.png)\n\nCAN.
+    IT. CASHDB???\n\nYes, but it will explode in production.\n\n* * *\n\n ![slide
+    21](/images/talk/please-implement-a-quorum-database/slide_21-05d4a56d.png)\n\nIt
+    will fail because of latency. Paxos has a liveness problem: two duelling proposers
+    can easily prevent eachothers' progress. The log-centric model only helps to funnel
+    proposers into conflict.\n\nBoth systems tried a way to solve this:\n\n- Megastore
+    optimization: if you commit to slot N, you’re automatically the \"leader\" for
+    slot N+1.\n\n- PaxosStore: time-based exclusion for a log slot once you hear a
+    proposal for it (also geographic closeness).\n\nNeither really fundamentally saved
+    them.\n\nHowever, it’s nice that replica catchup is easy because there’s one log
+    with one ordering to replicate, and one can easily describe a snapshot of data
+    by just the log offset. But, the latency spikes worse than leader election timeouts
+    removes the motivation for using quorums in the first place.\n\n* * *\n\n ![slide
+    22](/images/talk/please-implement-a-quorum-database/slide_22-de33fcfe.png)\n\nWhat
+    if we built CashDB using some E-Paxos ideas?\n\n* * *\n\n ![slide 23](/images/talk/please-implement-a-quorum-database/sl"
+  error:
+  fetched_at: '2026-11-16T10:45:02Z'
+archived_at: '2026-11-16T10:45:02Z'

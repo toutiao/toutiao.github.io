@@ -1,0 +1,119 @@
+---
+post:
+  id: lo-ydzo2o
+  source: lobsters
+  title: Announcing Hegel-clj
+  url: https://aphyr.com/posts/428-announcing-hegel-clj
+  hn_url: https://lobste.rs/s/ydzo2o
+  score: 12
+  author: abhin4v
+  posted_at: '2026-11-16T04:12:25Z'
+  fetched_at: '2026-11-16T10:44:58Z'
+  article_url: https://aphyr.com/posts/428-announcing-hegel-clj
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T10:45:00Z'
+  raw_comment_count: 0
+  tags:
+  - clojure
+  - release
+  - testing
+comments: []
+article:
+  url: https://aphyr.com/posts/428-announcing-hegel-clj
+  title: Announcing Hegel-clj
+  fetch_status: success
+  content: "# [Announcing Hegel-clj](/posts/428-announcing-hegel-clj)\n\n[Software](/tags/software)
+    [Clojure](/tags/clojure) [Testing](/tags/testing)\n\nI’ve just released [hegel-clj](https://github.com/aphyr/hegel-clj),
+    a Clojure interface for the [Hegel](https://hegel.dev) generative testing library.
+    You can jump right to [the docs](https://cljdoc.org/d/com.aphyr/hegel-clj/0.1.1/doc/readme),
+    but I thought it might be interesting to explain why I want another testing library.\n\nI
+    do a lot of generative testing in Clojure with the excellent [test.check](https://github.com/clojure/test.check).
+    However, using test.check can be frustrating! In particular, complex generators
+    can get stuck during shrinking, leaving me trying to prune down a complex data
+    structure by hand. The culprit is usually `bind`. If you’re not familiar with
+    test.check, Quickcheck, or other libraries in this family, `bind` is a generator
+    which draws some random value, then uses that to construct a _new_ generator,
+    which in turn is used to draw some other value.\n\n    (require '[clojure.test.check
+    :as tc]\n             '[clojure.test.check.generators :as tcg]\n             '[clojure.test.check.properties
+    :as tcp])\n    (tcg/bind ; Take a number from `nat`, a generator of small positive\n
+    \             ; integers.\n              tcg/nat\n              ; Now with that
+    number, construct a generator of vectors, each\n              ; with that many
+    elements.\n              (fn [size]\n                (tcg/vector tcg/large-integer
+    size)))\n\nWe can also write this using test.check’s `let` macro, which expands
+    to a series of nested `bind`s under the hood.\n\n    (tcg/let [size tcg/nat]\n
+    \     (tcg/vector tcg/large-integer size))\n\nThis leads to the [canonical example](https://github.com/clojure/test.check/blob/master/doc/growth-and-shrinking.md#gotchas-1)
+    of poor shrinking in test.check. Let’s try to find a vector containing `42`:\n\n
+    \   (-> (tc/quick-check 1000\n          (tcp/for-all [xs (tcg/let [size tcg/nat]\n
+    \                            (tcg/vector tcg/large-integer size))]\n                       (not-any?
+    #{42} xs))\n          {:seed 1777986545686})\n      :shrunk :smallest first)\n
+    \   \n    [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 0 0 42 0]\n\nThat _does_ contain 42, but this vector is _enormous_. Why are
+    there all these zeroes? Once test.check found this vector, surely it could have
+    shrunk it to just `[42]`, right?\n\nThe answer has to do with shrink trees. Test.check
+    generators don’t actually return values like `64`. Instead they return a lazily
+    evaluated tree of values: the root might be `64`, and its children might be `[32
+    48 ... 63]`, and each of _those_ children has further children: `32` has children
+    `[16, 24, ... 31]`, and so on. Simplifying a bit, here’s how the tree for large
+    integers [is defined](https://github.com/clojure/test.check/blob/5ba3a25b60cf66ff531db8f44d89145abfacfa5c/src/main/clojure/clojure/test/check/generators.cljc#L228-L237):\n\n
+    \   (defn- shrink-long\n      \"Given a number x, returns a coll of (x-x, x-x/2,
+    x-x/4, x-x/8, ..., x-1)\"\n      [^long x]\n      (core/let [size (- 64 (Long/numberOfLeadingZeros
+    (Math/abs x)))\n                 ^longs vals (long-array size)]\n        (loop
+    [i 0 n x]\n          (if (zero? n)\n            vals\n            (do\n              (aset
+    vals i (- x n))\n              (recur (inc i) (quot n 2))))))))\n\nSo, if test.check
+    finds that `64` violates some property we’re testing, it tries the first child
+    of `64`, `32`. Let’s say that passes the test, so test.check tries the next child
+    of `64`: `48`. If `48` fails, test.check tries its first child `24`, and so on.
+    By performing this depth-first search of the tree, and choosing the branches cleverly,
+    test.check can often quickly shrink an integer to a smaller one that still fails
+    the test.\n\nA similar strategy applies to fixed-size vectors. The tree for a
+    vector like `[2 2]` has children like `[1 2]` and `[2 1]`, based on the trees
+    for each individual element of the vector. This explains why test.check produced
+    a vector like `[0 0 0 ... 42 0]`: it found something like `[91 23 1034543 ...
+    42 15]`, then shrank the first element to zero, then the second, and so on. The
+    only element it couldn’t shrink was the one that caused our property to fail:
+    `42`. Because our generator `(tcg/vector tcg/large-integer size)` always used
+    a fixed `size`, the tree for that vector always contained `size` elements—in this
+    case, 39.\n\nHang on! We didn’t just generate fixed-size vectors. We used `bind`
+    to draw a size, then built a vector of that size:\n\n    (tcg/bind tcg/nat\n              (fn
+    [size]\n                (tcg/vector tcg/large-integer size)))\n\nWhat kind of
+    trees does `bind` produce? The [code](https://github.com/clojure/test.check/blob/5ba3a25b60cf66ff531db8f44d89145abfacfa5c/src/main/clojure/clojure/test/check/generators.cljc#L125-L142)
+    involves some gnarly higher-order functions, but in essence `bind`’s trees can
+    shrink in two ways. They can shrink the outer value (the `size` returned by `tcg/nat`),
+    or they can shrink the inner value (the vector returned by `(tcg/vector ...)`.\n\nNow
+    imagine `bind` draws a size of `100`, then generates a vector of a hundred elements
+    like `[15 32 42 ...]`. This contains `42`, so test.check begins hunting through
+    the shrink tree. One of the branches it can take shrinks the `size` parameter,
+    starting with `[50, 75, ... 99]`. But if `bind` picks any of those sizes, the
+    vector `[15 32 42 ...]` is useless—it’s the wrong size! So `bind` calls our function
+    with `50` to construct a generator of 50-element vectors, and generates a single
+    vector from that generator. This vector will have _different_ random elements,
+    like `[69, 45, 1, ...]`.\n\nIf there’s no `42` in the vector of 50 elements, then
+    test.check abandons that branch and moves on to size `75`. It draws a new vector
+    of 75 elements like `[8 7 42 ...]`, and since that contains `42`, it can continue
+    shrinking. But since `42` is an uncommon integer, and test.check draws new elements
+    for each `size`, it is very likely that most sizes will not produce a vector with
+    `42`, and test.check will get stuck with, say, 39 elements. From there it can
+    shrink each element, producing the comically oversized…\n\n    [0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 42 0]\n\nFor this
+    vector it’s fairly obvious what’s wrong. But for [nontrivial test.check generators](https://github.com/jepsen-io/particledb/blob/4e911c2d6ebf5ed97becba08c12d754cbbd4da53/src/jepsen/particledb/gen/tc.clj),
+    there might be a dozen nested levels of `bind` with complex downstream consequences.
+    Every one of them offers a place for test.check to get stuck, and the smallest
+    failing case can be devilishly tricky to understand. Experienced test.check users
+    try to avoid `bind` and `let`—but they’re fundamentally inescapable for many problems.\n\nOver
+    in the Python world, the [Hypothesis](https://hypothesis.works/) team took a very
+    different approach to shrinking. Test.check is fundamentally a two-phase system:
+    first it asks a generator to produce a shrink tree. Then, if the root of that
+    tree looks “bad”, it explores the rest of that tree. Instead, Hypothesis generators
+    produce a single value, and if that value looks bad, they re-run the generator
+    and [ask it to produce something similar, but smaller](https://drmaciver.github.io/papers/reduction-via-generation-preview.pdf).
+    This approach, called _internal test-case-reduction_, is the foundation of [Hegel](https://hegel.dev/).\n\n##
+    [Hegel-clj](#hegel-clj)\n\nHegel is a new cross-platform library for generative
+    testing. It provides deterministic generators which draw random values from an
+    imperative, structured RNG, as well as a rich family of special values and shrinking
+    tactics. Writing these generators and shrinkers is hard. The idea is that Hegel’s
+    core library will do this hard work once, and simpler wrapper libraries will extend
+    the benefits of that hard work across many languages.\n\nI’ve been working for
+    a few months on [hegel-cl"
+  error:
+  fetched_at: '2026-11-16T10:45:00Z'
+archived_at: '2026-11-16T10:45:01Z'

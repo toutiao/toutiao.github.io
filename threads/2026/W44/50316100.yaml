@@ -4,14 +4,11 @@ post:
   title: 'Jepsen: ParticleDB 1.1.4'
   url: https://jepsen.io/analyses/particledb-1.1.4
   hn_url: https://news.ycombinator.com/item?id=50316100
-  score: 348
+  score: 363
   author: aphyr
   posted_at: '2026-10-31T13:39:52Z'
-  fetched_at: '2026-11-02T10:39:37Z'
-  article_url: https://jepsen.io/analyses/particledb-1.1.4
-  article_fetch_status: success
-  article_fetched_at: '2026-10-31T21:08:04Z'
-  raw_comment_count: 193
+  fetched_at: '2026-11-16T10:45:04Z'
+  raw_comment_count: 215
 comments:
 - id: '50317240'
   parent_id: '50316100'
@@ -1255,6 +1252,162 @@ comments:
     you do this?
   score: 0
   posted_at: '2026-11-02T02:25:24Z'
+- id: '50335321'
+  parent_id: '50324718'
+  author: rsynnott
+  text: I mean I assume that that&#x27;s where, say, 3.3.2 came from; the database
+    grows _new_ bizarre brokenness as stuff is fixed.<p>I&#x27;m genuinely kind of
+    fascinated whether there was a _design_ here, or if someone just said &quot;claude,
+    postgres but faster pls&quot;. Some of the issues are truly incredible.
+  score: 0
+  posted_at: '2026-11-02T11:03:52Z'
+- id: '50336178'
+  parent_id: '50322298'
+  author: jeltz
+  text: I second this. I wish more people spoke up against gross negligence abd incompetence
+    like this.
+  score: 0
+  posted_at: '2026-11-02T12:54:50Z'
+- id: '50336420'
+  parent_id: '50332027'
+  author: darkwi11ow
+  text: Yeah, good question, thanks. Llm reasoning is done exclusively in the way
+    of symbolic manipulation. Human reasoning is done not in symbols but in mental
+    models that are hard to explain for today science but we have evidence they are
+    somewhat efficient for producing correct programs, at least after sufficient training.
+    Ron&#x27;s post makes the case to explain that symbolic reasoning is not sufficient
+    for producing correct programs. Hope this helps.
+  score: 0
+  posted_at: '2026-11-02T13:14:33Z'
+- id: '50337518'
+  parent_id: '50324906'
+  author: oogali
+  text: 'I guarantee you that every investor knows they are not knowledgeable about
+    technical details. So, they have a person on call that they’ve designated as their
+    technical advisor (or even entrepreneur-in-residence, depending on how much the
+    investor is paying this person).<p>The problem is there’s no incentive for this
+    advisor to admit they are out of their depth because the money will stop flowing:
+    some flavor of “if you can’t help me on this, then what am I paying you for?”.<p>Experienced
+    investors, a.k.a. those who have previously been burned <i>and</i> learned from
+    it will have multiple technical advisors categorized by their past career specializations.<p>The
+    other investors will continue to rely on the advice of one jack-of-all-trades
+    with questionable results.'
+  score: 0
+  posted_at: '2026-11-02T14:44:50Z'
+- id: '50338488'
+  parent_id: '50318395'
+  author: cannonpalms
+  text: 'I commend Orkes for funding a Jepsen report knowing that it could be published
+    this harshly. I question the wisdom of doing so, but it at least speaks to the
+    team&#x27;s integrity. Building databases is very hard; I know this from personal
+    experience.<p>Disclosure: I&#x27;m a software engineer on the core team at a different
+    database company, but we focus on time-series use cases and do not compete in
+    the ACID&#x2F;OLTP space ParticleDB is targeting.<p>I decided to dig into these
+    claims a bit.<p>&gt; Its also faster than Redis for KV<p>ParticleDB&#x27;s own
+    benchmarks[0] come with several caveats. Much of the win over Redis seems to come
+    from comparing ParticleDB on 48 cores to Redis&#x27;s single execution thread,
+    from what I can tell.<p>- On a single client in async mode, ParticleDB loses on
+    writes at 0.86-0.90x and ties on GET.<p>- SET at 512 clients reaches 4.81x Redis,
+    but that&#x27;s about 18.7k ops&#x2F;s per allocated core vs Redis&#x27;s 186k
+    on <i>one thread.</i> For comparison, GET at 512 clients works out to about 33.8k
+    ops&#x2F;s per allocated core vs Redis&#x27;s 228k.<p>- Tail latency on SET is
+    much worse, e.g. p99 of 49ms vs 5.3ms for async SET at 512 clients and 306ms vs
+    41ms for durable mode with pipelining.<p>- Each test was 8 seconds long on 100k
+    keys, but the Jepsen report saw throughput decline linearly over an hour, even
+    on small datasets.<p>&gt; also numbers show this should be top on clickbench<p>Would
+    this claim survive after validating query results?<p>Regardless, it&#x27;s moot,
+    because it doesn&#x27;t survive on its face either. On hot runs, by my calculations
+    from the numbers in the Clickbench PR[1], ParticleDB scores about 1.5x better
+    than ClickHouse, however Umbra still scores about 1.5x better than ParticleDB.<p>The
+    fact that `GROUP BY URL` (Q33&#x2F;Q34) beats `GROUP BY UserID` (Q15) by 4x on
+    a `c6a` is also puzzling to me. Only a handful of 100+ ClickBench results that
+    I checked do this, and ParticleDB&#x27;s ratio is the most extreme.  It also speeds
+    up only 2.2x when going from 16 to 192 vCPUs, while Umbra, ClickHouse, and ElosDB
+    manage 7-10x. This makes me wonder whether the ParticleDB submission may inadvertently
+    be using some precomputation&#x2F;intermediate caching, despite final result caching
+    seemingly having been disabled.<p>[0]: <a href="https:&#x2F;&#x2F;particledb.ai&#x2F;benchmarks&#x2F;key-value&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;particledb.ai&#x2F;benchmarks&#x2F;key-value&#x2F;</a><p>[1]:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pull&#x2F;2952"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ClickHouse&#x2F;ClickBench&#x2F;pull&#x2F;2952</a>'
+  score: 0
+  posted_at: '2026-11-02T15:49:34Z'
+- id: '50338656'
+  parent_id: '50324736'
+  author: meowface
+  text: Yes, but I said 1 - 2 years, not current LLMs.
+  score: 0
+  posted_at: '2026-11-02T15:58:30Z'
+- id: '50338667'
+  parent_id: '50324365'
+  author: meowface
+  text: 'I think it is probably going to happen with LLMs, and I&#x27;d bet on it.<p>As
+    said: 1 - 2 years, not current ones.'
+  score: 0
+  posted_at: '2026-11-02T15:58:56Z'
+- id: '50343517'
+  parent_id: '50336420'
+  author: iknowstuff
+  text: |-
+    &gt; Llm reasoning is done exclusively in the way of symbolic manipulation.
+    No, LLMs are not a classical symbolic system applying explicit rules to symbols.<p>The article asserts general guarantees of program correctness have fundamental limits, but it explicitly says those limits apply to humans too. While that suggests neither humans nor LLMs can reliably solve <i>every</i> planning or verification problem, it says nothing about which will do better on the software problems people actually encounter.<p>It certainly does not present a fundamental problem with LLMs as they exist today.
+  score: 0
+  posted_at: '2026-11-02T20:50:25Z'
+- id: '50343551'
+  parent_id: '50332382'
+  author: iknowstuff
+  text: Here let me point you to the assertion you made:<p>&gt;&gt; Its not happening,
+    at least not with LLMs<p>&gt; Correct.
+  score: 0
+  posted_at: '2026-11-02T20:52:40Z'
+- id: '50345166'
+  parent_id: '50343551'
+  author: elendilm
+  text: Wrong. The entire arc was on database and novel architectures. Let me point
+    you to the things you missed both on the example and the context.<p>&gt;&gt; Writing
+    such a complex software as database engine requires strategy, awareness and rigor.<p>&gt;
+    Correct. Current LLMs are pathetic at architectural correctness without expert
+    supervision at every turn.<p>&gt; Try having a discussion on designing an architecture
+    for a new kv engine with cache-oblivious algorithms that beats lmdb on generic
+    random point-key lookups on a disk-backed mmap file.<p>&gt; What happens in the
+    future is up for debate,
+  score: 0
+  posted_at: '2026-11-02T22:50:44Z'
+- id: '50345470'
+  parent_id: '50338656'
+  author: elendilm
+  text: My comment was to your parent comment :).<p>I find it unlikely, especially
+    due to the numerous pathetic suggestions LLMs keep offering me on the architectural
+    discussions I engage in.<p>Verbal abuse is what makes it useful to me. A punching
+    bag where it infuriates me making me lay down the how and why its suggestions
+    are stupid. This results in progress.<p>I guess we would have to wait and see.
+    Maybe LLMs do get better at architecture in the future. But seems unlikely to
+    me without expert supervision.
+  score: 0
+  posted_at: '2026-11-02T23:13:05Z'
+- id: '50354882'
+  parent_id: '50343517'
+  author: darkwi11ow
+  text: |-
+    &gt; No, LLMs are not a classical symbolic system applying explicit rules to symbols.<p>I do not mean that LLM is a classic symbolic system that generates symbols according to rules,
+    but instead it&#x27;s a system that generates symbols according to recorded probabilities. The focus here is on symbols: the LLM reasoning starts with &lt;think&gt; token, ends with &lt;&#x2F;think&gt; token, and everything in between is symbols (tokens). Quite different from how human brain works, where symbols are not that much involved in reasoning.<p>&gt; The article asserts general guarantees of program correctness have fundamental limits, but it explicitly says those limits apply to humans too.<p>Yep, however I would like to assert that today we have evidence of systems architected by humans and behaving correctly (like Linux kernel), while there are no evidence of systems architected by LLMs that behave correctly. Even the systems which are architected by LLMs with human assistance (such as Claude Code or Codex) routinely have horrendous bugs (you&#x27;re welcome to search &quot;Claude Code Bug&quot; and &quot;Codex Bug&quot; on this very website).<p>&gt; It certainly does not present a fundamental problem with LLMs as they exist today.<p>The article was created 10 years ago that is why it does not address LLMs. However it asserts that mathematics modeling is not that helpful for writing correct programs. As long as LLM reasoning is closer to mathematics modeling than human mental modeling, LLMs will be worse at writing correct programs than humans. Some future technology less focused on symbolic reasoning could change that, but today it&#x27;s not on sufficient level.
+  score: 0
+  posted_at: '2026-11-03T17:18:15Z'
+- id: '50381445'
+  parent_id: '50354882'
+  author: iknowstuff
+  text: Holy shit so are you confident that “Its not happening, at least not with
+    LLMs, maybe some future technology will be better with that, but not language
+    models” or not?
+  score: 0
+  posted_at: '2026-11-05T16:56:15Z'
+- id: '50401972'
+  parent_id: '50318753'
+  author: senderista
+  text: One thing you will quickly learn is that writing a new SQL database from scratch
+    is absolute folly. A more narrowly scoped database (like a key&#x2F;value store)
+    can be quite instructive as a personal project.
+  score: 0
+  posted_at: '2026-11-07T05:41:22Z'
 article:
   url: https://jepsen.io/analyses/particledb-1.1.4
   title: 'Jepsen: ParticleDB 1.1.4'
@@ -1350,4 +1503,4 @@ article:
     | No locks, m"
   error:
   fetched_at: '2026-10-31T21:08:04Z'
-archived_at: '2026-11-02T10:39:56Z'
+archived_at: '2026-11-16T10:45:26Z'

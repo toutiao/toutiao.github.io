@@ -1,0 +1,150 @@
+---
+post:
+  id: lo-md0vco
+  source: lobsters
+  title: beer.drv.drv.drv
+  url: https://fzakaria.com/2026/11/14/beer-drv-drv-drv
+  hn_url: https://lobste.rs/s/md0vco
+  score: 14
+  author: fzakaria
+  posted_at: '2026-11-16T00:47:28Z'
+  fetched_at: '2026-11-16T10:44:58Z'
+  article_url: https://fzakaria.com/2026/11/14/beer-drv-drv-drv
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T10:45:00Z'
+  raw_comment_count: 4
+  tags:
+  - nix
+comments:
+- id: lo-yovs8p
+  parent_id: '0'
+  author: geocar
+  text: |-
+    You could handle 99 beers if you do the recursion by decimal digits (keeps max depth to 10+digits). Then, if that weren't sufficient, lower the base and implement binary->decimal encoding, and now max depth is 2+digits. 2^499-2 sounds like a lot of beer.
+    I am extremely entertained by this today.
+  score: 3
+  posted_at: '2026-11-16T04:29:28Z'
+- id: lo-gilkv0
+  parent_id: '0'
+  author: fzakaria
+  text: |-
+    that's a pretty funny follow-up.
+    I'm not sure if a drv can have > 1 output though to make it work.
+
+    error: derivation names are allowed to end in '.drv' only if they produce a single derivation file
+
+    I wasn't sure about 2^52 should be the beers ? :)
+  score: 2
+  posted_at: '2026-11-16T04:41:54Z'
+- id: lo-jw9ikk
+  parent_id: '0'
+  author: fzakaria
+  text: 'I ended up filing: https://github.com/NixOS/nix/issues/16835'
+  score: 2
+  posted_at: '2026-11-16T04:47:57Z'
+- id: lo-ixarf4
+  parent_id: '0'
+  author: radex
+  text: |-
+    I’d like to see a write up about how dynamic derivations could be used to close the gap with Bazel.
+    Bazel defines dependencies in very fine-grained way, so it’s clear how unnecessary rebuilds can be skipped. With Nix, we tend to have a derivation per binary.
+  score: 3
+  posted_at: '2026-11-16T08:12:19Z'
+article:
+  url: https://fzakaria.com/2026/11/14/beer-drv-drv-drv
+  title: beer.drv.drv.drv | Farid Zakaria’s Blog
+  fetch_status: success
+  content: "Have you heard about [dynamic derivations](/2025/03/11/nix-dynamic-derivations-a-practical-application)?\n\nThey
+    are an experimental-feature in Nix that lets a derivation produce other derivations
+    as its output. Why ? This lets you dynamically create your build graph, instead
+    of having to know it all at evaluation time. It’s Nix’s answer to try and match
+    the build speed of other build systems like [Bazel](https://bazel.build/) or [buck2](https://buck2.build/).\n\nThere
+    is not much written about dynamic derivations, and the documentation is sparse.
+    I have [written](/2025/03/10/an-early-look-at-nix-dynamic-derivations) [a](/2025/03/11/nix-dynamic-derivations-a-practical-application)
+    [few](/2025/03/12/nix-dynamic-derivations-a-lang2nix-practicum) [posts](/2026/09/20/a-build-graph-that-rolls-dice)
+    about them, so I sometimes get questions about them.\n\nRecently, I got a DM from
+    [Evan Porter](https://www.linkedin.com/in/evanwp/) over [LinkedIn](https://www.linkedin.com/),
+    the ultimate bug triaging network, about whether it is possible to query the deriver
+    of a dynamic derivation to get the initial derivation.\n\n> For dynamic derivations
+    let’s say I have a .drv.drv file. This file outputs a derivation. Is it usually
+    possible to query deriver the output derivation to obtain the initial derivation?\n\nThey
+    had tried it and got this:\n\n    $ nix-store --query --deriver \\\n        $(nix-store
+    --query --deriver ./result)\n    unknown-deriver\n\nThat should work. \U0001F928
+    Every path a build registers carries a `deriver`, the `.drv` that produced it,
+    and a `.drv` that came out of a build is still a path a build registered.\n\nWhen
+    I tried it, it worked. \U0001F937\n\nYou will need `extra-experimental-features
+    = dynamic-derivations ca-derivations recursive-nix` in your `nix.conf` to drive
+    the samples in this post.\n\n    $ nix build -f default.nix \\\n        --print-out-paths\n
+    \   /nix/store/v4hkwn8y4m083gsap6523c0m5r985ygr-result\n    \n    $ nix-store
+    --query --deriver \\\n        /nix/store/v4hkwn8y4m083gsap6523c0m5r985ygr-result\n
+    \   /nix/store/6pniymfhwcyrmkns0np7ap1argjziqq2-result.drv\n    \n    $ nix-store
+    --query --deriver \\\n        /nix/store/6pniymfhwcyrmkns0np7ap1argjziqq2-result.drv\n
+    \   /nix/store/m5x261fv29jkn0rvznqj2fzkaql01xiy-result.drv.drv\n\nTurns out, there
+    is a case where you do get `unknown-deriver` if you set `__contentAddressed =
+    true` on the producer. If the producer is content-addressed, its output path is
+    not known until after the build, and Nix does not fill in the `deriver` of a path
+    that already exists. I filed [NixOS/nix#16823](https://github.com/NixOS/nix/issues/16823).\n\nThe
+    question though made me wonder how far back you can walk the chain of dynamic
+    derivations. I had to try it. \U0001F608\n\nLet’s pick a fun example to see how
+    far we can go. Here is a derivation that imitates the classic song _99 bottles
+    of beer_ by producing a chain of derivations, each one outputting the next verse.1The
+    builder writes the next derivation by hand in [ATerm](/2025/03/23/nix-derivations-by-hand),
+    so there is no recursive Nix and no `nix-instantiate` involved.&nbsp;\n\n    export
+    PATH=$busybox/bin\n    \n    # A content-addressed derivation does not know its
+    output path, so its\n    # \"out\" variable holds this placeholder and Nix swaps
+    in the real path at\n    # build time. It is \"/\" + nix32(sha256(\"nix-output:out\")),
+    the same for\n    # every derivation with an output named \"out\".\n    OUT_PLACEHOLDER=/1rz4g4znpzjwh1xymhjpm42vipw92pr73vdgl6xs1hycac8kf2n9\n
+    \   \n    bottles() {\n      case $1 in\n        0) echo \"no more bottles\" ;;\n
+    \       1) echo \"1 bottle\" ;;\n        *) echo \"$1 bottles\" ;;\n      esac\n
+    \   }\n    \n    # The last derivation in the chain writes the punchline instead
+    of a .drv.\n    if [\"$n\" -eq 0]; then\n      echo \"No more bottles of beer
+    on the wall, no more bottles of beer.\" >&2\n      echo \"Go to the store and
+    buy some more.\" > $out\n      exit 0\n    fi\n    \n    next=$((n - 1))\n    echo
+    \"$(bottles $n) of beer on the wall, $(bottles $n) of beer.\" >&2\n    echo \"Take
+    one down, pass it around, $(bottles $next) of beer on the wall.\" >&2\n    \n
+    \   # Input sources must be sorted.\n    srcs=$(printf '\"%s\"\\n' \"$busybox\"
+    \"$script\" | sort | paste -sd, -)\n    \n    # Write the derivation for the next
+    verse. A .drv is a single line of\n    # ATerm, so strip the spaces and newlines
+    that are only here for reading.\n    # Nix takes a derivation's name from its
+    store path, so the next name is\n    # ours minus one \".drv\".\n    tr -d ' \\n'
+    > $out <<EOF\n    Derive(\n      [(\"out\", \"\", \"text:sha256\", \"\")],\n      [],\n
+    \     [$srcs],\n      \"$system\",\n      \"$busybox/bin/sh\",\n      [\"$script\"],\n
+    \     [\n        (\"builder\", \"$busybox/bin/sh\"),\n        (\"busybox\", \"$busybox\"),\n
+    \       (\"n\", \"$next\"),\n        (\"name\", \"${name%.drv}\"),\n        (\"out\",
+    \"$OUT_PLACEHOLDER\"),\n        (\"outputHashAlgo\", \"sha256\"),\n        (\"outputHashMode\",
+    \"text\"),\n        (\"script\", \"$script\"),\n        (\"system\", \"$system\")\n
+    \     ]\n    )\n    EOF\n\n> **Tip** A derivation whose output is a `.drv` must
+    set `outputHashMode = \"text\"`.\n\nIn our example we are using a content-addressed
+    derivation, but the same idea works with an input-addressed one, but it’s more
+    work to compute the output path in the shell, unless you are using `nix-instantiate`
+    to do it for you with recursive Nix.\n\nThe Nix side builds the first derivation
+    and then follows `builtins.outputOf` once per bottle.\n\n    let\n      pkgs =
+    import (fetchTarball {\n        url = \"https://github.com/NixOS/nixpkgs/archive/6dadaf4375be35033e1c84395adbd53ff5fded96.tar.gz\";\n
+    \     }) { };\n      inherit (pkgs) lib;\n    \n      # maximum bottles of beer
+    on the wall,\n      # 50 is the most that fits in a store path!?\n      bottles
+    = 50;\n    \n      top = derivation {\n        name = \"beer\" + lib.concatStrings
+    (lib.replicate bottles \".drv\");\n        system = builtins.currentSystem;\n
+    \       builder = \"${pkgs.busybox}/bin/sh\";\n        args = [./bottles.sh];\n
+    \       script = ./bottles.sh;\n        busybox = pkgs.busybox;\n        n = bottles;\n
+    \       __contentAddressed = true;\n        outputHashMode = \"text\";\n        outputHashAlgo
+    = \"sha256\";\n      };\n    in\n    # Follow the chain of outputs down to the
+    last derivation.\n    lib.foldl' (drv: _: builtins.outputOf drv \"out\") top.outPath
+    (lib.range 1 bottles)\n\nWhile working through this example, I hit a bug in Nix
+    that made me set `__contentAddressed = true` on the top derivation. That is not
+    necessary for a derivation that outputs a `.drv`, but it works around the bug.
+    I filed [NixOS/nix#16830](https://github.com/NixOS/nix/issues/16830).\n\nYou might
+    notice that we limit the number of beers to 50. Why 50 and not 99?\n\nWell, 50
+    is the most that fits in a store path.\n\n    error: path '…-beer.drv.drv.drv…'
+    is not a valid store path:\n      name 'beer.drv.drv.drv…' must be no longer than
+    211 characters\n\nThe maximum length of a store path is [211 characters](https://github.com/NixOS/nix/blob/7d83031e0c3c4f7e6767ce94ae81ae93b6c04322/src/libstore/include/nix/store/path.hh#L48).
+    A derivation’s store path must include the `.drv` suffix, and every `.drv` in
+    a chain adds four characters. The top derivation is named `beer` and if you add
+    51 `.drv`s we get 208 characters. No room for any more beer. \U0001F37B\n\n> **Aside**\n>
+    \n> Even with a name of length 1, , we get a theoretical limit of .\n\nLet’s build
+    sing it.\n\n    $ nix build -f beer.nix \\\n        --print-out-paths \\\n        --print-build-logs\n
+    \   building '/nix/store/di5x9yrhh6pfn214c41bnpxh1avya51c-beer.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv'...\n
+    \   beer.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv>
+    50 bottles of beer on the wall, 50 bottles of beer.\n    beer.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.drv.d"
+  error:
+  fetched_at: '2026-11-16T10:45:00Z'
+archived_at: '2026-11-16T10:45:00Z'

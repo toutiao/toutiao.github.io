@@ -4,14 +4,14 @@ post:
   title: 'Clice v1.0 Released: Welcome to Modern C++'
   url: https://ykiko.me/en/articles/2105384023094834022/
   hn_url: https://news.ycombinator.com/item?id=50508715
-  score: 94
+  score: 161
   author: ''
   posted_at: '2026-11-15T17:22:32Z'
-  fetched_at: '2026-11-16T00:49:27Z'
+  fetched_at: '2026-11-16T10:44:39Z'
   article_url: https://ykiko.me/en/articles/2105384023094834022/
   article_fetch_status: success
   article_fetched_at: '2026-11-16T00:49:27Z'
-  raw_comment_count: 61
+  raw_comment_count: 36
 comments:
 - id: '50509974'
   parent_id: '50508715'
@@ -533,6 +533,169 @@ comments:
     maid, etc.<p>But still, who cares?"
   score: 0
   posted_at: '2026-11-16T00:38:30Z'
+- id: '50512657'
+  parent_id: '50510249'
+  author: whizzter
+  text: I think you should reconcile with Clang and hope that they can work on performance
+    for LSP tasks, because while C++ 26 reflections does a lot of &quot;conservative&quot;
+    things right, it also enabled consteval to create structures with novel shapes,
+    so you need consteval in an indexer.<p>ie.<p>auto val = make_named&lt;&quot;x&quot;,&quot;y&quot;&gt;(1,
+    2.3);<p>&#x2F;&#x2F; val is now a struct with an integer field named x and a double
+    field named y
+  score: 0
+  posted_at: '2026-11-16T00:49:30Z'
+- id: '50512758'
+  parent_id: '50510586'
+  author: jandrewrogers
+  text: 'In the case of C++, &quot;modern&quot; conventionally denotes &quot;C++11
+    or later&quot;. Idiomatic code between &quot;legacy&quot; and &quot;modern&quot;
+    dialects of C++ that they almost look like different languages. C++11 was a breaking
+    change to the idioms of older C++.<p>This is helpful context to the reader. Many
+    C++ programmers are unfamiliar with either idiomatic legacy or modern dialects
+    and would have difficulty following the code.<p>There are arguably three different
+    idiomatic dialects of C++ now: legacy, C++11, and C++20. We don&#x27;t really
+    have a common term for distinguishing between C++11 and C++20 even though the
+    idiomatic code looks quite different.<p>It has been an interesting evolutionary
+    strategy. C++ standards meticulously avoid breaking changes but will happily do
+    a major redesign of how idiomatic code is written.'
+  score: 0
+  posted_at: '2026-11-16T01:01:45Z'
+- id: '50512805'
+  parent_id: '50511010'
+  author: quacker
+  text: 'They explain exactly why in article:<p><i>Because C++ is simply too complex,
+    and on certain corner cases the compiler can easily crash or leak memory. That
+    is especially true for incomplete code in the middle of editing: a huge downstream
+    user base tests compilers on complete code, while very few people test them on
+    half-written code, where the compiler mostly falls back on best-effort heuristics</i><p>It&#x27;s
+    the compiler that crashes. Both clangd and clice are built on top of the same
+    compiler (clang) which is why both experience a crash on the same code.'
+  score: 0
+  posted_at: '2026-11-16T01:10:17Z'
+- id: '50513114'
+  parent_id: '50510249'
+  author: mwkaufma
+  text: Derivative?<p><pre><code>    It is still built on LLVM&#x2F;Clang, but unlike
+    clangd and ccls, which are also Clang-based, clice was redesigned from the ground
+    up to fix architectural problems that have gone unsolved in those servers for
+    years.</code></pre>
+  score: 0
+  posted_at: '2026-11-16T01:57:38Z'
+- id: '50513277'
+  parent_id: '50510586'
+  author: eluru
+  text: Sounds tiring, CPP has been modernised, killed, solved, so many so so many
+    times now, not even one was for real, this wont be the one either
+  score: 0
+  posted_at: '2026-11-16T02:24:41Z'
+- id: '50513382'
+  parent_id: '50511882'
+  author: Joker_vD
+  text: "&gt; all I really want is just something that behaves like a string or array&#x2F;vector
+    type.<p>What <i>does</i> behave like a std::string&#x2F;std::vector but is not
+    std::string&#x2F;std::vector, respectively? In my experience, if you want a flat
+    array behind a T* (or std::dequeue&lt;T&gt; at the worst) — so that the autovectorization
+    can kick in — then that&#x27;s precisely what you want, and no generalization
+    to e.g. a linked list, or a heap, or a red-black tree is really possible."
+  score: 0
+  posted_at: '2026-11-16T02:42:48Z'
+- id: '50513960'
+  parent_id: '50513382'
+  author: spacechild1
+  text: "&gt; What does behave like a std::string&#x2F;std::vector but is not std::string&#x2F;std::vector,
+    respectively?<p>`std::span` works with <i>all</i> vector&#x2F;array-like types:
+    `std::vector`, `std::array`, C-arrays and third-party vector&#x2F;array types.<p>Similarly,
+    `std::string_view` works with `std::string`, C-strings and third-party string
+    types.<p>&gt; so that the autovectorization can kick in<p>It&#x27;s not even about
+    vectorization. Often you just have a function that takes a string-like or array-like
+    thing, but you don&#x27;t care about the exact container. Yes, you could make
+    the argument a template (and constrain it with concepts), but then you have to
+    put everything in headers."
+  score: 0
+  posted_at: '2026-11-16T04:16:26Z'
+- id: '50513979'
+  parent_id: '50511931'
+  author: spacechild1
+  text: Exactly! When you have a `const std::string&amp;` argument, passing a C-string
+    implicitly allocates a new temporary `std::string`.<p>`std::string_view` accepts
+    both `const std::string&amp;` and `const char*` without hidden allocations.
+  score: 0
+  posted_at: '2026-11-16T04:19:18Z'
+- id: '50514228'
+  parent_id: '50510249'
+  author: qalmakka
+  text: Clangd is slower precisely because it&#x27;s very precise. The old indexers
+    you mention, like the one in Eclipse CDT, never truly worked for me. They weren&#x27;t
+    that useful and were always lacking compared to IntelliSense. clangd was the first
+    time the FOSS alternative truly matched and often trounced IntelliSense
+  score: 0
+  posted_at: '2026-11-16T05:00:25Z'
+- id: '50514457'
+  parent_id: '50508715'
+  author: nnevatie
+  text: "&gt; A completely hermetic, reproducible build powered by Bazel<p>Why not
+    CMake, the de-facto (like it or not) build tool for C++?"
+  score: 0
+  posted_at: '2026-11-16T05:48:13Z'
+- id: '50514919'
+  parent_id: '50514457'
+  author: rienbdj
+  text: Speed and correctness, choose 2
+  score: 0
+  posted_at: '2026-11-16T07:13:32Z'
+- id: '50514984'
+  parent_id: '50511882'
+  author: pwiecz
+  text: |-
+    &gt; IME, taking a string_view as an argument is pretty unproblematic. Two areas where I have seen problems<p>I&#x27;ve seen a few problema with automatic conversion of const std::string&amp; arguments to std::string_view.
+    They arised  when the argument was later captured by value in a lambda and passed as an argument to e.g. std::thread.
+    Instead of safely passing copy of the string now you pass refwrence to a memory owned by a different thread, which may be deallocated at any moment.
+  score: 0
+  posted_at: '2026-11-16T07:24:37Z'
+- id: '50515274'
+  parent_id: '50514984'
+  author: Conscat
+  text: This can be prevented by `[[clang::lifetimebound]]` and I&#x27;ve been doing
+    that lately.
+  score: 0
+  posted_at: '2026-11-16T08:20:06Z'
+- id: '50515559'
+  parent_id: '50508715'
+  author: tancop
+  text: "&gt; in an era like this it means the effort I poured into clice over the
+    past two and a half years is unlikely to have the lasting meaning I first imagined<p>Reading
+    C++ without a good language server is hard. And if you don&#x27;t read your agents
+    code that makes you a stupid vibe coder. Everyone else will benefit from your
+    project.<p>And it&#x27;s good training data (also for humans) to learn modern
+    C++ from a real codebase."
+  score: 0
+  posted_at: '2026-11-16T09:09:25Z'
+- id: '50515587'
+  parent_id: '50511568'
+  author: kamrann_
+  text: I would assume they&#x27;re referring to it being built on top of clang. While
+    it does claim to have improved on some architectural decisions in clangd, and
+    my testing of it today was indeed much better than clangd when it comes to handling
+    modules in particular, at the end of the day the bottleneck for responsiveness
+    remains by a distance the time it takes clang to recompiled a translation unit.
+  score: 0
+  posted_at: '2026-11-16T09:15:03Z'
+- id: '50515608'
+  parent_id: '50514228'
+  author: kamrann_
+  text: Yeah I think this is exacerbated by the ever increasing complexity of the
+    language. Anything using workarounds to avoid implementing a full frontend is
+    just going to fall apart on modern code depending on the standard library.
+  score: 0
+  posted_at: '2026-11-16T09:18:18Z'
+- id: '50515633'
+  parent_id: '50508715'
+  author: quailfarmer
+  text: |-
+    Re the melancholy conclusion:
+    I spent the last year of my school working on a big personal project, but when I started a full time job, this personal project was eclipsed, it no longer made sense in the context of the industry. But I recently returned for my 5yr reunion, and I found a bunch of current students who were still using my system! Upon reflection, it’s still one of the most fun projects I’ve ever done.
+  score: 0
+  posted_at: '2026-11-16T09:22:29Z'
 article:
   url: https://ykiko.me/en/articles/2105384023094834022/
   title: 'clice v1.0 Released: Welcome to Modern C++ | ykiko''s blog'
@@ -584,5 +747,5 @@ article:
 
   error:
   fetched_at: '2026-11-16T00:49:27Z'
-archived_at: '2026-11-16T00:49:40Z'
+archived_at: '2026-11-16T10:44:57Z'
 ...

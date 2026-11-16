@@ -4,14 +4,14 @@ post:
   title: A NES emulator written in Odin
   url: https://lucypero.com/lucynes.html
   hn_url: https://news.ycombinator.com/item?id=50506588
-  score: 107
+  score: 116
   author: ''
   posted_at: '2026-11-15T12:51:47Z'
-  fetched_at: '2026-11-16T00:49:25Z'
+  fetched_at: '2026-11-16T10:44:42Z'
   article_url: https://lucypero.com/lucynes.html
   article_fetch_status: success
   article_fetched_at: '2026-11-16T00:49:25Z'
-  raw_comment_count: 40
+  raw_comment_count: 47
 comments:
 - id: '50507525'
   parent_id: '50506588'
@@ -343,6 +343,76 @@ comments:
     should be the standard. See either in scala for more.
   score: 0
   posted_at: '2026-11-16T00:14:20Z'
+- id: '50512853'
+  parent_id: '50509862'
+  author: wahern
+  text: You don&#x27;t necessarily need a result&#x2F;option type. Go could add a
+    dependent typing facility that let you express a relationship between the first
+    and subsequent return values.<p>Very few languages do that; an option type is
+    simpler to implement in many respects. But in the case of Go, especially at this
+    juncture, it&#x27;s possible the simplest route is a dependent type, at least
+    a specialized one. You don&#x27;t need to introduce a fully generic dependent
+    typing facilty.<p>Even simpler would just be type qualifers, e.g. optional or
+    nilable, on the first return value, though that doesn&#x27;t help with multivalue
+    returns, where a simple dependent typing facility could fully express success
+    vs error return semantics.<p>You could also do it with contracts, though more
+    obliquely. One of the criticisms with C++ contracts was that a contract made it
+    easier to optimize a routine for the declared relationships, but without absolutely
+    mandating enforcement that the callee or caller also obeyed the contracts, which
+    is more difficult to do. That meant there was the potential for contracts to result
+    in more bugs caused by interactions between undefined behavior and the optimizer.
+  score: 0
+  posted_at: '2026-11-16T01:17:55Z'
+- id: '50512873'
+  parent_id: '50511323'
+  author: sitzkrieg
+  text: odin is way more ergonomic than any c standard
+  score: 0
+  posted_at: '2026-11-16T01:19:50Z'
+- id: '50514219'
+  parent_id: '50507605'
+  author: Panzerschrek
+  text: "&gt; manual memory management<p>Ergo memory leaks.<p>&gt; arena and pool
+    allocators<p>A poor&#x27;s man replacement for RAII.<p>&gt; go style err!=nill
+    style exception handling<p>Literally the most criticized part of Go.<p>&gt; first
+    class support for defer statements<p>Again, <i>defer</i> is used, because there
+    is no RAII.<p>&gt; consider it<p>No, thanks. I will continue using Rust or even
+    C++. I don&#x27;t want wasting time debugging memory leaks and corruptions."
+  score: 0
+  posted_at: '2026-11-16T04:58:33Z'
+- id: '50514566'
+  parent_id: '50511890'
+  author: iaaan
+  text: I mean that I run an external CLI tool called golangci-lint (a linter), and
+    it does some things that the compiler arguably should do instead.
+  score: 0
+  posted_at: '2026-11-16T06:10:29Z'
+- id: '50514752'
+  parent_id: '50514219'
+  author: boltzmann64
+  text: 'there is definitely a tradeoff here: would you rather hunt for memory leaks
+    or hunt for references (to satisfy the borrow checker).<p>some of really want
+    to do it the old way with arena&#x2F;pool allocators than guarantees at the compile
+    time. odin&#x27;s target audience is not rust programmers, it&#x27;s C programmers
+    who want modern conveniences.'
+  score: 0
+  posted_at: '2026-11-16T06:45:29Z'
+- id: '50514760'
+  parent_id: '50508919'
+  author: ternaryoperator
+  text: C3, Odin, Zig, and many other languages are all competing to be the ergonomic
+    replacement for C. None of them has crossed the chasm to wide industry adoption,
+    so there is not one of these that, to use your words, renders the others useless...yet.
+  score: 0
+  posted_at: '2026-11-16T06:47:21Z'
+- id: '50515532'
+  parent_id: '50512389'
+  author: sham1
+  text: |-
+    I see your Either types and raise you a checked exception. People might have soured on the idea due to the way Java specifically implements the idea, but they can absolutely be done properly. They&#x27;re also more ergonomic than an Either type, so that&#x27;s nice.<p>I guess I have to justify my last statement, so here goes. We need to first establish the fact that checked exceptions and an Either type used in error handling are isomorphic constructs. Both are part of your type system (there is no difference between a function returning an `Either&lt;T, E&gt;` and a function returning a `T` or throwing an exception `E`), although one could correctly argue that an Either type is more widely applicable. Okay, so error handling ergonomics. The main thing about exceptions is that they separate out your happy path code from error handling. This is often a physical separation via having separate blocks with a try and a catch. You can of course have this kind of separation with an Either type, but at least in my experience the ergonomics are such that it&#x27;s often nicer to just have the error boundary close to the fallible expression. Either that, or you have to start doing stack unwinding until you find an appropriate place for error handling -- except unlike with exceptions, this unwinding is done by hand.<p>Another thing that most exception systems give you are post-operations, usually in the form of some sort of a `finally` type dealio. And yeah, you can absolutely do the same thing with Either-based error handling, but it&#x27;s not nearly as ergonomic as a finally-block.<p>And if people get annoyed at these being called exceptions, because they&#x27;re not always exceptional, then we could call them something like &quot;error conditions&quot; or whatever floats one&#x27;s banana, that&#x27;s just bikeshedding.<p>The place where Java went wrong with its checked exceptions was two-fold:<p>a) you can&#x27;t parameterise properly over the exceptions you get thrown
+    b) whether an exception is checked or not is a property of its place in the class hierarchy instead of being separate from it<p>A large part of the first one is due to generics being added after the fact to the language, trying to preserve backwards compatibility which also lead to the kind of type erasure etc. you get in Java. And the second one is mostly just a mistake in the design of the exception hierarchy. Sadly that&#x27;s now impossible to fix in Java specially so we&#x27;re stuck with it, but other languages could still learn from it.
+  score: 0
+  posted_at: '2026-11-16T09:03:08Z'
 article:
   url: https://lucypero.com/lucynes.html
   title: lucyNES - Lucy's Save Room
@@ -444,4 +514,4 @@ article:
     Box](/psycho-box.html)"
   error:
   fetched_at: '2026-11-16T00:49:25Z'
-archived_at: '2026-11-16T00:49:40Z'
+archived_at: '2026-11-16T10:44:57Z'

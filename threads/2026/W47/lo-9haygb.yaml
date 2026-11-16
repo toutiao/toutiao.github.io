@@ -1,0 +1,108 @@
+---
+post:
+  id: lo-9haygb
+  source: lobsters
+  title: 'clice v1.0 Released: Welcome to Modern C++'
+  url: https://www.ykiko.me/en/articles/2105384023094834022/
+  hn_url: https://lobste.rs/s/9haygb
+  score: 16
+  author: jeaye
+  posted_at: '2026-11-15T21:19:35Z'
+  fetched_at: '2026-11-16T10:44:58Z'
+  article_url: https://www.ykiko.me/en/articles/2105384023094834022/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T10:45:00Z'
+  raw_comment_count: 4
+  tags:
+  - c++
+  - compilers
+comments:
+- id: lo-saellr
+  parent_id: '0'
+  author: jonpalmisc
+  text: Commit history & messages suggest heavy use of LLMs...
+  score: 3
+  posted_at: '2026-11-15T23:22:48Z'
+- id: lo-zwwbgp
+  parent_id: '0'
+  author: kneeawn
+  text: Comment removed by its author
+  score: 1
+  posted_at: '2026-11-15T23:57:51Z'
+- id: lo-84tcb2
+  parent_id: '0'
+  author: jo3_l
+  text: |-
+    This is true and the author indicates as such in the post. Nevertheless the post itself seems mostly human-written and contains some interesting technical content + what appears to be a pretty genuine reflection at the end. I also think there's a real gap that this project can potentially fill: clangd really does not handle modules well last I checked.
+    All that to say: I think it's worth reading the post despite the code mostly being LLM-authored.
+  score: 13
+  posted_at: '2026-11-16T00:19:10Z'
+- id: lo-dkb2uq
+  parent_id: '0'
+  author: jeaye
+  text: |-
+    This is how I felt reading the post as well. It's clearly hand-written and when the author gets to the point of talking about agentic coding, the prose becomes melancholic and boderline nihilistic in a way which I think is very human.
+    On a technical level, we all know that clangd has some serious usability issues. Exploring a different way of handling LSP for C++ is intriguing.
+  score: 9
+  posted_at: '2026-11-16T00:22:41Z'
+- id: lo-qcqktk
+  parent_id: '0'
+  author: BenjaminRi
+  text: The architectural decisions outlined in the blog do not look like LLM slop.
+    I don't mind if someone who knows what they're doing designs the architecture
+    and lets AI do the grunt work. I haven't studied the project in depth though.
+  score: 1
+  posted_at: '2026-11-16T09:48:59Z'
+article:
+  url: https://ykiko.me/en/articles/2105384023094834022/
+  title: 'clice v1.0 Released: Welcome to Modern C++ | ykiko''s blog'
+  fetch_status: success
+  content: |+
+    ![clice v1.0 Released: Welcome to Modern C++](https://www.ykiko.me/en/articles/2105384023094834022/featured.png)
+    Table of Contents
+
+    - [What is clice?](#what-is-clice)
+      - [Language Server](#language-server)
+      - [Command Line](#command-line)
+    - [The story behind it](#the-story-behind-it)
+      - [Why not improve clangd?](#why-not-improve-clangd)
+      - [How did we get here?](#how-did-we-get-here)
+      - [What about agents?](#what-about-agents)
+    - [To be continued](#to-be-continued)
+
+    [clice](https://github.com/clice-io/clice) recently hit 1,000 commits, a special milestone for the project. Since July 19, 2026, clice has been shipping nightly builds and going through roughly four months of alpha testing, with a huge number of bugs fixed thanks to real-world feedback from early users. Over the same stretch, I built a rigorous testing system for clice and ran extensive tests across many real open-source projects, tracking down and fixing the issues they uncovered. What does that mean? Every core feature is now stable, and you rarely run into problems in day-to-day use. So I think the time is right to ship the first stable release. The project looks very different today from where it stood two years ago in [Design and Implementation of a New C++ Language Server](https://www.ykiko.me/en/articles/13394352064), and this is probably the first time I’m promoting it widely, so please let me introduce it to you once again! This is the project I have poured the past **two and a half years** into, the work I am proudest of, the one that has excited me the most and left me sad and anxious more times than I can count, and the most ambitious thing I have taken on in my short life.
+
+    ## What is clice?[#](#what-is-clice)
+
+    In short, clice is a C/C++ language server written in **modern C++** , but it’s **more than** just a language server. It is still built on LLVM/Clang, but unlike clangd and ccls, which are also Clang-based, clice was redesigned from the ground up to fix architectural problems that have gone unsolved in those servers for years. It is written entirely in C++23 and serves as an example of modern C++ best practices in its own right, with all the major modern C++ features coming together remarkably well:
+
+    - Written entirely with C++20 [coroutines](https://github.com/clice-io/kotatsu/tree/main/include/kotatsu/async), using our own libuv-based structured-concurrency async library for intricate asynchronous logic. It is a complex concurrent program running an event loop on the main thread while coordinating both multiple processes (IPC) and multiple threads.
+    - Written entirely with C++20 named modules and C++23 `import std`, and fully self-hosted: module wrappers for third-party libraries are generated automatically by `clice modularize`, and clice runs smoothly on its own codebase to provide module-aware language services.
+    - Uses [static reflection](https://github.com/clice-io/kotatsu/tree/main/include/kotatsu/codec) built on templates and C++20 concepts for all serialization and deserialization across formats, including TOML, JSON, bincode, blob, and command-line arguments, with Rust-macro-like declarative annotations and zero boilerplate.
+    - Data-oriented code design throughout, with almost no virtual functions outside the callback interfaces Clang requires. Makes heavy use of modern C++ APIs like `std::format`, `std::expected`, `std::ranges`, and `std::views`, steering clear of outdated legacy C++98/11 APIs.
+    - A completely hermetic, reproducible build powered by Bazel, compiled with the unified [xclang](https://github.com/clice-io/xclang) toolchain for a consistent cross-platform cross-compilation workflow. Compiled binaries are heavily optimized (PGO + LTO), and build artifacts depend on nothing beyond system libraries.
+
+    > People are always debating whether modern C++ features like modules are actually ready for real work. clice’s answer is: yes, of course, completely usable! They hold up for complex software like clice, with hundreds of thousands of lines of code. Maybe this is what the modern C++ we have been hoping for looks like. That said, the surrounding ecosystem really is inconvenient enough right now that getting this whole workflow running end to end took a huge amount of effort on my part to track issues and adapt everything.
+
+    ### Language Server[#](#language-server)
+
+    Here is an overview of clice’s main features:
+
+    - Multi-process compilation: clice compiles code in a process pool modeled after modern web browsers, whereas clangd uses multithreading. Why multiple processes? Because C++ is simply **too complex** , and on certain [corner cases](https://github.com/clice-io/clice/issues/1057) the compiler can easily crash or leak memory. That is especially true for **incomplete** code in the middle of editing: a huge downstream user base tests compilers on complete code, while very few people test them on half-written code, where the compiler mostly falls back on best-effort heuristics. In clangd, a compiler crash takes down the whole server and forces a restart. In clice, compilation happens in isolated child processes: losing one worker does not affect the rest of the server, so go-to-definition, highlighting, and other services keep working. It also makes it much easier to manage memory usage and schedule compilation priorities, cutting down on unnecessary resource consumption.
+
+    - Modules and shared caching: clice has full support for C++20 named modules. All you need is a `compile_commands.json` containing all module files, and clice scans dependencies on its own and lazily builds required modules on demand, regardless of your build system or compiler, with full support for module completion, highlighting, go-to-definition, hover, and more. Built PCHs and PCMs are also cached on local disk for reuse across sessions. By comparison, clangd offers only very limited module support and no persistent cache.
+
+    - Compilation context: clice has full support for non-self-contained files, and more generally for the concept of a compilation context. You can explicitly pick the active context of a file: a specific compile command for a source file, or a specific inclusion site for a header. When you open a non-self-contained file, clice detects its context automatically, so it works out of the box. More broadly, it also supports grouping compile commands into build configurations, letting you switch between, say, debug and release.
+
+    - Better template support: clice implements a DFS pseudo instantiator that infers what many dependent names resolve to without needing concrete template arguments for a full instantiation. When a template has been instantiated once, clice also draws on that instantiation to power language features, such as completing on `auto` parameters of a lambda passed to a `ranges` call. On top of that, clice treats a template as a duck-typed interface and each instantiation as one of its implementations, much like a virtual function and its overrides: Go to Implementation on a dependent call inside a template lists the functions it actually calls across every instantiation, and Find References and Call Hierarchy work the same way.
+
+    - Out-of-the-box experience: Most projects need nothing more than a `compile_commands.json`. clice ships with built-in environment probing for 50+ toolchains, covering nvcc, MSYS2, Cygwin, zigcc, and more, automatically handling mismatches between your actual compiler and Clang. You don’t have to manually add piles of compiler flags to a config file the way you do with clangd.
+
+    Beyond these main features, clice also fixes a long list of smaller clangd issues that have gone untouched for years across semantic highlighting, folding, hover, and more. If you’re interested, give it a try and see what surprises you find. Overall, clice surpasses clangd in ease of use, feature support, and performance. You can install the clice extension in VS Code and other editors and start using it right now.
+
+    ### Command Line[#](#command-line)
+
+  error:
+  fetched_at: '2026-11-16T10:45:00Z'
+archived_at: '2026-11-16T10:45:00Z'
+...
