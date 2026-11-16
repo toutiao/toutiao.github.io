@@ -1,0 +1,136 @@
+---
+post:
+  id: lo-gm4vao
+  source: lobsters
+  title: 'Quality IMAP, Part 1: Your Mailbox Is A Database'
+  url: https://aerogramme.deuxfleurs.fr/blog/2026-quality-imap-part-1/
+  hn_url: https://lobste.rs/s/gm4vao
+  score: 12
+  author: gasche
+  posted_at: '2026-11-16T16:25:38Z'
+  fetched_at: '2026-11-16T21:43:45Z'
+  article_url: https://aerogramme.deuxfleurs.fr/blog/2026-quality-imap-part-1/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T21:43:48Z'
+  raw_comment_count: 2
+  tags:
+  - email
+  - testing
+comments:
+- id: lo-1zfw5u
+  parent_id: '0'
+  author: gasche
+  text: |-
+    The authors explain that the Dovecot testsuite helped them implement their own program. I wonder if their own efforts could in turn generate a cross-implementation testsuite that would be shared with other authors of email clients. This is tricky because the fuzzing effort concentrates on their internal AST structure for email (that it can be printed and reparsed correctly), and different implementations will use different internal ASTs for emails.
+    Ideally there would exist a sort of standard/conventional format for "structured email addresses" that is an easy-to-parse sort of AST for email, independent of a specific library's implementation. Then the authors (or really anyone) could use their fuzzing testsuite to generate streams of (parsed email, structured email) pairs, that could be used for testing by any author of an email library -- assuming they have a parser from structured emails to their own internal AST.
+  score: 2
+  posted_at: '2026-11-16T16:47:20Z'
+- id: lo-otklfz
+  parent_id: '0'
+  author: armael
+  text: Author of the post here, happy to answer questions!
+  score: 3
+  posted_at: '2026-11-16T16:55:15Z'
+article:
+  url: https://aerogramme.deuxfleurs.fr/blog/2026-quality-imap-part-1/
+  title: 'Quality IMAP, Part 1: Your Mailbox Is A Database | Aerogramme blog'
+  fetch_status: success
+  content: "# Quality IMAP, Part 1: Your Mailbox Is A Database \n[\n\n](/blog/ \"Back
+    to blog posts\")\n\nPublished on\n\n 19 min reading time 3704 words \n\n_During
+    the past year, we have significantly improved the reliability and correctness
+    of Aerogramme's IMAP implementation. This is the first part in a series of blog
+    posts elaborating on why implementing IMAP correctly is not so easy, and the set
+    of techniques we have been using to make our IMAP code as high-quality as we can.
+    In this first part, we focus on one challenging aspect of IMAP: fine-grained retrieval
+    and querying of emails._\n\n* * *\n\n_[Aerogramme](https://aerogramme.deuxfleurs.fr/)
+    is an experimental email server (& calendar, contacts), designed to be geo-distributed,
+    hosted outside of datacenters, on refurbished hardware, and reliable even in presence
+    of network issues and hardware failures. It is built on top of[Garage](https://garagehq.deuxfleurs.fr/)
+    and shares the same philosophy. Aerogramme is AI-free: we do not wish to use unethical
+    technology and prefer to spend effort on careful craftmanship and community-building._\n\n**Implementing
+    an IMAP server is not easy.** Partly because IMAP is an old protocol, with a good
+    number of extensions that has accumulated quite a bit of complexity over time.
+    On top of that IMAP provides - for good reasons - two classes of features that
+    are fundamentally challenging to implement: fine-grained retrieval and querying
+    of email contents and concurrent multi-client multi-session access to mailboxes.\n\nThis
+    is the first part in a series of posts discussing how we have been approaching
+    IMAP access. In the past year, we have been refining Aerogramme's IMAP implementation
+    to be \"more correct\", in a context where \"correctness\" is unfortunately not
+    always well specified: IMAP and email are defined in documents that are often
+    vague, and furthermore, real-world implementations do not always follow specifications.\n\nToday,
+    we'll walk you though our work on the **correctness and reliability of Aerogramme
+    for retrieving and querying emails** , and explain why your mailbox is, in fact,
+    a database...\n\n_This work was funded by [NLNet](https://nlnet.nl) under the
+    \"[Aerogramme 1.0](https://nlnet.nl/project/Aerogramme-1.0/)\" grant, and could
+    not have been possible without their support._\n\n_Feel free to join the Aerogramme
+    [matrix channel](https://matrix.to/#/#aerogramme:deuxfleurs.fr) for updates or
+    if you just want to chat!_\n\n# Your mailbox is a database\n\nOne challenge of
+    the IMAP specification is the rich feature-set it provides for retrieving mailbox
+    and email contents. We may sometimes think of a mailbox as a directory containing
+    plain email files; however, from the point of view of an IMAP server (or client),
+    a mailbox is closer to a database, accessed using a dedicated query language.\n\nFor
+    instance, mobile clients, which have slower and unreliable connectivity, benefit
+    from fine-grained querying of a mailbox contents. User experience is much better
+    if an email client can selectively fetch the subject of new emails (to update
+    the list of emails in the mailbox) without having to first download all of their
+    attachments or doing a sync of the entire mailbox.\n\nTo facilitate the mobile
+    client use-case, IMAP specifies two key mechanisms for querying and (partial)
+    retrieval of emails in a mailbox:\n\n- [SEARCH](https://datatracker.ietf.org/doc/html/rfc3501#section-6.4.4)
+    looks up the emails in a mailbox that satisfy a given \"search criteria\"; it
+    returns their identifiers. Criteria can select emails based on the contents of
+    specific headers, date, text contents, or flags - metadata attached to emails
+    that can be edited by the client. It can also be any combination of those using
+    OR/NOT/AND boolean operators.\n- [FETCH](https://datatracker.ietf.org/doc/html/rfc3501#section-6.4.5)
+    queries the contents of an email given its identifier. Extremely versatile. On
+    top of fetching the entire email, it allows querying an email based on its high-level
+    structure (emails have a recursive structure with sub-parts containing e.g. attachments
+    or text+html alternative views of the same contents), its raw byte-level representation,
+    or a combination of both. It is possible to selectively fetch sub-parts of an
+    email (according to its structure), obtain an \"abstract syntax tree\" (AST) for
+    the email and the value of some of its headers, and also fetch specific byte ranges
+    for sub-parts.\n\nA direct consequence of these features is that **an IMAP server
+    actually needs to parse the emails, not just store them**. It then needs to (correctly)
+    interpret the (sometimes tricky) query language of SEARCH and FETCH, and internally
+    support a data architecture that enable efficiently searching and querying over
+    the emails.\n\n# Email querying in Aerogramme\n\nOur implementation of SEARCH
+    and FETCH is backed by the three following components:\n\n_The logic for SEARCH
+    and FETCH is implemented as an interpreter_ that takes already parsed emails and
+    walks down their AST to evaluate IMAP-specific queries. This separates email structure
+    (email ASTs do not depend on IMAP concepts) from IMAP-specific business logic.
+    This layer has been_significantly reworked_ in the last months, fixing a good
+    number of logic bugs and edge cases in our implementation of the SEARCH and FETCH
+    IMAP specification.\n\n_Email parsing is done using the[eml-codec](https://git.deuxfleurs.fr/deuxfleurs/eml-codec)
+    companion library_, that we also develop and maintain. The eml-codec library parses
+    emails into a rich, structured AST while also giving access to raw input slices
+    that correspond to relevant AST nodes; this is required for implementing FETCH.
+    In the past year, eml-codec has evolved from an email parsing library with IMAP-specific
+    quirks to a robust, well-tested, general-purpose email library with support for
+    both parsing and printing of emails. You can read more about the library design
+    choices in our work-in-progress [design document](https://git.deuxfleurs.fr/Deuxfleurs/eml-codec/src/branch/main/doc/DESIGN.md).\n\n_Aerogramme's
+    internal data architecture splits mailbox state, email metadata, and email contents._
+    It is [briefly described](https://aerogramme.deuxfleurs.fr/documentation/internals/mailbox/)
+    in Aerogramme's documentation. Mailbox state (emails IDs and flags) and email
+    metadata (parsed headers, date, size) are stored in Aerogramme's metadata storage
+    using [Garage K2V](https://garagehq.deuxfleurs.fr/documentation/reference-manual/features/#k2v-api-experimental),
+    while email contents are stored in blob storage using [Garage S3](https://garagehq.deuxfleurs.fr/documentation/reference-manual/features/#s3-api).
+    This allows SEARCH to be efficient by only reading pre-computed information in
+    metadata storage. At the moment there are no other significant optimizations for
+    FETCH/SEARCH; the likely next step would be to add a full-text search engine.\n\nThese
+    components are all quite non-trivial! Let's now talk about the strategies we've
+    deployed to make them as correct as we could.\n\n# Testing Aerogramme's FETCH
+    and SEARCH query interpreter\n\nWe ran our implementation of FETCH and SEARCH
+    through[ImapTest](https://dovecot.github.io/imaptest/): a testing tool for IMAP
+    servers maintained by the Dovecot developers. `ImapTest` was invaluable in surfacing
+    issues with FETCH and SEARCH, but is equally useful to test all other aspects
+    of IMAP.\n\nMost relevant for FETCH and SEARCH was the test suite provided with
+    `ImapTest`: a collection of hand-crafted test scenarios testing many subtle or
+    \"interesting\" aspects of the IMAP specification. Each scenario consists of IMAP
+    commands to send to the server, and a specification of the corresponding expected
+    responses.\n\nRunning the ImapTest test suite found a small number of bugs in
+    SEARCH, mostly in edge-cases of the specification. However, testing FETCH revealed
+    that our initial implementation of the `BODY[<section>]` subcommand was conceptually
+    wrong in many cases! This subcommand of `FETCH` retrieves a sub-part of an email
+    by followi"
+  error:
+  fetched_at: '2026-11-16T21:43:48Z'
+archived_at: '2026-11-16T21:43:49Z'

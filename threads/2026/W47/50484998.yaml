@@ -1,0 +1,544 @@
+---
+post:
+  id: '50484998'
+  title: Do we still have to denormalize? Have your schema and search it too
+  url: https://www.paradedb.com/blog/joins
+  hn_url: https://news.ycombinator.com/item?id=50484998
+  score: 116
+  author: ''
+  posted_at: '2026-11-13T15:31:50Z'
+  fetched_at: '2026-11-16T21:43:44Z'
+  article_url: https://www.paradedb.com/blog/joins
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T21:43:44Z'
+  raw_comment_count: 44
+comments:
+- id: '50513163'
+  parent_id: '50484998'
+  author: dan_thinks
+  text: This looks exciting for some searches (top k), but the headline doesn&#x27;t
+    really fit. Yes - we still have to denormalize. Just not for some of the use cases
+    paradedb targets. Impressive work.
+  score: 0
+  posted_at: '2026-11-16T02:05:10Z'
+- id: '50513732'
+  parent_id: '50484998'
+  author: jamesgresql
+  text: Any questions please go for it, ParadeDB team is watching.
+  score: 0
+  posted_at: '2026-11-16T03:37:58Z'
+- id: '50513783'
+  parent_id: '50484998'
+  author: gopalv
+  text: '&gt; Instead of joining the tables completely and sorting at the end, a Rank
+    Join streams its inputs in descending score order (sorted access, or SA), building
+    candidate result-sets as it goes.<p>Your algorithm feels like a variant of the
+    WAND algorithm the Snowflake Top-K pruning paper [1] pulls from.<p>You can go
+    distributed with this approach if you have a &quot;gossip&quot; protocol between
+    workers to distribute the heap boundaries periodically.<p>Before the AI age, a
+    &quot;papers we love&quot; group was a great thing within any company.<p>Now,
+    Claude or Codex will know the SOTA literature around a topic like this and &quot;uniformly
+    distribute&quot; the past into every single implementation of a similar idea.
+    The future isn&#x27;t uniformly distributed, but the past is getting the treatment
+    &amp; that&#x27;s good.<p>[1] - <a href="https:&#x2F;&#x2F;arxiv.org&#x2F;html&#x2F;2504.11540v1#S5"
+    rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;html&#x2F;2504.11540v1#S5</a>'
+  score: 0
+  posted_at: '2026-11-16T03:48:47Z'
+- id: '50514079'
+  parent_id: '50513783'
+  author: stuhood
+  text: 'Yes! Search engines like Tantivy have long employed WAND to score across
+    terms. The difference though is that WAND is not joining terms in descending order
+    by score: rather, by doc-id.<p>This algorithm is closer to Fagin&#x27;s Threshold
+    Algorithm (also mentioned in your link): the Threshold Algorithm was the first
+    iteration of a rank join.'
+  score: 0
+  posted_at: '2026-11-16T04:35:04Z'
+- id: '50514108'
+  parent_id: '50484998'
+  author: anon373839
+  text: ParadeDB is the best! I really like the Django integration (<a href="https:&#x2F;&#x2F;github.com&#x2F;paradedb&#x2F;django-paradedb"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;paradedb&#x2F;django-paradedb</a>).
+    You get proper BM25 scoring, fuzzy matching, hybrid search, metadata filtering
+    while still just using  QuerySets. And you&#x27;re keeping everything in Postgres,
+    so there isn&#x27;t any need to manage or sync a separate DB&#x2F;search engine.
+  score: 0
+  posted_at: '2026-11-16T04:39:46Z'
+- id: '50514286'
+  parent_id: '50484998'
+  author: amluto
+  text: This is neat, but I’m a bit confused by the query that motivates the whole
+    article. If I search for ‘ocaml’, I want to match users’ about_me (the users.about_me
+    ||| &#x27;ocaml&#x27; part), but I do really want this to match on the basis of
+    each (completely irrelevant) post and&#x2F;or comment that gets picked up by the
+    join?  I think I would rather match <i>the user</i>, possibly with some user scoring
+    by the overall user score independent of my search term.<p>I feel like I would
+    probably execute three separate queries and merge the results myself.  And the
+    user query wouldn’t join against posts at all.  Doing this would end up implicitly
+    doing something like the optimization in the article.
+  score: 0
+  posted_at: '2026-11-16T05:09:44Z'
+- id: '50514969'
+  parent_id: '50514286'
+  author: radiospiel
+  text: Indeed. The query should maybe be a UNION ALL over individual search results
+    instead.
+  score: 0
+  posted_at: '2026-11-16T07:20:43Z'
+- id: '50514986'
+  parent_id: '50484998'
+  author: bartvk
+  text: The article mainly talks about searching.<p>What about the use case where
+    data frequently gets updated as well? I assume you then get to update lots of
+    duplicate data.
+  score: 0
+  posted_at: '2026-11-16T07:24:58Z'
+- id: '50515257'
+  parent_id: '50513732'
+  author: nehalem
+  text: I would like to try out ParadeDB and potentially retire Typesense but being
+    unable to install it in CloudSQL makes it more than difficult.
+  score: 0
+  posted_at: '2026-11-16T08:15:49Z'
+- id: '50515626'
+  parent_id: '50484998'
+  author: KellyCriterion
+  text: Denormalization &amp; Joins are mainly a thing from 80-90s when diskspace
+    &amp; compute was expensive; today its easy just do denormalize everything and
+    not use joins, since diskspace &amp; RAM today is abundant.<p>(sure, not true
+    for that one verylarge enterpriseDB at megacorpX, but in 95% of uses cases these
+    topics do not matter anymore)
+  score: 0
+  posted_at: '2026-11-16T09:21:01Z'
+- id: '50515638'
+  parent_id: '50514986'
+  author: nraynaud
+  text: The index is columnar, so the writes are less scattered on disk than in a
+    row-style B tree even when the updated values are very scattered in logical order
+    I think.
+  score: 0
+  posted_at: '2026-11-16T09:24:13Z'
+- id: '50515772'
+  parent_id: '50515626'
+  author: lompad
+  text: That makes it rather annoying to keep data consistent though, and tons of
+    people just won&#x27;t take enough care to properly update everything. Having
+    had to deal with that kind of half-out-of-date mess, I&#x27;d rather not, tbh.
+  score: 0
+  posted_at: '2026-11-16T09:43:19Z'
+- id: '50515795'
+  parent_id: '50515626'
+  author: oulipo
+  text: 'Not really, as the article mentions: if you simply denormalize everything,
+    each time you need to eg update a user name, you suddenly have to update its whole
+    posts and comments everywhere, making it something quite expensive'
+  score: 0
+  posted_at: '2026-11-16T09:47:54Z'
+- id: '50515806'
+  parent_id: '50513732'
+  author: oulipo
+  text: In my case I&#x27;m not so much interested by the BM25 aspect (I don&#x27;t
+    really have text to search), but I have collection of objects with many columns
+    (having a small-ish number of values, et categories&#x2F;tags) and I&#x27;d like
+    to have an easy way to facet-filter them efficiently.<p>Right now with &quot;vanilla
+    Postgres&quot; I have to guess which combination of facets is going to be common
+    and try to define indexes for these. Would ParadeDB help there?
+  score: 0
+  posted_at: '2026-11-16T09:50:16Z'
+- id: '50515936'
+  parent_id: '50515795'
+  author: KellyCriterion
+  text: a) thats the reason why lot of platforms do not allow to change username after
+    signup<p>b) absolutely manageable with a solid tooling (and honestly, in 99% of
+    cases this event is trivial as most systems just do not hold enough data to make
+    it like a &quot;eeek this change will run for 3 days for that 1 user&quot;)
+  score: 0
+  posted_at: '2026-11-16T10:10:01Z'
+- id: '50515952'
+  parent_id: '50515626'
+  author: fallingbananna
+  text: This is true only if you have *very* specific data.
+  score: 0
+  posted_at: '2026-11-16T10:12:57Z'
+- id: '50515967'
+  parent_id: '50515626'
+  author: load-bearing
+  text: But why do it? You yourself are saying that it increases resource usage (which
+    is mentality that left us with electron BTW), and creates additional difficulty
+    with keeping data consistent. What&#x27;s the upside?<p>I&#x27;ve never worked
+    on anything, and probably won&#x27;t ever work, that wouldn&#x27;t fit in modern
+    machines even in heavily denormalized forms, and have zero desire to do it just
+    for consistency sake. 3NF or up, with very rare exceptions.
+  score: 0
+  posted_at: '2026-11-16T10:14:32Z'
+- id: '50515972'
+  parent_id: '50515626'
+  author: RugnirViking
+  text: I do not agree, I believe normalization leads to a lot of other benefits like
+    making you think about connections between data much more carefully, and thinking
+    about what you need for each request. Denormalized tables have led way too many
+    times in my experience to hapless developers fetching enormous amounts of data
+    just to use a tiny amount far too often.<p>And db performance absolutely is an
+    issue. Agents mess it up all the time on our codebases...
+  score: 0
+  posted_at: '2026-11-16T10:15:45Z'
+- id: '50515982'
+  parent_id: '50515626'
+  author: vidarh
+  text: Denormalization brings a complexity cost when updating to ensure integrity,
+    though. And if storage and compute is cheap then you can easily get the benefits
+    of denormalization without the downsides by keeping data normalized for consistency
+    and instead build indexes to let you query it dernormalized when it makes sense.
+  score: 0
+  posted_at: '2026-11-16T10:16:36Z'
+- id: '50516129'
+  parent_id: '50515626'
+  author: fergie
+  text: "&gt; today its easy just do denormalize everything and not use joins<p>You
+    _can_ take this approach on a read-heavy db, but depending on your usecase you
+    are going to struggle with updates and writes."
+  score: 0
+  posted_at: '2026-11-16T10:43:10Z'
+- id: '50516178'
+  parent_id: '50484998'
+  author: jillesvangurp
+  text: Searching what you stored is nice. But usually, you want to put some ETL (extract,
+    transform, and load) in between your data base and search indices that enables
+    you to enrich, transform, and improve data. If you are using vector search, this
+    is also where you calculate your embeddings and run your data to elaborate tokenization
+    pipelines. And you might do things like calculate categorizations and other classifications
+    that you might use for filtering.<p>Search quality tuning inevitably involves
+    iterating on how you index your data. The value of separation of where your database
+    and search index live is that you can try out new indexing strategies and try
+    different strategies.<p>I&#x27;ve been consulting on how to improve search quality
+    for some time and sorting out ETL is usually the first thing I need to do for
+    clients. A good question is &quot;when did you last reindex your data&quot;. If
+    the answer is never, that usually means the clien is probably not able to do this
+    easily and that they probably made a lot of mistakes when they set up their system
+    first. I&#x27;ve helped quite a few clients like that.<p>ETL doesn&#x27;t have
+    to mean bringing in a lot of complexity. A few simple python or whatever scripts
+    can do the job. And many people don&#x27;t actually have a lot of data which means
+    these scripts can run quickly. I&#x27;ve had clients where it only took a few
+    seconds to rebuild their search indices.<p>ParadeDB seems premised on the notion
+    of just skipping all this. IMHO this is usually a mistake and if you were to do
+    this properly, you&#x27;d still end up with a separate db from which you index
+    into ParadeDB. Of course, if you do that, you could question if you could not
+    pick something else instead.
+  score: 0
+  posted_at: '2026-11-16T10:50:44Z'
+- id: '50516287'
+  parent_id: '50515967'
+  author: weego
+  text: Your assumption that increased resource usage is single concept with one outcome
+    and no nuance is entirely false (where do the problems of engineering a desktop
+    app even overlap with row level schema planning in a database?)<p>The claim that
+    is somehow causes data consistency issues also seems kind of unsubstantiated.<p>The
+    upside is that when you model it correctly your data conforms to your domain and
+    business in a way that makes every aspect of its use easier.
+  score: 0
+  posted_at: '2026-11-16T11:11:51Z'
+- id: '50516428'
+  parent_id: '50515626'
+  author: meindnoch
+  text: Or keep your data normalized, and maintain materialized views if and when
+    they&#x27;re needed.
+  score: 0
+  posted_at: '2026-11-16T11:34:41Z'
+- id: '50516736'
+  parent_id: '50515936'
+  author: fauigerzigerk
+  text: "<i>&gt;a) thats the reason why lot of platforms do not allow to change username
+    after signup</i><p>Nor any of the other user data that is indexed with every single
+    post?"
+  score: 0
+  posted_at: '2026-11-16T12:11:49Z'
+- id: '50517018'
+  parent_id: '50516736'
+  author: KellyCriterion
+  text: If I look at my youtube comment notification, Id say propably not? (Timestamp
+    belongs to a post as well as likes etc.?)
+  score: 0
+  posted_at: '2026-11-16T12:43:54Z'
+- id: '50517535'
+  parent_id: '50515257'
+  author: sorenbs
+  text: This might not be an option for you, but Prisma Postgres ships ParadeDB by
+    default. We have a generous free tier.
+  score: 0
+  posted_at: '2026-11-16T13:44:18Z'
+- id: '50517548'
+  parent_id: '50515936'
+  author: sgarland
+  text: Experience across multiple companies of varying size and maturity has proven
+    to me that devs are incapable of doing the RDBMS’ job for it; there are <i>always</i>
+    orphaned rows and referential integrity issues when FK Constraints get dropped.<p>Databases
+    are hard. They’re also some of the best-tested code that exists, so maybe let
+    them do their job.
+  score: 0
+  posted_at: '2026-11-16T13:45:06Z'
+- id: '50517697'
+  parent_id: '50515626'
+  author: cmiles74
+  text: "...And watch your updates take longer as they now update several columns
+    over several tables instead of just one column in one table, and be sure to ensure
+    that changes don&#x27;t leave any data in an inconsistent state. I don&#x27;t
+    think this is an &quot;enterprise&quot; issue, it&#x27;s about maintaining your
+    data, and that effects 99% of applications that store data in a database."
+  score: 0
+  posted_at: '2026-11-16T14:03:01Z'
+- id: '50518196'
+  parent_id: '50515257'
+  author: isaacvando
+  text: 'If you want to stay on CloudSQL, you can always setup a ParadeDB cluster
+    as a logical replica. Our cloud offering is in private preview if you&#x27;d like
+    to try: <a href="https:&#x2F;&#x2F;app.paradedb.com">https:&#x2F;&#x2F;app.paradedb.com</a>'
+  score: 0
+  posted_at: '2026-11-16T14:50:57Z'
+- id: '50518237'
+  parent_id: '50516287'
+  author: lompad
+  text: "&gt; The claim that is somehow causes data consistency issues also seems
+    kind of unsubstantiated.<p>Let me explain that part a bit more. If you have one
+    application, developed by at most a handful of devs, there will not be any consistency
+    issues. But add a few more applications and even a dozen devs (or just simply
+    a decade of time and some staff changes), and there _will_ be misunderstandings&#x2F;issues
+    identifying the correct rows to update, with exact interpretation differing per
+    application.<p>Congratulations, you now own a mess. Correcting this after the
+    fact is a major effort.<p>If you&#x27;re in 3NF this can&#x27;t really happen
+    - the exist once and only once. It&#x27;s always clear which to update and nothing
+    can be forgotten."
+  score: 0
+  posted_at: '2026-11-16T14:55:19Z'
+- id: '50518283'
+  parent_id: '50516178'
+  author: Veliladon
+  text: You&#x27;ll spend what time you save and more trying to keep all the unnormalized
+    data consistent.
+  score: 0
+  posted_at: '2026-11-16T14:58:14Z'
+- id: '50518879'
+  parent_id: '50514969'
+  author: onedognight
+  text: They compare to UNION ALL in passing:<p>&gt; Getting that original, natural
+    SQL query down to 100 ms on a single core (12x-50x faster than the 84-line UNION
+    ALL rewrite, and within range of a fully denormalized dataset) required rethinking
+    how joins and search indexes interact
+  score: 0
+  posted_at: '2026-11-16T15:47:58Z'
+- id: '50519230'
+  parent_id: '50515806'
+  author: stuhood
+  text: 'Yes, I believe that it would.<p>It sounds like you are in a similar boat
+    to <a href="https:&#x2F;&#x2F;www.paradedb.com&#x2F;customers&#x2F;moderntreasury">https:&#x2F;&#x2F;www.paradedb.com&#x2F;customers&#x2F;moderntreasury</a>:
+    no BM25 scoring, but a need to filter, sort, and aggregate by a variety of columns.'
+  score: 0
+  posted_at: '2026-11-16T16:13:35Z'
+- id: '50519299'
+  parent_id: '50514286'
+  author: stuhood
+  text: 'It very much depends which noun you are searching for (e.g., what the shape
+    of your search results will be):<p>The central query in the blog would likely
+    be the type of query you&#x27;d use for the default top-level search box on StackOverflow,
+    which is searching for posts and comments (e.g. questions and answers). The reason
+    to include users in that query is two fold: 1) posts&#x2F;comments from users
+    who are relevant to your query should get a higher score, 2) you need the users
+    to render the search results page anyway.<p>If you were doing only user search,
+    then I agree: you probably would only search the users table.'
+  score: 0
+  posted_at: '2026-11-16T16:19:30Z'
+- id: '50519343'
+  parent_id: '50518237'
+  author: williamdclt
+  text: 'while I mostly agree with you, you&#x27;re opposing &quot;teams who made
+    mistakes while denormalising&quot; with &quot;teams who made no mistake while
+    normalising&quot;. The biggest difference between these two scenarios isn&#x27;t
+    that one is using denormalisation and the other normalisation, it&#x27;s that
+    one made mistakes and the other didn&#x27;t.<p>In real life, the teams working
+    on a supposedly-normalised data schema will also make mistakes: they will model
+    their domain incorrectly, have information duplication without realising it at
+    first, different interpretation of the same data (accessing the same data doesn&#x27;t
+    mean they&#x27;ll interpret it the same way... or that it even _can_ be interpreted
+    in a consistent way if not modelled correctly).<p>I do agree that denormalisation
+    increases the chances of that happening. But IMO, there&#x27;s much more issues
+    on data modelling than there is in denormalisation. If you have a solid model
+    that is shared by everyone, you&#x27;ll have much fewer issues even with denormalisation
+    than if you have a not-solid model that is not-shared by everyone even with normalisation.'
+  score: 0
+  posted_at: '2026-11-16T16:22:40Z'
+- id: '50519804'
+  parent_id: '50519299'
+  author: amluto
+  text: If I’m searching for questions and answers, I don’t want an unrelated answer
+    from a very high ranked user who happens to mention the topic in their profile.
+  score: 0
+  posted_at: '2026-11-16T16:58:47Z'
+- id: '50519960'
+  parent_id: '50519804'
+  author: stuhood
+  text: 'Possibly, yea: scoring can be subtle. For a query like this, you&#x27;d likely
+    significantly &quot;boost&quot; (e.g. multiply) the scores from the questions
+    and answers to ensure that they are prioritized. But including the user score
+    as essentially a tiebreaker can be helpful.'
+  score: 0
+  posted_at: '2026-11-16T17:10:41Z'
+- id: '50520060'
+  parent_id: '50516178'
+  author: philippemnoel
+  text: Agreed that people need to iterate on their search index. Our users do this
+    a lot. Postgres has a clause called INDEX CONCURRENTLY, which allows you to build
+    an index in the background while the existing index continues to serve queries.<p>As
+    for embedding, etc., you can of course do this in Postgres as well. The &quot;T&quot;
+    in ETL can still be done in a Postgres-based product like ParadeDB, but you can
+    have it participate in transactions and avoid denormalizing (or denormalize much
+    less), etc.
+  score: 0
+  posted_at: '2026-11-16T17:19:23Z'
+- id: '50520081'
+  parent_id: '50514986'
+  author: philippemnoel
+  text: ParadeDB indexes stay in sync in real-time with the underlying table&#x27;s
+    UPDATEs, INSERTs and DELETEs. No actions needed on your side. We are specifically
+    designed for high update throughput.
+  score: 0
+  posted_at: '2026-11-16T17:20:57Z'
+- id: '50520252'
+  parent_id: '50520060'
+  author: philippemnoel
+  text: 'And of course, you can also index expressions to achieve this: <a href="https:&#x2F;&#x2F;www.paradedb.com&#x2F;docs&#x2F;reference&#x2F;indexing&#x2F;indexing-expressions">https:&#x2F;&#x2F;www.paradedb.com&#x2F;docs&#x2F;reference&#x2F;indexing&#x2F;indexing-ex...</a>'
+  score: 0
+  posted_at: '2026-11-16T17:33:01Z'
+- id: '50520933'
+  parent_id: '50515772'
+  author: pak9rabid
+  text: 'See: MongoDB'
+  score: 0
+  posted_at: '2026-11-16T18:23:20Z'
+- id: '50521231'
+  parent_id: '50519230'
+  author: oulipo
+  text: Interesting! I&#x27;m using a custom image (because I&#x27;m using timescaledb
+    too), can I just add the extra paradedb extension to my image and it will work
+    for normal postgres tables (I assume I can&#x27;t add a paradedb index on a timescale
+    hypertable?)
+  score: 0
+  posted_at: '2026-11-16T18:45:04Z'
+- id: '50521683'
+  parent_id: '50516129'
+  author: dam_jackalopes
+  text: I manage a pretty heavily denormalized data warehouse and it works pretty
+    well for us, but we have individuals in the org making noise about wanting functionality
+    to write back to the apps. Having to explain why this &quot;simple&quot; functionality
+    will cause significant heartburn to our analytics team isn&#x27;t at all fun.<p>At
+    least I didn&#x27;t design the thing so I have someone to shake my fist at.
+  score: 0
+  posted_at: '2026-11-16T19:15:26Z'
+- id: '50523212'
+  parent_id: '50521231'
+  author: philippemnoel
+  text: Yes, you can install the extension directly in your image. We publish prebuilt
+    binaries in our GitHub Releases.<p>I don&#x27;t know if it&#x27;ll work with TimescaleDB.
+    They do some weird shenanigans with Postgres tables :|
+  score: 0
+  posted_at: '2026-11-16T21:01:24Z'
+article:
+  url: https://www.paradedb.com/blog/joins
+  title: Do We Still Have to Denormalize? Have Your Schema and Search It Too | ParadeDB
+  fetch_status: success
+  content: "# Do We Still Have to Denormalize? Have Your Schema and Search It Too\n\n
+    ![Stu Hood headshot](/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fstu_headshot.ad88c2bc.jpeg&w=64&q=75&dpl=dpl_7omXgh8RD2B8upgsxyEvaMqph826)\n\nBy
+    Stu Hood on October 27, 2026\n ![Do We Still Have to Denormalize? Have Your Schema
+    and Search It Too](/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fhero.6fe23396.png&w=3840&q=75&dpl=dpl_7omXgh8RD2B8upgsxyEvaMqph826)\n\nSearch
+    usually means returning results sorted by relevance (like BM25 or vector similarity),
+    or summarizing results into **facets**. ParadeDB already [makes this fast](https://www.paradedb.com/blog/optimizing-top-k)
+    when your data lives in a single denormalized table.\n\nBut in a relational database,
+    data is usually normalized and factored out into separate tables, like `users`,
+    `posts`, and `comments`. We call searching across multiple joined tables a **search
+    join** , and making these queries fast is harder than it looks!\n\nHistorically
+    this pattern left people either choosing speed, and denormalizing via a fragile
+    ETL process into Elasticsearch, or choosing simplicity and accepting Postgres
+    slowly scoring and joining millions of rows only to return a handful of results.\n\nWe've
+    spent the last few months making search joins a first-class experience in ParadeDB,
+    removing the need to choose between complexity and slow queries. In our StackOverflow
+    benchmark, a multi-table search query is up to 1000x faster than vanilla Postgres
+    (dropping a natural 3-table Top-K search from 2 minutes to 100 ms), without the
+    burden of any additional infrastructure.\n\n## Why Search Pushes You to Denormalize\n\nTo
+    see what a search join looks like in practice, consider StackOverflow's data model,
+    which exercises both relational joins and search: `users` (2.3M rows), `posts`
+    (20M rows), `comments` (29M rows), and `badges` (29.4M rows), all of which should
+    be easily accessible from a search box or agent.\n\nYour instincts tell you that
+    when you store this dataset in a database, most of it should be normalized: you
+    don't want to denormalize users into their posts and comments and then need to
+    update every post or comment they've ever made when they update their profile.
+    When someone searches, you just want to write a single query that finds matches
+    across `users`, `posts`, and `comments`, ordered by their combined relevance scores:\n\n
+    \   SELECT\n      users.id AS user_id,\n      users.display_name,\n      posts.id
+    AS post_id,\n      posts.title,\n      comments.id AS comment_id\n    FROM\n      users\n
+    \     JOIN posts ON users.id = posts.owner_user_id\n      JOIN comments ON comments.post_id
+    = posts.id\n    WHERE\n      users.about_me ||| 'ocaml'\n      OR posts.title
+    ||| 'ocaml'\n      OR comments.text ||| 'ocaml'\n    ORDER BY\n      pdb.score(users.id)\n
+    \       + pdb.score(posts.id)\n        + pdb.score(comments.id) DESC,\n      comments.id
+    DESC\n    LIMIT 20;\n\nBut a traditional search engine tells you you can't write
+    it this way. If you try to export to Elastic, then you'll wade through \"`nested`
+    field types\", \"enrich processors\", \"`terms` lookup queries\", \"`runtime`
+    fields\", \"`LOOKUP JOIN`\" with its 10,000-row batch circuit breaker, \"client
+    side `_update_by_query`\", and \"`join` fields\" (only one per index!) before
+    realizing that you still have to choose to denormalize either users or badges
+    into every post and comment. And when you do denormalize, power-law skew makes
+    the write and space amplification much worse than average row sizes suggest. Not
+    only are you double writing into two databases, but the denormalized copy takes
+    up to 3x the storage after replication.\n\n## Why Search Joins Are Slow in Postgres\n\nWhat
+    if you skip the external search engine and run that query directly in vanilla
+    Postgres? On a B-Tree + GIN schema (with 8-way parallelism), it takes ~2 minutes
+    (118,000 ms).\n\n\"Just Use Postgres\" is a temptingly simple answer: but making
+    it possible with minimal compromise requires rethinking how Postgres both indexes
+    and executes queries. We've previously discussed [how ParadeDB's indexes maintain
+    transactional consistency](https://www.paradedb.com/blog/lsm-trees-in-postgres),
+    and [how they outperform built-in indexes for single-table Top-K](https://www.paradedb.com/blog/optimizing-top-k):
+    but joins sit above individual indexes, inside Postgres's query executor.\n\nExecuting
+    a search join quickly requires accessing the smallest amount of data you can (in
+    a locality friendly manner) before a Top-K or aggregate above the join reduces
+    its volume to something that can comfortably be rendered for your users. In this
+    case the bounded output (a small `LIMIT` or `GROUP BY`) is a critical portion
+    of the problem.\n\n ![Why search joins are hard in vanilla Postgres](/_next/static/media/search-join-funnel.da438a37.svg?dpl=dpl_7omXgh8RD2B8upgsxyEvaMqph826)\n\nWhen
+    you sort by a single column like `created_at`, Postgres could walk a B-Tree index
+    and finish once it has found 20 qualifying rows. When you sort by the sum of relevance
+    scores across `OR`'d tables, no tables are pre-ordered by that combined score.
+    Because a comment without 'ocaml' might still match via its post or user, Postgres
+    can't even filter the tables before joining them. It has to join all 28.5M rows
+    first, sum the scores for every triple, and only then sort and take the top 20.\n\nProcessing
+    all these rows is expensive, because Postgres's row-at-a-time executor needs to
+    fetch a tuple from the table storage (the **heap** ) to join on. When it fetches
+    that tuple, the cost of doing so is high enough that Postgres will always fetch
+    all columns that might be needed for the query (`display_name`, `title`, etc.):
+    even if the row is very likely to be eliminated later by the `LIMIT 20`.\n\nFor
+    aggregate queries, Postgres's lack of vectorization and the need to pick single
+    columns out of the heap similarly hamper its performance. Covering B-Tree indexes
+    (usually specialized for the particular aggregate you need to execute) can help,
+    but [degrade write throughput as they accumulate](https://www.paradedb.com/customers/moderntreasury)
+    (by introducing random writes in your insert path), and can't approach the aggregate
+    performance of a column store.\n\nSpecialized query rewrites (such as rewriting
+    the `OR` as an 84-line `UNION ALL` of separate per-table queries in a CTE) can
+    get you closer: down from ~2 minutes to 1.2s for a rare search term, but they're
+    much more code to maintain, and for a common term the runtime balloons to 14s.\n\nGetting
+    that original, natural SQL query down to 100 ms on a single core (12x-50x faster
+    than the 84-line `UNION ALL` rewrite, and within range of a fully denormalized
+    dataset) required rethinking how joins and search indexes interact.\n\n## Building
+    an Executor for Search Joins\n\nParadeDB's index unifies **columnar storage**
+    with BM25 and vector search, storing join keys and projected columns directly
+    inside the index across the queried tables.\n\nTo execute joins directly over
+    that columnar data (rather than tuple-at-a-time against the Postgres heap), using
+    Postgres's executor was not an option. Instead, after recognizing a search join
+    we intercept the query plan via Postgres's query planner hooks and propose a query
+    path that pushes the entire multi-table `JOIN` and `LIMIT` / `GROUP BY` (and `DISTINCT`,
+    `OVER`, `FILTER` etc) query to our columnar executor, built with [Apache DataFusion](https://datafusion.apache.org/).
+    All of your non-search queries continue to use Postgres's standard planner and
+    executor untouched, and for the queries we do accelerate, we extensively property
+    test to ensure equivalence to Postgres.\n\nDataFusion is one of the [fastest OLAP
+    query engines available today](https://benchmark.clickhouse.com/): it's built
+    around **vectorized execution** , and its shared-nothing model is a perfect fit
+    for Postgres's process model.\n\nBut one of DataFusion's most critical features
+    for ParadeDB is its extensibility. To turn an analytical engine into a low-latency,
+    transactional executor inside Postgres, "
+  error:
+  fetched_at: '2026-11-16T21:43:44Z'
+archived_at: '2026-11-16T21:43:45Z'

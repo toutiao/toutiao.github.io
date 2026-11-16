@@ -4,14 +4,14 @@ post:
   title: 'Protomaps: Self-hosting map tiles has gotten cheap and easy'
   url: https://bruceroettgers.eu/blog/protomaps/
   hn_url: https://news.ycombinator.com/item?id=50509837
-  score: 349
+  score: 451
   author: ''
   posted_at: '2026-11-15T19:26:22Z'
-  fetched_at: '2026-11-16T10:44:35Z'
+  fetched_at: '2026-11-16T21:43:36Z'
   article_url: https://bruceroettgers.eu/blog/protomaps/
   article_fetch_status: success
   article_fetched_at: '2026-11-16T00:49:24Z'
-  raw_comment_count: 56
+  raw_comment_count: 81
 comments:
 - id: '50510849'
   parent_id: '50509837'
@@ -455,6 +455,16 @@ comments:
     (using kart)
   score: 0
   posted_at: '2026-11-16T04:41:35Z'
+- id: '50514240'
+  parent_id: '50509837'
+  author: lakhya
+  text: For a browser viewer on a different origin, I’d test the actual 206 response
+    and CORS behavior from the deployed page, not just from curl. If the client needs
+    to inspect `Content-Range` or `ETag`, those response headers may need to be exposed;
+    a repeat range request also shows whether the CDN is serving the expected cached
+    slice.
+  score: 0
+  posted_at: '2026-11-16T05:03:03Z'
 - id: '50514377'
   parent_id: '50512020'
   author: bitbuilder
@@ -526,6 +536,233 @@ comments:
     able to undercut that price and still make a decent profit.
   score: 0
   posted_at: '2026-11-16T09:25:01Z'
+- id: '50515934'
+  parent_id: '50511863'
+  author: omnimus
+  text: I think main issue hosting services solve is keeping up the tiles up to date.<p>Maptiler
+    is pretty good company, maybe they would support the project.
+  score: 0
+  posted_at: '2026-11-16T10:09:43Z'
+- id: '50516210'
+  parent_id: '50509837'
+  author: globular-toast
+  text: 'I use this on my blog with MapLibreGL. I wrote up how I do it: <a href="https:&#x2F;&#x2F;blog.gpkb.org&#x2F;posts&#x2F;hugo-static-site-maps&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;blog.gpkb.org&#x2F;posts&#x2F;hugo-static-site-maps&#x2F;</a><p>One
+    thing I really like is that the data is static. This isn&#x27;t useful for some
+    applications, but for my use, namely blogging about my travels, it&#x27;s perfect.
+    I wouldn&#x27;t come back and edit the text or pictures to reflect subsequent
+    events, so why would I edit the map? Being able to take ad hoc snapshots of the
+    map at a point in time is perfect.'
+  score: 0
+  posted_at: '2026-11-16T10:56:40Z'
+- id: '50516263'
+  parent_id: '50512174'
+  author: Doctor_Fegg
+  text: Worth noting too that there&#x27;s been a fair amount of effort to fix generated
+    geometry issues in tilemaker, which was historically the pain point (essentially
+    because tilemaker&#x27;s geometry operations are based on Boost.Geometry rather
+    than JTS&#x2F;GEOS, and BG is a bit less developed in this sphere). It&#x27;s
+    a lot better now than it used to be and there&#x27;s a few PRs being merged soon
+    which will improve things further.
+  score: 0
+  posted_at: '2026-11-16T11:07:11Z'
+- id: '50516341'
+  parent_id: '50512020'
+  author: twelvechairs
+  text: The mature best practice in the geospatial industry is a postgis server with
+    R-tree based indexing of every item in space. Its pretty trivial to serve this
+    as dynamic vector tiles (e.g. &#x27;martin&#x27;) including at different scales&#x2F;zooms.<p>Few
+    people store data on a server as tiles though it might be served as tiles. Aside
+    from the added storage size, you dont want to have to update 20 levels tiles every
+    time one piece of data is added or removed.
+  score: 0
+  posted_at: '2026-11-16T11:21:05Z'
+- id: '50516570'
+  parent_id: '50514080'
+  author: nchmy
+  text: Thanks for sharing this. I&#x27;ll dig into how it differs from protomaps
+    today.
+  score: 0
+  posted_at: '2026-11-16T11:51:29Z'
+- id: '50516595'
+  parent_id: '50509837'
+  author: dromtrund
+  text: The svg tiles are decent for reverse geocoding too. I&#x27;ve had great success
+    splitting gps routes into segments by pulling location data out of relevant tiles.
+    A lot of the reverse geocoding APIs have pretty restrictive per-second limits
+    and response times in the order of 1-2 seconds. Hosting this in an s3 bucket costs
+    an order of magnitude less than any of the APIs I tried at my scale, with millisecond
+    latency, no request limits and near-flat volume scaling.
+  score: 0
+  posted_at: '2026-11-16T11:55:12Z'
+- id: '50516966'
+  parent_id: '50509837'
+  author: Eunice99x
+  text: Same experience on the routing side. I self-host Valhalla on a cheap VPS for
+    a road-trip planner instead of paying per request for a routing API. The setup
+    takes an afternoon of building tiles and figuring out the config, but after that
+    the cost is flat, and that&#x27;s what makes a free tier possible at all. Paying
+    per request for routing would have killed the free plan.
+  score: 0
+  posted_at: '2026-11-16T12:38:43Z'
+- id: '50517009'
+  parent_id: '50509837'
+  author: gorayobi
+  text: Word of warning. I had a client that was behind some corporate anti malware
+    proxy. Turned out it stripped the range header from the request and simply did
+    a request for the entire file. Had to implement a proxy endpoint just for them
+    so they could do classic WMTS style requests insetad.
+  score: 0
+  posted_at: '2026-11-16T12:43:04Z'
+- id: '50517039'
+  parent_id: '50509837'
+  author: jo-m
+  text: |-
+    I love protomaps, I have added it to my own hobby project to have a self-hosted fallback for regions (or times) where there are no SwissTopo maps available.<p>The app will periodically download the configured map regions and store the pmap files [1]. The Go backend then directly serves them to the frontend [2].<p>[1]: <a href="https:&#x2F;&#x2F;github.com&#x2F;jo-m&#x2F;cartomancer&#x2F;tree&#x2F;a02f042173b5ba1a7d9730344b300f1202d02099&#x2F;internal&#x2F;pkg&#x2F;maps" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;jo-m&#x2F;cartomancer&#x2F;tree&#x2F;a02f042173b5ba1a7d9...</a>
+    [2]: <a href="https:&#x2F;&#x2F;github.com&#x2F;jo-m&#x2F;cartomancer&#x2F;blob&#x2F;a02f042173b5ba1a7d9730344b300f1202d02099&#x2F;internal&#x2F;pkg&#x2F;api&#x2F;api.go#L117" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;jo-m&#x2F;cartomancer&#x2F;blob&#x2F;a02f042173b5ba1a7d9...</a>
+  score: 0
+  posted_at: '2026-11-16T12:46:44Z'
+- id: '50517230'
+  parent_id: '50517009'
+  author: wcedmisten
+  text: A common approach that&#x27;s recommended is to use cloudflare workers as
+    a translation layer from the classic &#x2F;z&#x2F;x&#x2F;y request format to the
+    HTTP range headers. That&#x27;s what I do on my sites, rather than using the pmtiles
+    protocol directly in MapLibre<p><a href="https:&#x2F;&#x2F;docs.protomaps.com&#x2F;deploy&#x2F;cloudflare"
+    rel="nofollow">https:&#x2F;&#x2F;docs.protomaps.com&#x2F;deploy&#x2F;cloudflare</a>
+  score: 0
+  posted_at: '2026-11-16T13:09:20Z'
+- id: '50517502'
+  parent_id: '50512892'
+  author: vladsanchez
+  text: This is amazing! I also love your BlockViz <a href="https:&#x2F;&#x2F;github.com&#x2F;BlueBlazin&#x2F;blockviz"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;BlueBlazin&#x2F;blockviz</a>
+    project. Keep Blazin!
+  score: 0
+  posted_at: '2026-11-16T13:40:38Z'
+- id: '50517591'
+  parent_id: '50516341'
+  author: boramalper
+  text: 'I think OpenFreeMap and Protomaps shift the complexity from <i>serving</i>
+    tiles to <i>building</i> tiles: the former approach requires a Postgres + PostGIS
+    + Martin + a reverse proxy whereas the latter approach requires nothing but a
+    web server (arguably OpenFreeMap requires a bit more than that, since it uses
+    BTRFS images).<p>If you are optimising for cost and read-traffic, such as OpenFreeMap,
+    shifting that complexity to a preparation step makes a lot of sense.'
+  score: 0
+  posted_at: '2026-11-16T13:50:29Z'
+- id: '50517830'
+  parent_id: '50512020'
+  author: oshawaconnectio
+  text: They are not the same; protomaps is for any map dataset whereas OpenFreeMap
+    is just for openstreetmap.
+  score: 0
+  posted_at: '2026-11-16T14:16:45Z'
+- id: '50517846'
+  parent_id: '50511502'
+  author: Nnnes
+  text: Once you get outside Cloudflare&#x27;s free tier, the Bunny setup in the original
+    post beats it pretty quickly. Cloudflare costs $0.30 (Workers invocations) + $0.36
+    (R2 class B operations) per million requests. Bunny charges for bandwidth but
+    not per request (!!), so assuming an average of 1kB&#x2F;request (map vector tiles
+    should be a bit less than this in my experience) that&#x27;s $0.005-$0.06 per
+    million depending on which region and tier you&#x27;re serving from.<p>The real
+    &quot;too good to be true&quot; might be GitHub Actions building a 100GB+ PMTiles
+    file for free
+  score: 0
+  posted_at: '2026-11-16T14:19:08Z'
+- id: '50517970'
+  parent_id: '50517846'
+  author: bcye
+  text: I think PM tiles are quite a bit larger. Just loading at a low zoom level
+    a view of the world triggers requests of ca. 500kB on my site, though that might
+    also overscan a bit or include the file header. From my calculations, for Bunny
+    to be cheaper the avg request should be at most 660kB at $0.01&#x2F;GB which should
+    probably hold true (I think just the worker invocations alone are already equivalent
+    to 300kB of traffic on Bunny)
+  score: 0
+  posted_at: '2026-11-16T14:29:51Z'
+- id: '50517977'
+  parent_id: '50513878'
+  author: bcye
+  text: Not sure satellite data is as freely available as OpenStreetMaps, I thought
+    the imagery is mostly copyrighted&#x2F;propietary.
+  score: 0
+  posted_at: '2026-11-16T14:30:34Z'
+- id: '50517986'
+  parent_id: '50514856'
+  author: bcye
+  text: Thank you :)
+  score: 0
+  posted_at: '2026-11-16T14:31:26Z'
+- id: '50518641'
+  parent_id: '50517970'
+  author: Nnnes
+  text: Huh yeah you&#x27;re right, I was off by about 100 orders of magnitude. pmtiles.io
+    shows tile sizes with &quot;Show tile bounds&quot; checked and they&#x27;re mostly
+    in the 30-100 kB range.<p>Bunny&#x27;s volume tier costs $5&#x2F;TB served, i.e.
+    $1 gets you 2~6.7 million tiles served, probably closer to 3.<p>But Cloudflare
+    also allows public R2 buckets so we could potentially ignore the Workers cost,
+    i.e. $1 gets you 2.8 million tiles served. I think caching just works in front
+    of R2? So you get significant gains if your visitors are mostly looking at the
+    same areas and not zooming in all the way to their house every time.<p>So they
+    come out pretty evenly or with Cloudflare a bit on top depending on the scenario.
+    Bunny does has the advantage of easy data replication across regions (I don&#x27;t
+    know of a good way to achieve this with R2, although D1 has some kind of replication
+    feature in beta).<p>Both are still far, far cheaper than almost any vector tile
+    subscription I&#x27;ve come across. And, of course, more expensive than self-hosting
+    (at least at the hobbyist level).
+  score: 0
+  posted_at: '2026-11-16T15:30:20Z'
+- id: '50518677'
+  parent_id: '50509837'
+  author: YuriyChobotok
+  text: Pretty cool option and easy to reuse.
+  score: 0
+  posted_at: '2026-11-16T15:32:46Z'
+- id: '50518771'
+  parent_id: '50518641'
+  author: bcye
+  text: 'When you have a CDN in front of object storage it&#x27;s not so easy to compare
+    as the origin requests go out in chunks. For caching in front of R2, you need
+    the worker, as Cloudflare only permits file sizes of up to 512MB regardless of
+    the range requested. And then there&#x27;s the latency difference of working directly
+    with R2 (Protomaps calls out latency up to 500ms and on a previous blog post I
+    measured 300-600ms on HEAD requests against R2[0])<p>[0]: <a href="https:&#x2F;&#x2F;bruceroettgers.eu&#x2F;blog&#x2F;benchmarking-r2-head-requests-from-workers&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;bruceroettgers.eu&#x2F;blog&#x2F;benchmarking-r2-head-requests...</a>'
+  score: 0
+  posted_at: '2026-11-16T15:40:04Z'
+- id: '50519602'
+  parent_id: '50512011'
+  author: maelito
+  text: I&#x27;m talking about their global satellite dataset project, in works now.
+  score: 0
+  posted_at: '2026-11-16T16:41:02Z'
+- id: '50519612'
+  parent_id: '50515934'
+  author: maelito
+  text: They did not follow our question about pricing for open source :&#x2F;<p>We
+    now generate our tiles every week for 2 €, and could soon generate them daily
+    for .5 €
+  score: 0
+  posted_at: '2026-11-16T16:41:59Z'
+- id: '50520349'
+  parent_id: '50517977'
+  author: mips_avatar
+  text: True I guess NASA blue marble and other datasets only exist for a few higher
+    zooms.
+  score: 0
+  posted_at: '2026-11-16T17:40:57Z'
+- id: '50521061'
+  parent_id: '50512020'
+  author: stevelacey
+  text: Been using it on <a href="https:&#x2F;&#x2F;coworkations.com&#x2F;search"
+    rel="nofollow">https:&#x2F;&#x2F;coworkations.com&#x2F;search</a> since April
+    and it works great. I ditched Google Maps after getting duped into a huge bill
+    by enabling some APIs in their console, moved to MapTiler, then kept hitting their
+    rate limits. OpenFreeMap has been zero issues and zero bill.
+  score: 0
+  posted_at: '2026-11-16T18:32:19Z'
 article:
   url: https://bruceroettgers.eu/blog/protomaps/
   title: 'Protomaps: Self-hosting map tiles has gotten cheap and easy — Bruce Röttgers'
@@ -601,4 +838,4 @@ article:
     [↑](#user-content-fnref-2)"
   error:
   fetched_at: '2026-11-16T00:49:24Z'
-archived_at: '2026-11-16T10:44:57Z'
+archived_at: '2026-11-16T21:43:45Z'

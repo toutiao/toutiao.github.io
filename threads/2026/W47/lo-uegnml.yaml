@@ -1,0 +1,100 @@
+---
+post:
+  id: lo-uegnml
+  source: lobsters
+  title: NoisyTCP
+  url: https://www.openwall.com/lists/oss-security/2026/11/15/2
+  hn_url: https://lobste.rs/s/uegnml
+  score: 11
+  author: hanno
+  posted_at: '2026-11-16T12:50:29Z'
+  fetched_at: '2026-11-16T21:43:45Z'
+  article_url: https://www.openwall.com/lists/oss-security/2026/11/15/2
+  article_fetch_status: success
+  article_fetched_at: '2026-11-16T21:43:50Z'
+  raw_comment_count: 1
+  tags:
+  - linux
+  - security
+comments:
+- id: lo-dpnopo
+  parent_id: '0'
+  author: rw-rw-rw-
+  text: |-
+    Looks like OpenBSD suffers from a similar issue:
+    https://ftp.openbsd.org/pub/OpenBSD/patches/8.0/common/017_tcpsyn.patch.sig
+  score: 2
+  posted_at: '2026-11-16T14:42:55Z'
+article:
+  url: https://www.openwall.com/lists/oss-security/2026/11/15/2
+  title: |-
+    oss-security - NoisyTCP: Linux Kernel TCP Pre-auth Remote Corruption
+     (CVE-2026-99288)
+  fetch_status: success
+  content: "| [![Openwall](/logo.png)](/) | |\n\n| \n\n| [Follow @Openwall on Twitter
+    for new release announcements and other news](https://twitter.com/openwall) |\n\n
+    |\n\n[[\\<prev]](1) [[next\\>]](3) [[day]](.) [[month]](..) [[year]](../..) [[list]](../../..)\n\n
+    \   Message-ID: <avnXBHKfNKnqmDij@v4bel>\n    Date: Mon, 16 Nov 2026 01:00:04
+    +0900\n    From: Hyunwoo Kim <imv4bel@...il.com>\n    To: oss-security@...ts.openwall.com\n
+    \   Cc: imv4bel@...il.com\n    Subject: NoisyTCP: Linux Kernel TCP Pre-auth Remote
+    Corruption\n     (CVE-2026-99288)\n    \n    The embargo agreed with the maintainers
+    of\n    linux-distros@...openwall.org has expired, so I am posting this report.\n
+    \   \n    # Abstract\n    \n    This report is a security advisory for NoisyTCP
+    (CVE-2026-99288), the\n    Linux Kernel TCP Pre-auth Remote Corruption vulnerability
+    reported\n    and patched by Hyunwoo Kim (@v4bel).\n    \n    To trigger this
+    vulnerability, a stale ehash lookup and the freeing and\n    reallocation of an
+    existing request socket must proceed concurrently in\n    different RX contexts.
+    Packet processing has to be spread out by using\n    the difference in receive
+    hash between IPv4 fragments and regular TCP\n    packets, so it can be triggered
+    against servers that have two or more\n    RX queues, or where RPS distributes
+    packets across multiple CPUs.\n    \n    That is, since this vulnerability can
+    be triggered against \"plain\"\n    TCP listeners, it can be triggered pre-auth
+    and remotely against\n    servers that TCP packets sent by an attacker can reach
+    directly, such\n    as Nginx, Apache, and SSH servers running with their \"default\"\n
+    \   configuration.\n    \n    # Trigger Flows\n    \n    There are two trigger
+    flows for this vulnerability, and an attacker\n    can arbitrarily choose either
+    one to trigger it.\n    \n    ## 1. request_sock Reuse ABA Race\n    \n    While
+    a stale lookup has found an existing request socket, another RX\n    context frees
+    it and reallocates a SYN cookie request with the same\n    tuple at the same slab
+    address.\n    \n    The stale lookup acquires a refcount on the new object and
+    then even\n    passes the tuple recheck, but the new request has no listener attached\n
+    \   to it. After that, the TCP receive path dereferences the NULL listener,\n
+    \   which causes a kernel panic.\n    \n    In the end, a remote DoS can be triggered.\n
+    \   \n    Because this is a Linux kernel TCP vulnerability, if the DoS is\n    triggered
+    against a web server running in a container, it takes down\n    not only the web
+    server application but the entire host.\n    \n    ## 2. Full child socket ABA
+    Race\n    \n    This path can trigger a remote use-after-free, but since complex
+    race\n    scenarios have to succeed in a nested way, it is generally hard to\n
+    \   trigger without using special techniques.\n    \n    # Trigger Characteristics\n
+    \   \n    To trigger this vulnerability, another RX context has to get in\n    between
+    the first tuple check and the refcount acquisition. Because of\n    this, against
+    bare-metal servers, especially quiet servers with little\n    execution variance
+    and contention, triggering the race can take a long\n    time.\n    \n    Against
+    Nginx, Apache, and SSH servers running with their default\n    configuration on
+    VMs such as QEMU/KVM, where vCPU preemption can occur,\n    it took about 5 seconds
+    to 2 minutes to trigger.\n    \n    Against Nginx running with its default configuration
+    on a quiet\n    bare-metal server (8 RX queues), it took about 14 hours to trigger,\n
+    \   even though a PoC with race timing carefully tuned for the target\n    environment
+    was used.\n    \n    # Affected Versions\n    \n    The affected range of NoisyTCP
+    (CVE-2026-99288) is as follows.\n    \n    Introduced: 079096f103fa (2015-10-03)\n
+    \   Fixed: 4e2b3ef19e0e (2026-11-03)\n    \n    That is, this vulnerability had
+    been latent in the Linux kernel for\n    about \"11 years\" and affects almost
+    all Linux distributions.\n    \n    # Mitigations\n    \n    Applying the 4e2b3ef19e0e
+    patch is the priority, but if it is difficult\n    to apply it immediately, one
+    of the following temporary mitigations can\n    be used.\n    \n    ## 1. Disable
+    SYN cookies\n    \n    This blocks the path where a request socket is reconstructed
+    through a\n    SYN cookie.\n    \n      sudo sysctl -w net.ipv4.tcp_syncookies=0\n
+    \   \n    This setting is managed per network namespace. It has to be applied
+    to\n    \"each\" container that uses a separate network namespace. Disabling it\n
+    \   lowers the protection against SYN floods.\n    \n    ## 2. Serialize to a
+    single RX queue\n    \n    This vulnerability requires different RX contexts to
+    race\n    concurrently. Reducing the RX queues of the interface where external\n
+    \   packets come in to one and disabling RPS and RFS can block the race.\n\n[Powered
+    by blists](https://www.openwall.com/blists/) - [more mailing lists](https://lists.openwall.net)\n\nPlease
+    check out the[Open Source Software Security Wiki](https://oss-security.openwall.org/wiki/),
+    which is counterpart to this[mailing list](https://oss-security.openwall.org/wiki/mailing-lists/oss-security).\n\nConfused
+    about [mailing lists](/lists/) and their use?[Read about mailing lists on Wikipedia](https://en.wikipedia.org/wiki/Electronic_mailing_list)and
+    check out these[guidelines on proper formatting of your messages](https://www.complang.tuwien.ac.at/anton/mail-news-errors.html)."
+  error:
+  fetched_at: '2026-11-16T21:43:50Z'
+archived_at: '2026-11-16T21:43:51Z'
