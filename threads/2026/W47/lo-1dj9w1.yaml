@@ -1,0 +1,355 @@
+---
+post:
+  id: lo-1dj9w1
+  source: lobsters
+  title: Actual curl rewrites in rust
+  url: https://daniel.haxx.se/blog/2026/11/17/actual-curl-rewrites-in-rust/
+  hn_url: https://lobste.rs/s/1dj9w1
+  score: 44
+  author: dasm
+  posted_at: '2026-11-17T13:37:05Z'
+  fetched_at: '2026-11-17T18:15:26Z'
+  article_url: https://daniel.haxx.se/blog/2026/11/17/actual-curl-rewrites-in-rust/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-17T18:15:26Z'
+  raw_comment_count: 27
+  tags:
+  - rust
+comments:
+- id: lo-evqalr
+  parent_id: '0'
+  author: johnklos
+  text: |-
+    People seem to forget that rust isn't as portable as C, and until it gets quite a bit further, every request to rewrite something is a request to desupport many platforms.
+    The same rewrite-everything-in-rust people are almost invariably OK with saying that only the important platforms and processor architectures matter, and haven't got a clue and/or simply don't care about the impact this would have on actual, running hardware out in the real world. Out of sight, out of mind. "It doesn't affect me."
+    And, as we're seeing with the sudo rust rewrite and the coreutils rewrite, along with other corporate inspired pushes such as moving to x86-64 v2, 3 or 4, the people who have nothing to lose are fine with the rest of the world losing those things, even if it means problems for everyone.
+    I wish the rewrite-everything-in-rust people would actually take the time to understand the effects of what they're pushing for.
+  score: 26
+  posted_at: '2026-11-17T15:27:25Z'
+- id: lo-b1aepv
+  parent_id: '0'
+  author: jado
+  text: |-
+    As a rewrite-in-anything-better-than-C guy I agree the platform support for Rust is obviously below C, but instead of saying "it doesn't affect me" I would rather pour more resources into expanding platform support, in an effort to rewrite the world away from C.
+
+    I know I’m repeating myself but: out of the 81 vulnerabilities we have confirmed in curl so far during 2026, 14 were the result of mistakes that most likely would have been avoided had we used a memory-safe language such as rust. That’s 17.3%.
+    A Rust implementation of curl would thus still have had 67 of those vulnerabilities.
+
+    I am of the opinion that if it could be caught statically then it must be caught statically. Saying "we only blew our foot off 14 times" isn't comforting for critical infrastructure.
+  score: 14
+  posted_at: '2026-11-17T15:50:05Z'
+- id: lo-ihen9r
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    When the topic is portability, it really depends on who's pushing for the rewrite. As with X11 to Wayland, sometimes it's the developers feeling at they're limits with the old tech.
+    You porting a compiler or compatibility layer of some sort doesn't opt every C developer whose project suddenly became compatible into an obligation to support a platform they never intended to support and possibly never heard of.
+    See, for example: https://blog.yossarian.net/2021/02/28/Weird-architectures-werent-supported-to-begin-with
+  score: 7
+  posted_at: '2026-11-17T15:57:35Z'
+- id: lo-axacq2
+  parent_id: '0'
+  author: nytpu
+  text: |-
+    But the point being, it goes from "possible to be portable with meticulous effort" to "impossible to be portable at all without becoming a compiler developer." (and not just any compiler developer, but working on the most massive and complex compilers in existence)
+    And true, few people do actually bother to write portable code. But I very meticulously do, even for projects that don't need it; and the SQLite devs do; and Curl did/does; and so do many other projects.
+    As an anecdote, I've run into one or two Rust compiler bugs rendering the language unusable for things as simple as embedded ARM32 targets. Targets that, while GCC is preferred, Clang still works for, so it has to be some frontend Rust issue rather than LLVM. So not even that far off the beaten path (i.e. "modern desktops and smartphones"), still in architectures nominally supported, and Rust already becomes largely unusable.
+  score: 6
+  posted_at: '2026-11-17T16:08:37Z'
+- id: lo-cjdyzf
+  parent_id: '0'
+  author: gendx
+  text: |-
+    I find the following statement highly misleading, and possibly misinformed about Rust:
+
+    out of the 81 vulnerabilities we have confirmed in curl so far during 2026, 14 were the result of mistakes that most likely would have been avoided had we used a memory-safe language such as rust. That’s 17.3%.
+    A Rust implementation of curl would thus still have had 67 of those vulnerabilities.
+
+    It seems to imply that the only benefit of Rust is preventing pure-memory-safety bugs (buffer overflows, use-after-free), which completely ignores the main benefits of the language:
+
+    rich type system: e.g. expressing state machines with exhaustive pattern matching, modeling generic APIs with traits,
+    seamless error handling: how many C vulnerabilities caused by swapping 0 and 1 as the success code? Here's a recent one: https://framapiaf.org/@davidrevoy/117564332564963206 (https://sshhole.com/ vulnerability),
+    rich linting system,
+    careful APIs in the standard library,
+    etc.
+
+    But the most misleading part is taking AI slop rewrites of Curl as the benchmark. A good benchmark should be an established HTTP library in Rust, such as reqwest -- which according to the RustSec Advisory Database didn't ever have any reported vulnerability. Of course that's misleading too as this doesn't include transitive dependencies such as rustls (5 low/medium vulnerabilities this year). And there may be an issue of under-reporting of vulnerabilities and/or staffing of the RustSec project. But I'd say the comparison is at best inconclusive (I cannot tell if reqwest had more or less relevant vulnerabilities than Curl this year).
+    What I'd really like to see is a deep dive comparison of a sample of these vulnerabilities: take 10-20 Curl vulnerabilities from this year, and for each one have a fair assessment of whether it would be prevented by the Rust compiler, avoided by idiomatic Rust (i.e. going beyond what the compiler outright rejects), and whether similar bugs have slipped through actual libraries like reqwest.
+    Of course, one could also argue that reqwest isn't as feature complete as Curl (I haven't checked  -- my anecdotal evidence is that reqwest has been sufficient for my side projects). But that would be a very different story as it would become a choice/tradeoff between more features vs. less attack surface.
+  score: 23
+  posted_at: '2026-11-17T16:09:08Z'
+- id: lo-wpl8x1
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    That's all true, but it doesn't change the fact that, unless you're paying them to do it, you don't get to veto developer decisions to migrate to a language that they believe will reduce the cognitive burden of supporting the platforms they intend to support.
+    Anything more is entitlement.
+  score: 5
+  posted_at: '2026-11-17T16:13:38Z'
+- id: lo-trt0km
+  parent_id: '0'
+  author: nytpu
+  text: So it's not entitled to demand people rewrite their mature programs from scratch
+    in Rust like a subset of the community has been doing to projects for years?
+  score: 5
+  posted_at: '2026-11-17T16:15:39Z'
+- id: lo-vhg6ms
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Please refer back to my initial post.
+
+    When the topic is portability, it really depends on who's pushing for the rewrite.
+
+    That's the whole point I was making. Of course it's entitled when random Joes push for it... but it's also entitled when random Joes push for developers to not make a decision that would cut against goals they never set.
+    You don't get to hijack their roadmap by opting yourself into compatibility.
+  score: 6
+  posted_at: '2026-11-17T16:17:39Z'
+- id: lo-3jpf8j
+  parent_id: '0'
+  author: nytpu
+  text: |-
+    Oh yeah, okay. I agree with that, I just think it should be the project's decision. e.g. SQLite where they highly prioritize stability and portability above all else (and have fantastic testing that catches any of the issues Rust would've solved easier), vs. Linux where they are more concerned with driver bugs that affect the larger kernel and security issues at this point.
+    Although from a rewrite perspective (rather than "new code in <>, leave the old C code" or such) I think it has been kinda demonstrated over and over that it's not a particularly good idea lol; but that's just my opinion/advice and projects should be able to do what they want.
+  score: 3
+  posted_at: '2026-11-17T16:23:44Z'
+- id: lo-k3ee1w
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Although from a rewrite perspective (rather than "new code in <>, leave the old C code" or such) I think it has been kinda demonstrated over and over that it's not a particularly good idea lol; but that's just my opinion/advice and projects should be able to do what they want.
+
+    Agreed. I like to point people at https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/ for that one.
+  score: 2
+  posted_at: '2026-11-17T16:25:13Z'
+- id: lo-huieq1
+  parent_id: '0'
+  author: ekuber
+  text: |-
+    I've run into quite a number of Rust compiler bugs rendering the language unusable for things as simple as embedded ARM32 targets.
+
+    Could you share links to the bug reports? I would be intrigued to see what the problems were, and on which specific platform, because ARM32 support runs the gamut from tier 2 to tier 3. It could be a bug on the rustc side, but it could also be a bug on the llvm side that gets excercised by rustc but not clang (one could argue the bug exists in the combination of rustc+llvm+your platform).
+  score: 9
+  posted_at: '2026-11-17T16:28:50Z'
+- id: lo-tr7iu7
+  parent_id: '0'
+  author: hjvt
+  text: |-
+    Although from a rewrite perspective (rather than "new code in <>, leave the old C code" or such) I think it has been kinda demonstrated over and over that it's not a particularly good idea lol;
+
+    Seems like it worked out pretty well for Fish, though
+  score: 5
+  posted_at: '2026-11-17T16:32:13Z'
+- id: lo-2gvjev
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    librsvg too, but that's where the nuance comes in.
+    Part of the reason it's possible at all with Rust is that it's got good C<->Rust interop which makes incremental porting tractable (i.e. The downsides of rewriting are more mitigated the more incremental you can make it) and I'd say the tipping point is when continued development in C is more difficult than an incremental rewrite into Rust.
+    It's another form of "at some point, you may find that technical debt has grown too big and is impeding your ability to develop the codebase"... just with the technical debt being centred around the relationship between C, how the developer uses it, how the project's scale has grown, etc.
+  score: 3
+  posted_at: '2026-11-17T16:37:29Z'
+- id: lo-cuf85a
+  parent_id: '0'
+  author: nytpu
+  text: Admittedly I never actually filed bug reports (and "quite a number" is an
+    exaggeration, it was one or two) because I just couldn't be assed to figure out
+    a minimum reproduction when I was just messing around with using Rust alongside
+    C for the project. It was for a GBA homebrew game (ARMv4T), had to do with interwork
+    between ARM32 and Thumb (not Thumb-2) code; in mixed assembly, C, and Rust sources.
+    I think it was either general ABI issues (something related to veneers maybe?),
+    or things being consistently linked wrong or something, I can't quite remember.
+    (I've run into (easier-to-reproduce) miscompiles in GCC's Ada/GNAT with this setup/target
+    too XD, just an odd target and I guess I tend to push languages pretty hard).
+    I'll see if I can dig up the sources that caused it, it could've been incidentally
+    fixed by now.
+  score: 3
+  posted_at: '2026-11-17T16:45:18Z'
+- id: lo-hwpe5l
+  parent_id: '0'
+  author: sny
+  text: There's this great slide Daniel includes in his talks every now and then that
+    shows just how many operating systems curl supports. I wonder how many of these
+    are supported by Rust.
+  score: 3
+  posted_at: '2026-11-17T16:52:31Z'
+- id: lo-zbknov
+  parent_id: '0'
+  author: kornel
+  text: |-
+    Rust has substantially caught up in platform support. There's Rust for Haiku, QNX. There's Rust for 68k and AVR. It can target BPF and NVPTX. Thanks to Rust's GCC backend, people even got Rust running on Dreamcast. People managed to build Rust for Windows XP and even 95. The platforms that are left out now are really really niche bottom of the barrel.
+    Push to x86 with AVX is not Rust's fault. Rust can build for OG Athlon and i686.
+    Rust requires a supported platform to have 2 maintainers and ability to run tests in CI, so the platforms that are unsupported don't meet the bar - they're so niche that they can't find more than one person willing to do the work or find a still-working hardware that could be used in CI.
+  score: 4
+  posted_at: '2026-11-17T17:05:22Z'
+- id: lo-9a22wr
+  parent_id: '0'
+  author: dzwdz
+  text: |-
+    A good benchmark should be an established HTTP library in Rust, such as reqwest -- which according to the RustSec Advisory Database didn't ever have any reported vulnerability. Of course that's misleading too as this doesn't include transitive dependencies such as rustls
+
+    I think that's misleading too :p It's sensible to put something like rustls out of scope, but reqwest has much more substantial dependencies. http had two high/critical vulns. hyper - a related HTTP library from the same author as reqwest - had several more. For HTTP/2, it seems to use h2, which had some low severity vulns too. QUIC is supported via quinn, which apparently has a high severity soundness bug.
+    Apparently, because that's the one bug I decided to take a look at. It seems to have been making some unjustified assumptions about the layout of some structs - it doesn't seem like it ever approached being exploitable, yet it was slapped with Attack Complexity: Low, Confidentiality Impact: High, CVSS 7.5. This makes me doubt the accuracy of the other severities.
+    But, back to the point - since Rust developers seem to split their software up into much tinier pieces than C developers, I don't think it makes sense to just look at the advisories for a single crate.
+
+    ...but I'm also not sure how interesting a better comparison would be. I think it's fairly obvious that, on the long term, a HTTP library written in a memory safe language with a solid type system will be more robust than one written in C.
+    Projects "rejecting" Rust probably don't do so because they aren't convinced of the benefits of better languages, but because they don't like the tradeoffs made by Rust et al (see: sibling threads). Comparing vulnerability counts won't change their opinion.
+  score: 5
+  posted_at: '2026-11-17T17:10:05Z'
+- id: lo-bbhtk4
+  parent_id: '0'
+  author: kornel
+  text: I don't think any rewrite of curl in Rust will survive mainly because Rust
+    already has a Rust-native HTTP ecosystem and doesn't need yet another HTTP library
+    (and also has most of the other protocols covered). curl is a great achievement
+    for C, and C needs it. Rust doesn't.
+  score: 10
+  posted_at: '2026-11-17T17:16:46Z'
+- id: lo-sx3yph
+  parent_id: '0'
+  author: kornel
+  text: |-
+    For ABI issues, see https://faultlore.com/abi-cafe/
+    The C standard doesn't promise you any ABI. It's an under-documented fragile mess, so in practice it requires testing and tweaking every combination until it seems to work. Rust has already found cases where even gcc and clang disagree.
+  score: 4
+  posted_at: '2026-11-17T17:23:29Z'
+- id: lo-y2da4j
+  parent_id: '0'
+  author: cuchulain
+  text: |-
+    It's definitely not as featureful.
+    reqwest seems like it's "just" an HTTP library. Which is great if that's what you want, of course. I definitely get that for a lot of people that's why they use curl or libcurl in the first place, so definitely a reasonable starting point! (i'm not sure i've personally used curl in anger for anything other than HTTP; at work we also use curl for FTP, TFTP, and possibly SCP/SFTP although I can't be sure of those last two).
+    curl supports around 25 different url schemas according to the man page.  So another check might also be useful to look at which url schemes those vulnerabilities affected.   From a quick check there were definitely ones against SSH, IMAP, SMB, LDAPS etc. Maybe 15%-20% of them?
+    From a quick check curl etc also supports a wider range of HTTP related features around auth and proxy handling.   It also looks like curl is much more tolerant of bad HTTP server designs, where the server responses are not strictly HTTP compliant, whereas reqwest seems to be pretty strict in terms of compliance. It'd be lovely (and probably a better outcome) if everything was compliant, but in reality that's just not things are , particularly in embedded stacks which aren't going to get overhauled.
+    I'm not an expert in either, this was just a quick check. But yeah, looks like the attack surface on curl is huge compared to reqwest.
+    I've not done anything with Rust yet, but it's something that's on my list of things to investigate rewriting parts of our C stack at work.
+  score: 3
+  posted_at: '2026-11-17T17:23:45Z'
+- id: lo-jofed8
+  parent_id: '0'
+  author: johnklos
+  text: |-
+    Of course it depends on who is pushing for a rewrite. I stated that my issue is with the rewrite-everything-in-rust crowd, who, generally, like to parrot what they've read or heard because it makes them feel smarter, not too unlike the people who like to tell everyone else that self-hosting email can't be done properly.
+
+    You porting a compiler or compatibility layer of some sort doesn't opt every C developer whose project suddenly became compatible into an obligation to support a platform they never intended to support and possibly never heard of.
+
+    Has anyone suggested that?
+  score: 0
+  posted_at: '2026-11-17T17:25:44Z'
+- id: lo-yi5qts
+  parent_id: '0'
+  author: nytpu
+  text: It was not following the explicit wording of AAPCS, § 5.3 and § 5.6 if my
+    memory about it being interworking/veneers is correct. And per your second paragraph,
+    AAPCS § 7 and AAELF which gives a concrete C→machine ABI for anything that would've
+    been relevant to my issues (I for sure manually verified the assembly from C and
+    Rust when I noticed issues, and I know my own assembly followed AAPCS)
+  score: 3
+  posted_at: '2026-11-17T17:32:17Z'
+- id: lo-k3dc0n
+  parent_id: '0'
+  author: pert
+  text: it would be interesting to see, rather than a "rewrite of curl", instead a
+    feature compatible piece of software which is instead built upon the HTTP libraries
+    we already have in rust. I.e. same CLI surface but completely separate implementation
+  score: 3
+  posted_at: '2026-11-17T17:34:20Z'
+- id: lo-oafqdh
+  parent_id: '0'
+  author: kornel
+  text: Thanks. I stand corrected.
+  score: 3
+  posted_at: '2026-11-17T17:34:25Z'
+- id: lo-mskpdv
+  parent_id: '0'
+  author: nytpu
+  text: |-
+    You're broadly correct, there is ambiguity with things like threading and more complex OS/hosted stuff, and for portable code there's no ABI you could rely on (your statement about "C code isn't portable, just ported" is exactly how I'd put it. See also: the Faultlore post about "C isn't a programming language anymore").
+    But for a single embedded target in explicitly non-portable code there's usually a concrete ABI you can trust for at least most of ISO C stuff. Which is good because freestanding environments usually need a lot of assembly that you need to be able to reliably call and interact with lol
+  score: 2
+  posted_at: '2026-11-17T17:39:16Z'
+- id: lo-ebd5oe
+  parent_id: '0'
+  author: 5d22b
+  text: |-
+    yet it was slapped with Attack Complexity: Low, Confidentiality Impact: High, CVSS 7.5. This makes me doubt the accuracy of the other severities.
+
+    Back when I paid attention to the RustSec issue tracker, they often regretted CVSS as a poor metric with little practical usefulness.
+  score: 1
+  posted_at: '2026-11-17T17:41:23Z'
+- id: lo-avdrev
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Has anyone suggested that?
+
+    That was what was implied by the outrage at pyca/cryptography deciding to migrate to Rust ASN.1 parsing as referenced in https://blog.yossarian.net/2021/02/28/Weird-architectures-werent-supported-to-begin-with
+    It broke compatibility with compiler targets the pyca/cryptography people had never intended to support.
+  score: 2
+  posted_at: '2026-11-17T18:09:48Z'
+article:
+  url: https://daniel.haxx.se/blog/2026/11/17/actual-curl-rewrites-in-rust/
+  title: Actual curl rewrites in rust | daniel.haxx.se
+  fetch_status: success
+  content: "![](https://daniel.haxx.se/blog/wp-content/uploads/2023/09/old-machine.jpg)\n\nFor
+    a long time we have received repeated requests for, or questions about, a curl
+    rewrite in rust. Often as a joke, but also seriously.\n\n![](https://daniel.haxx.se/blog/wp-content/uploads/2026/11/orly-rewriting-curl-in-rust.png)\n_A
+    joke from years ago_\n\nIn this modern world of AIs, we have only been waiting
+    for someone to prove it possible and now it seems we don’t have to wait anymore.\n\nThis
+    fall seems to be the time of the curl-in-rust takes as we first saw [urlx](https://github.com/jonwiggins/urlx)
+    appear a few months ago, claimed to be _a memory-safe, from-scratch reimplementation
+    of curl and libcurl_ and now in November [curl, rewritten in Rust](https://github.com/kov/curl)
+    – _a rewrite of curl and libcurl in Rust_. This second one confusingly enough
+    not even using a different name.\n\nThis latter one [claims to have spent 8,600
+    USD](https://claude.ai/artifact/K4BoWt35HQz1xWZBR3bMRD) to make it happen.\n\n##
+    Writing code once was never the issue\n\nWriting code _once_ was never the big
+    deal with software and it still isn’t. Sure, it’s fascinating that you can make
+    a set of agents accomplish this in only a few weeks but let’s face it: it could
+    do this because all the AIs of the world have trained on curl code for years.
+    curl is extremely well documented, there are hundreds of existing open source
+    application using its API and there are thousands of test cases to verify the
+    implementation.\n\nThe C code sits there and all the AI needs to do is convert
+    it to rust, then polish until the tests work.\n\n![](https://daniel.haxx.se/blog/wp-content/uploads/2021/04/I-could-write-curl-in-a-3-day-weekend.png)\n_A
+    know-it-all person’s comment from years ago_\n\n## curl is the result of time\n\ncurl
+    has come to be what it is thanks to many decisions, lots of time, many users,
+    oceans of feedback and many iterations. Sure, recreating what curl is at any specific
+    single moment in time is certainly doable. Doable, because we have made a perfect
+    specification for that project.\n\n## Behind already\n\nDuring the time these
+    agents converted 185,000 lines of C code into 340,000 lines of Rust code (I counted),
+    we merged over 300 commits in the actual curl project. We actually improved curl
+    during these a little more than three weeks. A little over 200 bugfixes actually.
+    200 bugfixes that none of those rust rewrites have. We also fixed a few vulnerabilities.
+    In another month we have done another 200 and maybe fixed a few more vulnerabilities.
+    Will these clones keep up?\n\nThe constant tweaking, fixing, improving and extending
+    is what makes a software project live, what makes it attractive to users and what
+    makes it able to compete with alternatives.\n\nThat fixing, and occasional new
+    feature, is a direct result of a working community of users, contributors and
+    maintainers. That goes way beyond the source code or which language that is used.\n\nA
+    primary reason it is hard to make a competing curl alternative is because of the
+    development speed, the development team and the community around curl. It is not
+    because of the chosen language it is implemented in. Only curl can boast decades
+    of ABI and API stability and prove that we know this and can do it well – over
+    time. An alternative that pops up today might be able to do it as well, and _in
+    a few decades we will know if they could_.\n\n## C\n\nI know I’m repeating myself
+    but: out of the 81 vulnerabilities we have confirmed in curl so far during 2026,
+    14 were the result of mistakes that most likely would have been avoided had we
+    used a memory-safe language such as rust. That’s 17.3%.\n\nA Rust implementation
+    of curl would thus still have had 67 of those vulnerabilities.\n\n## No rewrites\n\nI
+    don’t believe in rewrites into any language. I believe in constant and never-ending
+    polishing, iterating and refactoring.\n\n## Those rewrites\n\nI should add that
+    I have not been in contact with any of the people behind these rewrites, and if
+    there are two I bet there are more that I just haven’t seen yet. I only know of
+    them because people have pasted me links to their repositories.\n\nI don’t know
+    what they will do with those projects going forward. Are they anything more than
+    proof of concepts? I presume we will find out.\n\nThey can of course follow along
+    our commits and convert them to rust on the fly if they want – we only do about
+    11 commits per day on average. Or maybe they ignore the bugreports or maybe they
+    take their projects in other directions?\n\nI wish them good luck whatever they
+    decide!\n\n## How do I feel about them?\n\nSeveral people asked me this.\n\n_Imitation
+    is the sincerest form of flattery that mediocrity can pay to greatness_. / Someone\n\nI’m
+    amused. A little puzzled. Fascinated. They spent their money and effort on _that?_\n\n##
+    4 thoughts on “Actual curl rewrites in rust” \n\n### Leave a Reply \n\nThis site
+    uses Akismet to reduce spam. [Learn how your comment data is processed.](https://akismet.com/privacy/)"
+  error:
+  fetched_at: '2026-11-17T18:15:26Z'
+archived_at: '2026-11-17T18:15:26Z'

@@ -1,0 +1,950 @@
+---
+post:
+  id: '50532191'
+  title: What is the best harness for each model?
+  url: https://runta.com/blog/introducing-frontierharness-eval-v1-1/
+  hn_url: https://news.ycombinator.com/item?id=50532191
+  score: 196
+  author: ''
+  posted_at: '2026-11-17T14:53:43Z'
+  fetched_at: '2026-11-17T18:15:17Z'
+  article_url: https://runta.com/blog/introducing-frontierharness-eval-v1-1/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-17T18:15:17Z'
+  raw_comment_count: 79
+comments:
+- id: '50532247'
+  parent_id: '50532191'
+  author: guanlan
+  text: |-
+    Hi HN, I’m Guanlan, founder of Runta. The eval runs on our runtime, so weigh this accordingly.<p>The short version: when you change the model, think about changing the harness too. On any one model, cost per pass varies by up to 4.4x<p>What we ran: 22 harness configurations × 5 open-weight models × 62 terminal tasks × 4 attempts. 27,280 runs, 83B tokens. Each harness ran with default settings at maximum reasoning effort, each trial in a fresh sandbox. Costs are Baseten list prices times reported tokens.<p>What we found:
+    The lowest-cost harness changes with the model. Codex CLI ranks 1st on cost with GLM-5.3 and 15th with Kimi-K3.
+    Paying more doesn’t buy passes. The harness with the highest pass rate ranked anywhere from 4th to 19th on cost.
+    The model still sets most of the bill (93% of cost variation). The harness is the second lever.
+    Starting prompt size doesn’t predict cost. Output tokens do.
+    64% of inference spend went to runs that didn’t pass.
+  score: 0
+  posted_at: '2026-11-17T14:57:45Z'
+- id: '50533068'
+  parent_id: '50532247'
+  author: radlad
+  text: Hi Guanlan, I vouched for your comment since you involved in this post, but
+    you should be aware that all of your posts have been flagged, likely for AI patterns
+    in your writing.<p>&gt; Don&#x27;t post generated text or AI-edited text. HN is
+    for conversation between humans.<p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html</a>
+  score: 0
+  posted_at: '2026-11-17T15:49:44Z'
+- id: '50533354'
+  parent_id: '50532191'
+  author: Majromax
+  text: Saying that &#x27;steps per pass&#x27; explains cost seems nearly tautological.  Run
+    costs are proportional to the number of tokens produced, and the number of tokens
+    is strongly correlated to the number of steps.<p>The &#x27;steps per pass&#x27;
+    criterion is also not something under the harness&#x27;s direct control in the
+    way that its tool collection and system prompt (&#x2F;start tokens) are.  Even
+    the cache hit rate is hard to control beyond a limit, since modern harnesses rarely
+    rewrite history.<p>I&#x27;m also suspicious about the run-to-run variance between
+    models.  Given the high variability within the presented results and the observation
+    that failed runs (which can spin for a long time before delivering a wrong answer)
+    account for a majority of the cost, I&#x27;m not sure that many of the conclusions
+    here would hold up under a second sample.
+  score: 0
+  posted_at: '2026-11-17T16:05:06Z'
+- id: '50533426'
+  parent_id: '50532247'
+  author: latentsea
+  text: This is why for open-weights models at least harness aware post-training is
+    becoming a thing. Also closed source harnesses that aren&#x27;t fully editable
+    are basically an anti-pattern. The labs should just hurry up and productionize
+    self-evolving harnesses, and have the models internalize harness engineering,
+    so they can optimise the harness for the given task. These are solvable problems.
+  score: 0
+  posted_at: '2026-11-17T16:08:49Z'
+- id: '50533520'
+  parent_id: '50532191'
+  author: Zigurd
+  text: 'I find myself pulled in two directions by the performance of coding agents:
+    First, keeping them on a short leash seems sensible. I don&#x27;t get failed results
+    very often. When I first started using coding agents, this seemed not just sensible
+    but required in order to not deal with a lot of hallucinated weirdness. Secondly
+    though, it&#x27;s pretty cool to vaguely wave your hands in a certain direction
+    and get both user interface and business logic that&#x27;s objectively nicer than
+    I would&#x27;ve gotten from the effort I would&#x27;ve put into manually coding.
+    Whenever I cautiously use a coding agent, I wonder what I am missing by not letting
+    it cook.'
+  score: 0
+  posted_at: '2026-11-17T16:12:21Z'
+- id: '50533575'
+  parent_id: '50533520'
+  author: embedding-shape
+  text: Not every problem should (or even could sometimes) be solved the same way.
+    Are you planning to maintain the produced code for more than a year? No, then
+    wave away. But if you&#x27;re expecting others to depend on it, and you want to
+    be able to continue evolving what it is, then a tight leash and full understanding
+    of how it actually works, is very much needed, even if you don&#x27;t actually
+    type characters into an editor anymore.<p>Otherwise you still end up with balls
+    of spaghetti where each change takes longer and longer to work into the codebase.
+    With a bit of planning, you can keep tackling changes and they keep taking the
+    same amount of time more or less.
+  score: 0
+  posted_at: '2026-11-17T16:15:49Z'
+- id: '50533650'
+  parent_id: '50533520'
+  author: rrr_oh_man
+  text: "<i>&gt; objectively nicer than I would&#x27;ve gotten from the effort I would&#x27;ve
+    put into manually coding</i><p>I find that only works with topics I know very
+    little about."
+  score: 0
+  posted_at: '2026-11-17T16:19:28Z'
+- id: '50533689'
+  parent_id: '50533575'
+  author: smallnamespace
+  text: The cost of AI is rapidly falling while its engineering capabilities keep
+    rising. This implies that code is becoming more fungible, and you should expect
+    any code you write today to mostly be replaced in the near future.<p>The requirements
+    will be more stable than the code. Focus on them instead.
+  score: 0
+  posted_at: '2026-11-17T16:21:49Z'
+- id: '50533699'
+  parent_id: '50532191'
+  author: cronin101
+  text: I&#x27;m far behind the curve with local&#x2F;open weight models, but I thought
+    it was common practice that you should do some last-mile fine-tuning on the particular
+    harness that you&#x27;re using and would get a reasonable return on investment
+    for doing so (particularly on quantized models)?<p>Can anyone confirm&#x2F;deny
+    this is the case?<p>If so, it seems a shame not to include this practice into
+    the reporting methodology for full transparency.
+  score: 0
+  posted_at: '2026-11-17T16:22:31Z'
+- id: '50533768'
+  parent_id: '50532191'
+  author: jrmg
+  text: "&quot;In 27,280 coding agent runs, 64% of inference spend went to runs that
+    failed&quot; (the title this submission was submitted with) is a pretty editorialized
+    title.<p>The page&#x27;s title is: &quot;Introducing FrontierHarness Eval v1.1&quot;"
+  score: 0
+  posted_at: '2026-11-17T16:25:50Z'
+- id: '50533789'
+  parent_id: '50533699'
+  author: jrmg
+  text: What does &quot;last-mile fine-tuning on [a] harness&quot; mean?
+  score: 0
+  posted_at: '2026-11-17T16:26:43Z'
+- id: '50533829'
+  parent_id: '50533789'
+  author: cronin101
+  text: Taking the open weight model and altering those weights in order to overfit
+    for success on the tool shape &#x2F; quirks of the harness you are running the
+    model within.<p>As with most post-training this would be done via some scored&#x2F;verifiable
+    problem set (we can probably tell if the tool calls blew up during the coding
+    trajectory) e.g. a known set of input tasks where solutions can be verified.<p>Last-mile
+    aka doing in yourself (on box) vs the compute cluster that created those open
+    weights.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Fine-tuning_(deep_learning)"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Fine-tuning_(deep_learning)</a><p>I
+    believe (at least this used to be the case) that heavily quantized models that
+    are designed to fit on consumer hardware have inflated failure rates and this
+    can claw back quite a bit of reliability.
+  score: 0
+  posted_at: '2026-11-17T16:29:04Z'
+- id: '50533839'
+  parent_id: '50532191'
+  author: ford
+  text: To be clear - &quot;Failed&quot; here means &quot;Did not meet all pass criteria
+    on a given benchmark task&quot;, not &quot;Experienced a runtime failure&quot;
+  score: 0
+  posted_at: '2026-11-17T16:29:28Z'
+- id: '50533849'
+  parent_id: '50533650'
+  author: datsci_est_2015
+  text: |-
+    This comment could be interpreted at least two ways, and I’m not sure which it is:<p><pre><code>  - tongue in cheek: in topics you know very little about, you don’t have the ability to tell whether the LLM output is trash or not
+      - very serious: LLMs allow you to create things you could not have created before due to not having the knowledge
+    </code></pre>
+    Sort of like a Dunning-Kruger or Gell-Mann amnesia.
+  score: 0
+  posted_at: '2026-11-17T16:29:59Z'
+- id: '50533864'
+  parent_id: '50533689'
+  author: catdog
+  text: "&gt; The cost of AI is rapidly falling while its engineering capabilities
+    keep rising.<p>Wouldn&#x27;t count on it. There likely is a ceiling, we might
+    or might not be near it."
+  score: 0
+  posted_at: '2026-11-17T16:31:03Z'
+- id: '50533876'
+  parent_id: '50533520'
+  author: contravariant
+  text: I think Conway&#x27;s law applies. In an ideal situation your code mimics
+    your organisational structure.<p>The places where you let an agent do its thing
+    is bound by the (implicit) interface your prompt creates. In an <i>ideal</i> situation
+    this interface is a simple isolated thing in your application.<p>If you just let
+    it do its thing, expect a monolith. You shouldn&#x27;t rely on it coming up with
+    interfaces that mesh well with what you had in mind, and each of those interfaces
+    represents a decision that it took, restricting future iterations of the code.
+    So a monolith is not only what you can expect, but also the best you can hope
+    for.<p>If you want to let it cook, create more places for code that does a thing
+    and you don&#x27;t care how.
+  score: 0
+  posted_at: '2026-11-17T16:31:45Z'
+- id: '50533882'
+  parent_id: '50533689'
+  author: datsci_est_2015
+  text: Robust systems experience very little turnover in nearly every non-software
+    discipline that involves systems. Why the hell would we insert risk into our system-building
+    processes by needlessly turning over code?
+  score: 0
+  posted_at: '2026-11-17T16:31:54Z'
+- id: '50533887'
+  parent_id: '50533699'
+  author: ford
+  text: I don&#x27;t think this is common, though it would be interesting if ThinkingMachines&#x2F;HuggingFace&#x2F;OpenRouter&#x2F;BaseTen
+    offered fine-tuned variants of the most popular open models that worked with specific
+    harnesses
+  score: 0
+  posted_at: '2026-11-17T16:32:10Z'
+- id: '50533890'
+  parent_id: '50532191'
+  author: scubazealous
+  text: While this could be better, I wonder how much time the average developer spends
+    on runs that fail? How much time do students spend on runs that fail?
+  score: 0
+  posted_at: '2026-11-17T16:32:23Z'
+- id: '50533920'
+  parent_id: '50533876'
+  author: Ericson2314
+  text: BTW the usual point of Conway&#x27;s structure is to try to adjust the org
+    &#x2F; who is working on the software, so you don&#x27;t get a bad software architecture.<p>The
+    &quot;objective&quot; nature of code is revealing a flaw in the human division
+    of labor.
+  score: 0
+  posted_at: '2026-11-17T16:34:03Z'
+- id: '50533929'
+  parent_id: '50533689'
+  author: Zigurd
+  text: "&gt; <i>The requirements will be more stable than the code.</i><p>These kinds
+    of changes to the way teams are formed and managed, and how products are developed
+    is what really fascinates me about the impact of coding agents.<p>Even if it works,
+    for some definition of works, to dump a huge spec into a coding agent context
+    window, I suspect this is where a lot of horror stories about agentic coding come
+    from.<p>Teams, and the management structure above them, are going to have to get
+    used to more collaborative and iterative product definition and development in
+    order to extract the most value from coding agents."
+  score: 0
+  posted_at: '2026-11-17T16:34:32Z'
+- id: '50533954'
+  parent_id: '50532191'
+  author: seizethecheese
+  text: 'The headline here is confusing. They ran a bunch of harness and agent combinations
+    on terminal bench tasks, and 64% of the spending was on tasks that didn’t pass
+    terminal bench verifiers.<p>It’s unclear whether that’s supposed to be surprising
+    against the selected models for the benchmark. I suspect it’s not and the headline
+    is written to pander to “wasting money on AI” upvotes.<p>Edit: they changed the
+    title. The one used to get to the front page was something like &quot;Across N
+    agent runs 64% of agent cost went to failing runs&quot;.<p>Edit2: since the link
+    is poor quality, I tried to answer some of these questions myself using 927k agent
+    runs vs. this blog post&#x27;s 27k: <a href="https:&#x2F;&#x2F;micjm.com&#x2F;blog&#x2F;on-model-harness-interactions&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;micjm.com&#x2F;blog&#x2F;on-model-harness-interactions&#x2F;</a>.
+    The upshot: there&#x27;s not a lot of harness x model interactions. OpenAI models
+    do seem to have a preference.'
+  score: 0
+  posted_at: '2026-11-17T16:36:17Z'
+- id: '50533989'
+  parent_id: '50533887'
+  author: cronin101
+  text: In hindsight I think I overestimated how common&#x2F;achievable this is with
+    the logic that if PewDiePie could do it, so could a layman <a href="https:&#x2F;&#x2F;felloai.com&#x2F;pewdiepies-ai-model-beats-gpt-4o&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;felloai.com&#x2F;pewdiepies-ai-model-beats-gpt-4o&#x2F;</a><p>However,
+    the hardware requirements are still quite enormous.<p>I could see a gap in the
+    market for crowdfunded (gofundme?) post-training of open-weight models, per harness.
+    I estimate that the one-time compute cost is probably $x000 so this scales nicely
+    with a large number of interested developers that could reuse the weights.
+  score: 0
+  posted_at: '2026-11-17T16:37:46Z'
+- id: '50534004'
+  parent_id: '50533849'
+  author: devmor
+  text: I don&#x27;t see why both can&#x27;t be true.<p>LLMs are allowing people to
+    create things with very little effort compared to before, and those creations
+    are of questionable quality - indeterminable by the LLM-user due to a lack of
+    experience.
+  score: 0
+  posted_at: '2026-11-17T16:38:33Z'
+- id: '50534019'
+  parent_id: '50532191'
+  author: andai
+  text: "&gt;Through our experiments, we found that you should consider switching
+    harnesses when switching models to maximize your experience.<p>I&#x27;ve seen
+    this for years, and seen several papers that studied it: the same prompt will
+    help with one LLM and harm performance for a different LLM on the same task.<p>And
+    on benchmarks which test LLM x Harness, they find that LLMs tend to do way better
+    with their &quot;own&quot; harness. (Or in the case of Chinese LLMs, the harness
+    of the LLM whose training data they borrowed :)"
+  score: 0
+  posted_at: '2026-11-17T16:39:22Z'
+- id: '50534026'
+  parent_id: '50532191'
+  author: shevy-java
+  text: Well, it is a milking system. You have to pay for those tokens anyway.
+  score: 0
+  posted_at: '2026-11-17T16:39:36Z'
+- id: '50534057'
+  parent_id: '50532191'
+  author: colinmarc
+  text: How are people even using Baseten for coding agents? I am using Pi (so very
+    small requests) in a &quot;normal&quot; single-agent way and I hit the rate limits
+    on throughput immediately.
+  score: 0
+  posted_at: '2026-11-17T16:41:12Z'
+- id: '50534106'
+  parent_id: '50533876'
+  author: pjc50
+  text: Oh that&#x27;s a good insight. The agent counts as part of the &quot;organization&quot;
+    for this purpose.
+  score: 0
+  posted_at: '2026-11-17T16:43:48Z'
+- id: '50534120'
+  parent_id: '50532191'
+  author: bisonbear
+  text: These are cool results and I&#x27;m glad that tokens are being invested to
+    eval harness capabilities.<p>However, I am hesitant on the correlation between
+    pass&#x2F;fail in evals which are a binary 0&#x2F;1 determined by tests, and real
+    world usage, where users can steer, run code review, and care about more than
+    just test pass&#x2F;fail.<p>I wrote about the problem of determining &quot;success&quot;
+    for coding agents, and a lot of it boils down to the fact that agents can write
+    dumb code that passes tests, and write smart code that fails tests, and we need
+    to shift to rewarding quality of code and alignment with intent rather than just
+    signal on held out tests (which is still important!)<p><a href="https:&#x2F;&#x2F;www.stet.sh&#x2F;blog&#x2F;cost-per-successful-task"
+    rel="nofollow">https:&#x2F;&#x2F;www.stet.sh&#x2F;blog&#x2F;cost-per-successful-task</a>
+  score: 0
+  posted_at: '2026-11-17T16:44:39Z'
+- id: '50534140'
+  parent_id: '50533954'
+  author: seizethecheese
+  text: Okay, I wanted to know “which tasks” and dig into the methodology, and its
+    documented nowhere!<p>A serious effort here would use a specific set of terminal
+    bench questions. Instead these look like cherry picked questions. How were they
+    picked and why? Without an answer we should assume they were picked to produce
+    some result.
+  score: 0
+  posted_at: '2026-11-17T16:45:16Z'
+- id: '50534177'
+  parent_id: '50533954'
+  author: plufz
+  text: Yeah exactly, compared to what baseline? People here will probably be stunned
+    when I say this, but my pre-agent code was usually not bug free on my first attempts
+    either.
+  score: 0
+  posted_at: '2026-11-17T16:46:32Z'
+- id: '50534184'
+  parent_id: '50534004'
+  author: ygjb
+  text: So, basically, the same as before, but LLMs provide the creations of questionable
+    quality at a faster rate :P<p>I think the quality of the results vary with the
+    rigor of the process.  If you one-shot prompt a new service (even with Fable5)
+    &quot;build me an airtable competitor, no bugs&quot;, you will get some real code
+    camp quality results, but a well defined set of prompts and a workflow that leverages
+    multiple coding agents reviewing each others work, and implementing test cases
+    at a relatively granular level yields radically different results.<p>Couple that
+    with a rigorous design&#x2F;spec session, and multiple checkpoints (say at release
+    milestone) to monitor drift from the original design makes the process a bit more
+    intentional and measurable, while still being far faster than a typical engineer
+    can build.
+  score: 0
+  posted_at: '2026-11-17T16:46:55Z'
+- id: '50534244'
+  parent_id: '50533954'
+  author: Edward40
+  text: Because these tasks are genuinely hard and require long-horizon reasoning,
+    running full evaluation experiments gets expensive fast.<p>For example, on bun-sourcemap-leak
+    (<a href="https:&#x2F;&#x2F;hub.harborframework.com&#x2F;tasks&#x2F;terminal-bench&#x2F;bun-sourcemap-leak"
+    rel="nofollow">https:&#x2F;&#x2F;hub.harborframework.com&#x2F;tasks&#x2F;terminal-bench&#x2F;bun-sou...</a>),
+    all 440 trials finished cleanly with zero infra errors or timeouts, yet 0 out
+    of 440 passed all hidden-variant tests (the best was 35&#x2F;36 across three DeepSeek
+    V4.1 Flash runs).<p>Some of these tasks take up to 8 hours per run, so if you
+    are not careful, you end up burning massive amounts of compute and API spend just
+    to get an accurate evaluation signal.
+  score: 0
+  posted_at: '2026-11-17T16:49:59Z'
+- id: '50534274'
+  parent_id: '50532191'
+  author: fennecfoxy
+  text: Yeah, developers sometimes go down the wrong path as well. It&#x27;s a non
+    deterministic system exploring a huge problem space...
+  score: 0
+  posted_at: '2026-11-17T16:51:46Z'
+- id: '50534318'
+  parent_id: '50533520'
+  author: nolok
+  text: 'I don&#x27;t understand why that idea was adopted that IA had to be that
+    &quot;give one command have a perfect run and correct answer&quot; thing when
+    it&#x27;s clearly not how it works and an eternal &quot;the last % is worth 99%&quot;
+    issue.<p>I know why the US frontier labs push it of course, you can&#x27;t push
+    a trillion dollar plus idea if you also say it should be a cheap commodity and
+    the best and latest are now the answer, a bazillion mid levels are.<p>But most
+    work of value I do is with a swarm of &quot;not the latest nor the brightest&quot;
+    models, with a smart one controlling the dance. Most decisions or review is better
+    done through consensus. The myth that &quot;if we keep going it will reach a point
+    where it&#x27;s always correct&quot; seems so obvious to me, it doesn&#x27;t work
+    like that, for that matter we don&#x27;t work like that.<p>This is not a jab at
+    it. I work with it. I love it. But I think the story imperative are a mismatch
+    for the actual needs of most companies, and it&#x27;s hiding between the &quot;frontier
+    needs&quot; of special research &amp; co, or the governemental needs.<p>On the
+    same line of thought: it&#x27;s pretty obvious as great as these things are, no
+    they&#x27;re not going to &quot;replace all employee&quot;, and no employee without
+    them won&#x27;t be able to compete either. They&#x27;re a supercharger, a self
+    multiplying smart assistant with capabilities in any field, and it feels so wrong
+    to me that they&#x27;ve been presented in a complelty different way.'
+  score: 0
+  posted_at: '2026-11-17T16:53:55Z'
+- id: '50534320'
+  parent_id: '50533689'
+  author: wtch98
+  text: "&gt; The cost of AI is rapidly falling while its engineering capabilities
+    keep rising. This implies that code is becoming more fungible, and you should
+    expect any code you write today to mostly be replaced in the near future.<p>I
+    have code I wrote in 2006 which is still in daily use adding business value at
+    my company. Why would it need replacing?"
+  score: 0
+  posted_at: '2026-11-17T16:54:04Z'
+- id: '50534350'
+  parent_id: '50532191'
+  author: augment_me
+  text: This is completely expected. Agents are pseudo-greedy search functions that
+    brute-force solutions using their context.<p>If you want perfect search, you need
+    lossless compression, which defeats the point of the current systems that are
+    lossy L2-optimized representations of all information.
+  score: 0
+  posted_at: '2026-11-17T16:55:33Z'
+- id: '50534357'
+  parent_id: '50534184'
+  author: yugoslavia4ever
+  text: Yes, but before you learned as you went, researching and finding out what
+    good (or at least better) looked like; what learning is done when you wave your
+    hand?
+  score: 0
+  posted_at: '2026-11-17T16:55:59Z'
+- id: '50534379'
+  parent_id: '50534140'
+  author: jzemeocala
+  text: 'For real, i remember setting up advanced Linux configurations back before
+    the 3.0 kernel and I&#x27;m pretty sure I had a higher failure rate.<p>The biggest
+    difference is that I, as a human, get mentally exhausted. but modern AI (when
+    given unlimited tokens and tools) is like if Stephen hawking had a meth habit
+    and the tenacity of Sisyphus with a bad case of syphilis after being told he can
+    be cured if he can get that boulder over the hill<p>And even if they did try to
+    test them on a lot of gotcha tasks; I&#x27;m perennially reminded of the ever-relevant
+    quote about AI and other tech: &quot;this is the worst it will ever be&quot;'
+  score: 0
+  posted_at: '2026-11-17T16:57:45Z'
+- id: '50534398'
+  parent_id: '50534274'
+  author: bityard
+  text: 'This is a good point. I&#x27;m (so far) only a hobbyist developer and _most_
+    of my non-trivial projects took at least 2 prototypes before getting to something
+    that was fully usable with few caveats or technical debt.<p>I think this is not
+    too different from physical products, either. You often hear of companies spending
+    multiple years and iterating through dozens of prototypes in order to bring something
+    new to the market.<p>I don&#x27;t think there is a shorter path: you never truly
+    understand a problem until you take up the engineering work to solve it.'
+  score: 0
+  posted_at: '2026-11-17T16:58:58Z'
+- id: '50534405'
+  parent_id: '50533954'
+  author: themgt
+  text: "<i>Over the 22 harnesses, the rank correlation of the steps per pass and
+    the cost per pass was +0.51 (p = 0.015). For the other three factors, it was −0.03
+    to +0.02 (p ≥ 0.88). Within each model, tool calls tracked cost as well as steps.
+    Table 4 below and Table 5 in the appendix give the values.</i><p><i>For harness
+    developers: cut steps, not just prompt tokens. Prompt size, tool count and cache
+    hit rate did not predict cost per pass. Steps did, because every step sends the
+    whole context again.</i><p>Incredible, none of these harness developers considered
+    just asking the LLM to solve the problem right away! Don&#x27;t siege Leningrad,
+    take it immediately!"
+  score: 0
+  posted_at: '2026-11-17T16:59:10Z'
+- id: '50534425'
+  parent_id: '50534140'
+  author: seizethecheese
+  text: Confirmed. This is 17 TB4 tasks and 45 TB2.1 tasks. Why?
+  score: 0
+  posted_at: '2026-11-17T17:00:11Z'
+- id: '50534427'
+  parent_id: '50532191'
+  author: underdeserver
+  text: Wait till you hear what the human success rate used to be.
+  score: 0
+  posted_at: '2026-11-17T17:00:19Z'
+- id: '50534435'
+  parent_id: '50532191'
+  author: maerF0x0
+  text: So? I&#x27;m sure exceedingly high amount of EC2 cpus are idling, or lost
+    to discarded branch predictions etc.<p>We waste whatever is cheap to gain what
+    is dear.<p>(Of course we iterate towards better, but that doesn&#x27;t mean we
+    delay shipment&#x2F;usage once it&#x27;s profitable &#x2F; better than status
+    quo)
+  score: 0
+  posted_at: '2026-11-17T17:00:44Z'
+- id: '50534445'
+  parent_id: '50534120'
+  author: Edward40
+  text: "&quot;Cost per pass&quot; is distinct from &quot;cost per successful task.&quot;<p>Cost
+    per pass is simply the average cost per task divided by the pass rate.<p>If you
+    draw a line from the origin to any harness on that chart, its slope (pass rate
+    ÷ cost) represents passes per dollar. Cost per pass is the inverse of that slope,
+    meaning the lowest cost per pass gives you the steepest line."
+  score: 0
+  posted_at: '2026-11-17T17:01:30Z'
+- id: '50534473'
+  parent_id: '50534425'
+  author: Edward40
+  text: We want to see how performance diverges between TB2.1 and TB4 while keeping
+    costs manageable, since running the entire dataset is really expensive.
+  score: 0
+  posted_at: '2026-11-17T17:03:13Z'
+- id: '50534490'
+  parent_id: '50534405'
+  author: Edward40
+  text: Cutting the system prompt and tools is easy. Cutting steps requires understanding
+    the model&#x27;s RL strategy and how it was trained to explore.
+  score: 0
+  posted_at: '2026-11-17T17:04:36Z'
+- id: '50534499'
+  parent_id: '50534318'
+  author: wat10000
+  text: I recently tried some personal evals to see how some different models performed.
+    I was trying Opus, Sonnet, Gemini 3.8 (this was pre-Argon) and a couple of others.
+    I picked a pull request I&#x27;d recently made with heavy Claude assistance, one
+    that seemed simple enough to be quick to solve but with enough subtleties that
+    I could differentiate the results. Set up the agents to run clean without knowledge
+    of the solution, and set them loose.<p>To my surprise, none of them came close
+    to producing an acceptable PR. Quality varied, but even the very best results
+    were missing significant pieces.<p>My takeaway is that the human in the loop is
+    still massively important for many things. And that makes it really hard to come
+    up with a useful benchmark.
+  score: 0
+  posted_at: '2026-11-17T17:04:54Z'
+- id: '50534504'
+  parent_id: '50532191'
+  author: bob1029
+  text: The entire point of this AI thing is that the cost of failure is now ~zero.
+    You can try again in a few minutes &#x2F; hours. A traditional software business
+    might only complete one iteration before time runs out.
+  score: 0
+  posted_at: '2026-11-17T17:05:22Z'
+- id: '50534516'
+  parent_id: '50534318'
+  author: krrrh
+  text: "&gt; it doesn&#x27;t work like that, for that matter we don&#x27;t work like
+    that.<p>The parallels with self-driving cars are interesting. We demand that agents
+    don’t just produce better code than most humans (which the frontier models do),
+    but that they perform much much much better."
+  score: 0
+  posted_at: '2026-11-17T17:06:09Z'
+- id: '50534538'
+  parent_id: '50534473'
+  author: seizethecheese
+  text: How were the specific questions chosen?
+  score: 0
+  posted_at: '2026-11-17T17:07:36Z'
+- id: '50534539'
+  parent_id: '50533699'
+  author: hedgehog
+  text: It&#x27;s typically easier to tune the harness around the models&#x27; existing
+    behavior. In my experience the primary failures in models &gt; 5B params on coding
+    tasks are just that they aren&#x27;t able to translate instructions into a correct
+    description or implementation of the problem (will write wrong code, wrong tests,
+    and wrong documentation). The basic tool calling and syntax of generated code
+    is fine.
+  score: 0
+  posted_at: '2026-11-17T17:07:37Z'
+- id: '50534628'
+  parent_id: '50533575'
+  author: krrrh
+  text: A shift is realizing that refactors go from something that was costly and
+    infrequent to something that can happen inexpensively and frequently. It takes
+    some rebalancing.<p>I recently used agentic processes to bring a young codebase
+    to a functioning state very rapidly. This forced discussions about design principles
+    that were folded back into a short document in the repo which then led to a major
+    refactoring plan, and a massive pruning of code that was written the week prior.
+    There are solid engineering approaches in the codebase now that wouldn’t have
+    been achieved without this discovery process.
+  score: 0
+  posted_at: '2026-11-17T17:11:58Z'
+- id: '50534650'
+  parent_id: '50532191'
+  author: evalstate
+  text: Just use a harness that has been properly integrated and tested with each
+    model, with published traces and comparisons (author of) <a href="https:&#x2F;&#x2F;fast-agent.ai&#x2F;benchmarks&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;fast-agent.ai&#x2F;benchmarks&#x2F;</a><p>GitHub
+    and Copilot CLI have started to do the same btw (not sure if they publish the
+    traces&#x2F;reward hack results). But we should normalise this as consumers shouldn&#x27;t
+    be forced in to playing this game.
+  score: 0
+  posted_at: '2026-11-17T17:13:09Z'
+- id: '50534665'
+  parent_id: '50534445'
+  author: bisonbear
+  text: In this case, I am not entirely sure how cost per pass is distinct from cost
+    per successful task given that success is defined as pass&#x2F;fail.<p>To illustrate
+    the difference, the author of FrontierHarness included &quot;Figure 3. Cost and
+    pass rate of each harness with each model&quot;, in which we can see that Codex
+    CLI has $0.937 cost per pass, but a $0.573 cost per task. Measuring cost per task
+    also changes the winner to OpenCode
+  score: 0
+  posted_at: '2026-11-17T17:13:58Z'
+- id: '50534672'
+  parent_id: '50532191'
+  author: WorldPeas
+  text: evolving harnesses are also a cool development I&#x27;ve seen recently though
+    I feel they&#x27;ll have diminishing returns <a href="https:&#x2F;&#x2F;www.alphaxiv.org&#x2F;abs&#x2F;2609.01437"
+    rel="nofollow">https:&#x2F;&#x2F;www.alphaxiv.org&#x2F;abs&#x2F;2609.01437</a>
+  score: 0
+  posted_at: '2026-11-17T17:14:35Z'
+- id: '50534707'
+  parent_id: '50533699'
+  author: bisonbear
+  text: In MiMo&#x27;s v2.6 public RL training run, they explicitly trained on 23
+    different harnesses in order to minimize overfitting on any single harness. I
+    imagine that this technique has to be common in RL training runs given that model
+    providers have little control over where their models are used.<p><a href="https:&#x2F;&#x2F;mimo.xiaomi.com&#x2F;rl&#x2F;#overview"
+    rel="nofollow">https:&#x2F;&#x2F;mimo.xiaomi.com&#x2F;rl&#x2F;#overview</a>
+  score: 0
+  posted_at: '2026-11-17T17:16:28Z'
+- id: '50534712'
+  parent_id: '50533689'
+  author: tempfile
+  text: "&gt; This implies that code is becoming more fungible<p>Code has always been
+    fungible, in the sense that it could be refactored.<p>&gt; you should expect any
+    code you write today to mostly be replaced in the near future<p>Why on earth do
+    you think this? It does not follow from your other points. Just because you <i>could</i>
+    turn your business into a rube goldberg code juggling machine, why would you?"
+  score: 0
+  posted_at: '2026-11-17T17:16:48Z'
+- id: '50534736'
+  parent_id: '50534490'
+  author: bisonbear
+  text: I wonder if Claude Code would do better given they just introduced code mode,
+    which should significantly cut the number of steps required
+  score: 0
+  posted_at: '2026-11-17T17:17:55Z'
+- id: '50534751'
+  parent_id: '50532191'
+  author: jedisct1
+  text: It would have been nice to see swival.dev in that list.<p>But unsurprisingly,
+    Codex works pretty well, too (and not just with OpenAI models), and Claude Code
+    is just a waste of tokens and money.
+  score: 0
+  posted_at: '2026-11-17T17:18:41Z'
+- id: '50534759'
+  parent_id: '50534140'
+  author: Edward40
+  text: Sorry for the inconvenience. We ran 27,280 total trials on Runta (1–4 vCPU,
+    2–8 GB RAM, 32 GB disk) using the 62-task frontier-harness-eval@v1.1.0 dataset
+    across 5 models and 22 harnesses on Baseten, with 4 attempts per task. Every harness
+    and model ran at max effort with a 131,072 max output token limit per request
+    and per-task agent timeouts ranging from 15 minutes to 8 hours.<p>For scoring,
+    final passes are divided by scored attempts, where infrastructure errors are excluded
+    from the denominator, timeouts are still graded by the verifier, and reward hacking
+    (such as looking up solutions online) counts as a failure. Costs are calculated
+    using list price multiplied by reported tokens.<p><a href="https:&#x2F;&#x2F;hub.harborframework.com&#x2F;datasets&#x2F;frontier-harness-eval&#x2F;frontier-harness-eval"
+    rel="nofollow">https:&#x2F;&#x2F;hub.harborframework.com&#x2F;datasets&#x2F;frontier-harness-ev...</a>
+  score: 0
+  posted_at: '2026-11-17T17:19:05Z'
+- id: '50534783'
+  parent_id: '50534140'
+  author: Edward40
+  text: I&#x27;m also building a leaderboard in the meantime, which will release in
+    a few days with more detailed harness version info and methodology.
+  score: 0
+  posted_at: '2026-11-17T17:20:50Z'
+- id: '50534870'
+  parent_id: '50534759'
+  author: seizethecheese
+  text: This doesn&#x27;t answer the question at all.
+  score: 0
+  posted_at: '2026-11-17T17:25:10Z'
+- id: '50534879'
+  parent_id: '50532191'
+  author: samueloph
+  text: Am I&#x27;m missing something or at this point the distinction between &quot;harness&quot;
+    and &quot;agent&quot; doesn&#x27;t exist anymore because too many people use them
+    interchangeably?<p>Is this post mixing them up or is my understanding of these
+    concepts off?
+  score: 0
+  posted_at: '2026-11-17T17:25:46Z'
+- id: '50534958'
+  parent_id: '50534879'
+  author: layer8
+  text: harness + model = agent (plus sub-agents)<p>Do you have a different understanding?
+  score: 0
+  posted_at: '2026-11-17T17:29:39Z'
+- id: '50534992'
+  parent_id: '50534879'
+  author: ogmutlu
+  text: They mean the same thing?
+  score: 0
+  posted_at: '2026-11-17T17:31:39Z'
+- id: '50535001'
+  parent_id: '50532191'
+  author: '0xbadcafebee'
+  text: 'The choice of agent&#x2F;harness is, as people frequently point out, just
+    one of many variables that changes agent performance. Skills, MCPs, Extensions,
+    system prompt additions, often have drastic effects, making things better and&#x2F;or
+    worse. It&#x27;s <i>interesting</i> to compare them side by side, but probably
+    won&#x27;t reflect your own unique experience.<p>Second thing to consider: ZCode
+    was sending everyone&#x27;s code to Alibaba... not sure I would use their harness
+    just to save a few cents on coding.'
+  score: 0
+  posted_at: '2026-11-17T17:32:32Z'
+- id: '50535025'
+  parent_id: '50532191'
+  author: BugsJustFindMe
+  text: This is nice and all, but I really want to see the best harness for the actual
+    frontier models ChatGPT and Claude, not just open weight models.
+  score: 0
+  posted_at: '2026-11-17T17:34:28Z'
+- id: '50535029'
+  parent_id: '50532191'
+  author: justincormack
+  text: You do need to optimise prompts too, eg I found that openai models just gave
+    up in Pi, but adding a line to the prompt matching Codex eg &quot;Once implementation
+    is authorized, the agent should persist through the bounded change, tests, review
+    and final validation. Complexity, expected duration and context compaction alone
+    are not reasons to stop.&quot; fixes that. Otherwise it would look at tasks and
+    say they were too hard.
+  score: 0
+  posted_at: '2026-11-17T17:34:37Z'
+- id: '50535232'
+  parent_id: '50533954'
+  author: adrithmetiqa
+  text: "Agreed. Does this help anyone decide what model or harness to use.  \nNope."
+  score: 0
+  posted_at: '2026-11-17T17:46:53Z'
+- id: '50535250'
+  parent_id: '50534870'
+  author: dotancohen
+  text: It&#x27;s still the most informative thing to come out of that account or
+    the linked article.
+  score: 0
+  posted_at: '2026-11-17T17:47:52Z'
+- id: '50535259'
+  parent_id: '50533864'
+  author: reddit_clone
+  text: Definitely with the cost. I strongly believe the price now is heavily subsidized
+    and will shoot up in the future. (Not new. First hit is free..)
+  score: 0
+  posted_at: '2026-11-17T17:48:18Z'
+- id: '50535332'
+  parent_id: '50532191'
+  author: xyzzy_plugh
+  text: I don&#x27;t like this framing.<p>For a given model, the best harness depends
+    on the problem. As models become increasingly capable, the harness  appears to
+    matter more than the model. This is perhaps controversial but allow me to explain.<p>Most
+    of my problems are in a single domain, using specific tools and programming languages.
+    I give whatever model de jour the specific tools it needs to solve the problem.
+    I don&#x27;t let it execute arbitrary scripts or programs (though it can, if it
+    really tries). I give it a restricted number of calls and I feed that information
+    back into it (budget). I let it farm out work to other models, using the same
+    harness. I give everything a budget, which is tracked and enforced, but it&#x27;s
+    not real, and refills at different times.<p>This bespoke, specialized harness
+    absolutely smokes any other mainstream harness for these tasks. Significantly
+    faster, cheaper, more correct.<p>But I can&#x27;t build a mobile app with this
+    harness, or make a movie.<p>These tests are doing the same thing. They measure
+    a handful of scenarios. I can&#x27;t easily tell if those map to my needs or not.
+    In my experience, very few of them do.<p>Can these general purpose harnesses solve
+    my problems? Yes, if I&#x27;m willing to let the model churn for a long time and
+    burn a lot of tokens. But that doesn&#x27;t feel like a sustainable practice.<p>Maybe
+    I&#x27;m too early, maybe it&#x27;s premature to optimize the harness this way,
+    but I&#x27;m spending fewer tokens than my peers and getting a lot more done,
+    and that matters.
+  score: 0
+  posted_at: '2026-11-17T17:52:57Z'
+- id: '50535378'
+  parent_id: '50534379'
+  author: dotancohen
+  text: That quote is outdated. My phone nags me now twice daily to update, and the
+    update removes features I use so I&#x27;m careful to tread around it.<p>My Windows
+    work desktop has two orders of magnitude more memory and more processing power
+    than the last time I used Windows, yet boots slower and is laggier than any Windows
+    I&#x27;ve ever used.<p>Almost all useful information online is concentrated into
+    YouTube and Reddit, everything is advertising and trying to steal attention. I&#x27;m
+    not even welcome on Reddit anymore due to the media campaigns against my country
+    and race.<p>We&#x27;ve definitely passed the point where the derivative has gone
+    negative.
+  score: 0
+  posted_at: '2026-11-17T17:55:18Z'
+- id: '50535508'
+  parent_id: '50532191'
+  author: SAI_Peregrinus
+  text: When a task passes all tests, it&#x27;s done. More tokens should be spent
+    on failing runs, because most runs where tokens are used should fail. For the
+    same reason that your lost keys are always in the last place you look for them.
+  score: 0
+  posted_at: '2026-11-17T18:03:23Z'
+- id: '50535566'
+  parent_id: '50534712'
+  author: skydhash
+  text: it&#x27;s amazing that you could read a book like &quot;The Design and Implementation
+    of the 4.4 BSD Operating Systems&quot; (1996) and still find it relevant to browse
+    the code of OpenBSD and NetBSD, three decades later. While good software gets
+    plenty of updates and additions, the core ideas barely bulge over time. A lot
+    of churn is people playing around with no reason instead of solving the problem
+    properly the first time.
+  score: 0
+  posted_at: '2026-11-17T18:06:50Z'
+- id: '50535581'
+  parent_id: '50534538'
+  author: Edward40
+  text: You can see the task in <a href="https:&#x2F;&#x2F;hub.harborframework.com&#x2F;datasets&#x2F;frontier-harness-eval&#x2F;frontier-harness-eval"
+    rel="nofollow">https:&#x2F;&#x2F;hub.harborframework.com&#x2F;datasets&#x2F;frontier-harness-ev...</a><p>We
+    kept the category unified so we have tasks for every domain like ML , science
+    and others.
+  score: 0
+  posted_at: '2026-11-17T18:07:38Z'
+- id: '50535603'
+  parent_id: '50533954'
+  author: Edward40
+  text: Good finding! Model preference is interesting.
+  score: 0
+  posted_at: '2026-11-17T18:08:35Z'
+- id: '50535646'
+  parent_id: '50535332'
+  author: Edward40
+  text: I am thinking about how to measure the efficiency of ultilzing existing context
+    in one specific domain.
+  score: 0
+  posted_at: '2026-11-17T18:10:55Z'
+article:
+  url: https://runta.com/blog/introducing-frontierharness-eval-v1-1/
+  title: Introducing FrontierHarness Eval v1.1 — RUNTA
+  fetch_status: success
+  content: |-
+    [All Blog](/blog/)
+
+    ## TL;DR
+
+    We partnered with [Baseten](https://www.baseten.co/) to build the largest-scale harness leaderboard using 83B tokens across 27,280 agent runs. We wanted to answer two questions: **when you switch your model, should you consider switching the harness too? What is the best harness for each model?**
+
+    Previously, our [v1.0 FrontierHarness leaderboard](/blog/introducing-frontierharness-eval/) ranked harnesses on a single model, Kimi K3.
+
+    V1.1 expands the benchmark to 22 harnesses × 5 models × 62 tasks × 4 attempts, 76× the size of v1.0.
+
+    **Through our experiments, we found that you should consider switching harnesses when switching models to maximize your experience.**
+
+    Each model had a different best-value (pass rate vs. cost) harness: Codex CLI with GLM-5.3, Pi with GLM-5.3 Flash, ZCode with DeepSeek V4.1 Flash 1017, Oh My Pi with Muse and Alma with Kimi-K3. **Cost ranks moved far between models.**
+
+    By cost per task, the median harness moved 11 of 22 places, and Codex CLI went from 1st with GLM-5.3 to 16th with Kimi-K3.
+
+    * * *
+
+    ## Result
+
+    **Figure 1. Cost per task and pass rate of each harness**
+
+    Each point is one harness: further left is a lower average cost per task, and higher is a higher pass rate. The orange line joins the harnesses that no other harness beats in both cost and pass rate. Select a model to filter all figures of this post.
+
+    Over all models, four harnesses are on the line: OpenCode v2 (lowest cost per task, $0.561), Pi, Codex CLI and ZCode (highest pass rate, 61.9%). The others cost up to 1.6 times as much and passed 50.6% to 60.2%.
+
+    Each card names the best-value harness for one model: the lowest cost per pass, unless another harness costs at most 30% more per pass and passes at least 5 points more often. This rule picked ZCode over OpenCode v1 with DeepSeek (25% more cost, 7.7 more points) and Alma over Oh My Pi with Kimi-K3 (9% more cost, 6.5 more points).
+
+    * * *
+
+    ## Why We Built _FrontierHarness_ Eval v1.1
+
+    [V1.0](/blog/introducing-frontierharness-eval/) ran nine harnesses with one model. Their pass rates were within 17 points of each other, but the median cost per pass differed by 17 times. We thought that this came mostly from the pair of harness and model: a harness that is cheap with one model can be expensive with another.
+
+    V1.1 runs each harness with five models.
+
+    * * *
+
+    ## What We Tested
+
+    **Harnesses.** 18 harnesses. The four DeepSeek Harness profiles have different tool sets, and OpenCode ran at two versions. Each counts separately: 22 configurations. Table 2 in the [appendix](#appendix-reference-tables) gives their versions.
+
+    **Models.** Baseten served all five: GLM-5.3 (`zai-org/GLM-5.3`), GLM Flash (`zai-org/GLM-5.3-Flash`), DeepSeek (`deepseek-ai/DeepSeek-V4.1-Flash-1017`), Muse (`meta-models/muse-spark-open`) and Kimi-K3 (`moonshotai/Kimi-K3`).
+
+    **Tasks.** 62 terminal tasks. The time limits are those of the tasks, from 15 minutes to 8 hours.
+
+    * * *
+
+    ## Setup and Scoring
+
+    ### Configuration and Runtime
+
+    We ran the Harbor evaluation with each harness’s default settings, because we think this is closest to how people use a harness every day. Each harness used the same version and settings with all models, at the maximum reasoning effort.
+
+    **Figure 2. How Harbor and Runta divide the work in each trial**
+
+    Each trial gets a new Runta runtime, which is deleted at the end. Thus no trial can see the files of an earlier trial.
+
+    ### Scoring Method
+
+    **Table 1. Methodology**
+
+    A cell is one harness and model pair. We use the two cost metrics of [our dashboard](https://frontierharness.org/):
+
+    - **Average cost per task:** the mean cost of the priced trials of each task, then the mean over the tasks. Figure 1 and the cost ranks use it (Figures 4 and 5).
+    - **Cost per pass:** the average cost per task divided by the pass rate. The best-value harness uses it (Figures 3, 6 and 7).
+
+    We pick the best value by cost per pass because we want harnesses at the top left of a chart of pass rate against cost per task: a high pass rate at a low cost. Draw a line from the origin to the point of a harness. Its slope, pass rate ÷ cost, is the passes per dollar. Cost per pass is the inverse of this slope, so the lowest cost per pass has the steepest line.
+
+    Audits of the trial logs flagged 216 trials for reward hacking, and 163 of them were online lookups. These trials score 0. Table 3 in the appendix gives the count for each harness and model.
+
+    * * *
+
+    ## Results by Model
+
+    **Figure 3. Cost and pass rate of each harness with each model**
+
+    A deeper cell costs less than the others in its column. Codex CLI was the cheapest per pass with GLM-5.3, $0.803, but 12th with Muse and 10th with Kimi-K3. Over all models, it cost the least per pass, $0.937, and Antigravity CLI the most, $1.63.
+
+    ### How Sure Are These Results?
+
+    We drew the 62 tasks again 4,000 times and chose the best-value harness each time. Codex CLI stayed first with GLM-5.3 in 99.6% of the draws. The other four winners are the most likely of several close harnesses: Oh My Pi with Muse (53%), ZCode with DeepSeek (47%), Pi with GLM Flash (42%) and Alma with Kimi-K3 (25%).
+
+    * * *
+
+    ## The Harness Changes the Cost
+
+    The model sets the general level of the cost, because the list prices of the models differ by 20 times or more (Figure 9). We took the average cost per task of the 110 cells on a log scale, so that a doubling counts the same with each model. A two-way analysis of variance divides the spread of these costs into three parts:
+
+    - **Model, 92.8%:** the differences between the five models.
+    - **Harness, 2.3%:** the part of the effect of a harness that is the same with every model.
+    - **Pair, 4.9%:** the rest. It also contains noise, because each cell has one value.
+
+    So with the model fixed, 68% of the variation between harnesses (4.9 of 7.2 points) depends on the pair, or is noise.
+
+    ### With the Model Fixed, the Harness Changes the Cost by 1.8 to 5.0 Times
+
+    **Figure 4. Lowest-cost and highest-cost harness for each model**
+
+    Each row is a model, on a log scale of average cost per task. The ratio divides the highest cost by the lowest.
+
+    To test for chance, we shuffled the trials between the harnesses of each model 300 times and calculated the ratio again. “Chance” is the median of these ratios, 1.2 to 1.8 times. All five real ratios are larger than every shuffle (p = 0.003), so the spread comes from the harnesses, not from the noise of reruns. The largest is with DeepSeek: Cline CLI cost 5.0 times as much as OpenCode v1, for 2.0 more points. With the other models, the cheapest harness per task was at most 0.4 points behind the most expensive one.
+
+    ### The Cheapest Harness per Task Changes With the Model
+
+    **Figure 5. Cost rank of each harness with each model (1 = lowest cost per task)**
+
+    Each line is a harness, with the cheapest at the top. The five highlighted lines are the cheapest harnesses per task with GLM-5.3, GLM Flash, DeepSeek, Muse and Kimi-K3.
+
+    Codex CLI was 1st with GLM-5.3 and 16th with Kimi-K3. DeepSeek Harness: Creator moved the most, from 1st with Muse to 21st with GLM Flash. OpenCode v1 was 1st with DeepSeek and 13th with Muse.
+
+    Reruns do not explain these moves. We divided the attempts into two halves and ranked the harnesses by cost in each half. With the same model, the two rankings had a mean rank correlation of 0.71. With two different models, it was 0.26.
+
+    ### A Higher Cost Does Not Give a Higher Score
+
+    **Figure 6. Lowest and highest cost per pass for each model**
+
+    This is Figure 4 for cost per pass. After each ratio is the rank correlation of the cost per task and the pass rate of the harnesses, from −0.39 to +0.22. A positive value means that the more expensive harnesses passed more often.
+
+    The harness with the highest pass rate was 5th to 20th of 22 in cost per task. With four of the five models, the most expensive harness per pass passed less often than the cheapest one.
+
+    * * *
+
+    ## Does a Simpler Harness Cost Less?
+
+    No. We compared four factors wit
+  error:
+  fetched_at: '2026-11-17T18:15:17Z'
+archived_at: '2026-11-17T18:15:25Z'

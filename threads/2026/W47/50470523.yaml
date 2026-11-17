@@ -1,0 +1,557 @@
+---
+post:
+  id: '50470523'
+  title: 'Rows vs. Columns: How different are they, really?'
+  url: https://spiraldb.com/blog/rows-vs-columns
+  hn_url: https://news.ycombinator.com/item?id=50470523
+  score: 123
+  author: ''
+  posted_at: '2026-11-12T17:04:41Z'
+  fetched_at: '2026-11-17T18:15:22Z'
+  article_url: https://spiraldb.com/blog/rows-vs-columns
+  article_fetch_status: success
+  article_fetched_at: '2026-11-17T18:15:22Z'
+  raw_comment_count: 43
+comments:
+- id: '50530202'
+  parent_id: '50470523'
+  author: j0shk0
+  text: Am I missing something or is this nothing more but AOS vs SOA ?
+  score: 0
+  posted_at: '2026-11-17T11:50:31Z'
+- id: '50530262'
+  parent_id: '50530202'
+  author: pdpi
+  text: It&#x27;s the same basic concept, yes. The details matter, though, and the
+    fact that AoS&#x2F;SoA is mostly about in-memory layout, whereas row&#x2F;column
+    store is about on-disk layout means that the performance compromises are very
+    different. E.g. column store databases frequently use RLE for compression, but
+    that&#x27;s probably _way_ too expensive for SoA.
+  score: 0
+  posted_at: '2026-11-17T11:57:41Z'
+- id: '50530352'
+  parent_id: '50470523'
+  author: krawcu
+  text: I enjoyed reading this post
+  score: 0
+  posted_at: '2026-11-17T12:12:05Z'
+- id: '50530408'
+  parent_id: '50530202'
+  author: xnorswap
+  text: Please introduce your acronyms!<p>Array of Structures vs Structure of Arrays.
+  score: 0
+  posted_at: '2026-11-17T12:16:56Z'
+- id: '50530487'
+  parent_id: '50470523'
+  author: kinleyd
+  text: Great read! I do enjoy exploring both row and column data stores every now
+    and then. Love the way I get my head bent.
+  score: 0
+  posted_at: '2026-11-17T12:27:39Z'
+- id: '50530514'
+  parent_id: '50530262'
+  author: j0shk0
+  text: Thank you!
+  score: 0
+  posted_at: '2026-11-17T12:30:29Z'
+- id: '50530608'
+  parent_id: '50470523'
+  author: 4ndrewl
+  text: "&quot;a database that keeps each record&#x27;s details together can&#x27;t
+    take advantage of that: to read two columns, it has to read all five.&quot;<p>My
+    understanding is that modern databases will take advantage of that if you create
+    an index of those fields - ie it&#x27;ll read from the index, not the records."
+  score: 0
+  posted_at: '2026-11-17T12:40:47Z'
+- id: '50530615'
+  parent_id: '50530514'
+  author: OskarS
+  text: 'One thing to add is that databases tend to take it further using compression.
+    For instance, if you have a column that is all either A or B, you can use run-length
+    encoding (&quot;the next thousand entries are B&quot;). Or you can do delta encoding:
+    if you have some very large number that takes a lot of bits to store, but the
+    deltas between them are quite small, you can save a lot of disk space and I&#x2F;O
+    by just storing the deltas.<p>You can also combine these two: if you have a numeric
+    id that increases by 1 every row, you can delta-encode that to just get a massive
+    list of 1&#x27;s, which you can then run-length encode to just be &quot;the delta
+    for the next million rows is 1&quot;, saving huge amounts of space.<p>You generally
+    don&#x27;t do this with AOS&#x2F;SOA, because you do want to be able to random-access
+    your entries (&quot;index&quot; them, in database terms) and I&#x2F;O performance
+    is much less important. Databases have this issue too, which is why indexes tend
+    to either not be available or much slower in column-oriented DBs.<p>EDIT: ah,
+    read the original commenter a bit too quickly, missed that they mentioned run-length
+    encoding. Apologies.'
+  score: 0
+  posted_at: '2026-11-17T12:41:17Z'
+- id: '50530630'
+  parent_id: '50470523'
+  author: reticulates
+  text: "&gt; Those consequences are the reason that most database systems are built
+    for either transactions or analytics, and not both. [24]<p>&gt; [...]<p>&gt; [24]
+    People have tried to build one system that does both in the past (HTAP, or hybrid
+    transactional&#x2F;analytical processing), but those attempts generally didn&#x27;t
+    work out. Some newer systems seem to be bridging the gap, however. CedarDB, the
+    commercial version of Umbra (a research system from TU Munich), runs transactions
+    and analytics on just one engine and one copy of the data. Databricks&#x27; Lakebase
+    keeps Postgres (a row store) as the engine for transactional queries, but its
+    storage layer rewrites the same data into columnar formats in the background,
+    allowing an analytical engine to query it.<p>The footnote says &quot;those attempts
+    generally didn&#x27;t work out&quot; but then mentions Lakebase and CedarDB as
+    newer efforts. Can anyone speak to whether or not CedarDB, Lakebase (and any others?)
+    are achieving the fabled transactions + analytics in one database? Should we expect,
+    at some point in the near future, for transactions + analytics to be standard
+    in all databases, or is combining them a niche &#x2F; esoteric thing with many
+    tradeoffs?"
+  score: 0
+  posted_at: '2026-11-17T12:43:01Z'
+- id: '50530662'
+  parent_id: '50530608'
+  author: kubanczyk
+  text: Well, yes. One of the things an index can do is column-oriented storage.
+  score: 0
+  posted_at: '2026-11-17T12:45:43Z'
+- id: '50530772'
+  parent_id: '50530615'
+  author: slfnflctd
+  text: Appreciate you going into more detail about how run-length encoding works
+    in any case.  I had an abstract idea it was something like that, but didn&#x27;t
+    realize it could actually be implemented so &#x27;simply&#x27;.
+  score: 0
+  posted_at: '2026-11-17T12:59:23Z'
+- id: '50530819'
+  parent_id: '50530608'
+  author: minkeymaniac
+  text: Not really modern either.. Oracle&#x2F;Sybase&#x2F;SQL Server have been doing
+    that already in the 90s.. including indexed views for aggregation<p>What they
+    recently (and some of these were added in late 2000s) added is columnstore indexes...
+    with compression and also in memory (Sybase Hana, SQL Server In Memory aka Hekaton,
+    Oracle IM column store)
+  score: 0
+  posted_at: '2026-11-17T13:04:06Z'
+- id: '50530820'
+  parent_id: '50530615'
+  author: pdpi
+  text: |-
+    On the one hand, you missed me mentioning RLE. Oh no how dare you.
+    On the other hand, you added a bunch of extra detail, including stuff I didn&#x27;t know about.<p>I call that a pretty positive tradeoff :)
+  score: 0
+  posted_at: '2026-11-17T13:04:07Z'
+- id: '50530869'
+  parent_id: '50530615'
+  author: ConnorTsui20
+  text: One of the cool things about Vortex (which is a file format, but in this context
+    can be better thought of as the storage layer of a DBMS) is that we have implemented
+    compression encodings that _do_ support fast random access. For example, FastLanes
+    allows us to bit-pack values extremely effectively while retaining random access,
+    and this can be combined with other encodings such as ALP and FSST.<p>I believe
+    Vortex is unique in its ability to retain random access while recursively compressing
+    data. And turns out that this is helpful for both in-memory _and_ on-disk (we
+    might write about that in the future)!<p>I unfortunately didn&#x27;t have much
+    space to write about that in this blog, but in the compression section I did link
+    to other blogs that we have written that go into much more detail, if you are
+    interested :D
+  score: 0
+  posted_at: '2026-11-17T13:09:14Z'
+- id: '50530948'
+  parent_id: '50530608'
+  author: ConnorTsui20
+  text: 'We generally refer to an index that holds the data it indexes at its leaves
+    a &quot;clustered index&quot;. But this only means that the tuples are organized
+    according to the ordering of the index: you still generally store the entire record
+    (all columns&#x2F;attributes) together.<p>For example, if I cluster on my sorted
+    primary key, that just means that the index can jump to the tuple with the correct
+    primary key quickly (log time), but you will still end up reading* the entire
+    tuple in the same way I explain in the blog. And if you only store a record ID
+    that points to the other fields instead of the entire tuple at the leaves of the
+    index, then that wouldn&#x27;t be considered a clustered index.<p>I will note,
+    however, that DBMSs should be smart enough to know that an aggregation on only
+    an indexed column does not need to fetch the rest of the columns, only the data
+    at the leaves of the index.'
+  score: 0
+  posted_at: '2026-11-17T13:16:42Z'
+- id: '50531246'
+  parent_id: '50530630'
+  author: contravariant
+  text: I think there&#x27;s never going to be a point where you can have the kind
+    of performance you can get by optimising a datastructure for a &#x27;fixed&#x27;
+    dataset. Nor can you get the maximal performance updating data if you need to
+    maintain a useful datastructure.<p>A simple case is a sorted list, you can sort
+    it after every update, you can ignore the ordering and sort it as needed, or you
+    can use a datastructure that is typically O(log(N)) at both updates and retrieval.
+    Better datastructurs help, but they cannot remove the tradeoff entirely (in fact
+    O(log(N)) inserts are kind of theoretically minimal, though a trie can do it in
+    O(1) for fixed length datatypes).
+  score: 0
+  posted_at: '2026-11-17T13:42:42Z'
+- id: '50531439'
+  parent_id: '50530630'
+  author: lemagedurage
+  text: There&#x27;s also TiDB which has decent adoption. It allows for columnar replicas
+    of transactional data and exposes both over the same MySQL-compatible interface.
+  score: 0
+  posted_at: '2026-11-17T13:57:27Z'
+- id: '50531747'
+  parent_id: '50530630'
+  author: akoller
+  text: 'There are always tradeoffs. Databases are fundamentally about managing optimizations,
+    and the question is whether those tradeoffs make sense for your workload.<p>HTAP
+    has historically been niche because the cost of analytics on fresh data wasn&#x27;t
+    worth the squeeze (sooner or later the MBAs step in). Separating the OLTP and
+    OLAP layers gives you better workload isolation and the ability to optimize each
+    independently.<p>Databricks Lakebase&#x2F;LTAP uses Postgres for transactions
+    and lakehouse engines for analytics, with a shared storage layer. They also use
+    Spark to build Postgres pages in parallel and write them directly to storage,
+    avoiding the single-writer bottleneck when loading large volumes of data.<p>SingleStore
+    takes a different approach: a distributed database based on MySQL with an in memory
+    rowstore for transactions tightly coupled with a merger to columnstore for analytics.<p>I
+    don&#x27;t think HTAP DBs will become the default for every use case. But I do
+    think the space will grow as we move towards agents and automated decision making
+    and optimizations.'
+  score: 0
+  posted_at: '2026-11-17T14:19:40Z'
+- id: '50531777'
+  parent_id: '50530615'
+  author: kloop
+  text: Fun fact, the original Pokemon used both DE and RLE to compress the sprites.
+    It&#x27;s one of the things that makes missingno screw up sprites (it tries to
+    decode game data as if it&#x27;s a sprite encoded this way and sometimes causes
+    buffer overruns)
+  score: 0
+  posted_at: '2026-11-17T14:21:57Z'
+- id: '50531856'
+  parent_id: '50530819'
+  author: gfody
+  text: it&#x27;s no use to mention the frontier database engines to HN - they don&#x27;t
+    exist HTAP is impossible and postgres is SOTA!
+  score: 0
+  posted_at: '2026-11-17T14:27:41Z'
+- id: '50531929'
+  parent_id: '50530408'
+  author: hansvm
+  text: It&#x27;s a technical forum. That&#x27;s like asking to &quot;please introduce
+    the definition of a linker&quot; the first time it crops up. If somebody really
+    doesn&#x27;t know, searching &quot;aos vs soa&quot; in Google yields a largely
+    correct AI summary followed by a Wikipedia article on the topic followed by a
+    StackOverflow discussion on pros&#x2F;cons followed by a similar Reddit discussion.
+    Aside from maybe the image&#x2F;video results, literally everything on the first
+    page looks like it would explain the concept well.
+  score: 0
+  posted_at: '2026-11-17T14:34:28Z'
+- id: '50531979'
+  parent_id: '50530608'
+  author: ronfriedhaber
+  text: One can argue each view of a database is merely a derivate of the WAL, and
+    therefore every view is an index. The major benefit of columnar databases is the
+    data stored being continuous in memory. Avoid all serialize&#x2F;deserialize and
+    control flow logic. Most core index data structures in relational DBs do not support
+    this kind of tight vector view, Arrow[1]is a format that does.<p>Theoretically
+    one can have a custom index extension which stores the data in a column-oriented
+    manner, yet then one has major duplication, which is a problem for petabyte-scale
+    databases, and is an even bigger problem in the Cloud.<p>KDB+ is the best implementation
+    of a columnar DB in my opinion. Simple C, and one can understand how the data
+    is stored down to the DRAM cells. Durability is just MMAP, which is fine as OLAP
+    DBMSs tend not to be ACID.<p>In my personal opinion one shall learn from the best.
+    The best in the world in massively parallel vectorized computation are the people
+    at OpenAI and Anthropic, and the people who built PyTorch. Much of their work
+    can be applied to analytical DBMSs.<p>(Draft, of course the topic is much more
+    nuanced)<p>[1] <a href="https:&#x2F;&#x2F;arrow.apache.org&#x2F;" rel="nofollow">https:&#x2F;&#x2F;arrow.apache.org&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-17T14:37:51Z'
+- id: '50531997'
+  parent_id: '50531929'
+  author: xnorswap
+  text: Expanding acronyms helps bring people into your field of interest.<p>People
+    who might be technical and might even intuitively understand what is meant by
+    &quot;Array of Structures vs Structures of Arrays&quot; might not be familiar
+    with the acronym AOS vs SOA, especially given SOA is already a technical acronym
+    their brain might shortcut to, &quot;Service Oriented Architecture&quot;, even
+    if instantly dismissed as clearly incorrect.<p>By expanding the algorithm you
+    also help let people better decide if they want to spend the time reading up more
+    about it.
+  score: 0
+  posted_at: '2026-11-17T14:38:46Z'
+- id: '50532163'
+  parent_id: '50531997'
+  author: hansvm
+  text: It&#x27;s the same problem you see with variable names though -- longer names
+    add local clarity but give disproportionate weight to those local concepts rather
+    than the global structure. There&#x27;s value in selectively using less precise
+    identifiers.<p>Maybe you agree with that and just disagree with where the line
+    should be drawn?
+  score: 0
+  posted_at: '2026-11-17T14:51:48Z'
+- id: '50532331'
+  parent_id: '50531979'
+  author: postexitus
+  text: Or, every index is a view.
+  score: 0
+  posted_at: '2026-11-17T15:03:49Z'
+- id: '50532464'
+  parent_id: '50532163'
+  author: xnorswap
+  text: My line on acronyms is fairly clear, I think that introducing acronyms by
+    expanding them on first-use is a useful guideline and principle to try to stick
+    by.<p>I&#x27;d also err on the side of generally assuming that most people, even
+    in a technical forum, don&#x27;t know all acronyms unless they&#x27;re very widely
+    known outside of the topic at hand. I don&#x27;t think AOS vs SOA comes anywhere
+    close to that line.<p>Some acronyms are of course better understood by their acronym,
+    I wouldn&#x27;t introduce a Local Area Network (LAN), or Domain Name Resolution
+    (DNS), so like all guidelines there&#x27;s judgement to be made.<p>Even then,
+    if I were writing an intro to DNS, then I would call it an Introduction to Domain
+    Name Resolution (DNS), because it is specifically targeted as an introduction.
+    I wouldn&#x27;t do the same for SQL, because no-one calls it Structured Query
+    Language. Fairly often it would be more confusing if they did expand it, because
+    quite often when people talk about SQL they&#x27;re not really talking about the
+    language at all, but using it as a short-hand for talking about SQL-compatible
+    databases, or more specifically talking about relational database management systems
+    (RDBMS), but &quot;SQL&quot; is a useful shorthand to contrast to &quot;No-SQL&quot;
+    databases that were popularised a decade or two ago.
+  score: 0
+  posted_at: '2026-11-17T15:12:31Z'
+- id: '50532523'
+  parent_id: '50531747'
+  author: Kinrany
+  text: "&gt; HTAP has historically been niche because the cost of analytics on fresh
+    data wasn&#x27;t worth the squeeze (sooner or later the MBAs step in). Separating
+    the OLTP and OLAP layers gives you better workload isolation and the ability to
+    optimize each independently.<p>That feels like something HTAP databases could
+    offer as a choice!<p>- Things you can always do<p>- Things you can do when optimizing
+    for fresh data<p>- Things you can do when optimizing for analytics on old data<p>-
+    Things you can do, but with poor performance<p>This feels like one of those cases
+    where people choose to make software simple instead of, and at the cost of (not)
+    making operations simple."
+  score: 0
+  posted_at: '2026-11-17T15:17:15Z'
+- id: '50532657'
+  parent_id: '50470523'
+  author: remywang
+  text: "&gt; Most formats split the table into large groups of rows and store the
+    columns separately inside of each group (this is known as a &quot;row group&quot;).
+    This idea goes back to PAX, from Weaving Relations for Cache Performance (VLDB
+    2001), and it&#x27;s how Apache Parquet files work today.<p>PAX’s “row group”
+    has the same size as a disk page, whereas Parquet row groups are much larger so
+    a page stores only data from the same column. I’ve been trying to track down the
+    origin of this change in design but haven’t been able to find the right paper"
+  score: 0
+  posted_at: '2026-11-17T15:25:27Z'
+- id: '50532763'
+  parent_id: '50470523'
+  author: netcraft
+  text: The simple example of computing an average over a single column makes it seem
+    like each columns data is stored by itself, but as soon as you want to do something
+    with the correlation of two columns (such as a simple single column group by)
+    doesnt that mean that each column would have to store both the column&#x27;s value
+    and some kind of row identifier that lets you join with the other columns in the
+    same record? I&#x27;ve never looked into columnar stores so this is an honest
+    question, I just always assumed thats how it would have to be structured
+  score: 0
+  posted_at: '2026-11-17T15:32:44Z'
+- id: '50532927'
+  parent_id: '50532657'
+  author: nwatson
+  text: Related US Patent US7024414B2 [0] from Addamark (later Sensage) filed 2001
+    August, &quot;Storage of row-column data&quot;. The patent outlines columnar compressed
+    storage similar in many respects to parquet.<p>[0] <a href="https:&#x2F;&#x2F;patents.justia.com&#x2F;patent&#x2F;20030028509"
+    rel="nofollow">https:&#x2F;&#x2F;patents.justia.com&#x2F;patent&#x2F;20030028509</a>
+  score: 0
+  posted_at: '2026-11-17T15:42:44Z'
+- id: '50532962'
+  parent_id: '50470523'
+  author: postexitus
+  text: What is the competition to spiraldb, providing similar functionality?
+  score: 0
+  posted_at: '2026-11-17T15:44:24Z'
+- id: '50532992'
+  parent_id: '50532763'
+  author: sixo
+  text: You correlate positionally, within a block&#x2F;rowgroup.<p>If you run e.g.
+    a `SELECT SUM(col1) WHERE col2 = x`, a columnar DB will typically produce produce
+    a bitmap from of col2, use it to mask col1, then sum what&#x27;s left—all very
+    efficient operations.
+  score: 0
+  posted_at: '2026-11-17T15:45:53Z'
+- id: '50533096'
+  parent_id: '50532992'
+  author: netcraft
+  text: ah, that makes sense, you can assume the vectors of the columns are the same
+    size and use position. thanks!
+  score: 0
+  posted_at: '2026-11-17T15:51:06Z'
+- id: '50533269'
+  parent_id: '50532523'
+  author: xyzzy_plugh
+  text: You are correct! And sadly the vast majority of people don&#x27;t want to
+    make choices or think about that tradeoff.<p>If it can&#x27;t outperform pure
+    OLTP and it can&#x27;t outperform pure OLAP then there is no pit of success for
+    such an HTAP system.<p>The unfortunate part is that the vast majority of software
+    out there in the world would be served perfectly with an HTAP solution.<p>The
+    fortunate part is that for a lot of problems you can just run Postgres and then
+    when you need analytics you can still use Postgres, until you hit scaling issues
+    (if ever).<p>I&#x27;ve never seen a project choose to solve OLAP and OLTP upfront
+    and succeed.
+  score: 0
+  posted_at: '2026-11-17T16:00:52Z'
+- id: '50533370'
+  parent_id: '50530948'
+  author: 4ndrewl
+  text: 'I think the postgres docs disagree here: <a href="https:&#x2F;&#x2F;www.postgresql.org&#x2F;docs&#x2F;current&#x2F;indexes-index-only-scans.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.postgresql.org&#x2F;docs&#x2F;current&#x2F;indexes-index-only-s...</a>'
+  score: 0
+  posted_at: '2026-11-17T16:06:03Z'
+- id: '50534080'
+  parent_id: '50531246'
+  author: jlokier
+  text: There&#x27;s a general trick which combines the time complexities.<p>In the
+    case of a sorted list, it&#x27;s keeping a sorted list, along with a growing small
+    unsorted list that you will query or sort when needed.<p>This works for kernel
+    timer trees, database storage, and indexes.<p>Keep your &quot;fixed&quot; data
+    up to some checkpoint in an efficient form, and your &quot;new&quot; data since
+    the checkpoint in a faster-updating, slower-querying form.  When doing queries,
+    read both and merge, and maybe sort parts of the new data on demand.  The new
+    data will be slower to query, but it should also be smaller.<p>At carefully chosen
+    times, transfer data from the new form to the &quot;fixed&quot; form, either with
+    an incremental update if you can, or by rewriting the fixed form entirely.  It
+    doesn&#x27;t have to stop at two layers, and shouldn&#x27;t if the fixed form
+    is large, or if you want unlimited scale.<p>Choosing the right times and how much
+    to update (the whole key range, intervals, predicate subsets, ertc) is an interesting
+    algorithm design problem.  When you get it just right, you can get excellent performance
+    in fast-queryable compression and continuous fast-updates at the same time.  (I&#x27;m
+    building a database engine that does this in my spare time.)
+  score: 0
+  posted_at: '2026-11-17T16:42:19Z'
+- id: '50534614'
+  parent_id: '50530608'
+  author: kbolino
+  text: Index-only scans are possible when the index covers all involved columns <i>and</i>
+    the query condition favors using the index. If you have an index on (col_a, col_b)
+    but you run SELECT col_a WHERE col_b, you typically will not get an index-only
+    scan because the query planner will decide against using the index in the first
+    place, since it is ordered on col_a before col_b.
+  score: 0
+  posted_at: '2026-11-17T17:11:34Z'
+- id: '50534648'
+  parent_id: '50530630'
+  author: florbnit
+  text: Lakebase is just cheating, they superglued a transactional database to an
+    analytical one.<p>That said, it works wonderfully and I love it.
+  score: 0
+  posted_at: '2026-11-17T17:12:49Z'
+- id: '50534763'
+  parent_id: '50534080'
+  author: senderista
+  text: <a href="https:&#x2F;&#x2F;users.ime.usp.br&#x2F;~cris&#x2F;aulas&#x2F;19_1_6957&#x2F;BentleyS1980-DSP.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;users.ime.usp.br&#x2F;~cris&#x2F;aulas&#x2F;19_1_6957&#x2F;BentleyS1980-...</a>
+  score: 0
+  posted_at: '2026-11-17T17:19:23Z'
+- id: '50534950'
+  parent_id: '50532992'
+  author: gopalv
+  text: '&gt; a columnar DB will typically produce produce a bitmap from of col2<p>Bitmaps
+    fell out of fashion after the branch predictor became the slowest part of vectorized
+    execution.<p>Most columnar dbs use compact selection vectors and loop over the
+    values within them, rather than an if() over each row.<p>Imagine you had 1024
+    rows in the col1 column and only 1 row is selected, then this optimization has
+    to only do 3-4 branches before the vector is done vs a bit-map which has to always
+    do 1024 checks.<p>This became relevant somewhere in the mid 2010s and is called
+    out in the Hive design[1] docs from that era.<p>[1] - <a href="https:&#x2F;&#x2F;issues.apache.org&#x2F;jira&#x2F;secure&#x2F;attachment&#x2F;12594231&#x2F;Hive-Vectorized-Query-Execution-Design-rev10.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;issues.apache.org&#x2F;jira&#x2F;secure&#x2F;attachment&#x2F;12594231&#x2F;Hi...</a>'
+  score: 0
+  posted_at: '2026-11-17T17:29:15Z'
+- id: '50535039'
+  parent_id: '50531747'
+  author: throwaway7783
+  text: The workloads are different. An almost -in-sync analytics replica is a decent
+    tradeoff (copy, lag etc).<p>I&#x27;m working on one such solution right now,
+  score: 0
+  posted_at: '2026-11-17T17:35:36Z'
+- id: '50535134'
+  parent_id: '50531747'
+  author: efromvt
+  text: Agree with everything here. Workload isolation and independent scaling in
+    particular are the reasons I never see HTAP work out in practice, even beyond
+    expected loss from not using the more specialized solution. A very low latency
+    storage handoff between two engines always seems like 80% of value with 20% of
+    operational headache.
+  score: 0
+  posted_at: '2026-11-17T17:41:28Z'
+- id: '50535569'
+  parent_id: '50470523'
+  author: Peteragain
+  text: So just putting it out there. Compressed inverted indexes for &quot;documents&quot;
+    does columns. For each word you might want to search on, keep a list of the documents
+    that contain it. For words that occur in all documents the compressed index is
+    zero long; for those words occuring in jut one document, the index is 1 London.  The
+    words in half the documents take the most space, but are also the best discriminators.
+  score: 0
+  posted_at: '2026-11-17T18:07:06Z'
+article:
+  url: https://spiraldb.com/blog/rows-vs-columns
+  title: 'Rows vs Columns: How different are they, really? | Spiral'
+  fetch_status: success
+  content: |-
+    When we think about structured data, we generally think in terms of rows. Take this simple CSV file, which records some data about bike rides on a bike-sharing app in New York City:
+
+    ride_id, started_at, start_area, bike_type, duration_min 1001, 2026-11-02 07:58, Tribeca, classic, 14 1002, 2026-11-02 08:01, Financial District, electric, 6 1003, 2026-11-02 08:01, SoHo, classic, 21 1004, 2026-11-02 08:03, Financial District, electric, 8 1005, 2026-11-02 08:04, Financial District, classic, 15 1006, 2026-11-02 08:07, Tribeca, electric, 1 1007, 2026-11-02 08:08, Tribeca, electric, 9 1008, 2026-11-02 08:12, Financial District, classic, 31
+
+    Data in this CSV file is organized into rows, where each row corresponds to a record of data. Each record here is one ride, or one "thing", with everything we know about it on one line. We tend to organize data like this almost everywhere: think of spreadsheets, JSON objects, C-style structs in an array, SQL tables, etc. This is because it matches how we think: one "thing", and all of the details of that "thing".
+
+    This way of thinking fits a lot of the software we write. When you log in to an app, post a comment on a video, add an item to a shopping cart, send a bank transfer, or book a ride, the application will change just one record (or a few, at most). So it makes sense that the databases behind this software, like Postgres and MySQL, "think in" (or are modeled around) rows as well: they keep each record's details together, so finding, updating, or creating a record means going to one place.
+
+    But not everything we ask of a database is limited to one record.
+
+    If you run the bike-share service that produced the CSV file above, you'll eventually want to learn something from all the data it collects. This kind of work is called analytics. For example, which neighborhood is busiest on Monday and Friday mornings? Do people take longer rides on electric bikes than on classic ones? Observe how no single record can answer these questions. The answers come from the dataset as a whole, so the only way to get them is to look at all of the records.1
+
+    Notice what these questions don't need, however. Finding the busiest neighborhood only needs the start_area and started_at columns, and comparing bike types only needs bike_type and duration_min. Each question may have to look at every row, but it only needs a few of the columns from each one. And a database that keeps each record's details together can't take advantage of that: to read two columns, it has to read all five. We may think in rows, but to answer questions like these quickly, we have to program in columns.
+
+    Programming in columns begins with how the data is stored, but that's only the start. Once data is stored by column, the way a database runs a query changes dramatically: how much data it reads, how many values it handles at a time, how many values the CPU can process with one instruction, how well the data compresses, etc.
+
+    This post will go over these changes, and by the end, you'll see just how much follows from the "simple" choice to store columns instead of rows.
+
+    ## #Row stores and column stores
+
+    Let's start with what doesn't change. Whether a database stores rows or columns, the table it shows you when you do SELECT * FROM rides; is the same. You create it with the same SQL, you query it with the same SQL, and you get the same answers. We can say that the two tables are logically equivalent.
+
+    CREATE TABLE rides ( ride_id BIGINT, started_at TIMESTAMP, start_area TEXT, bike_type TEXT, duration_min INTEGER ); SELECT * FROM rides WHERE ride_id = 1004; SELECT AVG(duration_min) FROM rides;
+
+    Rows vs columns is a physical distinction rather than a logical one: the data represents the same thing, but how that data is actually arranged in memory and on disk is different.
+
+    Databases are named after the grouping they choose. A row store keeps each record's values next to each other, just like the CSV we started with. Postgres and MySQL, which we mentioned before, are both row stores. They're built for the small reads and writes behind an application, which is called online transaction processing (OLTP).2
+
+    A column store does the opposite: it takes every record apart and keeps each column's values next to each other instead.3 DuckDB and ClickHouse are examples of column stores. They're built for analytics, which is called online analytical processing (OLAP).4
+
+    ### #Rows and columns in memory
+
+    To make this concrete, imagine that we have to hold our rides in memory ourselves. This isn't how a real database would be implemented, but it's a good approximation of how each kind arranges its data. In Rust, a row store would be a Vec of structs:
+
+    struct Ride { ride_id: u64, started_at: Timestamp, start_area: String, bike_type: BikeType, duration_min: u32, } type Rows = Vec<Ride>;
+
+    A column store will have the same fields, but it will look like a struct of Vecs:
+
+    struct Columns { ride_id: Vec<u64>, started_at: Vec<Timestamp>, start_area: Vec<String>, bike_type: Vec<BikeType>, duration_min: Vec<u32>, }
+
+    Here is what these data layouts look like side by side:
+
+    Both of these forms represent the same logical values, but their layout is dramatically different.
+
+    ### #Reading only the columns you need
+
+    Let's do a fun exercise.5 These are the two SQL queries shown above. Which layout is better for executing each of them?
+
+    SELECT AVG(duration_min) FROM rides; SELECT * FROM rides WHERE ride_id = 1004;
+
+    For the AVG query, computing it requires only the duration_min of every ride and nothing else. In the Columns layout, values are stored together in a single Vec<u32>, so the query can scan that one array without touching the other four. For Vec<Ride> (the Rows layout), there is simply no way to read only the durations. Each duration is stored within a Ride, so the query has to read through every Ride and pass over the other four fields every time.
+
+    Note that the code can "ignore" those other fields, but the hardware cannot. A CPU doesn't fetch memory one value at a time: it will fetch fixed-size blocks called cache lines (which are 64 bytes on most machines6), fetching the whole line even when the program needs only a few bytes of it. A Ride is 48 bytes7 and duration_min is only 4 of them, so with the row layout, we have to fetch all 48 bytes to read those 4, which is 12x the amount that we actually need. The CPU can't skip any of these lines either because a Ride is smaller than a cache line, so every cache line of the array has a duration somewhere in it.
+
+    This diagram only shows 8 rides for simplicity (which is why the duration_min line is half empty), but the factor of 12 doesn't depend on the size of the table. With one million rides, we might be fetching 48 MB vs 4 MB.
+
+    The second query goes the other way. SELECT * FROM rides WHERE ride_id = 1004 wants every field of a single ride, not just one. Once the database finds the record with that ride (probably via an index8), Vec<Ride> has all of its fields next to each other, so reading all of them touches only one or two cache lines (it might overlap two cache lines).9 On the other hand, Columns has spread the same ride over five different arrays, so the query has to fetch at least five cache lines to put it back together. For this query, the Rows layout wins.
+
+    Now that we have a better idea of what we're working with, let's go a bit deeper into how we can speed up queries over columnar data! Analytical data processing is an active field of research spanning several decades, so we won't be able to go over every possible optimization. Nevertheless, the rest of this post will give a good overview of the techniques that most modern analytical database systems utilize.
+
+    ## #Vectorized execution
+
+    The simplest way to run SELECT AVG(duration_min) FROM rides; is to visit one ride at a time: take a ride, add its duration, and repeat, dividing by the length of the column at the end. However, a column store doesn't necessarily have to execute this way
+  error:
+  fetched_at: '2026-11-17T18:15:22Z'
+archived_at: '2026-11-17T18:15:25Z'

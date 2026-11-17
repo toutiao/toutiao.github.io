@@ -1,0 +1,121 @@
+---
+post:
+  id: lo-oj87qu
+  source: lobsters
+  title: How to Bypass Rust's Orphan Rule
+  url: https://edvong.com/bypass-orphan-rule/
+  hn_url: https://lobste.rs/s/oj87qu
+  score: 10
+  author: lyxia
+  posted_at: '2026-11-17T15:35:36Z'
+  fetched_at: '2026-11-17T18:15:26Z'
+  article_url: https://edvong.com/bypass-orphan-rule/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-17T18:15:29Z'
+  raw_comment_count: 0
+  tags:
+  - rust
+comments: []
+article:
+  url: https://edvong.com/bypass-orphan-rule/
+  title: How to Bypass Rust's Orphan Rule - Edmond Vong
+  fetch_status: success
+  content: "# How to Bypass Rust's Orphan Rule\nContents \n1. [What Is the Orphan
+    Rule Actually Protecting Against?](https://edvong.com/bypass-orphan-rule/#what-is-the-orphan-rule-actually-protecting-against)\n2.
+    [Why the Two Usual Workarounds Fall Short](https://edvong.com/bypass-orphan-rule/#why-the-two-usual-workarounds-fall-short)
+    \n  1. [1. Building it into the library](https://edvong.com/bypass-orphan-rule/#1-building-it-into-the-library)\n
+    \ 2. [2. Wrap it in a NewType yourself](https://edvong.com/bypass-orphan-rule/#2-wrap-it-in-a-newtype-yourself)\n3.
+    [Adding a Generic Slot to the Trait](https://edvong.com/bypass-orphan-rule/#adding-a-generic-slot-to-the-trait)\n4.
+    [The Position of the Local Type Matters](https://edvong.com/bypass-orphan-rule/#the-position-of-the-local-type-matters)\n5.
+    [A Truly Standalone models Crate](https://edvong.com/bypass-orphan-rule/#a-truly-standalone-models-crate)\n6.
+    [Real-World Example: How This Works in Kova](https://edvong.com/bypass-orphan-rule/#real-world-example-how-this-works-in-kova)\n\nWrite
+    Rust for long enough, and you are bound to run into `error[E0117]`.\n\nTake a
+    simple, everyday scenario. You pull in a serialization library that defines a
+    `ToJson` trait, along with a third-party type library like `uuid`. You want to
+    turn a `uuid::Uuid` into JSON, so you naturally write:\n\n    impl ToJson for
+    uuid::Uuid {\n        fn to_json(&self) -> String {\n            format!(\"\\\"{}\\\"\",
+    self)\n        }\n    }\n\nAnd the compiler immediately stops you:\n\n    error[E0117]:
+    only traits defined in the current crate can be implemented for types defined
+    outside of the crate\n\nThis is Rust's well-known **Orphan Rule**. Once people
+    hit this wall, they usually either complain that the compiler is too rigid or
+    dutifully wrap the type in a NewType. But if you look closely at how the Orphan
+    Rule actually works, it is not a dead end. By design, it leaves a pretty wide
+    door open.\n\n* * *\n\n## What Is the Orphan Rule Actually Protecting Against?\n\nSetting
+    the jargon aside, the logic behind the Orphan Rule is simple: **if you want a
+    type to implement a trait, at least one of those two things (the type or the trait)
+    must belong to your own crate.** In plain English, you don't get to make rules
+    for someone else's types.\n\nSuppose crate A implements `ToJson` for `uuid::Uuid`
+    and outputs a hyphenated UUID string, while crate B also implements `ToJson` for
+    `uuid::Uuid` and outputs 32 raw hex characters without hyphens. If a project depends
+    on both A and B, the compiler has a problem when it sees `uuid.to_json()`: which
+    implementation should it pick?\n\nTo prevent this kind of global conflict, Rust
+    enforces **coherence** , and the Orphan Rule is how it gets enforced. There is
+    nothing wrong with the rule itself. It keeps the Rust ecosystem from turning into
+    a mess as dependency trees grow. The catch is that real-world projects constantly
+    run into a very common need: making a third-party type implement a trait from
+    another third-party crate. Neither the type nor the trait is yours, yet gluing
+    libraries together like this happens all the time. So what can you do?\n\n* *
+    *\n\n## Why the Two Usual Workarounds Fall Short\n\nRight now, the Rust ecosystem
+    mostly relies on two workarounds. Both appear to solve the problem on the surface,
+    but because neither addresses the root cause, they get awkward fast.\n\n### 1.
+    Building it into the library\n\nMany foundational crates take this route: since
+    users can't write the `impl` themselves, the crate provides it internally. Because
+    `ToJson` is defined inside the crate, implementing it for any external type satisfies
+    the Orphan Rule. Open up the `Cargo.toml` of one of these crates, and you will
+    see a long list of feature flags: `with-uuid`, `with-chrono`, `with-time`, `with-jiff`,
+    `with-url`, `with-rust-decimal`, and so on.\n\nIt looks helpful at first, but
+    **it tries to enumerate an open, constantly changing ecosystem inside a single
+    crate**. That approach has clear limits, and the downsides show up quickly:\n\n-
+    **You can never support everything.** Today the community favors `chrono`, tomorrow
+    people switch to `jiff`, and next week your team builds its own internal `Money`
+    type. If the library doesn't have built-in support, you are stuck waiting for
+    a release or opening a PR yourself.\n- **Version lock-in.** When a third-party
+    type crate bumps its major version, your whole dependency tree gets stuck until
+    the trait crate publishes a matching update.\n- **Hardcoded behavior.** Maybe
+    the library serializes `DateTime<Utc>` as an ISO-8601 string by default, while
+    your API spec requires an integer timestamp in milliseconds. Because the implementation
+    lives inside the library, you have no way to change it.\n\n### 2. Wrap it in a
+    NewType yourself\n\nWhen the library doesn't have built-in support, or its default
+    behavior doesn't fit your needs, you fall back to the familiar NewType pattern:\n\n
+    \   pub struct MyUuid(pub uuid::Uuid);\n    \n    impl ToJson for MyUuid {\n        fn
+    to_json(&self) -> String {\n            format!(\"\\\"{}\\\"\", self.0)\n        }\n
+    \   }\n\nWrapping one or two types is fine. The trouble starts when a moderately
+    complex domain model mixes `Uuid`, `Url`, `DateTime`, `HashMap`, and custom domain
+    types all at once. Once you wrap everything into `MyUuid`, `MyUrl`, and `MyDateTime`,
+    your business logic gets littered with `.0`, and you spend your time constantly
+    wrapping and unwrapping values. It gets old very quickly.\n\nNewType is a genuinely
+    useful pattern in Rust for expressing domain meaning, hiding internals, or enforcing
+    invariants. The problem is that when you only use it to appease the Orphan Rule
+    on types that didn't need a wrapper in the first place, your code bloats quickly.\n\nSo
+    is there a way to let users decide how third-party types implement a trait, without
+    wrapping everything in NewTypes?\n\n* * *\n\n## Adding a Generic Slot to the Trait\n\nLet's
+    go back to the rule: either the type or the trait must belong to the current crate.\n\nMany
+    developers assume the compiler only looks at `Trait` and `Type` in `impl Trait
+    for Type`. In fact, under Rust's Orphan Rule (RFC 2451), **the trait's own generic
+    type parameters are also part of the check**.\n\nPut simply, in `impl Trait<P>
+    for Type`, as long as a local type appears in the trait's generic parameters,
+    and there are no uncovered type parameters before it, the compiler knows this
+    implementation belongs exclusively to the current crate. No other crate can conflict
+    with it, so the compiler lets it through.\n\nTake this example:\n\n    impl ToJson<MyApp>
+    for uuid::Uuid {\n        // ...\n    }\n\n`ToJson` is a foreign trait, and `Uuid`
+    is a foreign type, but `MyApp` is defined in the current crate. Because it sits
+    in the trait's generic parameter position, this `impl` satisfies the Orphan Rule.\n\nFollowing
+    this idea, a library author only needs to take one extra step when designing a
+    trait: **leave a generic parameter on the trait as an extension point for users**.\n\nFor
+    example:\n\n    pub trait ToJson<Ctx = ()> {\n        fn to_json(&self) -> String;\n
+    \   }\n\nNotice that `Ctx = ()` has a default type. When the library implements
+    `ToJson` for basic types like `i32` and `String`, it makes those implementations
+    generic over any `Ctx`:\n\n    impl<Ctx> ToJson<Ctx> for i32 {\n        fn to_json(&self)
+    -> String {\n            self.to_string()\n        }\n    }\n    \n    impl<Ctx>
+    ToJson<Ctx> for String {\n        fn to_json(&self) -> String {\n            format!(\"\\\"{}\\\"\",
+    self)\n        }\n    }\n\nThis way, regular users never even notice `Ctx` exists.
+    Everything works the exact same way as before, with `()` as the default context.\n\nWhen
+    you do need to plug in third-party types, you just define an empty marker struct
+    in your own crate:\n\n    pub struct MyApp;\n\nThen you can write implementations
+    for any third-party type you want:\n\n    impl ToJson<MyApp> for uuid::Uuid {\n
+    \       fn to_json(&self) -> String {\n            format!(\"\\\"{}\\\"\", self)\n
+    \       }\n    }\n    \n    impl ToJson<MyApp> for chrono::DateTime<chrono::Utc>
+    {\n        fn to_jso"
+  error:
+  fetched_at: '2026-11-17T18:15:29Z'
+archived_at: '2026-11-17T18:15:30Z'
