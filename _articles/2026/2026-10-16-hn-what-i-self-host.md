@@ -13,7 +13,7 @@ tagline: >-
 
 ## 原文概要
 
-[HN 热门榜](/best)（2026-10-15）：viceconsole.fyi 的作者贴出自家 homelab 的完整清单——一台 Beelink S12 Pro Mini PC（N100、16 GB RAM、512 GB SSD + 6 TB HDD），去年 EU 没几个月时花 180 欧元入手，同款现在 359 欧元。文章标题是《What I Self-Host, What I Don't, and Why》，他在开头给了背景：曾在印度住过几年，回欧美后不想为流媒体付西方价格，又被"为你推荐 / 自动下一集"的成瘾机制烦到——于是从 Jellyfin 入手，"切线"切了别的方向。
+[HN 热门榜](https://news.ycombinator.com/best)（2026-10-15）：viceconsole.fyi 的作者贴出自家 homelab 的完整清单——一台 Beelink S12 Pro Mini PC（N100、16 GB RAM、512 GB SSD + 6 TB HDD），去年 EU 没几个月时花 180 欧元入手，同款现在 359 欧元。文章标题是《What I Self-Host, What I Don't, and Why》，他在开头给了背景：曾在印度住过几年，回欧美后不想为流媒体付西方价格，又被"为你推荐 / 自动下一集"的成瘾机制烦到——于是从 Jellyfin 入手，"切线"切了别的方向。
 
 硬件之外，他的两条铁律：(a) 除了路由器上的 VPN，不暴露任何服务到公网——理由是 AI 辅助黑客让这件事不再"安全就好"，加上 ISP 给的 IPv4 是 CGNAT，VPN 只在 IPv6 上对外可达（"公共 Wi-Fi 几乎永远跑不了"）；(b) 能原生跑就原生跑，能单文件胜过"compose + MySQL + Redis + 三个容器"。Podman 和 systemd 的集成现在已经够好，他"不再用 Docker"——这不是原则问题，是不想再多维护一套服务控制系统。
 

@@ -21,7 +21,7 @@ GrapheneOS 团队发了一条 Pixel 11 系列移植进展公告：他们花了�
 
 Google 的另一项决定也在这波讨论中被反复提及：非三星 Android OEM 不被允许直接发售预装 GrapheneOS 的设备，Google 只在配额内放行。工作正在进行规避，最终仍会有设备以 GrapheneOS 为出厂系统发售，不受 Google 数量限制。Pixel 11 这条新闻的讨论主线因此很快从"要不要买新机"滑向了"Google 的 OEM 政策是不是反竞争"。
 
-来源：[HN 热门榜](/news)](https://news.ycombinator.com/item?id=49964303)（270 分，148 条评论，3 小时前，由 finnlab 提交）；原文链接：https://discuss.grapheneos.org/d/41564-pixel-11-doesnt-yet-meet-the-grapheneos-security-standards-and-may-be-skipped
+来源：[HN 热门榜](https://news.ycombinator.com/item?id=49964303)（270 分，148 条评论，3 小时前，由 finnlab 提交）；原文链接：https://discuss.grapheneos.org/d/41564-pixel-11-doesnt-yet-meet-the-grapheneos-security-standards-and-may-be-skipped
 
 ## 讨论焦点
 

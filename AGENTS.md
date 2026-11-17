@@ -169,6 +169,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - **管道** opencode flag 本地与 CI 不得混用：本地 `--auto`（无 `--dir`），CI 用 `--dir` + `--dangerously-skip-permissions`
 - **管道** hn-auto 每次提交只含 `_articles/` 与三个投影文件，不得夹带其他变更
 - **管道** 本地不得与 CI 并发推远端：本地推 hn-data/master 前先 `git fetch` 对齐；CI 生成窗口（attach 后 ~20 分钟）内避免推同分支 — 基点过期 = CI 产出随 runner 销毁丢失（40056343806 事故）；本地重建 hn-data（seed/force push）后必须手动 dispatch 一轮 hn-auto 验证。定时任务会延迟触发（2026-10-25 00:00 UTC 的 hn-auto 迟到 2h50m，02:50 起跑撞上本地推送 → run 红，rebase 救援步骤挽回产出）——推前必须 `gh run list` 查**在跑/延迟**的 run，不能只按 cron 时刻推算安全窗口。CI 间互撞已由三 workflow 共享 `concurrency: hn-pipeline` 组根治（2026-10-25 双 dispatch 同秒并发：40157635045 success / 40157637103 push non-FF 靠 recover 救回但 run 红）；本地推送是组外残留竞态，仍靠 fetch 对齐 + recover 兜底
+- **管道** 分析/评估以远程为准：读投影数据、归档、榜单指标、CI 产出前必须先 `git fetch`，从 `origin/master`/`origin/hn-data` 读，不信本地工作树与本地 ref——stale ref 得出的是假结论（2026-11-12 误报「投影断更 5 天」：实际 CI 天天正常提交，根因是本地 origin/master 停在 5 天前就做了数据分析）
 - **热度** 热度、聚簇、行业分类全部确定性 Ruby — 0 LLM 调用；改公式只动权重常量并 bump `rule_version`，全部历史日榜必须可 `hn-heat.rb --recompute` 重建
 - **热度** 历史重算必须以锚点为地平线过滤输入：评论 `posted_at ≤ anchor`、帖出生 `≤ anchor`，所有下游信号（vel/expert/depth/resurrected）从过滤后集合推导（v3 事故：`comment_vel` 窗口无上界 + expert/depth 不截断 → 未来评论以恒定假平底泄入历史每一天，未出生帖在出生前发光；每日增量跑天然正确，仅 `--recompute` 受污染）
 - **内容** 单帖摘要必须带 `hn_id`；跨多帖的周报**不加** `hn_id` — 防止成员帖被 published dedup 屏蔽
@@ -194,6 +195,7 @@ git 操作若遇认证或网络错误：向用户报告错误信息并停止。�
 - 测试克制：数据层改动用真实 HN URL 本地跑通再上 CI；Jekyll 可见的改动过 `make build` 即可；不为纯文案、样式改动写测试。
 - 已验证正向模式（保留勿回退）：列表行内热度趋势用零依赖 sparkline — `hn-heat.rb sparkline_points` 服务端确定性算好 `"x,y"` 点串，模板内联 `<svg class="spark"><polyline points="...">`（curve ≥3 点才渲染，移动端隐藏）。x 按真实日期间隔定位（`curve_day_offsets`，跨年单调）——复波间隔不被压缩；连续曲线与按点序布点等价。不用 JS 图表库，不改成 canvas/图片。
 - 已验证正向模式（保留勿回退）：聚簇话题热度 = 合并成员原始信号后单次压缩（`merge_topic_signals`：comment/score velocity 跨成员求和（评论集/HN item 不相交），expert/depth 取代表帖）——直接求和成员 heat 会双重计 log 压缩（log(1+a)+log(1+b) > log(1+a+b)）且把 ratio/百分位当可加量，同话题碎片化投稿即虚高。行业曲线是跨故事总能量语义，保持逐帖求和。
+- 已验证正向模式（保留勿回退）：聚簇合并判定 = 静态 GENERIC 停用词 + 动态 DF/绑定双层（`pair_same_topic?`：shared 词先剔 generic，再剔 DF > `CLUSTER_TOKEN_DF_MAX` 的高频词；全高频时仅在词对**绑定**（共现 ≥ `CLUSTER_TOKEN_BIND_MIN_CO` 次且占稀有词标题 ≥ `CLUSTER_TOKEN_BIND_RATIO`）时放行，co 键必须 sort）——纯 shared>=2 会让 [bring, back] 词对把无关帖链式吸入巨簇（"Bring Back X"/"petition to bring back Y"）；绑定是实体识别（jensen+huang 共现 93%），ratio 小样本不可靠须配绝对次数下限。同 URL 捷径（url_hit）不受 DF 影响，但 `canonical_url` 的 query 是 key 的一部分（过滤 tracking/player 参数后保留键值）——丢 query 会把 youtube.com/watch?v=A 与 ?v=B 归一成一个 key，全站 YouTube 帖 url-合并成巨簇（El Niño/Jeep/billiards 14 帖误簇）。投影 article.url 必须过 `jekyll_slug`（Jekyll 把 `:name` slugify 小写，raw basename 大写周数链接 404）。
 
 ## 插件
 仅 `jekyll-seo-tag`。HTML 压缩用 `_config.yml` 的 `compress_html`（仅 production）。

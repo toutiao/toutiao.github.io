@@ -14,7 +14,7 @@ tagline: >-
 
 ## 原文概要
 
-JJ Maxwell 在 2026 年 5 月被确诊口腔鳞状细胞癌 (squamous cell carcinoma). 他把自己这段经历总结成了 8 条经验, 发表于 [HN 热门榜](/best), 不是医学建议, 是和医疗系统打交道时的"操作手册".
+JJ Maxwell 在 2026 年 5 月被确诊口腔鳞状细胞癌 (squamous cell carcinoma). 他把自己这段经历总结成了 8 条经验, 发表于 [HN 热门榜](https://news.ycombinator.com/best), 不是医学建议, 是和医疗系统打交道时的"操作手册".
 
 最核心的几条:
 

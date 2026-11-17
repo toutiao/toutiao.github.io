@@ -48,7 +48,7 @@ TRENDS_AUX_WINDOWS = { 7 => TRENDS_PATH_7, 90 => TRENDS_PATH_90 }.freeze
 TRENDS_WINDOW_MAX = TRENDS_AUX_WINDOWS.keys.max
 CATEGORY_MAP_PATH = ENV.fetch('HN_CATEGORY_MAP', File.join(__dir__, 'category_map.json'))
 
-RULE_VERSION = 'v4'
+RULE_VERSION = 'v5'
 WEIGHTS = { 'comment_vel' => 0.35, 'score_vel' => 0.25, 'expert' => 0.25, 'depth' => 0.15 }.freeze
 
 COHORT_WINDOW_DAYS = 14   # rolling window for expert cohort membership
@@ -551,32 +551,94 @@ def topic_tokens(title)
   }
 end
 
-def pair_same_topic?(tokens_a, tokens_b, posted_a, posted_b)
+# Static stoplist can't enumerate every common-word pair: "Bring Back X" and
+# "Bring Back Y" share [bring, back] and matched the old shared>=2 rule,
+# chain-absorbing unrelated posts into a mega-cluster. Two-part dynamic test:
+# - DF (title count within the clustering window) disqualifies common tokens…
+# - …unless the pair is BOUND: two shared high-DF tokens that co-occur in most
+#   of each other's titles are an entity (jensen+huang appear together ~90% of
+#   the time) and stay valid evidence; loose pairs (bring+back scattered over
+#   unrelated titles, ~5% co-occurrence) don't.
+CLUSTER_TOKEN_DF_MAX = 3
+CLUSTER_TOKEN_BIND_RATIO = 0.6
+# A ratio from tiny samples lies: [bring, back] co-occur 3 of bring's 4
+# titles (0.75) purely because "bring X back" is one phrase — not an entity.
+# Require enough co-occurrences for the ratio to mean anything.
+CLUSTER_TOKEN_BIND_MIN_CO = 8
+
+# Jekyll permalink /:collection/:year/:name slugifies :name (W47 -> w47);
+# a raw-basename URL 404s on Pages. Keep in sync with _config.yml.
+def jekyll_slug(s)
+  s.to_s.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/\A-+|-+\z/, '')
+end
+
+# df: token -> title count; co: [a,b] -> co-occurrence count (built in
+# merge_topics over the same corpus, so commonness is measured against the
+# window a thread would merge into).
+# One title's contribution to the DF corpus and the co-occurrence matrix.
+def df_and_co(df, co, toks)
+  toks.each { |tk| df[tk] += 1 }
+  toks.to_a.combination(2).each { |x, y| co[[x, y].sort] += 1 }
+end
+
+def pair_same_topic?(tokens_a, tokens_b, posted_a, posted_b, df = nil, co = nil)
   shared = tokens_a & tokens_b
   return false if shared.empty?
   # Brand/common-noun overlap alone never implies one story: require >= 1
   # distinctive shared token (generic set: mega-brands + ubiquitous tech words)
   return false if shared.all? { |t| GENERIC_TOPIC_TOKENS.include?(t) }
+  distinctive = shared
+  if df
+    low = shared.reject { |t| (df[t] || 0) > CLUSTER_TOKEN_DF_MAX }
+    if low.empty?
+      # All shared tokens are high-DF: merge on them only if at least one
+      # pair is bound (entity-like co-occurrence, e.g. jensen+huang appear
+      # together in most of the rarer token's titles).
+      bound = shared.to_a.combination(2).any? { |x, y|
+        c = co && co[[x, y].sort].to_i
+        c >= CLUSTER_TOKEN_BIND_MIN_CO && c / [df[x], df[y]].min.to_f >= CLUSTER_TOKEN_BIND_RATIO
+      }
+      return false unless bound
+    else
+      distinctive = low
+    end
+  end
   union = (tokens_a | tokens_b).size
   gap = (posted_a && posted_b) ? (posted_a - posted_b).abs : 0
   return false if gap > CLUSTER_PAIR_MAX_GAP_DAYS * 86400
-  shared.size >= 2 || (shared.size == 1 && shared.size.to_f / union >= 0.5)
+  distinctive.size >= 2 || (distinctive.size == 1 && distinctive.size.to_f / union >= 0.5)
 end
 
-# Same story URL (host+path, query/trailing slash stripped) = strongest
-# same-topic signal: covers cross-source reposts whose titles get reworded.
+# Query params that carry no content identity (tracking / player state) —
+# stripped before URL canonicalization.
+NON_CONTENT_QUERY_KEYS = %w[
+  utm_source utm_medium utm_campaign utm_term utm_content fbclid gclid
+  ref ref_src feature si t app pp list index
+].freeze
+
+# Same story URL = strongest same-topic signal: covers cross-source reposts
+# whose titles get reworded. Query is PART of the key: dropping it collapsed
+# youtube.com/watch?v=A and ?v=B into one key, url-merging every YouTube post
+# on the site into a single mega-cluster. Tracking params are filtered so the
+# same video posted with player noise still canonicalizes identically.
 def canonical_url(u)
   return '' if u.to_s.empty?
   uri = (URI.parse(u.to_s) rescue nil)
   return '' unless uri && uri.host
   host = uri.host.downcase.sub(/\Awww\./, '')
   path = uri.path.to_s.sub(/\/+\z/, '')
-  "#{host}#{path}"
+  q = uri.query.to_s.split('&')
+        .reject { |kv|
+          k = kv.split('=', 2)[0].to_s
+          k.empty? || NON_CONTENT_QUERY_KEYS.include?(k)
+        }
+        .sort
+  "#{host}#{path}#{q.empty? ? '' : '?' + q.join('&')}"
 end
 
-def same_topic?(a, b)
+def same_topic?(a, b, df = nil, co = nil)
   return true if !a[:url_key].empty? && a[:url_key] == b[:url_key]
-  pair_same_topic?(a[:tokens], b[:tokens], a[:posted], b[:posted])
+  pair_same_topic?(a[:tokens], b[:tokens], a[:posted], b[:posted], df, co)
 end
 
 # Wave detection on a topic's aggregated comment timeline: segments separated
@@ -635,12 +697,20 @@ def merge_topics(threads, reg, now = Time.now.utc)
       k.empty? ? nil : k
     })
   end
+  # DF corpus = every title participating in clustering this run (existing
+  # members + candidates) — a token's commonness is measured against the same
+  # window it would merge into. co counts sorted token-pair co-occurrence.
+  # Must run AFTER _tokens is built above (persisted topics carry no scratch keys).
+  df = Hash.new(0)
+  co = Hash.new(0)
+  topics.each { |t| t['_tokens'].each { |toks| df_and_co(df, co, toks) } }
+  candidates.each { |c| df_and_co(df, co, c[:tokens]) }
   joined = Set.new
   candidates.each do |c|
     topics.each do |t|
       next if joined.include?(c[:id])
       url_hit = !c[:url_key].empty? && t['_urls'].include?(c[:url_key])
-      tok_hit = t['_tokens'].any? { |toks| pair_same_topic?(c[:tokens], toks, c[:posted], member_posted.call(t['hn_ids'].last)) }
+      tok_hit = t['_tokens'].any? { |toks| pair_same_topic?(c[:tokens], toks, c[:posted], member_posted.call(t['hn_ids'].last), df, co) }
       next unless url_hit || tok_hit
       t['hn_ids'] << c[:id]
       t['_tokens'] << c[:tokens]
@@ -663,7 +733,7 @@ def merge_topics(threads, reg, now = Time.now.utc)
       b = rest[j]
       ra, rb = find.call(a[:id]), find.call(b[:id])
       next if ra == rb
-      parent[ra] = rb if same_topic?(a, b)
+      parent[ra] = rb if same_topic?(a, b, df, co)
     end
   end
   groups = Hash.new { |h, k| h[k] = [] }
@@ -702,7 +772,11 @@ def refresh_published
     content = File.read(f)
     fm = content[%r{\A---\s*\n(.*?)\n---}m, 1] || ''
     date = fm[/^date:\s*['"]?(\d{4}-\d{2}-\d{2})/, 1] || File.basename(f)[/\d{4}-\d{2}-\d{2}/]
-    slug = File.basename(f, '.md')
+    # permalink /articles/:year/:name has NO trailing slash (site-wide:
+    # post.url is slash-less too); the directory-style "/.../" form 404s on
+    # Pages. :name is slugified by Jekyll (weekly-W47 -> weekly-w47) — pass
+    # the URL through jekyll_slug or uppercase slugs 404.
+    slug = jekyll_slug(File.basename(f, '.md'))
     ids = content.to_enum(:scan, /hn_id:\s*"?(?<hn>\d+)"?|item\?id=(?<hn2>\d+)|lobste\.rs\/s\/(?<lo>[a-z0-9]+)/).map { Regexp.last_match }
                  .map { |m| m[:hn] || m[:hn2] || (m[:lo] ? "lo-#{m[:lo]}" : nil) }
                  .compact.uniq
@@ -710,9 +784,6 @@ def refresh_published
     # field on the projection — read side must tolerate its absence
     upd = fm[/^updated:\s*['"]?(\d{4}-\d{2}-\d{2})/, 1]
     ids.each do |id|
-      # permalink /articles/:year/:name has NO trailing slash (site-wide:
-      # post.url is slash-less too); the directory-style "/.../" form 404s on
-      # Pages — keep in sync with _config.yml
       entry = { 'date' => date, 'slug' => slug, 'url' => "/articles/#{date.to_s[0, 4]}/#{slug}" }
       entry['updated'] = upd if upd
       map[id] = entry

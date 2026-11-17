@@ -12,7 +12,7 @@ tagline: >-
 ---
 ## 原文概要
 
-[HN 热门榜](/best) 来源. 273 分，5 小时内前为主流的 123 条评论，原帖作者 [fagnerbrack](https://news.ycombinator.com/user?id=fagnerbrack)。
+[HN 热门榜](https://news.ycombinator.com/best) 来源. 273 分，5 小时内前为主流的 123 条评论，原帖作者 [fagnerbrack](https://news.ycombinator.com/user?id=fagnerbrack)。
 
 DeepSeek 上线 **Search API** + **Fetch API** 两个新接口，统一挂在 `https://api.deepseek.com/v1/tools/...`，复用与 DeepSeek 主 API 一样的 Bearer 鉴权。
 
