@@ -1,0 +1,121 @@
+---
+post:
+  id: lo-sz6o8w
+  source: lobsters
+  title: Improving the Wii U's Wii Mode
+  url: https://garyodernichts.blogspot.com/2026/11/improving-wii-us-wii-mode.html
+  hn_url: https://lobste.rs/s/sz6o8w
+  score: 20
+  author: calvin
+  posted_at: '2026-11-16T22:39:54Z'
+  fetched_at: '2026-11-17T06:58:32Z'
+  article_url: https://garyodernichts.blogspot.com/2026/11/improving-wii-us-wii-mode.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-17T06:58:37Z'
+  raw_comment_count: 0
+  tags:
+  - graphics
+  - hardware
+  - reversing
+comments: []
+article:
+  url: https://garyodernichts.blogspot.com/2026/11/improving-wii-us-wii-mode.html
+  title: 'Gary''s hacking stuff: Improving the Wii U''s Wii Mode'
+  fetch_status: success
+  content: "## Monday, November 16, 2026\n\n### Improving the Wii U's Wii Mode\n\nOne
+    feature of the Wii U is the backwards compatibility with Wii games through Wii
+    Mode, often referred to as vWii. In theory, this is a really nice way to enjoy
+    Wii games on a modern TV, since the Wii U has HDMI output. Unfortunately, Wii
+    Mode does not look great. Ironically, the output of an original Wii can look better.
+    \ \nThe two most prominent issues are the force-cropped output and color bleed
+    issues.\n\n| [![](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgddutNwjGyoPAqVySy66feWh7iohqv11w75McVPWIoAW49DaClcX26EhS-ULyPcYmLRoOySk_6BUjpls-O_qcAzf2qrrxyG9sjFrFxvz0yUbd5r0kh-7rAaXDxWnSwwaV-FfKwkXyikJpF-w-IaoGLmwWYlQzrVHadty8c4DZzAjmZUupxrFxXS9ReUjo/w640-h360/before.png)](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgddutNwjGyoPAqVySy66feWh7iohqv11w75McVPWIoAW49DaClcX26EhS-ULyPcYmLRoOySk_6BUjpls-O_qcAzf2qrrxyG9sjFrFxvz0yUbd5r0kh-7rAaXDxWnSwwaV-FfKwkXyikJpF-w-IaoGLmwWYlQzrVHadty8c4DZzAjmZUupxrFxXS9ReUjo/s1280/before.png)
+    |\n| \n\nScaled up image of the chroma bleed issue in Super Mario Sunshine and&nbsp;The
+    Legend of Zelda: Skyward Sword.  \nYou can see the green tint on the left side
+    of the characters.&nbsp;(Image credit: Rulumi)\n\n |\n\n  \n\nReports of these
+    issues go back to 2013, shortly after the Wii U was released, but a fix was never
+    provided.\n\nIn this blog post we'll take a closer look at the technical architecture
+    of Wii Mode graphics, how two simple typos in the firmware caused these issues,
+    and what modern AMD GPUs have in common with the Wii U.\n\n## The DMCU\n\nSo who
+    can we blame for these issues? One candidate is the DMCU. To get a quick overview
+    of the DMCU, I'm quoting fail0verflow's description from their 2014 Wii U blog
+    post:\n\n> You may have noticed that good old VI (the display controller / Video
+    Interface of ye olde GameCube and Wii) is gone. Huh? How does that work? Turns
+    out they’re emulating that in software and translating its configuration to the
+    R7xx’s CRTC registers. But where does this emulation software run? Sneaky: they
+    added a special microcontroller to the Latte just for this purpose. The DMCU is
+    a [68HC11](http://en.wikipedia.org/wiki/HC11) compatible 8-bit CPU whose sole
+    purpose is to perform VI emulation. It has a frontend hardware shim that looks
+    like VI to the Wii software, and behind the scenes it translates those registers
+    to the Radeon’s, including upscaling configuration. cafe2wii loads the DMCU’s
+    firmware (the DMCU doesn’t seem to be active in Wii U mode). It has its own dedicated
+    RAM and access to both the faux-VI back side and the Radeon’s register area. [...]\n\nTo
+    get to the bottom of these issues, I decided to reverse-engineer the firmware
+    of the DMCU. The DMCU firmware is located in the Wii U's storage and is loaded
+    into the DMCU's RAM before launching cafe2wii. Unfortunately, my favorite reverse-engineering
+    tool Ghidra does not support the HC11, so in 2024 I ended up writing my own processor
+    specification for it. Luckily, Ghidra already supported the HCS08 and HCS12, which
+    I could base my specification on.\n\nI then spent several days reverse-engineering
+    the DMCU firmware. The firmware itself is relatively straightforward. The DMCU
+    has an interface to access the 32-bit registers of the display controller. The
+    faux-VI hardware shim triggers interrupts in the DMCU firmware, which then configures
+    the display controller accordingly.\n\nReverse engineering the DMCU quickly reveals
+    the reason for the cropped image. The DMCU configures the display controller's
+    viewport to simulate overscan. This crops off up to 16 pixels, which does not
+    look great in several titles. Luckily, this is an easy fix; I can simply patch
+    the bytes of the firmware directly to change the values written to the viewport
+    registers.\n\n## AMD's DMCU\n\nWhat fail0verflow didn't know at the time, or at
+    least didn't mention, is that the DMCU is not a Wii U-specific microcontroller,
+    but is found in other AMD GPUs too. A patch submitted by an AMD employee in 2018
+    to the amd-gfx mailing list mentions the following:\n\n> DMCU (Display Microcontroller
+    Unit) is a GPU chip involved in eDP features like Adaptive Backlight Modulation
+    and Panel Self Refresh.\n\nAt least now we know what DMCU stands for. Could this
+    really be the same chip design as used by the Wii U? The linux-firmware repository
+    has several DMCU binary blobs for different GPUs. After downloading `raven_dmcu.bin`
+    and `navi12_dmcu.bin`, I wrote a quick tool to parse the headers of the firmware
+    blobs and extract the part that actually gets loaded into ERAM.\n\nAfter loading
+    the AMD Raven and Navi 12 DMCU firmware into Ghidra, I was able to confirm that
+    the newer AMD GPUs still use an M68HC11-based DMCU. Even the display controller
+    interface is almost identical to the one used on the Wii U.\n\n## Decompiling
+    the DMCU\n\nSince I grew tired of having to apply byte patches to the existing
+    DMCU firmware, I decided to create a C decompilation of the firmware. This would
+    also allow me to get a deeper understanding of how everything works.\n\nAt first,
+    I needed a proper toolchain to compile my project. GCC used to have upstream support
+    for the M68HC11 and M68HC12. The last upstream release with support is GCC 3.3.5
+    from 2005. Later versions broke it before it was removed entirely. I eventually
+    stumbled across releases from 2006 on the personal website of Stéphane Carrez,
+    the author of the original port. This leaves me with GCC 3.3.6 and binutils 2.15,
+    which will have to do for now.\n\nTo my surprise, I was able to byte-match entire
+    functions by hand from the original Wii U DMCU firmware using this compiler. To
+    help with matching I created a modified version of [decomp.me](https://github.com/decompme/decomp.me)
+    with support for the previously mentioned compiler.\n\nFor example, the following
+    function (compiled with `gcc3.3.6-m68hc1x-20060122 -Os -m68hc11 -fomit-frame-pointer
+    -mshort`) results in an exact byte-match in the Wii U DMCU firmware.\n\nvoid FUN\\_0e3b(FVIVideoMode
+    videoMode, FVIState\\* state)\n\n{\n\nuint32\\_t postBlanking = 0;\n\nuint32\\_t
+    preBlanking = 0;\n\nuint32\\_t uVar2 = 0;\n\nuint32\\_t uVar3 = 0;\n  \n\nif (videoMode
+    == FVI\\_VIDEO\\_MODE\\_288P\\_312 ||\n\nvideoMode == FVI\\_VIDEO\\_MODE\\_240P\\_262)
+    {\n\npreBlanking = state-\\>preBlanking;\n\npostBlanking = state-\\>postBlanking
+    + 1;\n\nuVar2 = state-\\>unk0x0C - 1;\n\nuVar3 = state-\\>unk0x14 + 2;\n\n } else
+    if (videoMode == FVI\\_VIDEO\\_MODE\\_288P\\_313 ||\n\nvideoMode == FVI\\_VIDEO\\_MODE\\_240P\\_263)
+    {\n\npreBlanking = state-\\>preBlanking;\n\npostBlanking = state-\\>postBlanking
+    - 1;\n\nuVar2 = state-\\>unk0x0C + 1;\n\nuVar3 = state-\\>unk0x14 - 2;\n\n }\n
+    \ \n\nDEINT\\_Lock();\n  \n\nFUN\\_1292();\n  \n\nDC\\_Write32(0x10A6, postBlanking
+    | (preBlanking \\<\\< 16) | 0x80008000ul);\n\nDC\\_Write32(0x10A7, uVar3 | (uVar2
+    \\<\\< 16) | 0x80008000ul);\n  \n\n DAT\\_0120 = 1;\n  \n\nFUN\\_133f();\n  \n\nDEINT\\_Unlock();\n
+    \ \n\nDEBUG\\_Write0x6(0x40);\n\n}\n\n    \n\nLooks like AMD or Nintendo (I'm
+    not sure who was responsible for writing the Wii U's DMCU firmware) might have
+    used Carrez's GCC port from 2006 when they were writing the Wii U's DMCU firmware.
+    Are they still using it? Unfortunately, I wasn't able to get an exact match in
+    the Raven or Navi 12 DMCU. They might have used some convoluted compiler flags
+    that I couldn't figure out, or a different compiler entirely.\n\nOne interesting
+    thing I noticed during reverse engineering is that the `nn_cmpt.rpl` library responsible
+    for loading the DMCU firmware ends up writing the current display resolution into
+    the middle of the DMCU's ERAM. These resolutions are unused by the DMCU firmware,
+    but end up overwriting instructions in the middle of the firmware. By sheer luck,
+    the overwritten functions happen to be unused, resulting in no issues being caused
+    by this. Since I'm loading my custom firmware in the same way as the original
+    one, this required some special attention in my decompilation. I had to create
+    a carveout section for the resolutions and place the text section before these
+    resolutions, manually placing larger functio"
+  error:
+  fetched_at: '2026-11-17T06:58:37Z'
+archived_at: '2026-11-17T06:58:37Z'

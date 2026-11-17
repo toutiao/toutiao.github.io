@@ -1,0 +1,194 @@
+---
+post:
+  id: lo-s7mejx
+  source: lobsters
+  title: How Rust Changed Me As A Developer
+  url: https://blog.startifact.com/posts/how-rust-changed-me/
+  hn_url: https://lobste.rs/s/s7mejx
+  score: 22
+  author: faassen
+  posted_at: '2026-11-16T18:17:29Z'
+  fetched_at: '2026-11-17T06:58:32Z'
+  article_url: https://blog.startifact.com/posts/how-rust-changed-me/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-17T06:58:33Z'
+  raw_comment_count: 9
+  tags:
+  - performance
+  - rust
+comments:
+- id: lo-dpkory
+  parent_id: '0'
+  author: icefox
+  text: With love, bro could have been writing OCaml in 2004. One of Rust's greatest
+    successes was getting into "mainstream" what functional languages had been doing
+    for 20 years.
+  score: 21
+  posted_at: '2026-11-16T23:42:54Z'
+- id: lo-b5xe45
+  parent_id: '0'
+  author: fazalmajid
+  text: Or Erlang. There is so much in Rust that reminds me of it. Too bad Graydon
+    Hoare did not stick to his guns on using only Erlang-style concurrency instead
+    of error-prone mutexes and shared memory.
+  score: 9
+  posted_at: '2026-11-17T00:40:36Z'
+- id: lo-ajkrb0
+  parent_id: '0'
+  author: schneems
+  text: |-
+    Learning Rust made me a better programmer in other languages. I too also read the code. Abstractions matter. Details matter.
+
+    Why write documentation?
+
+    The tooling and ecosystem on rust is top notch. Having examples that compile and run so they’re guaranteed to never be out of date is such a simple but powerful thing. Unit tests that live in the same file is another minor ergonomic win. Most weren’t done first by rust, but rust has them and they are great.
+    Rustfmt and clippy are wonderful tools, not to mention rust analyzer.
+  score: 4
+  posted_at: '2026-11-17T04:14:41Z'
+- id: lo-hbyciv
+  parent_id: '0'
+  author: briankung
+  text: Keeping Erlang-style concurrency in Rust would have necessitated keeping green
+    threads and a default async runtime, wouldn't it?
+  score: 4
+  posted_at: '2026-11-17T04:30:18Z'
+- id: lo-z0myis
+  parent_id: '0'
+  author: ptman
+  text: For most cases it would have been preferable to coloring functions. It's a
+    shame that everyone has to pay the price for the few usecases where async is significant
+  score: 2
+  posted_at: '2026-11-17T04:37:40Z'
+- id: lo-mz9c6v
+  parent_id: '0'
+  author: ghoti
+  text: On the contrary. Those who want Erlang style concurrency should be using Erlang,
+    or Elixir. Those unwilling to pay the price of using Erlang or Elixir should be
+    using Rust and are happy that Rust made the decisions that distinguish it from
+    Erlang. Both languages are well designed and highly effective in their target
+    domains.
+  score: 3
+  posted_at: '2026-11-17T05:14:43Z'
+- id: lo-urqbwf
+  parent_id: '0'
+  author: icefox
+  text: Would be a very different language if he had. I want to see that language,
+    but I think Rust as it turned out is probably more important. It fills a niche
+    that had been mostly unfilled, in a way that was revolutionary.
+  score: 3
+  posted_at: '2026-11-17T05:32:36Z'
+- id: lo-guln70
+  parent_id: '0'
+  author: travisgriggs
+  text: Will Gleam be that language (or at least a closer shade of it)?
+  score: 1
+  posted_at: '2026-11-17T06:34:49Z'
+- id: lo-bcld1c
+  parent_id: '0'
+  author: pgn
+  text: this scratches a nice part of my brain. related to the ownership -> clean
+    architecture bit especially, though idt i ever realized this was something that
+    might have resulted from writing rust.
+  score: 1
+  posted_at: '2026-11-17T06:41:31Z'
+article:
+  url: https://blog.startifact.com/posts/how-rust-changed-me/
+  title: Secret Weblog • How Rust Changed Me As A Developer
+  fetch_status: success
+  content: |-
+    # How Rust Changed Me As A Developer
+
+    - By Martijn Faassen
+
+    - 2026-11-16
+
+    - Tags: 
+
+    - programming, 
+
+    - rust
+
+    # How Rust Changed Me As A Developer
+
+    The programming language you use affects how you think as a software developer 1. That may seem surprising to you; you may have picked up JavaScript pretty quickly knowing Python, and it didn't really affect how you think or develop. That's because those languages are pretty similar. The more different a programming language is from what you're used to, the more it can change you. Rust was quite different to me, so it did.
+
+    I've been developing with Rust for over 6 years; more than 4 years professionally now. One of the reasons I really wanted to become more proficient with Rust is because I knew it would challenge me, and hopefully change me for the better as a developer. I think it did.
+
+    What I learned and am going to discuss here is not exclusive to Rust. You can encounter many of these concepts in other contexts, and indeed I had encountered quite a few of them already. But in this case, Rust helped bring them into better focus.
+
+    ## Where were enums all my life?
+
+    We're all familiar with product types, though not usually under that name:
+
+    struct Human { first_name: String, last_name: String, }
+
+    The fields of the Human struct 2 can vary independently from each other, and we have to deal with all possible combinations: all possible first names and last names, combined. The product of their combinations, to to speak.
+
+    But it turns out there's another type thing that's been around forever but that the programming community has mostly been been ignoring 3: the sum type. A sum type expresses variants: something is either one thing, or another, out of a bunch of variants:
+
+    enum Person { Human { first_name: String, last_name: String }, Cat { name: String, cuteness: Cuteness } }
+
+    A Person is either a human or a cat: that's the sum of the possiblities. Each variant can have data associated with it, and this can be a product type, but the Person type is just these options (two in this case). In code where you need to deal with a person, you need to handle each variant by match in on the object. The Rust compiler enforces this.
+
+    match some_person { Human { first_name, last_name } => { // do a thing with first_name and last_name }, Cat { name, cuteness } => { // do a thing with name and cutenes } }
+
+    When you handle the human variant, you only need to worry about first_name and last_name. You don't have to worry about name or cuteness at all. These cases are distinct from each other.
+
+    It turns out that it's really helpful to model stuff using sum types. People using functional programming languages already knew this. You can model optionality (null) this way: you got either some value, or nothing. You can also model errors: it's either okay (with whatever value you return in case of success), or an error (with a value describing the error).
+
+    Any language without sum types now feels impoverished to me. I know I can simulate it with some type field, but the job of a programming language is to help me handle basic stuff, and this is basic stuff.
+
+    ## Enums and abstraction
+
+    In an object oriented programming language, you handle variants using dynamic dispatch and an interface (or inheritance). You do this:
+
+    interface Person { def do_one_thing() def do_another_thing } class Human implements Person { ... } class Cat implements Person { ... }
+
+    The idea is that you can now use Person anywhere without worrying about the details inside: it's loosely coupled. You only use their interface.
+
+    This is indeed a great idea, but Rust taught me that this has tradeoffs I may not want to pay for. You pay two things: performance, and the need to create the interface.
+
+    Let's talk about the need to create the interface. You need to devise an interface that actually makes sense for your application: how are you using humans and cats everywhere? Doing this work of abstraction may be extremely worthwhile to do, especially if you anticipate unknown future persons that you need to be able to plug in later without having to modify the code that uses them -- you want your code use the open/closed principle.
+
+    But what if you are developing a single domain, and inside that you just want to be able to handle cats and humans and that's it? There's just no need to plug in other types of persons, and certainly not from outside.
+
+    Or let's say you do want to add a new variant once every while. Say you want to add Dog. Maybe you're actually okay going through the code that handles Human and Cat and add handling for dogs too? Maybe it actually is helpful to see those other handlers right there too when you do so? The compiler is going to ensure you don't miss any spots!
+
+    Or what if the abstraction you are trying to devise is the variance and that's more or less what you can say about it? For error handling, the abstraction is either okay with some value, or some error value.
+
+    In this case you may be paying the price of creating an interface without it being worthwhile.
+
+    enum may be all you actually need -- low ceremony, and statically checked. Finally I'll note that enums don't lock you out from creating that abstraction - you can add methods to an enum too, just like on a struct.
+
+    Enums made me a better programmer as now I have another elementary, simple, easy to understand language construct for abstraction in my mental toolbox.
+
+    ## Dispatch galore
+
+    In many languages there are two types of dispatch: dynamic dispatch, which we've discussed in case of our Person interface, and conditional dispatch, like this:
+
+    if something { do_this_thing() } else do_another() }
+
+    Rust has dynamic dispatch, if you ask for it. It also has the powered up version of conditional dispatch I already discussed: match on enums. It has conditional dispatch too - that's just [a special case][https://docs.rs/bool/latest/bool/enum.Boolean.html].
+
+    There's another type of dispatch that Rust makes you think about: dispatch that's statically compiled.
+
+    What if you're dealing either with groups of humans or groups of cats, and you want to do some operations on them, and those operations have common behavior (say, you want to count them). The group, or collection, doesn't really care about what's in it, as long as every item fulfills certain basic properties.
+
+    You could create an enum Person; either an enum or an interface with multiple implementations, and then dispatch during runtime to every member of the group based on whether that entry is a human or a cat. But this means you have to account for mixed groups of humans and cats, even though we just said those don't actually exist.
+
+    Instead, you can express this differently in Rust. You still have a Person interface (trait), but you compose your individual type of Person (Human or Cat) during compile time.
+
+    struct Group<T> { // some fields } // compile time assembly, // then runtime creation of the assembled group of cats let cat_group: Group<Cat> = Group::new();
+
+    Rust now refuses to compile if you use non-cat operations on items in the group, That's an invariant you now do not need to worry about anymore. This will be familiar to you with generics in other languages like TypeScript or Python.
+
+    In Rust, when you process your group of cats, there is no individual check somewhere whether an entry is a human or a cat, as it already knows it's all cats before the program even ran. Rust directly dispatches to the cat code, and the human code is not play. You avoid indirect dispatch for every group member, which can matter in situations where performance is important.
+
+    Rust made me a better programmer as I now better understand the connection between dispatch and performance.
+
+    ## Type driven development
+
+    When I discovered Python coming from C++ back in the late 1990s, dynamic typing was a revelation. You could so much with so little ceremony. For the last decade or so I have been on a long winding road back to types (far more ergonomic types) a
+  error:
+  fetched_at: '2026-11-17T06:58:33Z'
+archived_at: '2026-11-17T06:58:33Z'
