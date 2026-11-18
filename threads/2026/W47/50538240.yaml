@@ -1,0 +1,984 @@
+---
+post:
+  id: '50538240'
+  title: 'Java4Shell: RCE in OpenJDK when processing Base64'
+  url: https://calif.io/java4shell/
+  hn_url: https://news.ycombinator.com/item?id=50538240
+  score: 570
+  author: ''
+  posted_at: '2026-11-17T21:11:28Z'
+  fetched_at: '2026-11-18T02:45:32Z'
+  article_url: https://calif.io/java4shell/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-18T02:45:32Z'
+  raw_comment_count: 149
+comments:
+- id: '50537814'
+  parent_id: '50538240'
+  author: plmpsu
+  text: Does anyone know what the attack vector of this is? I&#x27;m trying to figure
+    out if our usage is affected by this CVE.
+  score: 0
+  posted_at: '2026-11-17T20:36:15Z'
+- id: '50538152'
+  parent_id: '50537814'
+  author: vips7L
+  text: No details yet. Calif was supposed to release them at 1PT after the update
+    was pushed out. The corretto release notes say its in hotspot&#x2F;compiler.<p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;corretto&#x2F;corretto-25&#x2F;blob&#x2F;25.0.5.1.2&#x2F;CHANGELOG.md"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;corretto&#x2F;corretto-25&#x2F;blob&#x2F;25.0.5.1.2&#x2F;CHAN...</a>
+  score: 0
+  posted_at: '2026-11-17T21:03:50Z'
+- id: '50538205'
+  parent_id: '50538240'
+  author: AgentME
+  text: Unconfirmed, but people on Twitter suggest this vulnerability has to do with
+    the AVX512 implementation of Base64 decoding, and so this vulnerability can be
+    worked around by running Java with the -XX:UseAVX=2 flag. (<a href="https:&#x2F;&#x2F;x.com&#x2F;sean_a_cassidy&#x2F;status&#x2F;2122791344573976817"
+    rel="nofollow">https:&#x2F;&#x2F;x.com&#x2F;sean_a_cassidy&#x2F;status&#x2F;2122791344573976817</a>)
+  score: 0
+  posted_at: '2026-11-17T21:08:15Z'
+- id: '50538221'
+  parent_id: '50537814'
+  author: yabones
+  text: Some unverified sources have said it&#x27;s in the Base64 decoder, but strangely
+    only effecting AMD64 machines, so anything on ARM&#x2F;graviton allegedly isn&#x27;t
+    impacted. Some sort of bug in some hyper-optimized code I reckon. That might mean
+    any place that parses cookies, headers, urls, JWTs, SAML payloads, certificates,
+    etc, might be exposed. Yikes.<p>But the facts aren&#x27;t really out yet, we&#x27;ll
+    learn more in coming hours and days...
+  score: 0
+  posted_at: '2026-11-17T21:09:23Z'
+- id: '50538254'
+  parent_id: '50537814'
+  author: explain
+  text: 'Here&#x27;s the supposed patch (?): <a href="https:&#x2F;&#x2F;pbs.twimg.com&#x2F;media&#x2F;HXWyDZQXEAAPOVf?format=webp&amp;name=large"
+    rel="nofollow">https:&#x2F;&#x2F;pbs.twimg.com&#x2F;media&#x2F;HXWyDZQXEAAPOVf?format=webp&amp;name...</a><p>`grep
+    -ow avx512vbmi &#x2F;proc&#x2F;cpuinfo | sort -u`<p>`-XX:-UseBASE64Intrinsics
+    -XX:UseAVX=2`'
+  score: 0
+  posted_at: '2026-11-17T21:12:36Z'
+- id: '50538267'
+  parent_id: '50538240'
+  author: benjiweber
+  text: <a href="https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;commit&#x2F;5177a70b385c16f26ede191fdac7aaba0bed0f8b"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;commit&#x2F;5177a70b385c16f26ede19...</a>
+  score: 0
+  posted_at: '2026-11-17T21:13:08Z'
+- id: '50538337'
+  parent_id: '50538240'
+  author: leca
+  text: What’s that old Chinese proverb? “May you live in interesting times”? It feels
+    like we’re living in interesting times. How long will it take for a bad actor
+    to seriously compromise critical infrastructure? My bet is within six months.<p>The
+    upside is that it’ll force legacy institutions and organizations with sub-par
+    security to get good at security and modernize their legacy stacks. That, or get
+    pwned in short order.
+  score: 0
+  posted_at: '2026-11-17T21:19:26Z'
+- id: '50538391'
+  parent_id: '50538240'
+  author: ievans
+  text: |-
+    Super impressive work by Calif as usual.<p>The exploit conditions are very specific but there are still going to be a lot of hosts impacted. We at Semgrep published some free detection scripts here: <a href="https:&#x2F;&#x2F;github.com&#x2F;semgrep&#x2F;detection-scripts&#x2F;tree&#x2F;main&#x2F;CVE-2026-114938" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;semgrep&#x2F;detection-scripts&#x2F;tree&#x2F;main&#x2F;CVE-2...</a><p>They look for these five conditions:<p><pre><code>  * HotSpot VM: any OpenJDK build, Oracle JDK, or GraalVM JDK. Only HotSpot generates the stub. OpenJ9 and GCJ are OK. Azul Prime (Zing), which replaces C2 with its own JIT, and any VM name not recognized as HotSpot are [?], never [!].
+      * x86-64 JVM on an x86-64 host.
+      * Version 17.0.6 or later, not at or above a version listed in FIXED_IN, and no newer than the newest releases checked (see below). Newer versions are [?]: they may carry the fix.
+      * The JVM reports avx512_vbmi and avx512bw, and UseAVX &gt;= 3.
+      * Base64 intrinsics are on and C2&#x2F;JVMCI can compile. These turn it off: -XX:-UseBASE64Intrinsics, -XX:DisableIntrinsic=_base64_decodeBlock, -Xint, -XX:TieredStopAtLevel below 4.</code></pre>
+  score: 0
+  posted_at: '2026-11-17T21:23:39Z'
+- id: '50538403'
+  parent_id: '50538240'
+  author: mzs
+  text: You can also mitigate Java4Shell by starting OpenJDK with either:<p>-XX:-UseBASE64Intrinsics
+    to disable hardware-accelerated Base64 encoding and decoding, or<p>-XX:UseAVX=2
+    to disable AVX-512. Apply this flag only on x86-64 hosts. OpenJDK on ARM doesn&#x27;t
+    recognize it and will fail to start.
+  score: 0
+  posted_at: '2026-11-17T21:25:23Z'
+- id: '50538430'
+  parent_id: '50538240'
+  author: doctorpangloss
+  text: is this the root cause of the issue befalling making giant companies right
+    now? i think it&#x27;s a java DOS for sure, but an RCE?
+  score: 0
+  posted_at: '2026-11-17T21:27:05Z'
+- id: '50538444'
+  parent_id: '50538205'
+  author: elric
+  text: There are presumably more bugs lurking in the hand crafted assembly intrinsics
+    in the JVM. The many eyeballs and shallow bugs thing is only true when the eyeballs
+    actually understand the code.
+  score: 0
+  posted_at: '2026-11-17T21:28:09Z'
+- id: '50538472'
+  parent_id: '50538430'
+  author: TZubiri
+  text: Looks unrelated, this is being disclosed now but it was discovered a couple
+    of weeks ago and is just now being made public at the same time.<p>Also I haven&#x27;t
+    looked into it, but I&#x27;m willing to be it&#x27;s some free after-use memory
+    corruption thing that has a CVSS Attack Complexity of high, the &#x27;RCE&#x27;
+    is speculative, and private companies push social media headlines to fit the AI
+    cybersecurity narrative.<p>Not saying the doom isn&#x27;t right, but sometimes
+    it&#x27;s more like a Wednesday than doomsday. Just patch it and move on. Thanks
+    to all involved though in disclosing and patching though.
+  score: 0
+  posted_at: '2026-11-17T21:30:56Z'
+- id: '50538491'
+  parent_id: '50538403'
+  author: marginalia_nu
+  text: Might be worth examining whether AVX-512 is even supported on the machine
+    before freaking out, too.
+  score: 0
+  posted_at: '2026-11-17T21:32:22Z'
+- id: '50538494'
+  parent_id: '50538240'
+  author: Sigmazero60
+  text: We set UseAVX=2 on all our jdk hosts last year for unrelated thermal issues,
+    turns out that saved us here
+  score: 0
+  posted_at: '2026-11-17T21:32:34Z'
+- id: '50538534'
+  parent_id: '50538240'
+  author: eyalitki
+  text: The fact that mainstream modules have such trivial bugs in logic that can
+    be fully covered by testing is staggering. It is about time software developers
+    will have proper test coverage for their code, at least for basic &quot;unit&quot;
+    modules. Maybe we can even name a testing philosophy to match it.
+  score: 0
+  posted_at: '2026-11-17T21:36:28Z'
+- id: '50538543'
+  parent_id: '50538240'
+  author: nacnud
+  text: 'More info here: <a href="https:&#x2F;&#x2F;www.upwind.io&#x2F;blog&#x2F;java4shell-what-we-know-now-and-what-comes-next"
+    rel="nofollow">https:&#x2F;&#x2F;www.upwind.io&#x2F;blog&#x2F;java4shell-what-we-know-now-and-w...</a><p>It&#x27;s
+    a heap out-of-bounds write in Java’s AVX-512 Base64 decoder.'
+  score: 0
+  posted_at: '2026-11-17T21:37:31Z'
+- id: '50538551'
+  parent_id: '50538240'
+  author: kaliszad
+  text: Seems like -XX:-UseBASE64Intrinsics is the better workaround for now.
+  score: 0
+  posted_at: '2026-11-17T21:38:04Z'
+- id: '50538586'
+  parent_id: '50538240'
+  author: yabones
+  text: Before you keep your security team up all night, it looks like proxies save
+    the day here. Might not be a complete fix, obviously a real patch should be applied
+    as soon as possible.<p>&gt; Request streaming. Some current grooming profiles
+    need partial request bodies to reach the application. A proxy that waits for the
+    complete body removes their release timing. nginx buffers request bodies by default.<p><a
+    href="https:&#x2F;&#x2F;calif.io&#x2F;java4shell&#x2F;#limitations" rel="nofollow">https:&#x2F;&#x2F;calif.io&#x2F;java4shell&#x2F;#limitations</a>
+  score: 0
+  posted_at: '2026-11-17T21:40:02Z'
+- id: '50538735'
+  parent_id: '50538240'
+  author: hypfer
+  text: |-
+    Given that this is AVX512-only...how many enterprises are out there that run vulnerable java applications on non-intel servers?<p>Genuine question. Everything I see is Intel all the time.
+    I know that people at home switched to AMD, but they don&#x27;t run enterprise java.<p>I also have been told that apparently EPYC was hyped for a while and some hosters give you that. But do corporations run the java applications there?<p>The name makes it sound like Log4J or the PHP thing, but from what I can tell right now, it kinda isn&#x27;t all that relevant?
+  score: 0
+  posted_at: '2026-11-17T21:51:39Z'
+- id: '50538743'
+  parent_id: '50538240'
+  author: nikanj
+  text: Just as with CVE-2026-98432, Debian is immediately patched at embargo drop,
+    Ubuntu still isn&#x27;t patched.<p>Why do we even pay for Ubuntu?
+  score: 0
+  posted_at: '2026-11-17T21:52:13Z'
+- id: '50538746'
+  parent_id: '50538240'
+  author: cpach
+  text: "."
+  score: 0
+  posted_at: '2026-11-17T21:52:36Z'
+- id: '50538760'
+  parent_id: '50538240'
+  author: dboreham
+  text: "&quot;vibe-uncoding&quot; -- have actually been doing quite a bit of that
+    in my older projects."
+  score: 0
+  posted_at: '2026-11-17T21:53:38Z'
+- id: '50538769'
+  parent_id: '50538205'
+  author: mey
+  text: If a system doesn&#x27;t support AVX512, is it an issue?
+  score: 0
+  posted_at: '2026-11-17T21:54:48Z'
+- id: '50538802'
+  parent_id: '50538735'
+  author: p_l
+  text: Lots of AMD servers out there, both on-prem and in the cloud, though AVX-512
+    capable ones are relatively recent.
+  score: 0
+  posted_at: '2026-11-17T21:57:07Z'
+- id: '50538803'
+  parent_id: '50538769'
+  author: cpach
+  text: 'AFAICT: No.<p>Edit: If I understood the article correctly, the machine needs
+    to have <i>all</i> the four of these flags in order to be exploitable: avx512f,
+    avx512bw, avx512vbmi, bmi2'
+  score: 0
+  posted_at: '2026-11-17T21:57:14Z'
+- id: '50538805'
+  parent_id: '50538240'
+  author: secondcoming
+  text: Why would anyone write the scalar part of a SIMD&#x27;d function in assembly
+    code!?
+  score: 0
+  posted_at: '2026-11-17T21:57:19Z'
+- id: '50538825'
+  parent_id: '50538534'
+  author: ajasmin
+  text: Finding these kind of bugs would have required fuzzing and some kind of bound
+    checking canaries. Not sure all bound checkers work on the hand-optimized assembly.<p>Or
+    as it turns out an LLM! Not clear whether their agent spawned any classic tools...
+  score: 0
+  posted_at: '2026-11-17T21:59:01Z'
+- id: '50538830'
+  parent_id: '50538240'
+  author: iririririr
+  text: is this why half the banks worldwide are offline on and off since yesterday?
+  score: 0
+  posted_at: '2026-11-17T21:59:40Z'
+- id: '50538831'
+  parent_id: '50538746'
+  author: ryanschaefer
+  text: This should be the main thread as this is the primary source
+  score: 0
+  posted_at: '2026-11-17T21:59:48Z'
+- id: '50538873'
+  parent_id: '50538534'
+  author: Noe2097
+  text: Not sure this is as trivial as it seems. The bug triggers on a specific instruction
+    set, on a precise input length, with a specific character at the end, and when
+    on the hot path, and requires low level memory access checking to be detected.
+  score: 0
+  posted_at: '2026-11-17T22:03:05Z'
+- id: '50538875'
+  parent_id: '50538743'
+  author: cpach
+  text: Are you sure? I can’t see any Debian advisory for this vuln.<p><a href="https:&#x2F;&#x2F;www.debian.org&#x2F;security&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.debian.org&#x2F;security&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-17T22:03:10Z'
+- id: '50538880'
+  parent_id: '50538240'
+  author: cedricbonhomme
+  text: 'Tracking sightings related to this vulnerability here: <a href="https:&#x2F;&#x2F;vulnerability.circl.lu&#x2F;vuln&#x2F;CVE-2026-114938#sightingsCorrelations"
+    rel="nofollow">https:&#x2F;&#x2F;vulnerability.circl.lu&#x2F;vuln&#x2F;CVE-2026-114938#sighting...</a>'
+  score: 0
+  posted_at: '2026-11-17T22:03:26Z'
+- id: '50538884'
+  parent_id: '50538205'
+  author: _msw_
+  text: This isn&#x27;t the best flag to mitigate, since it will fail on systems that
+    don&#x27;t support AVX2.<p>I recommend -XX:-UseBASE64Intrinsics instead.
+  score: 0
+  posted_at: '2026-11-17T22:03:46Z'
+- id: '50538889'
+  parent_id: '50538240'
+  author: rbanffy
+  text: Not everywhere... Requires an x86-64 processir with AVX512.
+  score: 0
+  posted_at: '2026-11-17T22:04:08Z'
+- id: '50538921'
+  parent_id: '50538337'
+  author: ctoth
+  text: "&gt; My bet is within six months<p>My bet is it already happened two months
+    ago and there&#x27;s a whole secret scrum we only vaguely know about happening
+    right now."
+  score: 0
+  posted_at: '2026-11-17T22:07:19Z'
+- id: '50538923'
+  parent_id: '50538240'
+  author: mushufasa
+  text: where is the dancing girl in the exploit videos???
+  score: 0
+  posted_at: '2026-11-17T22:07:28Z'
+- id: '50538981'
+  parent_id: '50538889'
+  author: formerly_proven
+  text: Pretty much any Intel server and most AMD servers are going to support AVX512
+    and conversely most VMs running in the cloud will have access to it.
+  score: 0
+  posted_at: '2026-11-17T22:12:08Z'
+- id: '50539002'
+  parent_id: '50538805'
+  author: magackame
+  text: pure love for the game
+  score: 0
+  posted_at: '2026-11-17T22:14:17Z'
+- id: '50539090'
+  parent_id: '50538921'
+  author: adrianpike
+  text: Instability is often correlated to urgently performed change, and we&#x27;ve
+    seen a lot of instability around the world lately.
+  score: 0
+  posted_at: '2026-11-17T22:21:59Z'
+- id: '50539095'
+  parent_id: '50538884'
+  author: marginalia_nu
+  text: What system supports AVX512 but not AVX2?
+  score: 0
+  posted_at: '2026-11-17T22:22:14Z'
+- id: '50539121'
+  parent_id: '50539095'
+  author: philipkglass
+  text: I assume that the advice is referring to situations where you might have a
+    mixture of ARM and AMD64 hosts, like on AWS, so you need to be careful about global
+    flag updates that might not work across all instances.
+  score: 0
+  posted_at: '2026-11-17T22:24:59Z'
+- id: '50539131'
+  parent_id: '50538981'
+  author: rbanffy
+  text: Speak for yourself. All my cloud VMs are ARM, with one exception, one s390x
+    running Linux.
+  score: 0
+  posted_at: '2026-11-17T22:25:36Z'
+- id: '50539150'
+  parent_id: '50537814'
+  author: fweimer
+  text: "GLM 5.3 produced this after a bit of prodding. I started out with the C++
+    sources with a bug marker instead of the fix: <a href=\"https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;commit&#x2F;5177a70b385c16f26ede191fdac7aaba0bed0f8b\"
+    rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;commit&#x2F;5177a70b385c16f26ede19...</a><p>There
+    are only a bunch of commits that came in the latest merge of security fixes, and
+    this one changed VBMI-related intrinsics code, so it&#x27;s a good match for what
+    was publicly disclosed at the time.<p><pre><code>    import java.util.Arrays;\n
+    \   import java.util.Base64;\n    \n    public class Canary {\n        &#x2F;&#x2F;
+    static fields defeat escape analysis so dst&#x2F;canary really live in the heap\n
+    \       static byte[] dst;\n        static byte[] canary;\n    \n        public
+    static void main(String[] args) {\n            &#x2F;&#x2F; (input, expected decodedOutLength)
+    pairs:\n            &#x2F;&#x2F;   65 = &quot;A&quot;*64 + &quot;=&quot;    -&gt;
+    fragment &quot;=&quot;   (length 1, trailing pad)\n            &#x2F;&#x2F;   66
+    = &quot;A&quot;*64 + &quot;Q=&quot;   -&gt; fragment &quot;Q=&quot;  (length 2,
+    trailing pad)\n            &#x2F;&#x2F;   67 = &quot;A&quot;*64 + &quot;QQ=&quot;
+    \ -&gt; fragment &quot;QQ=&quot; (length 3, trailing pad)\n            &#x2F;&#x2F;
+    \  68 = &quot;A&quot;*64 + &quot;QQ==&quot; -&gt; fragment 4 bytes, well-formed
+    control case\n            int[][] cases = { { 65, 50 }, { 66, 50 }, { 67, 50 },
+    { 68, 49 } };\n            byte[][] srcs = new byte[cases.length][];\n            for
+    (int c = 0; c &lt; cases.length; c++) {\n                int len = cases[c][0];\n
+    \               byte[] src = new byte[len];\n                Arrays.fill(src,
+    (byte) &#x27;A&#x27;);\n                if (len == 65) { src[64] = &#x27;=&#x27;;
+    }\n                if (len == 66) { src[64] = &#x27;Q&#x27;; src[65] = &#x27;=&#x27;;
+    }\n                if (len == 67) { src[64] = &#x27;Q&#x27;; src[65] = &#x27;Q&#x27;;
+    src[66] = &#x27;=&#x27;; }\n                if (len == 68) { src[64] = &#x27;Q&#x27;;
+    src[65] = &#x27;Q&#x27;; src[66] = &#x27;=&#x27;;\n                    src[67]
+    = &#x27;=&#x27;; }\n                srcs[c] = src;\n            }\n    \n            int
+    iters = 300_000;\n            for (int iter = 0; iter &lt; iters; iter++) {\n
+    \               for (int c = 0; c &lt; cases.length; c++) {\n                    byte[]
+    src = srcs[c];\n                    int dstLen = cases[c][1];\n                    &#x2F;&#x2F;
+    fresh dst, then canary IMMEDIATELY after it in the TLAB\n                    dst
+    = new byte[dstLen];\n                    canary = new byte[64];\n                    Arrays.fill(canary,
+    (byte) 0x41);\n                    int before = canary.length;\n                    try
+    {\n                        Base64.getDecoder().decode(src, dst);\n                    }
+    catch (IllegalArgumentException e) {\n                        &#x2F;&#x2F; expected
+    for the malformed tails\n                    }\n                    if (canary.length
+    != before || changed(canary)) {\n                        System.out.println(\n
+    \                           &quot;*** ITERATION &quot; + iter + &quot;, input
+    length &quot; + src.length\n                            + &quot;: DESTINATION
+    BUFFER OVERRUN DETECTED&quot;);\n                        System.out.println(\n
+    \                           &quot;canary.length = &quot; + canary.length + &quot;
+    (expected 64)&quot;);\n                        System.out.println(\n                            &quot;canary
+    bytes  = &quot; + toHex(canary, 48));\n                        return;\n                    }\n
+    \               }\n                if (iter % 50_000 == 0)\n                    System.out.println(&quot;iter
+    &quot; + iter + &quot;: clean so far&quot;);\n            }\n            System.out.println(\n
+    \               &quot;no corruption detected in &quot; + iters + &quot; iterations&quot;);\n
+    \       }\n    \n        static boolean changed(byte[] b) {\n            for (byte
+    x : b) if (x != 0x41) return true;\n            return false;\n        }\n    \n
+    \       static String toHex(byte[] b, int n) {\n            StringBuilder sb =
+    new StringBuilder();\n            for (int i = 0; i &lt; 64; i++)\n                sb.append(String.format(&quot;%02x
+    &quot;, b[i]));\n            return sb.toString();\n        }\n    }\n</code></pre>\nI
+    had to fix toHex() not to use b.length, otherwise it wouldn&#x27;t print anything
+    due to the negative array length field.<p><pre><code>    *** ITERATION 4076, input
+    length 67: DESTINATION BUFFER OVERRUN DETECTED\n    canary.length = -1700370022
+    (expected 64)\n    canary bytes  = 69 a6 9a 69 a6 9a 69 a6 9a 69 a6 9a 69 a6 9a
+    69 a6 9a 69 a6 9a 69 a6 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 9a 41
+    41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 \n\n</code></pre>\nGLM
+    had web access for this, and it was able retrieve the OpenJDK fix. I don&#x27;t
+    know if it found the reproducer in its web searches.<p>Turning this into a reliable
+    exploit probably still requires some expertise. It&#x27;s going to depend on heap
+    layout at the time of the overflow. Targets won&#x27;t be auto-selecting themselves
+    like they did for Log4Shell."
+  score: 0
+  posted_at: '2026-11-17T22:26:38Z'
+- id: '50539170'
+  parent_id: '50538735'
+  author: CodesInChaos
+  text: We run many of our apps on AWS&#x27;s graviton (ARM) to reduce costs.
+  score: 0
+  posted_at: '2026-11-17T22:28:21Z'
+- id: '50539182'
+  parent_id: '50538923'
+  author: 3dedb728-3f77
+  text: Yes, this is pretty much required now after the last.
+  score: 0
+  posted_at: '2026-11-17T22:29:30Z'
+- id: '50539212'
+  parent_id: '50539090'
+  author: pixl97
+  text: A lot of organizations we sitting on internal bugs for years because they
+    thought they were impossible to exploit, and now their red team can break them
+    in hours.<p>Most businesses are stuck in a trap now. They know the software is
+    exploitable, but they are organizationally slow in testing and rollout. They have
+    to start moving fast with security and IT organizations that are cut to the bone,
+    yet at the same time contain to much box checking deadweight.
+  score: 0
+  posted_at: '2026-11-17T22:32:11Z'
+- id: '50539216'
+  parent_id: '50539121'
+  author: marginalia_nu
+  text: Surely you&#x27;d still need to know what you&#x27;re deploying on.  Can&#x27;t
+    plop an x86_64 JVM on an ARM host or vice versa, at least if you want them to
+    run.
+  score: 0
+  posted_at: '2026-11-17T22:32:33Z'
+- id: '50539226'
+  parent_id: '50539090'
+  author: ChuckSneed
+  text: Instability can also be attributed to AI slop code. That&#x27;s the simplest
+    explanation.
+  score: 0
+  posted_at: '2026-11-17T22:33:12Z'
+- id: '50539246'
+  parent_id: '50538735'
+  author: tptacek
+  text: The Log4j comparison is always a little frustrating, because it sets the bar
+    somewhere in the neighborhood of &quot;apocalyptic&quot;. If you&#x27;re someone
+    who believes our response to serious vulnerabilities is inadequate, you can see
+    how Log4Shell gives a lot of cover to companies.<p>It is <i>wild</i> to find a
+    generalizable (if platform-specific) memory corruption vulnerability in Java core
+    Base64 handling; the tornado sirens should clearly be going off. But yes, it&#x27;s
+    not <i>as bad</i> as Log4Shell.
+  score: 0
+  posted_at: '2026-11-17T22:34:59Z'
+- id: '50539249'
+  parent_id: '50538743'
+  author: mitchweaver
+  text: Uhh, Debian is NOT patched as of this writing.<p>Fortunately I run name-brand
+    Oracle(R) Java(tm), which did publish updated packages.
+  score: 0
+  posted_at: '2026-11-17T22:35:14Z'
+- id: '50539251'
+  parent_id: '50538921'
+  author: Analemma_
+  text: I think this bet is optimistically assuming a far more competent world than
+    the one we actually have. Have you seen the idiot clowns actually in power? The
+    agency that might&#x27;ve been tasked with this hypothetical secret scrum, CISA,
+    has been gutted and left to rot because they thought it was an enemy plot to censor
+    them on social media or whatever. There&#x27;s no secret room where the smart
+    people are fixing things.
+  score: 0
+  posted_at: '2026-11-17T22:35:16Z'
+- id: '50539263'
+  parent_id: '50538391'
+  author: cjbprime
+  text: Wouldn&#x27;t it be prudent for someone to patch even if they aren&#x27;t
+    running their code on an AVX512 system right this moment? They could be running
+    on one.. next moment.
+  score: 0
+  posted_at: '2026-11-17T22:36:04Z'
+- id: '50539270'
+  parent_id: '50538391'
+  author: bonsai_spool
+  text: 'This looks like Claudese - may be kind to write such things yourself if you
+    intend for humans to read them. (For example, “ HotSpot VM: any OpenJDK build,
+    Oracle JDK, or GraalVM JDK. Only HotSpot generates the stub. OpenJ9 and GCJ are
+    OK. Azul Prime (Zing), which replaces C2 with its own JIT, and any VM name not
+    recognized as HotSpot are [?], never [!].” — I tried parsing at least five times
+    before realizing you’re asking me to decipher LLM talk)'
+  score: 0
+  posted_at: '2026-11-17T22:36:42Z'
+- id: '50539305'
+  parent_id: '50538391'
+  author: bikezen
+  text: 'The write-up itself matches your version assumption, however it also says:<p>&gt;
+    According to Oracle, the following Oracle Java SE versions are vulnerable: 8u511b33-perf,
+    17.0.21.0.3, 21.0.13.0.3, 25.0.5.0.3, 27.0.1.0.3. We thank Oracle for providing
+    this information ahead of publication time.<p>So according to Oracle at least,
+    JRE8 versions are affected as well.'
+  score: 0
+  posted_at: '2026-11-17T22:40:44Z'
+- id: '50539328'
+  parent_id: '50539216'
+  author: philipkglass
+  text: It&#x27;s possible if you have enough abstraction layers. At my company there
+    are a few systems with Java runtime flags specified in the service source code,
+    but deployment configuration in a separate infrastructure-as-code repository.
+    Switching between CPU architectures is normally transparent if you don&#x27;t
+    rely on native code libraries.
+  score: 0
+  posted_at: '2026-11-17T22:43:32Z'
+- id: '50539329'
+  parent_id: '50538873'
+  author: spockz
+  text: For the finished jre yes. But one would hope these kind of checks are also
+    run on a hand rolled decoder function. Fuzzing that one and finding logic bugs
+    is a lot easier
+  score: 0
+  posted_at: '2026-11-17T22:43:47Z'
+- id: '50539343'
+  parent_id: '50539263'
+  author: Banditoz
+  text: Sure, but I think it brings it down from &quot;patch immediately&quot; severity,
+    to just &quot;bump the JDK with next service deploy&quot; severity.<p>Or, do running
+    machines often have their CPU changed from under them without much notice?
+  score: 0
+  posted_at: '2026-11-17T22:45:22Z'
+- id: '50539357'
+  parent_id: '50539216'
+  author: articulatepang
+  text: I think the idea is that you’re already running the appropriate JVM on each
+    architecture, but want to push a global command line flag update to every JVM
+    you run, regardless of architecture, that prevents this exploit.<p>Until, presumably,
+    there’s fixes and you can test, update etc.
+  score: 0
+  posted_at: '2026-11-17T22:47:03Z'
+- id: '50539362'
+  parent_id: '50539305'
+  author: xur17
+  text: 25.0.5.0.3 is the latest on the 25 version [0]. Does that mean no patch is
+    available?<p>[0] <a href="https:&#x2F;&#x2F;www.oracle.com&#x2F;java&#x2F;technologies&#x2F;javase&#x2F;jdk25-archive-downloads.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.oracle.com&#x2F;java&#x2F;technologies&#x2F;javase&#x2F;jdk25-archiv...</a>
+  score: 0
+  posted_at: '2026-11-17T22:47:20Z'
+- id: '50539363'
+  parent_id: '50539357'
+  author: marginalia_nu
+  text: Why&#x27;d you patch the commandline of JVMs that aren&#x27;t vulnerable though?
+  score: 0
+  posted_at: '2026-11-17T22:47:42Z'
+- id: '50539368'
+  parent_id: '50539270'
+  author: Yokolos
+  text: I still don&#x27;t understand what&#x27;s meant with Azul. Is it affected
+    or not? What is it never?
+  score: 0
+  posted_at: '2026-11-17T22:48:43Z'
+- id: '50539415'
+  parent_id: '50539170'
+  author: t0mas88
+  text: Same here, and ARM64 is not affected by this CVE.
+  score: 0
+  posted_at: '2026-11-17T22:54:24Z'
+- id: '50539423'
+  parent_id: '50539343'
+  author: stackskipton
+  text: Depends on the company and deployment method. As Ops person, I generally don&#x27;t
+    think much about rolling out different Kubernetes Nodes and what SKU I select.
+    So yes, you could be running on one node type today and tomorrow I upgrade the
+    nodes under you.
+  score: 0
+  posted_at: '2026-11-17T22:55:06Z'
+- id: '50539428'
+  parent_id: '50538831'
+  author: cpach
+  text: Fair!
+  score: 0
+  posted_at: '2026-11-17T22:55:43Z'
+- id: '50539437'
+  parent_id: '50538735'
+  author: aleksejs
+  text: "(Some) Intel server CPUs support AVX512."
+  score: 0
+  posted_at: '2026-11-17T22:56:42Z'
+- id: '50539439'
+  parent_id: '50539182'
+  author: cpach
+  text: 'I’m probably boring, but IMHO a plain video is easier to digest (:'
+  score: 0
+  posted_at: '2026-11-17T22:56:48Z'
+- id: '50539656'
+  parent_id: '50538267'
+  author: cyberax
+  text: 'Wow. That JIT stub generation code is freaking terrifying: <a href="https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;blob&#x2F;5177a70b385c16f26ede191fdac7aaba0bed0f8b&#x2F;src&#x2F;hotspot&#x2F;cpu&#x2F;x86&#x2F;stubGenerator_x86_64.cpp"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;blob&#x2F;5177a70b385c16f26ede191f...</a><p>I
+    suspect it&#x27;s not the only issue they&#x27;re going to find there.'
+  score: 0
+  posted_at: '2026-11-17T23:23:52Z'
+- id: '50539669'
+  parent_id: '50539251'
+  author: scottyah
+  text: There are many secret rooms where many smart people are fixing many things.
+    It&#x27;s more telling about yourself that you don&#x27;t know of any.
+  score: 0
+  posted_at: '2026-11-17T23:25:43Z'
+- id: '50539684'
+  parent_id: '50539363'
+  author: xboxnolifes
+  text: So you don&#x27;t need to check every host individually, you just patch all
+    of them for now.
+  score: 0
+  posted_at: '2026-11-17T23:27:40Z'
+- id: '50539756'
+  parent_id: '50539362'
+  author: rhdunn
+  text: That&#x27;s the archive page for older downloads. The main download page [1]
+    reports the latest version as 25.0.5.1.<p>[1] <a href="https:&#x2F;&#x2F;www.oracle.com&#x2F;java&#x2F;technologies&#x2F;downloads&#x2F;#java25"
+    rel="nofollow">https:&#x2F;&#x2F;www.oracle.com&#x2F;java&#x2F;technologies&#x2F;downloads&#x2F;#java25</a>
+  score: 0
+  posted_at: '2026-11-17T23:33:39Z'
+- id: '50539792'
+  parent_id: '50539212'
+  author: jeremyjh
+  text: 3&#x2F;4 of the Fortune 500 will conclude they should hire expensive consultants
+    to create more checkboxes.
+  score: 0
+  posted_at: '2026-11-17T23:37:54Z'
+- id: '50539816'
+  parent_id: '50539343'
+  author: Sohcahtoa82
+  text: "&gt; Or, do running machines often have their CPU changed from under them
+    without much notice?<p>I dunno about other cloud providers, but I know AWS can
+    move your EC2 VM from one system to another transparently.  There is a server
+    ID you can get from the metadata, but unless you&#x27;re checking it frequently,
+    you can be moved without ever being aware."
+  score: 0
+  posted_at: '2026-11-17T23:39:37Z'
+- id: '50539818'
+  parent_id: '50539669'
+  author: jeremyjh
+  text: There is no secret room where smart people people aligned with the interests
+    of the people of the United States are fixing things. There may not be any smart
+    people left in the Federal government who aren&#x27;t actively engaged in looting
+    it.
+  score: 0
+  posted_at: '2026-11-17T23:39:39Z'
+- id: '50539838'
+  parent_id: '50538205'
+  author: jeremyjh
+  text: Oddly enough they saw fit to mention this fact in TFA.
+  score: 0
+  posted_at: '2026-11-17T23:41:51Z'
+- id: '50539846'
+  parent_id: '50539423'
+  author: xmodem
+  text: We’re using a second-tier cloud provider’s managed Kubernetes offering, and
+    in investigating our level of exposure to this, I just learned that there is variance
+    within a node pool on whether AVX-512 is available.
+  score: 0
+  posted_at: '2026-11-17T23:42:59Z'
+- id: '50539883'
+  parent_id: '50539368'
+  author: kaboberg
+  text: Azul Core definitely is - it uses upstream HotSpot.<p>Azul Platform Prime
+    (formerly Zing) may or may not be depending on whether they touched the base64
+    intrinsic. Since it is closed-source there is no way to verify via code, which
+    is how our research team investigates ecosystem events like this.
+  score: 0
+  posted_at: '2026-11-17T23:45:57Z'
+- id: '50539967'
+  parent_id: '50539669'
+  author: salamandars
+  text: Tell us about one of them, then.
+  score: 0
+  posted_at: '2026-11-17T23:54:45Z'
+- id: '50540003'
+  parent_id: '50539684'
+  author: eru
+  text: Especially since that check might have further problems.  The simpler you
+    can make your code (and still solve the problem) the better.
+  score: 0
+  posted_at: '2026-11-17T23:57:45Z'
+- id: '50540084'
+  parent_id: '50540003'
+  author: marginalia_nu
+  text: I don&#x27;t know if I&#x27;d count paving over the reality of what you&#x27;re
+    running with an abstraction layer as something simpler.  If anything it demonstrably
+    makes addressing issues like these harder.
+  score: 0
+  posted_at: '2026-11-18T00:06:47Z'
+- id: '50540088'
+  parent_id: '50539362'
+  author: K0IN
+  text: Ofc they needed 5 version numbers.
+  score: 0
+  posted_at: '2026-11-18T00:07:28Z'
+- id: '50540131'
+  parent_id: '50539816'
+  author: PhilipRoman
+  text: Question is if they expose it to the guest. Many (most?) cloud platforms will
+    make the guest see the lowest common denominator, specifically to avoid angry
+    customers when their working setup suddenly breaks.<p>In the case of transparent
+    migration, I think it&#x27;s basically a must. No JIT (or even libc probably)
+    is going to support CPU features changing at runtime.
+  score: 0
+  posted_at: '2026-11-18T00:11:53Z'
+- id: '50540216'
+  parent_id: '50538337'
+  author: makeitdouble
+  text: We&#x27;ve already seen an attack on transfusion blood storage.<p>I wouldn&#x27;t
+    minimize the impact of the ones on supermaket freezers either. It was technically
+    dumb and somewhat laughable, but we&#x27;re talking food. The affected chains
+    had stores in very rural areas with elder people living in remote places,  these
+    supermakets would be the only purveyor of long conservation food.<p>I&#x27;d argue
+    we&#x27;re already there, albeit at small scale yet.
+  score: 0
+  posted_at: '2026-11-18T00:22:01Z'
+- id: '50540329'
+  parent_id: '50538267'
+  author: 12_throw_away
+  text: I realize that speeding up Java&#x27;s base64 w&#x2F; SIMD probably has a
+    measurable impact on a significant proportion of all webservers everywhere. But
+    at the same time, implementing the entire thing in ASM, by hand, looks ... rough.
+    Here&#x27;s the comment describing how it works:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;blob&#x2F;5177a70b385c16f26ede191fdac7aaba0bed0f8b&#x2F;src&#x2F;hotspot&#x2F;cpu&#x2F;x86&#x2F;stubGenerator_x86_64.cpp#L2463-L2549"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;openjdk&#x2F;jdk&#x2F;blob&#x2F;5177a70b385c16f26ede191f...</a>
+  score: 0
+  posted_at: '2026-11-18T00:37:26Z'
+- id: '50540335'
+  parent_id: '50538391'
+  author: testtestmetest
+  text: Calif is an OpenAI funded shop..
+  score: 0
+  posted_at: '2026-11-18T00:38:09Z'
+- id: '50540340'
+  parent_id: '50538337'
+  author: testtestmetest
+  text: That&#x27;s what they want you to expect. Either way, the worst possible people
+    on our side will take advantage of it, and possibly cause it for that opportunity.
+  score: 0
+  posted_at: '2026-11-18T00:39:11Z'
+- id: '50540402'
+  parent_id: '50539818'
+  author: newsclues
+  text: No such agency
+  score: 0
+  posted_at: '2026-11-18T00:47:31Z'
+- id: '50540521'
+  parent_id: '50540335'
+  author: thephyber
+  text: Oracle owns Java and Oracle is &quot;OpenAI funded&quot; in the sense that
+    Oracle&#x27;s data center buildouts are being done using OpenAI as a consumer.<p>The
+    circular financing continues!<p>But seriously, the funding here doesn&#x27;t matter
+    any more than Project Zero&#x27;s funding comes from Google. Big companies are
+    trying to improve security for the common software substrates of our industries
+    &#x2F; governments.
+  score: 0
+  posted_at: '2026-11-18T01:01:38Z'
+- id: '50540522'
+  parent_id: '50540084'
+  author: articulatepang
+  text: I think you&#x27;re right, but many people are running systems at large scale,
+    with lots of hosts and all kinds of abstraction layers and stuff. Now this exploit
+    shows up. What are they to do? It&#x27;s just a practical thing they can do right
+    now.<p>First we must stop the bleeding. After that, yes, it&#x27;s worth figuring
+    out if they should change how things are set up.<p>I&#x27;ve been in situations
+    like this before. Sometimes the complications and abstractions were my fault,
+    sometimes I inherited them. Either way, as responsible owners of the overall system
+    or business, we&#x27;ve gotta be able to respond fast to issues.
+  score: 0
+  posted_at: '2026-11-18T01:01:47Z'
+- id: '50540529'
+  parent_id: '50539816'
+  author: johnbellone
+  text: You’ll need to restart the guest.
+  score: 0
+  posted_at: '2026-11-18T01:02:13Z'
+- id: '50540534'
+  parent_id: '50538337'
+  author: loloquwowndueo
+  text: That’s the thing - it’s not a proverb, it’s a curse my guy
+  score: 0
+  posted_at: '2026-11-18T01:02:41Z'
+- id: '50540544'
+  parent_id: '50540335'
+  author: milkshakes
+  text: and?
+  score: 0
+  posted_at: '2026-11-18T01:03:42Z'
+- id: '50540559'
+  parent_id: '50538735'
+  author: llama052
+  text: AMD EPYC processors have incredible value for their cost in the datacenter
+    these days.
+  score: 0
+  posted_at: '2026-11-18T01:05:19Z'
+- id: '50540598'
+  parent_id: '50538337'
+  author: thephyber
+  text: "&gt; How long will it take for a bad actor to seriously compromise critical
+    infrastructure?<p>That happened when Colonial Pipeline was hacked in 2017. It
+    shut down a large percentage of gas station gas purchases on the US East Coast.<p>There
+    were lots of severe vulns since then: shellshock, log4j, the PHP vuln from a few
+    weeks ago."
+  score: 0
+  posted_at: '2026-11-18T01:10:16Z'
+- id: '50540673'
+  parent_id: '50539216'
+  author: hinkley
+  text: That’s what docker base images are for so don’t count on these two concerns
+    being colocated.<p>If it’s Java, Node, etc the binary dependencies are platform
+    specific and 100% if your code is not unless you try very hard.
+  score: 0
+  posted_at: '2026-11-18T01:23:02Z'
+- id: '50540705'
+  parent_id: '50539226'
+  author: thephyber
+  text: I don&#x27;t think AI slop code is the proximal cause for most of this. It
+    is, however, the most common meme for blame.<p>My suspicion is (1) company execs
+    are being told to expect company extinction if they don&#x27;t force faster velocity
+    and (2) we are increasingly building more and more complex systems, so neither
+    AI nor humans can find all of the issues before they cause outages.
+  score: 0
+  posted_at: '2026-11-18T01:27:10Z'
+- id: '50540805'
+  parent_id: '50539967'
+  author: antonvs
+  text: He could tell you, but then he&#x27;d have to... lie.
+  score: 0
+  posted_at: '2026-11-18T01:41:16Z'
+- id: '50540844'
+  parent_id: '50538337'
+  author: flockonus
+  text: 'In the face of massive hacks happening this week and last - i&#x27;d give
+    4 days.<p>ps: wouldn&#x27;t even be surprised if some of the banks hacks were
+    related to this (branch) of exploit, given how much banks seem to rely on dated
+    Java'
+  score: 0
+  posted_at: '2026-11-18T01:46:22Z'
+- id: '50540962'
+  parent_id: '50539328'
+  author: hinkley
+  text: Which is a common enough thing if you&#x27;re picking Java or an interpreted
+    language.
+  score: 0
+  posted_at: '2026-11-18T02:03:01Z'
+- id: '50540968'
+  parent_id: '50538444'
+  author: hinkley
+  text: 'Tony Hoare we miss you already.<p>There are two ways of constructing a software
+    design: One way is to make it so simple that there are obviously no deficiencies
+    and the other way is to make it so complicated that there are no obvious deficiencies.'
+  score: 0
+  posted_at: '2026-11-18T02:04:10Z'
+- id: '50540993'
+  parent_id: '50538586'
+  author: hinkley
+  text: The biggest thing I have worked on recently had TWO proxies, but the second
+    was due to process per CPU spiciness and a JVM wouldn&#x27;t benefit in the least
+    from that. Which still leaves Conway&#x27;s Law, segregating rules and policies
+    between two teams who manage things on their own basis. Always annoying to punch
+    new headers through on such systems though.
+  score: 0
+  posted_at: '2026-11-18T02:10:01Z'
+article:
+  url: https://calif.io/java4shell
+  title: 'Java4Shell: Write once, RCE everywhere'
+  fetch_status: success
+  content: |-
+    CVE-2026-114938
+
+    # Java4Shell
+
+    Write once, RCE everywhere
+
+    Story by the New York Times
+
+    A memory-corruption vulnerability in OpenJDK's Base64 decoder. A remote attacker with no credentials can overwrite heap memory, read it in the style of Heartbleed, and reach remote code execution.
+
+    Begin ↓ Technical write-up ↘ Check your servers ↘ Recommendations ↘
+
+    After we disclosed PHP2Shell, we realized many people didn't know what PHP was. So we decided to go after something a little more familiar: Java.
+
+    Today, we are disclosing Java4Shell (CVE-2026-114938), a memory-corruption vulnerability in OpenJDK's Base64 decoder. OpenJDK is the most popular Java runtime. Under CVSS 4.0, this vulnerability scores 9.2 out of 10 (CRITICAL).
+
+    While PHP is a high-level web technology, Java sits much deeper. Java is the world's third most popular programming language, powering 90% of Fortune 500 companies. It is the beating heart of the modern economy. Banking, aviation, telecommunications, nearly every critical sector runs on Java, including national security systems.
+
+    Base64 is a very common way of representing binary data as text. It is used in authentication protocols, to encode file uploads, and to deliver network messages. To decode Base64 faster, OpenJDK uses specialized x86-64 CPU instructions to process many bytes at once. We discovered a bug in that optimized machine-level code that lets malformed input overwrite neighboring memory. With careful exploitation, the corruption can reveal sensitive memory, as Heartbleed did, or lead to remote code execution. The corruption itself can be triggered by just 64 A characters followed by a single =:
+
+    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+    In older OpenJDK 17, the trigger input is 128 of A followed by =.
+
+    ## Write once, RCE everywhere
+
+    Our initial testing demonstrated remote code execution in the following widely deployed Java applications, in their default configs.
+
+    Pre-auth RCE:
+
+    - Keycloak
+
+    - Atlassian Jira
+
+    - Atlassian Confluence
+
+    - JFrog Artifactory
+
+    - Jenkins
+
+    - PingFederate
+
+    Post-auth RCE:
+
+    - Apache Kafka Broker
+
+    - Apache Solr
+
+    - Elasticsearch
+
+    - Gerrit
+
+    - Spinnaker
+
+    The lists are non-exhaustive. We also demonstrated RCE in sample applications built on widely used frameworks, including Apache Struts and Spring Boot. Ordinary features such as authentication and file uploads can expose the vulnerable Base64 decoder, extending the potential impact far beyond the products we tested. samczsun also shared a client-side exploit with us. A Java program that opens a TLS connection to a malicious server can be compromised, even if it exposes no service of its own.
+
+    Here are a demo video of the exploits running:
+
+    ## Wait, Java has a memory-corruption vulnerability, in Base64?!
+
+    Yes. First time?
+
+    Memory corruption is the most common class of vulnerability on the Internet. But one of Java's biggest selling points is memory safety. Java manages memory on developers' behalf and checks memory accesses, protecting applications from the memory-corruption bugs common in other software.
+
+    But like PHP and many other technologies, much of Java itself is written in low-level languages like C, C++, and, in this case, assembly, where memory corruption is still a part of life.
+
+    To speed up Base64 decoding, OpenJDK uses specialized AVX-512 VBMI instructions on supported x86-64 processors. The bug sits in the hand-rolled assembly code that handles the final few characters. For the 65-character input above, OpenJDK allocates a 50-byte result array. After decoding the first 64 characters, the routine mishandles the stray = and calculates a negative output length. That invalid length becomes a full 64-byte write, sending 62 bytes past the end of the array. Java eventually rejects the input, but by then neighboring objects may already be corrupted.
+
+    ## Era of the centaur hacker
+
+    As with PHP2Shell, Calif used AI to find and weaponize Java4Shell. AI brings the horsepower. Our researchers bring the context. The best hacker today is neither AI nor human. It is the centaur hacker, part human, part AI.
+
+    It took our own Quang Luong an hour to discover the vulnerability, and two more hours to develop the first working exploit. The total token cost was less than $200.
+
+    One thing to note about this vulnerability is that there is no universal exploit. Depending on how Base64 is used and how the application works, different steps may be required for exploitation. Calif was able to accelerate the exploit development by spending initial effort building pipelines and strategies, then directing AI agents to use those for initial exploitation. Afterwards, most of the later chains are built almost autonomously with AI.
+
+    ## The tragedy of the commons
+
+    Java is one of many shared software stacks we all rely on. Over the years, it has grown to serve many different needs. Each feature request may make sense on its own, but everyone inherits the added complexity. Those who need a feature get the benefit. Everyone else carries the code and its risks, even if they never use it.
+
+    Java4Shell is a concrete example. The Base64 optimization helps applications that decode enormous amounts of data. But the code ships to everyone else too, including applications that gain little from it. On affected systems, an optimization few applications needed became a serious security risk.
+
+    Features can be useful, and most bugs can be fixed. But why do we have to worry about code we never needed in the first place?
+
+    ## A call for vibe-uncoding
+
+    If you don't need something, there is little reason to keep it running in your systems. Do you need that hand-rolled assembly Base64 decoder to process a few hundred bytes? Probably not.
+
+    Earlier this year we found Squidbleed, an older cousin of Heartbleed, hiding in the Squid proxy since 1997. The bug was in Squid's FTP module. But who uses FTP anymore? It's a dead protocol and should be removed.
+
+    Removing code is harder than it sounds. An apparently unused feature may have hidden dependencies. Someone has to understand what can be removed, make the change, and test what remains.
+
+    This is where AI can help to make that work practical at a scale we could not previously afford.
+
+    The same centaur hacker that discovered PHP2Shell and Java4Shell can comb a large codebase and flag dead code, bloated features, and needless optimizations. We call this vibe-uncoding: identify the parts a system actually needs, then remove everything else to reduce its attack surface.
+
+    With AI, everyone is asking, “What can we build?” But maybe the right question for security is, “What can we delete?”
+
+    ## The Tail of Base64
+
+    By Quang Luong
+
+    On affected OpenJDK builds, malformed Base64 data can cause a constant-value overwrite of allocated heap memory. Through remote Heap Feng Shui, we turn that overwrite into a heap leak and remote code execution.
+
+    ### Discovery
+
+    A few months back, I was developing a 0-click exploit on a certain phone vendor. The bug was constrained: it is a linear out-of-bounds write and we have no way to bypass ASLR. I almost considered it unexploitable until I audited the Android Runtime. Turns out, it has some predictable memory allocation pattern and if you align the registers from the starting memory corruption just right you can make the runtime interpret attacker's bytecode.
+
+    After completing that exploit chain, inspired (and bored), I decided to look into some thing completely different. So I pulled the official JVM implementation (OpenJDK HotSpot) and started auditing. Java is a mature platform, so I was aware that having a "good" bug here would be hard, but I wanted to give it my best attempt anyway.
+
+    Recalling my earlier lesson that complex systems and code crossing multiple boundaries are difficult to get right, I focused the audit on the JIT compiler, intrinsics, widely accessible APIs, and cryptography. Well, more precisely, I told Codex to look at those areas like any serious security researcher in 2026. To be honest
+  error:
+  fetched_at: '2026-11-18T02:45:32Z'
+archived_at: '2026-11-18T02:45:43Z'

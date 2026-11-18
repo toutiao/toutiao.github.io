@@ -5,17 +5,94 @@ post:
   title: How to Bypass Rust's Orphan Rule
   url: https://edvong.com/bypass-orphan-rule/
   hn_url: https://lobste.rs/s/oj87qu
-  score: 10
+  score: 19
   author: lyxia
   posted_at: '2026-11-17T15:35:36Z'
-  fetched_at: '2026-11-17T18:15:26Z'
+  fetched_at: '2026-11-18T02:45:44Z'
   article_url: https://edvong.com/bypass-orphan-rule/
   article_fetch_status: success
-  article_fetched_at: '2026-11-17T18:15:29Z'
-  raw_comment_count: 0
+  article_fetched_at: '2026-11-18T02:45:47Z'
+  raw_comment_count: 7
   tags:
   - rust
-comments: []
+comments:
+- id: lo-1xjsez
+  parent_id: '0'
+  author: bakaq
+  text: This is revolutionary, holy shit. Looks extremely useful, I'm going to start
+    using it.
+  score: 5
+  posted_at: '2026-11-17T18:23:01Z'
+- id: lo-pq5aep
+  parent_id: '0'
+  author: john_austin
+  text: |-
+    Man this feels like AI writing. The sort of chipper statements and unhelpful metaphors (a tree of generic types is like a bunch of grapes?..). The concept is nice, but it's rough to read.
+    Sorry if this isn't AI, these days it's tough to tell. :/
+  score: 14
+  posted_at: '2026-11-17T19:22:28Z'
+- id: lo-1vgv5v
+  parent_id: '0'
+  author: ghoti
+  text: To refer to this as a bypass of the orphan rule would be mistaken as it would
+    give the impression that this is an accident or emergent property of the language.
+    Instead this is an intentional feature of Rust that was deliberately implemented
+    in order to relax the orphan rule and make more programs expressible. This is
+    described in RFC 2451 and ironically the primary motivator that it mentions is
+    to facilitate ORMs. https://rust-lang.github.io/rfcs/2451-re-rebalancing-coherence.html
+  score: 14
+  posted_at: '2026-11-17T19:33:21Z'
+- id: lo-8epq5l
+  parent_id: '0'
+  author: apropos
+  text: |-
+    For better or worse, we allow implementing foreign traits for foreign types. For example, impl From<Foo> for Vec<i32> is something any crate can write, even though From is a foreign trait, and Vec is a foreign type.
+
+    WOW, that is a misleading first sentence. There is an unstated asterisk here: Rust allows impl ForeignTrait for ForeignType only if ForeignTrait is parametrized by a LocalType.
+    Thanks for linking this RFC though, it was a good read. Although as I understand it -- it's not the relaxing of the orphan rule that the above article is utilizing, right? Rather, it seems to be presupposing that impl ForeignTrait<LocalType> for ForeignType is accepted, and extending it to the impl<T> ForeignTrait<LocalType> for ForeignType<T> case.
+  score: 9
+  posted_at: '2026-11-17T20:26:10Z'
+- id: lo-u9ywru
+  parent_id: '0'
+  author: typesanitizer
+  text: FWIW, Pangram does flag multiple sections as being 100% AI-generated.
+  score: 6
+  posted_at: '2026-11-17T21:10:24Z'
+- id: lo-pkyk8v
+  parent_id: '0'
+  author: apropos
+  text: |-
+    This is an interesting approach for a library-level bypass of coherency restrictions -- for when you're designing a library and explicitly want to provide a default trait, but allow the user to override it explicitly if desired. I do not think the author makes a case for this being workable as a user-level bypass of coherency restrictions, however, and I don't understand why they bring up the conventional user-level orphan rule bypass of "use the newtype pattern", as such.
+
+    Wrapping one or two types is fine.
+
+    It's not, actually. To elaborate on the problem with the newtype design pattern: it is a design pattern. It has no first-class language support. Specifically, it means that the user has to either reimplement every single method on a new type, or dereference the wrapped type (the .0 mentioned in the article) whenever any method besides the new one is to be called. As always the case with design patterns, the lack of language support here (hence it being a design pattern) leads to boilerplate and verbosity. And since an external library's trait implementation is going to be implementing its trait on a specific type, the newtype pattern doesn't actually allow for slotting in your own trait impl within any other parts of the foreign library, like the "generic trait" pattern described in the article does.
+
+    As an aside, my personal gripes with Rust's coherency restrictions fall into four camps:
+
+    I want to locally (+ privately) implement an unimplemented foreign trait on a foreign type.
+    I want to locally override a foreign trait on a foreign type.
+    I want method call syntax for an arbitrary function so as to be nicer to chain.
+    I want the namespacing that traits provide, to have functions share a name but differ in type.
+
+    To this day, I do not understand why Rust's orphan rule prohibits #1. Allowing it wouldn't violate local coherency. Allowing it would only mean that a library update that adds an implementation of that foreign type produces a compile error. So what? A library update that changes the type signature of a function or method I am using produces a compile error, too.
+    That Rust prohibits #2 makes sense, although I hate it -- it is breaking coherency. However, I do constantly wish that Rust had an explicit opt-in exception for this. I want to be able to explicitly override a default Display implementation for a foreign type, and re-use all the machinery that builds atop Display, even if this implementation has extra restrictions to stay private, or whatever.
+    With regards to #3, that the standard library doesn't provide a blanket .apply(func, args...) bums me out.
+    With regards to #4, I grudgingly respect that the lack of support there forces me into the pattern of creating a new trait for whatever functionality it is that I am abstracting over, despite the verbosity.
+
+    Anyway, I think about the orphan rule a lot. It was nice to read this (even though it has annoying slop prose, presumably for translation -- I've got a translator built into my browser, buddy!), and think about it some more. The issue that the article is solving -- that you as a library author may want the user to be able to override your implementations of your traits -- never previously occurred to me.
+  score: 2
+  posted_at: '2026-11-17T21:40:48Z'
+- id: lo-imajwe
+  parent_id: '0'
+  author: skade
+  text: |-
+    To elaborate on the problem with the newtype design pattern: it is a design pattern. It has no first-class language support.
+
+    I disagree slightly. Newtype is made possible because there's not such thing as an automatic interface - you wrap a type into a new type, you can implement a completely different interface on it.
+    I do agree that delegation is missing, but https://github.com/rust-lang/rust/issues/118212 (fn_delegate) exists and is active.
+  score: 3
+  posted_at: '2026-11-17T21:54:51Z'
 article:
   url: https://edvong.com/bypass-orphan-rule/
   title: How to Bypass Rust's Orphan Rule - Edmond Vong
@@ -118,4 +195,4 @@ article:
     {\n        fn to_jso"
   error:
   fetched_at: '2026-11-17T18:15:29Z'
-archived_at: '2026-11-17T18:15:30Z'
+archived_at: '2026-11-18T02:45:47Z'

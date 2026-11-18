@@ -4,14 +4,11 @@ post:
   title: European RISC-V Industrial Computing Initiative
   url: https://erici.eu
   hn_url: https://news.ycombinator.com/item?id=50334523
-  score: 194
+  score: 204
   author: ymz5
   posted_at: '2026-11-02T08:58:33Z'
-  fetched_at: '2026-11-04T01:05:23Z'
-  article_url: https://erici.eu
-  article_fetch_status: success
-  article_fetched_at: '2026-11-03T13:46:18Z'
-  raw_comment_count: 125
+  fetched_at: '2026-11-18T02:45:50Z'
+  raw_comment_count: 147
 comments:
 - id: '50348207'
   parent_id: '50334523'
@@ -940,6 +937,167 @@ comments:
     any scale.
   score: 0
   posted_at: '2026-11-03T20:08:06Z'
+- id: '50361308'
+  parent_id: '50353950'
+  author: kragen
+  text: This is certainly true, but I think that some of it is a question of industrial
+    designs lagging behind the state of the art in computery stuff.<p>The CPU clock
+    cycle time of any random Cortex-M0+ is on the order of 30 nanoseconds, a much
+    higher clock speed than the microsecond range you&#x27;re taking about.  The microcontroller
+    also has much better response-time predictability than you can get on a basically-desktop
+    CPU, with its TLBs, three layers of cache, DRAM CAS latency, variable latency
+    to open DRAM pages, SMM, Intel ME, high-priority DMA delaying the CPU&#x27;s RAM
+    access, etc.<p>ERICI&#x27;s plan to run Linux under a real-time hypervisor is
+    definitely a thing that can be done, and a thing that is regularly done on cellphones
+    and industrial-control systems, and has been since the 01990s, among other things,
+    with RTLinux and Linux-CNC.  But, although I need to say that I lack any experience
+    in the area, I&#x27;m skeptical that it is a sensible tradeoff in 02026, where
+    by rearchitecting the entire system to run under a hypervisor you can maybe avoid
+    spending 9.97¢ on a 48MHz Cortex-M0+ <a href="https:&#x2F;&#x2F;www.lcsc.com&#x2F;product-detail&#x2F;Microcontrollers-MCU-MPU-SOC_PUYA-PY32F002BD15S6TU_C7469097.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.lcsc.com&#x2F;product-detail&#x2F;Microcontrollers-MCU-MPU...</a>
+    or 17¢ on a 48MHz RV32E CH32V003 <a href="https:&#x2F;&#x2F;www.lcsc.com&#x2F;product-detail&#x2F;Microcontrollers-MCU-MPU-SOC_WCH-Jiangsu-Qin-Heng-CH32V003A4M6_C5346357.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.lcsc.com&#x2F;product-detail&#x2F;Microcontrollers-MCU-MPU...</a>.  I
+    think it made more sense in the 01990s where EMC&#x2F;LinuxCNC was running on
+    an 80486 that was half as fast as the Cortex-M0+ but cost US$2500.  I think it
+    might be a better tradeoff to avoid having any CPUs that have to run &quot;mixed-criticality&quot;
+    workloads, as seL4 calls them — where the same CPU is timeshared between a best-effort
+    Linux workload and hard real-time code.  The problem with hard real-time code
+    in industrial automation is that, if it misses a deadline, it can crash your lathe
+    and cost you US$159,532.53.  You&#x27;re depending on your real-time hypervisor
+    to make sure that <i>nothing Linux can do</i> can make that happen.<p>It seems
+    like it would probably be better engineering now to run the hard real-time control
+    loops on a tiny dedicated computer that costs 37¢, and communicate with the Linux
+    box over I²C or USB or a UART or PCIe or something.  To get the response times
+    lower than microcontrollers can guarantee, people seem to be moving to FPGAs.  You
+    can get a small FPGA for US$2 now, and the latency from inputs to outputs is typically
+    on the order of 10 nanoseconds, much quicker than a microcontroller can respond
+    from an ISR.<p>Avoiding one crashed lathe can pay for a lot of microcontrollers.
+  score: 0
+  posted_at: '2026-11-04T03:49:49Z'
+- id: '50366043'
+  parent_id: '50361308'
+  author: myrmidon
+  text: 'You do have valid points with the &quot;better to avoid mixed criticality
+    when possible&quot; and &quot;isolate the most latency sensitive compontents on
+    dedicated hardware&quot;.<p>I work in embedded software and I have some insight
+    on why the reality often looks very different from this:<p>Software &quot;cost&quot;
+    works differently. In a startup environment, you can spread the fixed costs for
+    software development on thousands of installs (or even more). Automation software
+    is very different, and solutions are often bespoke; even if you&#x27;re building
+    and selling machines, the numbers will be much lower than for consumer stuff.<p>This
+    means that fixed costs for software development matter much more, and that hard
+    developer productivity (as in: how many factories can your PLC programmers automate
+    per year) is <i>much</i> more important. Vendoring dependencies is much more costly,
+    splitting your codebase over multiple subsystems is less desirable (=&gt; overhead
+    for general development, update, configuration management, redundant subcomponents,
+    slower iteration), heterogenous systems are very undesirable (because specialized
+    employees are more expensive to manage and less flexible).<p>This is why much
+    of the industry is so willing to shell out for &quot;overpriced&quot; PLC controllers
+    (when freely programmable MCUs can be had for cents), proprietary frameworks and
+    what you might perceive as obsolete garbage tooling for HMI&#x2F;cloud integration:
+    All those things help to build solutions that are &quot;good enough&quot; with
+    less programmers, less training, less specialization and thus, crucially, less
+    software-fixed-costs (that you wouldn&#x27;t be able to recoup).<p>One other thing:
+    software being formally correct vs. reliable&#x2F;robust is <i>much</i> more orthogonal
+    in practice than you might assume, and industry typically cares more about the
+    latter. My perspective is that formalizing&#x2F;certifying software is (overly)
+    concerned with eliminating lower risk holdouts (think: proving latency bounds
+    on memory allocation or somesuch), while &quot;robustifying&quot; software looks
+    at &quot;actual highest risk&quot; parts first (sanity checking requirements&#x2F;specifications,
+    avoiding pitfalls for users when configuring&#x2F;operating your system, fixing
+    false positives).'
+  score: 0
+  posted_at: '2026-11-04T14:31:23Z'
+- id: '50368587'
+  parent_id: '50361308'
+  author: ymz5
+  text: "&gt; ERICI&#x27;s plan to run Linux under a real-time hypervisor...<p>Why
+    plan? It&#x27;s working right now, alongside QSOE&#x2F;N. Resources nicely partitioned:
+    graphics controller and UFS storage for Linux; NVMe, Ethernet UART for QSOE. Please
+    see the demonstration video."
+  score: 0
+  posted_at: '2026-11-04T17:14:31Z'
+- id: '50377099'
+  parent_id: '50368587'
+  author: kragen
+  text: As I said, it&#x27;s been working since the 01990s.  Barabanov&#x27;s original
+    research on what would become RT-Linux and Yodaiken&#x27;s paper about it were
+    01996.  L⁴Linux was 01997.  Heck, MERT was 01975.  And, I&#x27;m sorry, but I&#x27;m
+    not going to watch your demonstration video.
+  score: 0
+  posted_at: '2026-11-05T09:31:22Z'
+- id: '50377208'
+  parent_id: '50366043'
+  author: kragen
+  text: That makes a lot of sense, and I greatly appreciate you sharing your experience.  It
+    helps me to understand why the industrial automation world looks the way it does.
+  score: 0
+  posted_at: '2026-11-05T09:44:48Z'
+- id: '50377405'
+  parent_id: '50377099'
+  author: ymz5
+  text: Excuse me, but what Barabanov, Yodaiken and all the stuff you mentioned have
+    to do with the subject?<p>Have you noticed that Linux on the diagram is a general-purpose
+    OS, used for non-critical tasks? Or, refusing to watch the video, you refuse also
+    to see what&#x27;s actually depicted on the page?<p>&gt; it&#x27;s been working
+    since the 01990s<p>What&#x27;s been working since the &quot;01990s&quot;? What
+    hypervisor in 1990s drove real-time OSes on industrial computers alongside general-purpose
+    OSes, providing full resource isolation?
+  score: 0
+  posted_at: '2026-11-05T10:14:18Z'
+- id: '50378174'
+  parent_id: '50377405'
+  author: kragen
+  text: 'L4: <a href="https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.828&#x2F;2026&#x2F;readings&#x2F;microkernel.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.828&#x2F;2026&#x2F;readings&#x2F;microkernel.p...</a>
+    and RTLinux: <a href="https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;19970307183643&#x2F;https:&#x2F;&#x2F;luz.cs.nmt.edu&#x2F;~rtlinux&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;19970307183643&#x2F;https:&#x2F;&#x2F;luz.cs.nm...</a><p>LinuxCNC
+    (EMC2) was using that approach too, but at first I think they were trying to get
+    hard-real-time performance out of Linux itself, and later I think they might have
+    been using paravirtualization rather than full virtualization, which was conventionally
+    considered impossible on the i386.'
+  score: 0
+  posted_at: '2026-11-05T12:07:36Z'
+- id: '50378294'
+  parent_id: '50378174'
+  author: ymz5
+  text: What &quot;that approach&quot;? In the scope of the initiative, we are talking
+    about full isolation of operating systems (which is possible with the hypervisor).
+    I still don&#x27;t understand why are you offering me to read about L4 and RT-Linux.<p>(QSOE&#x2F;L
+    <i>does</i> use seL4 as one of its possible kernels. But I guess you also haven&#x27;t
+    noticed this, because, perhaps, you don&#x27;t care.)
+  score: 0
+  posted_at: '2026-11-05T12:27:37Z'
+- id: '50380763'
+  parent_id: '50351513'
+  author: hn_submit
+  text: The Coremark website claims the CH32X033F8P7 has a Coremark of 41.6.<p>An
+    Atmel AVR has a Coremark of 7.5 so these little $2.50 MCUs are about 5 times (!)
+    as fast as the 8-bit AVR.
+  score: 0
+  posted_at: '2026-11-05T15:58:10Z'
+- id: '50383157'
+  parent_id: '50378294'
+  author: kragen
+  text: 'The approach you were asking about: using a hypervisor to drive real-time
+    OSes on industrial computers alongside general-purpose OSes, providing full resource
+    isolation.  I was answering your question as to which hypervisor was used.  Sorry
+    that wasn&#x27;t clear.'
+  score: 0
+  posted_at: '2026-11-05T19:15:49Z'
+- id: '50383849'
+  parent_id: '50350326'
+  author: hollowonepl
+  text: Nope, but I hope EU would be capable not only to create regulations but being
+    able to actually manufacture and produce stuff.
+  score: 0
+  posted_at: '2026-11-05T20:11:48Z'
+- id: '50383934'
+  parent_id: '50353041'
+  author: lproven
+  text: "&gt;  Would you rather read extremely basic text ones?<p>Yes, very much so."
+  score: 0
+  posted_at: '2026-11-05T20:19:08Z'
 article:
   url: https://erici.eu
   title: ERICI — European RISC-V Industrial Computing Initiative
@@ -1112,4 +1270,4 @@ article:
     Initiated by Yuri Zaporozhets · Ravensburg, Germany
   error:
   fetched_at: '2026-11-03T13:46:18Z'
-archived_at: '2026-11-04T01:05:31Z'
+archived_at: '2026-11-18T02:46:20Z'

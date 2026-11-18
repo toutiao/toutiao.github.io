@@ -1,0 +1,134 @@
+---
+post:
+  id: lo-yqmfzq
+  source: lobsters
+  title: Steve Jobs Core Animation demo from WWDC 2007
+  url: https://lucas.love/100/058
+  hn_url: https://lobste.rs/s/yqmfzq
+  score: 20
+  author: jeanthomas
+  posted_at: '2026-11-17T15:23:20Z'
+  fetched_at: '2026-11-18T02:45:44Z'
+  article_url: https://lucas.love/100/058
+  article_fetch_status: success
+  article_fetched_at: '2026-11-18T02:45:47Z'
+  raw_comment_count: 10
+  tags:
+  - graphics
+  - mac
+  - video
+comments:
+- id: lo-wucmph
+  parent_id: '0'
+  author: nickmonad
+  text: |-
+    I just clicked around the system settings on my work Macbook (M4 Max) and yeah, it's surprisingly slow.
+    I feel like Linux is actually the place where serious graphics work is happening now. Hyprland is kind of an extreme case, I don't think most "regular users" want that in their desktop experience, but it sure is fast and smooth.
+  score: 2
+  posted_at: '2026-11-17T15:58:02Z'
+- id: lo-bfeatr
+  parent_id: '0'
+  author: eugeny
+  text: Interesting how obvious it is that "water", "fish", "amazon" and "beach" are
+    literally the only tags that exist in the demo, as the results appear from the
+    first letter already.
+  score: 3
+  posted_at: '2026-11-17T16:28:37Z'
+- id: lo-pqr1tx
+  parent_id: '0'
+  author: bhoot
+  text: The overall usability has degraded too. Often, after I type in an app name
+    in full in spotlight, the first suggestion is a folder instead of the app itself.
+    The app does show up momentarily in the suggestion list while I am typing, but
+    vanishes by the time I'm done.
+  score: 7
+  posted_at: '2026-11-17T16:41:53Z'
+- id: lo-3cxfkt
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    Core Animation included a load of stuff that was arguably more important than the animation part (but was necessary for it).
+    In classic OpenStep, your window was a buffer (you could choose whether it actually got its own buffer or whether it rendered into the frame buffer directly, but OS X added the buffering automatically).  When your view had some updates pending, you would set its needsDisplay property.  Each run loop iteration, the window would kick the top-level view to recursively visit its children, query that property and call drawRect: on any view that needed redisplay.
+    In old unbuffered windows, it would also send a drawRect: message to any newly exposed region (e.g. if you dragged a window that overlapped the edge of the screen back on, the regions that used to be off the edge would now be drawn).  With OS X, this didn't happen: the window server pretended that the window was always exposed, so dragging windows around was nice and fast: no redrawing needed, just compositing the windows, and by 2007 this was all done on the GPU.  With buffered windows, you'd still get things like scroll views exposing parts of child views and asking them to redraw the newly visible regions.
+    With CoreAnimation, views could set their needsLayer property and they'd now render to a CALayer object, rather than into the same buffer as the parent.  These would then be composited on the GPU.  This had two big advantages.  First, it meant that views could cache their contents easily.  NeXT's NSScrollView did some tricks to copy pixels around (and have child views draw into a slightly larger rectangle than was visible) but now any child view with a layer could just have the coordinates of that layer moved by the scroll view without ever needing to be redrawn for scrolls (almost no CPU work, and the GPU work was trivial because GPUs are really fast at compositing).  But, in addition to the caching, it also enabled parallelism.  Two different views could advertise that they were thread safe (i.e. their controllers would acquire locks, or do read-only operations on the model) and then they could be rendered in parallel using libdispatch's work queues.
+    This combination of things meant better parallelism for rendering and lower total CPU rendering work, at the expense of more GPU memory.  A complex view hierarchy might need 2-5x as much total memory as the window buffer would need without CoreAnimation.  And a display might need 20x as much frame buffer with the window server providing a texture buffer for each window.  The 1440x900 display in a MacBook Pro around then needed around 3.7 MiB for the frame buffer and the compositing window manager plus core animation would turn this into maybe 370 MiB of cached textures.  The window server could ask windows to discard cached CALayers (and recompute them on next display) and used texture compression for windows, so it wasn't often that much, but it was easily 100+ MiB of texture memory.  That was clearly infeasible on the NeXT machines, which had 8-32 MiB of total memory (and a single core and no GPU, so parallelising the CPU work and offloading to the GPU made no sense) but was a big win on the kind of machines Apple was selling by 2007 (the cheapest MacBook Pro then had two cores).
+    The animation bits on top were almost free: they were just some affine transforms added in the compositing step, and a little bit of processing to do interpolation around the values in the affine transforms.  Once you'd built the core parts, the animation bits were trivial in comparison.
+    The iPhone's UIKit built on top of CoreAnimation from the start.  Not having overlapping windows meant that its display server could discard (or aggressively compress) the contents of background apps if RAM was tight.
+    Note that the combination of the damage, fixes, render, composite, and GLX extensions on X11 meant that X11 could do everything that CoreAnimation did.  It just needed assembling and cooperation from the compositing manager.  The thing Apple did was rip out the core of their toolkits to rebuild around this model.
+  score: 24
+  posted_at: '2026-11-17T16:42:18Z'
+- id: lo-mdh95u
+  parent_id: '0'
+  author: incanus
+  text: Core Animation when it came on the scene was amazing. Apple used to do these
+    traveling events called Tech Talks where you could signup, for free, and they
+    would hold developer-oriented sessions at a hotel. It was like a mini WWDC. They
+    really focused on Core Animation for a while and I learned a ton about how to
+    implement things efficiently.
+  score: 4
+  posted_at: '2026-11-17T17:31:48Z'
+- id: lo-rcwa3c
+  parent_id: '0'
+  author: xeubie
+  text: |-
+    One really clear turning point for Apple on a technical level was the switch from Objective-C to Swift. At the time it seemed like an exciting transition, bringing a stricter compiler and a syntax that younger web developers saw as familiar. But after going through years of churn to switch to this supposedly modern language, what did they actually gain? Objective-C was really elegant, and (unlike C++) a strict superset of C. Swift became bloated with features, including excessive type inference that made it look good on slides but absolutely tanked compile times.
+    Francisco Tolmasky (part of the original iPhone team) talked about the many mistakes they made when introducing Swift, including not consulting the army of application developers within Apple itself before announcing it. It's a language made by LLVM compiler geeks that had little application-level experience, and had dubious features like declarative syntax bolted on afterwards. I'd argue this was actually their biggest mistake on the software side, because it affected their entire ecosystem across all of their products.
+  score: 4
+  posted_at: '2026-11-17T18:29:30Z'
+- id: lo-yg9qo3
+  parent_id: '0'
+  author: multiplegeorges
+  text: |-
+    This drives me insane. It's basic search. I don't understand it.
+    And yes, I've disabled a bunch of types from Spotlight indexing.
+  score: 4
+  posted_at: '2026-11-17T20:17:43Z'
+- id: lo-1eqzgv
+  parent_id: '0'
+  author: pscanf
+  text: I made the grave mistake of updating to Golden Gate. It's a severely degraded
+    experience, to put it kindly. I can't full-screen apps anymore, because the multiple
+    desktops manager (Mission Control) becomes unusably laggy. Without full-screen
+    windows it's just very laggy. I really cannot understand how they could allow
+    such a buggy piece of software to ship. For the first time in 15 years I'm actually
+    considering switching back to linux for my laptop.
+  score: 2
+  posted_at: '2026-11-17T21:08:15Z'
+- id: lo-ob6rjn
+  parent_id: '0'
+  author: kevinc
+  text: Of course I want Apple to bring software quality back. But I don't think Apple's
+    quality is the sole problem. A lot of us prefer their computers even with this
+    deficiency, because the alternatives still look worse. I want competition to make
+    them improve. Why don't we expect great things from anybody else?
+  score: 2
+  posted_at: '2026-11-17T21:37:23Z'
+- id: lo-5edcig
+  parent_id: '0'
+  author: refi64
+  text: |-
+    But after going through years of churn to switch to this supposedly modern language, what did they actually gain?
+
+    I think a sizable gain was that many more things have both spatial and temporal memory safety throughout, which aiui was a large reason that Swift is now in the kernel and Secure Enclave.
+    (I do also know of a sizable number of people who still vastly prefer the ergonomics to Objective C, but of course that's a more subjective thing.)
+  score: 1
+  posted_at: '2026-11-18T00:50:00Z'
+article:
+  url: https://lucas.love/100/058
+  title: '058 - WWDC 2007 - lucas.love'
+  fetch_status: success
+  content: |-
+    A Steve Jobs Core Animation demo from WWDC 2007 popped up in my feed and it stopped me cold. A live wall of playing videos, instant zoom, instant tag search, zero glitches, on 2007 hardware.
+
+    Then I clicked around Sequoia for thirty seconds and watched panels load in slowly.
+
+    Tahoe is worse. I am still holding out on Sequoia and it is barely better.
+
+    I want to be wrong about this.
+
+    Tell me where Apple software still feels like 2007 to you.
+
+    Keynote footage: Apple WWDC 2007.
+  error:
+  fetched_at: '2026-11-18T02:45:47Z'
+archived_at: '2026-11-18T02:45:47Z'
