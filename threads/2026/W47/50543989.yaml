@@ -1,0 +1,495 @@
+---
+post:
+  id: '50543989'
+  title: 'Energy-Based Reasoners: 385x more efficient inference'
+  url: https://energy-based-reasoners.github.io/
+  hn_url: https://news.ycombinator.com/item?id=50543989
+  score: 273
+  author: ''
+  posted_at: '2026-11-18T09:29:32Z'
+  fetched_at: '2026-11-18T20:06:42Z'
+  article_url: https://energy-based-reasoners.github.io/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-18T20:06:42Z'
+  raw_comment_count: 43
+comments:
+- id: '50544356'
+  parent_id: '50543989'
+  author: saithound
+  text: 385x? Them&#x27;s rookie numbers. Classical energies learn to reason 1000x
+    faster than looped models. [1] Of course, all for a very generous definition of
+    reasoning, that has almost nothing in common with the thing most people associate
+    with the term nowadays. [2]<p>[1] <a href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2611.17309"
+    rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2611.17309</a><p>[2]
+    <a href="https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;reasoning?api-mode=responses"
+    rel="nofollow">https:&#x2F;&#x2F;developers.openai.com&#x2F;api&#x2F;docs&#x2F;guides&#x2F;reasoning?api-...</a>
+  score: 0
+  posted_at: '2026-11-18T10:15:56Z'
+- id: '50544575'
+  parent_id: '50544356'
+  author: ricardobeat
+  text: Did those two papers get published six days apart?
+  score: 0
+  posted_at: '2026-11-18T10:43:21Z'
+- id: '50544691'
+  parent_id: '50543989'
+  author: igleria
+  text: As far as I could understand, this works very well for a very specific logic
+    puzzle problem set. Interested on future papers tho :)
+  score: 0
+  posted_at: '2026-11-18T10:56:36Z'
+- id: '50544794'
+  parent_id: '50544356'
+  author: yorwba
+  text: The common definition of &quot;reasoning&quot; for all three is &quot;performing
+    a sequence of intermediate steps with multiple passes through the model before
+    outputting an answer.&quot; The main difference is that the reasoning models in
+    TFA and [1] are puzzle-solving models, not language models.
+  score: 0
+  posted_at: '2026-11-18T11:08:34Z'
+- id: '50545266'
+  parent_id: '50543989'
+  author: Topfi
+  text: Recommend checking out Logical Intelligence, chaired by among others Yann
+    LeCun, for more context on EBMs [0]. Has great potential in areas that LLMs traditionally
+    do not perform that well in and, because they want to show the advantages of EBMs,
+    also tends to be a great source of examples LLMs struggle with, like primary school
+    level maths and counting (while ironically providing Millennium level Lean proofs).
+    Does of course open the not unreasonable discussion of whether it matters if LLMs
+    can accurately count when writing code to do the calculation is reliable and fast...<p>[0]
+    <a href="https:&#x2F;&#x2F;logicalintelligence.com&#x2F;blog&#x2F;energy-based-model-sudoku-demo"
+    rel="nofollow">https:&#x2F;&#x2F;logicalintelligence.com&#x2F;blog&#x2F;energy-based-model-sudo...</a>
+  score: 0
+  posted_at: '2026-11-18T12:03:27Z'
+- id: '50545318'
+  parent_id: '50544794'
+  author: saithound
+  text: Well, yes, that&#x27;s the very generous definition of reasoning I was referring
+    to, under which almost any iterative computation could count as reasoning.
+  score: 0
+  posted_at: '2026-11-18T12:09:19Z'
+- id: '50545415'
+  parent_id: '50543989'
+  author: scurnus
+  text: This is basic and similar to recurrent reasoning papers, it works only on
+    sudoku and basic games, with constrained rules, unique or low number of solutions.
+    It would be interesting to see how these reasoners do in games like Chess or Go.
+    Efficient inference is useful when it comes with something useful.
+  score: 0
+  posted_at: '2026-11-18T12:18:53Z'
+- id: '50545423'
+  parent_id: '50545266'
+  author: nilsherzig
+  text: "&gt; See the live benchmark<p>broken login wall. truly agi."
+  score: 0
+  posted_at: '2026-11-18T12:19:32Z'
+- id: '50545445'
+  parent_id: '50543989'
+  author: xgk
+  text: 'The paper does not seem to define what Energy-Based means. The paper says:
+    <i>&quot;EBMs learn a scalar function that assigns an energy to a candidate prediction
+    given an input.&quot;</i> What codomain do those learned scalar function have?
+    I guess real numbers? But is &quot;Energy&quot; just a synonym for the reals?'
+  score: 0
+  posted_at: '2026-11-18T12:21:32Z'
+- id: '50545451'
+  parent_id: '50543989'
+  author: program_whiz
+  text: Big caveat if anyone thinks this could replace or strongly augment &quot;reasoning&quot;
+    models (LLMs, RNNs) -- its more like an energy-based search for a discrete problem
+    (graph coloring, solving mazes, sudoku).<p>It works by training a weight matrix
+    (N-to-N) on different solutions. For example, in sudoku you&#x27;re training a
+    weight matrix for every space to every other space (81 c 2), with 9x9 numbers
+    (~240K weights).  So then the &quot;energy&quot; for every number in a space is
+    W_ij(a, b) where ij is a pair of spaces, and (a, b) is a pair numbers you want
+    to swap (e.g. 4-&gt;2 in the space).  Pick the lowest energy move each time (argmin
+    of this whole space), and iterate.<p>This has a few limitations.  First, its discrete
+    and has a limited space definition, getting this to work for arbitrary reasoning
+    seems hard (what size&#x2F;shape graph would you use for arbitrary reasoning).  Second,
+    the ruleset is defined apriori (e.g. you need to know you have a 9x9 grid and
+    9 numbers, the rules of the game are implicit in the checker).  Third, the actual
+    search algorithm is somewhat bespoke to task (less of a factor, maybe use generic
+    graph coloring as the basis of any problem), but for something like agentic reasoning
+    its not clear how this would be adapted. For example with mazes, we need to know
+    what constitutes a valid path and a solved maze, but for language&#x2F;code rules
+    like that are hard to formulate.<p>Fourth, this doesn&#x27;t admit of an easy
+    way to use &quot;fuzzy reasoning&quot; that would be required for integration
+    with any kind of human language or image-based system, where continuous vectors
+    are useful (the graph edges and colors are on&#x2F;off or discrete).<p>There are
+    ways to adapt, but this approach fits pretty solidly in the &quot;deterministic,
+    fixed problem size&quot; realm.<p>In addition, for training you need correct solutions
+    and counter-examples (strongly labeled).  For something like &quot;fuzzy logic&quot;
+    training or &quot;natural language&quot; coming up with clear examples and counter-examples
+    would be challenging to fit into this model.  LLMs are only possible by leveraging
+    vast quantities of unlabeled data. Not saying impossible, but challenging.  For
+    example, if training on human code, what constitutes a counter-example? You basically
+    already have to have a method of getting correct and sufficiently incorrect code
+    just to train this type of system, and its unclear how to represent those changes.<p>For
+    all of these problems, given the constraints and amount of bespoke logic required,
+    solving with dynamic programming is far faster (including arbitrary graph coloring
+    problems).  I only say this to mean that if we could solve all the problems I
+    mentioned above and get arbitrary reasoning into the form of graph coloring, it
+    would still probably be more efficient just to solve that with good old dynamic
+    programming &#x2F; recursion than with a model like this that needs O(N^2) params
+    versus the graph and needs millions of training examples for different domains.  They
+    brag about solving sudoku, but a CPU-based approach to solving it the good old
+    fashioned way on is probably 10-100x faster.  If we were using an H200 like they
+    did, we could easily solve the whole sudoku dataset in less than a second.<p>But
+    it _is_ a very interesting approach, partly because the energy strategy encodes
+    good &#x2F; likely guesses, so that is kind of interesting vs dynamic programming
+    which is kind of a brute-force approach, so maybe for very large spaces it would
+    be more efficient (but then you have the issue of the parameter space blowing
+    up).
+  score: 0
+  posted_at: '2026-11-18T12:21:55Z'
+- id: '50545464'
+  parent_id: '50543989'
+  author: netbioserror
+  text: The more abstractly reasoning can be modeled, the better. It means knowledge
+    can be externalized to discrete knowledge bases and queried when needed, and models
+    can be run locally with lower and lower energy hardware.<p>The question is, how
+    integral to reasoning is compressing vast quantities of knowledge to the latent
+    space?
+  score: 0
+  posted_at: '2026-11-18T12:24:00Z'
+- id: '50545475'
+  parent_id: '50545445'
+  author: usernametaken29
+  text: I find this particularly concerning because in their related works they did
+    not refer to the free energy principle, which is the underlying principle of energy
+    based cognition... so eh... what are they referring to? If its not the energy
+    as defined by FEP and active inference, which energy is it? Did they mean entropy?
+    I didn&#x27;t get it from the paper, really
+  score: 0
+  posted_at: '2026-11-18T12:25:16Z'
+- id: '50545592'
+  parent_id: '50545423'
+  author: Topfi
+  text: Yeah, that&#x27;s embarrassing. It was a neat showcase when it was online.
+    Was only able to find this video that shows the demo [0].<p>[0] <a href="https:&#x2F;&#x2F;www.linkedin.com&#x2F;posts&#x2F;brianbuntz_sudoku-is-apparently-not-a-strong-suite-for-activity-7442670455754403840-ZH70"
+    rel="nofollow">https:&#x2F;&#x2F;www.linkedin.com&#x2F;posts&#x2F;brianbuntz_sudoku-is-apparent...</a>
+  score: 0
+  posted_at: '2026-11-18T12:39:49Z'
+- id: '50545647'
+  parent_id: '50545445'
+  author: program_whiz
+  text: 'See my comment below, I explain what it means.  Energy is just a number that
+    comes out of matrix which learns the relationship between different states of
+    the system being searched.  For example, suppose we&#x27;re talking about sudoku.  You
+    would have a matrix that has W_ij (weights between spaces).  For each of those,
+    there are 9x9 numbers (energy between two of the digits).  A combination like
+    W[0, 1](4, 4) is high because you would have a 4 in the first space, and a 4 in
+    the 2nd space (which breaks the rules).  Most of the values are low energy (e.g.
+    4 and 2 is energy 0, no conflict).  However, as different numbers are placed,
+    they are checking for the lowest energy number across the whole board, and the
+    &quot;clues&quot; are locked in.<p>So if you had a &quot;clue&quot; like 2 in
+    a space, then the energy for 2 on that row &#x2F; column would be high, but other
+    numbers low.  You just sum this up and pick the lowest energy number.  As you
+    add numbers, you can hit conflicts (e.g. two 7s in the row), changing one of them
+    will be the next lowest energy move.  The probability of changing a number is
+    inversely proportional to its energy.  So changing the conflicting numbers is
+    the usual most likely move.<p>So in the best case it works like this: For each
+    empty cell, pick a number at random, but its weighted by the other numbers that
+    affect it (e.g. if 7 is in the row, the chance of 7 is 0.1%).  Continue doing
+    this on empty cells, unless there is a conflict in solved cells (higher prob of
+    mutation), in which case change that number first.<p>So its a slightly fuzzified
+    version of a very fast concrete algo.  &quot;Energy&quot; is just a number from
+    training, its defining by the task at hand (in this case, &quot;energy&quot; is
+    how much conflict numbers have on the board, 0 meaning no conflict and solved
+    if every cell is filled in).'
+  score: 0
+  posted_at: '2026-11-18T12:45:29Z'
+- id: '50545736'
+  parent_id: '50543989'
+  author: program_whiz
+  text: |-
+    A clarifying way to think about this for sudoku:<p>For every clue, mark the probability of sampling its number in the row&#x2F;col to zero.  Also mark the probability of selecting a &quot;clue cell&quot; for modification to 0.<p>Pick a random cell for modification, based on its &quot;energy&quot; (higher energy get modified first):<p><pre><code>    1. Every conflicting cell gets energy +1.0 (try to resolve conflicts before new empty cells).  E.g. two 7s on the same row both get +1 energy.
+
+        2. Empty cells have small energy 0.1
+
+        3. Filled cells with no conflicts have energy 0
+    </code></pre>
+    For the selected cell, choose a digit.  Look at numbers in its row&#x2F;column, every occurrence of a number in the row&#x2F;col drop prob of sampling by 90%.  Example:<p><pre><code>    | No. of 7s | chance of 7 |
+        | --- | --- |
+        | 0 | 10% (equal to other digits) |
+        | 1 | 1% |
+        | 2 | 0.1% |
+    </code></pre>
+    Obviously this would get more complex with more numbers on the line (this is just checking 7 on otherwise empty line).<p>This is essentially what these models are doing.  It provides a kind of &quot;wave function collapse&quot; search with random exploration based on &quot;energy&quot;, but energy is just defined as conflict &#x2F; unsolved.  For something like a maze, energy is disconnected path segments or walls, etc.
+  score: 0
+  posted_at: '2026-11-18T12:53:45Z'
+- id: '50545801'
+  parent_id: '50545445'
+  author: CuriouslyC
+  text: To simplify the explanation further, the main difference in practice between
+    energy based and more traditional models is that they throw out normalization.
+  score: 0
+  posted_at: '2026-11-18T13:00:55Z'
+- id: '50545865'
+  parent_id: '50545266'
+  author: otabdeveloper4
+  text: "&gt; while ironically providing Millennium level Lean proofs<p>They&#x27;re
+    doing that by generating a metric shitload of schizo syllogism junk that is then
+    sifted through Lean to find a valid nugget. (Or not.)<p>The implication is that
+    &quot;Millennium level&quot; is mostly stuff that&#x27;s too tedius for meatsack
+    humans to sift through."
+  score: 0
+  posted_at: '2026-11-18T13:07:33Z'
+- id: '50546005'
+  parent_id: '50545801'
+  author: xgk
+  text: |-
+    That&#x27;s also my default assumption: <i>P(x) ∝ e^(−E(x))</i> Or, in more detail,<p><pre><code>    E(x) = −log P(x) + constant
+    </code></pre>
+    If that&#x27;s the correct interpretation, then the main advantage of energy-based methods over strictly probabilistic methods seems to be that, since the energy function does not need to integrate to one, it can be parameterised with <i>any</i> nonlinear regression function. That means density estimation is basically a nonlinear regression problem.<p>This is the interpretation in [1]. I am not sure, however, if the paper here is an unnormalised probabilistic model.<p>[1] Y. Song, D. P. Kingma, <i>How to Train Your Energy-Based Models.</i> (2021) <a href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2101.03288" rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2101.03288</a>
+  score: 0
+  posted_at: '2026-11-18T13:22:16Z'
+- id: '50546066'
+  parent_id: '50545451'
+  author: plaguuuuuu
+  text: I&#x27;d love to wire it into a model and do some training. Can&#x27;t see
+    any way to obtain it though.
+  score: 0
+  posted_at: '2026-11-18T13:28:53Z'
+- id: '50546076'
+  parent_id: '50543989'
+  author: thesnarkitecht
+  text: Anyone want to explain how these models work? And can you actually run them
+    on any hardware?
+  score: 0
+  posted_at: '2026-11-18T13:29:26Z'
+- id: '50546102'
+  parent_id: '50546076'
+  author: vessenes
+  text: Well their Sudoku model is 1.8 million parameters, so yes. You could run it
+    on your toothbrush. I like the idea of a Sudoku-cheating toothbrush, or maybe
+    vape, actually, you could be that guy at the cafe.
+  score: 0
+  posted_at: '2026-11-18T13:31:17Z'
+- id: '50546168'
+  parent_id: '50543989'
+  author: mocmoc
+  text: I&#x27;ve spent a year on this. EBMs while ... how to say it, they are impressive
+    validators , it&#x27;s insanely hard to train them. They are very niche specific.
+    While LLMs , being not right all the time and clumsy and so on, they help the
+    people to get the job done at the end.<p>EBM sudoku is not that hard in a small
+    scale, and Logical Intelligence sudoku solver doesn&#x27;t scale , if I&#x27;m
+    wrong , I want to see them offering as big of a sudoku as you want.<p>also, after
+    months and months training EBMs , you come to realize... it&#x27;s really worth
+    it?
+  score: 0
+  posted_at: '2026-11-18T13:37:43Z'
+- id: '50546186'
+  parent_id: '50545266'
+  author: testtestmetest
+  text: Logical Intelligence is most definately a scam, that should hardly be taken
+    seriously. Its one of the handful of companies that is able to automatically fundraise
+    a fk ton of momey just by putting LeCun&#x27;s name on it (a great way to make
+    a bunch of money off VCs last year).<p>Its funny everytime ebms get brought up
+    people have to name drop this company. They literally do nothing.
+  score: 0
+  posted_at: '2026-11-18T13:38:56Z'
+- id: '50546322'
+  parent_id: '50546066'
+  author: program_whiz
+  text: Yeah any method I&#x27;m thinking is better solved another way.  If you need
+    continuous graphs, then this devolves into GNN or transformers.  If you truly
+    have discrete graphs, just use standard programming?  I dunno, maybe this energy
+    approach is better on some problems (more efficient), but getting training examples
+    where you automatically extract the graph representation, and the energy rules
+    seems like a big leap.  If you already have the energy rules in code, then the
+    &quot;just program it&quot; approach is stronger.  I left a comment above with
+    an example how to sample this just using ordinary code that would be a lot more
+    efficient imo (but keeps the random weighted search), and is probably better than
+    brute force.
+  score: 0
+  posted_at: '2026-11-18T13:52:35Z'
+- id: '50546329'
+  parent_id: '50543989'
+  author: cobychapple
+  text: title says 385x and the page says 345x, I guess the compression is lossy?
+  score: 0
+  posted_at: '2026-11-18T13:53:29Z'
+- id: '50546599'
+  parent_id: '50545647'
+  author: datsci_est_2015
+  text: Nice explanation. Very intuitive use of the word “energy” by the researchers,
+    imo, because of its relationship to entropy and “low energy states” (good &#x2F;
+    desirable &#x2F; stable) and “high energy states” (bad &#x2F; undesirable &#x2F;
+    unstable).
+  score: 0
+  posted_at: '2026-11-18T14:16:54Z'
+- id: '50546613'
+  parent_id: '50545801'
+  author: datsci_est_2015
+  text: Which can be a huge advantage, as normalization is an often-overlooked source
+    of bias in modeling.
+  score: 0
+  posted_at: '2026-11-18T14:18:10Z'
+- id: '50546813'
+  parent_id: '50546168'
+  author: xgk
+  text: What makes EBM hard to train?<p>It took a long time (including the development
+    of GPUs, then TPUs, not to mention domain-specific languages like JAX and PyTorch
+    with associated compilers) and scale to train LLMs. EBMs have not yet seen this
+    level of decades of &#x27;full-stack&#x27; optimisation.
+  score: 0
+  posted_at: '2026-11-18T14:36:01Z'
+- id: '50547001'
+  parent_id: '50546168'
+  author: m3kw9
+  text: is it good for local llm&#x27;s where you do a very specific task like voice
+    removal?
+  score: 0
+  posted_at: '2026-11-18T14:51:17Z'
+- id: '50547701'
+  parent_id: '50543989'
+  author: crab2
+  text: "&quot;Autoregressive Language Models are Secretly Energy-Based Models&quot;"
+  score: 0
+  posted_at: '2026-11-18T15:43:53Z'
+- id: '50547886'
+  parent_id: '50545266'
+  author: abeppu
+  text: "&gt; We disabled code execution for all models in the demo, to prevent the
+    LLMs from writing a brute-force backtracking solver in Python and running it,
+    which would tell us something about their coding ability but nothing about their
+    reasoning ability.<p>This seems sketchy. Reasoning how to solve the problem with
+    a program is still reasoning, and if it yields programs which are more efficient
+    (bc even a slow interpreter is faster&#x2F;cheaper than an LLM) and potentially
+    reusable, then so much the better!"
+  score: 0
+  posted_at: '2026-11-18T15:58:02Z'
+- id: '50547985'
+  parent_id: '50547886'
+  author: throwaway0q5347
+  text: I think the goal in this case is to isolate the LLM from that avenue in order
+    to determine whether or not the approach is improving the LLM intrinsic ability,
+    not because it is a better solution than having the LLM create programs.
+  score: 0
+  posted_at: '2026-11-18T16:04:54Z'
+- id: '50548042'
+  parent_id: '50546186'
+  author: throwaway0q5347
+  text: "&gt; Logical Intelligence is most definately a scam, that should hardly be
+    taken seriously<p>citation needed?"
+  score: 0
+  posted_at: '2026-11-18T16:10:22Z'
+- id: '50548357'
+  parent_id: '50545475'
+  author: eli_gottlieb
+  text: 'Energy-based models parameterize energy functions $$E_{\eta}(x) = -log p_{\eta}(x)$$
+    with neural networks $$\eta$$.  The FEP and active inference are specializations
+    of this paradigm to latent-variable models where the energy function is defined
+    by the unnormalized Bayesian posterior over the latent instead of just a marginal
+    distribution over the observed data.<p>Source: I&#x27;ve worked with a lot of
+    core FEP folks and published at their conference.'
+  score: 0
+  posted_at: '2026-11-18T16:32:11Z'
+- id: '50548449'
+  parent_id: '50547985'
+  author: abeppu
+  text: What is reasoning if examining a problem and constructing a program to solve
+    it doesn&#x27;t count? Changing the original represention into one that is more
+    familiar (particular sequences of tokens) seems like it is all about &quot;intrinsic
+    ability&quot;.<p>I&#x27;m not saying they don&#x27;t have a point, but I think
+    this is actually not great evidence.
+  score: 0
+  posted_at: '2026-11-18T16:38:49Z'
+- id: '50548616'
+  parent_id: '50545865'
+  author: zbentley
+  text: 'I think that’s valuable, potentially. The bitter lesson writ large, basically:
+    lots of problem spaces that previously required reasoning to narrow down possible
+    paths to solutions can now be permitted over much more broadly instead.<p>Sucks
+    for the project of human learning though.'
+  score: 0
+  posted_at: '2026-11-18T16:50:47Z'
+- id: '50548826'
+  parent_id: '50548449'
+  author: thelaxiankey
+  text: There&#x27;s a distinction between reasoning with access to a turing machine
+    and reasoning without access to a turing machine. In one case, you must sometimes
+    become a turing machine yourself and execute &quot;algorithms&quot;, which is
+    something LLMs can struggle with.<p>When I was learning combinatorics, I was aggressively
+    discouraged from using induction to prove things. Not because it was bad, or because
+    it didn&#x27;t work, but because if I used induction, I wouldn&#x27;t be practicing
+    &#x27;combinatorics&#x27;, I&#x27;d be practicing induction. You can make similar
+    observations about solving ODEs numerically, or using mathematica for all your
+    integrals.<p>One way to think of this is that banning coding prevents the agent
+    from outsourcing some of the skills it&#x27;s bad at (discrete sequential reasoning)
+    to a computer. We are grading precisely the thing it&#x27;s outsourcing because
+    we suspect improving that might make it better.
+  score: 0
+  posted_at: '2026-11-18T17:05:07Z'
+- id: '50549605'
+  parent_id: '50543989'
+  author: tristenharr
+  text: Ahh finally! It’s what I would have expected. Thank you so much for scratching
+    this intellectual itch I’ve had for a bit now.<p>This also might be a good way
+    to finally explain to people how AI is working in some sense. If you look at it
+    from an information theoretic view and treat things like kolgomorov complexity
+    and the data inputs to machine learning as an energy landscape, you can look at
+    AI and ML as a whole as something that is learning the energy landscape.<p>It’s
+    not that AI ever was a black box, we have always known how it works. (It’s a pet
+    peeve of mine when people say we don’t understand AI, we designed it using mathematics
+    we understand perfectly the mechanisms)<p>The information we observe is a consequence
+    of the underlying structure and constraints of reality. The universe has an underlying
+    physical structure, with energy, interactions, constraints, and relationships.
+    What we call data is an observable artifact of those underlying structures.<p>You
+    can view reasoning as navigating an energy landscape.<p>Very neat and interesting
+    nice work!
+  score: 0
+  posted_at: '2026-11-18T17:53:15Z'
+- id: '50549652'
+  parent_id: '50549605'
+  author: andai
+  text: "&gt;It’s a pet peeve of mine when people say we don’t understand AI, we designed
+    it using mathematics we understand perfectly the mechanisms<p>Well, unfortunately
+    I am here to peeve your pet. OpenAI and Anthropic have both spent years training
+    specialized AIs to help them figure out what the heck their AIs are doing!"
+  score: 0
+  posted_at: '2026-11-18T17:56:15Z'
+- id: '50550037'
+  parent_id: '50548449'
+  author: freecodeio
+  text: someone is teaching a kid to do multiplication and removed the calculator,
+    why are you so surprised with this concept?
+  score: 0
+  posted_at: '2026-11-18T18:25:05Z'
+- id: '50550119'
+  parent_id: '50545865'
+  author: topicalSoup
+  text: 'You are factually incorrect about this. If you look at how these proofs are
+    actually being generated, the proof comes first and is only later Lean-verified.
+    For example, take Yang-Mills: it was proved by OpenAI on Sept 9 and then Lean-formalized
+    on Oct 16. If all the AI was doing was sifting Lean, we would expect the proof
+    completion and the Lean verification to happen simultaneously.'
+  score: 0
+  posted_at: '2026-11-18T18:30:37Z'
+- id: '50550790'
+  parent_id: '50548357'
+  author: xgk
+  text: How do those core FEP folks train their models, and can the results  compete
+    with LMs?<p>What I have seen in the past made me think that majority of them would
+    not even know how to write a line of CUDA ...
+  score: 0
+  posted_at: '2026-11-18T19:21:55Z'
+- id: '50551263'
+  parent_id: '50543989'
+  author: anamax
+  text: Seems sort of like Ising machines.
+  score: 0
+  posted_at: '2026-11-18T19:55:42Z'
+article:
+  url: https://energy-based-reasoners.github.io/
+  title: 'Energy-Based Reasoners: Your Recurrent Reasoner Should Be an Energy-Based
+    Model'
+  fetch_status: success
+  content: |-
+    ## Abstract
+
+    Looping is a powerful inductive bias for reasoning. By repeatedly iterating a recurrent block, looped models can scale their effective depth and enable multi-step reasoning in latent space. However, existing looped models are not inherently guided by an explicit measure of progress, making it difficult to determine when to stop looping and how to improve upon the current state. To enable this, we introduce **Energy-Based Reasoners** ( **EBRs** ), which learn an energy function over latent reasoning states and formulate looped updates as gradient descent on this energy. The energy scores latent states, while its gradient guides refinement and provides a signal for stopping. To train EBRs effectively, we further introduce exploration-based training to discover additional modes and to better shape the energy landscape over a broader set of states. Across four algorithmic reasoning benchmarks, EBRs match or outperform prior recurrent reasoning models, achieving 99.9% accuracy on Sudoku-Extreme while using 345× less inference compute than the next-best model and maintaining comparable training compute. On all multi-solution benchmarks, EBRs achieve state-of-the-art coverage of distinct valid solutions while maintaining near-100% single-sample accuracy. These results suggest that energy-based models are a promising approach for strong reasoning performance.
+  error:
+  fetched_at: '2026-11-18T20:06:42Z'
+archived_at: '2026-11-18T20:06:47Z'

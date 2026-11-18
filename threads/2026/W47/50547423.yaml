@@ -1,0 +1,152 @@
+---
+post:
+  id: '50547423'
+  title: NGINX2Root by Xint – From Nginx visitor to root of the server host
+  url: https://nginx2root.com/
+  hn_url: https://news.ycombinator.com/item?id=50547423
+  score: 82
+  author: ''
+  posted_at: '2026-11-18T15:24:17Z'
+  fetched_at: '2026-11-18T20:06:46Z'
+  article_url: https://nginx2root.com/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-18T20:06:46Z'
+  raw_comment_count: 13
+comments:
+- id: '50547568'
+  parent_id: '50547423'
+  author: philipwhiuk
+  text: 'I really dislike a brand new vibe-coded website claiming five vulns and &quot;responsible
+    disclosure&quot; without an actual fix already available on <a href="https:&#x2F;&#x2F;nginx.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;nginx.org&#x2F;</a><p>Responsible my ass<p>Wiz
+    write-up: <a href="https:&#x2F;&#x2F;www.wiz.io&#x2F;blog&#x2F;nginx-http2-rce-vulnerabilities"
+    rel="nofollow">https:&#x2F;&#x2F;www.wiz.io&#x2F;blog&#x2F;nginx-http2-rce-vulnerabilities</a>'
+  score: 0
+  posted_at: '2026-11-18T15:34:22Z'
+- id: '50547721'
+  parent_id: '50547568'
+  author: mountainrose
+  text: the patch has been released already by f5 <a href="https:&#x2F;&#x2F;my.f5.com&#x2F;manage&#x2F;s&#x2F;article&#x2F;K000164058"
+    rel="nofollow">https:&#x2F;&#x2F;my.f5.com&#x2F;manage&#x2F;s&#x2F;article&#x2F;K000164058</a>
+  score: 0
+  posted_at: '2026-11-18T15:45:37Z'
+- id: '50548335'
+  parent_id: '50547423'
+  author: patryk_builds
+  text: 'The most useful line on the page for operators is easy to miss: after updating,
+    `nginx -s reload` does not load the new binary, you need a restart. I&#x27;d expect
+    a fair number of hosts to be &quot;patched&quot; on disk and still running the
+    old worker for weeks.<p>The other one is the caveat about version strings. Distro
+    packages and container images backport fixes without changing the version, so
+    `nginx -v` can&#x27;t confirm exposure or safety by itself. For anyone pinning
+    an image tag like nginx:1.27-alpine, the question is whether that tag was rebuilt,
+    and the only way to know is to pull again and compare digests.<p>On the 98.9%
+    figure: the page is careful to call it version prevalence, which I appreciate.
+    But the fourth condition in your checklist, external h2 negotiation, is measurable
+    from outside with an ALPN probe. Did you run that against the same Shodan set?
+    The share of affected-version hosts that actually negotiate h2 on a public port
+    would be a much better estimate of real exposure.<p>I checked my own small server
+    after reading this and it turned out not to matter, since the proxy in front is
+    Caddy. What it did show me is that I couldn&#x27;t have answered &quot;which proxy,
+    which version, is h2 on&quot; from memory, and that&#x27;s probably the common
+    case for small deployments.'
+  score: 0
+  posted_at: '2026-11-18T16:30:51Z'
+- id: '50548372'
+  parent_id: '50547423'
+  author: outloudvi
+  text: |-
+    I won&#x27;t call it NGINX2Root if it requires a vuln published a quarter ago (the SCTP one, probably CVE-2026-64564) to gain root.
+    In this case it&#x27;s an RCE, so... some NGINX2Shell?<p>Also, Xint, if you are using SCTPhantom, you don&#x27;t &quot;discover&quot; the SCTP vuln, you &quot;reproduce&quot; the SCTP vuln; Tencent discovered the SCTP vuln:
+    <a href="https:&#x2F;&#x2F;matrix.tencent.com&#x2F;en&#x2F;2026&#x2F;08&#x2F;06&#x2F;sctphantom-CVE-2026-64564" rel="nofollow">https:&#x2F;&#x2F;matrix.tencent.com&#x2F;en&#x2F;2026&#x2F;08&#x2F;06&#x2F;sctphantom-CVE-2026...</a><p>The good thing is, Xint, thank you for doing responsible disclosure <i>this</i> time! I won&#x27;t say <a href="https:&#x2F;&#x2F;copy.fail" rel="nofollow">https:&#x2F;&#x2F;copy.fail</a> is responsible given the website was released before many distros have fixed the issue.<p><i>Edit</i>: So there&#x27;s another unreleased SCTP vulnerability? Well, maybe it&#x27;s time to turn it off if it&#x27;s not used...<p>&gt; Does patching nginx close the whole chain?<p>&gt; It closes the way in through nginx. The kernel bug is a separate local privilege escalation vulnerability and needs its own patch, which will be released in the coming weeks.
+  score: 0
+  posted_at: '2026-11-18T16:33:11Z'
+- id: '50549022'
+  parent_id: '50547423'
+  author: ChrisArchitect
+  text: Related:<p><i>Pre-auth RCE in Nginx HTTP&#x2F;2 handling</i><p><a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50547374">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50547374</a>
+  score: 0
+  posted_at: '2026-11-18T17:16:19Z'
+- id: '50549242'
+  parent_id: '50547568'
+  author: Y-bar
+  text: I do too. But they definitely help me convince the CTO to allow us to patch
+    servers where they would otherwise hesitate.
+  score: 0
+  posted_at: '2026-11-18T17:29:59Z'
+- id: '50549550'
+  parent_id: '50547423'
+  author: sam-cop-vimes
+  text: Does anyone know whether sites behind Cloudflare are affected by this or does
+    Cloudflare provide some protection against this?
+  score: 0
+  posted_at: '2026-11-18T17:50:22Z'
+- id: '50549611'
+  parent_id: '50547423'
+  author: whalesalad
+  text: when did it become en vogue to register a domain and host a website for a
+    specific vuln? and could watching the cert transparency log for new names in this
+    shape lead to heads up prior to responsible disclosure.
+  score: 0
+  posted_at: '2026-11-18T17:53:38Z'
+- id: '50549807'
+  parent_id: '50549611'
+  author: TACIXAT
+  text: I believe the trend kicked off with Heartbleed in 2014.
+  score: 0
+  posted_at: '2026-11-18T18:07:47Z'
+- id: '50549875'
+  parent_id: '50549611'
+  author: jl6
+  text: A good vuln needs a whole branding campaign these days. The discoverers get
+    more recognition and job offers if they are known as the hero discoverers of the
+    famous ass2elbow rather than merely CVE-2026-2828350810639.
+  score: 0
+  posted_at: '2026-11-18T18:13:18Z'
+- id: '50549921'
+  parent_id: '50547423'
+  author: Meglis
+  text: Can someone tell me why NGF is not listed as affected here ? Am I missing
+    something ? <a href="https:&#x2F;&#x2F;my.f5.com&#x2F;manage&#x2F;s&#x2F;article&#x2F;K000164058"
+    rel="nofollow">https:&#x2F;&#x2F;my.f5.com&#x2F;manage&#x2F;s&#x2F;article&#x2F;K000164058</a>
+  score: 0
+  posted_at: '2026-11-18T18:16:48Z'
+- id: '50549957'
+  parent_id: '50549611'
+  author: Meglis
+  text: how will you distinguish between real and fake websites, there is also <a
+    href="https:&#x2F;&#x2F;terminal2shell.com&#x2F;" rel="nofollow">https:&#x2F;&#x2F;terminal2shell.com&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-18T18:18:51Z'
+- id: '50550072'
+  parent_id: '50548335'
+  author: citrin_ru
+  text: 'I hope anyone using nginx should know that &#x27;nginx -s reload&#x27; reloads
+    only config. And you don&#x27;t necessarily need to restart - nginx can be upgraded
+    gracefully without breaking existing connections: <a href="https:&#x2F;&#x2F;nginx.org&#x2F;en&#x2F;docs&#x2F;control.html#upgrade"
+    rel="nofollow">https:&#x2F;&#x2F;nginx.org&#x2F;en&#x2F;docs&#x2F;control.html#upgrade</a>
+    on FreeBSD it can be done using &#x2F;usr&#x2F;local&#x2F;etc&#x2F;rc.d&#x2F;nginx
+    upgrade, may be other OSes have similar scripts.'
+  score: 0
+  posted_at: '2026-11-18T18:27:18Z'
+article:
+  url: https://nginx2root.com/
+  title: NGINX2Root by Xint — From nginx visitor to root of the server host
+  fetch_status: success
+  content: |-
+    # NGINX2Root
+
+    From nginx visitor to root of the server hostnginx 방문자에서 서버 호스트의 root까지nginxへの未認証アクセスから、サーバーホストのroot権限へ
+
+    - CVE-2026-123007
+
+    - CVE-2026-123634
+
+    - CVE-2026-123633
+
+    - CVE-2026-121810
+
+    - CVE-2026-113425
+  error:
+  fetched_at: '2026-11-18T20:06:46Z'
+archived_at: '2026-11-18T20:06:48Z'

@@ -1,0 +1,125 @@
+---
+post:
+  id: lo-a1uff5
+  source: lobsters
+  title: Java4Shell is a reason to use Java
+  url: https://mccue.dev/pages/11-18-26-java4shell
+  hn_url: https://lobste.rs/s/a1uff5
+  score: 22
+  author: emccue
+  posted_at: '2026-11-18T14:21:42Z'
+  fetched_at: '2026-11-18T20:06:48Z'
+  article_url: https://mccue.dev/pages/11-18-26-java4shell
+  article_fetch_status: success
+  article_fetched_at: '2026-11-18T20:06:50Z'
+  raw_comment_count: 6
+  tags:
+  - java
+  - security
+comments:
+- id: lo-zhtjo7
+  parent_id: '0'
+  author: Pentlander
+  text: Ehh as someone that likes Java I don’t really buy this. There have been plenty
+    of RCEs unrelated to memory safety, the biggest one being the log4j one from a
+    while ago. There were also a decent number of Jackson/native serialization ones
+    that happened over the years. Sure a majority of the time it’s libraries that
+    have issues rather than the platform or stdlib itself, but that’s not exclusive
+    to Java.
+  score: 8
+  posted_at: '2026-11-18T14:50:38Z'
+- id: lo-gxqfco
+  parent_id: '0'
+  author: cpurdy
+  text: |-
+    The point seems to be that entire classes of security violations generally do not exist in Java (which is true), not that security violations do not exist in Java.
+    It seems a reasonable point.
+  score: 9
+  posted_at: '2026-11-18T15:29:13Z'
+- id: lo-klkwhl
+  parent_id: '0'
+  author: orib
+  text: I'm assuming this person has never heard of the JNI.
+  score: 3
+  posted_at: '2026-11-18T15:52:27Z'
+- id: lo-paecat
+  parent_id: '0'
+  author: emccue
+  text: The native code protections apply to JNI. The difference between the JVM and
+    other ecosystems is that you will need to opt-in even if the JNI comes from a
+    transitive dependency.
+  score: 6
+  posted_at: '2026-11-18T16:07:17Z'
+- id: lo-tc9amd
+  parent_id: '0'
+  author: Pentlander
+  text: That’s more of an argument of memory safe vs not languages than being a pro
+    for Java specifically. It would make more sense to compare to the number of RCEs
+    or the response to them in other memory safe languages, e.g. Php or Ruby. Even
+    then, as far as I know Go has had much fewer than Java. Honestly the number of
+    CVEs that relate to both native and library serialization points to a deficiency
+    in Java the platform.
+  score: 3
+  posted_at: '2026-11-18T17:31:36Z'
+- id: lo-wcjde7
+  parent_id: '0'
+  author: gf0
+  text: |-
+    Go has had much fewer than Java
+
+    Is this comparision normalized to account for one being 3x older, but especially that it is a vastly more worthwhile target due to it being so much more popular, and how heavily it is used in industry, especially so in finance, web backends etc?
+    Because sure Linux desktop may have less CVEs than Windows, but let's be honest, it's not because it would be secure, very far from that.
+    And a bit snarkily: go is not a memory safe language, it has a real in the language causing ordinary safe go code to segfault. It's not practical to exploit, but still.
+  score: 1
+  posted_at: '2026-11-18T19:53:58Z'
+article:
+  url: https://mccue.dev/pages/11-18-26-java4shell
+  title: Java4Shell is a reason to use Java
+  fetch_status: success
+  content: "by: **Ethan McCue**\n  \n  \n  \n Good Morning.\n\nWe're less than a day
+    into dealing with [\"Java4Shell\"](https://calif.io/java4shell), an issue stemming
+    from how the Java Virtual Machine intrinsifies Base64 encoding code. If you have
+    a Java deployment you haven't updated yet, add `-XX:-UseBASE64Intrinsics` to the
+    VM flags. Then upgrade your VM to a version where the issue is patched when you
+    can.\n\nThis is just one in a string of high profile outages and vulnerabilities.
+    AI is a good fuzzer, people are finding latent problems with much lower effort
+    than the past. People are pretty worried about this because we're all pretty sure
+    there are more latent problems to find.\n\nVulnerabilities tend to be bigger problems
+    [when they stem from native code,](https://www.cisa.gov/news-events/news/urgent-need-memory-safety-software-products)
+    and they tend to be widespread problems when they come from dependencies many
+    people share.\n\nJava4Shell is both of these things. A lot of people use Java
+    and the problem stems from a handwritten assembly intrinsic. Fun times.\n\nBut,
+    for a moment, lets say we trust the VM. It is a big dependency, but it is only
+    one dependency. We can all agree to audit it more closely, reduce the amount of
+    native code in it, proactively run AIs against it, etc. Of course.\n\nNormal Java
+    programs are memory safe. If you use a library which wants to call native code
+    you will get a warning, [later a hard error](https://openjdk.org/jeps/472), unless
+    you the person using the library adds `--enable-native-access=the.specific.library`
+    to their command-line options. This means even with a sprawling dependency tree,
+    which is a problem for all programming language ecosystems, you can know your
+    exact exposure to native code and what dependencies you need to audit more closely.\n\nCompare
+    that to C#, [which lets any dependency write assembly inline](https://esozbek.me/blog/inline-assembly-in-csharp-and-dotnet/).
+    Python, JavaScript, Go - everything [speaks C](https://faultlore.com/blah/c-isnt-a-language/)
+    and lets any one of your dependencies bring along native code. As we are all learning
+    the hard way, this carries risk.\n\nNot only are Java programs memory safe. They
+    are also fast. The exact mechanism which caused Java4Shell (the ability for the
+    VM to swap out normal Java code for native code) combined with JIT compilation
+    can make the actual performance of a Java program competitive with C. Sometimes
+    a Java program can even be faster. A JIT compiler knows what code paths are actually
+    taken and can optimize around them. They can even refocus what is optimized if
+    the workload changes. It is pretty cool!\n\nSomewhat recently I went through the
+    [raytracing in a weekend](https://raytracing.github.io/) book with Java.\n\n    Impl
+    mean ± σ vs C++\n    ─────────────────────────────────────────────────\n    C++
+    clang 21 -O3 7.00 ±0.01 1.00x\n    Java 28, value classes 11.95 ±0.25 1.71x\n
+    \   C# .NET 11 preview 6 11.95 ±0.22 1.71x\n    C# .NET 10 11.98 ±0.11 1.71x\n
+    \   Java 26 17.53 ±0.21 2.50x\n\nBenchmarks can be problematic, I know. What I
+    want you to take away is that the JVM makes your code fast enough that most people
+    don't need native code. Unlike, to take a potshot, CPython. There everything is
+    slow as molasses unless you make it a native extension.\n\nSo if you are worried
+    AI is going to find security problems with your code, use Java. The problems are
+    likely to be less severe.\n\n* * *\n\nOr use Kotlin, Clojure, JRuby, etc. Whatever.
+    Most of what I talked about applies to all of them. Its only what I didn't talk
+    about (the module system) that is Java specific.\n\n* * *\n\n#### [\\<- Index](/)"
+  error:
+  fetched_at: '2026-11-18T20:06:50Z'
+archived_at: '2026-11-18T20:06:50Z'
