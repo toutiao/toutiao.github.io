@@ -1,0 +1,124 @@
+---
+post:
+  id: lo-bhfexs
+  source: lobsters
+  title: FreeBSD GUS
+  url: https://gregoire.dev/writing/gus/
+  hn_url: https://lobste.rs/s/bhfexs
+  score: 16
+  author: rdmsr
+  posted_at: '2026-11-18T02:54:59Z'
+  fetched_at: '2026-11-18T11:16:37Z'
+  article_url: https://gregoire.dev/writing/gus/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-18T11:16:55Z'
+  raw_comment_count: 0
+  tags:
+  - freebsd
+  - mac
+comments: []
+article:
+  url: https://gregoire.dev/writing/gus/
+  title: FreeBSD GUS
+  fetch_status: success
+  content: "## Introduction\n\nFreeBSD has a pretty neat safe memory reclamation scheme
+    (something akin to RCU), that's also been adopted by XNU that hasn't really been
+    well-documented outside of code comments, and I thought it would've been interesting
+    to write about it.\n\n## What safe memory reclamation is all about\n\nThe problem
+    of _safe memory reclamation_ (SMR) shows up notably when working with lock-free
+    data structures. Lock-free data structures are the bread and butter of modern
+    scalability in operating systems, and they often allow much higher throughput
+    than their finely grained locked counterparts, but they come with their own issues.\n\nLock-free
+    data structure code in unmanaged languages needs to carefully manage the liveness
+    of the objects it manages, i.e it must guarantee that memory is freed if and only
+    if no one is able to access it. This arises because there is no synchronization
+    around the access of the data structure, so an object that is removed can still
+    be visible concurrently by another CPU (who might have made a local copy).\n\nMore
+    broadly, SMR schemes can also be used for other things than memory reclamation,
+    I like to think of them as providing barriers ensuring that all participants (read:
+    CPUs or threads) have passed through a certain point.\n\n## Prior art\n\nSMR schemes
+    broadly fall in two families: _Epoch-based reclamation_ (EBR) and _Quiescent-state
+    based reclamation_ (QSBR). You might have also heard of _Hazard Pointers_ (HP),
+    which are useful on their own but are seldom seen in operating systems (at least,
+    that I know of!).\n\nQSBR is notable because you might've heard of it called a
+    different name by the Linux project, _RCU_ (Read-Copy-Update)! RCU's author, Paul
+    McKenney, actually invented QSBR for the DYNIX operating system.\n\nRCU has been
+    described extensively, and I would recommend reading McKenney's excellent [LWN
+    Articles](https://lwn.net/Articles/262464/) to learn more. The TL;DR is that there
+    are three operations: `rcu_read_lock`, `rcu_read_unlock` and `rcu_synchronize`,
+    the `read` operations are used to guard reads around potentially-freed memory
+    (i.e to enter a _read section_) and the `synchronize` function waits until there
+    is no CPU in a read section (this could be used to wait until memory is safe to
+    be freed).\n\nThe gist of the algorithm is that memory is known to be safe to
+    free when all CPUs have gone through at least one _quiescent point_ ever since
+    the object was removed from its data structure (a _grace period_), and read section
+    operations block those quiescent points from ever happening.\n\nIn practice, this
+    can be implemented by having a quiescent point on context switches and inhibiting
+    preemption during read operations. The core of the algorithm is actually pretty
+    simple, and much of the complexity of the Linux code stems from making this scalable
+    (Tree RCU) and handling other RCU flavors (e.g preemptible RCU).\n\nFreeBSD's
+    safe memory reclamation scheme is called _GUS_ and is part of the EBR family.\n\n##
+    Epoch-based reclamation\n\nEpoch-based reclamation was first described by Keir
+    Fraser in his now-famous thesis titled _Practical Lock-freedom_ ([link](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-579.pdf)).
+    The way it works is that there is a global _epoch_ which moves through 0, 1 and
+    2. When a thread enters a read section, it pins itself by reading the global epoch
+    and copying it into its local slot.\n\nWhen a writer retires an object, it goes
+    into a \"limbo\" bag tagged with the current epoch (really, the epoch is used
+    as an index into an array of three linked lists). The global epoch is advanced
+    by _polling_ all other threads and checking whether or not they have acknowledged
+    the current epoch by reading their local slot; if it so happens that they have,
+    then the global epoch is advanced and memory that was retired two epochs ago can
+    now be freed.\n\nThe main issues that arise:\n\n1. Epochs are _bounded_, i.e they
+    always cycle through 0, 1 and 2, this means that writers have to synchronize with
+    epoch advancement before retiring more objects; and\n2. Doing an O(n) scan touching
+    remote memory is very expensive!\n\nIt is now time to reveal that GUS really means
+    _Global Unbounded Sequences_, and it tackles on issue #1 by making epochs unbounded
+    (hence the name) and issue #2 is somewhat mitigated by clever integration with
+    the broader system.\n\n## GUS\n\n> I am using sequence and epoch interchangeably
+    here. Confusing, I know!\n\nThe way GUS works is that there is a global, monotonically
+    increasing write sequence, as well as a global read sequence, which represents
+    the last minimum observed sequence across CPUs.\n\nEach CPU also keeps track of
+    its own local sequence when it is pinned, akin to how EBR does things.\n\nThe
+    algorithm goes as follows, in pseudocode:\n\n    enter():\n        store(cpu.cur_seq,
+    load(global_write_seq, relaxed), relaxed)\n        fence(seq_cst)\n    \n    exit():\n
+    \       store(cpu.cur_seq, SEQ_INVALID, release)\n    \n    advance():\n        fetch_add(global_write_seq,
+    1, release)\n    \n    // Returns whether a sequence `goal` is reached\n    poll(goal):\n
+    \       fence(seq_cst)\n        \n        if goal <= global_read_seq:\n            //
+    Goal already reached!\n            return true\n    \n        min_seq = global_read_seq\n
+    \   \n        for each cpu:\n            min_seq = min(min_seq, load(cpu.cur_seq,
+    relaxed))\n    \n        if goal <= min_seq:\n            // Goal reached across
+    all CPUs\n            fence(acquire)\n            \n            Exchange global_read_seq
+    with the new one.\n            return true\n            \n        return false\n\n>
+    I will not go _too_ much into details about the atomic operations here, if you're
+    curious, they have been extensively described by people smarter than me! The basic
+    idea, however, is that one needs to remember that all operations after `enter`
+    must not be reordered w.r.t the publication of the epoch (the store to `cur_seq`)\n\nThe
+    basic idea is therefore that a sequence is essentially a timestamp, and that the
+    read sequence is always playing catch-up with the write sequence, but never actually
+    reaching it, (i.e there is always at least a separation of 1 between both). Obviously,
+    in practice, there is a bit more to it especially w.r.t memory orderings, but
+    the whole thing is still freakishingly simple and can be implemented in a few
+    hundred lines, see the FreeBSD implementation [here](https://elixir.bootlin.com/freebsd/v15.1/source/sys/kern/subr_smr.c).\n\nThe
+    unbounded epochs solved the issue #1 that was presented earlier, but what about
+    issue #2: how is polling amortized?\n\nJeff Roberson, the author of GUS, also
+    wrote the UMA (universal memory allocator) implementation, and both tie nicely
+    together.\n\n## Integration with the rest of the system\n\nTo me, the way GUS
+    is integrated with the allocator is really its distinguishing feature and what
+    makes the whole thing work well.\n\nThe UMA allocator is essentially a modernized
+    slab allocator, which was first implemented in Solaris and described in Jeff Bonwick's
+    influential papers in the early 2000s. To make things scale on SMP systems, it
+    relies on per-CPU \"buckets\" (magazines in Bonwickspeak), which are essentially
+    an array of _N_ objects on which objects are popped from and pushed onto quickly.
+    A certain amount of pre-allocated buckets are stored in a per-zone (`kmem_cache`
+    in Bonwickspeak) \"depot\" from which empty buckets and full buckets are pulled.
+    _N_, i.e the size of buckets, is dynamically resized according to measured contention
+    on the depot lock; high contention needs to be reduced by increasing the bucket
+    size, which provides amortization over the (potentially) slow and contended operation
+    of going to the depot.\n\nGUS and the allocator join together by allowing the
+    creation of \"SMR zones\" which are zones that do careful handling around the
+    freeing of objects. Someone wanting to write a lock-free data structure could
+    create a SMR zone for their object and do allocations and frees effectively transparently.\n\nOn
+    SMR zones, when the allocator notices "
+  error:
+  fetched_at: '2026-11-18T11:16:55Z'
+archived_at: '2026-11-18T11:16:55Z'

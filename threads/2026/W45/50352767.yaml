@@ -1,0 +1,433 @@
+---
+post:
+  id: '50352767'
+  title: Handles are the better pointers (2018)
+  url: https://floooh.github.io/2018/06/17/handles-vs-pointers.html
+  hn_url: https://news.ycombinator.com/item?id=50352767
+  score: 69
+  author: vinhnx
+  posted_at: '2026-11-03T14:54:30Z'
+  fetched_at: '2026-11-18T11:16:58Z'
+  raw_comment_count: 28
+comments:
+- id: '50352865'
+  parent_id: '50352767'
+  author: PaulHoule
+  text: A nice analysis of large-scale programming techniques that go beyond the novice
+    version of &quot;OO Sux&quot; to the almost secret<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;AoS_and_SoA"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;AoS_and_SoA</a><p>and
+    why game engines use entity-component systems, analytical databases are column-oriented,
+    etc.  That is,  the classical organization of &quot;objects&quot; as structures
+    has a lot of overhead when you&#x27;re doing heavy work.  For instance java reifies
+    objects with a big header,  a monitor lock, and other stuff that really adds up
+    if you,  say,  are writing a chess engine and need to maintain transposition tables.  And
+    even if you are in C++ and there is a lot less overhead,  AoS still has bad mechanical
+    sympathy compared to SoA.
+  score: 0
+  posted_at: '2026-11-03T15:01:27Z'
+- id: '50353586'
+  parent_id: '50352865'
+  author: mac3n
+  text: see Jovial language (<a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=27390796">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=27390796</a>)
+    SERIAL and PARALLEL tables.
+  score: 0
+  posted_at: '2026-11-03T15:57:07Z'
+- id: '50353909'
+  parent_id: '50352767'
+  author: michaelcampbell
+  text: This article reminds me (on the surface, this is deeper than my experience)
+    of how the recent Goose language orients things.<p>I never worked with it but
+    I seem to recall the old original Mac API&#x27;s (Pascal based) used &quot;handles&quot;
+    a lot to solve the issue of being able for the system to move allocations and
+    memory out from under a program without it knowing, as a &quot;pointer to pointer
+    to &lt;thing&gt;&quot;.  I was poring over those manuals in ~1988&#x2F;1989 with
+    visions of being a full-time Mac developer in my head.
+  score: 0
+  posted_at: '2026-11-03T16:16:14Z'
+- id: '50354021'
+  parent_id: '50352767'
+  author: throwitaway222
+  text: I remember back in the day in Windows C++ programming everything was a HANDLE
+    memory is probably not serving me, but they were all really just void* renamed.
+    And you use them with various win32 functions I guess to keep things straight.
+    I don&#x27;t miss those days.
+  score: 0
+  posted_at: '2026-11-03T16:24:30Z'
+- id: '50354399'
+  parent_id: '50354021'
+  author: andrewshadura
+  text: Famously Win16 API required locking memory allocations to be able to access
+    them by a pointer. Unlocked allocations could be moved by the OS.
+  score: 0
+  posted_at: '2026-11-03T16:50:36Z'
+- id: '50354449'
+  parent_id: '50352767'
+  author: Surac
+  text: my API always use handels, not because i design them that way, but in every
+    iteration they get more and more handles
+  score: 0
+  posted_at: '2026-11-03T16:53:23Z'
+- id: '50354643'
+  parent_id: '50354021'
+  author: delta_p_delta_x
+  text: '&gt; but they were all really just void* renamed<p>The good thing is that
+    all of these can and have been quite neatly put into RAII[1] or some memory arena
+    with custom deleters which use the Win32 functions. One <i>could</i> manually
+    `delete` those handles, but there be dragons. Vulkan does something similar; everything
+    is a VkSomething handle. They <i>may</i> just be pointers directly exposed by
+    the driver, but even so, users are explicitly supposed to use vkDeleteSomething
+    functions to delete them.<p>[1]: <a href="https:&#x2F;&#x2F;github.com&#x2F;microsoft&#x2F;wil"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;microsoft&#x2F;wil</a>'
+  score: 0
+  posted_at: '2026-11-03T17:05:02Z'
+- id: '50355177'
+  parent_id: '50352767'
+  author: program_whiz
+  text: |-
+    there are serious downsides to this, its a tradeoff and I wouldn&#x27;t say they are &quot;better pointers&quot;.  There are definitely cases where it can work (e.g. uniform objects that either rapidly create&#x2F;destroy or all die at a boundary). This is usually the case with a &quot;simple memory model&quot; domain like games, rendering, etc.  All the work starts and ends at a request, frame, or scene.<p>But for anything else, handles can be trouble.<p>First, you&#x27;re obviously paying indirection tax on EVERY lookup.  Logic like `x-&gt;foo` becomes `memory_allocator.objects[x-&gt;index]-&gt;foo`. You&#x27;re also paying the generation counter tax (assuming you want any kind of safety).  So you also have to do something like this:<p><pre><code>    if (x-&gt;index &lt; 0 || x-&gt;index &gt; memory_allocator.objects.size()) { &#x2F;&#x2F; panic? }
+        auto *ref = memory_allocator.objects[x-&gt;index];
+        if (!ref) { &#x2F;&#x2F; panic? }
+        if (ref-&gt;generation != x-&gt;generation) { &#x2F;&#x2F;&#x2F; panic? }
+        return *ref;
+    </code></pre>
+    Next, you have type bloat.  Hopefully you are making type-safe versions of all these indices so you can&#x27;t just use an aribtrary index into any kind of array right?  Ok well that means now you have double the types (one index type per pointer type).  Ok maybe not the worst, just a lot of boilerplate everywhere.  Prepare for a lot of this:<p><pre><code>   struct Handle { uint64_t index; uint64_t generation }
+       typedef PlayerHandle Handle;
+    </code></pre>
+    Handles are also a lot bigger.  If you&#x27;re memory constrained, adding an additional 16-32 bytes per pointer allocation is painful.  For my programming lang I have a single test file that contains 300K AST nodes, that would be another 9.6MB to parse a single file for handles alone, for noticeably slower performance (300K+ indirections and cache misses).<p>Next, you have the issue of resizing your memory array.  You now are in &quot;write your own garbage collector&quot; land.  You want to consolidate 50% of the memory that is suddenly free?  Well you need to change every index to point the new compacted range (expensive and complex), or manage a free list which potentially increases the memory requirement, and adds complexity, cache coherence issues, etc.  Do your memory lists grow indefinitely?  Do you need to think about having separate lists for short lived and long lived (generational GC style)?  Managing lifespan of objects all sharing one backing storage when the indexes are just integers strewn about is actually _harder_ than doing the same with pointers (just use compacting GC already).<p>Then there&#x27;s the issue of object pools.  You want your data to live in arrays.  Do you put all objects into one master array?  You lose cache coherence &#x2F; iteration speed, and type safety (unless you really bloat and start adding type info to every entry).  If you use different arrays for each you might end up with dozens of arrays, one per type, and also their free lists.  Now you need a way to manage the lifespans and scope of all these object pools.  Suddenly, you&#x27;ve reinvented malloc &#x2F; free and segfault signals.<p>Or you could just wisely use pointers...
+  score: 0
+  posted_at: '2026-11-03T17:35:23Z'
+- id: '50355469'
+  parent_id: '50352767'
+  author: emtel
+  text: I’m not sure how applicable this is today. It is quite hard to beat jemalloc,
+    especially for small allocations, which it handles essentially the same way a
+    hand coded pool or arena would anyway.
+  score: 0
+  posted_at: '2026-11-03T17:53:18Z'
+- id: '50355502'
+  parent_id: '50352767'
+  author: mcphage
+  text: This sounds a lot like ECS—or at least, how ECS systems handle memory for
+    the components.
+  score: 0
+  posted_at: '2026-11-03T17:55:20Z'
+- id: '50355580'
+  parent_id: '50355469'
+  author: ex-aws-dude
+  text: I’ve worked on game engines and what he’s describing is still very common<p>I
+    don’t know about outside that world though
+  score: 0
+  posted_at: '2026-11-03T18:00:10Z'
+- id: '50355661'
+  parent_id: '50352767'
+  author: FLeXMurphy
+  text: They always have been, and Win32 extensively uses HANDLE with some underlying
+    restrictions. I remember reading up that certain numeric allocation buckets in
+    HANDLE corresponded to the type of underlying resource (ie. Nth bits mean &lt;this
+    resource&gt;), but it has been too long to remember the details.
+  score: 0
+  posted_at: '2026-11-03T18:05:57Z'
+- id: '50356608'
+  parent_id: '50355469'
+  author: throw-qqqqq
+  text: If using 32bit handles, you save 4 bytes per reference compared to pointers.
+    If your application uses a lot of references, this can add up (in total memory
+    use).<p>I have a few applications with lots of tree structures, where this makes
+    a meaningful difference.
+  score: 0
+  posted_at: '2026-11-03T19:04:51Z'
+- id: '50356645'
+  parent_id: '50353909'
+  author: jsrcout
+  text: 'Your memory is correct.<p>The early Macintoshes used the Motorola MC68000
+    CPU, which lacked an MMU. (Not sure if external MMUs were available then, but
+    in any case Macs didn&#x27;t have one). And the onboard memory was tiny even for
+    the time (128_K_ for the smaller models).<p>So the memory management user API
+    was designed to let the system move memory blocks around at will. &quot;Resources&quot;
+    (discrete data blocks such as menu definitions, icons, even code segments, all
+    with static content IIRC) could even be freed entirely, then reloaded from floppy
+    disk when needed again.<p>To make this work, your code would lock a handle before
+    dereferencing it into a pointer to the memory block, then unlock it when finished
+    accessing it. As an application developer it didn&#x27;t really feel like a burden
+    or hassle, just another minor thing to remember, and it did the job.<p>I have
+    my doubts as to how this approach would scale to the larger and more complex software
+    of today, but it would be an interesting experiment.<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Classic_Mac_OS_memory_management"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Classic_Mac_OS_memory_manageme...</a><p>EDIT:
+    The Mac&#x27;s memory API was a bit more complex than I remembered. But it was
+    all part of being a Mac developer back then - <i>everything</i> on the Mac was
+    new and different. For many of us, it felt like the future had arrived. (Maybe
+    not so much the case for those coming from LISP machines and the like).<p><a href="https:&#x2F;&#x2F;archive.org&#x2F;details&#x2F;inside-macintosh-1992-1994&#x2F;1992-memory&#x2F;mode&#x2F;2up"
+    rel="nofollow">https:&#x2F;&#x2F;archive.org&#x2F;details&#x2F;inside-macintosh-1992-1994&#x2F;1992-...</a>'
+  score: 0
+  posted_at: '2026-11-03T19:07:12Z'
+- id: '50356818'
+  parent_id: '50352767'
+  author: Conscat
+  text: I made a real attempt to program this way in my C++ project (largely due to
+    this article), and personally I found it extremely cumbersome because you have
+    to carry the owner of this resource everywhere you want to use the handle. That
+    itself can worsen the performance when it&#x27;s in different functions, it made
+    generic programming hard and such code has to be more template heavy, and it was
+    difficult to refactor.<p>But this was a very low level project, and I suspect
+    Floooh was probably thinking more of end-user applications.
+  score: 0
+  posted_at: '2026-11-03T19:18:50Z'
+- id: '50356972'
+  parent_id: '50356608'
+  author: lomereiter
+  text: It&#x27;s not just memory savings, it&#x27;s also about CPU cache. A frequently
+    accessed tree&#x2F;graph-like data structure can fit into L2&#x2F;L3 cache so
+    much easier if it uses 32-bit offsets instead of pointers.
+  score: 0
+  posted_at: '2026-11-03T19:29:53Z'
+- id: '50357204'
+  parent_id: '50356645'
+  author: michaelcampbell
+  text: thanks for the link(s); &quot;Inside Macintosh&quot; was indeed the set of
+    books&#x2F;folders I had.  Shortly after I bought those, I moved from one state
+    to another and of course the box I packed those in was the one box that got lost
+    in the move =(
+  score: 0
+  posted_at: '2026-11-03T19:49:48Z'
+- id: '50357245'
+  parent_id: '50352767'
+  author: nickwanninger
+  text: 'My PhD thesis is on this topic, and I had an ASPLOS paper on handle based
+    memory support in unmanaged languages (C&#x2F;C++) through LLVM a few years ago:
+    <a href="https:&#x2F;&#x2F;nickw.io&#x2F;papers&#x2F;asplos24-alaska.pdf" rel="nofollow">https:&#x2F;&#x2F;nickw.io&#x2F;papers&#x2F;asplos24-alaska.pdf</a><p>The
+    overhead we saw there is suprisingly just from instruction and branch overhead
+    from using software handles - I have ongoing work to do it in hardware and the
+    overheads are <i>much</i> lower.'
+  score: 0
+  posted_at: '2026-11-03T19:52:43Z'
+- id: '50357720'
+  parent_id: '50355580'
+  author: ex-aws-dude
+  text: Also something not discussed is that you kind of want handles anyway for serializing
+    objects that reference eachother
+  score: 0
+  posted_at: '2026-11-03T20:27:52Z'
+- id: '50357824'
+  parent_id: '50352767'
+  author: boricj
+  text: 'That&#x27;s basically what I&#x27;ve done at work on my embedded project.<p>Object
+    pools, with indices and generations. Way, way easier than meddling with raw pointers,
+    cheaper than shared_ptr&#x2F;weak_ptr and no clean-up required when deleting stuff
+    because the stored generation won&#x27;t match the new object&#x27;s generation.
+    You can even make that default-constructible if you increment the generation on
+    instantiation too (so that only even generations are alive) and hide it all behind
+    high-level abstractions with C++.<p>Though my knowledge of these techniques come
+    from 2000s video game architectures, as games like GTA: Vice City are known to
+    use it.'
+  score: 0
+  posted_at: '2026-11-03T20:37:06Z'
+- id: '50358324'
+  parent_id: '50357245'
+  author: nostrademons
+  text: 'Note that the terminology in this article is somewhat non-standard.  I usually
+    think of a handle as a pointer-to-a-pointer: it adds another level of indirection
+    so that memory allocator can move objects in memory without needing knowledge
+    of all outstanding pointers.  IIRC the classic Mac Toolbox (~1990) used them extensively,
+    and that concept seems to be what your Ph.D thesis is about.<p>The objects discussed
+    in this article would probably be better called &quot;descriptors&quot;.  They&#x27;re
+    very much analogous to file descriptors in UNIX: the API returns an integer index
+    into a table, which contains the actual data being referenced.  The memory address
+    of the table or its members remains opaque to calling code, and there is no way
+    to access outside the bounds of the table.'
+  score: 0
+  posted_at: '2026-11-03T21:17:42Z'
+- id: '50358803'
+  parent_id: '50356818'
+  author: whizzter
+  text: Sounds like a misunderstanding&#x2F;misusage? I&#x27;m thinking that the handles
+    are to be opaque indicies, think typed variation of void pointers or filehandles
+    in classic C api&#x27;s. Thus, the handle is subsystem specific and it owns _all_
+    resources of a type, thus you&#x27;re not meant to know or be able to send the
+    &quot;owner&quot;, it&#x27;s merely a way to have a reference to something you
+    use.
+  score: 0
+  posted_at: '2026-11-03T21:58:36Z'
+- id: '50359212'
+  parent_id: '50352767'
+  author: peter_d_sherman
+  text: The most popular program of all time which used the concept of &quot;Handles
+    are the better pointers&quot; -- is&#x2F;was the Microsoft Windows series of operating
+    systems (from a little company called Microsoft, in Seattle).<p>You have have
+    heard of it (or them!)<p>You see, in that OS, individual windows (as GUI elements
+    and &quot;Operating System Objects&quot;) were not pointers, but <i>Handles!</i><p>Every
+    other OS-controlled object (Bitmaps, Brushes, Fonts, Device Contexts, etc.) were
+    also <i>Handles!</i><p>You see, Application Programmers (for normal applications,
+    not Ring 0 device drivers) -- were <i>never</i> given direct pointer access to
+    OS internal data structures!<p>Instead the OS handed out <i>Handles</i> for different
+    OS-managed objects to application code that asked for them, allocated and managed
+    the memory they used during their lifetime, and disposed of the memory so allocated
+    when the application using them had completed or terminated.<p>Unix&#x2F;Linux
+    is similar -- except that the application programmer typically gets what&#x27;s
+    called a &quot;File Handle&quot; (because &quot;everything&#x27;s a file&quot;
+    under Unix&#x2F;Linux...)<p>But generally speaking (and yes, there are exceptions
+    like mmap() on Unix&#x2F;Linux and ring-0 drivers on Windows) the application
+    programmer never manages the memory allocation or disposal themselves, they never
+    use direct pointers for these objects, they go through an OS proxy to that OS
+    structure, that proxy is called a &quot;handle&quot;, and it moves the proper
+    responsibility for memory allocation&#x2F;deallocation of the resource to the
+    OS, away from the programmer.<p>Compare and contrast this with the use of handles
+    (as proxies) and the concept of &quot;Encapsulation&quot; (from Object Oriented
+    programming, but equally applicable here) in codebases where you have a central
+    Senior developer who writes the central code in a language like C or C++, full
+    of pointers, complex data structures, complex dynamic memory allocation&#x2F;deallocation,
+    etc., and you have regular developers who write code via the use of Handles around
+    that central code, i.e., that central code does not expose pointers or direct
+    memory -- instead it exposes an API or functions where regular programmers request
+    handles, and subsequently pass the handles with additional API calls to the central
+    codebase to gain functionality for whatever object or objects are represented
+    by the handle.<p>(You can also compare this to obtaining a token&#x2F;cookie from
+    a web API, then passing that token&#x2F;cookie on subsequent requests with different
+    additional parameters to different endpoints on a single website&#x27;s API to
+    gain different functions related to the use of the back end object or objects
+    that that token&#x2F;cookie is related to...)<p>Also, I should point out that
+    while replacing pointers with handles in code may make a programming a little
+    bit slower, it also allows the handle allocation code to save&#x2F;update a list
+    of allocations.  Hybrid code could replace pointer operations with handle allocation
+    in a test&#x2F;debug codebase, then replace it again with native pointer operations
+    in a release codebase (faster, once all the bugs are worked out).  A handle allocator
+    is a powerful tool to check for memory allocation errors in code if it&#x27;s
+    programmed correctly...  Allocate the same handle twice -- have your handle allocation
+    code can check for that, and raise an immediate exception!  Forget to free it
+    at the end of use?  Raise an exception for that!  It&#x27;s a great way to find
+    bugs in pointer code!<p>Anyway, great article!<p>Related:<p><a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Encapsulation_(computer_programming)"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Encapsulation_(computer_progra...</a><p><a
+    href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Pointer_(computer_programming)"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Pointer_(computer_programming)</a>
+  score: 0
+  posted_at: '2026-11-03T22:35:09Z'
+- id: '50359901'
+  parent_id: '50359212'
+  author: lioeters
+  text: Lovely long-form comment, a joy to read. The way you explain the concept of
+    &quot;handles&quot; as an abstraction useful in a whole class of situations.<p>&gt;
+    Any problem in computer science can be solved with another level of indirection.<p><a
+    href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Fundamental_theorem_of_software_engineering"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Fundamental_theorem_of_softwar...</a><p>An
+    entire operating system conceptualized as a hierarchy of handles.<p>- Windows,
+    GUI elements, &quot;OS objects&quot;<p>- Bitmaps, Brushes, Fonts, Device Contexts<p>-
+    File system namespace - Objects as file descriptors - <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Everything_is_a_file"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Everything_is_a_file</a><p>-
+    Memory handles to manage allocation and freeing without directly handling pointers<p>-
+    APIs, token&#x2F;cookie, authenticated requests - and functions<p>It&#x27;s about
+    encapsulation, and designing the <i>interface between objects</i>.<p>How handles
+    are like functions, makes me think. A function is a form of indirection, and it
+    can be seen as a handle or interface with defined types of inputs and outputs.<p>And
+    the useful of handles&#x2F;proxies in testing. Yes, it solves the same question
+    as &quot;dependency injection&quot; but in a more functional style. You pass in
+    a handle with well-defined types of vaues, which can be treated the same way by
+    functions whether the handle operates with a local test database or the actual
+    production one. It&#x27;s being able to have multiple implementations, or instances,
+    with the same interface.
+  score: 0
+  posted_at: '2026-11-03T23:57:49Z'
+- id: '50361327'
+  parent_id: '50359901'
+  author: peter_d_sherman
+  text: '&gt;Lovely long-form comment, a joy to read. The way you explain the concept
+    of &quot;handles&quot; as an abstraction useful in a whole class of situations.<p>Well
+    thank you very much!  I appreciate the kind sentiment!<p>&gt; Any problem in computer
+    science can be solved with another level of indirection.<p>Indeed!  I forgot to
+    include this part when writing, it was &quot;at the tip of my consciousness&quot;
+    but I couldn&#x27;t recall that exact text exactly, so I didn&#x27;t include it
+    -- but you nailed it!:<p>&gt;<a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Fundamental_theorem_of_software_engineering"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Fundamental_theorem_of_softwar...</a><p>&gt;An
+    entire operating system conceptualized as a hierarchy of handles.<p>It&#x27;s
+    quite the concept isn&#x27;t it!<p>Incidentally, if you look at the Assembly compiler
+    output of any &quot;Object-Oriented&quot; programming language (i.e., C++, ObjectPascal,
+    etc.), you will notice that it is generating what looks like normal Assembly functions
+    for non-Object-Oriented programming languages (C, Pascal, etc.), <i>except that</i>
+    each function is getting passed an additional first parameter (typically as EAX
+    on 32-bit x86 systems, RAX on 64-bit x86 systems), and that first parameter is
+    actually a pointer to the &quot;Object&quot; in memory (pointer to a data structure
+    that comprises the &quot;Object&quot; in memory -- since Assembler has no concept
+    of higher-level programming language Objects!), but it&#x27;s function is to allow
+    a flat traditional function to operate on the data (and call associated related
+    &quot;object&quot; functions (via another level of pointer indirection)) -- well,
+    it&#x27;s the same <i>principle</i> as a Handle (that of &quot;Indirection&quot;:
+    <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Indirection" rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Indirection</a>)
+    in effect!<p>&gt;It&#x27;s about encapsulation, and designing the interface between
+    objects.<p>Indeed!<p>&gt;How handles are like functions, makes me think. A function
+    is a form of indirection, and it can be seen as a handle or interface with defined
+    types of inputs and outputs.<p>Exactly!<p>&gt;And the useful of handles&#x2F;proxies
+    in testing. Yes, it solves the same question as &quot;dependency injection&quot;
+    but in a more functional style.<p>You get &quot;dependency injection&quot; virtually
+    for free!<p>&gt;You pass in a handle with well-defined types of vaues, which can
+    be treated the same way by functions whether the handle operates with a local
+    test database or the actual production one. It&#x27;s being able to have multiple
+    implementations, or instances, with the same interface.<p>Yes!  And (added bonus!)
+    it <i>decouples</i> the handle using program (client) from the handle serving
+    program (server!).  That is, the code is not as strongly linked &quot;bind&#x2F;bound
+    together&quot; as code using raw pointers, and can be separated across boundaries
+    (across processes on a single machine, across the internet on multiple machines)
+    if the data is <i>marshalled</i> (fancy term for if the data of the variable which
+    contains the integer value for the Handle is moved from point A to point B, wherever
+    point A and B are, i.e., HTTP(S) request + JSON or XML or BSON or other structured
+    data exchange format...)<p>Anyway, thank you again for your kind sentiments!'
+  score: 0
+  posted_at: '2026-11-04T03:53:41Z'
+- id: '50361792'
+  parent_id: '50352767'
+  author: Panzerschrek
+  text: Nice approach! I did something similar in my recent project (even if it was
+    not C++). But I didin&#x27;t bother handling overflow of generation counter, since
+    for my purposes 32 bits were more than enough.
+  score: 0
+  posted_at: '2026-11-04T05:30:08Z'
+- id: '50361836'
+  parent_id: '50355177'
+  author: Panzerschrek
+  text: "&gt; First, you&#x27;re obviously paying indirection tax on EVERY lookup<p>It&#x27;s
+    not true for typical use-cases, when objects aren&#x27;t processed one by one,
+    but in bulk.<p>&gt; Next, you have type bloat<p>What&#x27;s the problem? Do you
+    pay a special tax each time you need create a new type?<p>&gt; Prepare for a lot
+    of this<p>That&#x27;s not how it&#x27;s done in C++. You typically have a template
+    for handle types, so that <i>PlayerHandle</i> is just <i>Handle&lt;Player&gt;</i>.<p>&gt;
+    Handles are also a lot bigger.<p>The article mentions, that handles are typically
+    smaller than pointers. A pointer is 8 bytes (on 64-bit machines), but handles
+    can be smaller if not so many objects are needed to be created.<p>&gt; Next, you
+    have the issue of resizing your memory array.<p>There is only problematic to resize
+    it down, which is almost never needed.<p>&gt; dozens of arrays<p>&gt; manage the
+    lifespans and scope of all these object pools<p>It&#x27;s not a problem. Each
+    subsystem owns its arrays and destroys them only when the subsystem itself is
+    destroyed."
+  score: 0
+  posted_at: '2026-11-04T05:38:28Z'
+- id: '50364678'
+  parent_id: '50361836'
+  author: program_whiz
+  text: Yes, there are ways to workaround &#x2F; minimize these problems, but again,
+    it mostly works for simple systems (like games).  Sure, if you process everything
+    &quot;in bulk&quot; so that you don&#x27;t have complex lifespans and&#x2F;or
+    indirection, then it is easy.  But if you already have everything &quot;in bulk&quot;
+    and aren&#x27;t worried about lifespans, and already freeing in bulk, why do you
+    need handles again?<p>Same for other responses. Great, you can just implement
+    a lifespan array in every subsystem.  If your sub systems are very simple (e.g.
+    single Entity component is the only thing you&#x27;re allocating in a game, maybe
+    Resource as well), then sure, its simple.   Not sure what it&#x27;s buying you,
+    since you apparently are also freeing all entities and scene elements at once
+    too.  But for a complex system where there are many types of objects (dozens or
+    hundreds), and where lifespans are complex (some short, some long), then having
+    &quot;every system implement its own pool&quot; adds a lot of complexity.  Then
+    not only would you want type-safety with a Handle&lt;Object&gt; for every type
+    of object, but also some kind of affinity for the sub-system which currently manages
+    that lifespan (unless you just have a single Pool for every object type, which
+    re-introduces the lifespan issues).<p>Again, other responses I&#x27;ll lump into
+    &quot;sounds like for simple systems it isn&#x27;t substantially more difficult
+    than pointers&quot;.  I guess if it has a meaningful performance tradeoff, then
+    it might be worth it (where a simple free list or using system malloc would be
+    too expensive).<p>If you say you don&#x27;t need many objects, so counters can
+    be small, and you never need to resize the handles array, so indexes are valid,
+    and you don&#x27;t have lots of object types, and don&#x27;t have lots of subsystems,
+    and lifespans are purely scoped to subsystem lifespans, and don&#x27;t mind type
+    bloat all over your interfaces, then it sounds like handles are a perfect fit.  I&#x27;m
+    trying to imagine what&#x27;s so bad about using pointers in such a simple system,
+    and what we&#x27;re &quot;solving&quot; (e.g. just &amp;memory_array[next_index++]).
+  score: 0
+  posted_at: '2026-11-04T12:30:01Z'
+article:
+archived_at: '2026-11-18T11:17:03Z'

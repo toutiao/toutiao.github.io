@@ -7,11 +7,11 @@ post:
   score: 149
   author: ''
   posted_at: '2026-11-17T14:48:03Z'
-  fetched_at: '2026-11-18T02:45:39Z'
+  fetched_at: '2026-11-18T11:16:16Z'
   article_url: https://www.aikido.dev/blog/java-17-rce-vulnerability-cve-2026-114938
   article_fetch_status: success
-  article_fetched_at: '2026-11-18T02:45:39Z'
-  raw_comment_count: 28
+  article_fetched_at: '2026-11-18T11:16:16Z'
+  raw_comment_count: 30
 comments:
 - id: '50538315'
   parent_id: '50532118'
@@ -263,16 +263,127 @@ comments:
   text: No.
   score: 0
   posted_at: '2026-11-18T02:18:07Z'
+- id: '50541936'
+  parent_id: '50541045'
+  author: tptacek
+  text: Not the comic (that was Calif), but the out-of-process first disclosure.
+  score: 0
+  posted_at: '2026-11-18T04:38:45Z'
+- id: '50543494'
+  parent_id: '50539833'
+  author: iLoveOncall
+  text: All I see is someone writing a series of bullshit and when proven wrong moves
+    the goalpost?
+  score: 0
+  posted_at: '2026-11-18T08:32:52Z'
 article:
   url: https://www.aikido.dev/blog/java-17-rce-vulnerability-cve-2026-114938
-  title: 'Java4Shell Java RCE: Fix & Versions (CVE-2026-114938)'
+  title: 'Java4Shell RCE: Affected Versions & Fix (CVE-2026-114938)'
   fetch_status: success
-  content: "4.7/ **5**\n\nTired of false positives?\L  \nTry Aikido like 100k others.\n\n[\nStart
-    Now\n](https://app.aikido.dev/login)\n\nGet a personalized walkthrough\n\nTrusted
-    by 100k+ teams\n\n[\nBook Now\n](https://www.aikido.dev/book/demo)\n\nScan your
-    app for IDORs and real attack paths\n\nTrusted by 100k+ teams\n\n[\nStart&nbsp;Scanning\n](https://app.aikido.dev/login)\n\nSee
-    how AI pentests your app\n\nTrusted by 100k+ teams\n\n[\nStart Testing\n](https://app.aikido.dev/login)\n\n[\nStart
-    Now\n](https://app.aikido.dev/login)"
+  content: |-
+    # Java4Shell: RCE flaw in OpenJDK's Base64 decoder, with affected versions and fix (CVE-2026-114938)
+
+    ## TL;DR
+
+    - Java4Shell (CVE-2026-114938) is a memory corruption flaw in OpenJDK's Base64 decoder, found by Calif. It can let an attacker run code remotely, sometimes without authentication.
+
+    - Exposure requires an affected Java build, an x86-64 CPU with AVX-512 VBMI, and attacker-controlled data reaching the decoder, according to Red Hat's advisory. ARM64 is not affected.
+
+    - Patch affected runtimes, including those bundled in applications and containers. Oracle has released fixes for Java 17, 21, 25 and 27; check your vendor for its builds.
+
+    - Eclipse Temurin has no confirmed fix yet. Aikido has patched images for Java4Shell (eclipse-temurin:17-jdk, 17-jdk-jammy, 17-jdk-noble, 17-jdk-alpine, 17-alpine-3.24, 21-jdk, 21-jdk-noble and gradle:jdk21), with more on the way. Aikido users can get them from Aikido Images; everyone else can pull them from the public ECR gallery.
+
+    - To find out if you are affected, click "Am I affected?" on the Aikido dashboard.
+
+    ## ‍
+
+    ## Which Java versions and builds are affected?
+
+    - Java 17, 21, 25 and 27 builds from every vendor are affected until that vendor ships a fixed version. For Oracle Java SE, that means any release before 17.0.21.1, 21.0.13.1, 25.0.5.1 or 27.0.1.1. Standard Java 8 and 11 are not affected. The exception is Oracle’s Java SE 8 Enterprise Performance Pack build (8u511-perf), which Oracle lists as affected.
+
+    - Exposure needs an x86-64 CPU with AVX-512 VBMI (Intel Xeon from Ice Lake, AMD Zen 4 and newer), a JVM not started with -XX:UseAVX=2, and attacker-controlled Base64 data reaching java.util.Base64.Decoder. ARM64 is not affected.
+
+    - Oracle's advisory names Oracle Java SE. Other vendors number their builds differently, so check your vendor's advisory for the fixed build.
+
+    Java builds to check:
+
+    - Oracle Java SE (JDK and JRE)
+
+    - Oracle GraalVM for JDK and GraalVM Enterprise Edition
+
+    - OpenJDK builds from other vendors, such as Eclipse Temurin, Amazon Corretto, Azul Zulu, the Microsoft Build of OpenJDK and the Red Hat build of OpenJDK
+
+    - Linux distribution packages such as openjdk-17
+
+    - JDKs bundled inside applications and container base images
+
+    ## How to fix Java4Shell
+
+    - Update to the fixed build for your Java line. Oracle's fixes are 17.0.21.1, 21.0.13.1, 25.0.5.1 and 27.0.1.1.
+
+    - Use your vendor's fixed build. Amazon Corretto has released fixed builds, listed in the table above. Red Hat is expediting fixes for RHEL 8, 9 and 10 and its OpenJDK builds. If you run Zulu, Microsoft's build or a distribution package, check that vendor's advisory, since build numbers differ.
+
+    - Running Eclipse Temurin? There is no confirmed Temurin fix yet. Aikido has patched images for Java4Shell, listed in the table above. Aikido users can get them from Aikido Images; everyone else can pull them from the public ECR gallery.
+
+    - If you cannot patch yet, disable the vulnerable optimization. Start affected JVMs with -XX:-UseBASE64Intrinsics. Applications that decode a lot of Base64 may run slower. On x86-64 only, -XX:UseAVX=2 also works, as Red Hat recommends; ARM64 JVMs do not recognize it and will not start. Neither replaces the patch.
+
+    - Not sure where you run Java? See the next section.
+
+    ## Am I affected by Java4Shell?
+
+    - You are in scope if you run Java 17, 21, 25 or 27 on x86-64 hardware with AVX-512 VBMI, before the fixed version. That includes bundled JDKs, container base images and products that ship their own Java.
+
+    - To find out if you are affected, click "Am I affected?" on the Aikido home page. It checks your environment for this vulnerability, so you do not need to track down every Java runtime by hand.
+
+    - Start with internet-facing services. Anything that accepts Base64 from outside, such as login headers or file uploads, is the likeliest to be hit.
+
+    ## What is Java4Shell (CVE-2026-114938)?
+
+    Java4Shell is the names given to CVE-2026-114938. It is a memory corruption flaw in the x86-64 Base64 decoder in OpenJDK's HotSpot runtime. The optimized decoder miscalculates the store mask for the padded tail of its input, so it writes past the end of the output buffer. The bug sits in the JIT-compiled fast path behind java.util.Base64.Decoder, so any application that decodes attacker-controlled Base64, such as login headers or file uploads, can expose it.
+
+    Calif reports remote code execution against default configurations of Keycloak, Atlassian Jira and Confluence, JFrog Artifactory, Jenkins and PingFederate without authentication, and against Apache Kafka, Solr, Elasticsearch, Gerrit and Spinnaker after authentication. It says there is no universal exploit, because each target needs its own chain. Other researchers have so far reproduced crashes and memory leaks rather than code execution.
+
+    Calif rates the flaw 9.2 (Critical) under CVSS 4.0. Oracle scores it 8.1 under CVSS 3.1, with high attack complexity.
+
+    ## Is Java4Shell being exploited?
+
+    As of November 18, we have seen no confirmed reports of exploitation in the wild, and the flaw is not listed in CISA's Known Exploited Vulnerabilities catalog. Calif's public proof of concept triggers the memory corruption but does not give code execution, and it is holding back its product-specific exploits until people have had time to upgrade. Exploitation can follow quickly once working code circulates, so patch now. We will update this post if that changes.
+
+    ## FAQ
+
+    What is Java4Shell? The name given to CVE-2026-114938, a memory corruption flaw in OpenJDK's Base64 decoder that can lead to remote code execution, sometimes without authentication.
+
+    Which Java versions are affected? Java 17, 21, 25 and 27 builds from every vendor, until each ships a fix. For Oracle Java SE, that is any release before 17.0.21.1, 21.0.13.1, 25.0.5.1 or 27.0.1.1. Standard Java 8 and 11 are not affected.
+
+    Has Oracle released a patch? Yes. Oracle released fixes on November 17, 2026: 17.0.21.1, 21.0.13.1, 25.0.5.1 and 27.0.1.1. Amazon Corretto has also published fixed builds, and Red Hat is expediting fixes for RHEL.
+
+    Is Java4Shell being exploited? We have seen no confirmed reports of exploitation as of November 18.
+
+    Is there a workaround? Yes. Start affected JVMs with -XX:-UseBASE64Intrinsics, or with -XX:UseAVX=2 on x86-64 only. Neither replaces the patch.
+
+    Is ARM64 affected? No. Only x86-64 CPUs with AVX-512 VBMI are affected, such as Intel Xeon from Ice Lake onward and AMD Zen 4 or newer.
+
+    Are Java 8 and 11 affected? Standard Java 8 and 11 are not. The exception is Oracle's Java SE 8 Enterprise Performance Pack build (8u511-perf).
+
+    How do I know if I am affected? Click "Am I affected?" on the Aikido home page.
+
+    ‍
+
+    Trusted by 100k+ teams
+
+    Trusted by 100k+ teams
+
+    Trusted by 100k+ teams
+
+    https://www.aikido.dev/blog/java-17-rce-vulnerability-cve-2026-114938
+
+    ## Recently Added
+
+    ### Two malicious agent-framework releases hit PyPI in 33 minutes
+
+    ### Critical Apache HTTP Server vulnerability can allow remote code execution (CVE-2026-119618)
+
+    ### wfx-loot campaign pushes CI secret stealer to tens of thousands of repositories
   error:
-  fetched_at: '2026-11-18T02:45:39Z'
-archived_at: '2026-11-18T02:45:44Z'
+  fetched_at: '2026-11-18T11:16:16Z'
+archived_at: '2026-11-18T11:16:36Z'
