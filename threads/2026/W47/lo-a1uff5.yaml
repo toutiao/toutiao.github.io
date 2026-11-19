@@ -5,14 +5,14 @@ post:
   title: Java4Shell is a reason to use Java
   url: https://mccue.dev/pages/11-18-26-java4shell
   hn_url: https://lobste.rs/s/a1uff5
-  score: 26
+  score: 30
   author: emccue
   posted_at: '2026-11-18T14:21:42Z'
-  fetched_at: '2026-11-19T02:20:26Z'
+  fetched_at: '2026-11-19T11:14:52Z'
   article_url: https://mccue.dev/pages/11-18-26-java4shell
   article_fetch_status: success
-  article_fetched_at: '2026-11-19T02:20:28Z'
-  raw_comment_count: 10
+  article_fetched_at: '2026-11-19T11:14:54Z'
+  raw_comment_count: 14
   tags:
   - java
   - security
@@ -34,13 +34,13 @@ comments:
   text: |-
     The point seems to be that entire classes of security violations generally do not exist in Java (which is true), not that security violations do not exist in Java.
     It seems a reasonable point.
-  score: 16
+  score: 21
   posted_at: '2026-11-18T15:29:13Z'
 - id: lo-klkwhl
   parent_id: '0'
   author: orib
   text: I'm assuming this person has never heard of the JNI.
-  score: 3
+  score: 2
   posted_at: '2026-11-18T15:52:27Z'
 - id: lo-paecat
   parent_id: '0'
@@ -48,7 +48,7 @@ comments:
   text: The native code protections apply to JNI. The difference between the JVM and
     other ecosystems is that you will need to opt-in even if the JNI comes from a
     transitive dependency.
-  score: 12
+  score: 14
   posted_at: '2026-11-18T16:07:17Z'
 - id: lo-tc9amd
   parent_id: '0'
@@ -59,7 +59,7 @@ comments:
     then, as far as I know Go has had much fewer than Java. Honestly the number of
     CVEs that relate to both native and library serialization points to a deficiency
     in Java the platform.
-  score: 7
+  score: 10
   posted_at: '2026-11-18T17:31:36Z'
 - id: lo-wcjde7
   parent_id: '0'
@@ -70,7 +70,7 @@ comments:
     Is this comparision normalized to account for one being 3x older, but especially that it is a vastly more worthwhile target due to it being so much more popular, and how heavily it is used in industry, especially so in finance, web backends etc?
     Because sure Linux desktop may have less CVEs than Windows, but let's be honest, it's not because it would be secure, very far from that.
     And a bit snarkily: go is not a memory safe language, it has a real in the language causing ordinary safe go code to segfault. It's not practical to exploit, but still.
-  score: 3
+  score: 5
   posted_at: '2026-11-18T19:53:58Z'
 - id: lo-zqpxo1
   parent_id: '0'
@@ -86,7 +86,7 @@ comments:
   text: |-
     I was using segfault sloppily.
     It's the slice data structure that can tear under data races and one can read/write past the allocated region. So it's not a "controlled explosion*.
-  score: 3
+  score: 6
   posted_at: '2026-11-18T20:51:44Z'
 - id: lo-8qfbyu
   parent_id: '0'
@@ -111,8 +111,64 @@ comments:
     circles, and I am tired of reading it. "Oh, there are exploits that don't have
     to do with memory safety, so why care about memory safety?" is really not serious
     at all, no matter how much you pepper it up to seem like a serious point of contention.
-  score: 1
+  score: 3
   posted_at: '2026-11-19T02:03:30Z'
+- id: lo-wtfuhi
+  parent_id: '0'
+  author: Pentlander
+  text: I addressed this in a reply to another comment. What I don’t understand is
+    the argument for Java specifically over other memory safe languages, especially
+    given Java has had some high profile RCEs.
+  score: 1
+  posted_at: '2026-11-19T06:05:45Z'
+- id: lo-8ubfu8
+  parent_id: '0'
+  author: emccue
+  text: |-
+    Lets compare Java to a few other options then.
+    Say we have apps in
+
+    Python
+    Go
+    Java
+
+    And all of them have a transitive dependency tree of non-trivial depth.
+    When you import somelib and call somelib.func(), might that call into native code? Probably. Python itself is slow and the ecosystem has tons of C extensions to deal with this.
+    Go is a similar story. There is less reason to use CGO, but if you import "github.com/somebody/somelib" that might pull in some native code.
+    Now for Java.
+    In Java 8 java -jar app.jar has the same problem as Python and Go. Anything can be doing JNI and thats a potential problem.
+    In Java 25 java -jar app.jar will print a warning at runtime if native code is called. At some point soon this warning will become a hard error.
+    To address the warning you need to add java --enable-native-access=ALL-UNNAMED -jar app.jar, which says "anything in the jar can do native stuff." But if you are conscious of these issues you can always split things up into
+    java -p <jars> ... MainClass. And in this configuration to use native code you need to write java -p <jars> --enable-native-access=somelib ... MainClass.
+
+    the argument for Java specifically over other memory safe languages
+
+    So the argument boils down to "you won't end up running native code by accident and, when you do, you can limit that superpower to what actually needs it and audit appropriately."
+
+    The tangent about speed is just to say "and you probably won't have many libraries that need native code anyways." Which is the realm Go operates in too, I think.
+    The rest of the module system protections are also cool. Put code in a module and you have a much stronger guarantee than many languages can provide about whether that code "definitely does what it says."
+    This is important when you get nonsense like gadget chain attacks. You can limit what a bug in one part of the program can do to code in another. In the Java world we are kinda dismissive of it, but if we're going to start living in a "AI finds any critical security flaws in hours" world, that level of confidence that "No, assuming the VM is written right, this will not happen" is valuable.
+  score: 1
+  posted_at: '2026-11-19T06:53:44Z'
+- id: lo-v5tol6
+  parent_id: '0'
+  author: david_chisnall
+  text: This is actually one of the reasons to prefer Java to other memory-safe languages.
+    Java has an explicit two-worlds abstract machine, where safe and unsafe code live
+    in different places. Ten years ago, I showed that you can use CHERI to sandbox
+    the native JNI code and ensure the integrity of the Java code even in the presence
+    of arbitrary bugs in the native code (and use Java attributes to provide isolated
+    sandboxes for different native things). Other folks have done the same with NaCl
+    and other techniques. This is much easier with Java than, say, Rust where unsafe
+    Rust (and FFI) can directly access Rust objects.
+  score: 4
+  posted_at: '2026-11-19T09:19:05Z'
+- id: lo-drt2wm
+  parent_id: '0'
+  author: ptman
+  text: CGO_ENABLED=0 go build ...
+  score: 1
+  posted_at: '2026-11-19T09:30:18Z'
 article:
   url: https://mccue.dev/pages/11-18-26-java4shell
   title: Java4Shell is a reason to use Java
@@ -163,4 +219,4 @@ article:
     about (the module system) that is Java specific.\n\n* * *\n\n#### [\\<- Index](/)"
   error:
   fetched_at: '2026-11-18T20:06:50Z'
-archived_at: '2026-11-19T02:20:28Z'
+archived_at: '2026-11-19T11:14:54Z'

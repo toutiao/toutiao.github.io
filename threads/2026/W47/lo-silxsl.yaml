@@ -5,17 +5,54 @@ post:
   title: The Magic of Partial Evaluation
   url: https://jimmyhmiller.com/magic-of-partial-evaluation
   hn_url: https://lobste.rs/s/silxsl
-  score: 21
+  score: 31
   author: abhin4v
   posted_at: '2026-11-18T17:30:14Z'
-  fetched_at: '2026-11-19T02:20:26Z'
+  fetched_at: '2026-11-19T11:14:52Z'
   article_url: https://jimmyhmiller.com/magic-of-partial-evaluation
   article_fetch_status: success
-  article_fetched_at: '2026-11-19T02:20:29Z'
-  raw_comment_count: 0
+  article_fetched_at: '2026-11-19T11:14:55Z'
+  raw_comment_count: 4
   tags:
   - plt
-comments: []
+comments:
+- id: lo-yngsof
+  parent_id: '0'
+  author: hmry
+  text: |-
+    What kind of code is suitable for partial evaluation? I would imagine anything that uses late binding or monkey patching would be out, and also anything that dynamically dispatches via global state (like calling methods on global variables).
+    So I'm quite surprised / incredulous that Javascript would work...
+  score: 2
+  posted_at: '2026-11-19T03:23:20Z'
+- id: lo-u6nfrs
+  parent_id: '0'
+  author: aardvark179
+  text: |-
+    The GraalVM family of language implementations are all based on partial evaluation. You can get really good performance out of dynamic languages using these techniques if you can reliably detect when things have been invalidated.
+    Depending on the context that might be, “Somebody touched a prototype,” or you might separate parts of the process of method lookup and evaluation and try to specialise on the resolved method.
+    Working on TruffleRuby was one of the most fun things I’ve done in my career, some things that are normally the hardest to optimise were beautifully simple.
+  score: 3
+  posted_at: '2026-11-19T07:42:45Z'
+- id: lo-pfgsgy
+  parent_id: '0'
+  author: tentacloids
+  text: You can not partially evaluate potentially un-pure constructs like that to
+    effectively treat them as part of the external world (the input). That's how I/O
+    functions would be treated. You'd have to, anyway; you can't partially evaluate
+    any code not explicitly given to the partial evaluator.
+  score: 2
+  posted_at: '2026-11-19T08:41:47Z'
+- id: lo-pbnahu
+  parent_id: '0'
+  author: mordae
+  text: |-
+    Calling through pointer cannot be collapsed unless you manage to provably evaluate all mutations of said pointer at compile time. But only if the pointer can truly hold an arbitrary value.
+    If you can prove that are e.g. two distinct values the pointer can point to you can specialize the rest of the program for both of those instead and branch into correct "world" instead of keeping calling through the pointer. This obviously leads to an explosion of combinations if done eagerly.
+    With some good heuristics, if you can e.g. spot program selecting a different SIMD backend and then just keeps using it, specializing for each variant would be a huge boost for performance.
+    Sometimes you don't have enough information at the compile time. E.g. you do not know how hot the pointer you'd be calling through really is. Could be once at startup. Could be 100k times per second. If you run the program interpreted (or instrumented) on typical workload, you can determine how hot the loops actually are and thus use this profile to guide your specializations.
+    This allows you to see through e.g. the monkey patching for your typical workload. Profile says the program runs for a while using one pointer but then switches to another pointer and then heavily uses that. So you retain the call-through-the-pointer situation but also specialize for the monkey-patched situation that actually carries most of the workload and reap the performance benefits.
+  score: 1
+  posted_at: '2026-11-19T10:43:11Z'
 article:
   url: https://jimmyhmiller.com/magic-of-partial-evaluation
   title: The Magic of Partial Evaluation — Jimmy Miller
@@ -121,4 +158,4 @@ article:
     = a.charCodeAt(0);\n          break a;\n"
   error:
   fetched_at: '2026-11-19T02:20:29Z'
-archived_at: '2026-11-19T02:20:29Z'
+archived_at: '2026-11-19T11:14:55Z'
