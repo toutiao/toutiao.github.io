@@ -1,0 +1,112 @@
+---
+post:
+  id: lo-pqyuhk
+  source: lobsters
+  title: PostgreSQL 19 Released
+  url: https://www.postgresql.org/about/news/postgresql-19-released-3449/
+  hn_url: https://lobste.rs/s/pqyuhk
+  score: 26
+  author: bio
+  posted_at: '2026-11-19T15:12:08Z'
+  fetched_at: '2026-11-19T20:06:30Z'
+  article_url: https://www.postgresql.org/about/news/postgresql-19-released-3449/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:31Z'
+  raw_comment_count: 1
+  tags:
+  - databases
+comments:
+- id: lo-g46mbq
+  parent_id: '0'
+  author: cinemast
+  text: The VACUUM improvements feel like an early Christmas present.
+  score: 9
+  posted_at: '2026-11-19T16:03:10Z'
+article:
+  url: https://www.postgresql.org/about/news/postgresql-19-released-3449/
+  title: 'PostgreSQL: PostgreSQL 19 Released!'
+  fetch_status: success
+  content: "## Quick Links\n\n- [About](/about/)\n- [Governance](/about/governance/)\n-
+    [Policies](/about/policies/)\n- [Feature Matrix](/about/featurematrix/)\n- [Donate](/about/donate/)\n-
+    [History](/docs/current/history.html)\n- [Sponsors](/about/sponsors/)\n  - [Contributing](/about/contributing/)\n
+    \ - [Financial](/about/financial/)\n  - [Servers](/about/servers/)\n- [Latest
+    News](/about/newsarchive/)\n- [Upcoming Events](/about/events/)\n  - [Past events](/about/eventarchive/)\n-
+    [Press](/about/press/)\n- [Licence](/about/licence/)\n\n \n\n# PostgreSQL 19 Released!\n\nPosted
+    on **2026-11-19** by PostgreSQL Global Development Group\n\n PostgreSQL Project\n\nNovember
+    19, 2026 - The [PostgreSQL Global Development Group](https://www.postgresql.org)today
+    announced the release of [PostgreSQL 19](https://www.postgresql.org/docs/19/release-19.html),
+    the latest version of the world's most advanced open source database.\n\nMission-critical
+    usage of PostgreSQL continues to rapidly rise, and PostgreSQL 19 responds to this
+    by simplifying both administration and development for these workloads at scale.
+    This release introduces the[`REPACK (CONCURRENTLY)`](https://www.postgresql.org/docs/19/sql-repack.html)command
+    so users can optimize tables for their current workload without disruption to
+    ongoing operations. PostgreSQL 19 gives users better control over plan stability
+    and query performance with the new [`pg_plan_advice`](https://www.postgresql.org/docs/19/pgplanadvice.html)extension.
+    Developers will find many delightful features in this release, from support for
+    \"read-your-writes\" consistency on standbys to \"get or create\" behavior that
+    saves a network round trip.\n\n\"For over 30 years, the global open source community
+    has built PostgreSQL into a database that organizations trust with their most
+    critical data,\" said Jonathan Katz, a member of the PostgreSQL core team. \"PostgreSQL
+    19 continues that commitment to reliability, giving users new ways to manage their
+    workloads without disruption and to build applications that span multiple systems.\"\n\nPostgreSQL,
+    an innovative data management system known for its reliability, robustness, and
+    extensibility, benefits from 30 years of open source development from a global
+    developer community and has become the preferred open source relational database
+    for organizations of all sizes.\n\n### Simplifying workload management\n\nTables
+    that receive many updates and deletes can build up unused space, known as \"bloat,\"
+    which can also significantly impact query performance. The`VACUUM FULL` and `CLUSTER`
+    commands were previously used to handle this, but had tradeoffs, including preventing
+    access to the table until the cleanup finished. PostgreSQL 19 introduces the [`REPACK`](https://www.postgresql.org/docs/19/sql-repack.html)command,
+    which reclaims this space and can reorder a table's data to match an index, and
+    with `REPACK (CONCURRENTLY)`, can do so without blocking reads or writes. `REPACK`
+    replaces the `VACUUM FULL` and `CLUSTER` commands, both of which remain available
+    for compatibility.\n\nThe PostgreSQL query planner usually picks an efficient
+    plan for each query, but the plan can change as your data changes, and sometimes
+    the new plan is slower. PostgreSQL 19 adds the [`pg_plan_advice`](https://www.postgresql.org/docs/19/pgplanadvice.html)extension,
+    which allows stabilization of plan choices and the ability to experiment with
+    different plans using the \"plan advice\" mini-language. The companion[`pg_stash_advice`](https://www.postgresql.org/docs/19/pgstashadvice.html)extension
+    stores advice and automatically applies it to queries based on their query identifier,
+    so you can fix a slow plan without changing your application.\n\nPostgreSQL 19
+    also helps [autovacuum](https://www.postgresql.org/docs/19/routine-vacuuming.html#AUTOVACUUM)keep
+    up on busy systems. Autovacuum can now vacuum indexes using parallel workers,
+    controlled by the new[`autovacuum_max_parallel_workers`](https://www.postgresql.org/docs/19/runtime-config-vacuum.html#GUC-AUTOVACUUM-MAX-PARALLEL-WORKERS)setting,
+    and uses a new [scoring system](https://www.postgresql.org/docs/19/routine-vacuuming.html#AUTOVACUUM-PRIORITY)to
+    decide which tables to process first. Queries that read a table can now automatically
+    mark pages as all-visible in the [visibility map](https://www.postgresql.org/docs/19/routine-vacuuming.html#VACUUM-FOR-VISIBILITY-MAP)
+    during execution, reducing the work that future vacuums need to do. Additionally,[`vacuumdb
+    --analyze-only`](https://www.postgresql.org/docs/19/app-vacuumdb.html)now analyzes
+    partitioned tables when no tables are specified.\n\nThis release adds new views
+    for monitoring workloads, including[`pg_stat_lock`](https://www.postgresql.org/docs/19/monitoring-stats.html#PG-STAT-LOCK-VIEW)for
+    per-lock-type statistics, [`pg_stat_recovery`](https://www.postgresql.org/docs/19/monitoring-stats.html#PG-STAT-RECOVERY-VIEW)for
+    recovery status, and [`pg_stat_autovacuum_scores`](https://www.postgresql.org/docs/19/monitoring-stats.html#PG-STAT-AUTOVACUUM-SCORES-VIEW)to
+    show how autovacuum prioritizes tables. The new `IO` option for[`EXPLAIN ANALYZE`](https://www.postgresql.org/docs/19/sql-explain.html)
+    and the matching [`auto_explain`](https://www.postgresql.org/docs/19/auto-explain.html#AUTO-EXPLAIN-CONFIGURATION-PARAMETERS-LOG-IO)setting
+    report asynchronous I/O activity. PostgreSQL 19 also reports the amount of WAL
+    written for full-page images in [`pg_stat_wal`](https://www.postgresql.org/docs/19/monitoring-stats.html#PG-STAT-WAL-VIEW),`EXPLAIN
+    (ANALYZE, WAL)`, and in vacuum and analyze log events.\n\n### Distributed data
+    improvements\n\nPreviously, PostgreSQL often required users to restart their server
+    to enable[logical replication](https://www.postgresql.org/docs/19/logical-replication.html),
+    which could be disruptive in production workloads. PostgreSQL 19 simplifies logical
+    replication initialization by automatically raising the effective WAL level to
+    `logical` when you create the first logical replication slot. You can see the
+    WAL level in use with the new [`effective_wal_level`](https://www.postgresql.org/docs/19/runtime-config-preset.html#GUC-EFFECTIVE-WAL-LEVEL)
+    setting.\n\nPostgreSQL 19 also adds logical replication of[sequence values](https://www.postgresql.org/docs/19/logical-replication-sequences.html),
+    which you can publish using `FOR ALL SEQUENCES` with[`CREATE PUBLICATION`](https://www.postgresql.org/docs/19/sql-createpublication.html).`CREATE
+    PUBLICATION` also adds an `EXCEPT` clause to exclude tables when publishing `FOR
+    ALL TABLES`, and [`CREATE SUBSCRIPTION`](https://www.postgresql.org/docs/19/sql-createsubscription.html)can
+    now get its connection settings from a foreign server, such as one defined with
+    [`postgres_fdw`](https://www.postgresql.org/docs/19/postgres-fdw.html), using
+    the `SERVER` clause. Additionally, the new[`retain_dead_tuples`](https://www.postgresql.org/docs/19/sql-createsubscription.html#SQL-CREATESUBSCRIPTION-PARAMS-WITH-RETAIN-DEAD-TUPLES)subscription
+    option lets PostgreSQL detect updates that conflict with a concurrent delete,
+    and these conflicts are counted in[`pg_stat_subscription_stats`](https://www.postgresql.org/docs/19/monitoring-stats.html#MONITORING-PG-STAT-SUBSCRIPTION-STATS).\n\nFor
+    applications that send reads to standbys, PostgreSQL 19 adds \"read-your-writes\"
+    consistency with the new[`WAIT FOR LSN`](https://www.postgresql.org/docs/19/sql-wait.html)
+    command. A session on a standby can use `WAIT FOR LSN` to wait until the standby
+    has replayed the write-ahead log (WAL) up to a specific[log sequence number (LSN)](https://www.postgresql.org/docs/19/wal-internals.html)before
+    running a query, so the application can read data it just wrote on the primary.\n\nPostgreSQL
+    19 also improves queries on foreign tables. With the new[`import_stats`](https://www.postgresql.org/docs/19/postgres-fdw.html#POSTGRES-FDW-OPTIONS-COST-ESTIMATION)
+    option,[`postgres_fdw`](https://www.postgresql.org/docs/19/postgres-fdw.html)
+    can import table statistics from the remote server "
+  error:
+  fetched_at: '2026-11-19T20:06:31Z'
+archived_at: '2026-11-19T20:06:31Z'

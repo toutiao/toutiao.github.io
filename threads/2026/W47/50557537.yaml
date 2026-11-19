@@ -1,0 +1,591 @@
+---
+post:
+  id: '50557537'
+  title: Distributed, high-performance blob storage on SQLite
+  url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
+  hn_url: https://news.ycombinator.com/item?id=50557537
+  score: 214
+  author: ''
+  posted_at: '2026-11-19T08:39:45Z'
+  fetched_at: '2026-11-19T20:06:15Z'
+  article_url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:15Z'
+  raw_comment_count: 60
+comments:
+- id: '50557940'
+  parent_id: '50557537'
+  author: feverzsj
+  text: Sounds like you should use a database-per-user design.
+  score: 0
+  posted_at: '2026-11-19T09:36:55Z'
+- id: '50558040'
+  parent_id: '50557940'
+  author: mkesper
+  text: Right, then even sqlite should be enough?
+  score: 0
+  posted_at: '2026-11-19T09:50:05Z'
+- id: '50558304'
+  parent_id: '50557537'
+  author: CyrusGrissom
+  text: I couldn&#x27;t find the word &quot;replication&quot; in the post or on the
+    GitHub page. So, what about fault tolerance?
+  score: 0
+  posted_at: '2026-11-19T10:25:54Z'
+- id: '50558354'
+  parent_id: '50557537'
+  author: bob1029
+  text: "&gt; JSON blobs<p>An alternative to faster blob storage is to represent the
+    blob&#x27;s schema in SQL directly.<p>If most blob updates are incremental you
+    can eliminate a significant amount of storage IO and garbage collection this way.<p>One
+    SQLite database per blob type with a metadata SQLite db that tracks each. We could
+    leverage powerful AI reasoning models to produce SQLite schemas and virtual table
+    adapters for each encountered JSON schema type."
+  score: 0
+  posted_at: '2026-11-19T10:33:52Z'
+- id: '50558363'
+  parent_id: '50558304'
+  author: tomasol
+  text: I&#x27;m curious too. The only backup I found on GitHub uses cp; they may
+    use filesystem snapshots or Litestream in production. If it’s Litestream, litestream
+    sync -wait can force a sync after a write and wait for remote replication to complete.
+  score: 0
+  posted_at: '2026-11-19T10:35:02Z'
+- id: '50558418'
+  parent_id: '50557537'
+  author: zodwick
+  text: all roads lead to sqlite
+  score: 0
+  posted_at: '2026-11-19T10:42:07Z'
+- id: '50558739'
+  parent_id: '50557537'
+  author: robinduckett
+  text: What about using, ahem, files?
+  score: 0
+  posted_at: '2026-11-19T11:25:07Z'
+- id: '50558809'
+  parent_id: '50558354'
+  author: testtestmetest
+  text: You want an LLM to be modifying your db schemas on the fly?? Seems slow and
+    error prone.
+  score: 0
+  posted_at: '2026-11-19T11:33:00Z'
+- id: '50558860'
+  parent_id: '50557537'
+  author: _s_a_m_
+  text: so it&#x27;s just sharding?
+  score: 0
+  posted_at: '2026-11-19T11:40:37Z'
+- id: '50558861'
+  parent_id: '50557537'
+  author: matja
+  text: What is the consistency model? What happens if a node is down unexpectedly?
+  score: 0
+  posted_at: '2026-11-19T11:40:40Z'
+- id: '50558910'
+  parent_id: '50557537'
+  author: Kalanos
+  text: A limitation that i ran into with sqlite was not being able to interact with
+    it over the network e.g. NFS. Does this solve that problem?
+  score: 0
+  posted_at: '2026-11-19T11:47:43Z'
+- id: '50558913'
+  parent_id: '50558739'
+  author: ncruces
+  text: Filesystems can be much slower than SQLite for many (think millions of) small
+    files.<p>They also mention considering this in the post.
+  score: 0
+  posted_at: '2026-11-19T11:47:56Z'
+- id: '50558923'
+  parent_id: '50557537'
+  author: Kalanos
+  text: Is the db still a single, portable file?
+  score: 0
+  posted_at: '2026-11-19T11:48:27Z'
+- id: '50558952'
+  parent_id: '50557537'
+  author: martinjc
+  text: Why not rqlite?
+  score: 0
+  posted_at: '2026-11-19T11:52:52Z'
+- id: '50559004'
+  parent_id: '50557537'
+  author: murkt
+  text: Sounds like it solves their particular problem, but hardly can be used by
+    outsiders in the current state.<p>Bad fault tolerance, no words on replication
+    or backup. Offline rebalance... meh. I am not sure how I feel about their choice
+    of Redis protocol.
+  score: 0
+  posted_at: '2026-11-19T12:01:11Z'
+- id: '50559034'
+  parent_id: '50558952'
+  author: otoolep
+  text: rqlite[1] author here, happy to answer any questions.<p>[1] <a href="https:&#x2F;&#x2F;rqlite.io"
+    rel="nofollow">https:&#x2F;&#x2F;rqlite.io</a>
+  score: 0
+  posted_at: '2026-11-19T12:05:24Z'
+- id: '50559043'
+  parent_id: '50557537'
+  author: anacrolix
+  text: I spent years trying to squeeze this use case out of sqlite. All roads lead
+    to tears, it is <i>not</i> made for this use case.<p>I wrote <a href="https:&#x2F;&#x2F;github.com&#x2F;anacrolix&#x2F;possum"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;anacrolix&#x2F;possum</a> for
+    this exact use case. It has a few rough edges but it absolutely hauls ass for
+    caching on disk. Incidentally it uses sqlite for transaction&#x2F;TTL metadata
+    which is more suited to sqlite but it&#x27;s <i>still</i> the bottleneck.<p>sqlite
+    transaction commit overhead is too high and uncompetitive without batching but
+    it&#x27;s a design flaw specific to being multiprocess.
+  score: 0
+  posted_at: '2026-11-19T12:05:55Z'
+- id: '50559153'
+  parent_id: '50558913'
+  author: robinduckett
+  text: I guess my squishy biological tokeniser and summariser missed it (i.e I read
+    the TL;DR and skipped the post)
+  score: 0
+  posted_at: '2026-11-19T12:18:36Z'
+- id: '50559423'
+  parent_id: '50557537'
+  author: ratherlongname
+  text: So many comments about things already addressed in the article <i>sigh</i>
+  score: 0
+  posted_at: '2026-11-19T12:48:59Z'
+- id: '50559490'
+  parent_id: '50559043'
+  author: mightyham
+  text: At the end of the day durable transaction commit in any OLTP database will
+    always be slow because fsync is an expensive operation (~1000 IOPS on a decent
+    SSD), so as you mentioned batching is the only way to make significant increases
+    to throughput. That said, based on assorted benchmarks I&#x27;ve seen online,
+    sqlite doesn&#x27;t even get close to max fsync IOPS because it has a ton of overhead.
+    Other embedded systems like rocksdb or lmdb are going to give better performance.
+  score: 0
+  posted_at: '2026-11-19T12:54:43Z'
+- id: '50559629'
+  parent_id: '50557537'
+  author: Blobtits
+  text: Reads like this is be a perfect fit for ClickHouse. You should do async inserts,
+    remove the 20 or so _log options ClickHouse enables for some insane defaults and
+    batch them in Redis if needed (probablynot). Then you have automatic compression,
+    free ttl, no write concurrency.
+  score: 0
+  posted_at: '2026-11-19T13:11:16Z'
+- id: '50559777'
+  parent_id: '50557537'
+  author: gkamal
+  text: This looks like a classic case of nih&#x2F;reinventing wheel.
+  score: 0
+  posted_at: '2026-11-19T13:23:43Z'
+- id: '50560033'
+  parent_id: '50557537'
+  author: lukax
+  text: OpenStack Swift uses SQLite for storing metadata. Each account has one SQLite
+    db. Each container also initially had one SQLite db but in 2018 they added support
+    for sharding so if a container has more than 1 million objects, the container
+    is split into multiple SQLite databases. The performance is not ideal. Ceph scales
+    much better.
+  score: 0
+  posted_at: '2026-11-19T13:45:43Z'
+- id: '50560379'
+  parent_id: '50559490'
+  author: luke5441
+  text: |-
+    Or you can do like GP with that possum and not fsync at all. It even sets synchronous=OFF, which will corrupt SQLite databases.
+    Then it is fast because it only writes to memory. YOLO!
+  score: 0
+  posted_at: '2026-11-19T14:13:52Z'
+- id: '50560537'
+  parent_id: '50560379'
+  author: stingraycharles
+  text: The usual answer here is a WAL + batching multiple transactions.
+  score: 0
+  posted_at: '2026-11-19T14:25:27Z'
+- id: '50560551'
+  parent_id: '50558040'
+  author: lmz
+  text: But now you have a file per user, which you then need to distribute somehow...
+  score: 0
+  posted_at: '2026-11-19T14:26:09Z'
+- id: '50560707'
+  parent_id: '50557940'
+  author: dolmen
+  text: As the post mentions &quot;trading&quot; and &quot;50% writes&quot;, I guess
+    that most writes are derived from live market data, and probably not user-specific
+    but shared.
+  score: 0
+  posted_at: '2026-11-19T14:38:51Z'
+- id: '50560717'
+  parent_id: '50558952'
+  author: eatonphil
+  text: "&gt; Horizontally scalable, distributed.<p>This doesn&#x27;t describe rqlite,
+    at least."
+  score: 0
+  posted_at: '2026-11-19T14:39:27Z'
+- id: '50560724'
+  parent_id: '50559777'
+  author: cuttothechase
+  text: explain?<p>sqlite offers this and this is being redone or what is being reinvented
+    here
+  score: 0
+  posted_at: '2026-11-19T14:39:59Z'
+- id: '50560778'
+  parent_id: '50558910'
+  author: dolmen
+  text: What about reading the article?<p>The network interface is the Redis protocol.
+  score: 0
+  posted_at: '2026-11-19T14:43:20Z'
+- id: '50560990'
+  parent_id: '50557537'
+  author: redwood
+  text: To confirm this is being stored on devices rather than on a server side environment?
+  score: 0
+  posted_at: '2026-11-19T14:59:39Z'
+- id: '50561040'
+  parent_id: '50557537'
+  author: articulatepang
+  text: I wonder if they tried storing diffs instead, and compacting them once in
+    a while.<p>These are user preferences for UI setup, and they have a lot of write
+    traffic. But probably each user changes their preferences only by a little bit
+    each time. Their 1MB writes would go down to just the small diffs.<p>They could
+    store the diffs and transparently apply them before sending to the client. After
+    some timeout or maybe after a certain number of diffs have accumulated, squash
+    them all and write back.<p>They’d still need a server and custom code to handle
+    this but it would probably reduce the database load and SSD writes by a lot. And
+    let them just use something off-the-shelf for storage.
+  score: 0
+  posted_at: '2026-11-19T15:02:59Z'
+- id: '50561069'
+  parent_id: '50559043'
+  author: adev_
+  text: "&gt;  Incidentally it uses sqlite for transaction&#x2F;TTL metadata which
+    is more suited to sqlite but it&#x27;s still the bottleneck.<p>Why sqlite instead
+    of RocksDB ?<p>What you need at the end of the day for a blob storage is a transactional
+    key value store.<p>Which RocksDB will give you with much better throughput (and
+    latency) and solves your transaction problem."
+  score: 0
+  posted_at: '2026-11-19T15:05:20Z'
+- id: '50561097'
+  parent_id: '50560778'
+  author: withinboredom
+  text: Then why use this at all? Why not something like SwytchDB?
+  score: 0
+  posted_at: '2026-11-19T15:07:49Z'
+- id: '50561100'
+  parent_id: '50560717'
+  author: otoolep
+  text: (Hi Phil!)<p>Correct, I read the post. Agreed, rqlite is not a great fit for
+    high-throughput durable writes since all writes go through the Raft Leader. This
+    is not specific to rqlite -- all systems which put Raft in the data plane[1] have
+    the same challenge.<p>rqlite does offer a Queued Writes mode[2], which allows
+    you to trade durability for much greater write throughput. The post mentions something
+    similar -- async_write -- but their post claims they also make the data queryable
+    before it is durable, unlike rqlite.<p>[1] <a href="https:&#x2F;&#x2F;youtu.be&#x2F;8XbxQ1Epi5w?t=2306"
+    rel="nofollow">https:&#x2F;&#x2F;youtu.be&#x2F;8XbxQ1Epi5w?t=2306</a><p>[2] <a
+    href="https:&#x2F;&#x2F;rqlite.io&#x2F;docs&#x2F;api&#x2F;queued-writes&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;rqlite.io&#x2F;docs&#x2F;api&#x2F;queued-writes&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-19T15:08:19Z'
+- id: '50561133'
+  parent_id: '50557537'
+  author: sgarland
+  text: "&gt; What we learned along the way… Deleting rows doesn’t shrink SQLite files<p>This
+    is true of every RDBMS I am aware of. It would be horribly inefficient to constantly
+    run page merges in order to be able to free some of them.<p>Whenever I read things
+    on posts that are a. discussed in documentation b. should be apparent from first
+    principles, I immediately lose faith in the product."
+  score: 0
+  posted_at: '2026-11-19T15:10:46Z'
+- id: '50561398'
+  parent_id: '50557537'
+  author: nodesocket
+  text: If only rethinkdb hadn’t nose dived. It supported sharding, health checks,
+    clustering with failover. Write performance was quite good as I recall.
+  score: 0
+  posted_at: '2026-11-19T15:30:03Z'
+- id: '50561455'
+  parent_id: '50561398'
+  author: nodesocket
+  text: 'Update: I guess it’s still up, though last release was 3 years ago.<p><a
+    href="https:&#x2F;&#x2F;github.com&#x2F;rethinkdb&#x2F;rethinkdb" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rethinkdb&#x2F;rethinkdb</a>'
+  score: 0
+  posted_at: '2026-11-19T15:34:07Z'
+- id: '50561921'
+  parent_id: '50560724'
+  author: luke5441
+  text: My short research gives me that ScyllaDB could be tuned for this use case
+    (e.g. disabling durable writes for the blobs). And even if not I&#x27;d look into
+    basing the work on something like ScyllaDB instead of developing a completely
+    new database, especially since they already run ScyllaDB and have experience running
+    it.
+  score: 0
+  posted_at: '2026-11-19T16:07:03Z'
+- id: '50561941'
+  parent_id: '50561040'
+  author: WorldMaker
+  text: A part of me wonders a similar question that they started with a blob store
+    and assumed a blob store and might have got good results normalizing their JSON
+    schema into an Sqlite table structure, if they were going down the road towards
+    Sqlite anyway. Especially, because if these preferences are truly per-user you
+    could even ship the entire Sqlite database to the user and read it with WASM and
+    not worry about concurrent writes and use much simpler object&#x2F;file storage
+    for the backup copies of Sqlite databases at that point. (Or get fancy with it
+    and WAL log, sure, but really, if it is user owned at that point, just stick with
+    simple dumb backups.)
+  score: 0
+  posted_at: '2026-11-19T16:09:32Z'
+- id: '50561992'
+  parent_id: '50557537'
+  author: vmikhailov
+  text: Since you store blobs (json), you might benefit from having a graph on top
+    of it at some point. I had a similar task in the past so I created a cypher-to-sql
+    transpiler. Feel free to use it - <a href="https:&#x2F;&#x2F;github.com&#x2F;vmikhailov&#x2F;cypher-sql-go"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;vmikhailov&#x2F;cypher-sql-go</a>
+  score: 0
+  posted_at: '2026-11-19T16:12:34Z'
+- id: '50562025'
+  parent_id: '50561133'
+  author: guywithahat
+  text: I once interviewed with a NYC robotics startup and, reflecting on his past
+    job, he said they migrated away from SQLite3 because they needed a WAL database
+    for their smart grocery cart.<p>It was hard to take him seriously after that
+  score: 0
+  posted_at: '2026-11-19T16:15:01Z'
+- id: '50562074'
+  parent_id: '50557537'
+  author: EGreg
+  text: 'If you liked that, you might like this… it’s distributed, high performance,
+    but also encrypted and has micropayments for storage, and anyone can contribute
+    storage by just opening a browser tab:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;Safebots&#x2F;Safecloud"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;Safebots&#x2F;Safecloud</a><p>It
+    can also stream videos to any domain, like a decentralized YouTube. Here is a
+    demo:<p><a href="https:&#x2F;&#x2F;youtu.be&#x2F;glWQM0BIcDQ?si=VV7YFiElGKBC82Bv"
+    rel="nofollow">https:&#x2F;&#x2F;youtu.be&#x2F;glWQM0BIcDQ?si=VV7YFiElGKBC82Bv</a><p>This
+    is what we encourage to store in it:<p><a href="https:&#x2F;&#x2F;safebots.ai&#x2F;datasets.html"
+    rel="nofollow">https:&#x2F;&#x2F;safebots.ai&#x2F;datasets.html</a><p>Oh, and
+    it is also compatible with S3 bucket protocol, IPFS, and even MySQL protocol so
+    it can replace your S3 bucket or database with a distributed database — just like
+    that!<p><i>PS: if you’re curious, it uses a columnar store and SQLite’s query
+    planner, to be as efficient as possible.</i>'
+  score: 0
+  posted_at: '2026-11-19T16:18:29Z'
+- id: '50562165'
+  parent_id: '50557537'
+  author: sneilan1
+  text: Earlier in the blog post, Sarat writes about how many databases can&#x27;t
+    store multi-megabyte blobs. That makes sense to me but later on, he writes<p>&gt;
+    While raw files start to beat SQLite above ~100 KiB, we compress blobs before
+    writing them. And thankfully, 99% of our compressed values sit well below 100
+    KiB.<p>My question is, were the other databases not tried with compression on
+    the application side?
+  score: 0
+  posted_at: '2026-11-19T16:24:47Z'
+- id: '50562195'
+  parent_id: '50561133'
+  author: tomasol
+  text: Everybody learns. Coming from other databases it might not be obvious that
+    you need to enable vacuum explicitly.
+  score: 0
+  posted_at: '2026-11-19T16:26:06Z'
+- id: '50562314'
+  parent_id: '50560724'
+  author: gkamal
+  text: 90% of it. Sharding, multi node, write buffering, redis protocol. The whole
+    distributed and high performance part of it.<p>Problem is that it is not really
+    distributed (static sharding, no fault tolerance,  no consistency model).. on
+    top of that poor operational support - backup&#x2F;restore, recovery. Stateful
+    infra pieces need lot more rigour, you can&#x27;t iterate your way through such
+    fundamental capabilities once it is in production use.
+  score: 0
+  posted_at: '2026-11-19T16:33:48Z'
+- id: '50562340'
+  parent_id: '50560990'
+  author: gkamal
+  text: No, this is on the server.
+  score: 0
+  posted_at: '2026-11-19T16:35:26Z'
+- id: '50562495'
+  parent_id: '50562195'
+  author: mbreese
+  text: Especially if you started in an age of remote cloud databases. The further
+    we get away from the infrastructure we use, the less we know about nuances like
+    this. What used to be considered common knowledge gets lost when you don&#x27;t
+    have experience with running a DB server.<p>I mean, today, why would you? It used
+    to be that starting a new CRUD project meant at least an hour of setting up web
+    servers, database servers, proxies, etc. Today, that&#x27;s all abstracted away
+    for pennies an hour.
+  score: 0
+  posted_at: '2026-11-19T16:45:29Z'
+- id: '50562553'
+  parent_id: '50559043'
+  author: mbreese
+  text: Yeah, I&#x27;m not sure how well this will work. I&#x27;ve always dealt with
+    data blobs with data on the filesystem (or s3), metadata in the database. Anything
+    else starts to get a bit too much like a filesystem in a database, which has lead
+    many smart people to tears.<p>Or is there a better way?
+  score: 0
+  posted_at: '2026-11-19T16:48:56Z'
+- id: '50562902'
+  parent_id: '50562340'
+  author: redwood
+  text: Then why not use S3 or an S3 equivalent open source? Or even gridfs
+  score: 0
+  posted_at: '2026-11-19T17:15:11Z'
+- id: '50563015'
+  parent_id: '50562553'
+  author: UltraSane
+  text: Metadata in a DB or index of some kind and the actual data in a key-val object
+    store is the most versatile configuration I have used. This lets you use as many
+    different metadata indexes as you need.
+  score: 0
+  posted_at: '2026-11-19T17:22:56Z'
+- id: '50563042'
+  parent_id: '50559034'
+  author: martinjc
+  text: An honor to see you here. I used rqlite for a project i want to be available
+    globally, in a small package i can myself manage, without having to bother with
+    clustering postgres. I appreciate the ease of implementation in code, and how
+    easy it is to manage operationally.
+  score: 0
+  posted_at: '2026-11-19T17:24:32Z'
+- id: '50563132'
+  parent_id: '50561133'
+  author: AtlasBarfed
+  text: Is there really no way to use Cassandra for this use case? A distributed and
+    relatively battle tested database? They didn&#x27;t want to use SSDB because it
+    lacked support. Okay.<p>I mean you&#x27;re one-off vibe-coded distributed database
+    isn&#x27;t a database until aphyer puts it through it&#x27;s paces, and until
+    it encounters most CAP its edge cases over years of use.<p>Otherwise, this isn&#x27;t
+    a database. It&#x27;s a black hole of uncertainty that will almost certainly drop
+    writes and commits silently
+  score: 0
+  posted_at: '2026-11-19T17:29:51Z'
+- id: '50563226'
+  parent_id: '50563015'
+  author: senderista
+  text: "&gt; the actual data in a key-val object store<p>So, on a filesystem?"
+  score: 0
+  posted_at: '2026-11-19T17:36:01Z'
+- id: '50563391'
+  parent_id: '50561133'
+  author: simonw
+  text: The problem with that attitude is that you&#x27;re actively encouraging people
+    to <i>not</i> talk about things they&#x27;ve just learned that might be obvious,
+    for fear of being judged negatively by people like you. That harms the discourse.
+  score: 0
+  posted_at: '2026-11-19T17:47:47Z'
+- id: '50563645'
+  parent_id: '50563042'
+  author: otoolep
+  text: Great to hear, ease of operations is one of the main design goals. I&#x27;ve
+    too many scars from running complicated systems. Of course that means that the
+    rqlite feature set has remained focused (a nice way of saying &quot;limited&quot;),
+    but in exchange, if it matches your use case, it can work well.
+  score: 0
+  posted_at: '2026-11-19T18:05:10Z'
+- id: '50563760'
+  parent_id: '50561100'
+  author: otoolep
+  text: 'One detail: if you batch up your writes in the client, and send that batch
+    through a Raft-based data plane system, you can get high throughput. But then
+    you are paying with latency, as the clients have to wait until they have a batch
+    worth of data before making the write request to the Raft-based system. rqlite
+    calls this approach Bulk Requests[1].<p>[1] <a href="https:&#x2F;&#x2F;rqlite.io&#x2F;docs&#x2F;api&#x2F;bulk-api&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;rqlite.io&#x2F;docs&#x2F;api&#x2F;bulk-api&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-19T18:13:44Z'
+- id: '50563806'
+  parent_id: '50563226'
+  author: UltraSane
+  text: You can use one if you don&#x27;t need the scale of a true object storage
+    system.
+  score: 0
+  posted_at: '2026-11-19T18:16:01Z'
+- id: '50565379'
+  parent_id: '50558809'
+  author: killingtime74
+  text: The LLM just produces the SQL schema from your JSON one time. basically like
+    an ORM.
+  score: 0
+  posted_at: '2026-11-19T19:54:23Z'
+- id: '50565502'
+  parent_id: '50563226'
+  author: dantillberg
+  text: Filesystems typically support mutable values, while it&#x27;s beneficial in
+    many ways to support only immutable values in distributed systems. A filesystem
+    is a fine stand-in for object storage, though, at low scale&#x2F;volume.
+  score: 0
+  posted_at: '2026-11-19T20:02:05Z'
+article:
+  url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
+  title: Distributed, high-performance blob storage on SQLite - Zerodha Tech Blog
+  fetch_status: success
+  content: |-
+    ![Sarat Chandra](https://avatars.githubusercontent.com/u/10434498?v=4)
+
+    [Sarat Chandra](https://zerodha.tech//authors/sarat)
+    Software Engineer
+
+    **TLDR;** We built Blobasaur, a sharded, distributed, lightweight blob storage server on top of SQLite to solve our high-throughput blob read/write usecase. JSON blobs varying from a few KBs to MBs are now written and read thousands of times per second on commodity hardware while maintaining single-digit millisecond latency.
+
+    * * *
+
+    On [Kite](https://zerodha.com/products/kite), our trading platform with ~20 million customers, users are able to customize their investment and trading screens heavily. They save multi-chart layouts, financial indicator templates, vector drawings, and various kinds of arbitrary UI preferences. In addition, we offer a Terminal mode that allows users to design their own workspaces by dragging, dropping, and customizing widgets. Under the hood, our backend services store these user preferences and metadata as opaque blobs (mostly JSON) ranging from a few kilobytes to several megabytes.
+
+    Many years ago, we stored such blobs in CouchDB, which turned out to be ill-suited for the kind of throughput we were starting to see. We then moved to SSDB ([ssdb](https://github.com/ideawu/ssdb)), a C++ disk-backed store that speaks the Redis protocol. This made it very easy to integrate as well. SSDB solved our immediate performance problems and ran reliably in production for several years.
+
+    Over time, two problems forced us to look for a replacement:
+
+    1. SSDB became unmaintained, which was an obvious operational risk. It is written in C++, which is not a part of our stack or expertise, so forking and maintaining was also not viable.
+    2. Scaling and size limits. SSDB is not a distributed system and can only run on a single node. This imposes significant future scaling challenges, including at one point forcing us to cap blob sizes at 1 MB because latency degrades on larger payloads.
+
+    As we added features like the Terminal mode and onboarded more internal services, we needed a robust solution. Our criteria were:
+
+    - A key-value blob store with a simple API.
+    - Designed for multi-megabyte blob read/write ops and high throughput. We sustain loads of thousands to tens of thousands of requests per second reading and writing arbitrary blobs. These are unpredictable and bursty thanks to the volatility in stock markets.
+    - Horizontally scalable, distributed.
+    - Disk-space efficiency / compression.
+    - Easily maintainable and highly economical.
+
+    So we investigated FOSS databases optimized for high-throughput blob storage and looked at the following:
+
+    - **ScyllaDB:** We already run ScyllaDB for high-throughput workloads, but in our tests, it turned out to be suboptimal for large blobs. Significantly lower throughput and higher resource usage. We specifically want multi-megabyte blobs. Tombstones from frequent overwrites and TTL expiries require careful tuning in ScyllaDB.
+    - **PostgreSQL:** We already have [considerable experience](https://zerodha.tech/blog/working-with-postgresql/) with Postgres in our stack and experimented with storing blobs as `BYTEA` columns, but it turned out to be severely suboptimal again for the use case in terms of performance and disk-space efficiency.
+    - **YugabyteDB:** Has blob storage as one of the options, but is not primarily designed or optimized for it. Also, a large system with too many features.
+    - **RocksDB:** Had the right primitives, but again, not architected for high throughput multi-MB blob writes.
+    - **Ceph:** Severe operational complexity and resource requirements. We didn’t even get to trying it out.
+    - **SeaweedFS:** This was the closest candidate. However, there were a few blockers. Our use case is overwrite-heavy (a user changing their workspace) over the same key, and SeaweedFS keeps appending before compaction, which can cause disk usage to grow uncontrollably. Blobs have their own IDs, which then have to be mapped against user keys in a separate DB, adding another layer. It doesn’t support TTL per blob. Also, reasonably complex setup with many parts.
+    - **S3 and MinIO:** Object storage has high per-request latency for small blobs, high request costs under write-heavy workloads (writes are 50% of our traffic), and coarse lifecycle TTLs instead of exact key expiry. Not to mention, S3 would incur significant costs given thousands of ops per second and tens of millions of ops per day.
+    - **Raw filesystem (one file per blob):** Putting blobs directly on disk meant implementing atomic writes and write batching, managing large numbers of files and directories, good old atomic read/write disk performance and inode headaches, and maintaining a separate metadata index for TTLs. Not to mention, orchestrating this over AWS storage volumes.
+
+    Around this time, we were toying with SQLite for another project and were marveling at its [_35% Faster Than The Filesystem_](https://www.sqlite.org/fasterthanfs.html) claim. We also happen to have a query cache system that creates [millions of tables](https://nadh.in/files/indiafoss-2024-dungbeetle.pdf) every day in a Postgres instance, which pushes the database to its limits quite successfully. Putting two and two together, we thought, why not build a system on top of SQLite to store millions of blobs and see what happens?
+
+    So we ended up building [Blobasaur](https://github.com/iamd3vil/blobasaur), an open source sharded blob server written in Rust that speaks the Redis protocol and uses SQLite as its storage engine. It is a single binary application that is high performance, and super simple to deploy and maintain. It is in production at Zerodha and it has successfully replaced SSDB.
+
+    [![Blobasaur logo](/static/images/blobasaur-logo.svg)](https://github.com/iamd3vil/blobasaur)
+
+    ## What we needed
+
+    We had several Go and Python services already talking to SSDB via the Redis protocol, with more waiting to onboard. We wanted the new solution to meet these requirements:
+
+    - Redis protocol compatibility (if possible at all): Every existing client already used standard Redis libraries (`GET`, `SET`, `HGET`, `HSET`, `DEL`, `EXPIRE`). If we could get a system that could be a drop-in replacement, that would allow us to leave existing services untouched and reduce risk significantly.
+    - Low latency across payload sizes: It needed to serve both 2 KB settings blobs and 5 MB chart layouts with single-digit millisecond latency.
+    - Built-in compression: Almost all our payloads are repetitive JSON, which compresses well.
+    - Simple CRUD with TTLs: We didn’t need complex data structures, server-side scripting, or secondary queries. We just needed key-value and hash CRUD with key expiry.
+    - Multi-node partitioning: We needed to split data across multiple machines so a single node wasn’t a bottleneck.
+    - Relaxed durability is acceptable: This store holds non-critical UI and workspace preferences, and not critical financial data. If a sudden power loss drops recent writes, a user might lose a recent chart layout tweak, which is annoying, but it never affects trading. This was a good performance trade-off for our use case.
+
+    ## Why SQLite (and Rust)
+
+    We had a few options for the storage. The obvious one is the raw filesystem, with one file per blob. But with that, we’d need to invent everything ourselves:
+
+    - Atomic writes and batching.
+    - TTL cleanup, which needs secondary indexes or walking the directories.
+    - Dealing with fd limits.
+    - Managing metadata separately from the raw data.
+
+    SQLite pretty much gave us everything that the raw filesystem lacked. For small blobs, SQLite is up to 35% faster than raw filesystem I/O. While raw files start to beat SQLite above ~100 KiB, we compress blobs before writing them. And thankfully, 99% of our compressed values sit well below 100 KiB.
+
+    Using SQLite also meant inheriting a battle-tested storage engine with ACID transactions, crash recovery, and standard tooling. Any shard on disk can be inspected with the standard `sqlite3` CLI or
+  error:
+  fetched_at: '2026-11-19T20:06:15Z'
+archived_at: '2026-11-19T20:06:29Z'

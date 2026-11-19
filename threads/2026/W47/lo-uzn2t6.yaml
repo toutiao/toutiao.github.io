@@ -1,0 +1,135 @@
+---
+post:
+  id: lo-uzn2t6
+  source: lobsters
+  title: Mutex poisoning is not for everyone
+  url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
+  hn_url: https://lobste.rs/s/uzn2t6
+  score: 12
+  author: polywolf
+  posted_at: '2026-11-19T13:01:49Z'
+  fetched_at: '2026-11-19T20:06:30Z'
+  article_url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:40Z'
+  raw_comment_count: 1
+  tags:
+  - rust
+comments:
+- id: lo-hgczbz
+  parent_id: '0'
+  author: jamesw
+  text: For whatever reason I've bounced off of explanations of poisoning and why
+    it's a problem in the past, but this was super clear and well organised. I'm now
+    aware of std::sync::nonpoison in nightly and finally understand why parking_lot
+    is a transitive dependency of all my projects. Kudos!
+  score: 1
+  posted_at: '2026-11-19T19:35:45Z'
+article:
+  url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
+  title: Mutex poisoning is not for everyone | bertptrs.nl
+  fetch_status: success
+  content: "After some [recent discussion](https://github.com/rust-lang/rust/issues/149359)
+    on the topic of mutex poisoning and notably a [blog post](https://sunshowers.io/posts/on-poisoning/)
+    that I thought was interesting, thoughtful, exhaustive, yet completely disagreed
+    with, I wanted to comment on the debate myself. To me, poisoning-by-default is
+    one of biggest mistakes that were made in the language, next to some others that
+    are a story for a different time.\n\nIn short, I believe that Mutex poisoning
+    is the wrong choice for most applications, as\n\n- it significantly pessimises
+    code performance in the general case\n- in addition to hampering readability\n-
+    while encouraging bad code patterns to deal with its weirdness\n- in order to
+    solve a niche problem\n- that doesn’t even solve the general problem.\n\n## What
+    is poisoning?\n\nIn theory, a mutex guards a critical section of the code. That
+    code changes the state of a piece of data free from interference of concurrent
+    threads, then releases the lock. That code might then encounter an error, and
+    release the lock in the middle of doing its important work. For example:\n\n    1\n
+    \   2\n    3\n    4\n    5\n    6\n    7\n    8\n    9\n    10\n    11\n    12\n
+    \   13\n    14\n    15\n    16\n    17\n    18\n    \n    fn important(always_even:
+    Arc<Mutex<i32>>) -> i32 {\n        // Invariant: always_even must always be even\n
+    \       let mut handle = always_even.lock().unwrap();\n    \n        *handle +=
+    1;\n    \n        risky_operation();\n    \n        *handle += 1;\n    \n        *handle\n
+    \   }\n    \n    fn risky_operation() {\n        if rng().next_u32() % 42 == 0
+    {\n            panic!();\n        }\n    }\n\nThe following code will work fine
+    most of the time, but if the dice roll doesn’t go our way, the`always_even` mutex
+    gets unlocked in an invalid state. In Rust, today, poisoning exists to handle
+    this. If a guard is released abnormally (while panicking), it records that this
+    happened in a boolean. Any future calls to `lock()` will return `Err(PoisonError)`,
+    which will trigger a panic when we unwrap it. The bad state is never observed
+    and all is well.\n\nYou might have felt that the example I made up was somewhat
+    contrived. That’s because it is. Real cases of this pattern can and do happen,
+    but most of the use cases that involve mutexes are much simpler. Many critical
+    sections are no longer than a variable assignment, or doesn’t have an invalid
+    in-between state. There are cases in lower level programming where a mutex guards
+    a piece of data that is not directly inside it, or is outside the view of the
+    program entirely. In fact, I’ve written a wrapper for a C library that worked
+    like that. Though I disagree with the notion that this is the common case.\n\nI
+    do recommend anyone [Rain’s blog](https://sunshowers.io/posts/on-poisoning/) on
+    the matter, as she has some good examples of how you can cause violations of these
+    critical sections (even without mutexes) and I wholeheartedly support the idea
+    of a `Poison` wrapper for the use cases that need it. I suspect the domains she
+    works on lend themselves more towards these issues compared to mine. Rust’s default
+    behaviour should make the common case easy and the rare case possible.\n\n## Side-note:
+    how mutexes work\n\nThis section is only tangentially related to the topic at
+    hand, but I already wrote it and wasn’t ready to kill my darlings. Skip to [the
+    next section](#how-poisoning-harms-every-single-piece-of-code) to continue the
+    discussion on poisoning.\n\nIn Rust, for most platforms, mutexes are implemented
+    using the `futex` system call. It allows for operations to remain purely in user-space
+    as long as the mutex in question isn’t contended, which is nice for performance
+    reasons.\n\nUnder the hood, a mutex is a simple 32-bit integer on most platforms
+    even though it only holds three unique values:\n\n- If it’s zero, the mutex is
+    free and can be claimed by any thread by a simple atomic compare-exchange.\n-
+    If it’s one, the mutex is held but there are no waiting threads. This is useful
+    to know, as it means there are no threads that we need to wake up when releasing
+    the mutex, and we can yet again remain in userspace.\n- If it’s two, the mutex
+    is held _and_ some other thread is waiting for it. This means some additional
+    care should be taken when unlocking.\n\n![Flow chart describing mutex locking
+    in Rust](/assets/2026/poisoning/mutex_locking.svg)\n\n_Flow chart showing how
+    a mutex acquisition is implemented in Rust, using atomic operations and\nfutex
+    primitives. Note how the uncontended case remains entirely in user-space and does
+    not sleep\nthe thread._\n\nRust implements this with a few atomic operations and
+    the `futex_wait` call. Crucially, the path for locking a mutex that _isn’t_ contended
+    is a single atomic operation. The only operation that requires a context switch
+    is `futex_wait`.\n\nUnlocking is even simpler. The thread that holds the mutex
+    first releases the lock, then optionally, if there was an indication that the
+    lock was contended, wakes any sleeping threads so they can try to acquire the
+    lock.\n\n![Flow chart describing mutex unlocking in Rust](/assets/2026/poisoning/mutex_unlocking.svg)\n\n_Flow
+    chart showing how a mutex release in Rust. First, we swap the current value with
+    0, and\ndepending on whether it was originally 1 (simply locked) or 2 (contended),
+    we optionally wake any\nsleeping threads._\n\n## How poisoning harms every single
+    piece of code\n\nAs discussed in too much detail above, (un)locking mutexes is
+    cheap as long as they’re not contended, and when contended, they are at least
+    cheap instruction wise. This is where poisoning mutexes get you.\n\nIn short,
+    being able to poison is a cost that is always paid, but seldom used. To start,
+    poisoning is essentially implemented by adding an `AtomicBool` field to every
+    `Mutex`. Due to alignment, this grows the size of every mutex by anywhere from
+    zero bytes to an additional pointer. This isn’t terrible but for use cases where
+    you have many mutexes guarding small objects, this can add up.\n\nThe real issue
+    to me however is in code size. Let’s start with another contrived example, a function
+    that reads its argument, copies it, and returns it. An idealised version of that
+    would be the following.\n\n    1\n    2\n    3\n    \n    pub fn get_contents(val:
+    &i32) -> i32 {\n        *val\n    }\n\nThis compiles down to 2 instructions and
+    a label. Copy the data into the register then return.\n\n    1\n    2\n    3\n
+    \   \n    example::check_contents::h197b180b47e24703:\n            mov eax, dword
+    ptr [rdi]\n            ret\n\nOf course, this doesn’t work for any context that
+    needs shared mutation, but we can consider it our baseline. Perfection would look
+    like this. So, let’s ignore that atomic integers exist and add a mutex to this
+    story. We will go over the generated assembly code for each, and you can compare
+    the code in its entirety in [this Compiler Explorer overview](https://rust.godbolt.org/z/1jEP5MEGz).\n\n###
+    Base case: Locking and unwrapping\n\nWe can update the code above to actually
+    use mutexes, and simply lock-then-unwrap the mutex.\n\n    1\n    2\n    3\n    4\n
+    \   5\n    \n    use std::sync::Mutex;\n    \n    pub fn check_contents(mutex:
+    &Mutex<i32>) -> i32 {\n        *mutex.lock().unwrap()\n    }\n\nThis compiles
+    to a total of _147_ lines of assembly which I’m not going to reproduce here in
+    full.\n\n- 75 of those are specifically inlined to this particular function and
+    cannot be reused.\n- About 45 those are monomorphised for mutexes guarding an
+    `i32`\n- The remainder is global program information and might be reused for other
+    locks.\n\nTo divide that up a different way, we have\n\n- code checking the poison
+    status\n- code doing the mutex manipulation\n- code to initiate a poison in case
+    of a panic\n- code for preparing to panic should we need to\n- code for displaying
+    a panic\n- some `dyn` drop glue\n\nMost of this is inlined into the function.
+    This in turn affects performance, as this limits how much of your “real” code
+    fits in the CPU’s instruction cache. The laptop I’m writing this on has a paltry
+    32KiB of instruction cache. Lu"
+  error:
+  fetched_at: '2026-11-19T20:06:40Z'
+archived_at: '2026-11-19T20:06:40Z'

@@ -1,0 +1,102 @@
+---
+post:
+  id: lo-elmy67
+  source: lobsters
+  title: 15 million web servers on one VM - smoltcp, DPDK, AF_XDP
+  url: https://kapteko.com/15-million-webservers/
+  hn_url: https://lobste.rs/s/elmy67
+  score: 17
+  author: rrampage
+  posted_at: '2026-11-19T13:38:19Z'
+  fetched_at: '2026-11-19T20:06:30Z'
+  article_url: https://kapteko.com/15-million-webservers/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:39Z'
+  raw_comment_count: 0
+  tags:
+  - networking
+  - rust
+comments: []
+article:
+  url: https://kapteko.com/15-million-webservers/
+  title: 15 million web servers on one VM - smoltcp, DPDK, AF_XDP · kapteko
+  fetch_status: success
+  content: |-
+    Put a web server online and everyone starts trying to hack it. Why? A basic rule of economics. Short supply, big demand - there aren’t enough web servers for everyone. Let’s run a web server for every human on the planet, all 8 billion of them. I couldn’t get funding, so we’re bootstrapping. The goal is to run 15 million web servers on one VM with 10GB of RAM and 1 CPU core. If we succeed, I’ll find some RAM from old microwaves around the house and we’ll scale it up so everyone can have their own web server. Demand will drop to zero and cybersecurity will be solved once and for all.
+
+    ## Web server
+
+    Instead of vibe coding it all, let’s use an ancient technique called learning. First of all, what is a web server? There are a few essential syscalls.
+
+    - listen - syscall, asks kernel to listen for connections on a socket
+
+    - accept - syscall, accepts a connection on a socket
+
+    - recv - receives data from a socket
+
+    - send - sends data
+
+    - close - closes
+
+    What is a syscall? A function that is executed by the OS kernel. Whatever fancy language or library you use for HTTP, it all comes down to those syscalls (well, yes, but actually no). Let’s use C to make it all explicit. We start listening, then read from the socket in a loop and always reply with OK.
+
+    int main(void) { // We use port 0 which makes OS return any available port int server = socket(AF_INET, SOCK_STREAM, 0); if (listen(server, 128) < 0) return 1; const char reply[] = "HTTP/1.0 200 OK\r\nContent-Length: 2\r\n\r\nOK"; for (int client; (client = accept(server, NULL, NULL)) >= 0;) { if (recv(client, NULL, 4096, MSG_TRUNC) > 0) send(client, reply, sizeof reply - 1, MSG_NOSIGNAL); close(client); } }
+
+    It couldn’t be simpler: listen on a socket, accept a connection, read the data, send a reply, close the client connection, and repeat. It gives us around 65k RPS. Now that we’ve learned everything, let’s finish the article and call it a day:
+
+    $ for i in $(seq 1 15_000_000); do echo $i; ./server &; done ... ... 28232 program exited with error 1
+
+    Hm, why did listen fail? Ah, we’ve run out of ports! We’re using port=0, so the kernel picks an available port from ip_local_port_range.
+
+    $ sysctl net.ipv4.ip_local_port_range net.ipv4.ip_local_port_range = 32768 60999
+
+    Why are so many ports skipped? Historically, port 0 was created for outbound connections. When you call connect('example.com', 80), Linux connects to the remote server (the sending part) and then allocates a random port on the host from ip_local_port_range to receive data (the receiving part). There are a few reasons the default range is small.
+
+    - Port 0 is special. You cannot listen on it (actually, you can - https://acid.vegas/blog/the-port-that-does-not-exist/).
+
+    - Ports 1-1024 require root.
+
+    - Ports 1024-32768 are skipped to keep dynamically allocated ports from conflicting with existing apps. You don’t want to call connect('example.com') and end up allocating port 3306 to receive incoming data. mysql cannot start because you have example.com open in your Firefox would make for a confusing UX.
+
+    - Ports 60999 - 65535 are excluded for historical reasons dating back to IP Masquerading.
+
+    Nothing prevents us from overriding the range and using 1-65535, but that’s still a bit short of 15 million. A UDP server and a TCP server can use the same port, so we can double that to 128k. We could run a proxy in front to forward requests to the right process (virtual hosting, yay), but these are all ancient techniques - in the AI era, whenever you have a software problem, you just throw money at the hardware. Let’s simply connect 15M/32k=450 new network cards to the server.
+
+    The 65k limit comes from the TCP standard. A port is a u16, so even if we hack the kernel with find '*.c' -exec sed -i 's/u16/u32/' \; to support bigger port numbers, normal clients still wouldn’t be able to connect. Each listening server is identified by a (protocol, IP, port) tuple. That explains how we can use the same port for UDP and TCP. It also means we can use a bunch of different IPs for our web servers. If we connect 450 network cards to the server, we’ll get 450 unique IP addresses and be able to listen on 15 million unique addresses!
+
+    UPD. I’ve heard from readers that the network card is the ONLY hardware component that didn’t get 100 times more expensive in the last year. Can’t we avoid ruining that too and solve this in software?
+
+    Let’s use a beautiful technology called AnyIP, which lets us listen on a whole subnet. Many VPS and dedicated server providers routinely give you a whole TCPv6 subnet. We can simply run sudo ip -6 route add local 2001:db8:1234:5678::/64 dev lo to get 18 quintillion addresses (plus or minus one) to listen on. You can do the same for IPv4 - acquiring a subnet with 15M addresses would cost around $250 million, so adjust the command for your environment. We’ll change our server to pick the nth IP from our range:
+
+    // Read IP index from CLI, shift base IP by it int i = read_cli_param(argv[1]); const uint32_t base_ip = 0x0a400001; // ex. 10.64.0.1 addr.sin_addr.s_addr = htonl(first_ip + i); // shift, ex. 10.64.0.2
+
+    And now we can finally finish the article.
+
+    $ for i in $(seq 1 15_000_000); do echo $i; ./server $i &; done ... ... Out of memory
+
+    Hm, one server consumes 1.5MB of RAM, so running that many would take… 20TB of RAM, which is a few bytes more than our 10GB budget.
+
+    ## Runtime
+
+    By pure coincidence (what are the odds?), I explained in Running 10 million Codex CLIs on one server - LFI processes why running millions of processes creates too much overhead. The answer is to run them all in one process inside a custom runtime, much as V8 can run millions of guests in a single process. In Userland Linux scheduler in Rust, I showed how to build a specialised userland scheduler and switch between tasks with the absolute minimum amount of RAM per task.
+
+    > TLDR: We’re using LFI for sandboxing. It gives us memory isolation and replaces all syscalls with calls to our host handler, which lets us implement I/O however we like. To schedule multiple guests, we load them all into our main process’s memory and make the CPU constantly switch between guests - we become our own micro OS.
+
+    TLDR: We’re using LFI for sandboxing. It gives us memory isolation and replaces all syscalls with calls to our host handler, which lets us implement I/O however we like. To schedule multiple guests, we load them all into our main process’s memory and make the CPU constantly switch between guests - we become our own micro OS.
+
+    Since we need to save every byte and CPU cycle we can, we’re doomed to build another specialised runtime. Let’s get started. How much is 10GB divided by 15M, exactly?
+
+    Ten Great Britains divided by 15 million gives around half of kilo britain. Not much. If we run all our guests in our runtime, our custom scheduler needs to switch between them. What’s the absolute minimum state we need to preserve for each guest? We can ignore server initialisation and assume switches only happen within the main loop. Let’s take another look at the loop.
+
+    for (int client; (client = accept(server, NULL, NULL)) >= 0;) { if (recv(client, NULL, 4096, MSG_TRUNC) > 0) send(client, reply, sizeof reply - 1, MSG_NOSIGNAL); close(client); }
+
+    This code has only two state variables, server and client. Both are simple file descriptors. If our scheduler had to suspend a guest at any syscall point in this loop, we’d need to save the following state:
+
+    struct Context { pc: u64, // Instruction address to return to fd_server: i32, // server file descriptor fd_client: i32, // client file descriptor }
+
+    We only need 16 bytes per guest, so to run 15M guests in our runtime and be able to suspend them and switch between them, we would need 220MB of RAM. We’re playing it safe here - we don’t need the full u64 or i32, and with bit packing, we could probably get down to 8 bytes per guest. What else do we need?
+
+    $ codex "How much TCP connection takes?" Idle connection takes zero, while active connection consum
+  error:
+  fetched_at: '2026-11-19T20:06:39Z'
+archived_at: '2026-11-19T20:06:39Z'

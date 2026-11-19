@@ -1,0 +1,274 @@
+---
+post:
+  id: '50343293'
+  title: 'Moment of Ruby: An Argument for Nothing'
+  url: https://www.aha.io/engineering/articles/moment-of-ruby-an-argument-for-nothing
+  hn_url: https://news.ycombinator.com/item?id=50343293
+  score: 79
+  author: zemptime
+  posted_at: '2026-11-02T20:32:57Z'
+  fetched_at: '2026-11-19T20:06:42Z'
+  raw_comment_count: 24
+comments:
+- id: '50377995'
+  parent_id: '50343293'
+  author: matharmin
+  text: It&#x27;s an interesting trick, but for a setter method you really need to
+    use `def cloaking=(value)` instead of overloading the same method. It would help
+    to give a more realistic example for where this technique can be useful.
+  score: 0
+  posted_at: '2026-11-05T11:43:03Z'
+- id: '50378068'
+  parent_id: '50343293'
+  author: semiquaver
+  text: Wow, I wrote Ruby for 15+ years and never saw this trick!
+  score: 0
+  posted_at: '2026-11-05T11:52:20Z'
+- id: '50378247'
+  parent_id: '50343293'
+  author: koolba
+  text: What happens if you pass in (nothing_provided = true) as the value?<p>Does
+    it return back the empty current value?<p>I’m no ruby expert, but seems like the
+    freeze approach avoids that with a unique inaccessible object.
+  score: 0
+  posted_at: '2026-11-05T12:21:17Z'
+- id: '50378388'
+  parent_id: '50378068'
+  author: rubyfan
+  text: Same and it’s really unclear to me why you would want this access pattern
+    over. It seems like it might lead to unintended consequences.
+  score: 0
+  posted_at: '2026-11-05T12:37:58Z'
+- id: '50378419'
+  parent_id: '50343293'
+  author: thisismyopinion
+  text: Please fix the indentation of the code -_-
+  score: 0
+  posted_at: '2026-11-05T12:42:35Z'
+- id: '50378450'
+  parent_id: '50378247'
+  author: XYen0n
+  text: This expression returns true. It should be in a different scope from the default
+    parameter value, so I assume it is equivalent to passing true directly.
+  score: 0
+  posted_at: '2026-11-05T12:46:14Z'
+- id: '50378541'
+  parent_id: '50343293'
+  author: shevy-java
+  text: "<p><pre><code>    def index_with(default = (no_default = true))\n      if
+    block_given?\n        to_h { |elem| [elem, yield(elem)] } # rubocop:disable Rails&#x2F;IndexWith\n
+    \     elsif no_default\n        to_enum(:index_with) { size if respond_to?(:size)
+    }\n      else\n        to_h { |elem| [elem, default] } # rubocop:disable Rails&#x2F;IndexWith\n
+    \     end\n    end\n</code></pre>\nWho, other than the rather strange people in
+    rails, write code like that?<p>It does not convey anything useful or meaningful.
+    It is\ncomplicated to read and not easy to understand. Just that # comment\nthere
+    shows a lack of trust since it just appeases rubocop.<p>I have been critical of
+    the rails people before, and this is another\nexample. They don&#x27;t really
+    write ruby code. Sure, it is valid ruby\ncode, but AI can write valid ruby code
+    too and a monkey can as well\nif given enough time (and tries).<p>My criticism
+    is not confined to that alone, though. Take the\nfollowing:<p><pre><code>    NOT_PROVIDED
+    = Object.new.freeze\n</code></pre>\nAgain, this is just madness. I am noticing
+    that rails people\nslap down .freeze onto everything. This. Is. Not. Ruby. You\ndon&#x27;t
+    see matz doing that. It is an anti-pattern.<p>I understand WHY it originated,
+    of course; a lot of this has\nto do with how strings were non-frozen in the past.
+    Matz changed\nthis eventually, but that .freeze pattern still remains deeply\nrooted
+    in the brain of the rails people. They often come up\nwith craziness, such as
+    ActiveSupport::HashWithIndifferentAccess.<p>Again, I understand why (don&#x27;t
+    want to care about Strings or Symbols\nas keys); Jeremy wrote a rebuttal about
+    this already, so I won&#x27;t\nrepeat it (he is spot on), but I think it is time
+    to end the rails\ndominance in ruby in general. This is now, of course, much easier\nwith
+    DHH going all-in on AI, and the most sad rails conference of\nall times, where
+    DHH declared how ruby on rails is de-facto dead\n(now it is all AI rust, baby).<p>Ruby
+    really has a ton of problems. I&#x27;ll not repeat them here all,\nbut <a href=\"https:&#x2F;&#x2F;po-ru.com&#x2F;2026&#x2F;10&#x2F;18&#x2F;why-im-no-longer-updating-this-repository\"
+    rel=\"nofollow\">https:&#x2F;&#x2F;po-ru.com&#x2F;2026&#x2F;10&#x2F;18&#x2F;why-im-no-longer-updating-this-...</a>\nsummarized
+    it nicely. With Claude being the new de-facto language\ndesigner, it may be best
+    to completely re-think ruby. I do not see\nruby having a future as agentic AI
+    slop surrogate. It will just \nfurther accelerate decay against humans here, which
+    is a problem other\nprojects also suffer. You can find that on many comments -
+    it is a \nreal problem now. If you have two humans, and one claude slops all\nthe
+    time, and even uses claude to &quot;interact&quot; with other humans, you\nno
+    longer communicate really. You kind of claude-cell isolated yourself.<p>I am not
+    saying this is the case for all claude users, since some \nunderstand the problem
+    domain - but many others do not understand that\nthis is a real problem, which
+    is shocking. Paul kind of understood \nthe emerging problem here."
+  score: 0
+  posted_at: '2026-11-05T12:56:13Z'
+- id: '50378620'
+  parent_id: '50377995'
+  author: shevy-java
+  text: "I somewhat agree with you here. I find it easier to read when a &#x27;=&#x27;
+    is used.<p>At the same time I also understand the idea behind:<p><pre><code>    def
+    colour(xyz = :green)\n</code></pre>\nThe idea would be to use something in a toggle
+    state.<p>I sometimes use a similar, but simpler pattern, though I\nalso tend to
+    use explicit method names. But for instance:<p><pre><code>    enable(:colours)\n
+    \   enable :colours\n    enable_colours\n    disable_colours # etcc\n</code></pre>\nPersonally
+    I prefer the longer variants, e. g. enable_colours\nand disable_colours (without
+    trailing (); if people prefer\nUS spelling the method names could be enable_colors
+    etc.. it\nis really the very same point anyway). I do, however had,\nalso sometimes
+    use a more generic top-level entry point such\nas enable. I use that for my pseudo-shell
+    replacement for\nbash, written in ruby too. For instance:<p><pre><code>    enable
+    :windows_configuration\n    enable :colours\n    enable :systemd # and so on and
+    so forth.\n</code></pre>\nI mostly do this so I have an easier time remembering
+    things;\nand finding a simple, ideally as simple as possible, entry\npoint.<p>Of
+    course it is not exactly the same as the rails-idiom shown\nhere, since I&#x27;d
+    also have to use:<p><pre><code>    colours :green\n    colours :disable\n    colours
+    false\n</code></pre>\nBut I am also fine with set_colours :false. But in general
+    I\ntend to prefer disable_colours in this case.<p>Personally, since I know my
+    brain is rather weak, I try to not\nuse &quot;cloaked&quot; methods and just use
+    oldschool setters and \ngetters, where I treat set_foobar to be the same as foobar
+    =.<p>foobar= is a bit more elegant, but I also like set_xyz in general.\nOddly
+    enough I don&#x27;t really use get_xyz; but I, to my shame, must\nadmit that I
+    like this:<p><pre><code>   def return_base_directory\n</code></pre>\nMost will
+    omit &quot;return_&quot;, but I kind of like stupid code where I \ndon&#x27;t
+    have to think. In particular in bigger projects.<p>I don&#x27;t really see a need
+    for overloading methods though. I dislike\nhaving too many instance variables
+    however had; I noticed that when\nI have like more than 10 @ variables, I often
+    find it easier to just\ngroup them into a Hash instead, with Symbols as key. So
+    for instance:<p><pre><code>    @internal_hash[:use_colours] = false\n</code></pre>\nIt&#x27;s
+    not that elegant compared to:<p><pre><code>    @use_colours = false\n</code></pre>\nbut
+    I found a Hash to just be a lot more convenient\nto use here. And pp hash is super-userful.
+    (We can\neasily get all instance variables programmatically,\nof course, but I
+    still find a Hash structure so much\nmore logical and convenient to use and read
+    than many\ndifferent instance variables.)"
+  score: 0
+  posted_at: '2026-11-05T13:05:12Z'
+- id: '50378928'
+  parent_id: '50343293'
+  author: Maledictus
+  text: Ruby is beautiful :&#x27;-)
+  score: 0
+  posted_at: '2026-11-05T13:39:24Z'
+- id: '50378934'
+  parent_id: '50378247'
+  author: vidarh
+  text: If you pass in (nothing_provided = true), the method received &quot;true&quot;
+    as its argument, not the expression, so it acts exactly as if you pass in true.
+  score: 0
+  posted_at: '2026-11-05T13:40:03Z'
+- id: '50378941'
+  parent_id: '50343293'
+  author: DataDaoDe
+  text: This reminded me of something I did almost two decades ago now that I feel
+    really improved my ability to program in Ruby at the time. I spent months reading
+    through ActiveSupport and Rails source code and re-implemented whole subsystems
+    on my own to just understand how they worked. I had a blast and learned a ton
+    along the way not just about ruby but about software engineering and being able
+    to process and understand &quot;large projects&quot;. At the time, I also remember
+    really enjoying Jim Weirich&#x27;s talks and his good-natured personality inspired
+    me to dig into rake and rubygems as well.
+  score: 0
+  posted_at: '2026-11-05T13:40:51Z'
+- id: '50380141'
+  parent_id: '50377995'
+  author: the_sleaze_
+  text: Agreed. Ruby is a very sharp tool and its expressiveness can lead to overly
+    clever expressions of creativity.<p>Better to use `defined?` keyword for nil checking.
+    It does what it says on the box.
+  score: 0
+  posted_at: '2026-11-05T15:15:48Z'
+- id: '50380163'
+  parent_id: '50378620'
+  author: the_sleaze_
+  text: default arguments are a great, but I tend to advise that we cap them at 1.
+    Too high arity is a smell.
+  score: 0
+  posted_at: '2026-11-05T15:17:18Z'
+- id: '50381359'
+  parent_id: '50343293'
+  author: efficax
+  text: an &quot;interesting trick&quot; that is yet another demonstration that ruby
+    is terrible language with too much magic
+  score: 0
+  posted_at: '2026-11-05T16:48:08Z'
+- id: '50383495'
+  parent_id: '50381359'
+  author: ishouldstayaway
+  text: I don&#x27;t love this pattern either, but where is the &quot;magic&quot;
+    in the article?
+  score: 0
+  posted_at: '2026-11-05T19:44:01Z'
+- id: '50386022'
+  parent_id: '50343293'
+  author: garrisonj
+  text: I miss thinking about these sorts of things.
+  score: 0
+  posted_at: '2026-11-05T23:25:17Z'
+- id: '50388980'
+  parent_id: '50343293'
+  author: GuestFAUniverse
+  text: Seems overly complicated.<p>If you need a &quot;trick&quot; and a blog post
+    to explain your code instead of explicitly using setters and getters, I&#x27;d
+    rather have simple  AI slop code.
+  score: 0
+  posted_at: '2026-11-06T06:41:42Z'
+- id: '50391636'
+  parent_id: '50383495'
+  author: efficax
+  text: expressions in function signatures. maybe we could put the whole program in
+    a few default arguments<p>i mean look at this nonsense<p><a href="https:&#x2F;&#x2F;zverok.space&#x2F;blog&#x2F;2020-11-19-arg_defaults.html"
+    rel="nofollow">https:&#x2F;&#x2F;zverok.space&#x2F;blog&#x2F;2020-11-19-arg_defaults.html</a><p>it’s
+    a language designed to surprise you, and that’s a bad thing
+  score: 0
+  posted_at: '2026-11-06T12:38:33Z'
+- id: '50392711'
+  parent_id: '50343293'
+  author: lucasluitjes
+  text: "Nice, though I think I&#x27;d rather do:<p><pre><code>  def a *args\n    if
+    args.empty? \n      @setting\n    else\n      @setting = args.first\n    end\n
+    \ end</code></pre>"
+  score: 0
+  posted_at: '2026-11-06T14:29:35Z'
+- id: '50394832'
+  parent_id: '50392711'
+  author: zemptime
+  text: this also works and reads nicely! tradeoff is, you allocate an array each
+    time
+  score: 0
+  posted_at: '2026-11-06T16:48:51Z'
+- id: '50394875'
+  parent_id: '50377995'
+  author: zemptime
+  text: What example would be better than the one I used?<p>Had a difficult time trying
+    to think of a good example, and settled on &quot;legacy config code whose contract
+    you absolutely can&#x27;t change for &lt;reasons&gt;&quot; + &quot;spaceships.&quot;
+  score: 0
+  posted_at: '2026-11-06T16:51:57Z'
+- id: '50394989'
+  parent_id: '50380141'
+  author: zemptime
+  text: |-
+    Not totally following this one. If the contract of your methods needs to differentiate an actually supplied &quot;nil&quot; from &quot;nothing was supplied&quot;, how does `defined?` accomplish that? For ex, using it would break the intended contract here:<p><pre><code>  irb(main):020\* def cloaking(value = nil)
+      irb(main):021\*   if defined?(value)
+      irb(main):022\*     @value = value
+      irb(main):023\*   else
+      irb(main):024\*     @value
+      irb(main):025\*   end
+      irb(main):026&gt; end
+      =&gt; :cloaking
+      irb(main):027&gt; cloaking(&quot;on&quot;)
+      =&gt; &quot;on&quot;
+      irb(main):028&gt; cloaking()
+      =&gt; nil
+      irb(main):029&gt; cloaking(&quot;on&quot;)
+      =&gt; &quot;on&quot;
+      irb(main):030&gt; cloaking
+      =&gt; nil
+    </code></pre>
+    calling cloaking with no argument clears the value this method is intended to read. could `defined?` be used to accomplish this in some way I didn&#x27;t demonstrate here?
+  score: 0
+  posted_at: '2026-11-06T17:00:17Z'
+- id: '50395035'
+  parent_id: '50378388'
+  author: zemptime
+  text: added an addendum from Byroot (who introduced the change I learned this technique
+    from) on when&#x2F;why they use this
+  score: 0
+  posted_at: '2026-11-06T17:03:11Z'
+- id: '50395245'
+  parent_id: '50378419'
+  author: zemptime
+  text: fixed
+  score: 0
+  posted_at: '2026-11-06T17:15:52Z'
+article:
+archived_at: '2026-11-19T20:06:54Z'

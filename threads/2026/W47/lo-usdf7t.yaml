@@ -1,0 +1,118 @@
+---
+post:
+  id: lo-usdf7t
+  source: lobsters
+  title: Ruby2Shell (GHSA-34m4-m9fh-gqp5)
+  url: https://verialabs.com/ruby2shell/
+  hn_url: https://lobste.rs/s/usdf7t
+  score: 13
+  author: bezdomni
+  posted_at: '2026-11-19T10:50:28Z'
+  fetched_at: '2026-11-19T20:06:30Z'
+  article_url: https://verialabs.com/ruby2shell/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:39Z'
+  raw_comment_count: 5
+  tags:
+  - ruby
+  - security
+comments:
+- id: lo-1ac69g
+  parent_id: '0'
+  author: hjvt
+  text: |-
+    UTF-8 strings take a different code path and are not affected.
+
+    So, it is pretty much a nothingburger?
+  score: 4
+  posted_at: '2026-11-19T13:54:56Z'
+- id: lo-9emdix
+  parent_id: '0'
+  author: LeahNeukirchen
+  text: Supposedly, it's triggerable in a Rails default configuration. But I'm not
+    sure yet how...
+  score: 3
+  posted_at: '2026-11-19T14:27:45Z'
+- id: lo-kihq7w
+  parent_id: '0'
+  author: mperham
+  text: |-
+    pretty much a nothingburger?
+
+    Vacuous hype seems to be the story of most of these security alerts.
+  score: 1
+  posted_at: '2026-11-19T16:18:32Z'
+- id: lo-nyalxs
+  parent_id: '0'
+  author: patrickthomson
+  text: |-
+    Ruby bends over backwards to hide the details of string encoding from the user, and to interpret them in a way that keeps control flow going. Correct Ruby string handling entails a lot of force_encoding! at interface boundaries. So I think if you specified one of the affected encodings in something like a Content-Encoding header, you could hit this path pretty easily (probably as part of Rack internals), though I don't know anything about how one would get shell after that.
+    Source: long, long ago I helped implement the String class for a Ruby implementation, and it was one of the most maddening specs I've ever had to work with. "Strings are mutable blobs of bytes with a mutable tag describing their interpretation" is the wrong design, as Python learned.
+  score: 6
+  posted_at: '2026-11-19T16:18:36Z'
+- id: lo-u5kojq
+  parent_id: '0'
+  author: byroot
+  text: |-
+    No, it's very real, because Rack allow to send strings in arbitrary encodings via multipart chunks.
+    This behavior is likely to be removed from future versions of rack (currently in review). I already added a feature in Rails to monkey patch it out.
+    Now this only allow triggering a single byte of overflow, but it's kinda crazy how agents are capable of turning that into an actual RCE.
+  score: 4
+  posted_at: '2026-11-19T17:53:49Z'
+article:
+  url: https://verialabs.com/ruby2shell/
+  title: Ruby2Shell (GHSA-34m4-m9fh-gqp5) | Veria Labs
+  fetch_status: success
+  content: |-
+    ## Affected software
+
+    ### Ruby versions
+
+    ### Your deployment
+
+    The bug is reachable from the following frameworks in their default configuration. Other frameworks are not exposed by default, but application code that upcases strings received in a legacy encoding may also be vulnerable.
+
+    ### Self-hosted software
+
+    The latest version of the following popular software bundles an affected Ruby.
+
+    Updated 19 November 2026 at 19:59 UTC.
+
+    ## Remediation
+
+    ### Your deployment
+
+    Upgrade Ruby to a fixed release: 3.3.14, 3.4.13 or 4.0.10.
+
+    ### Self-hosted software
+
+    Install the vendor's fixed release. See Self-hosted software for fixed versions of popular products.
+
+    ## Technical details
+
+    ### Root cause
+
+    Most of Ruby's single-byte encodings have no capital ß. Upcasing it writes two bytes, SS, but the loop only bounds-checks one (to < to_end).
+
+    1while (*pp < end && to < to_end) { /* room for one byte */2 code = *(*pp)++;3 if (code == SHARP_s) {4 if (flags & ONIGENC_CASE_UPCASE) {5 *to++ = 'S'; /* first byte */6 code = 'S';7 }8 /* ... */9 }10 /* ... */11 *to++ = code; /* second byte, unchecked */12}
+
+    The output buffer is allocated as the input length plus 20 bytes. Each ß adds one byte to the output, so an input with 21 of them overflows the buffer by one byte.
+
+    The same loop is in several ISO-8859 and Windows-125x encodings and has been there since Ruby 2.4.0. It is reached by upcase, swapcase, downcase(:fold) and casecmp?.
+
+    UTF-8 strings take a different code path and are not affected.
+
+    Fixed upstream in ruby/ruby@d582f8f.
+
+    ### Primitive
+
+    A one-byte heap overflow. The byte written is S (0x53) when upcasing or s (0x73) when case-folding, and it lands directly after the output buffer. The attacker controls the size of the buffer through the input length.
+
+    Copying the result out of the buffer then reads one byte out of bounds.
+
+    ## Proof of concept
+
+    We'll be publishing a proof of concept in a week, once people have had time to upgrade.
+  error:
+  fetched_at: '2026-11-19T20:06:39Z'
+archived_at: '2026-11-19T20:06:39Z'

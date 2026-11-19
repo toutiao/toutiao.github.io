@@ -1,0 +1,125 @@
+---
+post:
+  id: lo-xn50o0
+  source: lobsters
+  title: PHP 8.6 Release Announcement
+  url: https://www.php.net/releases/8.6/en.php
+  hn_url: https://lobste.rs/s/xn50o0
+  score: 14
+  author: luke8086
+  posted_at: '2026-11-19T10:17:55Z'
+  fetched_at: '2026-11-19T20:06:30Z'
+  article_url: https://www.php.net/releases/8.6/en.php
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:40Z'
+  raw_comment_count: 3
+  tags:
+  - php
+  - release
+comments:
+- id: lo-jpfygp
+  parent_id: '0'
+  author: mort
+  text: This is that release which contains a fix for the CRITICAL CVE, right? Is
+    there any info on what it is? Do we know if normal Nextcloud setups are vulnerable?
+  score: 1
+  posted_at: '2026-11-19T16:25:04Z'
+- id: lo-s93n1j
+  parent_id: '0'
+  author: proctrap
+  text: See the old thread, I posted the changelog I got in https://lobste.rs/c/jhpvbn
+  score: 1
+  posted_at: '2026-11-19T17:49:30Z'
+- id: lo-uy1pzn
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    There were multiple CVEs, and the fixes happened to coincide with a feature release. This Lobsters story seems to be more focused on new features (here's what's new in 8.6), whereas the security-focused story was this one from the other day (not sure if it meets the criteria for merging these stories or not).
+    I have not dug into any of the fixes yet, but there is at least one critical CVE that received a cutesy name ("phpAfterShell"), so I presume that one's kind of important? From their description it sounds like they claim the default configuration is vulnerable, which kind of contradicts what the PHP team said the other day.
+  score: 1
+  posted_at: '2026-11-19T17:57:09Z'
+article:
+  url: https://www.php.net/releases/8.6/en.php
+  title: 'PHP: PHP 8.6 Release Announcement'
+  fetch_status: success
+  content: |-
+    # Faster, Safer, More Powerful.
+
+    PHP 8.6 is a major update of the PHP language, with new features including Partial Function Application, a new Duration class, a Polling API, and a new clamp() function
+
+    ## Key Features in PHP 8.6
+
+    More expressive code, stronger types, and scalable I/O.
+
+    Allows some of a function's arguments to be provided in advance, returning a Closure that accepts the rest.
+
+    The Duration class represents elapsed time as measured by a stopwatch.
+
+    Scalable I/O multiplexing using epoll, kqueue, and other native mechanisms, available to event loop libraries like ReactPHP and AMPHP.
+
+    Ensures that a given value (numeric or otherwise) falls within a specified range.
+
+    A standard, type-safe way to express sort order that can be shared across libraries.
+
+    Allows readonly properties to declare default values, so fixed values no longer have to be assigned in the constructor.
+
+    ## Partial Function Application
+
+    Allows some of a function's arguments to be provided in advance, using ? and ... placeholders for the rest. The result is a Closure, and the function is only called once the remaining arguments are passed to it.
+
+    $versions = ['8.4', '8.5', '8.6', '8.7', '9.0']; $supportsPfa = array_filter( $versions, fn ($version) => version_compare($version, '8.6', '>='), );
+
+    $versions = ['8.4', '8.5', '8.6', '8.7', '9.0']; $supportsPfa = array_filter( $versions, version_compare(?, '8.6', '>='), );
+
+    ## New \Time\Duration Class
+
+    The Duration class represents elapsed time as measured by a stopwatch. Its representation is independent of any time and timezone and can represent a range of more than 250 years with nanosecond precision. This makes it well-suited to represent timeouts or benchmark timings in an expressive way.
+
+    /** * All delays are in microseconds. */ function backoff( int $baseDelay, int $step, int $attempt, ): void { $delay = $baseDelay + ($step * (2 ** $attempt)); // Wait at most 30 seconds. usleep(min($delay, 30_000_000)); } // 1 second base delay, plus 100 milliseconds // doubling with each attempt. backoff(1_000_000, 100_000, $attempt);
+
+    use Time\Duration; function backoff( Duration $baseDelay, Duration $step, int $attempt, ): void { $delay = $baseDelay->add($step->multiplyBy(2 ** $attempt)); // Durations are comparable, so min() works directly. $delay = min($delay, Duration::fromSeconds(30)); time_nanosleep($delay->seconds, $delay->nanoseconds); } backoff( Duration::fromSeconds(1), Duration::fromMilliseconds(100), $attempt, ); // Preconfigure the delays using Partial Function Application. $waitBeforeRetry = backoff( Duration::fromSeconds(1), Duration::fromMilliseconds(100), attempt: ?, ); $waitBeforeRetry($attempt);
+
+    ## Polling API
+
+    The new Io\Poll API efficiently monitors many streams at once using the best mechanism available on each platform (epoll, kqueue, event ports, or WSAPoll), without the scalability limits of stream_select(). It is designed as a common foundation that event loop libraries such as ReactPHP and AMPHP can build on.
+
+    $server = stream_socket_server('tcp://0.0.0.0:8080'); $clients = []; while (true) { $read = [$server, ...$clients]; $write = $except = null; // Based on select(), which typically can't handle // more than 1024 connections stream_select($read, $write, $except, null); foreach ($read as $stream) { if ($stream === $server) { $clients[] = stream_socket_accept($server); continue; } $data = fread($stream, 8192); if ($data === '' || $data === false) { $key = array_search($stream, $clients, true); unset($clients[$key]); fclose($stream); } else { fwrite($stream, $data); } } }
+
+    use Io\Poll\{Context, Event}; $server = stream_socket_server('tcp://0.0.0.0:8080'); // Automatically uses epoll, kqueue, event ports, or WSAPoll $poll = new Context(); $poll->add(new StreamPollHandle($server), [Event::Read]); while (true) { foreach ($poll->wait() as $watcher) { $stream = $watcher->getHandle()->getStream(); if ($stream === $server) { $client = stream_socket_accept($server); $poll->add( new StreamPollHandle($client), [Event::Read], ); continue; } $data = fread($stream, 8192); if ($data === '' || $data === false) { $watcher->remove(); fclose($stream); } else { fwrite($stream, $data); } } }
+
+    ## Stream Error Handling
+
+    Stream operations can now be configured to throw a StreamException or to fail silently instead of emitting warnings. Errors are reported as structured StreamError objects with a StreamErrorCode enum case, the wrapper name, and the affected path or URL, and can also be retrieved later with stream_last_errors() or passed to a custom error handler.
+
+    $config = @file_get_contents('/etc/app/config.json'); if ($config === false) { // Only an unstructured message string is available $error = error_get_last(); log_error($error['message']); }
+
+    $context = stream_context_create([ 'stream' => [ 'error_mode' => StreamErrorMode::Exception, ], ]); try { $config = file_get_contents( '/etc/app/config.json', context: $context, ); } catch (StreamException $e) { foreach ($e->getErrors() as $error) { // $error->code is a StreamErrorCode enum case log_error( $error->code->name, $error->message, $error->wrapperName, ); } }
+
+    ## New clamp() Function
+
+    Ensures that a given value (numeric or otherwise) falls within a specified range. Otherwise, the nearest boundary value is returned.
+
+    var_dump(max(0, min(-10, 100))); // int(0) var_dump(max(0, min(50, 100))); // int(50) var_dump(max(0, min(110, 100))); // int(100)
+
+    var_dump(clamp(-10, 0, 100)); // int(0) var_dump(clamp(50, 0, 100)); // int(50) var_dump(clamp(110, 0, 100)); // int(100) // Any comparable value works with clamp(). This // includes the new Duration class. var_dump(clamp( \Time\Duration::fromSeconds(30), min: \Time\Duration::fromMinutes(1), max: \Time\Duration::fromMinutes(10), )->seconds); // int(60)
+
+    ## New SortDirection Enum
+
+    The SortDirection enum provides a shared, type-safe way to express sort order with its Ascending and Descending cases. Previously, every library had to define its own way of representing sort direction, resulting in a mix of incompatible integers, strings, booleans, and custom enums. Since SortDirection is built into PHP, libraries can accept it in their public APIs without needing adapter code.
+
+    Learn more about this feature in The PHP Foundation’s blog.
+
+    class QueryBuilder { private array $orderBy = []; public function orderBy( string $column, int $direction = SORT_ASC, ): static { $this->orderBy[] = $column . ' ' . match ($direction) { SORT_ASC => 'ASC', SORT_DESC => 'DESC', }; return $this; } } $qb->orderBy('name', SORT_DESC); $qb->orderBy('name', SORT_STRING); // Accepted by the signature, then fails inside the method: // UnhandledMatchError: Unhandled match case 2
+
+    class QueryBuilder { private array $orderBy = []; public function orderBy( string $column, SortDirection $direction = SortDirection::Ascending, ): static { $this->orderBy[] = $column . ' ' . match ($direction) { SortDirection::Ascending => 'ASC', SortDirection::Descending => 'DESC', }; return $this; } } $qb->orderBy('name', SortDirection::Descending); $qb->orderBy('name', SORT_STRING); // TypeError: QueryBuilder::orderBy(): Argument #2 ($direction) // must be of type SortDirection, int given
+
+    ## DocComments for Function Parameters
+
+    Function and method parameters can now have their own DocComments, which are available via the new ReflectionParameter::getDocComment() method. This allows each parameter to be documented right next to its declaration, without repeating its name and type in a @param tag.
+
+    class DB { /** * Returns up to $limit items matching the $query. * * @param string $query Terms to search * @param int $limit Maximum number of results */ public function search(string $query, int $limit = 10): array { return []; } } // Parameter descriptions can only be extracted // by parsing the function's DocComment.
+
+    class DB { /** * Returns up to $limit items matching the $query. */ public function search( /** Terms to search */ string $query, /** Maximum number of results */ int $limit = 1
+  error:
+  fetched_at: '2026-11-19T20:06:40Z'
+archived_at: '2026-11-19T20:06:40Z'

@@ -1,0 +1,104 @@
+---
+post:
+  id: lo-bk5nfs
+  source: lobsters
+  title: Distributed, high-performance blob storage on SQLite
+  url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
+  hn_url: https://lobste.rs/s/bk5nfs
+  score: 20
+  author: gowthamgts
+  posted_at: '2026-11-19T08:37:13Z'
+  fetched_at: '2026-11-19T20:06:30Z'
+  article_url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T20:06:40Z'
+  raw_comment_count: 1
+  tags:
+  - distributed
+  - rust
+comments:
+- id: lo-1p2ugr
+  parent_id: '0'
+  author: sebastien
+  text: I think SQLite's positioning is that it does not compete with other DBs, but
+    competes with the filesystem. I realised that first hand building an event sourcing
+    system with event batches and compaction. A month worth of simulated data would
+    take up 5-10x the size on the FS due to block size and metadata, while becoming
+    increasingly slow to query and process. Swapping to SQLite as a backend solved
+    the probem, all with a simple payload agnostic schema to organise blobs.
+  score: 1
+  posted_at: '2026-11-19T19:10:41Z'
+article:
+  url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
+  title: Distributed, high-performance blob storage on SQLite - Zerodha Tech Blog
+  fetch_status: success
+  content: |-
+    ![Sarat Chandra](https://avatars.githubusercontent.com/u/10434498?v=4)
+
+    [Sarat Chandra](https://zerodha.tech//authors/sarat)
+    Software Engineer
+
+    **TLDR;** We built Blobasaur, a sharded, distributed, lightweight blob storage server on top of SQLite to solve our high-throughput blob read/write usecase. JSON blobs varying from a few KBs to MBs are now written and read thousands of times per second on commodity hardware while maintaining single-digit millisecond latency.
+
+    * * *
+
+    On [Kite](https://zerodha.com/products/kite), our trading platform with ~20 million customers, users are able to customize their investment and trading screens heavily. They save multi-chart layouts, financial indicator templates, vector drawings, and various kinds of arbitrary UI preferences. In addition, we offer a Terminal mode that allows users to design their own workspaces by dragging, dropping, and customizing widgets. Under the hood, our backend services store these user preferences and metadata as opaque blobs (mostly JSON) ranging from a few kilobytes to several megabytes.
+
+    Many years ago, we stored such blobs in CouchDB, which turned out to be ill-suited for the kind of throughput we were starting to see. We then moved to SSDB ([ssdb](https://github.com/ideawu/ssdb)), a C++ disk-backed store that speaks the Redis protocol. This made it very easy to integrate as well. SSDB solved our immediate performance problems and ran reliably in production for several years.
+
+    Over time, two problems forced us to look for a replacement:
+
+    1. SSDB became unmaintained, which was an obvious operational risk. It is written in C++, which is not a part of our stack or expertise, so forking and maintaining was also not viable.
+    2. Scaling and size limits. SSDB is not a distributed system and can only run on a single node. This imposes significant future scaling challenges, including at one point forcing us to cap blob sizes at 1 MB because latency degrades on larger payloads.
+
+    As we added features like the Terminal mode and onboarded more internal services, we needed a robust solution. Our criteria were:
+
+    - A key-value blob store with a simple API.
+    - Designed for multi-megabyte blob read/write ops and high throughput. We sustain loads of thousands to tens of thousands of requests per second reading and writing arbitrary blobs. These are unpredictable and bursty thanks to the volatility in stock markets.
+    - Horizontally scalable, distributed.
+    - Disk-space efficiency / compression.
+    - Easily maintainable and highly economical.
+
+    So we investigated FOSS databases optimized for high-throughput blob storage and looked at the following:
+
+    - **ScyllaDB:** We already run ScyllaDB for high-throughput workloads, but in our tests, it turned out to be suboptimal for large blobs. Significantly lower throughput and higher resource usage. We specifically want multi-megabyte blobs. Tombstones from frequent overwrites and TTL expiries require careful tuning in ScyllaDB.
+    - **PostgreSQL:** We already have [considerable experience](https://zerodha.tech/blog/working-with-postgresql/) with Postgres in our stack and experimented with storing blobs as `BYTEA` columns, but it turned out to be severely suboptimal again for the use case in terms of performance and disk-space efficiency.
+    - **YugabyteDB:** Has blob storage as one of the options, but is not primarily designed or optimized for it. Also, a large system with too many features.
+    - **RocksDB:** Had the right primitives, but again, not architected for high throughput multi-MB blob writes.
+    - **Ceph:** Severe operational complexity and resource requirements. We didn’t even get to trying it out.
+    - **SeaweedFS:** This was the closest candidate. However, there were a few blockers. Our use case is overwrite-heavy (a user changing their workspace) over the same key, and SeaweedFS keeps appending before compaction, which can cause disk usage to grow uncontrollably. Blobs have their own IDs, which then have to be mapped against user keys in a separate DB, adding another layer. It doesn’t support TTL per blob. Also, reasonably complex setup with many parts.
+    - **S3 and MinIO:** Object storage has high per-request latency for small blobs, high request costs under write-heavy workloads (writes are 50% of our traffic), and coarse lifecycle TTLs instead of exact key expiry. Not to mention, S3 would incur significant costs given thousands of ops per second and tens of millions of ops per day.
+    - **Raw filesystem (one file per blob):** Putting blobs directly on disk meant implementing atomic writes and write batching, managing large numbers of files and directories, good old atomic read/write disk performance and inode headaches, and maintaining a separate metadata index for TTLs. Not to mention, orchestrating this over AWS storage volumes.
+
+    Around this time, we were toying with SQLite for another project and were marveling at its [_35% Faster Than The Filesystem_](https://www.sqlite.org/fasterthanfs.html) claim. We also happen to have a query cache system that creates [millions of tables](https://nadh.in/files/indiafoss-2024-dungbeetle.pdf) every day in a Postgres instance, which pushes the database to its limits quite successfully. Putting two and two together, we thought, why not build a system on top of SQLite to store millions of blobs and see what happens?
+
+    So we ended up building [Blobasaur](https://github.com/iamd3vil/blobasaur), an open source sharded blob server written in Rust that speaks the Redis protocol and uses SQLite as its storage engine. It is a single binary application that is high performance, and super simple to deploy and maintain. It is in production at Zerodha and it has successfully replaced SSDB.
+
+    [![Blobasaur logo](/static/images/blobasaur-logo.svg)](https://github.com/iamd3vil/blobasaur)
+
+    ## What we needed
+
+    We had several Go and Python services already talking to SSDB via the Redis protocol, with more waiting to onboard. We wanted the new solution to meet these requirements:
+
+    - Redis protocol compatibility (if possible at all): Every existing client already used standard Redis libraries (`GET`, `SET`, `HGET`, `HSET`, `DEL`, `EXPIRE`). If we could get a system that could be a drop-in replacement, that would allow us to leave existing services untouched and reduce risk significantly.
+    - Low latency across payload sizes: It needed to serve both 2 KB settings blobs and 5 MB chart layouts with single-digit millisecond latency.
+    - Built-in compression: Almost all our payloads are repetitive JSON, which compresses well.
+    - Simple CRUD with TTLs: We didn’t need complex data structures, server-side scripting, or secondary queries. We just needed key-value and hash CRUD with key expiry.
+    - Multi-node partitioning: We needed to split data across multiple machines so a single node wasn’t a bottleneck.
+    - Relaxed durability is acceptable: This store holds non-critical UI and workspace preferences, and not critical financial data. If a sudden power loss drops recent writes, a user might lose a recent chart layout tweak, which is annoying, but it never affects trading. This was a good performance trade-off for our use case.
+
+    ## Why SQLite (and Rust)
+
+    We had a few options for the storage. The obvious one is the raw filesystem, with one file per blob. But with that, we’d need to invent everything ourselves:
+
+    - Atomic writes and batching.
+    - TTL cleanup, which needs secondary indexes or walking the directories.
+    - Dealing with fd limits.
+    - Managing metadata separately from the raw data.
+
+    SQLite pretty much gave us everything that the raw filesystem lacked. For small blobs, SQLite is up to 35% faster than raw filesystem I/O. While raw files start to beat SQLite above ~100 KiB, we compress blobs before writing them. And thankfully, 99% of our compressed values sit well below 100 KiB.
+
+    Using SQLite also meant inheriting a battle-tested storage engine with ACID transactions, crash recovery, and standard tooling. Any shard on disk can be inspected with the standard `sqlite3` CLI or
+  error:
+  fetched_at: '2026-11-19T20:06:40Z'
+archived_at: '2026-11-19T20:06:40Z'
