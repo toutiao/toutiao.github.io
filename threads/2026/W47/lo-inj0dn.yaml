@@ -1,0 +1,130 @@
+---
+post:
+  id: lo-inj0dn
+  source: lobsters
+  title: IPv6 delegation, an unusually subtle failure mode
+  url: https://savyasacheejha.com/posts/why-odhcpd/
+  hn_url: https://lobste.rs/s/inj0dn
+  score: 13
+  author: fanf
+  posted_at: '2026-11-18T17:52:22Z'
+  fetched_at: '2026-11-19T02:20:26Z'
+  article_url: https://savyasacheejha.com/posts/why-odhcpd/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T02:20:30Z'
+  raw_comment_count: 1
+  tags:
+  - linux
+  - networking
+comments:
+- id: lo-giu5md
+  parent_id: '0'
+  author: atmosx
+  text: Interesting. I will keep an eye on this in my setup. Given the abundance of
+    IPv6 addresses, I wonder why ISPs keep them dynamic. Every client should be getting
+    assigned the same prefix.
+  score: 1
+  posted_at: '2026-11-19T01:47:52Z'
+article:
+  url: https://savyasacheejha.com/posts/why-odhcpd/
+  title: IPv6 delegation, an unusually subtle failure mode · Savyasachee Jha
+  fetch_status: success
+  content: "Running a custom x64 router has a lot of upsides. One, it runs mainline
+    Linux, so it gets updates quickly. Two, router adblocking. 'Nuff said. And three,
+    if something breaks, you get to dive in deep and figure out what's going wrong.\n\nThis
+    week, I had a really interesting time with my custom setup. I noticed that if
+    I'd restart `pppd` (which connects to my ISP), Google would stop working. It would
+    still resolve, but I couldn't reach it.\n\n_Photo by Jordan Harrison on Unsplash_\n\n##
+    Diagnosis\n\nI have a stack where `networkd` is responsible for the network in
+    general, with `pppd` dialing in to my ISP, `kea-dhcp4` handing out DHCPv4 addresses,
+    `blocky` handling DNS (on the router as well as the laptop) and `networkd` itself
+    handling RA. As far as I knew, there was nothing wrong in this stack at all. All
+    the daemons themselves are battle-tested and known to be working fine.\n\nSo maybe
+    this was a problem with my laptop?\n\n    ~ ❯ ping -c 4 google.com\n    PING google.com
+    (2404:6800:4013:813::64) 56 data bytes\n    --- google.com ping statistics ---\n
+    \   4 packets transmitted, 0 received, 100% packet loss, time 3064ms\n    \n    ~
+    ❯ ip addr\n    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+    group default qlen 1000\n        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00\n
+    \       inet 127.0.0.1/8 scope host lo\n           valid_lft forever preferred_lft
+    forever\n        inet6 ::1/128 scope host noprefixroute\n           valid_lft
+    forever preferred_lft forever\n    2: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP>
+    mtu 1500 qdisc noqueue state UP group default qlen 1000\n        link/ether 00:00:5e:00:53:01
+    brd ff:ff:ff:ff:ff:ff\n        inet 192.168.2.148/24 brd 192.168.2.255 scope global
+    dynamic noprefixroute wlan0\n           valid_lft 4130sec preferred_lft 4130sec\n
+    \       inet6 2001:db8:aaaa:1::10f1/64 scope global temporary dynamic\n           valid_lft
+    3090sec preferred_lft 1290sec\n        inet6 2001:db8:aaaa:1::1a03/64 scope global
+    dynamic mngtmpaddr noprefixroute\n           valid_lft 3090sec preferred_lft 1290sec\n
+    \       inet6 2001:db8:bbbb:2::bea0/64 scope global temporary dynamic\n           valid_lft
+    3554sec preferred_lft 1754sec\n        inet6 2001:db8:bbbb:2::690f/64 scope global
+    dynamic mngtmpaddr noprefixroute\n           valid_lft 3554sec preferred_lft 1754sec\n
+    \       inet6 fe80::5b9c/64 scope link noprefixroute\n           valid_lft forever
+    preferred_lft forever\n\nOne `ping` told me that Google was getting resolved to
+    its IPv6 address, which exonerated DNS, but I couldn't ping it. An IPv4 address
+    on the other hand, worked fine.\n\nOn the other hand, `wlan0` showed 2 groups
+    of IPv6 addresses with the older IPv6 address having a preferred lifetime greater
+    than 0. Could this be the culprit? I restarted `NetworkManager`, and lo and behold,
+    Google magically started working again and I was down to just one group of IPv6
+    addresses, the newer ones.\n\n## Solutioning\n\nI've never debugged networks in
+    depth, but the problem here seemed to be fairly simple to grasp. Whenever `pppd`
+    restarts, it negotiates a new connection with my ISP, which provides a new prefix
+    to my router for delegation. However, no device drops the old IPv6 address. At
+    first I thought this was NetworkManager's fault, but then I saw my iPhone do the
+    same thing. Two points don't make a pattern, but they do make a line. Which pointed
+    straight at `networkd`.\n\nDon't get me wrong. I like `networkd`. The only reason
+    I have `NetworkManager` on my laptop is because it's purpose built for Wi-Fi and
+    roaming and it's never let me down yet (`iwd` ftw). My router and server both
+    run `networkd`. It's a very comfortable, no-nonsense daemon. So I was reluctant
+    to blame it. So I turned to `pppd` instead as a cop-out.\n\nI decided to ensure
+    that `pppd` would never restart when I'd redeploy my NixOS router. But unfortunately,
+    I've had times when my ISP has randomly hiccoughed and `pppd` reconnects to it
+    leading to the same problem all over again. Which meant I'd have to get to the
+    bottom of this.\n\nA little bit of searching led me to [RFC 9096](https://www.rfc-editor.org/rfc/rfc9096.html),
+    _Improving the Reaction of Customer Edge Routers to IPv6 Renumbering Events_,
+    which tightens [RFC 7084](https://www.rfc-editor.org/rfc/rfc7084.html), _Basic
+    Requirements for IPv6 Customer Edge Routers_. Basically, whenever a new prefix
+    is given to the router and the old one dropped by upstream, the router needs to
+    advertise the old prefix with preferred and valid lifetimes of `0` which causes
+    consumers of the router advertisement to stop using it as a source address.\n\nInterestingly,
+    `networkd` has an issue [RFC 7084 support in networkd (automatic ipv6 range delegation)](https://github.com/systemd/systemd/issues/4073)
+    where a requirement for properly implementing RFC 9096 came up in September 2026.
+    There's a [patch](https://github.com/systemd/systemd/pull/34244) as well which
+    hasn't yet been merged. The same issue has been [brought up with radvd on OPNsense](https://github.com/opnsense/core/issues/9261)
+    and closed as \"not planned\", as well as with [dnsmasq on OPNsense](https://github.com/opnsense/core/issues/11028).
+    [VyOS's dynamic-prefix support is still an open request](https://vyos.dev/T5795).
+    Which meant that the usual suspects were out. There's only one option left, and
+    it's not available on NixOS. [`odhcpd` from OpenWrt](https://git.openwrt.org/project/odhcpd),
+    which actually _does_ implement [RFC](https://github.com/openwrt/odhcpd/commit/86c0200f80)
+    [9096](https://github.com/openwrt/odhcpd/commit/cdb9e5b655).\n\nI was a bit wary
+    of relying on an OpenWrt package. Not because I think there's anything wrong with
+    OpenWrt (quite the contrary!), but because the distribution itself is unusual.
+    It doesn't use `systemd` or `dbus`, instead using `procd` as pid1 and uses `ubus`
+    for IPC. I know that many of their packages depend on these two pieces of infrastructure
+    to function, so that was the first thing I checked. Fortunately, `odhcpd` is unusual
+    in that it can get information from the kernel directly through netlink and can
+    be configured without the need for `ubus`, so that was not a blocker. Packaging
+    it took me a while, but I [submitted it for review to nixpkgs](https://github.com/NixOS/nixpkgs/pull/586551)
+    and began running it on my router, switching off router advertisement on `networkd`.
+    I could have used `odhcpd` for DHCP as well, but I was fairly happy with `kea-dhcp4`
+    so I left it alone.\n\nAnd lo and behold, when I deliberately restarted pppd,
+    I got:\n\n    ~ ❯ ip -6 addr show scope global\n    2: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP>
+    mtu 1500 state UP\n        inet6 2001:db8:cccc:3::5286/64 scope global deprecated
+    dynamic mngtmpaddr noprefixroute\n           valid_lft 5325sec preferred_lft 0sec\n
+    \       inet6 2001:db8:dddd:4::dcaa/64 scope global temporary dynamic\n           valid_lft
+    5338sec preferred_lft 2638sec\n        inet6 2001:db8:dddd:4::8a09/64 scope global
+    dynamic mngtmpaddr noprefixroute\n           valid_lft 5338sec preferred_lft 2638sec\n
+    \   \n    ~ ❯ ip -6 route get 2606:4700:4700::1111\n    2606:4700:4700::1111 from
+    :: via fe80::1 dev wlan0 proto ra src 2001:db8:dddd:4::dcaa metric 100 pref medium\n
+    \   \n    ~ ❯ ping -6 -c3 2606:4700:4700::1111\n    3 packets transmitted, 3 received,
+    0% packet loss, time 2003ms\n    rtt min/avg/max/mdev = 6.289/8.147/9.487/1.356
+    ms\n\nSuccess! The best thing was that `odhcpd`'s memory is persistent across
+    reboots and is agnostic to the time set on your machine. This is pretty important
+    for me, because I haven't replaced the dead CMOS battery on my router and the
+    clock resets every time the router restarts. This allows `odhcpd` to advertise
+    old prefixes with the correct preferred/valid lifetime of 0 after every reboot
+    without caring about when they were delegated. In practice, this would matter
+    if my router loses power while my Wi-Fi access point remains up, or if I reboot
+    my router (which definitely does happen often). Given my family's reliance on
+    the home network remaining up, I'd rath"
+  error:
+  fetched_at: '2026-11-19T02:20:30Z'
+archived_at: '2026-11-19T02:20:30Z'

@@ -1,0 +1,353 @@
+---
+post:
+  id: '50550096'
+  title: The Magic of Partial Evaluation
+  url: https://jimmyhmiller.com/magic-of-partial-evaluation
+  hn_url: https://news.ycombinator.com/item?id=50550096
+  score: 98
+  author: ''
+  posted_at: '2026-11-18T18:29:03Z'
+  fetched_at: '2026-11-19T02:20:22Z'
+  article_url: https://jimmyhmiller.com/magic-of-partial-evaluation
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T02:20:22Z'
+  raw_comment_count: 25
+comments:
+- id: '50550795'
+  parent_id: '50550096'
+  author: measurablefunc
+  text: Combining this w&#x2F; a JIT gets you truffle&#x2F;graal.
+  score: 0
+  posted_at: '2026-11-18T19:22:07Z'
+- id: '50550882'
+  parent_id: '50550795'
+  author: grashalm
+  text: If you are curious how this works in Truffle. Here are some docs:<p><a href="https:&#x2F;&#x2F;www.graalvm.org&#x2F;latest&#x2F;graalvm-as-a-platform&#x2F;language-implementation-framework&#x2F;PartialEvaluation&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.graalvm.org&#x2F;latest&#x2F;graalvm-as-a-platform&#x2F;languag...</a>
+  score: 0
+  posted_at: '2026-11-18T19:28:22Z'
+- id: '50551469'
+  parent_id: '50550096'
+  author: owlstuffing
+  text: This type of optimization is also known as compile-time constant expression
+    folding.<p>The problem with expanding it to include function calls is that it
+    compromises binary compatibility. A code change on a function that results in
+    a different range or has different side effects, will not be realized unless the
+    caller is recompiled.
+  score: 0
+  posted_at: '2026-11-18T20:09:26Z'
+- id: '50551576'
+  parent_id: '50550096'
+  author: apignotti
+  text: We implemented a similar concept in our C++ -&gt; JavaScript&#x2F;WebAssembly
+    compiler (Cheerp) several years ago. It was a nice challenge.<p><a href="https:&#x2F;&#x2F;labs.leaningtech.com&#x2F;blog&#x2F;reducing-webassembly-size-by-exploring-all-executions-in-llvm"
+    rel="nofollow">https:&#x2F;&#x2F;labs.leaningtech.com&#x2F;blog&#x2F;reducing-webassembly-size-...</a>
+  score: 0
+  posted_at: '2026-11-18T20:17:56Z'
+- id: '50551733'
+  parent_id: '50550096'
+  author: infogulch
+  text: Doesn&#x27;t Zig have a pretty nice implementation of compile-time evaluation
+    built in?
+  score: 0
+  posted_at: '2026-11-18T20:31:15Z'
+- id: '50552110'
+  parent_id: '50551469'
+  author: cogman10
+  text: Which is why the second most important optimization of compilers is inlining.  If
+    the callee is small enough then hoisting it up into the caller can expose additional
+    optimizations, including noticing that parameters in the caller to the callee
+    are in fact constant.
+  score: 0
+  posted_at: '2026-11-18T21:06:03Z'
+- id: '50552150'
+  parent_id: '50551733'
+  author: jimmyhmiller
+  text: |-
+    Comptime in zig is definitely quite cool, but not quite the same.<p>Consider this example.
+    <a href="https:&#x2F;&#x2F;jimmyhmiller.com&#x2F;split-shot&#x2F;#&#x2F;vm" rel="nofollow">https:&#x2F;&#x2F;jimmyhmiller.com&#x2F;split-shot&#x2F;#&#x2F;vm</a><p>Make the code a comptime argument in zig and you get &quot;store to comptime variable depends on runtime condition&quot;.
+  score: 0
+  posted_at: '2026-11-18T21:09:22Z'
+- id: '50552243'
+  parent_id: '50550096'
+  author: artrax
+  text: |-
+    We build this as a c++ library, do to query-compilation for our stream processing engine.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;nebulastream&#x2F;nautilus" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nebulastream&#x2F;nautilus</a><p>It allows us to implement operators or functions without having to write them in terms of LLVM IR DSL (or similar). Rather, you write your functions over a wrapper type (and returning one), for which there is an overload of anything which you can overload in c++.<p>You can instantiate a wrapper from some c++ value, in which case the wrapper will just forward everything to this value, which was nice for debugging in the preagentic era.
+    But, you can also instantiate such a wrapper as a tracer, and the result of the functions evaluation will be a trace.<p>For controlflow, we record whenever a wrapper type is evaluated as a bool, first return true, and when we reach the end of one branch, throw an exception to get back to the beginning, and start all over again, but evaluate it to false.<p>The resulting trace we can turn into LLVM IR and compile, or run for example in wasm
+  score: 0
+  posted_at: '2026-11-18T21:18:13Z'
+- id: '50552542'
+  parent_id: '50550795'
+  author: arvyy
+  text: truffle is great, it&#x27;s the most exciting tech in pldev domain to me.
+    I&#x27;ll just mention truffle has few other perks than just performance boost
+    -- you get a debugger with a fairly small effort, and you get interop with other
+    languages implemented using truffle (which does include fairly mainstream ones
+    like python, js, and others).
+  score: 0
+  posted_at: '2026-11-18T21:43:51Z'
+- id: '50552568'
+  parent_id: '50552150'
+  author: hansvm
+  text: Zig isn&#x27;t perfect, but I&#x27;ve definitely done this futamura stuff
+    before. It&#x27;s one of my favourite ways to implement a Forth in Zig (which,
+    incidentally, is the default way that I introduce a backprop library or other
+    DSL as I&#x27;m prototyping an idea). Interpreters are dead-simple to write, and
+    I just write an interpreter with a comptime code argument. It definitely works,
+    and the codegen is reasoanble out of the box.
+  score: 0
+  posted_at: '2026-11-18T21:45:07Z'
+- id: '50552579'
+  parent_id: '50550096'
+  author: johntortugo
+  text: 'This seminar explains how GraalVM Truffle uses partial evaluation: <a href="https:&#x2F;&#x2F;youtu.be&#x2F;pksRrON5XfU"
+    rel="nofollow">https:&#x2F;&#x2F;youtu.be&#x2F;pksRrON5XfU</a>'
+  score: 0
+  posted_at: '2026-11-18T21:45:31Z'
+- id: '50552675'
+  parent_id: '50550096'
+  author: airtnp
+  text: |-
+    I keep thinking the partial evaluator and Futamura projection application on LLM context.<p>Skill =&gt; Generic Program
+    LLM skill optimizer =&gt; Partial evaluator
+    Context =&gt; Env&#x2F;Input
+    Agent =&gt; Interpreter<p>First projection:
+    mix(interpreter, program) =&gt; specialized skill
+    AOT compiling =&gt; offline skill rewriting
+    JIT compiling =&gt; runtime specializing, defer loading<p>Second projection:
+    mix(mix, interpreter) =&gt; Agent&#x2F;Model specific skill optimizer<p>Third projection:
+    mix(mix, mix) =&gt; self-improvement skill optimizer<p>Whatever maybe I&#x27;m just thinking LLM as magic partial evaluator for any tasks
+  score: 0
+  posted_at: '2026-11-18T21:50:24Z'
+- id: '50553079'
+  parent_id: '50550096'
+  author: iFreilicht
+  text: Very interesting concept! It reminds me of Hazel (<a href="https:&#x2F;&#x2F;hazel.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;hazel.org&#x2F;</a>) which takes the idea further
+    and into the editor; any program written in it can be partially evaluated, even
+    if variables or even part of the syntax are missing. Missing parts are called
+    &quot;holes&quot;, and those are preserved during evaluation so that something
+    like<p>abs(  + 2 * 3 - 10)<p>becomes<p>abs(  - 4)<p>which is great fun. My first
+    attempts using this showed me that if you&#x27;re not used to this, it actually
+    gets pretty confusing quite quickly, but I guess it can be learned.
+  score: 0
+  posted_at: '2026-11-18T22:20:11Z'
+- id: '50553239'
+  parent_id: '50553079'
+  author: fmbb
+  text: Is that a unary minus denoting a negative number or a binary minus yielding
+    a function with one hole?
+  score: 0
+  posted_at: '2026-11-18T22:30:51Z'
+- id: '50553286'
+  parent_id: '50550096'
+  author: TuringTest
+  text: "&gt; For me, the most beautiful pieces of software are those that reveal
+    something about the nature of programming languages.<p>There are three moments
+    that make the functional programmer evolve their understanding of how a programming
+    language really works as a symbolic representation of human thought, beyond the
+    metaphor taught in school of a computer program as a grinder that crunches input
+    data and produces results.<p>The first one is when you really understand recursion
+    and how a function can be defined in terms of itself (with varying parameters
+    for each call).<p>The second is when you discover Prolog variable unification
+    or Haskell lazy evaluation and how you can represent infinite data structures
+    without having the program hang in an infinite loop.<p>Third one is when you learn
+    that the behavior of any imperative language (down to the working of the microprocessor
+    data paths) can be fully represented in a pure functional rewrite language (without
+    destructive assignment &#x2F; cell state changes).<p>Those insights make one realize
+    that all programming paradigms have the nature of symbols processing in common
+    and there&#x27;s no &quot;true description&quot; of a program&#x27;s runtime execution
+    - the imperative, functional and logic views of the running program are all equivalent
+    representations."
+  score: 0
+  posted_at: '2026-11-18T22:34:34Z'
+- id: '50553456'
+  parent_id: '50553286'
+  author: packetlost
+  text: "&gt; Third one is when you learn that the behavior of any imperative language
+    (down to the working of the microprocessor data paths) can be fully represented
+    in a pure functional rewrite language (without destructive assignment &#x2F; cell
+    state changes).<p>Can you either expand on that one or link me to sources that
+    do? I think I follow, but I&#x27;d like more info"
+  score: 0
+  posted_at: '2026-11-18T22:47:55Z'
+- id: '50553463'
+  parent_id: '50552542'
+  author: measurablefunc
+  text: I think they have a C interpreter as well so in theory that should allow running
+    python modules that are wrappers for C libraries like sqlite.
+  score: 0
+  posted_at: '2026-11-18T22:48:17Z'
+- id: '50553589'
+  parent_id: '50550096'
+  author: p1necone
+  text: All the examples in here look pretty clean, but doesn&#x27;t partial application
+    like this in practice on &quot;average&quot; codebases result in massive binary
+    size explosion?
+  score: 0
+  posted_at: '2026-11-18T23:01:04Z'
+- id: '50553599'
+  parent_id: '50552568'
+  author: speedster217
+  text: Thanks for the input! I was thinking about trying this out in Zig. The whole
+    article reminded me of why I was originally excited about comptime
+  score: 0
+  posted_at: '2026-11-18T23:02:11Z'
+- id: '50553706'
+  parent_id: '50553456'
+  author: IsTom
+  text: I think OP might be talking about operational or denominational semantics
+    or something isomorphic to them.
+  score: 0
+  posted_at: '2026-11-18T23:14:24Z'
+- id: '50553770'
+  parent_id: '50553589'
+  author: fjfaase
+  text: I once tried this for an interpreting parser I wrote and it resulted in a
+    very large program that took far longer to compile and was also slower than the
+    original interpreter, probably due the code no longer fitting in the processor
+    caches.
+  score: 0
+  posted_at: '2026-11-18T23:21:48Z'
+- id: '50553971'
+  parent_id: '50553456'
+  author: tpoacher
+  text: Not OP, and probably not what he meant, but for me the insight that any for
+    loop can be expressed as a fully equivalent tail-recursive call and vice-versa
+    is what I would describe as my No.3 moment.
+  score: 0
+  posted_at: '2026-11-18T23:45:33Z'
+- id: '50554106'
+  parent_id: '50553971'
+  author: packetlost
+  text: I don&#x27;t think that&#x27;s what is being said. The statement is more like
+    &#x27;any imperative program can be represented by a purely functional representation&#x27;,
+    which goes beyond simply modeling loops with tail call elimination.
+  score: 0
+  posted_at: '2026-11-19T00:01:12Z'
+- id: '50554746'
+  parent_id: '50553286'
+  author: amw-zero
+  text: "&gt; Third one is when you learn that the behavior of any imperative language
+    (down to the working of the microprocessor data paths) can be fully represented
+    in a pure functional rewrite language (without destructive assignment &#x2F; cell
+    state changes).<p>What no one is ever able to explain is: why is this a good thing?<p>The
+    underlying machine does destructive assignment. The whole thing is a big mutable
+    array. Why should we represent it in another way?"
+  score: 0
+  posted_at: '2026-11-19T01:11:28Z'
+- id: '50555054'
+  parent_id: '50554746'
+  author: AlotOfReading
+  text: The difficulty of a given problem changes depending on the perspective you&#x27;re
+    looking at it from. That&#x27;s why understanding different models helps.<p>Optimizing
+    deeply enough will eventually make any abstraction leaky though, so you&#x27;ll
+    never fully escape mechanical sympathy.
+  score: 0
+  posted_at: '2026-11-19T01:46:23Z'
+article:
+  url: https://jimmyhmiller.com/magic-of-partial-evaluation
+  title: The Magic of Partial Evaluation — Jimmy Miller
+  fetch_status: success
+  content: "There are certain ideas in software that are simply beautiful. It doesn't
+    matter if they have any practical use. It doesn't matter that you will never convince
+    your coworkers to consider them. There is just something captivating about the
+    way some computational systems work.\n\nFor me, the most beautiful pieces of software
+    are those that reveal something about the nature of programming languages. Programming
+    languages are my obsession. I have never met a problem that couldn't be solved
+    by introducing yet another programming language. Solving a problem at the programming
+    language level is about solving the meta problem. Instead of trying to solve a
+    particular problem, we take a step back and ask how we can solve a whole class
+    of problems at once.\n\nSo when I find something that makes me rethink the nature
+    of programming languages, I start rethinking computation as a whole. One of these
+    incredibly beautiful but tricky concepts goes by the name partial evaluation.
+    If you are fascinated by interpreters and compilers, partial evaluation will teach
+    you how they are related, and how you can get a compiler for free.\n\n## Partial
+    Evaluation Easy Mode[#](#partial-evaluation-easy-mode)\n\nPartial evaluation has
+    been a fascination of mine for a while. But this whole thing came up when [James
+    Long announced he had revived](https://x.com/jlongster/status/2118465154354385010)
+    Meta's partial evaluator for JavaScript called prepack. When I first heard about
+    prepack, I had some high hopes and expectations for the project, but was sadly
+    let down. This revival brought to light those same dreams. But sadly, just as
+    with the original aim, prepack was not designed for beauty, but for practicality.
+    So I figured it was time to renew my own efforts.\n\nYes, in some ways this is
+    a post repping my own library I'm releasing. But I'm not doing this because I
+    want it to be used. I'm doing this because it lets you play with the idea I find
+    so beautiful. That is what this post is about.\n\n### Doing Partial Evaluation
+    by Hand[#](#doing-partial-evaluation-by-hand)\n\nConsider the following code:\n\n
+    \   function factorial(n) {\n      if (n <= 1) return 1;\n      return n * factorial(n
+    - 1);\n    }\n    \n    factorial(5);\n\nAs a person who reads code, you can think
+    about how this code computes and what answer it will give. But you can do more
+    than just give the answer. You can see the expanded form of this particular code
+    for these particular calls. This code is spiritually the same as the following
+    expression, once we expand it out.\n\n    5 * (4 * (3 * (2 * 1)))\n\nIn this case,
+    there is really nothing at all that this code needs to do at runtime. A sufficiently
+    smart compiler will just run this code directly at compile time and give the answer.
+    But this is a bit less clear if things come in at runtime.\n\n    function power(base,
+    exponent) {\n      if (exponent === 0) return 1;\n      return base * power(base,
+    exponent - 1);\n    }\n    \n    power(process.argv[2], 5)\n\nIt might seem like
+    we can't do anything here, but again, if you are used to thinking about how programs
+    run, you can trace this out and realize this is just the same as:\n\n    process.argv[2]
+    * (process.argv[2] * (process.argv[2] * (process.argv[2] * (process.argv[2] *
+    1))))\n\nWhat we have done in both of these cases is called partial evaluation.
+    In the first, it was a trivial case because everything was statically known. But
+    in this latter case, we have reduced a program down into the essentials of its
+    dynamic structure. There are no recursive function calls left. All of this has
+    been expanded as far as it could till we get just the dynamic parts of the code
+    remaining.\n\n## The Big Idea[#](#the-big-idea)\n\nThis intuitive notion of partial
+    evaluation is all you need to know to appreciate the beauty here. Partial evaluation
+    just evaluates the part of the program we can evaluate at build time and leaves
+    all the rest. When we do this with certain programs in certain combinations, we
+    get some quite surprising, incredible behavior.\n\n    function calculate(expr)
+    {\n      if (typeof expr === \"number\") return expr;\n      switch (expr[0])
+    {\n        case \"+\": return calculate(expr[1]) + calculate(expr[2]);\n        case
+    \"-\": return calculate(expr[1]) - calculate(expr[2]);\n        case \"*\": return
+    calculate(expr[1]) * calculate(expr[2]);\n        case \"/\": return calculate(expr[1])
+    / calculate(expr[2]);\n        default: throw new Error(\"Unknown operator\");\n
+    \     }\n    }\n    \n    calculate([\"+\", 1, [\"*\", 2, 3]]);\n\nHere we have
+    a very simple interpreter for a language that just supports arithmetic. For the
+    above expression, you should be able to think about how we could start \"partially\"
+    evaluating it. (In this case, it can be a full evaluation.) If this kind of partial
+    evaluation isn't quite clicking for you, I've put the steps below to hopefully
+    help it make sense.\n\n    calculate([\"+\", 1, [\"*\", 2, 3]])\n    → calculate(1)
+    + calculate([\"*\", 2, 3])\n    → 1 + calculate([\"*\", 2, 3])\n    → 1 + (calculate(2)
+    * calculate(3))\n    → 1 + (2 * calculate(3))\n    → 1 + (2 * 3)\n    → 1 + 6\n
+    \   → 7\n\nThis is a simple evaluation of the code. But what happens if we throw
+    a value we don't know into the expression?\n\n    calculate([\"+\", Number(process.argv[2]),
+    [\"*\", 2, 3]])\n    → calculate(Number(process.argv[2])) + calculate([\"*\",
+    2, 3])\n    → Number(process.argv[2]) + calculate([\"*\", 2, 3])\n    → Number(process.argv[2])
+    + (calculate(2) * calculate(3))\n    → Number(process.argv[2]) + (2 * calculate(3))\n
+    \   → Number(process.argv[2]) + (2 * 3)\n    → Number(process.argv[2]) + 6\n\nHere
+    we can see that clear partial evaluation difference. We don't know how to evaluate
+    `Number(process.argv[2])`. We have no idea what the answer to that will be. But
+    as part of this process, we do know some partial information about it. For example,
+    when we get to\n\n    if (typeof expr === \"number\") return expr;\n\nwe know
+    that `Number(process.argv[2])` is indeed a number. So we can partially evaluate
+    it further. Hopefully this is all making sense. But if you are like me, this all
+    might seem a bit trivial and uninteresting. So let's look at a more complicated
+    example.\n\n    function brainfuck(code, input = \"\") {\n      const tape = new
+    Uint8Array(30000);\n      const jumps = {}, stack = [];\n      let pointer = 0,
+    inputPointer = 0, output = \"\";\n      for (let i = 0; i < code.length; i++)
+    {\n        if (code[i] === \"[\") stack.push(i);\n        if (code[i] === \"]\")
+    {\n          const start = stack.pop();\n          jumps[start] = i;\n          jumps[i]
+    = start;\n        }\n      }\n      for (let i = 0; i < code.length; i++) {\n
+    \       switch (code[i]) {\n          case \">\": pointer++; break;\n          case
+    \"<\": pointer--; break;\n          case \"+\": tape[pointer]++; break;\n          case
+    \"-\": tape[pointer]--; break;\n          case \".\": output += String.fromCharCode(tape[pointer]);
+    break;\n          case \",\":\n            tape[pointer] = inputPointer < input.length\n
+    \             ? input.charCodeAt(inputPointer++)\n              : 0;\n            break;\n
+    \         case \"[\": if (!tape[pointer]) i = jumps[i]; break;\n          case
+    \"]\": if (tape[pointer]) i = jumps[i]; break;\n        }\n      }\n      return
+    output;\n    }\n    \n    brainfuck(\"++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.\");\n\nHere
+    we have a brainfuck interpreter. And the example program we want to partially
+    evaluate does not require any input at all (in brainfuck `,` is the way you get
+    input). So when we go to partially evaluate this, we will just get an answer.
+    In this case, this program is actually brainfuck's \"hello world\". But what about
+    a program with input?\n\n    function main() {\n    \treturn brainfuck(\",>++[>+++[>++++[<<<+>>>-]<-]<-]<.\",
+    process.argv[2])\n    }\n\nWhen we do our partial evaluation, we get the following:\n\n
+    \   function main(b) {\n      let a;\n      a: {\n        a = process.argv[2];\n
+    \       a = a === void 0 ? \"\" : a;\n        if (0 < a.length) {\n          a
+    = a.charCodeAt(0);\n          break a;\n"
+  error:
+  fetched_at: '2026-11-19T02:20:22Z'
+archived_at: '2026-11-19T02:20:25Z'

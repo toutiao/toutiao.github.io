@@ -1,0 +1,124 @@
+---
+post:
+  id: lo-silxsl
+  source: lobsters
+  title: The Magic of Partial Evaluation
+  url: https://jimmyhmiller.com/magic-of-partial-evaluation
+  hn_url: https://lobste.rs/s/silxsl
+  score: 21
+  author: abhin4v
+  posted_at: '2026-11-18T17:30:14Z'
+  fetched_at: '2026-11-19T02:20:26Z'
+  article_url: https://jimmyhmiller.com/magic-of-partial-evaluation
+  article_fetch_status: success
+  article_fetched_at: '2026-11-19T02:20:29Z'
+  raw_comment_count: 0
+  tags:
+  - plt
+comments: []
+article:
+  url: https://jimmyhmiller.com/magic-of-partial-evaluation
+  title: The Magic of Partial Evaluation — Jimmy Miller
+  fetch_status: success
+  content: "There are certain ideas in software that are simply beautiful. It doesn't
+    matter if they have any practical use. It doesn't matter that you will never convince
+    your coworkers to consider them. There is just something captivating about the
+    way some computational systems work.\n\nFor me, the most beautiful pieces of software
+    are those that reveal something about the nature of programming languages. Programming
+    languages are my obsession. I have never met a problem that couldn't be solved
+    by introducing yet another programming language. Solving a problem at the programming
+    language level is about solving the meta problem. Instead of trying to solve a
+    particular problem, we take a step back and ask how we can solve a whole class
+    of problems at once.\n\nSo when I find something that makes me rethink the nature
+    of programming languages, I start rethinking computation as a whole. One of these
+    incredibly beautiful but tricky concepts goes by the name partial evaluation.
+    If you are fascinated by interpreters and compilers, partial evaluation will teach
+    you how they are related, and how you can get a compiler for free.\n\n## Partial
+    Evaluation Easy Mode[#](#partial-evaluation-easy-mode)\n\nPartial evaluation has
+    been a fascination of mine for a while. But this whole thing came up when [James
+    Long announced he had revived](https://x.com/jlongster/status/2118465154354385010)
+    Meta's partial evaluator for JavaScript called prepack. When I first heard about
+    prepack, I had some high hopes and expectations for the project, but was sadly
+    let down. This revival brought to light those same dreams. But sadly, just as
+    with the original aim, prepack was not designed for beauty, but for practicality.
+    So I figured it was time to renew my own efforts.\n\nYes, in some ways this is
+    a post repping my own library I'm releasing. But I'm not doing this because I
+    want it to be used. I'm doing this because it lets you play with the idea I find
+    so beautiful. That is what this post is about.\n\n### Doing Partial Evaluation
+    by Hand[#](#doing-partial-evaluation-by-hand)\n\nConsider the following code:\n\n
+    \   function factorial(n) {\n      if (n <= 1) return 1;\n      return n * factorial(n
+    - 1);\n    }\n    \n    factorial(5);\n\nAs a person who reads code, you can think
+    about how this code computes and what answer it will give. But you can do more
+    than just give the answer. You can see the expanded form of this particular code
+    for these particular calls. This code is spiritually the same as the following
+    expression, once we expand it out.\n\n    5 * (4 * (3 * (2 * 1)))\n\nIn this case,
+    there is really nothing at all that this code needs to do at runtime. A sufficiently
+    smart compiler will just run this code directly at compile time and give the answer.
+    But this is a bit less clear if things come in at runtime.\n\n    function power(base,
+    exponent) {\n      if (exponent === 0) return 1;\n      return base * power(base,
+    exponent - 1);\n    }\n    \n    power(process.argv[2], 5)\n\nIt might seem like
+    we can't do anything here, but again, if you are used to thinking about how programs
+    run, you can trace this out and realize this is just the same as:\n\n    process.argv[2]
+    * (process.argv[2] * (process.argv[2] * (process.argv[2] * (process.argv[2] *
+    1))))\n\nWhat we have done in both of these cases is called partial evaluation.
+    In the first, it was a trivial case because everything was statically known. But
+    in this latter case, we have reduced a program down into the essentials of its
+    dynamic structure. There are no recursive function calls left. All of this has
+    been expanded as far as it could till we get just the dynamic parts of the code
+    remaining.\n\n## The Big Idea[#](#the-big-idea)\n\nThis intuitive notion of partial
+    evaluation is all you need to know to appreciate the beauty here. Partial evaluation
+    just evaluates the part of the program we can evaluate at build time and leaves
+    all the rest. When we do this with certain programs in certain combinations, we
+    get some quite surprising, incredible behavior.\n\n    function calculate(expr)
+    {\n      if (typeof expr === \"number\") return expr;\n      switch (expr[0])
+    {\n        case \"+\": return calculate(expr[1]) + calculate(expr[2]);\n        case
+    \"-\": return calculate(expr[1]) - calculate(expr[2]);\n        case \"*\": return
+    calculate(expr[1]) * calculate(expr[2]);\n        case \"/\": return calculate(expr[1])
+    / calculate(expr[2]);\n        default: throw new Error(\"Unknown operator\");\n
+    \     }\n    }\n    \n    calculate([\"+\", 1, [\"*\", 2, 3]]);\n\nHere we have
+    a very simple interpreter for a language that just supports arithmetic. For the
+    above expression, you should be able to think about how we could start \"partially\"
+    evaluating it. (In this case, it can be a full evaluation.) If this kind of partial
+    evaluation isn't quite clicking for you, I've put the steps below to hopefully
+    help it make sense.\n\n    calculate([\"+\", 1, [\"*\", 2, 3]])\n    → calculate(1)
+    + calculate([\"*\", 2, 3])\n    → 1 + calculate([\"*\", 2, 3])\n    → 1 + (calculate(2)
+    * calculate(3))\n    → 1 + (2 * calculate(3))\n    → 1 + (2 * 3)\n    → 1 + 6\n
+    \   → 7\n\nThis is a simple evaluation of the code. But what happens if we throw
+    a value we don't know into the expression?\n\n    calculate([\"+\", Number(process.argv[2]),
+    [\"*\", 2, 3]])\n    → calculate(Number(process.argv[2])) + calculate([\"*\",
+    2, 3])\n    → Number(process.argv[2]) + calculate([\"*\", 2, 3])\n    → Number(process.argv[2])
+    + (calculate(2) * calculate(3))\n    → Number(process.argv[2]) + (2 * calculate(3))\n
+    \   → Number(process.argv[2]) + (2 * 3)\n    → Number(process.argv[2]) + 6\n\nHere
+    we can see that clear partial evaluation difference. We don't know how to evaluate
+    `Number(process.argv[2])`. We have no idea what the answer to that will be. But
+    as part of this process, we do know some partial information about it. For example,
+    when we get to\n\n    if (typeof expr === \"number\") return expr;\n\nwe know
+    that `Number(process.argv[2])` is indeed a number. So we can partially evaluate
+    it further. Hopefully this is all making sense. But if you are like me, this all
+    might seem a bit trivial and uninteresting. So let's look at a more complicated
+    example.\n\n    function brainfuck(code, input = \"\") {\n      const tape = new
+    Uint8Array(30000);\n      const jumps = {}, stack = [];\n      let pointer = 0,
+    inputPointer = 0, output = \"\";\n      for (let i = 0; i < code.length; i++)
+    {\n        if (code[i] === \"[\") stack.push(i);\n        if (code[i] === \"]\")
+    {\n          const start = stack.pop();\n          jumps[start] = i;\n          jumps[i]
+    = start;\n        }\n      }\n      for (let i = 0; i < code.length; i++) {\n
+    \       switch (code[i]) {\n          case \">\": pointer++; break;\n          case
+    \"<\": pointer--; break;\n          case \"+\": tape[pointer]++; break;\n          case
+    \"-\": tape[pointer]--; break;\n          case \".\": output += String.fromCharCode(tape[pointer]);
+    break;\n          case \",\":\n            tape[pointer] = inputPointer < input.length\n
+    \             ? input.charCodeAt(inputPointer++)\n              : 0;\n            break;\n
+    \         case \"[\": if (!tape[pointer]) i = jumps[i]; break;\n          case
+    \"]\": if (tape[pointer]) i = jumps[i]; break;\n        }\n      }\n      return
+    output;\n    }\n    \n    brainfuck(\"++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.\");\n\nHere
+    we have a brainfuck interpreter. And the example program we want to partially
+    evaluate does not require any input at all (in brainfuck `,` is the way you get
+    input). So when we go to partially evaluate this, we will just get an answer.
+    In this case, this program is actually brainfuck's \"hello world\". But what about
+    a program with input?\n\n    function main() {\n    \treturn brainfuck(\",>++[>+++[>++++[<<<+>>>-]<-]<-]<.\",
+    process.argv[2])\n    }\n\nWhen we do our partial evaluation, we get the following:\n\n
+    \   function main(b) {\n      let a;\n      a: {\n        a = process.argv[2];\n
+    \       a = a === void 0 ? \"\" : a;\n        if (0 < a.length) {\n          a
+    = a.charCodeAt(0);\n          break a;\n"
+  error:
+  fetched_at: '2026-11-19T02:20:29Z'
+archived_at: '2026-11-19T02:20:29Z'
