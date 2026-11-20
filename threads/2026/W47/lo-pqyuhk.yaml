@@ -5,14 +5,14 @@ post:
   title: PostgreSQL 19 Released
   url: https://www.postgresql.org/about/news/postgresql-19-released-3449/
   hn_url: https://lobste.rs/s/pqyuhk
-  score: 26
+  score: 58
   author: bio
   posted_at: '2026-11-19T15:12:08Z'
-  fetched_at: '2026-11-19T20:06:30Z'
+  fetched_at: '2026-11-20T02:04:10Z'
   article_url: https://www.postgresql.org/about/news/postgresql-19-released-3449/
   article_fetch_status: success
-  article_fetched_at: '2026-11-19T20:06:31Z'
-  raw_comment_count: 1
+  article_fetched_at: '2026-11-20T02:04:11Z'
+  raw_comment_count: 3
   tags:
   - databases
 comments:
@@ -20,8 +20,28 @@ comments:
   parent_id: '0'
   author: cinemast
   text: The VACUUM improvements feel like an early Christmas present.
-  score: 9
+  score: 17
   posted_at: '2026-11-19T16:03:10Z'
+- id: lo-88y0qu
+  parent_id: '0'
+  author: simonw
+  text: |-
+    Developers will find many delightful features in this release, from support for "read-your-writes" consistency on standbys to "get or create" behavior that saves a network round trip.
+
+    Looks like that's via a new WAIT FOR LSN query you can run on your standby - so you commit data to the leader, track what the log sequence number is, then on subsequent reads you can say to the standby "don't answer this query until you've caught up to LSN X".
+    I remember reading about Wikipedia using a hand-rolled version of this against MySQL, it's neat to see it as a core feature of PostgreSQL now.
+
+    In addition to this, MediaWiki attempts to ensure that the user sees events occurring on the wiki in chronological order. A few seconds of lag can be tolerated, as long as the user sees a consistent picture from subsequent requests. This is done by saving the primary binlog position in the session, and then at the start of each request, waiting for the replica to catch up to that position before doing any reads from it.
+  score: 7
+  posted_at: '2026-11-19T20:16:16Z'
+- id: lo-o61gbv
+  parent_id: '0'
+  author: yorickpeterse
+  text: |-
+    GitLab's database load balancer did (and still does IIRC) something similar: after a write it records the WAL pointer from the primary and stores it in your session. The next time it wants to read from a secondary it first compares that value against the WAL pointer of the secondary. Only if that value is newer than the one from the last write does it read from the secondary.
+    Seeing something like this (finally) included in PG itself is nice and would probably make that entire implementation a lot simpler.
+  score: 2
+  posted_at: '2026-11-20T01:24:48Z'
 article:
   url: https://www.postgresql.org/about/news/postgresql-19-released-3449/
   title: 'PostgreSQL: PostgreSQL 19 Released!'
@@ -109,4 +129,4 @@ article:
     can import table statistics from the remote server "
   error:
   fetched_at: '2026-11-19T20:06:31Z'
-archived_at: '2026-11-19T20:06:31Z'
+archived_at: '2026-11-20T02:04:11Z'

@@ -5,14 +5,14 @@ post:
   title: Mutex poisoning is not for everyone
   url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   hn_url: https://lobste.rs/s/uzn2t6
-  score: 12
+  score: 26
   author: polywolf
   posted_at: '2026-11-19T13:01:49Z'
-  fetched_at: '2026-11-19T20:06:30Z'
+  fetched_at: '2026-11-20T02:04:10Z'
   article_url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-19T20:06:40Z'
-  raw_comment_count: 1
+  article_fetched_at: '2026-11-20T02:04:12Z'
+  raw_comment_count: 6
   tags:
   - rust
 comments:
@@ -23,8 +23,66 @@ comments:
     it's a problem in the past, but this was super clear and well organised. I'm now
     aware of std::sync::nonpoison in nightly and finally understand why parking_lot
     is a transitive dependency of all my projects. Kudos!
-  score: 1
+  score: 3
   posted_at: '2026-11-19T19:35:45Z'
+- id: lo-uvh437
+  parent_id: '0'
+  author: aster
+  text: I realize that rust is no longer a young language where change can rapidly
+    happen, but it's a shame that people are so afraid to introduce edition breaking
+    changes, this is what editions are for. The issues with poisoning mutexes are
+    well documented, and I think it would be a shame to keep it as the default going
+    forwards.
+  score: 10
+  posted_at: '2026-11-19T20:14:05Z'
+- id: lo-mkrh5w
+  parent_id: '0'
+  author: natkr
+  text: |-
+    Couldn't disagree harder with this post. It basically makes two claims:
+
+    Poisoning costs performance, both for bookkeeping and panic propagation
+    Uptime is more important than correctness
+
+    For 1, yeah, but that's consistent with the rest of the standard library. HashMap defaults to SipHash even though it's slower than something like AHash.. because they consider collision unpredictability to be more important than best-case performance. If your use case is hot enough for this to be a problem and it actually is safe under panicking and you've put in the work to prove that.. you can still use parking_lot! It's good that the option is there.. but it's also good it's easier to use the seatbelt than to turn off the warning.
+    For 2.. no? We don't do On Error Resume Next all over the place anymore either. I'm sure there are cases where it might make sense, but if silencing the error in those cases is the hard part... I have to doubt that you're actually bothering with the hard part.
+  score: 8
+  posted_at: '2026-11-19T21:01:01Z'
+- id: lo-zrafjq
+  parent_id: '0'
+  author: pkolloch
+  text: |-
+    code in later editions must work together with code in older editions. That would make these changes very challenging.
+    Is it such a big deal to use another Mutex from a library?
+  score: 3
+  posted_at: '2026-11-19T21:13:35Z'
+- id: lo-luyrre
+  parent_id: '0'
+  author: aster
+  text: |-
+    pkolloch 28 minutes ago (unread) |
+
+    I don't think it's a big deal to use a Mutex from another library, it's more a matter of a large part of the community saying there's a problem with this implementation, and instead of fixing it, the solution presented is to use something else because it would break compatibility to change the implementation, so we should just stick with this forever?
+    I'm not aware of specifics with rust editions, I may have been wrong on the point that it could just be changed from one edition to the next without breaking old edition crates. What if std::sync::Mutex just exists as an alias to std::sync::poison::Mutex in edition A and to std::sync::nonpoison::Mutex in edition B?
+    EDIT: In fact, this appears to be what the rust team plans to do
+    https://github.com/rust-lang/rust/issues/134645#issuecomment-3324577500
+  score: 8
+  posted_at: '2026-11-19T21:50:45Z'
+- id: lo-lqydnb
+  parent_id: '0'
+  author: peter
+  text: |-
+    I think there are realistically only 3 types of non-trivial rust programs:
+
+    panic=abort
+    programs that carefully join every single thread/task and check for panics
+    programs with bugs on panic
+
+    Type 1 obviously prefers nonpoison.
+    Type 2 is the only case where poisoning might be good. But realistically, if the authors went to great lengths to handle panics, they probably don’t want to panic on poisoned mutexes. That kind of hardening is all about using drop guards / RAII to ensure everything stays consistent, especially in async programs where cancel safety matters even more than panic safety.
+    Type 3 programs have already made the “uptime is more important than correctness” choice. I doubt removing poisoning from type 3 programs would meaningfully increase exposure to bugs for most programs.
+  score: 2
+  posted_at: '2026-11-20T01:54:28Z'
 article:
   url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   title: Mutex poisoning is not for everyone | bertptrs.nl
@@ -132,4 +190,4 @@ article:
     32KiB of instruction cache. Lu"
   error:
   fetched_at: '2026-11-19T20:06:40Z'
-archived_at: '2026-11-19T20:06:40Z'
+archived_at: '2026-11-20T02:04:12Z'

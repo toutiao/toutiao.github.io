@@ -4,14 +4,14 @@ post:
   title: Distributed, high-performance blob storage on SQLite
   url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
   hn_url: https://news.ycombinator.com/item?id=50557537
-  score: 214
+  score: 265
   author: ''
   posted_at: '2026-11-19T08:39:45Z'
-  fetched_at: '2026-11-19T20:06:15Z'
+  fetched_at: '2026-11-20T02:03:51Z'
   article_url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
   article_fetch_status: success
   article_fetched_at: '2026-11-19T20:06:15Z'
-  raw_comment_count: 60
+  raw_comment_count: 69
 comments:
 - id: '50557940'
   parent_id: '50557537'
@@ -515,6 +515,98 @@ comments:
     is a fine stand-in for object storage, though, at low scale&#x2F;volume.
   score: 0
   posted_at: '2026-11-19T20:02:05Z'
+- id: '50565884'
+  parent_id: '50557537'
+  author: grep_it
+  text: I find that partitioning by key range tends to be more flexible and malleable
+    to rebalancing (merge, splits, etc). Doing things like CRC16(key) % 16384 tends
+    to bite eventually.
+  score: 0
+  posted_at: '2026-11-19T20:27:17Z'
+- id: '50566406'
+  parent_id: '50562195'
+  author: sgarland
+  text: 'In other databases, you also don&#x27;t get the space back (mostly [0]).
+    Postgres requires VACUUM FULL (or REPACK CONCURRENTLY, as of Pg19), and MySQL
+    requires OPTIMIZE TABLE, neither of which is commonly done.<p>This is my point;
+    if you&#x27;re coming from other databases, it should be obvious that you don&#x27;t
+    get space back unless you ask for it.<p>0: Postgres can, under the specific circumstance
+    of pages at the end of a table being completely empty, release them back to the
+    OS with a normal VACUUM.'
+  score: 0
+  posted_at: '2026-11-19T21:09:24Z'
+- id: '50566467'
+  parent_id: '50563391'
+  author: sgarland
+  text: I want people to read documentation and try experiments, I just question whether
+    they should be creating a product at that time. I have nothing against &quot;hey,
+    look what I learned!&quot; posts, it&#x27;s the concomitant positioning as having
+    enough expertise in the field to sell a solution that bothers me.<p>I felt similarly
+    when Prisma launched and didn&#x27;t implement JOINs, instead just doing full
+    SELECTs and joining them itself.
+  score: 0
+  posted_at: '2026-11-19T21:14:35Z'
+- id: '50566492'
+  parent_id: '50562495'
+  author: sgarland
+  text: '&gt; Today, that&#x27;s all abstracted away for pennies an hour.<p>Until
+    it isn&#x27;t. &quot;Why is my query slow&quot; doesn&#x27;t get solved just because
+    you didn&#x27;t have to run apt-get install postgresql.<p>EDIT: the company also
+    discusses working with Postgres [0], and man do they have some takes. work_mem
+    set to 600 MB, using a temporary table for active queries while copying its rows
+    to the main table (their pg_catalog has to be MASSIVE), generating a table per
+    query on a &quot;cache DB,&quot; resulting in millions of tables that are then
+    dropped at EOD...<p>This is my point. Even if these were running on RDS (they
+    aren&#x27;t), they would still be causing performance problems, because you need
+    to understand how your tooling works to use it well at scale.<p>0: <a href="https:&#x2F;&#x2F;zerodha.tech&#x2F;blog&#x2F;working-with-postgresql&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;zerodha.tech&#x2F;blog&#x2F;working-with-postgresql&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-19T21:15:31Z'
+- id: '50566499'
+  parent_id: '50565502'
+  author: UltraSane
+  text: yes my favorite key is a blake3 hash of the object.
+  score: 0
+  posted_at: '2026-11-19T21:16:31Z'
+- id: '50566766'
+  parent_id: '50557537'
+  author: ltbarcly3
+  text: I remember something in operating systems class about an efficient way to
+    store binary objects.  Let me go check the textbook..<p>Filesystem!  I knew there
+    was some obscure way to do this.
+  score: 0
+  posted_at: '2026-11-19T21:35:57Z'
+- id: '50566953'
+  parent_id: '50563132'
+  author: sgarland
+  text: They mentioned trying Scylla, but found it didn&#x27;t do well with multi-megabyte
+    blobs. I question why they need multiple megabytes&#x27; worth of JSON to store
+    user preferences and metadata, personally, but that&#x27;s neither here nor there.
+  score: 0
+  posted_at: '2026-11-19T21:51:10Z'
+- id: '50567867'
+  parent_id: '50566467'
+  author: FridgeSeal
+  text: 'Learning things: A-ok.<p>Publicly posting about _just_ learning stuff which
+    should be well-and-truly table-stakes for a product you own: not the best look.<p>It’d
+    be a bit like a chef posting about they’ve recently learnt that cross-contamination
+    is bad.'
+  score: 0
+  posted_at: '2026-11-19T23:09:42Z'
+- id: '50567944'
+  parent_id: '50557537'
+  author: munch-o-man
+  text: |-
+    I wrote something similar with s3&#x2F;blob storage but probably with slightly different use cases. Been working on it for like a year now:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;afreidah&#x2F;s3-orchestrator" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;afreidah&#x2F;s3-orchestrator</a>
+    <a href="https:&#x2F;&#x2F;s3-orchestrator.munchbox.cc" rel="nofollow">https:&#x2F;&#x2F;s3-orchestrator.munchbox.cc</a><p>self hosted service that acts as an orchestration layer between x-number of s3&#x2F;blob storage backends, handles replication, failover, encryption, compression, integrity checking, and backend pressure analysis to optimize reads&#x2F;writes to the most efficient available backend that meets the requirements of the request.<p>Threw a star on yours so I can remember to look at it deeper later
+  score: 0
+  posted_at: '2026-11-19T23:16:41Z'
+- id: '50568465'
+  parent_id: '50557537'
+  author: adsharma
+  text: Why not rivet?
+  score: 0
+  posted_at: '2026-11-20T00:17:23Z'
 article:
   url: https://zerodha.tech/blog/high-performance-distributed-blob-storage/
   title: Distributed, high-performance blob storage on SQLite - Zerodha Tech Blog
@@ -588,4 +680,4 @@ article:
     Using SQLite also meant inheriting a battle-tested storage engine with ACID transactions, crash recovery, and standard tooling. Any shard on disk can be inspected with the standard `sqlite3` CLI or
   error:
   fetched_at: '2026-11-19T20:06:15Z'
-archived_at: '2026-11-19T20:06:29Z'
+archived_at: '2026-11-20T02:04:09Z'

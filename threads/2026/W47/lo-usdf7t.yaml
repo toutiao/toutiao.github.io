@@ -5,14 +5,14 @@ post:
   title: Ruby2Shell (GHSA-34m4-m9fh-gqp5)
   url: https://verialabs.com/ruby2shell/
   hn_url: https://lobste.rs/s/usdf7t
-  score: 13
+  score: 24
   author: bezdomni
   posted_at: '2026-11-19T10:50:28Z'
-  fetched_at: '2026-11-19T20:06:30Z'
+  fetched_at: '2026-11-20T02:04:10Z'
   article_url: https://verialabs.com/ruby2shell/
   article_fetch_status: success
-  article_fetched_at: '2026-11-19T20:06:39Z'
-  raw_comment_count: 5
+  article_fetched_at: '2026-11-20T02:04:12Z'
+  raw_comment_count: 6
   tags:
   - ruby
   - security
@@ -40,7 +40,7 @@ comments:
     pretty much a nothingburger?
 
     Vacuous hype seems to be the story of most of these security alerts.
-  score: 1
+  score: 2
   posted_at: '2026-11-19T16:18:32Z'
 - id: lo-nyalxs
   parent_id: '0'
@@ -48,7 +48,7 @@ comments:
   text: |-
     Ruby bends over backwards to hide the details of string encoding from the user, and to interpret them in a way that keeps control flow going. Correct Ruby string handling entails a lot of force_encoding! at interface boundaries. So I think if you specified one of the affected encodings in something like a Content-Encoding header, you could hit this path pretty easily (probably as part of Rack internals), though I don't know anything about how one would get shell after that.
     Source: long, long ago I helped implement the String class for a Ruby implementation, and it was one of the most maddening specs I've ever had to work with. "Strings are mutable blobs of bytes with a mutable tag describing their interpretation" is the wrong design, as Python learned.
-  score: 6
+  score: 8
   posted_at: '2026-11-19T16:18:36Z'
 - id: lo-u5kojq
   parent_id: '0'
@@ -57,26 +57,43 @@ comments:
     No, it's very real, because Rack allow to send strings in arbitrary encodings via multipart chunks.
     This behavior is likely to be removed from future versions of rack (currently in review). I already added a feature in Rails to monkey patch it out.
     Now this only allow triggering a single byte of overflow, but it's kinda crazy how agents are capable of turning that into an actual RCE.
-  score: 4
+  score: 7
   posted_at: '2026-11-19T17:53:49Z'
+- id: lo-rtxiw9
+  parent_id: '0'
+  author: misty
+  text: I do feel like it's worth keeping in mind Ruby was developed in Japan and
+    the string design was developed at a time when Unicode adoption was very far from
+    universal in Japan. Designing the string class specifically to ensure the precise
+    byte value of strings is preserved unless absolutely necessary makes more sense
+    in that context. By comparison, I remember reading a mailing list thread from
+    early in the Python 3 days where a Japanese developer commented that it was going
+    to be very difficult to work with paths in real-world systems because many of
+    them had mixed-encoding paths for historical reasons that weren't valid in any
+    specific encoding and couldn't safely be coerced to/from Unicode without losing
+    information. (I believe all of that was resolved, possibly before 3.0 was released,
+    but you can imagine why a language being designed around these kinds of usecases
+    would have been much more defensive around them.)
+  score: 5
+  posted_at: '2026-11-19T23:03:51Z'
 article:
   url: https://verialabs.com/ruby2shell/
-  title: Ruby2Shell (GHSA-34m4-m9fh-gqp5) | Veria Labs
+  title: Ruby2Shell (CVE-2026-132825) | Veria Labs
   fetch_status: success
   content: |-
     ## Affected software
 
     ### Ruby versions
 
-    ### Your deployment
+    ### Frameworks
 
     The bug is reachable from the following frameworks in their default configuration. Other frameworks are not exposed by default, but application code that upcases strings received in a legacy encoding may also be vulnerable.
 
     ### Self-hosted software
 
-    The latest version of the following popular software bundles an affected Ruby.
+    These products bundle their own Ruby, so the fix has to come from the vendor. Products marked Vulnerable have no fixed release yet: every current version is vulnerable.
 
-    Updated 19 November 2026 at 19:59 UTC.
+    Updated 20 November 2026 at 01:59 UTC.
 
     ## Remediation
 
@@ -112,7 +129,13 @@ article:
 
     ## Proof of concept
 
-    We'll be publishing a proof of concept in a week, once people have had time to upgrade.
+    We'll be publishing a proof of concept demonstrating remote code execution on stock Rails on 25 November 2026, or later if major vendors have not shipped a fix by then.
+
+    ## Credits
+
+    Veria Labs found this vulnerability independently and was the first to demonstrate remote code execution.
+
+    The Ruby security advisory also credits Stephan Lipp (Ada Logics) and Anthropic with reporting the underlying primitive. Additional discoverers include Moritz Sanft in collaboration with OpenAI.
   error:
-  fetched_at: '2026-11-19T20:06:39Z'
-archived_at: '2026-11-19T20:06:39Z'
+  fetched_at: '2026-11-20T02:04:12Z'
+archived_at: '2026-11-20T02:04:12Z'

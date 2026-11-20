@@ -4,14 +4,14 @@ post:
   title: What's New in PHP 8.6
   url: https://www.php.net/releases/8.6/en.php
   hn_url: https://news.ycombinator.com/item?id=50557870
-  score: 242
+  score: 276
   author: ''
   posted_at: '2026-11-19T09:27:15Z'
-  fetched_at: '2026-11-19T20:06:15Z'
+  fetched_at: '2026-11-20T02:03:51Z'
   article_url: https://www.php.net/releases/8.6/en.php
   article_fetch_status: success
   article_fetched_at: '2026-11-19T20:06:15Z'
-  raw_comment_count: 84
+  raw_comment_count: 93
 comments:
 - id: '50558004'
   parent_id: '50557870'
@@ -798,6 +798,122 @@ comments:
   text: There are critical vulns patched in the older releases at the same time.
   score: 0
   posted_at: '2026-11-19T19:55:23Z'
+- id: '50565561'
+  parent_id: '50558909'
+  author: Heliodex
+  text: |-
+    <p><pre><code>    max($value, min($lower_bound, $upper_bound)) when $value &lt; $lower_bound: $lower_bound
+        max($value, min($lower_bound, $upper_bound)) when $value &gt; $upper_bound: $value
+        max($value, min($lower_bound, $upper_bound)) when $value is between them: $value
+
+        max($lower_bound, min($value, $upper_bound)) when $value &lt; $lower_bound: $lower_bound
+        max($lower_bound, min($value, $upper_bound)) when $value &gt; $upper_bound: $upper_bound
+        max($lower_bound, min($value, $upper_bound)) when $value is between them: $value
+    </code></pre>
+    If the former was what&#x27;s actually written then yeah, it would be incorrect. However, if you swapped arguments 1 and 2 for each clamp() call, they&#x27;d give the same result, and for what you say the PHP 8.5 example is written as, there&#x27;s no call given where $value &gt; $upper_bound.<p>I don&#x27;t know if this makes much sense, though that&#x27;s all the more reason for needing clamp().
+  score: 0
+  posted_at: '2026-11-19T20:05:43Z'
+- id: '50565597'
+  parent_id: '50557870'
+  author: PaulHoule
+  text: Love the partial function application syntax but it&#x27;s a little scary
+    to me that people are writing PHP scripts that use select, Xpoll, etc.
+  score: 0
+  posted_at: '2026-11-19T20:07:35Z'
+- id: '50565669'
+  parent_id: '50559712'
+  author: Jach
+  text: Yeah, the most shallow &quot;PHP bad&quot; comments are pretty annoying, but
+    they sometimes have a point, and there are always new programmers who don&#x27;t
+    know any history. One of the bug fixes I saw today was for an issue that&#x27;s
+    been around for 20 years and is another consequence of PHP&#x27;s decision (IMO
+    a bad one) to have a unified &quot;stream wrapper&quot; API such that functions
+    named, for example, file_get_contents(), can be passed a URL rather than a file.
+    If that URL was httpS or HTTPS (i.e. an uppercase S), then the bug now fixed was
+    that PHP would ignore TLS and initially connect over port 80 and make the initial
+    request (along with sending whatever else) over plaintext. It could also successfully
+    follow a redirect to actual https but hide that it leaked data in the initial
+    request. This is just such a PHP thing. I&#x27;ve at times acted the apologist
+    for PHP, it was my first language over 20 years ago so I&#x27;ll always have some
+    fondness for it, but in my heart I do think it fundamentally sucks and can&#x27;t
+    be evolved to stop sucking.<p>The last time I did any professional work in PHP
+    was probably 2012, though. Since then I&#x27;ve only maintained a couple things
+    I originally made myself, and on rare occasions have written a standalone script
+    or two (I think the last one was about 3 years ago) and it still makes me happy
+    that I can just rsync things up to my site. Thankfully the maintenance work has
+    been very minimal, but in contrast I&#x27;ve not been excited about any PHP changes
+    since the early 5 days, and my upgrades from 5 to 7 to 8 were mostly just going
+    &quot;huh&quot; (though sometimes &quot;Eh? wtf&quot;) at the new features while
+    being wary of breaking changes (the upgrade guides over the years have been helpful
+    and there haven&#x27;t been many breaking changes). When I look at modern PHP,
+    it&#x27;s structured quite differently to how my old waiting-to-be-rewritten maintenance
+    sites are, and I don&#x27;t like it, I just think it&#x27;s become a worse Java,
+    and most professional deployments seem to use a big framework and have a whole
+    deployment workflow (vs. just copying a few files) so again why not just use a
+    Java workflow that&#x27;ll be at worst equally cumbersome but without all the
+    PHP nonsense. On new language features specifically, I stopped getting excited
+    over those in any language once I found my way to Lisp, where if you want some
+    language feature, you don&#x27;t have to wait for some committee to add it, you
+    can just add it (or someone else has already added it, or it&#x27;s always been
+    there since before I was born). It&#x27;s nice when other languages play catch-up,
+    sure (though sometimes they implement something worse than not having it at all),
+    but I can&#x27;t ever muster excitement...
+  score: 0
+  posted_at: '2026-11-19T20:13:14Z'
+- id: '50566063'
+  parent_id: '50565348'
+  author: Timon3
+  text: 'If we&#x27;re talking about local CRUD, sure, but that&#x27;s a tiny minority
+    of use cases. As soon as your application does network requests outside your LAN,
+    less than a few milliseconds is impossible for most regular users and developers.
+    That&#x27;s not to mention tons and tons of processes that definitely take more
+    than a few milliseconds, like: compiling a meaningfully big codebase, compressing&#x2F;uncompressing
+    most files, rendering a video, ...<p>Those are just a few examples. What is the
+    &quot;something&quot; that&#x27;s wrong with all of us?'
+  score: 0
+  posted_at: '2026-11-19T20:42:16Z'
+- id: '50566394'
+  parent_id: '50557870'
+  author: grzes
+  text: do you guys now if PHP 8.6 will be included in upcoming Debian Forky?
+  score: 0
+  posted_at: '2026-11-19T21:08:38Z'
+- id: '50566656'
+  parent_id: '50559613'
+  author: whalesalad
+  text: you are assuming that the work is happening inside of an http request context.
+    what about background tasks? workers? cli tooling? etc.
+  score: 0
+  posted_at: '2026-11-19T21:29:14Z'
+- id: '50566721'
+  parent_id: '50564725'
+  author: moebrowne
+  text: These benchmarks are garbage, the last round was nearly 2 years ago, there&#x27;s
+    no explaination of where the &quot;performance scores&quot; come from and the
+    GitHub repo is archived.<p>The TideWays benchmark doesn&#x27;t show the peak,
+    it shows the rps for 15 sustained users.
+  score: 0
+  posted_at: '2026-11-19T21:33:16Z'
+- id: '50567013'
+  parent_id: '50566721'
+  author: TimWolla
+  text: |-
+    &gt; The TideWays benchmark doesn&#x27;t show the peak, it shows the rps for 15 sustained users.<p>Yes. And it&#x27;s also not entirely representative of a production set-up. As an example Vegata is running on the same machine as PHP and the same is true for the MySQL server used by WordPress and Laravel. The tests are also running against a - except for worker count - stock installation to possibly highlight improvements by better INI defaults in newer PHP versions. This is all good enough to compare the different PHP versions against each other, since they are all equally affected by this. But it is thus by no means representative of what you can get out of a properly tuned production setup.<p>Disclosure: I set up the benchmark and performed the measurements.
+    PS: It&#x27;s Tideways, lowercase &#x27;w&#x27;.
+  score: 0
+  posted_at: '2026-11-19T21:56:21Z'
+- id: '50567144'
+  parent_id: '50564643'
+  author: moebrowne
+  text: |-
+    &gt; What does it cost you to write that explicitly? Like, 10 extra characters?<p>The given example is 26 additional characters, and that&#x27;s without any type declarations. Also calling closures isn&#x27;t free, there is a small performance penalty.<p><pre><code>    fn ($version) =&gt; version_compare($version, &#x27;8.6&#x27;, &#x27;&gt;=&#x27;)
+    </code></pre>
+    vs<p><pre><code>    version_compare(?, &#x27;8.6&#x27;, &#x27;&gt;=&#x27;)
+
+    </code></pre>
+    &gt; Pretty much the same for DocComments for params. Uh... why?<p>The reason is that docblocks are used to attach meta data to code, like generics.<p>&gt; SortDirection is literally just a built-in enum, not a huge deal. Libraries will still use their own implementations for a long time just to preserve back-compatibility.<p>Symfony at least conditionally defines a SortDirection enum in the global namespace: <a href="https:&#x2F;&#x2F;github.com&#x2F;symfony&#x2F;polyfill-php86&#x2F;blob&#x2F;1.x&#x2F;Resources&#x2F;stubs&#x2F;SortDirection.php" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;symfony&#x2F;polyfill-php86&#x2F;blob&#x2F;1.x&#x2F;Resources...</a>
+  score: 0
+  posted_at: '2026-11-19T22:08:35Z'
 article:
   url: https://www.php.net/releases/8.6/en.php
   title: 'PHP: PHP 8.6 Release Announcement'
@@ -882,4 +998,4 @@ article:
     class DB { /** * Returns up to $limit items matching the $query. */ public function search( /** Terms to search */ string $query, /** Maximum number of results */ int $limit = 1
   error:
   fetched_at: '2026-11-19T20:06:15Z'
-archived_at: '2026-11-19T20:06:29Z'
+archived_at: '2026-11-20T02:04:09Z'
