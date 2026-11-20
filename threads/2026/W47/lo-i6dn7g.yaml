@@ -1,0 +1,159 @@
+---
+post:
+  id: lo-i6dn7g
+  source: lobsters
+  title: Jujutsu Primer
+  url: https://ethanlowman.com/posts/jj-primer/
+  hn_url: https://lobste.rs/s/i6dn7g
+  score: 10
+  author: Jrmurr
+  posted_at: '2026-11-20T03:34:36Z'
+  fetched_at: '2026-11-20T10:59:43Z'
+  article_url: https://ethanlowman.com/posts/jj-primer/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-20T10:59:44Z'
+  raw_comment_count: 4
+  tags:
+  - vcs
+comments:
+- id: lo-fec0ik
+  parent_id: '0'
+  author: arialdo
+  text: |-
+    Thank you!
+    You linked Steve's tutorial, commenting it's not maintained anymore.
+    This more recent Ju! Ju! Tsu! tutorial might be of interest:
+
+    PDF
+    HTML
+
+    (Disclosure: I'm the author)
+  score: 3
+  posted_at: '2026-11-20T09:10:41Z'
+- id: lo-ssuz2i
+  parent_id: '0'
+  author: wofo
+  text: |-
+    Thanks for your tutorial! It's the best I've found so far :)
+    PS. There are a few typos here and there. In case you haven't seen them, there are some PRs in your repo with fixes.
+  score: 2
+  posted_at: '2026-11-20T10:21:51Z'
+- id: lo-mdliw7
+  parent_id: '0'
+  author: arialdo
+  text: |-
+    Thank you, happy you found it useful!
+    And thank you the heads up! I must find the time to restart working on it!
+  score: 1
+  posted_at: '2026-11-20T10:39:06Z'
+- id: lo-cwygho
+  parent_id: '0'
+  author: amil
+  text: The PDF is beautiful, thank you so much for making this, just what I wanted!
+  score: 1
+  posted_at: '2026-11-20T10:47:29Z'
+article:
+  url: https://ethanlowman.com/posts/jj-primer/
+  title: Jujutsu Primer — Ethan Lowman
+  fetch_status: success
+  content: "# Jujutsu Primer\n\nThis guide is a brief(ish) introduction to the [Jujutsu](https://docs.jj-vcs.dev/latest/)
+    (`jj`) version control system (VCS) for someone familiar with Git.\n\n## [Why
+    try Jujutsu?](#why-try-jujutsu)\n\n`jj` provides primitives for version control
+    that are simple to learn, but elegantly compose into powerful workflows. Features
+    like automatic rebase and native undo soften the sharp edges of Git. Eventually,
+    you’ll organically discover new powerful workflows that would be too cumbersome
+    to attempt with most other VCS tools.\n\nIf you work in a Git repository, you
+    can try it today. Jujutsu and Git can be used [side-by-side in the same repository](https://docs.jj-vcs.dev/latest/git-experts/#git-can-be-used-side-by-side-in-the-same-repository),
+    so you can try out `jj` on a `git` repo on your own, without fully ejecting from
+    `git`.\n\nPersonally, I think `jj` considerably boosts my effectiveness, because
+    it allows me to keep VCS bookkeeping out of my working memory. Automatic rebasing
+    also makes stacked diff workflows quite easy, and reduces thrashing of my working
+    memory. It’s also just a fun tool to use.\n\n## [Installing `jj`](#installing-jj)\n\nOfficial
+    installation instructions are [here](https://docs.jj-vcs.dev/latest/install-and-setup/),
+    but here are a few common methods:\n\n    # macOS\n    brew install jj\n    \n
+    \   # Arch Linux\n    pacman -S jujutsu\n    \n    # NixOS (ideally from nixpkgs-unstable)\n
+    \   nix-shell -p jujutsu\n    \n    # From source\n    # (Requires a recent Rust
+    and ~/.cargo/bin on your PATH)\n    cargo install --locked --bin jj jj-cli\n\n##
+    [Setup and configuration](#setup-and-configuration)\n\nIn an existing `git` repository,
+    run:\n\n    jj git init\n\nFrom here on, `jj` and `git` repo state will be synchronized
+    automatically.\n\nTo set your user details globally, run commands like these:\n\n
+    \   jj config set --user user.name \"Some One\"\n    jj config set --user user.email
+    \"someone@example.com\"\n\nYou can edit `jj`’s TOML configuration for your user
+    in an editor with:\n\n    jj config edit --user\n\nIn addition to the `--user`
+    scope, `jj config` also has `--repo` and `--workspace` scopes. View the merged
+    config with:\n\n    jj config list\n\n## [Commits and changes](#commits-and-changes)\n\nA
+    **commit** , also called a **revision** , is essentially the same thing as a `git`
+    commit. It represents a snapshot of repository state that descends from one or
+    more parent repository snapshots. It is often visualized as a diff against a singular
+    parent commit, or in the case of a merge commit, the diff against multiple parent
+    commits once merged.\n\nWhen using a Git repo backend, the `jj` **commit ID**
+    is the same as the `git` commit ID: a hash formatted as a hex string. In the output
+    of `jj log` below, the hex hashes `2bea5e3d` and `849165bc` on the right are commit
+    IDs.\n\n    $ jj log\n    @ kpqxywon ethan@example.com 2026-11-15 12:17:12 849165bc\n
+    \   │ (empty) (no description set)\n    ◆ royxmykx ethan@example.com 2026-11-15
+    12:10:46 main 2bea5e3d\n    │ Adjust config\n    ~\n\nThe IDs on the left hand
+    side (`royxmykx` and `kpqxywon`) are **change IDs** , which are stable identifiers
+    for logical changes as they physically evolve over time. We’ll discuss these more
+    in the next section.\n\nCommit IDs and change IDs can be referenced in shorthand
+    with an unambiguous (unique) prefix. `jj` helpfully highlights the shortest unique
+    prefix of most IDs to make it easy to type them manually. For example, instead
+    of copying and pasting `kpqxywon`, we can type in a prefix, down to the shortest
+    unique prefix `k`.\n\nWe can inspect the commit `2bea5e3d` with `jj show`, using
+    its short prefix `2`.\n\n    $ jj show 2\n    Commit ID: 2bea5e3d1992a60ba9ee52c6ce37c55adba9e8fb\n
+    \   Change ID: royxmykxtrkrqppotnrvutxlvrvqyxmy\n    Bookmarks: main main@git
+    main@origin\n    Author : Ethan Lowman <ethan@example.com> (2026-11-15 12:10:46)\n
+    \   Committer: Ethan Lowman <ethan@example.com> (2026-11-15 12:10:46)\n    \n
+    \       Adjust config\n    \n    diff --git a/config.py b/config.py\n    index
+    7366a4e31d..174ffea06b 100644\n    --- a/config.py\n    +++ b/config.py\n    @@
+    -1,1 +1,1 @@\n    -DEFAULT_LIMIT = 10\n    +DEFAULT_LIMIT = 20\n\nMany folks configure
+    a custom diff formatter, like [Delta](https://github.com/dandavison/delta). See
+    [configuration docs](https://docs.jj-vcs.dev/latest/config/#processing-contents-to-be-paged)
+    if you’re interested.\n\n## [Creating & evolving changes](#creating-evolving-changes)\n\nLet’s
+    take another look at our commit graph:\n\n    $ jj log\n    @ kpqxywon ethan@example.com
+    2026-11-15 12:17:12 849165bc\n    │ (empty) (no description set)\n    ◆ royxmykx
+    ethan@example.com 2026-11-15 12:10:46 main 2bea5e3d\n    │ Adjust config\n    ~\n\nOn
+    commit `849165bc`, you’ll see the symbol `@` on the graph node. This represents
+    a snapshot of our **working copy** , or the code we have actually checked out
+    in our local directory. We can inspect this special commit pointer in a variety
+    of ways:\n\n`jj show` shows commit details and a diff, which is empty here.\n\n
+    \   $ jj show\n    Commit ID: 849165bca19639dbd6ccb53e8c1340e78c36d59a\n    Change
+    ID: kpqxywonksrltlrkyqukqqsxpltznztk\n    Author : Ethan Lowman <ethan@example.com>
+    (2026-11-15 12:17:12)\n    Committer: Ethan Lowman <ethan@example.com> (2026-11-15
+    12:17:12)\n    \n        (no description set)\n\n`jj status` shows repo state
+    with diff stats.\n\n    $ jj status\n    The working copy has no changes.\n    Working
+    copy (@) : kpqxywon 849165bc (empty) (no description set)\n    Parent commit (@-):
+    royxmykx 2bea5e3d main | Adjust config\n\n`jj diff` works much like `git diff`.
+    Its output is empty here, since there are no changes in the current working copy
+    relative to the parent commit.\n\n    $ jj diff\n\nThis output isn’t very interesting,
+    since `@` has no changes. Let’s make an example change to see what happens. If
+    we edit `main.py` and rerun `jj show`, we see this:\n\n    $ jj show\n    Commit
+    ID: 66b59f20c534705cfb753c722222290e9185b22c\n    Change ID: kpqxywonksrltlrkyqukqqsxpltznztk\n
+    \   Author : Ethan Lowman <ethan@example.com> (2026-11-15 12:26:43)\n    Committer:
+    Ethan Lowman <ethan@example.com> (2026-11-15 12:26:43)\n    \n        (no description
+    set)\n    \n    diff --git a/main.py b/main.py\n    new file mode 100644\n    index
+    0000000000..c74cd2e0e0\n    --- /dev/null\n    +++ b/main.py\n    @@ -0,0 +1,2
+    @@ def my_new_feature():\n    +def my_new_feature():\n    + pass\n\n    $ jj log\n
+    \   @ kpqxywon ethan@example.com 2026-11-15 12:26:43 66b59f20\n    │ (no description
+    set)\n    ◆ royxmykx ethan@example.com 2026-11-15 12:10:46 main 2bea5e3d\n    │
+    Adjust config\n    ~\n\nYou’ll notice several things have changed. The working
+    copy has been automatically committed, and `@` is no longer marked `(empty)`.
+    The new commit ID for `@` is `66b59f20`, since we’ve added changes, but the change
+    ID for `66b59f20` is still `kpqxywon`. `jj` has no staging area like in `git`,
+    so we don’t have to manually add files. When we run a `jj` command to inspect
+    or modify repo state after editing files, `jj` automatically snapshots the working
+    copy as a new physical commit for the relevant logical change.\n\nLet’s give this
+    change a description (also called a commit message). We can either run `jj desc`,
+    which opens an editor, or provide it directly with `-m`.\n\n    $ jj desc -m \"Implement
+    the feature\"\n    Working copy (@) now at: kpqxywon 6b89ffb2 Implement the feature\n
+    \   Parent commit (@-) : royxmykx 2bea5e3d main | Adjust config\n\nNotice again
+    that the commit ID has changed, since the hash covers the commit message, but
+    the change ID has remained stable.\n\nNow, let’s say we’re ready to use this new
+    feature, and we want to organize that change in a separate commit. We can create
+    a new commit with `jj new`:\n\n    $ jj new\n    Working copy (@) now at: nlrtlrxv
+    6cca2add (empty) (no description set)\n    Parent commit (@-) : kpqxywon 6b89ffb2
+    Implement the feature\n\n    $ jj log\n    @ nlrtlrxv ethan@example.com 2026-11-15
+    12:35:49 6cca2add\n    │ (empty) (no description set)\n    ○ kpqxywon ethan@example.com
+    2026-11-15 12:33:23 6b8"
+  error:
+  fetched_at: '2026-11-20T10:59:44Z'
+archived_at: '2026-11-20T10:59:44Z'

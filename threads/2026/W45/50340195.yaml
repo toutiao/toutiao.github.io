@@ -4,14 +4,11 @@ post:
   title: Partial Operator Precedence
   url: https://ziglang.org/devlog/2026/#2026-10-24
   hn_url: https://news.ycombinator.com/item?id=50340195
-  score: 103
+  score: 106
   author: tosh
   posted_at: '2026-11-02T17:22:20Z'
-  fetched_at: '2026-11-06T10:29:13Z'
-  article_url: https://ziglang.org/devlog/2026/#2026-10-24
-  article_fetch_status: success
-  article_fetched_at: '2026-11-05T19:38:14Z'
-  raw_comment_count: 60
+  fetched_at: '2026-11-20T10:59:46Z'
+  raw_comment_count: 70
 comments:
 - id: '50376377'
   parent_id: '50340195'
@@ -588,6 +585,122 @@ comments:
     think this would be rare situations)
   score: 0
   posted_at: '2026-11-06T01:36:48Z'
+- id: '50393120'
+  parent_id: '50376843'
+  author: skrebbel
+  text: Obviously. I mean assuming you want to support infix operators at all.
+  score: 0
+  posted_at: '2026-11-06T14:59:29Z'
+- id: '50394932'
+  parent_id: '50386625'
+  author: qalmakka
+  text: honestly speaking, I think that shifts would almost always be better represented
+    with functions, like lsl(a, 4), which solves the shenanigan between arithmetic&#x2F;logic
+    shift too.
+  score: 0
+  posted_at: '2026-11-06T16:56:13Z'
+- id: '50396493'
+  parent_id: '50394932'
+  author: Joker_vD
+  text: |-
+    In that case, I&#x27;d rather just have explicit bitfield getter&#x2F;setter functions à la<p><pre><code>    slct(var, 6, 2) = expr;  &#x2F;&#x2F; var = (var &amp;~ (0b111111 &lt;&lt; 2)) | ((expr &amp; 0b111111) &lt;&lt; 2);
+        var = slct(expr, 6, 2);   &#x2F;&#x2F; var = (expr &gt;&gt; 2) &amp; 0b111111;
+    </code></pre>
+    Freaking <i>BCPL</i> had those in 1976, and that language was more primitive than C (it didn&#x27;t even have any types beyond &quot;machine word, reinterpreted accordingly to the operation applied to it&quot;).
+  score: 0
+  posted_at: '2026-11-06T18:42:36Z'
+- id: '50397808'
+  parent_id: '50393120'
+  author: fc417fc802
+  text: You had said &quot;that’s easier to implement than not having them&quot; which
+    is what&#x27;s being objected to there as being plainly incorrect. To your infix
+    comment, for example a strict left to right scan works just fine and is trivial
+    to implement. In that example I guess you&#x27;d still strongly prefer to retain
+    precedence for the assignment operator in order to avoid an extra set of parentheses
+    around every expression but that has no effect on the ease of implementing the
+    language itself.
+  score: 0
+  posted_at: '2026-11-06T20:15:15Z'
+- id: '50398054'
+  parent_id: '50386625'
+  author: fc417fc802
+  text: "&gt; &gt; When read procedurally (left to right) it is quite okay though,<p>&gt;
+    Except that there are almost no circumstances in which &quot;((a &amp; b) + c)
+    &gt;&gt; d&quot; is a sensible expression.<p>That doesn&#x27;t seem like a convincing
+    argument to me. The question is whether or not the rules set you up for scenarios
+    where misunderstandings are likely. Strict left to right does not - for example,
+    given a &amp; b &lt;&lt; c it is immediately clear that the desired interpretation
+    is not the actual one while b &lt;&lt; c &amp; a will unmistakeably do what you
+    want."
+  score: 0
+  posted_at: '2026-11-06T20:31:18Z'
+- id: '50398235'
+  parent_id: '50380375'
+  author: fc417fc802
+  text: 'Given strict left to right parsing I don&#x27;t see the issue with either
+    of those examples (setting aside that perhaps bool % int ought to trigger a type
+    error). The second example in particular seems perfectly sensible when read this
+    way.<p>Note that I view ? as a language construct rather than an operator. If
+    for whatever reason someone insisted on including that in the strict left to right
+    requirement the second example still works and is easy to read. I just don&#x27;t
+    like those semantics as much because the parenthesis in something like a ? ( b
+    &gt;&gt; c ) : d are otherwise unnecessary. The implicit parenthesis of expr ?
+    expr : expr seems preferable to me.'
+  score: 0
+  posted_at: '2026-11-06T20:43:39Z'
+- id: '50402309'
+  parent_id: '50398054'
+  author: Joker_vD
+  text: "&gt; The question is whether or not the rules set you up for scenarios where
+    misunderstandings are likely.<p>No, this is a misleading statement of the problem
+    because it tacitly assumes that programmers write arbitrary expressions with almost
+    the same probability, so the rules should accommodate them all, at the same expense.
+    This is patently false, and is a horrible policy for any UI&#x2F;UX&#x2F;DevEx&#x2F;etc.
+    designer. The very existence of linters and static analyzers, hell, even the warnings
+    in the modern compilers about suspicious operator precedence and &quot;this expression
+    doesn&#x27;t mean what you probably think it does&quot; — all that suggests that
+    some kinds expressions are more probable than others; ergo, those should be accommodated
+    for at the expense of the unlikelier ones. So, the precedence levels and PEMDAS
+    it is, instead of the abstractly-pure, from-the-first-principles, strictly left-to-right
+    order which makes only its inventor, with a very peculiar kind of mind, happy
+    at the expense of most of the actual programmers and users of the language."
+  score: 0
+  posted_at: '2026-11-07T07:00:59Z'
+- id: '50411405'
+  parent_id: '50398235'
+  author: tsimionescu
+  text: 'Contradicting highly ingrained precedence rules for the common operations
+    (+, -, ×) is a huge flaw for strict left to right parsing.<p>And for ?:, only
+    the part between the ? and the : is implicitly paranthesized. In &quot;a &amp;&amp;
+    b ? c : d || e&quot;, you need operator precedence to decide if this is &quot;a
+    &amp;&amp; (b ? c : d) || e&quot; or &quot;(a &amp;&amp; b)? c : (d || e)&quot;
+    or any other combination. So you have to define the precedence of ? and : in relation
+    to other operators in order to define the syntax of your language, so I think
+    it&#x27;s normal to consider it an operator as well (and I&#x27;d say the same
+    for Python&#x27;s if&#x2F;else conditional expression, &quot;a if b else c&quot;,
+    this is not about the characters used).'
+  score: 0
+  posted_at: '2026-11-08T08:26:48Z'
+- id: '50445229'
+  parent_id: '50411405'
+  author: fc417fc802
+  text: 'Personally I don&#x27;t see that as a flaw. My concern is how easy a set
+    of rules is to understand versus get wrong at a glance. I think strict left to
+    right is one of the better options owing to how hard it is to inadvertently misread
+    the meaning of an expression.<p>&gt; for ?:, only the part between the ? and the
+    : is implicitly paranthesized.<p>That is a choice. If you treat it as an operator,
+    yes. But you don&#x27;t have to. It can be treated as a language construct. Given
+    the grammar expr ? expr : expr the trailing portion is akin to a set of brackets
+    or parenthesis, greedily consuming all until end of line.'
+  score: 0
+  posted_at: '2026-11-10T19:39:14Z'
+- id: '50447361'
+  parent_id: '50383250'
+  author: kibwen
+  text: Worth noting that I have no love whatsoever for traditional mathematical notation.
+    We can do better.
+  score: 0
+  posted_at: '2026-11-10T22:44:46Z'
 article:
   url: https://ziglang.org/devlog/2026/#2026-10-24
   title: |-
@@ -724,4 +837,4 @@ article:
         1.2M zig-pkg/zl
   error:
   fetched_at: '2026-11-05T19:38:14Z'
-archived_at: '2026-11-06T10:29:14Z'
+archived_at: '2026-11-20T11:00:35Z'

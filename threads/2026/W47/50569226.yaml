@@ -1,0 +1,1030 @@
+---
+post:
+  id: '50569226'
+  title: 'OpenSSL: Buffer overflow in EVP_EncodeBlock() (CVE-2026-121481, CVSS 9.8)'
+  url: https://github.com/openssl/openssl/pull/33652
+  hn_url: https://news.ycombinator.com/item?id=50569226
+  score: 267
+  author: ''
+  posted_at: '2026-11-20T02:01:09Z'
+  fetched_at: '2026-11-20T10:59:35Z'
+  article_url: https://github.com/openssl/openssl/pull/33652
+  article_fetch_status: success
+  article_fetched_at: '2026-11-20T10:59:35Z'
+  raw_comment_count: 210
+comments:
+- id: '50569529'
+  parent_id: '50569226'
+  author: VladVladikoff
+  text: |-
+    :&#x2F;
+    I really need a day off from patching servers.
+  score: 0
+  posted_at: '2026-11-20T02:46:00Z'
+- id: '50569564'
+  parent_id: '50569226'
+  author: jerf
+  text: So, uh, like, any word on what the &quot;9.8&quot; actually means? Is this
+    &quot;an obscure feature nobody has on could with a bit of luck and a cosmic ray
+    strike allow arbitrary code execution if you&#x27;re one of the few people using
+    it&quot; or is this &quot;if you have a socket with OpenSSL exposed to the internet
+    you&#x27;re already compromised&quot; or what?
+  score: 0
+  posted_at: '2026-11-20T02:50:50Z'
+- id: '50569578'
+  parent_id: '50569226'
+  author: asveikau
+  text: Seems like only OpenSSL 4 is impacted?  What distros and systems use that?<p>I
+    feel like in the post heartbleed era, a lot of people are not including new features
+    of upstream openssl as much as they used to.
+  score: 0
+  posted_at: '2026-11-20T02:52:45Z'
+- id: '50569607'
+  parent_id: '50569529'
+  author: pixl97
+  text: Sorry buddy, back to the server mines for you!<p>And yea, I&#x27;d really
+    like a day where I&#x27;m not writing an email to customers about what they do
+    and don&#x27;t need to update regarding our software.
+  score: 0
+  posted_at: '2026-11-20T02:57:12Z'
+- id: '50569660'
+  parent_id: '50569578'
+  author: daemonologist
+  text: Well, Fedora 45 (with which I am composing this message).<p>Fortunately it
+    doesn&#x27;t look like I need to patch anything at work though.
+  score: 0
+  posted_at: '2026-11-20T03:05:50Z'
+- id: '50569670'
+  parent_id: '50569226'
+  author: m00dy
+  text: "&gt;&gt;I am really worried about the negative return value being added.
+    Existing third party callers might not be ready to handle this correctly (i.e.
+    if they cast the return to size_t without checking). Could we instead return 0?
+    (In all the added error returns in this PR.)<p>Rust fixes it."
+  score: 0
+  posted_at: '2026-11-20T03:07:42Z'
+- id: '50569680'
+  parent_id: '50569564'
+  author: pixl97
+  text: So this might be very similar to Java4shell, though will need to be verified.<p>This
+    is another base64 encoder where it takes a blob and coverts it to base64. I&#x27;m
+    assuming an attacker control bit of data could be passed to the function which
+    then overflows. Not sure if it can attempt to control a valid address or not,
+    but unlocked AI likely could pretty quick.
+  score: 0
+  posted_at: '2026-11-20T03:08:55Z'
+- id: '50569705'
+  parent_id: '50569226'
+  author: amluto
+  text: 'On a very very quick read, the bug is that EVP_EncodeBlock malfunctions if
+    the input is larger than ~1.5GB.  EVP_EncodeBlock is a function that encodes base64.<p><a
+    href="https:&#x2F;&#x2F;docs.openssl.org&#x2F;1.0.2&#x2F;man3&#x2F;EVP_EncodeInit&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;docs.openssl.org&#x2F;1.0.2&#x2F;man3&#x2F;EVP_EncodeInit&#x2F;</a><p>As
+    a seasoned C programmer, I can immediately observe that the whole API is bad:
+    the caller is expected to calculate the buffer length on their own, using a nontrivial
+    formula, and the caller does not pass in the output buffer length, so the implementation
+    cannot validate it.  But apparently OpenSSL 4 also implemented it wrong and wrote
+    (possibly far) past the end of the buffer.<p>You should probably assume that,
+    if you are running anything that can be convinced to use this API to encode a
+    very long blob as base64, then you are in trouble. I don’t know why a modern server
+    would do this.<p>BTW, OpenSSL seems to be a rather low quality implementation
+    of a very low quality set of APIs.  Stay away.<p>edit: Fixed my size threshold,
+    hopefully. I was thinking of unsigned ints, but this is a <i>signed</i> int. I
+    have not looked at the code, just the description.'
+  score: 0
+  posted_at: '2026-11-20T03:13:29Z'
+- id: '50569772'
+  parent_id: '50569705'
+  author: kvuj
+  text: "&gt; EVP_EncodeBlock() encodes a full block of input data in f and of length
+    dlen and stores it in t. For every 3 bytes of input provided 4 bytes of output
+    data will be produced. If dlen is not divisible by 3 then the block is encoded
+    as a final block of data and the output is padded such that it is always divisible
+    by 4. Additionally a NUL terminator character will be added. For example if 16
+    bytes of input data is provided then 24 bytes of encoded data is created plus
+    1 byte for a NUL terminator (i.e. 25 bytes in total). The length of the data generated
+    without the NUL terminator is returned from the function.<p>My god, you only see
+    this type of horrendous API in C don&#x27;t you."
+  score: 0
+  posted_at: '2026-11-20T03:24:31Z'
+- id: '50569799'
+  parent_id: '50569772'
+  author: userbinator
+  text: What&#x27;s &quot;horrendous&quot;? I don&#x27;t see anything which stands
+    out as being wrong. It specifies exactly the lengths of input and output.<p>gets(),
+    on the other hand, <i>that</i> is &quot;horrendous&quot;.
+  score: 0
+  posted_at: '2026-11-20T03:29:20Z'
+- id: '50569805'
+  parent_id: '50569705'
+  author: vlovich123
+  text: "&gt; BTW, OpenSSL seems to be a rather low quality implementation of a very
+    low quality set of APIs. Stay away.<p>We’ve known this for well over two decade
+    since heartbleed yet for some reason Linux distros haven’t migrated off of it"
+  score: 0
+  posted_at: '2026-11-20T03:31:00Z'
+- id: '50569818'
+  parent_id: '50569799'
+  author: kvuj
+  text: Perhaps I&#x27;m just used to having programmed in C# professionally for a
+    little bit, but these sorts of APIs where you have to do a calculation to determine
+    the destination buffer size make me feel like a caveman. A minuscule typo and
+    you get a CVE like this.<p>I know, I know, C is low level and high performance,
+    but surely in the year of our lord 2026, we could have come out with something
+    simpler.<p>Horrendous is a strong word, you&#x27;re right.
+  score: 0
+  posted_at: '2026-11-20T03:33:00Z'
+- id: '50569831'
+  parent_id: '50569705'
+  author: userbinator
+  text: "<i>if the input is larger than ~1.5GB.</i><p>...on a system where ints are
+    32 bits. The bottom line is that this doesn&#x27;t appear to be easily exploitable
+    and IMHO it should be the callers of EVP_EncodeBlock which need to be inspected
+    to determine the actual risk.<p><i>using a nontrivial formula</i><p>It&#x27;s
+    base64. 4&#x2F;3 expansion; round it up and add padding. What&#x27;s &quot;nontrivial&quot;
+    about that?<p><i>and the caller does not pass in the output buffer length, so
+    the implementation cannot validate it</i><p>Not necessary, because the caller
+    is responsible for allocation."
+  score: 0
+  posted_at: '2026-11-20T03:35:12Z'
+- id: '50569844'
+  parent_id: '50569805'
+  author: dcrazy
+  text: For those too young to remember 2014, Heartbleed led to both BoringSSL and
+    LibreSSL being forked from OpenSSL.
+  score: 0
+  posted_at: '2026-11-20T03:36:57Z'
+- id: '50569866'
+  parent_id: '50569705'
+  author: landr0id
+  text: '&gt;As a seasoned C programmer, I can immediately observe that the whole
+    API is bad: the caller is expected to calculate the buffer length in their own,
+    using a nontrivial formula, and the caller does not pass in the output buffer
+    length, so the implementation cannot validate it. But apparently OpenSSL 4 also
+    implemented it wrong and wrote (possibly far) past the end of the buffer.<p>Many
+    such cases.<p>I expect we&#x27;ll see some fun libyuv bugs soon in applications
+    which decode media. The APIs are begging for misuse.<p><a href="https:&#x2F;&#x2F;chromium.googlesource.com&#x2F;libyuv&#x2F;libyuv&#x2F;+&#x2F;refs&#x2F;heads&#x2F;main&#x2F;include&#x2F;libyuv&#x2F;convert.h"
+    rel="nofollow">https:&#x2F;&#x2F;chromium.googlesource.com&#x2F;libyuv&#x2F;libyuv&#x2F;+&#x2F;refs&#x2F;heads...</a>'
+  score: 0
+  posted_at: '2026-11-20T03:42:05Z'
+- id: '50569945'
+  parent_id: '50569831'
+  author: mrheosuper
+  text: The question can be reduce to &quot;who do the length validation&quot;.<p>In
+    my case, if i write a public-facing API, i never trust the caller will do the
+    correct thing, thus the caller must provide all the critical parameters, and i
+    must validate all of them.
+  score: 0
+  posted_at: '2026-11-20T03:54:54Z'
+- id: '50569968'
+  parent_id: '50569670'
+  author: sippingabonedry
+  text: Be sure to let us know when your equivalent Rust crypto library is available.
+  score: 0
+  posted_at: '2026-11-20T03:58:06Z'
+- id: '50569986'
+  parent_id: '50569968'
+  author: m00dy
+  text: we don&#x27;t need many crypto libraries, maybe just one for the whole world,
+    written in Rust and then all functions are math-proofed.
+  score: 0
+  posted_at: '2026-11-20T04:00:36Z'
+- id: '50570002'
+  parent_id: '50569772'
+  author: td521534f12
+  text: '&quot;No way to prevent this&quot; say users of only language where this
+    regularly happens<p><a href="https:&#x2F;&#x2F;xeiaso.net&#x2F;blog&#x2F;series&#x2F;no-way-to-prevent-this&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;xeiaso.net&#x2F;blog&#x2F;series&#x2F;no-way-to-prevent-this&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-20T04:02:52Z'
+- id: '50570013'
+  parent_id: '50569705'
+  author: teunispeters
+  text: I like to declare that industry coding standards such as MISRA exist precisely
+    because code bases like OpenSSL (specifically) exist, as it&#x27;s such a good
+    example of breaking every sensible rule in the standards.
+  score: 0
+  posted_at: '2026-11-20T04:04:32Z'
+- id: '50570014'
+  parent_id: '50569986'
+  author: td521534f12
+  text: You&#x27;d probably need a second one for FIPS.
+  score: 0
+  posted_at: '2026-11-20T04:04:38Z'
+- id: '50570049'
+  parent_id: '50569799'
+  author: amluto
+  text: Even in C, if you have a function that takes an input buffer and output buffer
+    of differing lengths, the right API has the caller pass both lengths.<p>But yes,
+    gets is worse.
+  score: 0
+  posted_at: '2026-11-20T04:10:28Z'
+- id: '50570130'
+  parent_id: '50569844'
+  author: morkalork
+  text: TIL it&#x27;s 2036
+  score: 0
+  posted_at: '2026-11-20T04:21:44Z'
+- id: '50570169'
+  parent_id: '50569705'
+  author: octoberfranklin
+  text: This is really embarrassing because this isn&#x27;t even ancient code.<p>OpenSSL
+    has been around a long time and has a lot of legacy code, but this is in OpenSSL
+    4.x only -- stuff that was written in the last ~year.<p>If they don&#x27;t have
+    the manpower to write new code safely they should just stick to maintaining what
+    they&#x27;ve already written.
+  score: 0
+  posted_at: '2026-11-20T04:28:13Z'
+- id: '50570254'
+  parent_id: '50569968'
+  author: cyberax
+  text: You rang?<p><a href="https:&#x2F;&#x2F;github.com&#x2F;rustls&#x2F;rustls"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rustls&#x2F;rustls</a>
+  score: 0
+  posted_at: '2026-11-20T04:40:16Z'
+- id: '50570319'
+  parent_id: '50569945'
+  author: userbinator
+  text: "<i>The question can be reduce to &quot;who do the length validation&quot;.</i><p>At
+    the boundary where untrusted input becomes trusted. This is commonly known as
+    the sanitisation&#x2F;validation layer."
+  score: 0
+  posted_at: '2026-11-20T04:50:59Z'
+- id: '50570346'
+  parent_id: '50570049'
+  author: userbinator
+  text: "<i>takes an input buffer and output buffer of differing lengths, the right
+    API has the caller pass both lengths.</i><p>If there is no fixed relationship
+    between the two, then that makes sense; but in this case there is a very simple
+    and well-defined relationship between them. But to specify two lengths which must
+    always agree; and if not, then what? You&#x27;ve effectively invented an additional
+    artificial error condition, an additional branch, and burdened all the callers
+    up the chain to do <i>something</i>, which is a treacherous path to complexity
+    and the production of even more bugs.<p>Or are you just preaching the same mindless
+    idiocy that lead to Microsoft&#x27;s memcpy_s() (the &quot;s&quot; is for &quot;stupid&quot;)?"
+  score: 0
+  posted_at: '2026-11-20T04:57:17Z'
+- id: '50570383'
+  parent_id: '50569831'
+  author: amluto
+  text: "&gt; It&#x27;s base64. 4&#x2F;3 expansion; round it up and add padding. What&#x27;s
+    &quot;nontrivial&quot; about that?<p>If you mean ceil(inlen * 4&#x2F;3) + 1 (even
+    if you use exact arithmetic), then you are passing too small a buffer and you
+    will overflow.  Maybe your “add padding” part fixes it?  In any case, I think
+    that the fact that this confusion is even possible proves my point.<p>You should
+    not need to read the manpage of a function you are calling in order to determine
+    whether you have passed a large enough buffer to avoid overflow.<p>Reading the
+    manpage to get the function to not return an error would be a different story."
+  score: 0
+  posted_at: '2026-11-20T05:04:14Z'
+- id: '50570428'
+  parent_id: '50570383'
+  author: userbinator
+  text: <i>If you mean ceil(inlen * 4&#x2F;3) + 1 (even if you use exact arithmetic),
+    then you are passing too small a buffer and you will overflow.</i><p>If you let
+    untrusted input reach inlen and overflow that computation, you have already failed:<p><a
+    href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50570319">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50570319</a>
+  score: 0
+  posted_at: '2026-11-20T05:11:10Z'
+- id: '50570447'
+  parent_id: '50570130'
+  author: wahern
+  text: To be fair, frustrations with OpenSSL long preceded Heartbleed. Heartbleed
+    was just the final straw for those who forked libressl and BoringSSL.<p>And to
+    be fair to OpenSSL, it was one of the first widely used crypto libraries, along
+    with Netscape&#x27;s NSS. Setting aside the reasonablebess of the initial choices,
+    the rapid uptake meant those choices were difficult if not impossible to completely
+    unwind, particularly the style and typing of parameters and error reporting. Even
+    today debates rage about signed vs unsigned, etc, in C and other languages. (But
+    suffice it to say there are still alot of unforced errors, IMO, such as implicit
+    output buffer sizes.)
+  score: 0
+  posted_at: '2026-11-20T05:14:53Z'
+- id: '50570499'
+  parent_id: '50569529'
+  author: txdv
+  text: call in the agents
+  score: 0
+  posted_at: '2026-11-20T05:25:04Z'
+- id: '50570526'
+  parent_id: '50569772'
+  author: cesarb
+  text: '&gt; My god, you only see this type of horrendous API in C don&#x27;t you.<p>This
+    is the appropriate place to put a link to this pair of classics on API design:<p>&quot;How
+    Do I Make This Hard to Misuse?&quot; <a href="https:&#x2F;&#x2F;ozlabs.org&#x2F;~rusty&#x2F;index.cgi&#x2F;tech&#x2F;2008-03-30.html"
+    rel="nofollow">https:&#x2F;&#x2F;ozlabs.org&#x2F;~rusty&#x2F;index.cgi&#x2F;tech&#x2F;2008-03-30.html</a><p>&quot;What
+    If I Don&#x27;t Actually Like My Users?&quot; <a href="https:&#x2F;&#x2F;ozlabs.org&#x2F;~rusty&#x2F;index.cgi&#x2F;tech&#x2F;2008-04-01.html"
+    rel="nofollow">https:&#x2F;&#x2F;ozlabs.org&#x2F;~rusty&#x2F;index.cgi&#x2F;tech&#x2F;2008-04-01.html</a>'
+  score: 0
+  posted_at: '2026-11-20T05:29:51Z'
+- id: '50570544'
+  parent_id: '50569805'
+  author: DANmode
+  text: Not breaking userspace is more important than security………
+  score: 0
+  posted_at: '2026-11-20T05:33:03Z'
+- id: '50570568'
+  parent_id: '50569831'
+  author: sweetjuly
+  text: I am confused why you make out 32 bit int as being rare. Almost all devices
+    that you&#x27;d reasonably connect to the internet at this point have int as 32
+    bits
+  score: 0
+  posted_at: '2026-11-20T05:38:19Z'
+- id: '50570647'
+  parent_id: '50569818'
+  author: JSR_FDED
+  text: You should be comparing with assembly language, not C#.
+  score: 0
+  posted_at: '2026-11-20T05:49:48Z'
+- id: '50570695'
+  parent_id: '50569844'
+  author: stock_toaster
+  text: 'And also led to Amazon&#x27;s s2n-tls and libcrypto being released around
+    2015 too as I call.<p>EDIT: found the release announcement - June 2015 - <a href="https:&#x2F;&#x2F;aws.amazon.com&#x2F;blogs&#x2F;security&#x2F;introducing-s2n-a-new-open-source-tls-implementation&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;aws.amazon.com&#x2F;blogs&#x2F;security&#x2F;introducing-s2n-a-new-...</a>'
+  score: 0
+  posted_at: '2026-11-20T05:57:45Z'
+- id: '50570768'
+  parent_id: '50569818'
+  author: uecker
+  text: One can abstract buffer handling away in C just fine, eliminating all those
+    problems. I don&#x27;t know why programmers insist on open-coding low-level buffer
+    management.
+  score: 0
+  posted_at: '2026-11-20T06:06:54Z'
+- id: '50570790'
+  parent_id: '50569529'
+  author: staplehorse6553
+  text: If you stopped patching servers, you wouldn&#x27;t be affected. Always use
+    trusted, 5-10+ years old code.
+  score: 0
+  posted_at: '2026-11-20T06:11:54Z'
+- id: '50570804'
+  parent_id: '50569986'
+  author: staplehorse6553
+  text: Does the alpha-stage WIP code you call &#x27;Rust&#x27; compile for 32-bit
+    yet? No? Ok.
+  score: 0
+  posted_at: '2026-11-20T06:14:28Z'
+- id: '50570812'
+  parent_id: '50569564'
+  author: fulafel
+  text: "This was possibly a rhetorical question but apparently it goes something
+    like this - just a simple formula someone came up with that tries to model badness:<p><pre><code>
+    \ # Hardcoded weights for AV:N&#x2F;AC:L&#x2F;PR:N&#x2F;UI:N&#x2F;S:U&#x2F;C:H&#x2F;I:H&#x2F;A:H\n
+    \ attack_vector = 0.85        # Network\n  attack_complexity = 0.77    # Low\n
+    \ privileges_required = 0.85  # None\n  user_interaction = 0.85     # None\n \n
+    \ confidentiality = 0.56      # High\n  integrity = 0.56            # High\n  availability
+    = 0.56         # High\n\n  impact_sub_score = 1 - (1 - confidentiality) \\* (1
+    - integrity) \\* (1 -  availability)  # -&gt; 0.91 \n  impact = 6.42 \\* impact_sub_score
+    \                                                      # -&gt; 5.87\n\n  exploitability
+    = (\n    8.22 \\* attack_vector \\* attack_complexity \\* privileges_required
+    \\* user_interaction)  # -&gt; 3.88\n\n  score = impact + exploitability                      #
+    -&gt; 9.76\n</code></pre>\n(using Github&#x27;s values from <a href=\"https:&#x2F;&#x2F;github.com&#x2F;advisories&#x2F;GHSA-83xj-7xh4-4p7x\"
+    rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;advisories&#x2F;GHSA-83xj-7xh4-4p7x</a>)<p>Interesting
+    that the impact calculation treats C, I, A as equal. And of course a lot of those
+    inputs are just human(?) supplied vibes and&#x2F;or context dependent in your
+    use case."
+  score: 0
+  posted_at: '2026-11-20T06:15:12Z'
+- id: '50570871'
+  parent_id: '50569805'
+  author: CrimsonCape
+  text: I just don&#x27;t get it; this is a task to hand to an LLM, &quot;go rebuild
+    OpenSSL, use Rust (no mistakes)&quot; and have it churn through a greenfield implementation.
+    Then open a PR =). Why hasn&#x27;t this happened yet? The fact that the LLM will
+    write tests and deal with all the compiler errors probably puts it lightyears
+    ahead.
+  score: 0
+  posted_at: '2026-11-20T06:25:48Z'
+- id: '50570884'
+  parent_id: '50570768'
+  author: eptcyka
+  text: Yes, of course, this isn’t C, this is just another case of people writing
+    C wrong.
+  score: 0
+  posted_at: '2026-11-20T06:28:19Z'
+- id: '50570963'
+  parent_id: '50570871'
+  author: b112
+  text: LLMs have a bottleneck, human review.  And human review is absolutely required
+    at this stage (the future is unknown).  A rust built LLM only reviewed SSL library
+    would be a recipe for disaster.<p>Beyond that, when it comes to exceptionally
+    complex APIs, forward thinking implementation, and revising the &#x27;way things
+    are done&#x27;?  These are weak points for LLMs.  If you don&#x27;t know how to
+    write OpenSSL(or its replacement), and don&#x27;t understand all its quirks, and
+    the entire industry surrounding it, you cannot be the human driving the LLM successfully.<p>There
+    is no way for a human to catch all the design mistakes an LLM will make, otherwise.<p>People
+    seem to get upset, when I say this, for reasons I cannot fathom.  However, we
+    need to have a mental model of how we trust LLM output, and the &#x27;new junior&#x27;
+    is great for that.  Especially considering that every day, is a new day for an
+    LLM, its context window always loses yesterday.<p>So consider LLMs as an eager,
+    intelligent, incredibly well read junior, just out of college.  And on their third
+    day of work.<p>Zero real world experience.  Constant review required.<p>Would
+    you want that junior to design, build, and write test scripts for a library to
+    underpin the entire internet?
+  score: 0
+  posted_at: '2026-11-20T06:39:32Z'
+- id: '50570981'
+  parent_id: '50569986'
+  author: _ache_
+  text: |-
+    It&#x27;s not just &quot;math-proofed&quot;.
+    You need a lot more to be a crypto library.<p>Like time-constant, and it&#x27;s hard to be time-constant in a performance optimised language like Rust. LLVM is doing some magic, and you don&#x27;t want any magic in a crypto library.
+  score: 0
+  posted_at: '2026-11-20T06:42:51Z'
+- id: '50570983'
+  parent_id: '50569705'
+  author: socketcluster
+  text: "&gt; BTW, OpenSSL seems to be a rather low quality implementation of a very
+    low quality set of APIs.<p>Fully agree with your assessment above that line, but
+    damn, this is a strong statement for a library this ubiquitous. You wonder; how
+    could this happen? And yet, as an open source developer myself, I know how little
+    people care about code quality."
+  score: 0
+  posted_at: '2026-11-20T06:42:56Z'
+- id: '50570999'
+  parent_id: '50570983'
+  author: Gigachad
+  text: We have known this since at least heartbleed. The answer was that basically
+    no one funds the project and it had only one developer.<p>All these trillion dollar
+    tech companies have been leaching off open source for free and never contributed
+    back to the projects they rely on.
+  score: 0
+  posted_at: '2026-11-20T06:45:42Z'
+- id: '50571002'
+  parent_id: '50569578'
+  author: agilob
+  text: |-
+    Arch<p><pre><code>    pacman -Q  | grep openssl
+        openssl 4.1.0-1
+        openssl-3 3.5.9-2</code></pre>
+  score: 0
+  posted_at: '2026-11-20T06:46:04Z'
+- id: '50571007'
+  parent_id: '50570871'
+  author: fock
+  text: you don&#x27;t get credit for that because it is clear you are not very skillful
+    at what AI-bros value most, namely manipulating other nerds...<p>if you look at
+    the commit history of OpenSSL, you can easily notice how a lot of people started
+    contributing once their clanker got up to speed. They are very happy to rip out
+    weird C and replace it with assembler or intrinsics. Rip out lists of characters
+    formatted as a single string and replace them with array syntax, each char quoted.
+  score: 0
+  posted_at: '2026-11-20T06:46:26Z'
+- id: '50571021'
+  parent_id: '50570169'
+  author: fock
+  text: and now guess who helped writing this code. the chicken are coming home to
+    roost, but people who are happy about their youthful productivity or stock packages
+    will not be able to notice...<p>the code before this PR included the check. But
+    that was old code!
+  score: 0
+  posted_at: '2026-11-20T06:48:47Z'
+- id: '50571027'
+  parent_id: '50569844'
+  author: b112
+  text: I wonder.  Realistically, Boring and Libre haven&#x27;t taking off.  I measure
+    that by most use and default deploys.  But with LLMs, we may be entering a new
+    world.<p>In that world, certainly some projects may be impervious to fixes.  We&#x27;ve
+    all seen projects that basically eschew all change, and ignore issue trackers,
+    and are basically dead.<p>But the ones which still live?  Eventually this first
+    wave of LLM derived fixes will get through the old churn.  Presumably, code will
+    improve dramatically.  If that&#x27;s so, OpenSSL will become &quot;good code&quot;.  And
+    the same with old legacy projects which are still hanging around.<p>Meaning...
+    will legacy simply exist forever?  Our two forks above will likely fade away,
+    if openssl&#x27;s code becomes clean as can be.
+  score: 0
+  posted_at: '2026-11-20T06:50:02Z'
+- id: '50571079'
+  parent_id: '50570871'
+  author: brianpane
+  text: There’s already a Rust TLS library, rustls, that’s relatively mature (10 years
+    in development, a couple of paid maintainers, robust development and release processes).
+    It’s not a drop-in replacement for OpenSSL, though. There’s a companion project
+    to build an OpenSSL-compatible wrapper API for it, but that’s not as far along.
+    Interestingly, while rustls has a plug-in API that lets you choose your favorite
+    Rust encryption library for the low-level operations (aws-lc-rs, Ring, Graviola,
+    etc), those libraries all tend to contain a lot of assembly … not just for speed,
+    but because it’s easier to avoid side channel timing vulnerabilities in assembly.
+  score: 0
+  posted_at: '2026-11-20T06:58:23Z'
+- id: '50571107'
+  parent_id: '50569986'
+  author: uecker
+  text: "A crypto library written in Rust would not be available everywhere, so can
+    not be the only one. And if you formally verify the code, you can also formally
+    verify that it is memory safe, so there is not much point to have it in Rust.
+    \nCrypto has properties which may be difficult to verify though.<p>If you want
+    a safe interface that does not require passing random sizes around in extra arguments,
+    this can also be done in C."
+  score: 0
+  posted_at: '2026-11-20T07:02:27Z'
+- id: '50571148'
+  parent_id: '50570428'
+  author: amluto
+  text: Are you saying that any code that base64’s a string of attacker-controlled
+    <i>length</i> is a mistake?
+  score: 0
+  posted_at: '2026-11-20T07:08:11Z'
+- id: '50571166'
+  parent_id: '50570544'
+  author: Skunkleton
+  text: "&quot;not breaking userspace&quot; refers to kernel development. OpenSSL
+    is userspace."
+  score: 0
+  posted_at: '2026-11-20T07:10:31Z'
+- id: '50571177'
+  parent_id: '50570544'
+  author: vasco
+  text: Yeah, we all know users would rather be reliably hacked than unreliably safe.
+  score: 0
+  posted_at: '2026-11-20T07:12:05Z'
+- id: '50571213'
+  parent_id: '50571166'
+  author: charcircuit
+  text: And this is why the Linux Desktop will never go mainstream. You should never
+    break apps at all, the OS&#x27;s API surface goes beyond just the kernel.
+  score: 0
+  posted_at: '2026-11-20T07:15:30Z'
+- id: '50571245'
+  parent_id: '50571166'
+  author: yjftsjthsd-h
+  text: Paraphrasing to &quot;don&#x27;t make breaking API&#x2F;ABI changes for projects
+    consuming your API&#x2F;ABI&quot; doesn&#x27;t materially change a reasonable
+    point. (And I generally agree with that point, although I confess openssl specifically
+    really strains my view)
+  score: 0
+  posted_at: '2026-11-20T07:19:09Z'
+- id: '50571247'
+  parent_id: '50570812'
+  author: arch-choot
+  text: CIA psyop confirmed? (&#x2F;s)
+  score: 0
+  posted_at: '2026-11-20T07:19:34Z'
+- id: '50571273'
+  parent_id: '50570999'
+  author: socketcluster
+  text: It&#x27;s insane. I maintain a small open source project with only about 100k
+    downloads per week and so, in terms of funding, it&#x27;s crickets for me but
+    I assumed famous projects like OpenSSL would get some decent funding.<p>Then I
+    read articles about billionaires donating millions or even billions to various
+    (sometimes frivolous) charities and I wonder WTF.<p>The numbers just don&#x27;t
+    add up. It&#x27;s like there is an invisible force field preventing people from
+    donating money to open source?<p>Crazy to think that the people who once posted
+    a dumb viral 30-second meme video on YouTube probably got more money than the
+    author of a complex, world-famous open source project which has been at the top
+    for decades and which quite literally intermediates every aspect of almost every
+    human&#x27;s life.<p>Does not compute.
+  score: 0
+  posted_at: '2026-11-20T07:22:19Z'
+- id: '50571278'
+  parent_id: '50571148'
+  author: Pinus
+  text: I <i>think</i> userbinator thought that you meant that the calculation would
+    overflow, while I think you meant that the calculation, even if not overflowing,
+    would return the wrong value under some conditions and that subsequent code would
+    then overflow the buffer. (As for what <i>I</i> think about the actual issue,
+    I’m too sleepy to even try. Which is probably an indication of something. =) )
+  score: 0
+  posted_at: '2026-11-20T07:23:14Z'
+- id: '50571304'
+  parent_id: '50569818'
+  author: pjmlp
+  text: Not even that is usable as excuse, only those that never tried out the systems
+    programming languages that either predated C, or where equally developed during
+    the 1970&#x27;s outside Bell Labs and UNIX ecosystem.<p>You could have come with
+    something simpler in PL&#x2F;I.
+  score: 0
+  posted_at: '2026-11-20T07:26:55Z'
+- id: '50571317'
+  parent_id: '50569799'
+  author: IanCal
+  text: The thing that jumps out to me is that it returns “the size of the output
+    data minus one” but if I’m passing in a pointer it’s on me to make sure there’s
+    enough memory allocated isn’t it? So the caller must make sure it’s calculated
+    this correctly - in which case why return the size? Taking the size as an argument
+    could be safer as you’d be checking the caller calculated enough space too.<p>(Honest
+    questions in this it’s probably been 20 years since I did c)
+  score: 0
+  posted_at: '2026-11-20T07:28:37Z'
+- id: '50571325'
+  parent_id: '50569529'
+  author: roygbiv2
+  text: Same! Just did a whole bunch of out of band patching, more on the weekend.
+    Fun times.
+  score: 0
+  posted_at: '2026-11-20T07:29:55Z'
+- id: '50571339'
+  parent_id: '50570999'
+  author: k_sze
+  text: 'Honest question: shall free software licenses be changed to force large corporations
+    to sponsor free software projects adequately?'
+  score: 0
+  posted_at: '2026-11-20T07:31:17Z'
+- id: '50571349'
+  parent_id: '50569578'
+  author: CER10TY
+  text: Considering OpenSSL 4.2 is the first proper 4.x LTS release, I think most
+    distros will still be on OpenSSL 3.x so not impacted.<p>Bleeding edge distros
+    like Arch&#x2F;Fedora are already on 4.x, so they&#x27;ll be impacted, but they
+    should also receive a patch relatively quickly.
+  score: 0
+  posted_at: '2026-11-20T07:32:48Z'
+- id: '50571367'
+  parent_id: '50570254'
+  author: jo-m
+  text: If I am not mistaken, the default backend is aws-lc [1] which is... a C library
+    (still better than having the frontend in C as well, though).<p>Meanwhile, ring
+    [2] carries an explicit disclaimer of &quot;This is an experiment&quot;.<p>[1]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;aws&#x2F;aws-lc" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;aws&#x2F;aws-lc</a><p>[2]
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;briansmith&#x2F;ring" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;briansmith&#x2F;ring</a>
+  score: 0
+  posted_at: '2026-11-20T07:35:27Z'
+- id: '50571386'
+  parent_id: '50571079'
+  author: dralley
+  text: The side channels issue is where rust crypto libraries are currently the weakest
+  score: 0
+  posted_at: '2026-11-20T07:39:40Z'
+- id: '50571430'
+  parent_id: '50571079'
+  author: zelphirkalt
+  text: Can you explain why it is easier to avoid side-channel timing attacks in assembly?
+  score: 0
+  posted_at: '2026-11-20T07:46:33Z'
+- id: '50571439'
+  parent_id: '50571339'
+  author: pbowyer
+  text: I certainly think so, but we who think this get shouted down because &quot;It&#x27;s
+    not Open Source(TM)&quot;.
+  score: 0
+  posted_at: '2026-11-20T07:47:30Z'
+- id: '50571443'
+  parent_id: '50571027'
+  author: p_l
+  text: BoringSSL is somewhat widely used because Google baked it into their projects
+    (and partially by Microsoft, I believe they made a FIPS variant of it and used
+    it in Go?)<p>LibreSSL had, IIRC, problem known as OpenBSD-itis. Or to put it bluntly,
+    the developers didn&#x27;t really care about any other platform. Plus I will admit
+    that being the first and loud &quot;we will fix openssl&quot; they got linked
+    with some loud PR that showed less understanding of code they mocked than OpenSSL
+    developer who wrote it, and that&#x27;s really impressive when you consider some
+    of the mocked code fragments were results of developers never reading foundational
+    documentation for a platform
+  score: 0
+  posted_at: '2026-11-20T07:48:04Z'
+- id: '50571446'
+  parent_id: '50570346'
+  author: baq
+  text: The artificial error condition is the whole point and the hoops you have to
+    jump through to be able to reach it as you say are reasons to not use C because
+    it’s hard to enforce invariants like this and easy to ignore them with mostly
+    working code. Mostly working was fine last year, it isn’t anymore.
+  score: 0
+  posted_at: '2026-11-20T07:48:10Z'
+- id: '50571461'
+  parent_id: '50569670'
+  author: bjoli
+  text: Sometimes I like to think of how little performance would be lost and how
+    much would be gained by just collectively deciding to use Option&#x2F;Result instead
+    of sentinel values.<p>Things like the dumb (not like I&#x27;m any individual being
+    dumb. Just collective accumulated stupidity) a*hole vulnerability some weeks ago.
+    That wasn&#x27;t even performance sensitive.
+  score: 0
+  posted_at: '2026-11-20T07:50:11Z'
+- id: '50571466'
+  parent_id: '50571339'
+  author: ozgrakkurt
+  text: This is backwards imo, it is related to people that chose to build these projects.
+    Everyone might have a different decision on it.
+  score: 0
+  posted_at: '2026-11-20T07:51:11Z'
+- id: '50571494'
+  parent_id: '50570963'
+  author: pseudohadamard
+  text: "&gt; A rust built LLM only reviewed SSL library would be a recipe for disaster.<p>There
+    was a great quote at this year&#x27;s OpenSSL conference that went something like
+    &quot;LLMs if left to their own devices will reinvent sendmail&quot;."
+  score: 0
+  posted_at: '2026-11-20T07:54:51Z'
+- id: '50571516'
+  parent_id: '50571430'
+  author: tecleandor
+  text: I guess it&#x27;s easier to control the timing of your operations if you write
+    them directly in assembly. Otherwise, the compiler optimizations could change
+    the code in unexpected ways.
+  score: 0
+  posted_at: '2026-11-20T07:58:24Z'
+- id: '50571518'
+  parent_id: '50571430'
+  author: jbarberu
+  text: Compilers like to make code go brrr as much as they can. With crypto you want
+    the code to run at a deterministic speed (execution time), regardless of input.
+    With hand written assembly you can (more easily) make sure you have the same cycle
+    count regardless of what the input is.
+  score: 0
+  posted_at: '2026-11-20T07:58:50Z'
+- id: '50571524'
+  parent_id: '50571430'
+  author: HappMacDonald
+  text: At a guess, because it is easier to control <i>timing</i> in assembly than
+    in a higher level language that will compile your source code into whatever shape
+    it feels like
+  score: 0
+  posted_at: '2026-11-20T07:59:31Z'
+- id: '50571557'
+  parent_id: '50571273'
+  author: avhception
+  text: I would very much like for my employer, who benefits massively, to donate.
+    However, the people in charge of the money decisions don&#x27;t know anything
+    about software and don&#x27;t want to be lectured by me. They have _important
+    business stuff_ to do. Sigh.
+  score: 0
+  posted_at: '2026-11-20T08:03:53Z'
+- id: '50571632'
+  parent_id: '50570790'
+  author: fc417fc802
+  text: Just stick to windows xp sp1 indefinitely. Those were simpler times. &#x2F;s
+  score: 0
+  posted_at: '2026-11-20T08:13:15Z'
+- id: '50571653'
+  parent_id: '50571367'
+  author: cyberax
+  text: You can also use a formally proven <a href="https:&#x2F;&#x2F;github.com&#x2F;ctz&#x2F;graviola&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ctz&#x2F;graviola&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-20T08:15:09Z'
+- id: '50571677'
+  parent_id: '50569772'
+  author: Ekaros
+  text: It makes lot of sense when you think what encoding here does. Changes 3 arbitrary
+    bytes to 4 bytes with only some values being possible. Null termination is one
+    issue, but the output is a string such only length of the text itself makes sense.
+  score: 0
+  posted_at: '2026-11-20T08:17:47Z'
+- id: '50571776'
+  parent_id: '50571273'
+  author: throwaway2037
+  text: 'OpenSSL receives millions of dollars of funding each year.  The corporation
+    that runs the foundation reported 5.5M USD funding in 2024[1], and 5.0M USD funding
+    in 2025[2].  These days, OpenSSL is well-funded.<p>From your HN bio, I guess this
+    is your project: <a href="https:&#x2F;&#x2F;socketcluster.io&#x2F;" rel="nofollow">https:&#x2F;&#x2F;socketcluster.io&#x2F;</a><p>From
+    the home page, I see that you are sponsored by two different companies.  To me,
+    &quot;in terms of funding, it&#x27;s crickets for me&quot; isn&#x27;t an honest
+    statement.<p>If funding is such a problem for you, why don&#x27;t you use a non-open
+    source license, e.g., Business Source License?  This would allow non-commercial
+    projects to use your software for free, but commercial users need to pay.  There
+    are a bunch of big, important open source projects that already changed: HashiCorp,
+    CockroachDB, MariaDB, etc.<p>[1] <a href="https:&#x2F;&#x2F;openssl-corporation.org&#x2F;blog&#x2F;2025-02-14-annual-report24.html"
+    rel="nofollow">https:&#x2F;&#x2F;openssl-corporation.org&#x2F;blog&#x2F;2025-02-14-annual-repor...</a><p>[2]
+    <a href="https:&#x2F;&#x2F;www.openssl-corporation.org&#x2F;assets&#x2F;Annual-Report-2025.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.openssl-corporation.org&#x2F;assets&#x2F;Annual-Report-202...</a>'
+  score: 0
+  posted_at: '2026-11-20T08:30:08Z'
+- id: '50571882'
+  parent_id: '50571339'
+  author: throwaway2037
+  text: Many important open source projects have already switched to Business Source
+    License.  However, they only switched <i>after</i> they became famous.  I have
+    not seen any projects that became famous that started with BSL.
+  score: 0
+  posted_at: '2026-11-20T08:42:49Z'
+- id: '50571914'
+  parent_id: '50569818'
+  author: Ono-Sendai
+  text: The proper way to do it is to factor out the length calc into a utility function
+    that the API provides.  Also the calculated buffer length is passed in to the
+    function, and an error is returned if it&#x27;s too small.
+  score: 0
+  posted_at: '2026-11-20T08:46:40Z'
+- id: '50572004'
+  parent_id: '50570695'
+  author: anygivnthursday
+  text: 'AWS-LC[0] itself based on BoringSSL, it makes it feel safer for those behind
+    ALBs (but looks like this CVE may not be TLS related).<p>[0]: <a href="https:&#x2F;&#x2F;github.com&#x2F;aws&#x2F;aws-lc"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;aws&#x2F;aws-lc</a><p>Edit: corrected
+    fork to based on, I don&#x27;t actually know if it was a fork and a repo just
+    says based on'
+  score: 0
+  posted_at: '2026-11-20T08:58:33Z'
+- id: '50572064'
+  parent_id: '50571443'
+  author: rustyhancock
+  text: "&gt; LibreSSL had, IIRC, problem known as OpenBSD-itis. Or to put it bluntly,
+    the developers didn&#x27;t really care about any other platform.<p>Well put. This
+    is the crux of the issue.<p>If you ever try to use libreSSL you rub up against
+    so much friction that most projects would hammer out early."
+  score: 0
+  posted_at: '2026-11-20T09:07:23Z'
+- id: '50572087'
+  parent_id: '50570884'
+  author: stavros
+  text: Perhaps we could use another language, where it&#x27;s not so easy (or possible)
+    to write it wrong?
+  score: 0
+  posted_at: '2026-11-20T09:10:22Z'
+- id: '50572094'
+  parent_id: '50571776'
+  author: Datagenerator
+  text: Interesting, three years no new Release necessary of SocketCluster? That must
+    be quite stable, congrats!
+  score: 0
+  posted_at: '2026-11-20T09:11:04Z'
+- id: '50572188'
+  parent_id: '50571107'
+  author: m00dy
+  text: it&#x27;s too late for C&#x2F;C++ developers.
+  score: 0
+  posted_at: '2026-11-20T09:21:35Z'
+- id: '50572278'
+  parent_id: '50570169'
+  author: kroeckx
+  text: This function has been there since the first commit in git history, from 1998.
+  score: 0
+  posted_at: '2026-11-20T09:32:53Z'
+- id: '50572330'
+  parent_id: '50571776'
+  author: josefx
+  text: From my understanding the problem was never that OpenSSL had no money, but
+    that all the money it had was tied to services and features that didn&#x27;t help
+    improve the libraries overall security and in some cases where even outright harmful.
+  score: 0
+  posted_at: '2026-11-20T09:39:52Z'
+- id: '50572334'
+  parent_id: '50571273'
+  author: drcongo
+  text: If you&#x27;re a white supremacist, you can get tens of millions donated to
+    your dotfiles.
+  score: 0
+  posted_at: '2026-11-20T09:40:36Z'
+- id: '50572422'
+  parent_id: '50571776'
+  author: throooooo
+  text: I don&#x27;t believe BSL = commerical issues have to pay. Typically it means
+    that the code can be used internally, but not distributed or resold as a service.
+  score: 0
+  posted_at: '2026-11-20T09:51:34Z'
+- id: '50572427'
+  parent_id: '50571882'
+  author: throwaway7356
+  text: "&gt; Many important open source projects have already switched to Business
+    Source License.<p>No: first not &quot;many&quot;, but very few. And second they
+    are proprietary projects."
+  score: 0
+  posted_at: '2026-11-20T09:52:15Z'
+- id: '50572481'
+  parent_id: '50569670'
+  author: layer8
+  text: Rust does not fix existing third party callers.
+  score: 0
+  posted_at: '2026-11-20T09:58:46Z'
+- id: '50572514'
+  parent_id: '50571177'
+  author: cowlevel
+  text: Users would rather risk getting hacked than have a computer that doesn&#x27;t
+    boot or doesn&#x27;t go on the internet. If they preferred the latter they&#x27;d
+    unplug it.
+  score: 0
+  posted_at: '2026-11-20T10:02:39Z'
+- id: '50572521'
+  parent_id: '50571317'
+  author: zzril
+  text: That part of the API seems particularly random indeed, especially when comparing
+    it to other EVP_{En,De}code* functions which use the returned int for success&#x2F;error.<p>The
+    only reason for such a design I could think of is that the caller would be able
+    to &quot;detect&quot; the overflow by comparing the returned value against the
+    length of the buffer. But that is of course pointless, as the compiler is free
+    to assume a buffer overflow cannot happen and thus optimize the check away...
+  score: 0
+  posted_at: '2026-11-20T10:04:03Z'
+- id: '50572601'
+  parent_id: '50569564'
+  author: Geezus_42
+  text: Since no enterprise distro has shipped OpenSSL 4 yet, it will only be an issue
+    if you are running an upstream distro on a personal machine.
+  score: 0
+  posted_at: '2026-11-20T10:13:39Z'
+- id: '50572713'
+  parent_id: '50569529'
+  author: Geezus_42
+  text: Don&#x27;t worry. No enterprise distro have shipped OpenSSL 4.
+  score: 0
+  posted_at: '2026-11-20T10:26:52Z'
+- id: '50572813'
+  parent_id: '50571177'
+  author: TeMPOraL
+  text: Correct. You can plan around reliable insecurity and stay safe. You cannot
+    ensure safety (or security) of unreliable software.
+  score: 0
+  posted_at: '2026-11-20T10:40:04Z'
+article:
+  url: https://github.com/openssl/openssl/pull/33652
+  title: "[NSF] [CVE-2026-121481] Buffer overflow in EVP_EncodeBlock() by nmouha ·
+    Pull Request #33652 · openssl/openssl · GitHub"
+  fetch_status: success
+  content: "## Conversation\n\n### nmouha commented Nov 10, 2026\n\nThis fixes \"Buffer
+    overflow in EVP_EncodeBlock()\" (CVE-2026-121481) by returning -1 for invalid
+    inputs to EVP_EncodeBlock(): NULL input or output buffers, negative lengths, and
+    lengths for which the encoded size does not fit in an int. The OpenSSL SRT has
+    asked for it to be fixed publicly; the advisory is still pending.\n\nReturning
+    -1 for invalid inputs is the most straightforward fix, and matches what happens
+    in wolfSSL's compatibility layer for OpenSSL's EVP_EncodeBlock().\n\nI'm suggesting
+    a similar guard for EVP_DecodeBlock(). No length limit is needed here because
+    the decoded length always fits in an int, but it is a good idea to reject NULL
+    buffers and negative lengths.\n\nMoreover, I propose to fix the incorrect length
+    check in the base64encode() function of http_client.c, which rejected only len
+    > INT_MAX.\n\nI am adding tests in test/base64_dec_avx2_test.c to cover the new
+    behavior, and documenting the -1 returns in doc/man3/EVP_EncodeInit.pod.\n\nExploiting
+    this vulnerability from the command line is possible by passing a large -proxy_pass
+    to openssl s_client. I confirmed that GOST accepts these large passwords out of
+    the box. However, the password has to be supplied through an environment variable
+    (env:VAR), otherwise the command line will be too long.\n\nNote: the pattern of
+    CVE-2026-121481 is similar to that of CVE-2021-23840.\n\n##### Checklist\n\n-
+    documentation is added or updated\n\n- tests are added or updated\n\nSorry, something
+    went wrong.\n\n### Uh oh!\n\nThere was an error while loading. Please reload this
+    page.\n\n- \U0001F44D 4 reactions\n\n- \U0001F440 1 reaction\n\nThis fixes the
+    buffer overflow in `EVP_EncodeBlock()` (CVE-2026-121481) by returning `-1` for
+    invalid inputs. It also provides a similar guard for `EVP_DecodeBlock()`, and
+    fixes the incorrect length check in the `base64encode()` function of `http_client.c`.
+    Also updates the documentation and adds new tests.\n\n### jogme left a comment\n\nThere
+    was a problem hiding this comment.\n\n### Choose a reason for hiding this comment\n\nThe
+    reason will be displayed to describe this comment to others. Learn more.\n\nThis
+    patch changes functions so they can fail. Can you please also ensure the call
+    sites check the return value of this function?\n\nThe problematic places I found:\n\n-
+    PEM_SignFinal()\n\n- NETSCAPE_SPKI_b64_encode()\n\nSorry, something went wrong.\n\n###
+    Uh oh!\n\nThere was an error while loading. Please reload this page.\n\n### t8m
+    commented Nov 12, 2026\n\n> This patch changes functions so they can fail. Can
+    you please also ensure the call sites check the return value of this function?
+    The problematic places I found: * `PEM_SignFinal()` * `NETSCAPE_SPKI_b64_encode()`\n\nThis
+    patch changes functions so they can fail. Can you please also ensure the call
+    sites check the return value of this function?\n\nThe problematic places I found:\n\n*
+    `PEM_SignFinal()` * `NETSCAPE_SPKI_b64_encode()`\n\nUnless these callers can plausibly
+    trigger the error conditions, I am not sure it needs to be done as part of this
+    PR.\n\nIt should definitely be a separate commit.\n\nSorry, something went wrong.\n\n###
+    Uh oh!\n\nThere was an error while loading. Please reload this page.\n\n### t8m
+    Nov 12, 2026\n\nThere was a problem hiding this comment.\n\n### Choose a reason
+    for hiding this comment\n\nThe reason will be displayed to describe this comment
+    to others. Learn more.\n\nI am really worried about the negative return value
+    being added. Existing third party callers might not be ready to handle this correctly
+    (i.e. if they cast the return to size_t without checking). Could we instead return
+    0? (In all the added error returns in this PR.)\n\nSorry, something went wrong.\n\n###
+    Uh oh!\n\nThere was an error while loading. Please reload this page.\n\n### nmouha
+    Nov 12, 2026\n\nThere was a problem hiding this comment.\n\n### Choose a reason
+    for hiding this comment\n\nThe reason will be displayed to describe this comment
+    to others. Learn more.\n\nHi Tomas,\n\nI'm okay making any changes that you suggest,
+    but are you really sure about this?\n\nBoth EVP_EncodeBlock() and EVP_DecodeBlock()
+    can legitimately return 0, so 0 is not an error for either function. EVP_EncodeBlock()
+    returns 0 when dlen == 0, and EVP_DecodeBlock() returns 0 when the input is empty
+    after trimming.\n\nAlso, for EVP_DecodeBlock(), the current failure paths (e.g.,
+    trimmed length not a multiple of invalid base64 characters) all return -1. So,
+    I wanted to make sure that both EVP_EncodeBlock() and EVP_DecodeBlock() consistently
+    return -1 on any error. As I mentioned before, returning -1 is also what WolfSSL
+    does in its OpenSSL compatibility layer.\n\nI understand the concern that third-party
+    callers may cast the return to size_t without checking. But are we not making
+    things more difficult for third-party calls if both 0 and -1 can indicate errors,
+    or if the existing EVP_DecodeBlock() errors will be changed from -1 to 0?\n\nPS:
+    I'm happy to make a separate commit for the problematic call site checks that
+    Norbert pointed out.\n\nBest, Nicky\n\nSorry, something went wrong.\n\n### Uh
+    oh!\n\nThere was an error while loading. Please reload this page.\n\n### nhorman
+    Nov 12, 2026\n\nThere was a problem hiding this comment.\n\n### Choose a reason
+    for hiding this comment\n\nThe reason will be displayed to describe this comment
+    to others. Learn more.\n\nmaybe return 0 instead? Since EVP_EncodeBlock is defined
+    in the docs as returning the number of bytes encoded, a 0 return would be reasonable,
+    as it accurately indicates no bytes were encoded. We could additionally add an
+    ERR_raise_data to indicate the reason why it happened.\n\nSorry, something went
+    wrong.\n\n### Uh oh!\n\nThere was an error while loading. Please reload this page.\n\n-
+    \U0001F44D 1 reaction\n\n### bob-beck Nov 13, 2026\n\nThere was a problem hiding
+    this comment.\n\n### Choose a reason for hiding this comment\n\nThe reason will
+    be displayed to describe this comment to others. Learn more.\n\nI've already been
+    tagged for trying to raise an error on a success case - and probably legitimately
+    - 0 is a success case.\n\nSorry, something went wrong.\n\n### Uh oh!\n\nThere
+    was an error while loading. Please reload this page.\n\n### bob-beck Nov 13, 2026\n\nThere
+    was a problem hiding this comment.\n\n### Choose a reason for hiding this comment\n\nThe
+    reason will be displayed to describe this comment to others. Learn more.\n\nSo
+    I think this is the incorrect fix, We already for STYLE.md say we should NOT add
+    special case errors like this where we get a failure case that looks like a success.
+    We should document that this function does not accept negative lengths, and simply
+    use OPENSSL_ASSERT here.\n\nMaking something return a magic value that appears
+    to be a success for this just adds dead code and impossible to reach and untested
+    error cases everywhere.\n\nSorry, something went wrong.\n\n### Uh oh!\n\nThere
+    was an error while loading. Please reload this page.\n\n### bob-beck Nov 13, 2026\n\nThere
+    was a problem hiding this comment.\n\n### Choose a reason for hiding this comment\n\nThe
+    reason will be displayed to describe this comment to others. Learn more.\n\nthis
+    PR also adds cases not in the report, and the report's reproducer is completely
+    synthetic, and probably should not be a CVE without evidence it really happens.
+    I suggest this should be fixed in documentation\n\nSorry, something went wrong.\n\n###
+    Uh oh!\n\nThere was an error while loading. Please reload this page.\n\n### nhorman
+    Nov 13, 2026\n\nThere was a problem hiding this comment.\n\n### Choose a reason
+    for hiding this comment\n\nThe reason will be displayed to describe this comment
+    to others. Learn more.\n\nthen lets just make a dlen overflow an asserted failure\n\nSorry,
+    something went wrong.\n\n### Uh oh!\n\nThere was an error while loading. Please
+    reload this page.\n\n### nmouha Nov 13, 2026\n\nThere was a problem hiding this
+    comment.\n\n### Choose a reason for hiding this comment\n\nThe reason will be
+    displayed to describe this comment to others. Learn more.\n\nThanks for all the
+    feedback! Following this discussion, I'm suggesting OPENSSL_assert() here.\n\nSorry,
+    something went wrong.\n\n### "
+  error:
+  fetched_at: '2026-11-20T10:59:35Z'
+archived_at: '2026-11-20T10:59:42Z'

@@ -5,14 +5,14 @@ post:
   title: Mutex poisoning is not for everyone
   url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   hn_url: https://lobste.rs/s/uzn2t6
-  score: 26
+  score: 33
   author: polywolf
   posted_at: '2026-11-19T13:01:49Z'
-  fetched_at: '2026-11-20T02:04:10Z'
+  fetched_at: '2026-11-20T10:59:43Z'
   article_url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-20T02:04:12Z'
-  raw_comment_count: 6
+  article_fetched_at: '2026-11-20T10:59:44Z'
+  raw_comment_count: 12
   tags:
   - rust
 comments:
@@ -23,7 +23,7 @@ comments:
     it's a problem in the past, but this was super clear and well organised. I'm now
     aware of std::sync::nonpoison in nightly and finally understand why parking_lot
     is a transitive dependency of all my projects. Kudos!
-  score: 3
+  score: 4
   posted_at: '2026-11-19T19:35:45Z'
 - id: lo-uvh437
   parent_id: '0'
@@ -33,7 +33,7 @@ comments:
     changes, this is what editions are for. The issues with poisoning mutexes are
     well documented, and I think it would be a shame to keep it as the default going
     forwards.
-  score: 10
+  score: 12
   posted_at: '2026-11-19T20:14:05Z'
 - id: lo-mkrh5w
   parent_id: '0'
@@ -46,7 +46,7 @@ comments:
 
     For 1, yeah, but that's consistent with the rest of the standard library. HashMap defaults to SipHash even though it's slower than something like AHash.. because they consider collision unpredictability to be more important than best-case performance. If your use case is hot enough for this to be a problem and it actually is safe under panicking and you've put in the work to prove that.. you can still use parking_lot! It's good that the option is there.. but it's also good it's easier to use the seatbelt than to turn off the warning.
     For 2.. no? We don't do On Error Resume Next all over the place anymore either. I'm sure there are cases where it might make sense, but if silencing the error in those cases is the hard part... I have to doubt that you're actually bothering with the hard part.
-  score: 8
+  score: 12
   posted_at: '2026-11-19T21:01:01Z'
 - id: lo-zrafjq
   parent_id: '0'
@@ -54,7 +54,7 @@ comments:
   text: |-
     code in later editions must work together with code in older editions. That would make these changes very challenging.
     Is it such a big deal to use another Mutex from a library?
-  score: 3
+  score: 5
   posted_at: '2026-11-19T21:13:35Z'
 - id: lo-luyrre
   parent_id: '0'
@@ -66,7 +66,7 @@ comments:
     I'm not aware of specifics with rust editions, I may have been wrong on the point that it could just be changed from one edition to the next without breaking old edition crates. What if std::sync::Mutex just exists as an alias to std::sync::poison::Mutex in edition A and to std::sync::nonpoison::Mutex in edition B?
     EDIT: In fact, this appears to be what the rust team plans to do
     https://github.com/rust-lang/rust/issues/134645#issuecomment-3324577500
-  score: 8
+  score: 13
   posted_at: '2026-11-19T21:50:45Z'
 - id: lo-lqydnb
   parent_id: '0'
@@ -79,10 +79,76 @@ comments:
     programs with bugs on panic
 
     Type 1 obviously prefers nonpoison.
-    Type 2 is the only case where poisoning might be good. But realistically, if the authors went to great lengths to handle panics, they probably don’t want to panic on poisoned mutexes. That kind of hardening is all about using drop guards / RAII to ensure everything stays consistent, especially in async programs where cancel safety matters even more than panic safety.
-    Type 3 programs have already made the “uptime is more important than correctness” choice. I doubt removing poisoning from type 3 programs would meaningfully increase exposure to bugs for most programs.
-  score: 2
+    Type 2 is the only case where poisoning might be good. But realistically, if a program goes to great lengths to handle panics, it probably don’t want to panic on poisoned mutexes. That kind of hardening is all about using drop guards / RAII to ensure everything stays consistent, especially in async programs where cancel safety matters even more than panic safety.
+    Type 3 programs have already made the “uptime is more important than correctness” choice. I doubt removing poisoning from type 3 programs would meaningfully increase exposure to bugs for most programs. I also don’t see why Mutex should be a special case that narrowly acts like panic=abort. If you really care about correctness over uptime as a default, you don’t actually want poison Mutex, you want uncaught panics to abort.
+  score: 4
   posted_at: '2026-11-20T01:54:28Z'
+- id: lo-rlwi9j
+  parent_id: '0'
+  author: kprotty
+  text: Comment removed by its author
+  score: 1
+  posted_at: '2026-11-20T03:04:38Z'
+- id: lo-m0kkwk
+  parent_id: '0'
+  author: kornel
+  text: |-
+    I agree with the post.
+    If you don't trust yourself that you won't have non-unwind-safe code in the critical section - I have bad news for you: unwind safety affects everything outside of critical sections too. In Rust everything can panic, and mutable state can also be external (files, sockets, databases). The classic problem of a counter drifting typically happens with Atomic that can't track poisoning.
+    These problems aren't limited to panics either. It's super easy to make a bug like:
+    *locked_state += bad;
+    op()?;
+    *locked_state -= bad;
+
+    and leave a bad state due to an early return from ?. It's the same bug as an early return due to a panic, but in that case poisoning doesn't trigger!
+    Poisoning is an incomplete solution to an imprecise assumption about a potential problem. It's the fallacy of "we need something, this is something, therefore we need this".
+    The real solution is to hunt down the non-transactional state that needs being restored and use drop guards (now in std). This has to be done everywhere, so poisoning won't save you.
+    In my experience, poisoning is just an outage amplifier for servers. It doesn't prevent errors, it only escalates panics that would be rare and affect only one bad request into a permanent failure that breaks all requests. And if that particular lock isn't checked by your healthcheck, you now have a serious problem. lock().unwrap() is a domino of poison. Do lock().unwrap_or_else(|_| abort()) to at least avoid leaving a server running that panics on every request.
+  score: 7
+  posted_at: '2026-11-20T04:18:51Z'
+- id: lo-vwjzpp
+  parent_id: '0'
+  author: sunshowers
+  text: |-
+    I disagree very strongly (the post links to my blog about it, and my position hasn't changed) and will use whatever influence I have to make sure poisoning mutexes stay the default.
+    It's funny, we disagree about so many things within my workplace. The one thing there is absolute unanimity on is that mutexes should poison by default. I've been on the minority side of plenty of debates and I straight up didn't believe how lopsided the opinion was at first.
+  score: 3
+  posted_at: '2026-11-20T04:35:04Z'
+- id: lo-jsscws
+  parent_id: '0'
+  author: lonjil
+  text: |-
+    EDIT: In fact, this appears to be what the rust team plans to do https://github.com/rust-lang/rust/issues/134645#issuecomment-3324577500
+
+    No, it's just an open proposal, which is quite strongly opposed.
+  score: 2
+  posted_at: '2026-11-20T07:56:05Z'
+- id: lo-xrxcfi
+  parent_id: '0'
+  author: purplesyringa
+  text: |-
+    Thanks, this is very well put. I've been advocating for avoiding poisoning in the current form for this reason, and I think correctness is a better argument than performance that this post puts up front.
+    One thing that gives me pause is that I've just realized that, while I do audit code for unwind safety in critical places, I think I never explicitly considered it whenever I used std::mem::take to workaround borrowck/aliasing model limitations. This pattern was so ingrained for me that I never did a double take. Now I have to worry if I have latent bugs of that sort somewhere; and if I do, whether poisoning mutexes would save me, or if their existence is what caused this frivolousness in the first place.
+  score: 3
+  posted_at: '2026-11-20T08:03:03Z'
+- id: lo-q21e7y
+  parent_id: '0'
+  author: aster
+  text: To be clear, I was just commenting on the aliasing mutex in different editions
+    part, not whether or not this would be something actually implemented.
+  score: 1
+  posted_at: '2026-11-20T10:53:12Z'
+- id: lo-9hmfyu
+  parent_id: '0'
+  author: mort
+  text: |-
+    Is it such a big deal to use another Mutex from a library?
+
+    I think it is. The lowest friction, syntax- or stdlib-supported way to do a thing ought to be the right way to do that thing, and in every case where it's the wrong way and conventional wisdom is to abandon the straightforward solution and do some less obvious thing makes the language worse.
+    Rust is a great language overall, and is my go-to language. But the fact that conventional wisdom is "don't use the standard mutex, use parking_lot, because the stdlib's mutex isn't very good" makes the language worse than it would otherwise have been. Just like C++ is made worse by the fact that conventional wisdom is, "std::unordered_map isn't a very good hash map, you should use one from a library".
+    (Note: I don't mind mutex poisoning, and I think calling .lock() on a mutex which was locked by a thread that's since paniced should also panic. I don't like how we have to call .lock().unwrap() all the time; the panic already happened. But the particulars of this specific discussion isn't the point.)
+  score: 1
+  posted_at: '2026-11-20T10:53:21Z'
 article:
   url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   title: Mutex poisoning is not for everyone | bertptrs.nl
@@ -190,4 +256,4 @@ article:
     32KiB of instruction cache. Lu"
   error:
   fetched_at: '2026-11-19T20:06:40Z'
-archived_at: '2026-11-20T02:04:12Z'
+archived_at: '2026-11-20T10:59:44Z'

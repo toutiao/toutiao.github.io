@@ -1,0 +1,216 @@
+---
+post:
+  id: '50569516'
+  title: 'Postgres 19 Repack: Faster, Built-In Table Bloat Cleanup'
+  url: https://www.snowflake.com/en/blog/engineering/postgres-19-repack-table-bloat/
+  hn_url: https://news.ycombinator.com/item?id=50569516
+  score: 109
+  author: ''
+  posted_at: '2026-11-20T02:43:49Z'
+  fetched_at: '2026-11-20T10:59:39Z'
+  article_url: https://www.snowflake.com/en/blog/engineering/postgres-19-repack-table-bloat/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-20T10:59:39Z'
+  raw_comment_count: 10
+comments:
+- id: '50570379'
+  parent_id: '50569516'
+  author: jzelinskie
+  text: 'I haven&#x27;t used these extensions, but I like the direction of being able
+    to extend Postgres by tailing its own internals (pg_squeeze approach) than triggers
+    (pg_repack).<p>We (the SpiceDB developers) took a similar approach to solve a
+    different problem a few years ago: implementing strict serializability in Postgres[0].
+    By hooking into the transactions layer themselves (pg_xact), we could layer on
+    our own MVCC reusing the real Postgres transactions to compute visibility and
+    total ordering. When you can just tail the Postgres internals, you don&#x27;t
+    even need to implement a Postgres extension, which can keep it portable across
+    locked-down, managed Postgres offerings.<p>Do folks know of other clever implementations
+    of behavior by &quot;spying&quot; on the Postgres internals?<p>[0]: <a href="https:&#x2F;&#x2F;m.youtube.com&#x2F;watch?v=_f6fHy4DWWM"
+    rel="nofollow">https:&#x2F;&#x2F;m.youtube.com&#x2F;watch?v=_f6fHy4DWWM</a>'
+  score: 0
+  posted_at: '2026-11-20T05:02:52Z'
+- id: '50570575'
+  parent_id: '50569516'
+  author: aurareturn
+  text: Trying to recoup space at a slow period, I remember using Repack on New Years
+    Eve on my local computer for a multi TB production DB and waiting hours and hours
+    hoping my connection doesn’t drop. When it dropped, I had to restart all over
+    again.<p>I thought it would be a simple process but it ended up taking many hours
+    and a few retries. Holy hell it was a miserable experience and it ruined my New
+    Years Eve.<p>I’m so happy this is now built in.
+  score: 0
+  posted_at: '2026-11-20T05:39:25Z'
+- id: '50570597'
+  parent_id: '50570575'
+  author: craigkerstiens
+  text: I feel like that whole experience deserves a blog post.<p>pg_repack, pg_squeeze,
+    pg_reorg, all felt like it was &quot;use as directed&quot; and if you misuse them
+    we&#x27;re sorry if we corrupt data - that&#x27;s a little extreme but they were
+    still very advanced tools.<p>Having this in core and learning from all the previous
+    Postgres paths is the way of Postgres. I&#x27;m with you couldn&#x27;t be more
+    excited to have this in core, to me it was always the flagship feature and I&#x27;m
+    just glad it stayed in 19 vs. a revert compared to so many other flagship features.
+  score: 0
+  posted_at: '2026-11-20T05:42:26Z'
+- id: '50570600'
+  parent_id: '50570575'
+  author: lefra
+  text: Before long-running commands, open a screen [1] session. That way, if you
+    get disconnected, the job keeps running, and you can reconnect to the screen session
+    afterwards.<p>The man page is quite long, use &quot;screen -R &lt;appropriate
+    name&quot; to create the session or reconnect to it, and (IIRC) CTRL-A D to exit
+    screen without closing the session.<p>[1] <a href="https:&#x2F;&#x2F;man7.org&#x2F;linux&#x2F;man-pages&#x2F;man1&#x2F;screen.1.html"
+    rel="nofollow">https:&#x2F;&#x2F;man7.org&#x2F;linux&#x2F;man-pages&#x2F;man1&#x2F;screen.1.html</a>
+  score: 0
+  posted_at: '2026-11-20T05:42:58Z'
+- id: '50570637'
+  parent_id: '50570600'
+  author: aurareturn
+  text: It was my first time doing it. I didn’t know it’d be such a frustrating experience.
+  score: 0
+  posted_at: '2026-11-20T05:47:55Z'
+- id: '50570850'
+  parent_id: '50569516'
+  author: dap
+  text: Having worked on clusters where bloat was an ongoing serious problem, this
+    looks really useful!  Thanks for doing this work.
+  score: 0
+  posted_at: '2026-11-20T06:22:10Z'
+- id: '50570913'
+  parent_id: '50569516'
+  author: inkysigma
+  text: Isn&#x27;t losing MVCC consistency a pretty big drawback? Am I misinterpreting
+    or does that mean occasionally a query might just return nothing for possibly
+    difficult to diagnose reasons?
+  score: 0
+  posted_at: '2026-11-20T06:32:20Z'
+- id: '50570978'
+  parent_id: '50569516'
+  author: QuentinM
+  text: I would have loved REPACK CONCURRENTLY when we were generating millions of
+    dead tuples an hour on our trading database …<p>Sadly it doesn’t support partitions
+    yet, which is typical when reaching sufficient scale that bloat management really
+    matters. People often mention disk space when talking about dead tuples, but the
+    real killer is what’s hidden under - bloat in the ctid &amp; btree leaf linked
+    lists make every lookup feel like table scans…!<p>Thankfully HOT (Heap-only Tuples)
+    has saved us since. Virtually no dead tulles generated, and they get otherwise
+    collected during regular ops like SELECT, amortizing cost over time, and preventing
+    dangerous build up.
+  score: 0
+  posted_at: '2026-11-20T06:42:26Z'
+- id: '50572160'
+  parent_id: '50569516'
+  author: nopurpose
+  text: They added plan hinting, but sadly not via comments. To use hinting an app
+    needs to issue a `SET` command, which adds round trip latency for each query.
+    Need to use quite unergonomic query batching&#x2F;pipelining to negate that latency.
+  score: 0
+  posted_at: '2026-11-20T09:17:32Z'
+- id: '50572634'
+  parent_id: '50570600'
+  author: pezezin
+  text: Nowadays screen is considered legacy and it is recommended to use tmux, but
+    the idea is the same.
+  score: 0
+  posted_at: '2026-11-20T10:16:43Z'
+article:
+  url: https://www.snowflake.com/en/blog/engineering/postgres-19-repack-table-bloat/
+  title: 'Postgres 19 REPACK: Built-In Online Table Bloat Cleanup'
+  fetch_status: success
+  content: "[Skip to content](#responsive-grid-main-content)\n\n[Blog](/en/blog/engineering/)/[Open
+    Source](/en/blog/engineering/open-source/)/Postgres 19 REPACK: Faster, Built-In
+    Table Bloat Cleanup\n\nNov 2, 2026/10 min readOpen Source\n\n# Postgres 19 REPACK:
+    Faster, Built-In Table Bloat Cleanup\n\n[\n\n ![](/adobe/dynamicmedia/deliver/dm-aid--c4153e9b-93dc-425b-b1c7-8b2ec951eb5b/craig-kerstiens.jpg?preferwebp=true&quality=85&sfver=678ce411)\n\nCraig
+    Kerstiens\n](/en/blog/authors/craig-kerstiens/)\n\n ![](/adobe/dynamicmedia/deliver/dm-aid--5802ecd3-9104-41ce-ba1d-b68593bb9c70/sf-eng-blog-ml-2.png?preferwebp=true&quality=85&sfver=b9a73556)\n\nREPACK
+    is my favorite feature in Postgres 19. It's not the flashiest, but it is the one
+    that’s going to matter most if you’re running a production database. Vacuum, autovacuum
+    and bloat have always been this sore spot for Postgres users. On the one hand,
+    Postgres MVCC design is not new. And yet, on high update systems, this churn of
+    having dead rows that get freed up later, vacuum being tweaked to the right levels
+    to maintain low bloat is still a bit of an inexact science.\n\nOnce bloat does
+    exist, it’s just sitting there. And you see that unclaimed space not being used.\n\nBefore
+    Postgres 19, your options for reclaiming that space were:\n\n- **VACUUM FULL:**
+    Built-in, but takes a read/write lock for the entire duration. On a large table,
+    that means minutes of downtime.\n- **dump/restore** : Fail over to a fresh database
+    that is a clean snapshot.\n- **pg\\_repack:** A third-party extension for online
+    rebuilds from an external process. Generally a good option, but not without caveats
+    and risks.\n- **pg\\_squeeze:** Another third-party extension for online rebuilds
+    via a background worker, also solid in production but again not without caveats
+    and risks.\n\nEnter Postgres 19:\n\n- **REPACK CONCURRENTLY** : reclaims bloated
+    table space while the table stays fully readable and writable, takes only a brief
+    lock at the very end, and runs without any extension\n\n## How Postgres tables
+    become bloated\n\nLet’s back up. You may be familiar with bloat as a seasoned
+    Postgres user, but just to make sure we’re all on the same page… It's one of those
+    Postgres realities, the tradeoff for MVCC. Tables accumulate dead tuples over
+    time: when rows are updated or deleted, the old versions stick around. Regular
+    autovacuum typically marks that space as reusable. For most tables, that's enough.
+    But for large, update-intensive tables, vacuum can fall behind. Dead rows accumulate
+    as table bloat. The file grows, but since VACUUM can only mark that space as internally
+    reusable, it doesn't shrink the table or return space to the OS. To actually reclaim
+    disk space, you need to rebuild the table.\n\nHow do you know if you have a bloat
+    problem? You can do a quick check using pg\\_stat\\_user\\_tables. The tuple counts
+    are estimates, but this is one good diagnostic signal.\n\n    SELECT\n        schemaname,\n
+    \       relname,\n        pg_size_pretty(pg_relation_size(schemaname || '.' ||
+    relname)) AS size,\n        n_live_tup,\n        n_dead_tup,\n        CASE WHEN
+    n_live_tup > 0\n             THEN round((n_dead_tup::float / n_live_tup::float)::numeric,
+    4)\n        END AS dead_tup_ratio,\n        last_autovacuum,\n        last_autoanalyze\n
+    \   FROM pg_stat_user_tables\n    ORDER BY dead_tup_ratio DESC NULLS LAST;\n\n_(Query
+    adapted from [Crunchy Data's bloat checking guide](https://www.crunchydata.com/blog/checking-for-postgresql-bloat))_\n\nA
+    rough rule of thumb:\n\n**Below 50% bloat** : Generally acceptable. Monitor it
+    and check autovacuum settings, but no urgent action needed.\n\n**Above 50% bloat**
+    : You're likely wasting disk space and paying a performance cost from extra page
+    reads. It's at least worth investigating — and possibly addressing — if you see
+    slow queries or growing table sizes.\n\nThere is no single bloat percentage that
+    determines whether a table needs attention. Consider wasted bytes, workload, growth,
+    and whether reclaiming space is worth the rewrite.\n\n### How pg\\_repack works\n\nThe
+    [pg\\_repack extension](https://reorg.github.io/pg_repack/) was the option for
+    online table rebuilds for years. Here's how it works:\n\n- **External tool** :
+    pg\\_repack runs as a command-line utility (pg\\_repack --table my\\_table -d
+    mydb) from an external server or management host. You needed to install both the
+    extension inside Postgres (CREATE EXTENSION pg\\_repack) and the client binary
+    on whatever machine would run it.\n- **Trigger-based change capture** : It creates
+    a log table and installs triggers on your target table to capture all INSERT/UPDATE/DELETE
+    operations during the rebuild. This adds trigger overhead on every write for the
+    duration of the operation.\n- **Shadow table approach** : It creates a new copy
+    of the table, populates it from the original, replays the trigger log, then does
+    a brief lock-and-swap, along with a final table rename.\n\nThis worked well, and
+    many production systems relied on it for years. But installing third-party extensions
+    makes some teams nervous, and the external binary adds operational overhead.\n\n###
+    How pg\\_squeeze works\n\n[pg\\_squeeze](https://github.com/cybertec-postgresql/pg_squeeze)
+    (from CYBERTEC, the same team behind much of the Postgres 19 REPACK work) came
+    along and took a more modern approach. It's also seen wide production use.\n\n-
+    **Logical decoding** : pg\\_squeeze uses Postgres’ WAL-based logical decoding
+    to capture concurrent changes. This means no triggers are installed on your table.
+    This is the same approach that PG 19's built-in REPACK (CONCURRENTLY) now uses.\n-
+    **Background worker** : This runs entirely inside the database as a background
+    worker process which means unlike pg\\_repack, you don’t need an external CLI
+    tool. You can also configure it to run automatically when bloat thresholds are
+    exceeded.\n- **Still an extension** : Lots of folks prefer a built-in option,
+    but this still requires wal\\_level = logical, a replication slot, compiling and
+    installing the extension, and adding it to shared\\_preload\\_libraries.\n\npg\\_squeeze
+    in a sense is the prototype for what became PG 19's REPACK (CONCURRENTLY). The
+    built-in version inherits the logical decoding approach but integrates it directly
+    into the server without an extension, shared\\_preload\\_libraries, or separate
+    configuration tables.\n\n### Enter REPACK\n\nPostgres 19 adds REPACK as a first-class
+    SQL command with three modes:\n\n    -- Basic repack, like VACUUM FULL — takes
+    ACCESS EXCLUSIVE lock\n    REPACK my_table;\n    \n    -- Online repack using
+    CONCURRENTLY just like you would with indexes\n    REPACK (CONCURRENTLY) my_table;\n
+    \   \n    -- Online repack + reorder by index \n    REPACK (CONCURRENTLY) my_table
+    USING INDEX my_index;\n\n## REPACK (CONCURRENTLY)\n\nThis is what makes the feature
+    production-ready. With CONCURRENTLY, the ACCESS EXCLUSIVE lock is only held briefly
+    at the end. During the bulk of the operation, which for a large table could take
+    minutes, the table remains fully readable and writable.\n\nHere's what happens
+    internally:\n\n ![Figure 1. Postgres 19 REPACK: Faster, built-in table bloat cleanup](/adobe/dynamicmedia/deliver/dm-aid--9c07541d-1f08-4e82-89a5-c8e8ac220a0b/figure-1.-postgres-19-repack--faster%252C-built-in-table-bloat-cleanup.png?preferwebp=true&quality=85&sfver=0e32a195)\n\n
+    \   REPACK (CONCURRENTLY, VERBOSE, ANALYZE) repack_test;\n\n    INFO: repacking
+    \"public.repack_test\" in physical order\n    INFO: \"public.repack_test\": found
+    0 removable, 1000000 nonremovable\n           row versions in 38452 pages\n    Time:
+    9406.788 ms (00:09.407)\n    \n    Before: 493 MB → After: 228 MB (54% reduction)\n\nThree
+    options in play here:\n\n- **CONCURRENTLY** : Rebuilds online, with only a brief
+    exclusive lock at the very end for the file swap.\n- **VERBOSE** : Prints progress
+    at INFO level.\n- **ANALYZE** : Runs ANALYZE after the repack completes to update
+    planner statistics.\n\n### REPACK with USING INDEX\n\nREPACK can also physically
+    reorder your table's rows to match an index. If your workload frequently reads
+    ranges of related "
+  error:
+  fetched_at: '2026-11-20T10:59:39Z'
+archived_at: '2026-11-20T10:59:42Z'

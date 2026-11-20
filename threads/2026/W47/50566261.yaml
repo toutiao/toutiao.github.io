@@ -1,0 +1,266 @@
+---
+post:
+  id: '50566261'
+  title: Rebuilding my local voice assistant pipeline
+  url: https://blog.platypush.tech/article/Rewriting-my-voice-assistant-pipeline
+  hn_url: https://news.ycombinator.com/item?id=50566261
+  score: 110
+  author: ''
+  posted_at: '2026-11-19T20:57:14Z'
+  fetched_at: '2026-11-20T10:59:41Z'
+  article_url: https://blog.platypush.tech/article/Rewriting-my-voice-assistant-pipeline
+  article_fetch_status: success
+  article_fetched_at: '2026-11-20T10:59:41Z'
+  raw_comment_count: 17
+comments:
+- id: '50566992'
+  parent_id: '50566261'
+  author: stavros
+  text: This is really useful, thanks! The other day I bought a small screen and didn&#x27;t
+    know what to do with it so I made an assistant that talks to my bot:<p><a href="https:&#x2F;&#x2F;m.youtube.com&#x2F;shorts&#x2F;3FseVyAG5uM"
+    rel="nofollow">https:&#x2F;&#x2F;m.youtube.com&#x2F;shorts&#x2F;3FseVyAG5uM</a><p>I
+    used microwakeword too, and training my own wakeword was pretty simple (basically
+    just recording a few tens of samples). Highly recommended.<p>I also wanted to
+    be able to issue some voice commands for lights and other things in my home with
+    low latency, so I added a short-circuit plugin that runs right after recognition.
+    If the recognized command matches one of the regexes, it&#x27;s immediately executed,
+    which has a latency of under a second. Otherwise, it gets sent to my assistant,
+    which usually will tweak the regex (or add a new one) to improve the whole system
+    as it fails.
+  score: 0
+  posted_at: '2026-11-19T21:54:39Z'
+- id: '50567505'
+  parent_id: '50566261'
+  author: fragilerock
+  text: Interesting read! I have my own local voice assistant and I implemented exactly
+    the same question mark trick just the other day.<p>The overall pipeline is quite
+    similar to my previous setup, but I found the STT -&gt; LLM -&gt; TTS pipeline
+    just infuriatingly slow. TTS and STT with whisper&#x2F;piper worked fine and reasonably
+    fast for me locally, but the real bottleneck was always the fact that they&#x27;re
+    not running concurrently with the LLM call. I ended up forking an open source
+    openai realtime API ESP32 plugin and patching it to my liking. It&#x27;s a bit
+    more expensive in terms of API cost but I only use it sparingly and it&#x27;s
+    so much nicer to use now.
+  score: 0
+  posted_at: '2026-11-19T22:38:23Z'
+- id: '50568378'
+  parent_id: '50566261'
+  author: bityard
+  text: Is this complimentary to, or an alternative to Home Assistant?
+  score: 0
+  posted_at: '2026-11-20T00:04:48Z'
+- id: '50568385'
+  parent_id: '50566261'
+  author: mmmooo
+  text: 'older amazon echo dots and shows really make great hardware for this, combined
+    with homeassistant, and can be had for very little cost. e.g. shameless plug:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;ygelfand&#x2F;echolocal" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ygelfand&#x2F;echolocal</a>'
+  score: 0
+  posted_at: '2026-11-20T00:05:43Z'
+- id: '50568405'
+  parent_id: '50566261'
+  author: mewse-hn
+  text: Interesting write up, I&#x27;ve been vibe coding an android voice assistant
+    using a similar pipeline without a wakeword - VAD &gt; ASR &gt; LLM &gt; TTS<p>I&#x27;ve
+    found parakeet to be much, much better than whisper and I made a 4 bit quant of
+    parakeet 110M for my crappier android test devices, it would probably fit a raspberry
+    pi:<p><a href="https:&#x2F;&#x2F;huggingface.co&#x2F;mewse&#x2F;parakeet-tdt_ctc-110m-onnx-int4"
+    rel="nofollow">https:&#x2F;&#x2F;huggingface.co&#x2F;mewse&#x2F;parakeet-tdt_ctc-110m-onnx-int4</a>
+  score: 0
+  posted_at: '2026-11-20T00:07:46Z'
+- id: '50568435'
+  parent_id: '50566261'
+  author: dofm
+  text: Just what I want to read — favourited to come back to!
+  score: 0
+  posted_at: '2026-11-20T00:13:22Z'
+- id: '50568594'
+  parent_id: '50568378'
+  author: malfist
+  text: Home assistant doesn&#x27;t really provide much out of the box, its mostly
+    a modular&#x2F;pluggable ecosystem and one of the things you can install are various
+    voice assistants
+  score: 0
+  posted_at: '2026-11-20T00:31:33Z'
+- id: '50568802'
+  parent_id: '50568405'
+  author: GaggiX
+  text: 'There is also parakeet-redux, a 1.58bits quant of parakeet-tdt-0.6b-v3 that
+    runs as well as the original model: <a href="https:&#x2F;&#x2F;huggingface.co&#x2F;moondream&#x2F;parakeet-redux"
+    rel="nofollow">https:&#x2F;&#x2F;huggingface.co&#x2F;moondream&#x2F;parakeet-redux</a><p>The
+    model is actually a distillation of a different checkpoint called parakeet-ultra,
+    same size and architecture as parakeet-tdt-0.6b-v3 but better, that&#x27;s why
+    the 1.58bit quant works so well.'
+  score: 0
+  posted_at: '2026-11-20T00:58:08Z'
+- id: '50568830'
+  parent_id: '50568385'
+  author: neumann
+  text: I got an echo show rooted and ROMd that I am loving - put it in the kids room
+    as a music player in kiosk mode, but have been now wanting one for myself with
+    wakewords. This looks like the ticket.
+  score: 0
+  posted_at: '2026-11-20T01:01:21Z'
+- id: '50568844'
+  parent_id: '50568385'
+  author: nl
+  text: 'I just commented in another thread that I built this: <a href="https:&#x2F;&#x2F;github.com&#x2F;nlothian&#x2F;earwing"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nlothian&#x2F;earwing</a><p>Beam
+    forming microphone array, custom UI, custom case. Maybe costs more than a second
+    hand echo dot though (hardware is probably around $30).'
+  score: 0
+  posted_at: '2026-11-20T01:03:41Z'
+- id: '50568852'
+  parent_id: '50568802'
+  author: mewse-hn
+  text: Oh crazy I hadn&#x27;t seen this yet, I might be able to unify my 0.6B vs
+    110M selector, thanks!
+  score: 0
+  posted_at: '2026-11-20T01:05:15Z'
+- id: '50569362'
+  parent_id: '50568830'
+  author: mmmooo
+  text: the gen 1 or 2 show 8s make great devices for this kind of stuff, 5&#x27;s
+    are a little small for me.  the lenovo android things (google homes) are also
+    really nice if you want a slightly bigger screen, but not as cheap second hand.
+  score: 0
+  posted_at: '2026-11-20T02:17:54Z'
+- id: '50570297'
+  parent_id: '50568405'
+  author: deepsquirrelnet
+  text: I trained a streaming model that comes with a VAD. Complete with benchmarks
+    on a pi 4.<p><a href="https:&#x2F;&#x2F;huggingface.co&#x2F;spaces&#x2F;futo-org&#x2F;asr4all-client-side"
+    rel="nofollow">https:&#x2F;&#x2F;huggingface.co&#x2F;spaces&#x2F;futo-org&#x2F;asr4all-client-side</a><p>Large
+    is feasible on one core of a pi 4, but not in low latency streaming. All will
+    work well on a 5.<p>I have built exactly the pipeline you&#x27;re talking about
+    with this model and gemma e4b + mtp. Works entirely on CPU at very reasonable
+    speeds. With an LLM you can even use lighter models and it has negligible impact.
+  score: 0
+  posted_at: '2026-11-20T04:48:11Z'
+- id: '50570433'
+  parent_id: '50566261'
+  author: bill10
+  text: I am using the old whisper.cpp to turn voice into text, and Kokoro to read
+    text out. Works pretty well for me, but Kokoro still sounds AI and whisper is
+    not that accurate. Will try Parakeet and Silero
+  score: 0
+  posted_at: '2026-11-20T05:11:48Z'
+- id: '50571271'
+  parent_id: '50567505'
+  author: tristanb
+  text: The lack of concurrency is exactly what makes the traditional pipeline feel
+    slow; Realtime avoids waiting for separate STT, LLM, and TTS stages. I built voicepe-realtime
+    (<a href="https:&#x2F;&#x2F;github.com&#x2F;TristanBrotherton&#x2F;voicepe-realtime"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;TristanBrotherton&#x2F;voicepe-realtime</a>)
+    for the Home Assistant Voice PE, using OpenAI Realtime with barge-in and custom
+    wake words.
+  score: 0
+  posted_at: '2026-11-20T07:22:02Z'
+- id: '50571571'
+  parent_id: '50571271'
+  author: fragilerock
+  text: Hah, the open source project i mentioned in my comment is yours. Thanks for
+    making it :)
+  score: 0
+  posted_at: '2026-11-20T08:05:35Z'
+- id: '50571846'
+  parent_id: '50571571'
+  author: tristanb
+  text: Oh you’re very welcome. I’m glad you like it - I welcome pull requests! I’ve
+    made a lot of improvements in speed recently, I’d love to know if I’ve missed
+    anything
+  score: 0
+  posted_at: '2026-11-20T08:38:46Z'
+article:
+  url: https://blog.platypush.tech/article/Rewriting-my-voice-assistant-pipeline
+  title: Rebuilding my voice assistant pipeline
+  fetch_status: success
+  content: "# Rebuilding my voice assistant pipeline [https://blog.platypush.tech/article/Rewriting-my-voice-assistant-pipeline](https://blog.platypush.tech/article/Rewriting-my-voice-assistant-pipeline)\n\n[\U0001F4DD](https://blog.platypush.tech/article/Rewriting-my-voice-assistant-pipeline.md
+    \"Raw Markdown\")\n\n### Swapping openwakeword for microwakeword and making voice
+    detection smarter\n\n ![Author photo](https://static.platypush.tech/images/logo-256.png)[Fabio
+    Manganiello](https://fabiomanganiello.com)\n\n[#platypush](/tags/platypush)[#voice](/tags/voice)[#voiceassistant](/tags/voiceassistant)[#microwakeword](/tags/microwakeword)[#openai](/tags/openai)\n\n
+    ![.](https://s3.platypush.tech/static/images/voice-assistant-pipeline.png)\n\n-
+    [Wake word detection: a new assistant.microwakeword plugin](#wake-word-detection-a-new-assistantmicrowakeword-plugin)\n-
+    [Speech-to-text: assistant.openai, with a much better ear](#speech-to-text-assistantopenai-with-a-much-better-ear)\n-
+    [Responses and context: the openai plugin](#responses-and-context-the-openai-plugin)\n-
+    [Text-to-speech: tts.openai](#text-to-speech-ttsopenai)\n- [The full configuration](#the-full-configuration)\n-
+    [What changed on the code side](#what-changed-on-the-code-side)\n- [Caveats](#caveats)\n\nI
+    [wrote an article](https://blog.platypush.tech/article/Local-voice-assistant)
+    a couple of months ago describing how I rebuilt my old voice assistant pipeline
+    in [Platypush](https://platypush.tech).\n\nAnd I wrote earlier articles describing
+    my journey through self-hosted voice assistants - [in 2024](https://blog.platypush.tech/article/The-state-of-voice-assistant-integrations-in-2024)
+    (with [Picovoice](https://picovoice.ai)), [in 2020](https://blog.platypush.tech/article/Build-custom-voice-assistants)
+    (diving into the legacy [`assistant.google`](https://docs.platypush.tech/platypush/plugins/assistant.google.html)
+    integration, the now defunct `assistant.alexa` integration, the now defunct Snowboy
+    integration, the now defunct DeepSpeech integration and Picovoice) and the [original
+    article in 2019](https://blog.platypush.tech/article/Build-your-customizable-voice-assistant-with-Platypush)
+    describing the Google Assistant integration.\n\nFor a couple of months I used
+    the voice pipeline described in my latest article as my main driver, but after
+    getting used to the robustness of commercial voice assistants I was unhappy with
+    the high rates of false positives/negatives of my self-hosted pipeline, as well
+    as its lack of robustness in detecting start/end of speech, especially in noisy
+    environments and using cheap microphones.\n\nAfter a bit of experimentation, I
+    decided to swap and fine tune a few parts, and after a couple of days of trying
+    the results are satisfying enough for me to write a short article about it.\n\nThe
+    resulting pipeline is:\n\n## Wake word detection: a new `assistant.microwakeword`
+    plugin\n\nUntil recently I used [`assistant.openwakeword`](https://docs.platypush.tech/platypush/plugins/assistant.openwakeword.html),
+    which wraps [openWakeWord](https://github.com/dscripka/openWakeWord).\n\nIt works,
+    but the project has been quiet for a while and all of its pre-trained models are
+    `v0.1` files from 2023, mostly trained on synthetic speech.\n\nIn practice I was
+    getting both false positives (the hotword triggering on background noise) and
+    false negatives (the hotword not detected unless I was close to the microphone).\n\nI
+    added a new plugin, [`assistant.microwakeword`](https://docs.platypush.tech/platypush/plugins/assistant.microwakeword.html),
+    on top of [microWakeWord](https://github.com/kahrendt/microWakeWord) through the
+    [`pymicro-wakeword`](https://pypi.org/project/pymicro-wakeword/) Python bindings.\n\n`microWakeWord`
+    is the engine used by ESPHome and Home Assistant Voice, its models are actively
+    maintained, and the built-in models (`okay_nabu`, `hey_jarvis`, `hey_mycroft`,
+    `alexa`) ship with the package — no download required.\n\nThe current official
+    models are provided under the [ESPHome micro-wake-word-models repository](https://github.com/esphome/micro-wake-word-models).\n\nCustom
+    models are supported too: drop a `microWakeWord` JSON manifest (with its `.tflite`
+    model) in the plugin's models directory and reference it by name.\n\nThe plugin
+    exposes the same API as `assistant.openwakeword` (same `models`, `detection_threshold`,
+    `frame_duration`, `patience_frames`, `input_device`, `input_volume` parameters,
+    same `list_models` action, same `HotwordDetectedEvent`), so switching is a matter
+    of just changing the configuration to point to the new plugin:\n\n    assistant.microwakeword:\n
+    \     models:\n        - alexa\n\nA few design notes:\n\n- Without an explicit
+    `detection_threshold`, each model uses the `probability_cutoff` from its own manifest
+    (0.9 for `alexa`), which is the value the model was validated against.\n- Models
+    already smooth their output over a sliding window, so unlike openwakeword, `patience_frames`
+    defaults to 0 here.\n- The audio thread never touches the TFLite models directly:
+    it queues frames (and a reset marker) to the main thread, because `MicroWakeWord.reset()`
+    reloads the interpreter and isn't safe to call concurrently.\n- Like `assistant.openwakeword`,
+    the plugin releases the audio device when another assistant plugin starts a conversation,
+    and re-acquires it when the conversation ends.\n\n## Speech-to-text: `assistant.openai`,
+    with a much better ear\n\n`assistant.openai` records audio when a conversation
+    starts and transcribes it through Whisper.\n\nThe tricky part has always been
+    _end-of-speech detection_: knowing when the user has finished talking. The previous
+    implementation used a per-frame boolean from WebRTC VAD, and any single frame
+    classified as speech would reset the silence timer. With even a bit of background
+    noise, phrases would only end when the maximum conversation duration was hit.\n\nThe
+    audio preprocessing layer (`AudioPreprocessor`, shared by the STT integrations)
+    has been reworked:\n\n- **[Silero VAD](https://github.com/snakers4/silero-vad)
+    as the primary backend** (through [`onnxruntime`](https://onnxruntime.ai), no
+    [PyTorch](https://pytorch.org) required), with WebRTC VAD and a plain RMS-based
+    detector as fallbacks. To get an idea of Silero VAD's performance compared against
+    other solutions for speech activity detection, take a look at the insightful article
+    [_One voice detector to rule them all_](https://thegradient.pub/one-voice-detector-to-rule-them-all/).
+    The Silero model is downloaded on first use into the Platypush workdir and checksum-verified:\n\n
+    \   assistant.openai:\n      # auto = silero -> webrtc -> energy, depending on
+    what's installed\n      vad_backend: auto\n\n- **Hysteresis + sliding window**
+    : a frame becomes speech above the VAD threshold and stays speech until its score
+    drops by a margin, and the per-frame decisions are smoothed by majority vote over
+    a 0.5s window. A single noise burst can no longer keep a conversation alive.\n\n-
+    **Adaptive noise floor** : the background noise level is tracked over time, and
+    frames that aren't louder than `noise_floor_factor` (default 2.0, ~6 dB) times
+    the floor are never considered as speech.\n\nOn a synthetic benchmark (Piper-generated
+    phrases mixed with babble and burst noise), the old settings kept conversations
+    open for 6–10 seconds after the speech had ended; the new pipeline ends them 1.0–1.6
+    seconds after the last word, which is the configured [`conversation_end_timeout`](https://docs.platypush.tech/platypush/plugins/assistant.openai.html#platypush.plugins.assistant.openai.AssistantOpenaiPlugin.start_conversation)
+    plus the smoothing lag.\n\nSince the changes on Platypush have been performed
+    directly in the [`AudioPreprocessor`](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/plugins/assistant/_audio.py)
+    also used by other native speech-to-text engines, other speech-to-text plugins
+    also benefit from them - e.g. if you use [`assistant.vosk`](https://docs.platypush.tech/platypush/plugins/assistant.vosk.html)
+    for full on-device detection.\n\n## Resp"
+  error:
+  fetched_at: '2026-11-20T10:59:41Z'
+archived_at: '2026-11-20T10:59:42Z'
