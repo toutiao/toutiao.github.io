@@ -4,14 +4,14 @@ post:
   title: 'Postgres 19 Repack: Faster, Built-In Table Bloat Cleanup'
   url: https://www.snowflake.com/en/blog/engineering/postgres-19-repack-table-bloat/
   hn_url: https://news.ycombinator.com/item?id=50569516
-  score: 109
+  score: 173
   author: ''
   posted_at: '2026-11-20T02:43:49Z'
-  fetched_at: '2026-11-20T10:59:39Z'
+  fetched_at: '2026-11-20T19:42:06Z'
   article_url: https://www.snowflake.com/en/blog/engineering/postgres-19-repack-table-bloat/
   article_fetch_status: success
   article_fetched_at: '2026-11-20T10:59:39Z'
-  raw_comment_count: 10
+  raw_comment_count: 29
 comments:
 - id: '50570379'
   parent_id: '50569516'
@@ -113,6 +113,178 @@ comments:
     the idea is the same.
   score: 0
   posted_at: '2026-11-20T10:16:43Z'
+- id: '50573067'
+  parent_id: '50572160'
+  author: stingraycharles
+  text: Huh, I thought most SET commands were handled entirely client-side? Eg setting
+    character encoding doesn’t require a round trip.
+  score: 0
+  posted_at: '2026-11-20T11:11:05Z'
+- id: '50573328'
+  parent_id: '50572160'
+  author: hans_castorp
+  text: "&gt; To use hinting an app needs to issue a `SET` command, which adds round
+    trip latency for each query<p>You can send the SET and the actual SQL command
+    as a single String (delimited by ; obviously), so there is no additional round
+    trip required.<p>Additionally: there is the possibility to save such a plan advice
+    to be applied without issuing a &quot;SET pg_plan_advice.advice&quot; before running
+    the statement. So this can also be applied to queries that can&#x27;t be changed
+    in the source code. This is provided by the extension pg_stash_advice"
+  score: 0
+  posted_at: '2026-11-20T11:41:14Z'
+- id: '50573354'
+  parent_id: '50570575'
+  author: HackerThemAll
+  text: "&gt; hoping my connection doesn’t drop<p>You don&#x27;t perform resource-intensive
+    operations on a big database over unreliable remote connections. Find another
+    way to be closer to the server, ideally on the same machine, or the same LAN at
+    least."
+  score: 0
+  posted_at: '2026-11-20T11:43:36Z'
+- id: '50573479'
+  parent_id: '50573328'
+  author: nopurpose
+  text: "&gt; You can send the SET and the actual SQL command as a single String (delimited
+    by ; obviously), so there is no additional round trip required.<p>This works for
+    simple protocol only, with drawbacks like no  parameter binding or re-planning
+    of every query even if repeated."
+  score: 0
+  posted_at: '2026-11-20T11:55:50Z'
+- id: '50573550'
+  parent_id: '50572634'
+  author: DaanDeMeyer
+  text: systemd-run is more likely to be installed and another way of achieving this.
+  score: 0
+  posted_at: '2026-11-20T12:03:18Z'
+- id: '50573627'
+  parent_id: '50573479'
+  author: hans_castorp
+  text: Ah, right. Forgot about that.<p>But I think the approach to decouple the actual
+    &quot;hint&quot; from the query still makes more sense, than requiring a change
+    to the original query to include it into the comments. I don&#x27;t know if something
+    like pg_stash_advice would be possible without that approach.
+  score: 0
+  posted_at: '2026-11-20T12:10:57Z'
+- id: '50573760'
+  parent_id: '50572160'
+  author: wantoncl
+  text: "&gt; They added plan hinting, but sadly not via comments.<p>Comments are
+    comments, not syntax. Plan hints have syntax. They are different concepts, and
+    mixing syntax inside comments is a great way to break things."
+  score: 0
+  posted_at: '2026-11-20T12:27:18Z'
+- id: '50573868'
+  parent_id: '50573479'
+  author: ndriscoll
+  text: Doesn&#x27;t it still support pipelining in the extended protocol though?
+    So still no round trip?
+  score: 0
+  posted_at: '2026-11-20T12:39:46Z'
+- id: '50573914'
+  parent_id: '50573868'
+  author: nopurpose
+  text: 'It does, but then we are back to my original complaint: pipelining (or query
+    batching) has quite less ergonomic API, at least in PostgreSQL drivers I worked
+    with, comparing to a simple query execution.'
+  score: 0
+  posted_at: '2026-11-20T12:43:44Z'
+- id: '50573960'
+  parent_id: '50573627'
+  author: nopurpose
+  text: They are orthogonal. You can still do pg_stash_advice based on a query id
+    AND have plan hint embedded in the query for cases where stashed hint is not set.<p>They
+    solve different problems:<p>- SET syntax, or query comment like in third-party
+    pg_hint_plan extension, are for app developers to embed desired hint into the
+    code<p>- pg_stash_advice, or &#x27;hint_plan.hints&#x27; table from pg_hint_plan,
+    is a tool to get out of a pickle when query suddenly starts to misbehave and rebuilding
+    and redeploying app with a new hint is not an option or will take too much time.
+  score: 0
+  posted_at: '2026-11-20T12:48:23Z'
+- id: '50574153'
+  parent_id: '50573550'
+  author: pezezin
+  text: Can it work in interactive mode like screen and tmux?
+  score: 0
+  posted_at: '2026-11-20T13:06:33Z'
+- id: '50574599'
+  parent_id: '50573914'
+  author: tux3
+  text: And maybe it is time for the postgres drivers to expose better support for
+    pipelining.<p>I hacked around our query builder to add support for it, and I wish
+    I didn&#x27;t have to. It feels like a problem that should have been solved 20
+    or 40 years ago.
+  score: 0
+  posted_at: '2026-11-20T13:47:45Z'
+- id: '50574613'
+  parent_id: '50570913'
+  author: CodesInChaos
+  text: What I don&#x27;t get is why postgres can&#x27;t detect table replacements
+    and trigger a serialization failure for the affected transactions.
+  score: 0
+  posted_at: '2026-11-20T13:48:56Z'
+- id: '50575569'
+  parent_id: '50573354'
+  author: justinclift
+  text: For manual stuff like this, using screen&#x2F;tmux from a session on the server
+    itself used to be the standard approach.
+  score: 0
+  posted_at: '2026-11-20T14:58:20Z'
+- id: '50575879'
+  parent_id: '50572160'
+  author: foxhill
+  text: plan hinting is a crutch. a useful one to have, and lifesaver when you need
+    it, but a crutch nonetheless.<p>what i <i>wish</i> postgres would do is to replan
+    when it wildly mis-estimates row counts in deeply nested queries. just because
+    you decided on a linear scan join when you thought that sub-query had 4 rows,
+    doesn’t mean you need to commit to it when that sub-query turns out to actually
+    have 4 million rows.<p>if you need query plan hints, it’s most likely because
+    some aspect of postgres’ statistics about your tables is very out of line. and,
+    given the very nature of stats collection, i.e., it being a lossy process, there
+    are many distributions of data that it simply cannot detect &amp; accurately account
+    for.
+  score: 0
+  posted_at: '2026-11-20T15:18:07Z'
+- id: '50575932'
+  parent_id: '50573760'
+  author: foxhill
+  text: i can’t remember which front end it was, but one of the places i worked with
+    was having all the comments stripped out of the queries before they were sent
+    over the wire.<p>it was a nice surprise to find out that hinting had just.. never
+    worked.
+  score: 0
+  posted_at: '2026-11-20T15:20:39Z'
+- id: '50577346'
+  parent_id: '50569516'
+  author: dangoodmanUT
+  text: "&gt; You need 2x the space for the table and indexes you are repacking, since
+    for a period, you will have two copies of it.<p>this feels like a foot gun. While
+    other storage formats (eg LSMs) have lots of write amplification, it&#x27;s done
+    iteratively so you don&#x27;t have massive storage and IO spikes when performing
+    maintenance.<p>While this is _definitely_ better, I think the long-term solution
+    is to replace the storage engine with something more modern."
+  score: 0
+  posted_at: '2026-11-20T16:32:57Z'
+- id: '50578954'
+  parent_id: '50569516'
+  author: hylaride
+  text: I used to have to keep an eye on tuple table bloat for awhile on big PG databases,
+    but with recent versions of Postgres the auto-vacuuming has mostly kept it in
+    check for all but the most gargantuan, busy tables.  I pretty much have stopped
+    caring (and I cared a lot less when SSDs became the default as the fragmentation
+    penalty that a full repack would fix wasn&#x27;t as bad as it was during the spinning
+    metal days).<p>Index bloat has been another story, though.  Pruning b-trees is
+    expensive and I&#x27;ve mostly just been scheduling reindexes (which have been
+    able to be done concurrently for awhile) instead.<p>USING INDEX is interesting,
+    though...
+  score: 0
+  posted_at: '2026-11-20T17:53:31Z'
+- id: '50579004'
+  parent_id: '50575879'
+  author: nopurpose
+  text: One can only dream. For now it is entirely lost even if you pass `LIMIT $1`
+    as a bind parameter.
+  score: 0
+  posted_at: '2026-11-20T17:57:06Z'
 article:
   url: https://www.snowflake.com/en/blog/engineering/postgres-19-repack-table-bloat/
   title: 'Postgres 19 REPACK: Built-In Online Table Bloat Cleanup'
@@ -213,4 +385,4 @@ article:
     ranges of related "
   error:
   fetched_at: '2026-11-20T10:59:39Z'
-archived_at: '2026-11-20T10:59:42Z'
+archived_at: '2026-11-20T19:42:11Z'

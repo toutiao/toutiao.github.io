@@ -4,14 +4,14 @@ post:
   title: 'OpenSSL: Buffer overflow in EVP_EncodeBlock() (CVE-2026-121481, CVSS 9.8)'
   url: https://github.com/openssl/openssl/pull/33652
   hn_url: https://news.ycombinator.com/item?id=50569226
-  score: 267
+  score: 353
   author: ''
   posted_at: '2026-11-20T02:01:09Z'
-  fetched_at: '2026-11-20T10:59:35Z'
+  fetched_at: '2026-11-20T19:42:02Z'
   article_url: https://github.com/openssl/openssl/pull/33652
   article_fetch_status: success
   article_fetched_at: '2026-11-20T10:59:35Z'
-  raw_comment_count: 210
+  raw_comment_count: 310
 comments:
 - id: '50569529'
   parent_id: '50569226'
@@ -919,6 +919,205 @@ comments:
     ensure safety (or security) of unreliable software.
   score: 0
   posted_at: '2026-11-20T10:40:04Z'
+- id: '50573090'
+  parent_id: '50572188'
+  author: anthk
+  text: |-
+    Rust and C developer there. C++ it&#x27;s an unrelated beast, don&#x27;t mix C99 users with these.
+    On C, I compiled Gplaces (A barebones Gemini -protocol- client with Clang hardening CFLAGS and I linked it against BoehmGC. That in 32 bit.<p>On Rust, it&#x27;s pure love in 64 bit, I acknowledge that (I use Cosmic DE with Pop!_OS so I can relate) and evcode it&#x27;s my main IDE, Crabcraft being second. But compiling &#x27;simple&#x27; TUI tools on Rust it&#x27;s impossible on 32 bit, even with ZRAM and a total of 1.5GB of RAM.<p>If you want half-secure TUI tools on 32 bit Golang it&#x27;s a saner option than C&#x2F;C++ and the only actual altual alternative to Rust. For instance AERC can be safer than Mutt to read email, even under a Maildir mailbox and email fetched&#x2F;sent with isync&#x2F;msmtp.
+  score: 0
+  posted_at: '2026-11-20T11:13:26Z'
+- id: '50573269'
+  parent_id: '50571213'
+  author: pluralmonad
+  text: The Linux desktop is already mainstream. It has been a first class GUI experience
+    for awhile now. Not to mention the endless papercuts in the proprietary OS&#x27;s
+    stemming from enshittification (Windows generally) or absurdly poor design (hello
+    Finder).
+  score: 0
+  posted_at: '2026-11-20T11:35:11Z'
+- id: '50573635'
+  parent_id: '50571166'
+  author: DANmode
+  text: "&gt; OpenSSL is userspace.<p>If only it kept itself to that…"
+  score: 0
+  posted_at: '2026-11-20T12:12:03Z'
+- id: '50573699'
+  parent_id: '50571002'
+  author: philipwhiuk
+  text: Yeh but Arch is more of a vibe than an actual distribution.
+  score: 0
+  posted_at: '2026-11-20T12:19:09Z'
+- id: '50573885'
+  parent_id: '50571367'
+  author: the8472
+  text: |-
+    aws-lc is a lot of assembly, which you kinda need anyway. Neither Rust nor C are fully suitable for cryptography because common optimizing compiler backends (LLVM, GCC, MSVC) can introduce branches (even if you wrote it in a branchless manner!), making the crypto code vulnerable to side-channel attacks.<p>So the options are<p><pre><code>  - write it in assembly
+      - use a high-level language, then verify the generated assembly the compiler generates
+      - write a new or modify an existing backend to support timing-independent code
+    </code></pre>
+    aws-lc does the first, some other crypto libs try to do the 2nd but I don&#x27;t know how solid that is and the 3rd one takes time.<p>base64 encode hopefully isn&#x27;t used in places where it would be a timing channel, so it could still benefit from a safe Rust impl. And at least it&#x27;s API could benefit from slices and Result
+  score: 0
+  posted_at: '2026-11-20T12:41:36Z'
+- id: '50573936'
+  parent_id: '50572064'
+  author: anthk
+  text: There&#x27;s LibreSSL portable. It worked better in legacy machines I own,
+    go figure.
+  score: 0
+  posted_at: '2026-11-20T12:45:37Z'
+- id: '50574197'
+  parent_id: '50571524'
+  author: cowlevel
+  text: It&#x27;s still impossible to control actual timing, but easy to ensure control
+    flow isn&#x27;t data-dependent, which is what you need. Classic example is memcmp.
+    Although you can write the or-then-check-zero memcmp in any high level language
+    and it&#x27;s very unlikely to compile to data-dependent timing unless your compiler
+    is AGI.
+  score: 0
+  posted_at: '2026-11-20T13:11:08Z'
+- id: '50574226'
+  parent_id: '50570526'
+  author: cowlevel
+  text: gets belongs in category -10
+  score: 0
+  posted_at: '2026-11-20T13:15:11Z'
+- id: '50575238'
+  parent_id: '50572481'
+  author: m00dy
+  text: yes, it does. Please refer Rust&#x27;s return types
+  score: 0
+  posted_at: '2026-11-20T14:38:22Z'
+- id: '50575287'
+  parent_id: '50574197'
+  author: cesarb
+  text: "&gt; Although you can write the or-then-check-zero memcmp in any high level
+    language and it&#x27;s very unlikely to compile to data-dependent timing unless
+    your compiler is AGI.<p>No need for &quot;AGI&quot;, the compiler just needs to
+    have enough value tracking to know that the value saturates (once a bit is set,
+    it never gets unset), and an heuristic to move the comparison inside the loop
+    when it might allow it to do less loop iterations.<p>(I wrote a Rust crate to
+    do precisely that kind of &quot;constant time memcmp&quot;, and the only truly
+    reliable way to do so without help of the compiler, is by using inline assembly
+    as a &quot;black box&quot; to make a few things invisible to the compiler&#x27;s
+    optimizer. It was inspired by code in the Linux kernel which did the same thing
+    also using inline assembly as a &quot;black box&quot;.)"
+  score: 0
+  posted_at: '2026-11-20T14:41:36Z'
+- id: '50575552'
+  parent_id: '50575238'
+  author: layer8
+  text: Existing third party callers don&#x27;t use Rust, so Rust&#x27;s return types
+    can&#x27;t possibly help here.
+  score: 0
+  posted_at: '2026-11-20T14:57:33Z'
+- id: '50575688'
+  parent_id: '50569529'
+  author: pseudohadamard
+  text: "&quot;Baldrick, you can have a day off when you&#x27;re dead&quot;"
+  score: 0
+  posted_at: '2026-11-20T15:06:35Z'
+- id: '50576666'
+  parent_id: '50572601'
+  author: orblivion
+  text: This should probably be in the headline. I was trying to figure out why Debian
+    didn&#x27;t have an update.
+  score: 0
+  posted_at: '2026-11-20T15:56:43Z'
+- id: '50577312'
+  parent_id: '50571494'
+  author: hobo123
+  text: Is that Zawinsky&#x27;s law of LLMs?
+  score: 0
+  posted_at: '2026-11-20T16:31:14Z'
+- id: '50577484'
+  parent_id: '50572087'
+  author: uecker
+  text: It is also easy to write it wrong in other languages. The coreutils rewrite
+    had hundreds of issues, cloudflare brought down half of the internet because in
+    the magic language where nothing can go wrong due to the advanced type system
+    someone used an unchecked .unwrap (but this does not count, because  this was
+    Rust and not C - so could not possibly be the fault of the language, so only the
+    programmer is to blame), and just recently Microsoft found a couple of memory
+    safety issues in Rust&#x27;s standard library. And let&#x27;s better not talk
+    about the supply chain.
+  score: 0
+  posted_at: '2026-11-20T16:39:16Z'
+- id: '50577566'
+  parent_id: '50571027'
+  author: vlovich123
+  text: We used BoringSSL at Cloudflare. I imagine there’s a lot of usage in places
+    you can’t see despite it not seeing more adoption. One place you can see it is
+    all browsers use it since Chromium bundles it everywhere except Apple but Apple’s
+    OSes use it to underpin their Network.framework which underpins WkWebview so all
+    Apple devices use it.
+  score: 0
+  posted_at: '2026-11-20T16:43:23Z'
+- id: '50577778'
+  parent_id: '50577566'
+  author: dcrazy
+  text: Seriously, at this point BoringSSL is surely more widely deployed than OpenSSL?
+    A billion Apple devices, plus every Chrome installation?
+  score: 0
+  posted_at: '2026-11-20T16:53:22Z'
+- id: '50577997'
+  parent_id: '50570544'
+  author: asveikau
+  text: The forks of OpenSSL are fairly API compatible with upstream, especially if
+    you&#x27;re not using new and exotic features. So for many projects you can just
+    link to a better maintained fork and be done.
+  score: 0
+  posted_at: '2026-11-20T17:04:00Z'
+- id: '50578490'
+  parent_id: '50577566'
+  author: cesarb
+  text: "&gt; all browsers use it since Chromium bundles it<p>Doesn&#x27;t Firefox
+    use NSS instead?"
+  score: 0
+  posted_at: '2026-11-20T17:28:05Z'
+- id: '50578562'
+  parent_id: '50570812'
+  author: jerf
+  text: Not quite what I meant. Having been on the end of trying to establish CVE
+    scores for bugs myself I am well aware that even two bugs of the &quot;same score&quot;
+    can be very different in nature. A &quot;push button, pop every website on the
+    internet&quot; is a 9.8-ish, but so is &quot;nginx with this particular couple
+    of config settings will yield a root shell for a particular request&quot; even
+    if it &quot;only&quot; affects 5% of the world, because &quot;affecting 5% of
+    every nginx install&quot; is still fairly justifiably a high rating for all the
+    scores. The scale tops out at the upper end.<p>Plus we&#x27;re seeing &quot;AI
+    has found this bug and it looks super duper scary everyone panic&quot; followed
+    by two weeks later &quot;well actually it took sustained and direct assault on
+    a website and sometimes it didn&#x27;t work and it was actually more like a 6.4&quot;
+    lately.<p>Geezus_42&#x27;s &quot;you probably haven&#x27;t actually shipped this
+    code anywhere anyhow&quot; is more like what I was looking for.
+  score: 0
+  posted_at: '2026-11-20T17:31:12Z'
+- id: '50579160'
+  parent_id: '50576666'
+  author: Geezus_42
+  text: For real.
+  score: 0
+  posted_at: '2026-11-20T18:06:26Z'
+- id: '50580208'
+  parent_id: '50571367'
+  author: toast0
+  text: The crypto primitives in OpenSSL have been pretty solid (although timing attacks
+    come up from time to time).<p>Where OpenSSL has been bad to terrible over decades
+    is protocol handling, api management, and lately locking.<p>Managing protocol
+    in a more restrictive language is a good thing. Bonus if it has the potential
+    to require less work from application developers around version updates. Maybe
+    they got better, I was using &lt;= 1.0.2; back then there was a chance some things
+    would break between different letter releases on the same version number even
+    though it still compiles, and going to a new version meant a lot of work.
+  score: 0
+  posted_at: '2026-11-20T19:11:15Z'
+- id: '50580282'
+  parent_id: '50573699'
+  author: hurricanepootis
+  text: I think that better describes omarchy then Arch proper
+  score: 0
+  posted_at: '2026-11-20T19:15:58Z'
 article:
   url: https://github.com/openssl/openssl/pull/33652
   title: "[NSF] [CVE-2026-121481] Buffer overflow in EVP_EncodeBlock() by nmouha ·
@@ -1027,4 +1226,4 @@ article:
     something went wrong.\n\n### "
   error:
   fetched_at: '2026-11-20T10:59:35Z'
-archived_at: '2026-11-20T10:59:42Z'
+archived_at: '2026-11-20T19:42:11Z'

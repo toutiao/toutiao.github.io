@@ -5,14 +5,14 @@ post:
   title: Mutex poisoning is not for everyone
   url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   hn_url: https://lobste.rs/s/uzn2t6
-  score: 33
+  score: 37
   author: polywolf
   posted_at: '2026-11-19T13:01:49Z'
-  fetched_at: '2026-11-20T10:59:43Z'
+  fetched_at: '2026-11-20T19:42:12Z'
   article_url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-20T10:59:44Z'
-  raw_comment_count: 12
+  article_fetched_at: '2026-11-20T19:42:16Z'
+  raw_comment_count: 39
   tags:
   - rust
 comments:
@@ -33,7 +33,7 @@ comments:
     changes, this is what editions are for. The issues with poisoning mutexes are
     well documented, and I think it would be a shame to keep it as the default going
     forwards.
-  score: 12
+  score: 13
   posted_at: '2026-11-19T20:14:05Z'
 - id: lo-mkrh5w
   parent_id: '0'
@@ -46,7 +46,7 @@ comments:
 
     For 1, yeah, but that's consistent with the rest of the standard library. HashMap defaults to SipHash even though it's slower than something like AHash.. because they consider collision unpredictability to be more important than best-case performance. If your use case is hot enough for this to be a problem and it actually is safe under panicking and you've put in the work to prove that.. you can still use parking_lot! It's good that the option is there.. but it's also good it's easier to use the seatbelt than to turn off the warning.
     For 2.. no? We don't do On Error Resume Next all over the place anymore either. I'm sure there are cases where it might make sense, but if silencing the error in those cases is the hard part... I have to doubt that you're actually bothering with the hard part.
-  score: 12
+  score: 18
   posted_at: '2026-11-19T21:01:01Z'
 - id: lo-zrafjq
   parent_id: '0'
@@ -54,7 +54,7 @@ comments:
   text: |-
     code in later editions must work together with code in older editions. That would make these changes very challenging.
     Is it such a big deal to use another Mutex from a library?
-  score: 5
+  score: 6
   posted_at: '2026-11-19T21:13:35Z'
 - id: lo-luyrre
   parent_id: '0'
@@ -66,7 +66,7 @@ comments:
     I'm not aware of specifics with rust editions, I may have been wrong on the point that it could just be changed from one edition to the next without breaking old edition crates. What if std::sync::Mutex just exists as an alias to std::sync::poison::Mutex in edition A and to std::sync::nonpoison::Mutex in edition B?
     EDIT: In fact, this appears to be what the rust team plans to do
     https://github.com/rust-lang/rust/issues/134645#issuecomment-3324577500
-  score: 13
+  score: 15
   posted_at: '2026-11-19T21:50:45Z'
 - id: lo-lqydnb
   parent_id: '0'
@@ -81,7 +81,7 @@ comments:
     Type 1 obviously prefers nonpoison.
     Type 2 is the only case where poisoning might be good. But realistically, if a program goes to great lengths to handle panics, it probably don’t want to panic on poisoned mutexes. That kind of hardening is all about using drop guards / RAII to ensure everything stays consistent, especially in async programs where cancel safety matters even more than panic safety.
     Type 3 programs have already made the “uptime is more important than correctness” choice. I doubt removing poisoning from type 3 programs would meaningfully increase exposure to bugs for most programs. I also don’t see why Mutex should be a special case that narrowly acts like panic=abort. If you really care about correctness over uptime as a default, you don’t actually want poison Mutex, you want uncaught panics to abort.
-  score: 4
+  score: 5
   posted_at: '2026-11-20T01:54:28Z'
 - id: lo-rlwi9j
   parent_id: '0'
@@ -104,7 +104,7 @@ comments:
     Poisoning is an incomplete solution to an imprecise assumption about a potential problem. It's the fallacy of "we need something, this is something, therefore we need this".
     The real solution is to hunt down the non-transactional state that needs being restored and use drop guards (now in std). This has to be done everywhere, so poisoning won't save you.
     In my experience, poisoning is just an outage amplifier for servers. It doesn't prevent errors, it only escalates panics that would be rare and affect only one bad request into a permanent failure that breaks all requests. And if that particular lock isn't checked by your healthcheck, you now have a serious problem. lock().unwrap() is a domino of poison. Do lock().unwrap_or_else(|_| abort()) to at least avoid leaving a server running that panics on every request.
-  score: 7
+  score: 12
   posted_at: '2026-11-20T04:18:51Z'
 - id: lo-vwjzpp
   parent_id: '0'
@@ -112,7 +112,7 @@ comments:
   text: |-
     I disagree very strongly (the post links to my blog about it, and my position hasn't changed) and will use whatever influence I have to make sure poisoning mutexes stay the default.
     It's funny, we disagree about so many things within my workplace. The one thing there is absolute unanimity on is that mutexes should poison by default. I've been on the minority side of plenty of debates and I straight up didn't believe how lopsided the opinion was at first.
-  score: 3
+  score: 10
   posted_at: '2026-11-20T04:35:04Z'
 - id: lo-jsscws
   parent_id: '0'
@@ -121,7 +121,7 @@ comments:
     EDIT: In fact, this appears to be what the rust team plans to do https://github.com/rust-lang/rust/issues/134645#issuecomment-3324577500
 
     No, it's just an open proposal, which is quite strongly opposed.
-  score: 2
+  score: 5
   posted_at: '2026-11-20T07:56:05Z'
 - id: lo-xrxcfi
   parent_id: '0'
@@ -129,7 +129,7 @@ comments:
   text: |-
     Thanks, this is very well put. I've been advocating for avoiding poisoning in the current form for this reason, and I think correctness is a better argument than performance that this post puts up front.
     One thing that gives me pause is that I've just realized that, while I do audit code for unwind safety in critical places, I think I never explicitly considered it whenever I used std::mem::take to workaround borrowck/aliasing model limitations. This pattern was so ingrained for me that I never did a double take. Now I have to worry if I have latent bugs of that sort somewhere; and if I do, whether poisoning mutexes would save me, or if their existence is what caused this frivolousness in the first place.
-  score: 3
+  score: 5
   posted_at: '2026-11-20T08:03:03Z'
 - id: lo-q21e7y
   parent_id: '0'
@@ -146,9 +146,299 @@ comments:
 
     I think it is. The lowest friction, syntax- or stdlib-supported way to do a thing ought to be the right way to do that thing, and in every case where it's the wrong way and conventional wisdom is to abandon the straightforward solution and do some less obvious thing makes the language worse.
     Rust is a great language overall, and is my go-to language. But the fact that conventional wisdom is "don't use the standard mutex, use parking_lot, because the stdlib's mutex isn't very good" makes the language worse than it would otherwise have been. Just like C++ is made worse by the fact that conventional wisdom is, "std::unordered_map isn't a very good hash map, you should use one from a library".
-    (Note: I don't mind mutex poisoning, and I think calling .lock() on a mutex which was locked by a thread that's since paniced should also panic. I don't like how we have to call .lock().unwrap() all the time; the panic already happened. But the particulars of this specific discussion isn't the point.)
-  score: 1
+    (Note: I don't mind mutex poisoning, and I even think calling .lock() on a mutex which was locked by a thread that's since paniced should also panic. I don't like how we have to call .lock().unwrap() all the time; the panic already happened, the place to handle it would've been to use panic::catch_unwind. But the particulars of this specific discussion isn't the point.)
+  score: 2
   posted_at: '2026-11-20T10:53:21Z'
+- id: lo-2oq3k6
+  parent_id: '0'
+  author: andyferris
+  text: "If all bug fixes are a breaking change to someone depending on current behavior…
+    surely the line between breaking and non- breaking language evolution is fundamentally
+    blurry.\nI’d expect “fearless concurrency” trumps many considerations - here’s
+    hoping \U0001F91E"
+  score: 2
+  posted_at: '2026-11-20T11:02:05Z'
+- id: lo-tfezi6
+  parent_id: '0'
+  author: andyferris
+  text: |-
+    In a language like go that takes backward compatibility very seriously, “another library” can just be a v2 of an existing standard library.
+    Editions can make the syntax of v2 be the prior syntax of v1 (ie the import expression). In cross-edition code the compiler should catch inconsistencies.
+    Requiring more backward compatibility than that seems nuts to me.
+  score: 1
+  posted_at: '2026-11-20T11:06:41Z'
+- id: lo-pooxs1
+  parent_id: '0'
+  author: aster
+  text: |-
+    I found your blog post interesting, I do realize there is value to poisoning.
+    Most of my annoyance with it stems from having to type .lock().unwrap(), maybe it really doesn't matter that much, but many of the projects where I've had to do so would have not gained anything from mutex poisoning.
+    I think I'm still just doubting how common this pattern where mutex poisoning is relevant really is, maybe it doesn't matter if it's common or not, I think there's value in std having safe proper implementations of things.
+    I do wonder why the (OP) blog post is against panicking on poison? maybe i just missed it but this does seem like a neat solution.
+  score: 2
+  posted_at: '2026-11-20T11:13:50Z'
+- id: lo-kubpcf
+  parent_id: '0'
+  author: mort
+  text: |-
+    panic=abort
+
+    ...
+    Type 1 obviously prefers nonpoison.
+
+    This would only be true if the language was changed such that an uncaught panic in any thread causes the process to exit. I think this would be a good choice. But since that's not how the language works, I like mutex poisoning, since it's a mechanism to propagate panics from one thread to the rest of the program.
+    It's not really clear to me what the author of TFA wants here. You can't just "remove poisoning", you need to make a decision about what happens when a thread which holds a mutex panics. Without making the case for which alternative behavior ought to be chosen, the article feels a bit empty.
+    If you just remove mutex poisoning and otherwise keep panic behavior unchanged, team "panic=abort" (that's me) will obviously dislike that because it would remove the standard opportunity for a thread panic to propagate and turn into a program panic.
+  score: 4
+  posted_at: '2026-11-20T11:15:05Z'
+- id: lo-8nwkvi
+  parent_id: '0'
+  author: mort
+  text: What would you think of a solution where .lock() returns the MutexGuard object
+    directly, and panics if it's poisoned? I share the annoyance of having to write
+    .lock().unwrap().
+  score: 3
+  posted_at: '2026-11-20T11:23:40Z'
+- id: lo-fn7nzc
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    I on the other hand disagree very strongly and will use whatever influence I have to make sure poisoning mutexes off by default.
+    Mutex poisoning has not solved me one problem but on the other hand it has created incidents and fundamentally unstable, and non panic safe Rust code. It's a design mistake that should not have happened and it solves a very narrow case that is otherwise largely unresolved in Rust for many other types that have the same problem.
+  score: 2
+  posted_at: '2026-11-20T13:12:43Z'
+- id: lo-ua7g7u
+  parent_id: '0'
+  author: sunshowers
+  text: 'Yep, that''s my preferred solution: https://sunshowers.io/posts/on-poisoning/#typing-in-lockunwrap-is-annoying'
+  score: 3
+  posted_at: '2026-11-20T15:46:49Z'
+- id: lo-pho8rn
+  parent_id: '0'
+  author: sunshowers
+  text: Sad it has come to this, but it does look like the only thing that remains
+    is power!
+  score: 3
+  posted_at: '2026-11-20T16:16:45Z'
+- id: lo-bpumdl
+  parent_id: '0'
+  author: innacquata
+  text: |-
+    I'm confused. You're talking about a Rust environment with panic=abort. Then you write:
+
+    This would only be true if the language was changed such that an uncaught panic in any thread causes the process to exit.
+
+    But abort on panic does cause a panic in any thread to cause the process to exit. Yet you seem to assume that it doesn't. The only way to get a poisoned mutex is for a thread to panic while holding the lock. Thus with abort on panic, the process will already exit when the mutex would be poisoned. There is no need to propagate the panic by observing the poison in other threads.
+  score: 4
+  posted_at: '2026-11-20T16:53:08Z'
+- id: lo-qqlrv6
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    I'd argue the non-panic-safety is the bigger problem, and I'd much rather have a path to Call Graph Analyzer being mature and available on stable rather than a "now you have two problems" situation.
+    It's bad enough that the existence of things like parking_lot makes me feel a desire to have a cargo-geiger for non-panicking mutexes.
+    I came to Rust for the lack of NULL and taking raise/throw out of the list of things omitted from the function signature and other such build-time correctness measures. I'd like Rust to progress more in that direction. (I'd also like to see LLVM advance to a state where it's possible for rustc to make "This used to autovectorize and now it doesn't" into a compile-time error.)
+  score: 6
+  posted_at: '2026-11-20T17:06:16Z'
+- id: lo-vdwmqy
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Rust is a great language overall, and is my go-to language. But the fact that conventional wisdom is "don't use the standard mutex, use parking_lot, because the stdlib's mutex isn't very good" makes
+
+    Except that, ever since they vendored a panicking version of parking_lot to back the stdlib APIs, there's no consensus that "stdlib's mutex isn't very good" because there's a lot of disagreement over whether panicking is good or bad. Given how much Rust focuses on "safety/correctness first" over languages like C++, I think it's reasonable for the panicking mutex to sit alongside things like SipHash and the mechanics of having an unsafe keyword.
+    I'm reminded of how loudly people coming to Rust complained about Rust not having a global "unsafe by default" flag in the early years.
+    (Granted, I'm also the guy who said that I think the Rc/Arc ergonomics experiment is a mistake because "For some tasks, the state of the art is a code smell" doesn't mean you install an automatic air freshener in the whole building's HVAC. I don't want my dependency tree to slowly succumb to encroaching "It's slower/more RAM hungry, but nothing specific shows up in the flamegraph"-ness.)
+    "Pit of success" design. Non-poisoning mutexes feel like they're in the same vein as all the "velocity of initial typing at the cost of total time-to-QA'd" optimizations in scripting languages.
+  score: 3
+  posted_at: '2026-11-20T17:21:25Z'
+- id: lo-mrf6t4
+  parent_id: '0'
+  author: mort
+  text: |-
+    Sorry, I didn't know it was an actual config thing which changes Rust behavior. I assumed you meant the people who treat a panic as "essentially an abort", as in leaves panics unhandled and just let the process crash when it panics.
+    I would never change such a setting globally. For all I know there's some transitive dependency deep down in my dependency tree which relies on catching panics as a form of exception handling in normal error cases. Other than in extremely controlled environment, changing such a setting globally is just too dangerous. But I treat panics as aborts, and therefore need a panic in a thread to propagate and cause a termination of the process. Currently, the mechanism behind that propagation is poisoned mutexes.
+    I suspect that my own approach to panics (that is, treat a panic as "essentially an abort", don't try to catch them, but don't change defaults) is by far the most common, yet it falls outside of your listed 3 alternatives.
+  score: 2
+  posted_at: '2026-11-20T17:26:25Z'
+- id: lo-9q1agi
+  parent_id: '0'
+  author: ssokolow
+  text: The standard library is the most notable exception editions can't help with,
+    because API interop between crates compiled with different editions means that
+    crates being developed against the newest edition must still have access to the
+    types from the older editions, and developers must still be able to easily find
+    their documentation.
+  score: 1
+  posted_at: '2026-11-20T17:29:46Z'
+- id: lo-8jnnyd
+  parent_id: '0'
+  author: mort
+  text: |-
+    The discussion on whether panicking is good or bad has no relevance for this conversation though, right? If a mutex is poisoned, the panic already happened.
+    Anyway AFAIK the most common reason people cite for why one should use parking_lot instead of stdlib mutexes is performance and size.
+  score: 1
+  posted_at: '2026-11-20T17:33:49Z'
+- id: lo-l8n394
+  parent_id: '0'
+  author: ghoti
+  text: |-
+    For all I know there's some transitive dependency deep down in my dependency tree which relies on catching panics as a form of exception handling in normal error cases.
+
+    You can be confident that there is not. In contrast to C++ which encourages users to use exceptions for error handling but also offers users the ability to disable exceptions, Rust encourages users to treat errors as values, thus everyone does and configuring abort-on-panic is common and wholly uncontroversial. And in contrast to Go which discourages catching panics but relies on this behavior in the standard library, Rust's standard library does not rely on catching panics internally.
+  score: 1
+  posted_at: '2026-11-20T17:48:16Z'
+- id: lo-2bytrm
+  parent_id: '0'
+  author: mort
+  text: Most of your comment is correct but your first sentence is not, I can't be
+    confident about that. In any case, I'm not changing the behavior of core language
+    features and most other people aren't either.
+  score: 1
+  posted_at: '2026-11-20T17:53:31Z'
+- id: lo-l0xzi4
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    The real solution is to hunt down the non-transactional state that needs being restored and use drop guards (now in std). This has to be done everywhere, so poisoning won't save you.
+
+    In other words, panics retain the "All the world is not a single-threaded system capable of transaction rollback" problem laid out in Exception Handling Considered Harmful.
+    ...we're long overdue for a Rustig findpanics Call Graph Analyzer in stable.
+  score: 2
+  posted_at: '2026-11-20T18:20:17Z'
+- id: lo-hipksz
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    I would never change such a setting globally.
+
+    It can only be changed globally. It's a build-time setting controlled exclusively by the top-level of the dependency tree.
+    Heck, while things like catch_unwind will compile either way, some of the APIs are #[cfg(panic = "unwind")] and will fail at compile time if a transitive dependency tries to use them in a panic="abort" build.
+    Beyond that, as ghoti pointed out, Rust actively encourages treating panics as uncatchable. Heck, catch_unwind was only added in Rust 1.9 as an adapter for exposing C functions without needing to spin up an internal thread to synthesize a catch_unwind primitive. Versions 1.0 through 1.8 evolved on the idea that unwinding should always kill the thread it occurs in.
+    (I catch them at the "unit of work" boundary in batch jobs, but that's purely a workaround for not having a stable way to audit my transitive dependencies for reachable panics because I don't trust my dependencies. Heck, at one point, I had to mix image 0.24 and 0.25 in the same codebase because I had a dependency that required 0.25 but the new zune-jpeg was panicking on some of the JPEGs I needed to batch-process, so I'd use image 0.24 to load the images, then flip the data over to an image 0.25 object before processing. A perfect example of why I don't trust dependencies to judge whether "can never happen" can be triggered by untrusted inputs and sanely choose between Result<T, E> and panic!.)
+
+    Other than in extremely controlled environment, changing such a setting globally is just too dangerous.
+
+    Do you have a contract with all your service providers that they'll be responsible for any and all liability if they can't prevent a tornado, earthquake, fire, flood, or other act of god from interrupting program operation?
+    If panic="abort" causes anything other than an increase in the rate of denied requests corresponding to the intervals when your service manager is restarting the service, your program has much deeper issues.
+    More mundanely, panic="abort" should be handled by whatever measures you have in place for people tripping over cords, kernel panics, OOM kills, power interruption in the presence of dead UPS/laptop batteries, etc.
+  score: 3
+  posted_at: '2026-11-20T18:42:41Z'
+- id: lo-cuadwv
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    If a mutex is poisoned, the panic already happened.
+
+    Yes, but we don't need to be ON ERROR RESUME NEXT about it.
+
+    Anyway AFAIK the most common reason people cite for why one should use parking_lot instead of stdlib mutexes is performance and size.
+
+    ...and much of that advice dates to back before they swapped out the guts of the standard library mutex for a poisoning version of parking_lot, same as what they did with HashMap and hashbrown or MPSC and crossbeam-channel.
+    IIRC, the thread tracking that ended with a request to open a new bug if performance was still a concern.
+  score: 3
+  posted_at: '2026-11-20T18:46:02Z'
+- id: lo-8ksbht
+  parent_id: '0'
+  author: mort
+  text: |-
+    I would never change such a setting globally.
+
+    It can only be changed globally
+
+    Right. So I don't change it. Your point?
+
+    Do you have a contract with all your service providers that they'll be responsible for any and all liability if they can't prevent a tornado, earthquake, fire, flood, or other act of god from interrupting program operation?
+
+    No. Should I?
+  score: 2
+  posted_at: '2026-11-20T18:51:43Z'
+- id: lo-uqbs3w
+  parent_id: '0'
+  author: mort
+  text: |-
+    Yes, but we don't need to be ON ERROR RESUME NEXT about it.
+
+    I don't know what "ON ERROR RESUME NEXT" is supposed to mean, but it sounds like it would ignore the error? You do realize that I'm arguing for literally the opposite of that, right?
+  score: 1
+  posted_at: '2026-11-20T18:54:11Z'
+- id: lo-oolekz
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    ON ERROR RESUME NEXT is a BASIC statement that enables semantics akin to how Bourne shell script behaves by default.
+    Since I'm not entirely sure whether I'm misunderstanding your stance, you're misunderstanding my stance, or we're talking past each other, I'll summarize my viewpoint in the hope that you can point out the disconnect:
+
+    Mutex poisoning being an incomplete solution to ensuring that inconsistent state cannot be observed doesn't mean it should be abandoned. I believe non-poisoning muxes in stdlib would run counter to the rest of Rust's design philosophy in the same way that the global "unsafe by default" flag C++ expats were clamoring for in the early days would have.
+    I'm open to a nicer API for using mutexes with poisoning, but I'm wary of making it less uncomfortable to use anything which panics immediately (i.e. a shorthand for .unwrap()), instead of something to make it easier and cleaner to bubble the "mutex has been poisoned" status up to a "transaction point" where some kind of reset-and-continue can be performed. (i.e. the "It's bad enough I feel I have to wrap my units of work in catch_unwind whenever I use something off crates.io" part)
+  score: 3
+  posted_at: '2026-11-20T19:04:04Z'
+- id: lo-nubflb
+  parent_id: '0'
+  author: mort
+  text: |-
+    I will summarize the viewpoint I expressed in https://lobste.rs/c/9hmfyu then, since we're still under that thread:
+    It is a big deal if users have to use another mutex library than the one in the stdlib. It makes the language worse if the standard library mutex is badly designed.
+    This is a direct response to the sentence:
+
+    Is it such a big deal to use another Mutex from a library?
+
+
+    Separately, I am of the opinion that panics should always result in program termination. I don't really care whether this is through poisoning or through some different mechanism. If mutex poisoning results in mutexes which are badly performing, maybe it would be better if an uncaught panic from a thread terminated the program instead of using mutex poisoning to propagate panics (not all threads are interacted with through mutexes, after all).
+    I also don't love the .lock().unwrap() stuff but that's not really related to poisoning, as .lock() could just do the unwrap internally. I view mutex poisoning as simply a mechanism for panic propagation, so I don't see a problem with .lock() panicking because the panic already happened and is just being propagated.
+    But really in this comment thread, my core point is that yes, it is a problem if the standard library mutexes are bad and other mutexes are the de facto standard.
+  score: 1
+  posted_at: '2026-11-20T19:09:59Z'
+- id: lo-hqg0gv
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Right. So I don't change it. Your point?
+
+    By qualifying it with "globally" you made it unclear whether you were aware that it can only be changed globally.
+
+    No. Should I?
+
+    Fair. I should have just made my point without the rhetorical flourish. I'll repeat it:
+
+    If panic="abort" causes anything other than an increase in the rate of denied requests corresponding to the intervals when your service manager is restarting the service, your program has much deeper issues.
+
+    Just as the Rust developers point to things like /proc/<PID>/mem as reasons that they refuse to commit to any kind of "security boundary" status for Rust's memory safety, panic="abort" is the gentlest, tamest version of a problem a responsible developer/architect is already supposed to be accounting for.
+  score: 1
+  posted_at: '2026-11-20T19:14:10Z'
+- id: lo-tjvf2j
+  parent_id: '0'
+  author: mort
+  text: I wouldn't mind panic="abort" being the default but I'm not into changing
+    fundamental language semantics away from their defaults.
+  score: 1
+  posted_at: '2026-11-20T19:19:05Z'
+- id: lo-prmkoa
+  parent_id: '0'
+  author: fanf
+  text: |-
+    ON ERROR RESUME NEXT is a BASIC statement
+
+    It’s peculiar to Microsoft Visual BASIC. Other variants of BASIC (including 8 bit Microsoft BASIC) don’t have it.
+  score: 1
+  posted_at: '2026-11-20T19:26:29Z'
+- id: lo-slhfg4
+  parent_id: '0'
+  author: tonyarkles
+  text: |-
+    If panic="abort" causes anything other than an increase in the rate of denied requests corresponding to the intervals when your service manager is restarting the service, your program has much deeper issues.
+
+
+
+    panic="abort" is the gentlest, tamest version of a problem a responsible developer/architect is already supposed to be accounting for.
+
+    I'm not a Rust developer other than doing some variation of Hello World every 6 months, but am I understanding correctly that panic="abort" means that the catch_unwind machinery never fires?
+
+    Heck, catch_unwind was only added in Rust 1.9 as an adapter for exposing C functions without needing to spin up an internal thread to synthesize a catch_unwind primitive. Versions 1.0 through 1.8 evolved on the idea that unwinding should always kill the thread it occurs in.
+
+    That makes me think that there's an issue here beyond "the backend application crashes and needs to be restarted": this makes it sound as if there is some code that relies on panic/catch_unwind as an internal mechanism, and the "service manager restarting the service" thing solves the fact that the application crashed, but it doesn't solve the fact that the endpoint that called the code that relies on panic/catch_unwind as a control flow mechanism is going to deterministically crash the application every time it's called... so it's not just "restart the service" it's also "this url will always cause the application to crash" and "you can't call that url anymore and get a 200, ever"
+  score: 1
+  posted_at: '2026-11-20T19:27:11Z'
 article:
   url: https://bertptrs.nl/2026/11/16/mutex-poisoning-is-not-for-everyone.html
   title: Mutex poisoning is not for everyone | bertptrs.nl
@@ -256,4 +546,4 @@ article:
     32KiB of instruction cache. Lu"
   error:
   fetched_at: '2026-11-19T20:06:40Z'
-archived_at: '2026-11-20T10:59:44Z'
+archived_at: '2026-11-20T19:42:16Z'
