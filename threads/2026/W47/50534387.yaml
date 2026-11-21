@@ -1,0 +1,481 @@
+---
+post:
+  id: '50534387'
+  title: Valkey kills the skiplist, cuts sorted set overhead by up to 43%
+  url: https://valkey.io/blog/from-skiplist-to-b+tree/
+  hn_url: https://news.ycombinator.com/item?id=50534387
+  score: 138
+  author: ''
+  posted_at: '2026-11-17T16:58:30Z'
+  fetched_at: '2026-11-21T10:44:18Z'
+  article_url: https://valkey.io/blog/from-skiplist-to-b+tree/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-21T10:44:18Z'
+  raw_comment_count: 47
+comments:
+- id: '50534388'
+  parent_id: '50534387'
+  author: reconditerose
+  text: Redis historically used a skiplist to keep a sorted index. Valkey showed its
+    inefficient and slow on modern hardware, migrating to a B+ tree instead.
+  score: 0
+  posted_at: '2026-11-17T16:58:30Z'
+- id: '50584804'
+  parent_id: '50534387'
+  author: snissn
+  text: Do they provide their benchmark code?
+  score: 0
+  posted_at: '2026-11-21T01:21:14Z'
+- id: '50584890'
+  parent_id: '50534388'
+  author: tyre
+  text: Is this AI? Why do we need a summary of the actual article in a comment?
+  score: 0
+  posted_at: '2026-11-21T01:32:41Z'
+- id: '50584898'
+  parent_id: '50534387'
+  author: WD-42
+  text: As a coding exercise I implemented a redis that utilized skiplists. I was
+    excited to read this article. Turns out it&#x27;s ai slop. Seriously people, stop
+    it. This hurts to read.
+  score: 0
+  posted_at: '2026-11-21T01:33:28Z'
+- id: '50584903'
+  parent_id: '50584890'
+  author: WD-42
+  text: The actual article is AI too so this is just saving you time.
+  score: 0
+  posted_at: '2026-11-21T01:33:44Z'
+- id: '50584938'
+  parent_id: '50584890'
+  author: bertonvv
+  text: From what I&#x27;ve seen on here many commenters didn&#x27;t read the article,
+    only the title (I&#x27;ve been guilty of this too). OP is maybe just adapting
+    to HN culture.
+  score: 0
+  posted_at: '2026-11-21T01:37:33Z'
+- id: '50584939'
+  parent_id: '50534387'
+  author: tyre
+  text: 'Tangentially related, the PR sections for the final PR in this feature is
+    quite nice[0].<p>There is a reviewing guide with suggested reading order, clear
+    design decisions, and scope boundaries for what is intentionally not included.<p>This
+    is the type of thing LLMs are very good at and high ROI for human reviewers.<p>[0]:
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;valkey-io&#x2F;valkey&#x2F;pull&#x2F;4206"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;valkey-io&#x2F;valkey&#x2F;pull&#x2F;4206</a>'
+  score: 0
+  posted_at: '2026-11-21T01:37:36Z'
+- id: '50584952'
+  parent_id: '50584898'
+  author: tyre
+  text: The PR (<a href="https:&#x2F;&#x2F;github.com&#x2F;valkey-io&#x2F;valkey&#x2F;pull&#x2F;4206"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;valkey-io&#x2F;valkey&#x2F;pull&#x2F;4206</a>)
+    is much better.
+  score: 0
+  posted_at: '2026-11-21T01:38:40Z'
+- id: '50584966'
+  parent_id: '50584939'
+  author: pastel8739
+  text: You really think that LLMs are “very good” at producing useful PR descriptions?
+    I have had a very different experience.
+  score: 0
+  posted_at: '2026-11-21T01:41:02Z'
+- id: '50585048'
+  parent_id: '50534387'
+  author: dnchdnd
+  text: Is valkey the recommended redis alternative these days ?
+  score: 0
+  posted_at: '2026-11-21T01:53:06Z'
+- id: '50585065'
+  parent_id: '50534387'
+  author: hinkley
+  text: I have to say I was always on the fence about Bill Pugh (Mr Skiplist).<p>Some
+    of his concurrency ideas were pretty good but Skip Lists were about the same time
+    I was realizing that theoretical and practical design for performance had diverged
+    and skip lists were a huge cache miss liability.<p>It didn&#x27;t hurt that a
+    few people I was aware had tried them had gone back to something else due to live
+    performance analysis being negative or inconclusive (If you can&#x27;t prove one
+    thing is better than the other, you use the simpler one, and skiplists are not
+    simple)
+  score: 0
+  posted_at: '2026-11-21T01:55:27Z'
+- id: '50585091'
+  parent_id: '50534388'
+  author: hinkley
+  text: It all ends up back at B trees. Why does it always end up back at B trees?<p>At
+    this point have we optimized hardware to assume B trees in a sort of self-fulfilling
+    prophesy?
+  score: 0
+  posted_at: '2026-11-21T01:58:32Z'
+- id: '50585102'
+  parent_id: '50584952'
+  author: hinkley
+  text: Can I convince you to post this as a top level?
+  score: 0
+  posted_at: '2026-11-21T01:59:28Z'
+- id: '50585110'
+  parent_id: '50585091'
+  author: wrs
+  text: Yes, that hardware is called &quot;the memory cache&quot;. B-trees were invented
+    because disk reads were very expensive. Now, memory cache fills are very expensive.
+  score: 0
+  posted_at: '2026-11-21T02:00:40Z'
+- id: '50585148'
+  parent_id: '50585065'
+  author: infamouscow
+  text: B+tree were designed around optimized IO in the era of magnetic storage, they&#x27;re
+    inherently cache-friendly. Skiplists are the same thing as a b+tree but the structure
+    is inverted, which makes skiplists more to concurrent writer-friendly than b+trees.
+    Different tradeoffs.
+  score: 0
+  posted_at: '2026-11-21T02:06:46Z'
+- id: '50585164'
+  parent_id: '50584903'
+  author: hinkley
+  text: <a href="https:&#x2F;&#x2F;github.com&#x2F;valkey-io&#x2F;valkey-io.github.io&#x2F;pull&#x2F;665&#x2F;commits"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;valkey-io&#x2F;valkey-io.github.io&#x2F;pull&#x2F;665&#x2F;co...</a><p>The
+    PR for the article. I&#x27;m not convinced it&#x27;s AI, but I didn&#x27;t do
+    a deep dive on the commit tree just poked around a bit.
+  score: 0
+  posted_at: '2026-11-21T02:09:07Z'
+- id: '50585178'
+  parent_id: '50585148'
+  author: hinkley
+  text: But more cache misses, due to the variable pointer length structure.<p>That
+    cost varies from chip generation to generation, but it does seem to be the case
+    that b trees win in more generations than they lose.
+  score: 0
+  posted_at: '2026-11-21T02:11:10Z'
+- id: '50585189'
+  parent_id: '50584938'
+  author: hinkley
+  text: There aren&#x27;t many commenters at the time you posted this. Which makes
+    this conversation feel even more artificial...
+  score: 0
+  posted_at: '2026-11-21T02:12:09Z'
+- id: '50585192'
+  parent_id: '50585091'
+  author: crest
+  text: Binary trees have worse cache locality. The cost of accessing memory has grown
+    so much compared to computation that supposedly slower &quot;heavy weight&quot;
+    data structures are worth it now (as in the last 10-20 years).
+  score: 0
+  posted_at: '2026-11-21T02:12:46Z'
+- id: '50585203'
+  parent_id: '50585048'
+  author: TkTech
+  text: Like all things, it depends. If you don&#x27;t need the latest and greatest
+    features in upstream redis, and you don&#x27;t want license headaches, Valkey
+    is probably a good default. It&#x27;s generally cheaper on hosting providers too
+    - AWS will discount you ~20-35% for Valkey vs Redis.
+  score: 0
+  posted_at: '2026-11-21T02:14:23Z'
+- id: '50585205'
+  parent_id: '50585048'
+  author: swingboy
+  text: 'Yes'
+  score: 0
+  posted_at: '2026-11-21T02:14:47Z'
+- id: '50585226'
+  parent_id: '50585192'
+  author: eventualcomp
+  text: A b-tree isn&#x27;t a binary tree. B doesn&#x27;t officially stand for binary
+    either, see History[0].<p>[0] <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;B-tree"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;B-tree</a>
+  score: 0
+  posted_at: '2026-11-21T02:17:39Z'
+- id: '50585263'
+  parent_id: '50585226'
+  author: jjmarr
+  text: I&#x27;m guessing their point is unlike binary trees which have two children
+    per node, B trees can have as many children per node is best for cache locality&#x2F;SIMD&#x2F;etc.
+    Which despite being &quot;heavyweight&quot; (wasted space if not all children
+    per node are occupied) is faster in practice because it&#x27;s cheaper to preload
+    large unused blocks to cache rather than only access memory when it is needed.
+  score: 0
+  posted_at: '2026-11-21T02:23:06Z'
+- id: '50585416'
+  parent_id: '50584966'
+  author: stuaxo
+  text: OMG, I <i>hate</i> the LLM PR descriptions, the comments, the docstrings -
+    anything to be read by a human that isn&#x27;t code.
+  score: 0
+  posted_at: '2026-11-21T02:46:09Z'
+- id: '50585448'
+  parent_id: '50585091'
+  author: alfiedotwtf
+  text: B trees are more friendly to being cache oblivious
+  score: 0
+  posted_at: '2026-11-21T02:52:25Z'
+- id: '50585536'
+  parent_id: '50534387'
+  author: vivzkestrel
+  text: "- valkey vs redis vs dragonfly 2027?"
+  score: 0
+  posted_at: '2026-11-21T03:13:12Z'
+- id: '50585538'
+  parent_id: '50585189'
+  author: bertonvv
+  text: I meant in general on this site. Dislike the insinuation that I&#x27;m generative
+    AI.
+  score: 0
+  posted_at: '2026-11-21T03:13:25Z'
+- id: '50585605'
+  parent_id: '50534387'
+  author: rsalus
+  text: I&#x27;ve long since moved to the MultiQueue algorithm for CPQs, seems like
+    SkipList has vanishingly few use cases now...
+  score: 0
+  posted_at: '2026-11-21T03:25:02Z'
+- id: '50585699'
+  parent_id: '50585263'
+  author: entrope
+  text: Every node in a binary tree needs a value and two child pointers, though.  That&#x27;s
+    asymptotically almost twice as many child pointers per value as a B-tree has.
+  score: 0
+  posted_at: '2026-11-21T03:44:57Z'
+- id: '50585849'
+  parent_id: '50585699'
+  author: hinkley
+  text: It’s a good thing this article isn’t about binary trees then.
+  score: 0
+  posted_at: '2026-11-21T04:09:30Z'
+- id: '50586041'
+  parent_id: '50584939'
+  author: plorkyeran
+  text: This is the standard LLM wall of irrelevant garbage that always makes me groan
+    when I see it. There&#x27;s a lot of words but it conveys very little useful information.
+    This is exactly the type of thing that LLMs are terrible at and has negative ROI
+    for human reviewers.
+  score: 0
+  posted_at: '2026-11-21T04:49:27Z'
+- id: '50586047'
+  parent_id: '50585203'
+  author: nurettin
+  text: I haven&#x27;t checked the newest additions, there were some updates about
+    adding login and encryption, but the latest innovation I use from redis is xstream,
+    and almost all clones now support it.<p>And a moderate LLM subscription can readily
+    generate a useful portion of this project overnight, which makes me concerned
+    about their profitability in the long run.
+  score: 0
+  posted_at: '2026-11-21T04:50:23Z'
+- id: '50586111'
+  parent_id: '50584939'
+  author: monkpit
+  text: This is an LLM smell and, after having dealt with this sort of thing and realizing
+    it’s usually low-signal high-noise, you end up ignoring this kind of thing outright.
+  score: 0
+  posted_at: '2026-11-21T05:05:48Z'
+- id: '50586161'
+  parent_id: '50534387'
+  author: dreamcompiler
+  text: "&gt; Every node carries a backward pointer<p>Curious. Skiplists don&#x27;t
+    need back pointers. You can traverse a skiplist backward almost as fast as forward
+    if you keep the &quot;finger&quot; around. The finger is the set of nodes from
+    level-n down to level-0 that point as close to the goal node as possible without
+    going beyond it. The ideal place to keep these nodes is on the stack. To traverse
+    backwards, you do a conventional search for the starting node but every time you
+    go down a pointer level, you push the last pointer on the stack first. Then back
+    traversal becomes stack pops together with appropriate forward recursive calls
+    when you pop back to a pointer that was too far to the left.<p>It&#x27;s easier
+    to convey the idea with code than english but I&#x27;m not typing the algorithm
+    with my thumbs into my phone."
+  score: 0
+  posted_at: '2026-11-21T05:13:21Z'
+- id: '50586293'
+  parent_id: '50585416'
+  author: what
+  text: Have you read the code though?
+  score: 0
+  posted_at: '2026-11-21T05:38:09Z'
+- id: '50586408'
+  parent_id: '50534387'
+  author: jauntywundrkind
+  text: Thanks Bill Pugh for skiplists, worked great for so long. Go terps. <a href="https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;78973.78977"
+    rel="nofollow">https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;10.1145&#x2F;78973.78977</a>
+  score: 0
+  posted_at: '2026-11-21T05:59:38Z'
+- id: '50586499'
+  parent_id: '50586047'
+  author: ddorian43
+  text: what even is `xstream` ? is that a typo for `stream` ?
+  score: 0
+  posted_at: '2026-11-21T06:17:00Z'
+- id: '50586785'
+  parent_id: '50534387'
+  author: antirez
+  text: 'For par condicio: I worked at a similar optimization for Redis using different
+    techniques (when I submitted the PR my colleagues informed me that ValKey and
+    another Redis team was working at it, I was not aware: the amoung the three implementation
+    we picked mine after extensive benchmarks) reaching memory savings that sometimes
+    can be tens of percentage of less RAM compared to this ValKey optimization. So
+    if you are exited for less memory for sorted Sets you should try both the implementations.
+    We also got a lot more speed in many use cases compared to the skiplist.'
+  score: 0
+  posted_at: '2026-11-21T07:10:31Z'
+- id: '50586840'
+  parent_id: '50585416'
+  author: bigstrat2003
+  text: The code isn&#x27;t really much better, having reviewed a decent bit of it
+    myself.
+  score: 0
+  posted_at: '2026-11-21T07:18:28Z'
+- id: '50586959'
+  parent_id: '50584939'
+  author: catlifeonmars
+  text: I prefer to go straight to the code when reviewing. I’ll form my own opinion,
+    then read the PR description, then do another, more detailed pass through the
+    code.
+  score: 0
+  posted_at: '2026-11-21T07:44:39Z'
+- id: '50587151'
+  parent_id: '50586499'
+  author: nurettin
+  text: I seem to remember it was xstream when it was first released. The commands
+    all have a prefix X (XADD, XREAD, XTRIM) perhaps it got rebranded into just stream.
+  score: 0
+  posted_at: '2026-11-21T08:25:10Z'
+- id: '50587180'
+  parent_id: '50585148'
+  author: josephg
+  text: Yep. I’ve implemented b trees and skip lists a few times. I find skip lists
+    to be a little easier to implement. But b trees seem to perform ~20% faster. I
+    can’t think of any good reasons to use skip lists instead of b trees in high performance
+    code.
+  score: 0
+  posted_at: '2026-11-21T08:28:44Z'
+- id: '50587245'
+  parent_id: '50585048'
+  author: unddoch
+  text: DragonflyDB has had this for years. You might disagree with the licensing
+    choice but the technology is just better IMO.<p>(Disclosure, worked for them 3
+    years ago for a few months)
+  score: 0
+  posted_at: '2026-11-21T08:39:33Z'
+- id: '50587269'
+  parent_id: '50585148'
+  author: fpoling
+  text: The data structure is not a pure B+tree. They also strip common  key prefix
+    for node elements and store 4 bytes of remaining key data together with a pointer
+    to the children to avoid key lookup in many cases. Plus they tune node sizes to
+    match jemalloc allocation classes to minimize allocation overhead. I am not sure
+    with such focus on cache friendliness the advantage of skip lists for writes still
+    holds as they will still have more cache misses even on inserts.
+  score: 0
+  posted_at: '2026-11-21T08:45:30Z'
+- id: '50587321'
+  parent_id: '50586785'
+  author: hawk_
+  text: Is your implementation also a B+ tree? If so how does it use tens of percentage
+    less memory? less metadata?
+  score: 0
+  posted_at: '2026-11-21T08:53:12Z'
+- id: '50587378'
+  parent_id: '50584939'
+  author: lelanthran
+  text: The snr of that file is very very low.
+  score: 0
+  posted_at: '2026-11-21T09:02:09Z'
+- id: '50587476'
+  parent_id: '50587321'
+  author: antirez
+  text: 'It uses two techniques: B+ tree instead of sorted sets, but also the hash
+    table side, the dictionary, is specialized for sorted sets and stores several
+    items per allocation. The B+ tree leaves hold all the members and scores (also
+    in clusters of many elements, 96 max or 4k: that&#x27;s a big part of the win),
+    rank lookup can skip many children because of meta data, which is part of the
+    ability to go as fast or faster than Redis <i>even</i> if the memory is so much
+    smaller. The hash table points to leaves in the B+ tree, does not have elements
+    at all, and is heavily optimized to do just the minimum, a single byte tag is
+    used as a speed optimization to optimized lookups in an optimistic way. Basically
+    it is the sum of many different techniques conceived during the years and never
+    adopted for fear of complexity (today no longer a problem), and newely discovered
+    techniques.<p>P.S. I tried several variants with different representations, so
+    this specific implementation is the Pareto frontier in speed&#x2F;size of many,
+    many attempts.'
+  score: 0
+  posted_at: '2026-11-21T09:21:56Z'
+article:
+  url: https://valkey.io/blog/from-skiplist-to-b+tree/
+  title: 'Valkey · From Skiplists to B+ Trees: Making Valkey Sorted Sets More Memory
+    Efficient'
+  fetch_status: success
+  content: |-
+    # From Skiplists to B+ Trees: Making Valkey Sorted Sets More Memory Efficient
+
+    Technical Deep Dive 2026-11-16 · _Rain Valentine_, _Dragos Andriciuc_
+
+    A [sorted set](https://valkey.io/topics/sorted-sets/) can spend more memory describing how its elements are ordered than storing the elements themselves.
+
+    In Valkey 9.2 that changes: the skiplist is replaced by a high-fanout B+ tree variant called **fbtree**.
+
+    fbtree combines the high fanout and contiguous storage of a conventional B+ tree with several optimizations designed for Valkey's workload and memory allocator, including feature-based lookups, SIMD searches, linked leaves, and fast paths for sequential inserts and pops. In a 5-million-member test, it reduced per-member memory overhead by 36–43%, saving up to 109 MB.
+
+    Let's take a look at why this change happened and how it works.
+
+    ## Why replace the skiplist?
+
+    Large sorted sets that exceed the [listpack threshold](https://valkey.io/blog/secret-life-of-data/) are backed by a skiplist paired with a hashtable (smaller sorted sets use a compact listpack representation that stores elements sequentially in contiguous memory). The hashtable gives O(1) lookups by member, while the skiplist gives O(log n) ordered lookups by rank or score. That pairing is architecturally simple, but the skiplist carries a significant memory cost. It stores exactly one element per node, scattered across memory as separate allocations connected by pointers.
+
+    ### Memory overhead
+
+    Valkey's skiplist pays for this in raw memory. Every node carries a backward pointer (8B), plus an average of 1.33 levels of forward pointers and span values, since skiplists are probabilistic (each node has a 25% chance of gaining another level). Each level costs 8B for the pointer plus 8B for the span value, giving around 29B of pointer and span overhead per node. Add the 8B score, and the total reaches roughly 37B per node before accounting for the member string.
+
+    ![Skiplist structure showing one heap allocation per sorted-set member](https://valkey.io/blog/from-skiplist-to-b+tree/images/skiplist-structure.svg)
+
+    ![Layout of a skiplist node with two levels and a 20-byte member](https://valkey.io/blog/from-skiplist-to-b+tree/images/zskiplistNode-struct-layout.svg)
+
+    ### Cache misses and dependent fetches
+
+    Modern CPUs use a hierarchy of hardware caches (L1, L2, and L3) to keep frequently accessed data close to the processor. These caches are much smaller and faster than main memory (RAM), so when the CPU cannot find the data it needs in its cache, it must fetch it from a slower level of the memory hierarchy. As a rough illustration, an L1 cache hit can take about 1 ns, while a DRAM access can take around 100 ns. A dependent memory access can leave the core waiting; actual latency and how much work can be hidden vary by system and workload .
+
+    Each node in the skiplist is a separate allocation, potentially scattered wherever the heap happened to place it, so following the structure can require repeatedly fetching data from unrelated memory locations. Because each step can determine where the next step goes, these fetches are dependent, resulting in more round trips through the memory hierarchy. A 2025 study of concurrent in-memory indexes found that, on its tested workloads, traditional skiplists experienced roughly 2.4–4.8× more cache misses than a comparable B-tree, with 2–8× lower throughput (testing different data structure implementations, not Valkey).
+
+    ## What replaced it: fbtree
+
+    A B+ tree keeps entries sorted in fixed-size nodes: leaf nodes hold the entries, or pointers to them, and inner nodes hold just enough routing data to pick which child to descend into. Packing many entries into each node addresses both problems above: far less per-member pointer overhead, and far fewer dependent fetches per lookup.
+
+    ![fbtree architecture showing members packed in leaf arrays and routing data stored in inner nodes](https://valkey.io/blog/from-skiplist-to-b+tree/images/fbtree-architecture.svg)
+
+    ### Memory layout
+
+    fbtree, short for Feature B+ Tree, uses a 61-way fanout: each node can hold up to 61 entries or child pointers. Leaf and inner nodes are sized to fit jemalloc allocation classes without wasting space on 64-bit builds; on supported 32-bit builds, `innerNode` is rounded up to the 1280-byte class.
+
+    ![Layout of an fbtree leaf node with 61 slots](https://valkey.io/blog/from-skiplist-to-b+tree/images/fbtree-leaf-struct.svg)
+
+    ![Layout of an fbtree inner node with 61-way fanout](https://valkey.io/blog/from-skiplist-to-b+tree/images/fbtree-inner-node.svg)
+
+    A 512-byte leaf holds up to 61 value pointers, so 61 members share one node instead of each getting its own. Instead of storing the score and member separately, fbtree stores them together as a single packed value: the normalized 8-byte score followed by the member bytes. This keeps the data needed for comparisons together and removes another level of pointer indirection.
+
+    ![Memory layout comparison between a skiplist and fbtree for 61 consecutive sorted set members](https://valkey.io/blog/from-skiplist-to-b+tree/images/allocations-to-scale.svg)
+
+    ### Fewer memory fetches
+
+    The skiplist's 25%-per-level rule gives it an effective branching factor of about 4, while fbtree's fanout is 61. Both structures retain O(log n) search complexity, but the B+ tree has substantially fewer levels to traverse and therefore fewer opportunities for expensive memory fetches.
+
+    A modern CPU can also fetch several adjacent cache lines efficiently when the data is laid out contiguously, thanks in part to the way memory is accessed and to hardware prefetching . Therefore a B+ tree node that spans a few cache lines can be read efficiently as the CPU scans its contents.
+
+    ![Animated diagram comparing skiplist and fbtree with 3,721 items. To insert an item, skiplist takes 19 fetches while fbtree takes 7.](https://valkey.io/blog/from-skiplist-to-b+tree/images/skiplist-v-fbtree-insert-animated.svg)
+
+    ### Optimizations
+
+    On top of that structure, fbtree adds optimizations aimed at specific operations.
+
+    In a B+ tree keyed by variable-length strings, such as sorted set members, picking a child means comparing the lookup against each child’s anchor, the largest member in that child, and reading those strings costs memory fetches. fbtree's inner nodes store each anchor along with a small four-byte "feature." Because the anchors often share a common prefix, fbtree stores that shared prefix separately and uses the four feature bytes to distinguish the children. The implementation can then compare those features in parallel using SIMD, often identifying the correct child before fetching the child node itself. If the features uniquely identify a child, the search can descend immediately; otherwise, they still narrow the range that needs a full binary search.
+
+    ![Diagram showing an inner node's feature bytes narrowing a lookup for "i love valkey!" from 61 possible children to a single match without reading a full anchor string](https://valkey.io/blog/from-skiplist-to-b+tree/images/inner-node-traversal.svg)
+
+    Range commands such as `ZRANGE` walk the set in order. fbtree links its leaf nodes in a doubly-linked list, so a scan can move from leaf to leaf without climbing back up the tree. The skiplist requests an item, waits to receive it, and only knows the next item to fetch when it's received the first. The B+ tree can work on up to 61 items in parallel, and while it works on those it can fetch the next leaf node with the next 61 items.
+
+    Commands such as `ZPOPMIN` work at the ends of the set. fbtree caches its leftmost and rightmost leaves, so finding them is O(1), as in a skiplist, instead of O(log n). This keeps pop and append operations at parity rather than regressing.
+
+    Range deletions remove a contiguous run of members, and fbtree handles them without rebuilding the surrounding structure.
+
+    ## What actually changed for you
+
+    Functionally, nothing changes.
+
+    The change is internal: sorted set comm
+  error:
+  fetched_at: '2026-11-21T10:44:18Z'
+archived_at: '2026-11-21T10:44:20Z'

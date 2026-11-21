@@ -4,14 +4,14 @@ post:
   title: The G1 Garbage Collector
   url: https://dev.java/learn/jvm/tool/garbage-collection/g1gc-overview/
   hn_url: https://news.ycombinator.com/item?id=50527444
-  score: 102
+  score: 109
   author: ''
   posted_at: '2026-11-17T04:29:07Z'
-  fetched_at: '2026-11-21T01:59:57Z'
+  fetched_at: '2026-11-21T10:44:19Z'
   article_url: https://dev.java/learn/jvm/tool/garbage-collection/g1gc-overview/
   article_fetch_status: success
   article_fetched_at: '2026-11-21T01:59:57Z'
-  raw_comment_count: 55
+  raw_comment_count: 68
 comments:
 - id: '50527736'
   parent_id: '50527444'
@@ -561,6 +561,154 @@ comments:
   text: Golang still got that issue.
   score: 0
   posted_at: '2026-11-21T00:11:04Z'
+- id: '50585243'
+  parent_id: '50581738'
+  author: vips7L
+  text: Isn’t that on by default?
+  score: 0
+  posted_at: '2026-11-21T02:20:10Z'
+- id: '50585634'
+  parent_id: '50580761'
+  author: KMag
+  text: "&gt; GC work is proportional to live data, not dead data.<p>This is true
+    of your basic moving collectors.  It&#x27;s generally not true of reference-counting
+    collectors (including Bacon-style cycle detecting collectors).  It&#x27;s also
+    not true of tracing collectors that have a step of sweeping all live and dead
+    objects, such as mark-sweep or mark-compact."
+  score: 0
+  posted_at: '2026-11-21T03:32:01Z'
+- id: '50585686'
+  parent_id: '50581924'
+  author: KMag
+  text: Though, if your compiler generates stack maps to facilitate pointer moving
+    at runtime, one could have a system that used a bump allocator and compaction
+    of a GC without running the trace portion of GC.  It could also use a per-thread
+    list of freed objects to batch up the freeing.  Then we get into a semantic argument
+    as to whether compile-time GC is really GC.
+  score: 0
+  posted_at: '2026-11-21T03:42:52Z'
+- id: '50585737'
+  parent_id: '50582741'
+  author: brunoborges
+  text: 'Thanks a lot mate!<p>It&#x27;s been an amazing journey exploring JVM on Kubernetes:
+    all that research is being turned into tools and products, if you are interested!
+    One is <a href="https:&#x2F;&#x2F;aka.ms&#x2F;jaz" rel="nofollow">https:&#x2F;&#x2F;aka.ms&#x2F;jaz</a>
+    (not open source at the moment, but it is free), and <a href="https:&#x2F;&#x2F;brewlet.sh"
+    rel="nofollow">https:&#x2F;&#x2F;brewlet.sh</a> (MIT).'
+  score: 0
+  posted_at: '2026-11-21T03:50:08Z'
+- id: '50585767'
+  parent_id: '50581738'
+  author: brunoborges
+  text: 'When cgroups &#x2F; container awareness was added to OpenJDK, it was not
+    on by default, and indeed there were versions that needed this flag. However,
+    all modern JDKs 11 and later, have container awareness support on by default.<p>That
+    said, this only makes the HotSpot JVM use cgroups data to interpret CPU and Memory
+    limits. It does not make any special consideration of default ergonomics (thread
+    pools, GC selection, heap sizing, and so on). Before the container awareness support,
+    the JDK would read the VM&#x2F;bare metal data; in other words, pre-container
+    awareness support would result in this: if the VM has 32GB of RAM and a container
+    is set for 4GB of memory limit, the JVM reads the 32GB as available memory.<p>All
+    the defaults I mentioned still apply even inside a container.<p>Edit: no worries!
+    thanks for sharing!'
+  score: 0
+  posted_at: '2026-11-21T03:54:40Z'
+- id: '50585781'
+  parent_id: '50582824'
+  author: brunoborges
+  text: Yeap! JVM launchers are extremely helpful. At Microsoft, I helped design `jaz`
+    (<a href="https:&#x2F;&#x2F;aka.ms&#x2F;jaz" rel="nofollow">https:&#x2F;&#x2F;aka.ms&#x2F;jaz</a>)
+    for this purpose!
+  score: 0
+  posted_at: '2026-11-21T03:56:10Z'
+- id: '50585787'
+  parent_id: '50581924'
+  author: preg_match
+  text: Moving GC’s <i>can</i> be more efficient due to their much cheaper bump allocations
+    and cache usage by putting objects together.<p>But, this is only assuming we use
+    only the most naive allocation algorithms when managing memory. Yes, it’s true
+    allocating is faster with a GC than malloc. But then you have to remember - most
+    GC languages force way more allocations than necessary. Java is perhaps the worst
+    about this, where almost everything goes on the heap.<p>You can use arena allocators
+    to put objects close together and get allocations almost for free. And, you can
+    put more objects on the stack next to each other, avoiding allocation cost altogether.
+    In practice, this will greatly outperform a GC, even if you don’t take into account
+    collection cost! What will not outperform a GC is doing a million tiny allocations.<p>But,
+    in languages like C and C++, you don’t typically do that. A million tiny allocations
+    is a Java thing. That’s why when people compare runtimes they sometimes mess up.
+    Yes, if you implement a Java algorithm verbatim in C++… it will perform poorly.
+    So, don’t.<p>Also, moving GCs only perform adequately when memory pressure is
+    low. The more memory usage and churn you have, the more moving, compacting, and
+    collecting you have to do. The same is not true of other allocation techniques.
+    A lot of comparisons are not well thought out because they’ll be running at 10%
+    heap utilization. Of course that performs well, it’s likely the GC isn’t even
+    performing many collections. But that’s not true at 90% utilization. Hence why
+    collectors like the G1GC were historically disabled on memory constrained environments.
+  score: 0
+  posted_at: '2026-11-21T03:57:30Z'
+- id: '50586492'
+  parent_id: '50585243'
+  author: brunoborges
+  text: Pretty much, yes.
+  score: 0
+  posted_at: '2026-11-21T06:15:49Z'
+- id: '50586729'
+  parent_id: '50579926'
+  author: madduci
+  text: Absolutely! Passing fine-tuned parameters to JVM makes a big difference and
+    everyone should profile their applications and find the correct balance
+  score: 0
+  posted_at: '2026-11-21T06:59:37Z'
+- id: '50586765'
+  parent_id: '50577451'
+  author: 0x54MUR41
+  text: They also have ops.java, <a href="https:&#x2F;&#x2F;ops.java" rel="nofollow">https:&#x2F;&#x2F;ops.java</a>,
+    which I just knew a few weeks ago. This web page is pretty useful for Java administrators.
+    An administrator usually has activities, like handling configurations, troubleshooting,
+    and keeping things up to date.<p>The website seems to address how things are moving
+    fast now in the age of AI. I mean using AI to find security vulnerabilities.
+  score: 0
+  posted_at: '2026-11-21T07:07:21Z'
+- id: '50587086'
+  parent_id: '50579691'
+  author: nlitened
+  text: Just set it to a very large number if you want that behavior. If I remember
+    correctly, JVM may use some sweet optimizations like use 32-bit pointers if you
+    limit your max memory below 32 GB. It wouldn’t be able to do that if it does not
+    know what the theoretical maximum for your app will be.
+  score: 0
+  posted_at: '2026-11-21T08:11:19Z'
+- id: '50587581'
+  parent_id: '50586492'
+  author: vips7L
+  text: So is there nuance in pretty much? My understanding for a while is that hotspot
+    automatically detected containers.
+  score: 0
+  posted_at: '2026-11-21T09:41:35Z'
+- id: '50587767'
+  parent_id: '50581924'
+  author: adrian_b
+  text: It is true that some implementations of garbage collectors can be faster than
+    some implementations of mallloc&#x2F;free.<p>Nonetheless, the title of the paper
+    by Andrew Appel (Garbage Collection Can Be Faster Than Stack Allocation) was just
+    a false statement, which today would be called a clickbait title.<p>No method
+    of dynamic memory allocation can be faster than stack allocation, if the latter
+    is done correctly.<p>In Appel&#x27;s paper, he claimed that if you have tons of
+    memory, than the overhead of freeing memory by the garbage collector can become
+    low, because of its laziness, i.e. the garbage collector will be invoked only
+    when there is a huge amount of memory that must be freed, so the overhead per
+    freed byte will be low, even lower than when stack-allocated memory is freed word-by-word.<p>However,
+    this comparison is a classic example of a straw man. When memory is abundant,
+    many compilers implement an optimization where stack deallocation is delayed as
+    much as possible, in order to free with a single instruction large amounts of
+    memory. So the same lazy deallocation strategy is also available for stacks, and
+    the difference between a single instruction needed for stack deallocation and
+    a long procedure needed by the garbage collector is enough to ensure that for
+    any realistic amount of available memory, stack allocation is the most efficient.<p>Obviously,
+    stack allocation is not applicable to everything, which is why other techniques,
+    like reference counts and garbage collectors, are also necessary.
+  score: 0
+  posted_at: '2026-11-21T10:17:54Z'
 article:
   url: https://dev.java/learn/jvm/tool/garbage-collection/g1gc-overview/
   title: The G1 Garbage Collector - Dev.java
@@ -665,4 +813,4 @@ article:
     and the G1 Stack Walker video at the b"
   error:
   fetched_at: '2026-11-21T01:59:57Z'
-archived_at: '2026-11-21T01:59:58Z'
+archived_at: '2026-11-21T10:44:20Z'
