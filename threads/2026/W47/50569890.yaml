@@ -4,14 +4,14 @@ post:
   title: PostgreSQL 19
   url: https://www.postgresql.org/docs/release/19.0/
   hn_url: https://news.ycombinator.com/item?id=50569890
-  score: 361
+  score: 380
   author: ''
   posted_at: '2026-11-20T03:45:45Z'
-  fetched_at: '2026-11-20T19:42:02Z'
+  fetched_at: '2026-11-21T01:59:50Z'
   article_url: https://www.postgresql.org/docs/release/19.0/
   article_fetch_status: success
   article_fetched_at: '2026-11-20T10:59:36Z'
-  raw_comment_count: 22
+  raw_comment_count: 27
 comments:
 - id: '50570414'
   parent_id: '50569890'
@@ -207,6 +207,58 @@ comments:
     have PG18, PG16). Just changing the port make simpler to test problems both ways.'
   score: 0
   posted_at: '2026-11-20T17:28:12Z'
+- id: '50581419'
+  parent_id: '50576577'
+  author: mb4nck
+  text: First off, one does not need to upgrade to each major version, it is perfectly
+    fine to jump over one or more major releases in one step.<p>Also, the definition
+    of a major release in Postgres is no new features, and, by extension, no system
+    catalog changes. When the Postgres system catalog changes, you need to make a
+    major version upgrade (this is e.g. the case if you want to upgrade from Postgres
+    19 beta3 to GA).<p>A lot of Postgres&#x27; reputation is on their solid minor
+    releases, and they will not compromise that.
+  score: 0
+  posted_at: '2026-11-20T20:20:58Z'
+- id: '50581463'
+  parent_id: '50572485'
+  author: mb4nck
+  text: For performance reasons, sequences have always been non-transactional in Postgres.
+    This implies that they are not in the transaction log which is being replicated
+    to standbys.<p>As I understand it, the new feature is not a continuous replication
+    (for the above reason), but rather a one-off synchronization of the current sequence
+    values of a leader to its followers, you&#x27;d need to run it again later for
+    additional syncs.
+  score: 0
+  posted_at: '2026-11-20T20:23:58Z'
+- id: '50581624'
+  parent_id: '50581463'
+  author: mxey
+  text: "&gt; For performance reasons, sequences have always been non-transactional
+    in Postgres. This implies that they are not in the transaction log which is being
+    replicated to standbys.<p>This cannot be true because physical replication already
+    supported sequences. Only the support for logical replication is new."
+  score: 0
+  posted_at: '2026-11-20T20:33:43Z'
+- id: '50581648'
+  parent_id: '50575062'
+  author: coldtea
+  text: That&#x27;s what LTS releases are for. And you don&#x27;t need to adopt them
+    at point .0, you can adopt them after one or two minor releases are out for the
+    LTS version.
+  score: 0
+  posted_at: '2026-11-20T20:35:15Z'
+- id: '50584076'
+  parent_id: '50581624'
+  author: anarazel
+  text: They&#x27;re durable but not transactional.<p>1) If you do BEGIN; SELECT nextval(&#x27;someseq&#x27;);
+    ROLLBACK; the value from the rolled back transaction won&#x27;t be reused, despite
+    the rollback.  That&#x27;s quite crucial for performance, as otherwise concurrent
+    transactions would not be able to get a sequence value until the first transaction
+    commits&#x2F;rolls back.<p>2) If you crash (PG or HW), some sequence values may
+    never end up being used. For performance only every 32nd sequence advancement
+    is WAL logged.
+  score: 0
+  posted_at: '2026-11-20T23:51:56Z'
 article:
   url: https://www.postgresql.org/docs/release/19.0/
   title: 'PostgreSQL: Release Notes'
@@ -307,4 +359,4 @@ article:
     Allow Append and MergeAppend to"
   error:
   fetched_at: '2026-11-20T10:59:36Z'
-archived_at: '2026-11-20T19:42:11Z'
+archived_at: '2026-11-21T01:59:57Z'

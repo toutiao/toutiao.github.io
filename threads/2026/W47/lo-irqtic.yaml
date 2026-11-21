@@ -1,0 +1,108 @@
+---
+post:
+  id: lo-irqtic
+  source: lobsters
+  title: 'Lisp Game Jam devlog: Polydraw'
+  url: https://spritely.institute/news/lisp-game-jam-devlog-polydraw.html
+  hn_url: https://lobste.rs/s/irqtic
+  score: 14
+  author: FedericoSchonborn
+  posted_at: '2026-11-20T11:18:47Z'
+  fetched_at: '2026-11-21T01:59:58Z'
+  article_url: https://spritely.institute/news/lisp-game-jam-devlog-polydraw.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-21T02:00:00Z'
+  raw_comment_count: 0
+  tags:
+  - games
+  - lisp
+comments: []
+article:
+  url: https://spritely.institute/news/lisp-game-jam-devlog-polydraw.html
+  title: 'Lisp Game Jam devlog: Polydraw — Spritely Institute'
+  fetch_status: success
+  content: |-
+    # Lisp Game Jam devlog: Polydraw
+
+    This year's Autumn Lisp Game Jam has just wrapped up! Spritely's contribution to the jam was Polydraw, a peer-to-peer party game that is easy to pick up and play with friends. In Polydraw, players take turns being the artist who draws an image based on a prompt. The catch is that the artist only has 60 seconds and can only draw using triangles. All of the other players are guessers who try to correctly guess the prompt. We're quite pleased with how the game turned out!
+
+    The rest of this post is a daily devlog of how we made Polydraw so you can see what the process look likes to make a game with Goblins and Hoot under a tight deadline.
+
+    ## Day 1 (10/30)
+
+    It's go time! First, we created a Git repository on Codeberg and copied the Hoot game jam template into it.
+
+    Since the core activity in Polydraw is drawing triangles, the first thing Dave implemented was an interface for doing that on a canvas. This first version was crude and didn't include a color picker.
+
+    ## Day 2 and 3 (10/31 and 11/1)
+
+    We took the weekend off to prepare for a busy week ahead.
+
+    ## Day 4 (11/02)
+
+    This is the day that we really got to work on the game jam.
+
+    The first version of the triangle editor stored pixel coordinates of the local canvas, but that wasn't going to be good enough to display on other machines with different sized canvases. So, Dave simply normalized triangle vertices into the [0,1] range so each peer could scale them as needed.
+
+    Dave also implemented a basic scene system, a common game programming pattern, to encapsulate the coarse game states such as the title screen, the lobby, and the main game.
+
+    A color palette was added along with some additional mockup UI around the canvas.
+
+    ## Day 5 (11/03)
+
+    With a good enough game engine in place, we turned our attention to the game protocol. Since we are using Goblins, all interactions are modeled using actors. Dave came up with the following actors:
+
+    - Player: Used for player identity within the game and contains the player's self-proposed name.
+
+    Player: Used for player identity within the game and contains the player's self-proposed name.
+
+    - Lobby: The place where players gather before the game starts. The player that creates the lobby is the host and all other players are guests.
+
+    Lobby: The place where players gather before the game starts. The player that creates the lobby is the host and all other players are guests.
+
+    - Game: Holds all of the game state like the player list, whose turn it is, and the scoreboard.
+
+    Game: Holds all of the game state like the player list, whose turn it is, and the scoreboard.
+
+    - Controller: A player's virtual game controller. Used to speak to the game actor, but all actions are scoped to the individual player.
+
+    Controller: A player's virtual game controller. Used to speak to the game actor, but all actions are scoped to the individual player.
+
+    A test script was written to simulate creating a game, joining the lobby, and playing a round. At this stage, everything was happening in a single process. Goblins makes it easy to start with a single process and then distribute the actors to multiple machines later.
+
+    ## Day 6 (11/04)
+
+    Now it was time to get the actors onto the network and hook them up to the game UI. For networking we used OCapN, naturally. Jessica started up an instance of our new end-to-end encrypted relay netlayer that we set as the default relay so the game would "just work" when we uploaded it to itch.io. In fact, dogfooding the relay was a large part of the motivation behind participating in the game jam in the first place!
+
+    Dave got the actors online with OCapN and connected the game UI to the actors, then confirmed that a three player game works. Three players is the minimum number of players needed to trigger OCapN's third-party handoff feature. Handoffs are what enable distributed networking in OCapN: Alice can give Bob a reference to Carol, which causes Bob and Carol to establish a new OCapN session with each other. This is the first application we've made that does handoffs over the relay netlayer and it was nice to see them working as intended.
+
+    Unfortunately, we discovered an issue with how Goblins handles two peers connecting to each other concurrently, a problem known as "crossed hellos". OCapN mandates that only one connection may be open between any two peers, so we have to pick which connection wins. The bug is that any promises that were created over the losing connection never resolve. This was observed in the game as an empty lobby player list that should be populated. It didn't prevent the rest of the game from working, though, so we didn't try to fix it (yet).
+
+    ## Day 7 (11/05)
+
+    On this day, Dave discovered that, despite his best efforts, he fell victim to the "identity footgun". We could write a whole blog post series about the many subtle issues of object identity (in the sense of Scheme's eq?) in object capability systems, but instead we'll refer you to the The Grant Matcher Puzzle and just mention that using object references as keys in associative data structures is error-prone. A promise that eventually resolves to a reference to Alice is not identical (again, in the eq? sense) to a reference to Alice. So, if you accidentally use a promise as a key somewhere or use eq? directly you will probably have a bad time, which is exactly what happened to us.
+
+    To deal with this identity crisis, Dave first detected it at runtime by writing a wrapper around eq? called geq?. This new predicate throws an error when comparing a promise to a non-promise. Then he used the resulting backtraces to find the offending code and change it to resolve all necessary promises before doing identity comparisons.
+
+    Christine finally cleared enough other things off her plate where she could start contributing to the game. We thought it would be nice to have the game start with a splash screen of triangle'y animations that would resemble the kinds of art players would make in the game. We decided to use the Blender add-on by Ursula Kurdali named Stop Motion since it gives a great amount of freedom to animate by creating and destroying as much geometry as you like. Christine made the first mockup of a splash screen animation of a "death" type character swinging a scythe.
+
+    However, the animation hadn't left Blender yet. We're gonna have to figure out how to get those polygons out and into the game engine!
+
+    ## Day 8 (11/06)
+
+    This was the day to finish implementing the core game loop. We wanted the weekend to be all about fixing bugs and making it look and feel as good as we can. At last, the points awarded at the end of each round were displayed in the UI. The player list on the left side of the screen was transformed into a leaderboard that sorted players by score.
+
+    While creating the leaderboard it was discovered that Goblins was not correctly parsing pairs received over OCapN. Christine swooped in with a quick fix and Jessica folowed up with a regression test.
+
+    We also added a small set of emoji reactions underneath the leaderboard. Reactions were not critical to the core gameplay but they were planned from the very beginning of the project. It's good that we had time to add them because it was a lot of fun to spam emojis at the artist to give them an indication of how good or bad they were doing.
+
+    ## Day 9 (11/07)
+
+    With two days left and the core gameplay loop complete, the focus shifted to bug fixing and adding juice. Up until this point the HTML was mostly unstyled (as you can see in the videos above), so Dave added a little CSS to improve the look and feel.
+
+    A playtest revealed that the simple PRNG we were using was implemented incorrectly. We noticed because the artist prompt was always "bus" no matter how many rounds you played. Oops! This was fixed.
+
+    Remember that crossed hellos bug from day 7? Dave finally implemented a workaround, which was to simply throw out the first pancake and try again, as suggested by Christine. A simple race agains
+  error:
+  fetched_at: '2026-11-21T02:00:00Z'
+archived_at: '2026-11-21T02:00:00Z'

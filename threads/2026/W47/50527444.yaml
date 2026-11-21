@@ -1,0 +1,668 @@
+---
+post:
+  id: '50527444'
+  title: The G1 Garbage Collector
+  url: https://dev.java/learn/jvm/tool/garbage-collection/g1gc-overview/
+  hn_url: https://news.ycombinator.com/item?id=50527444
+  score: 102
+  author: ''
+  posted_at: '2026-11-17T04:29:07Z'
+  fetched_at: '2026-11-21T01:59:57Z'
+  article_url: https://dev.java/learn/jvm/tool/garbage-collection/g1gc-overview/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-21T01:59:57Z'
+  raw_comment_count: 55
+comments:
+- id: '50527736'
+  parent_id: '50527444'
+  author: Sid_Lmao
+  text: 'Easy-to-miss detail: before JDK 27, the JVM only picked G1 with 2+ CPUs and
+    ~1.8 GB of memory; otherwise, it silently used SerialGC. So a lot of 1- CPU Kubernetes
+    pods have been on serial all along. Worth checking with -XX:+PrintCommandLineFlags
+    before upgrading, since GC behaviour will change.'
+  score: 0
+  posted_at: '2026-11-17T05:18:13Z'
+- id: '50575639'
+  parent_id: '50527736'
+  author: citrin_ru
+  text: Isn&#x27;t the reason for this that on a single core SerialGC is better (lower
+    CPU overhead at least)?
+  score: 0
+  posted_at: '2026-11-20T15:03:18Z'
+- id: '50575711'
+  parent_id: '50527444'
+  author: _verandaguy
+  text: Tangential, but I really dislike that the `.java` gTLD was allowed to come
+    about given it&#x27;s also a reasonably popular file extension.<p>The `.zip` gTLD
+    set a really bad precedent.
+  score: 0
+  posted_at: '2026-11-20T15:08:07Z'
+- id: '50576220'
+  parent_id: '50575711'
+  author: lmz
+  text: ".zip? Not .com?"
+  score: 0
+  posted_at: '2026-11-20T15:33:44Z'
+- id: '50576456'
+  parent_id: '50576220'
+  author: dboreham
+  text: Old school.
+  score: 0
+  posted_at: '2026-11-20T15:45:44Z'
+- id: '50576755'
+  parent_id: '50527444'
+  author: Fizzadar
+  text: I remember switching on G1GC for Elasticsearch back in 2014 and it was a total
+    game changer for cluster stability (ES had plenty of other warts back then to
+    counter the improvement). Cool to see it land as the default everywhere over a
+    decade later.
+  score: 0
+  posted_at: '2026-11-20T16:01:32Z'
+- id: '50577366'
+  parent_id: '50575639'
+  author: ch4s3
+  text: I&#x27;d imagine so. The kind of bookkeeping they&#x27;re talking about here
+    would negatively effect performance on a single core.
+  score: 0
+  posted_at: '2026-11-20T16:33:54Z'
+- id: '50577451'
+  parent_id: '50527444'
+  author: ahmedfromtunis
+  text: I love that they also have learn.java and inside.java.<p>They should make
+    get.java point to the download page. Oh and docs.java would be very cool!
+  score: 0
+  posted_at: '2026-11-20T16:37:42Z'
+- id: '50577522'
+  parent_id: '50575639'
+  author: antonhag
+  text: Lower overhead yes - but G1 should have shorter pauses. And shorter pauses
+    is probably worth it unless you run only background jobs in your jvms.
+  score: 0
+  posted_at: '2026-11-20T16:41:04Z'
+- id: '50578725'
+  parent_id: '50576220'
+  author: dbt00
+  text: The potential for confusion in 1985 wasn&#x27;t really on anyone&#x27;s radar.
+  score: 0
+  posted_at: '2026-11-20T17:39:53Z'
+- id: '50578874'
+  parent_id: '50576755'
+  author: cogman10
+  text: It&#x27;s definitely gotten a LOT better since it was introduced.  Java 17,
+    in particular, really made G1 great.<p>But if you&#x27;ve not already looked at
+    it for your usages, I suggest people check out both the parallel collector and
+    ZGC.  ZGC in particular has been getting a lot of very nice features.  Semi recently
+    getting fast heap freeing (to the OS).  The parallel collector for small heaps
+    can generally beat G1 pause times.<p>Where G1 really shines over the parallel
+    collector is the fact that it regularly collects old gen.  If your app has a lot
+    of caches, then G1 is very good at keeping the VM from ending up with very long
+    pauses.
+  score: 0
+  posted_at: '2026-11-20T17:48:21Z'
+- id: '50578940'
+  parent_id: '50577522'
+  author: cogman10
+  text: Lower CPU and Memory overhead.<p>Serial will be your best choice if your app
+    is constantly using 100% of that core or if you need to minimize the amount of
+    memory overhead.<p>G1 is a better choice if you can be flexible with your memory
+    and if you have a lot of periods in your app where it&#x27;s below 100% CPU usage
+    (maybe a lot of IO).
+  score: 0
+  posted_at: '2026-11-20T17:52:31Z'
+- id: '50579174'
+  parent_id: '50527444'
+  author: cyberax
+  text: And still no automatic heap sizing... Maybe next year?
+  score: 0
+  posted_at: '2026-11-20T18:07:16Z'
+- id: '50579586'
+  parent_id: '50579174'
+  author: karussell
+  text: 'What do you mean? G1 definitely has automatic heap sizing, i.e. Xmx just
+    defines the maximum it is allowed to use.<p>edit: looks like you probably mean
+    sth like this: <a href="https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;8359211"
+    rel="nofollow">https:&#x2F;&#x2F;openjdk.org&#x2F;jeps&#x2F;8359211</a>'
+  score: 0
+  posted_at: '2026-11-20T18:34:21Z'
+- id: '50579643'
+  parent_id: '50527736'
+  author: seabrookmx
+  text: "&gt; So a lot of 1- CPU Kubernetes pods have been on serial all along<p>I
+    don&#x27;t think this is true.<p>Setting your CPU limit to 1 in Kubernetes does
+    not mean the container sees a single logical processor. It only means the kernel
+    allows it to use 1 core worth of CPU _time_.<p>If your k8s node is an 8 core node,
+    Java will still see 8 logical processors. It just means you can only use 1&#x2F;8th
+    of each, or all of one, or some combination in-between.<p>I&#x27;ve never seen
+    a k8s node running on a single core VM, as most of the cloud providers only use
+    these for their free tier or shared core VM&#x27;s for the lightest of light workloads."
+  score: 0
+  posted_at: '2026-11-20T18:38:13Z'
+- id: '50579691'
+  parent_id: '50579586'
+  author: cyberax
+  text: Indeed.<p>One great feature in Go (or Python, or Node JS) is that you don&#x27;t
+    have to care about setting the -Xmx. The runtime will just use more RAM as needed,
+    and you can use normal mechanisms like cgroups to limit the maximum size.
+  score: 0
+  posted_at: '2026-11-20T18:41:57Z'
+- id: '50579809'
+  parent_id: '50576755'
+  author: pjmlp
+  text: It is not everywhere, because there are other JVM implementations, with their
+    own GC algorithms.
+  score: 0
+  posted_at: '2026-11-20T18:49:19Z'
+- id: '50579810'
+  parent_id: '50527736'
+  author: brunoborges
+  text: This is correct. I have been advocating about this for years now [1].<p>I
+    have also seen customers wasting resources across Kubernetes because their developers
+    would eventually tune JVMs with lowercase `-xmx` flag, which the JVM ignores,
+    and thus by default, the JVM only sets heap size to 25% by default (for =&gt;
+    512mb of available memory).<p>[1] <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=wApqCjHWF8Q"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=wApqCjHWF8Q</a>
+  score: 0
+  posted_at: '2026-11-20T18:49:21Z'
+- id: '50579820'
+  parent_id: '50527736'
+  author: pjmlp
+  text: Open JDK, not The JVM.<p>There are other implementations.
+  score: 0
+  posted_at: '2026-11-20T18:49:57Z'
+- id: '50579829'
+  parent_id: '50575639'
+  author: brunoborges
+  text: 'A 1,000 millicore CPU limit on Kubernetes does not mean the JVM can only
+    use a single core. But that is indeed how the JVM interprets the limit: as a single
+    core being available.'
+  score: 0
+  posted_at: '2026-11-20T18:50:26Z'
+- id: '50579840'
+  parent_id: '50527444'
+  author: pancakeguy
+  text: garbage collection will almost certainly be a relic of the past surprisingly
+    soon. Fundamentally it exchanges efficiency for readability &amp; developer experience,
+    to things that do not matter when using AI to write code.
+  score: 0
+  posted_at: '2026-11-20T18:50:47Z'
+- id: '50579926'
+  parent_id: '50527444'
+  author: brunoborges
+  text: 'Lots of details that teams miss when tuning the JVM on Kubernetes:<p>1. Default
+    heap size varies: it can be 50% of the available memory for any amount of available
+    memory up to 256mb; ~128mb for anywhere between 256 and 512; and then 25% for
+    anything above 512mb;<p>2. The JVM will still do parallel threads even when CPU
+    limit is 1,000 or below , which triggers CPU throttling much faster. Threads such
+    as GC (even when it is SerialGC), ForkJoin pools, Database connection pools, HTTP
+    server, and so on.<p>3. The JVM behaves MUCH better with 2,000 or more milicores,
+    and a well sized heap. Having very small containers and dozens of replicas is
+    worse than having slightly bigger containers (cpu&#x2F;memory limits) and fewer
+    replicas, even with a different ratio (e.g. 6 replicas will perform worse than
+    3 replicas, even when aggregated CPU and memory limits are the same).<p>I&#x27;ve
+    been advocating on this for years [1].<p>[1] <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=wApqCjHWF8Q"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=wApqCjHWF8Q</a>'
+  score: 0
+  posted_at: '2026-11-20T18:55:52Z'
+- id: '50579962'
+  parent_id: '50579840'
+  author: ogogmad
+  text: If true, it&#x27;s sad. So much work and so much accumulated wisdom. It&#x27;s
+    like seeing a cathedral built by thousands of hands over dozens of years collapse
+    in an earthquake.
+  score: 0
+  posted_at: '2026-11-20T18:57:39Z'
+- id: '50580112'
+  parent_id: '50579643'
+  author: rileymichael
+  text: '&gt; Setting your CPU limit to 1 in Kubernetes does not mean the container
+    sees a single logical processor<p>that&#x27;s incorrect, the jvm has been container
+    aware for nearly a decade (<a href="https:&#x2F;&#x2F;bugs.openjdk.org&#x2F;browse&#x2F;JDK-8146115"
+    rel="nofollow">https:&#x2F;&#x2F;bugs.openjdk.org&#x2F;browse&#x2F;JDK-8146115</a>)<p>you
+    are correct about the underlying scheduling. limits don&#x27;t pin you to a core,
+    you get quotas across all available'
+  score: 0
+  posted_at: '2026-11-20T19:05:31Z'
+- id: '50580213'
+  parent_id: '50579840'
+  author: IncreasePosts
+  text: Doesn&#x27;t this assume infinite abundance of compute? For most problems,
+    using a GC is probably easier for AI than to track everything manually(just like
+    with humans). Similarly, we could probably ask AI to output everything in optimized
+    assembler code, but it will almost certainly burn more tokens getting to a solution
+    than if we allow it to write in python or some other HLL
+  score: 0
+  posted_at: '2026-11-20T19:11:29Z'
+- id: '50580313'
+  parent_id: '50579840'
+  author: xxpor
+  text: Disagree. Maybe the naive business app use case will, but there are plenty
+    of places where you want to implement effective GC regardless. Anywhere you batch
+    frees to avoid calling it in a hot path is a GC. So it&#x27;s not _always_ an
+    efficiency sacrifice. Or, a different perspective is you always have to ask &quot;efficient
+    with what resource?&quot; CPU time efficiency vs memory efficiency for example
+    (an interesting case where the _money efficiency_ has obviously moved severely
+    in the past year!).
+  score: 0
+  posted_at: '2026-11-20T19:17:21Z'
+- id: '50580328'
+  parent_id: '50579840'
+  author: sealWithIt
+  text: On the one hand, I agree with you; on the other, I also find reasonable that
+    lower cognitive load may keep justifying the existence of GC-based languages even
+    for AI.
+  score: 0
+  posted_at: '2026-11-20T19:18:27Z'
+- id: '50580330'
+  parent_id: '50579962'
+  author: jitix
+  text: Disagree, we need to move ahead with progress.<p>Hobby and domain specific
+    languages may still use GC but getting rid of the concept of GC is the right direction,
+    along with removing different ways of doing things in a programming language.
+    Go was right when it forced developers to use only pattern for loops, one pattern
+    for error handling, etc.
+  score: 0
+  posted_at: '2026-11-20T19:18:36Z'
+- id: '50580761'
+  parent_id: '50579840'
+  author: titzer
+  text: No, manual memory management, with or without static ownership, is not inherently
+    more efficient than GC. Bump pointer allocation is crazy fast. GC work is proportional
+    to live data, not dead data. GC can do compaction and locality optimizations.
+    Manual deallocation is proportional to dead data, unless you are doing bulk deallocation
+    with regions. Stack allocation is crazy fast. It&#x27;s a little beyond what state-of-the-art
+    compilers do by default, but it&#x27;s just pointer analysis that will also get
+    better with AI optimizing and improving compilers.
+  score: 0
+  posted_at: '2026-11-20T19:43:55Z'
+- id: '50580795'
+  parent_id: '50580330'
+  author: titzer
+  text: Memory management is a resource issue that should be orthogonal to the logic
+    of code. Moving away from GC is not the right direction for writing smaller, more
+    concise, and more correct programs.<p>I don&#x27;t think that making programs
+    a lot more complicated because they have to prove a very specific memory management
+    discipline is the right way to go.
+  score: 0
+  posted_at: '2026-11-20T19:46:37Z'
+- id: '50580840'
+  parent_id: '50579840'
+  author: jeffbee
+  text: Can&#x27;t agree. GC language platforms are more efficient in many ways. Look
+    at the hoops that C allocators try to jump through just to get decent THP coverage
+    which a compacting GC gets essentially for free.
+  score: 0
+  posted_at: '2026-11-20T19:49:02Z'
+- id: '50581172'
+  parent_id: '50580795'
+  author: jitix
+  text: Programming languages are just an intermediate representation of the solution,
+    just like bytecode or assembly.<p>With AI we don&#x27;t need expressive programming
+    languages for humans to read and understand at line-level details. Instead, we
+    need stronger guardrails and fewer building blocks so that AI generates consistent
+    solutions.<p>GC became poplar only because it was hard for programmers to keep
+    track of memory management in languages like C and C++. And back then I was a
+    huge proponent of GC based languages.<p>This is just a step along the same path
+    that Go introduced. Many programmers switching from other languages complain about
+    Go&#x27;s restrictive and seemingly verbose syntax but once the benefits are realized
+    the tradeoffs become worth it.
+  score: 0
+  posted_at: '2026-11-20T20:07:33Z'
+- id: '50581222'
+  parent_id: '50579840'
+  author: quotemstr
+  text: Why would you think that malloc&#x2F;free style memory management is more
+    efficient? Both functions can be quite expensive, and they work synchronously.
+    GCes give you compaction, compressed pointers, and bump pointer young generation
+    operation as well as offloading allocation machinery to threads other than your
+    business logic one. It&#x27;s manual memory management that&#x27;s going the way
+    of the dinosaur, and the current interest in manual memory management is a fad.
+  score: 0
+  posted_at: '2026-11-20T20:10:34Z'
+- id: '50581238'
+  parent_id: '50579840'
+  author: hashmash
+  text: Implementing efficient concurrent algorithms without a tracing collector is
+    quite difficult, and it often requires the use of hazard pointers or epochs. Both
+    act like mini collectors, and they also require special tuning.<p>Unless you want
+    AI generated code to be single threaded and not take advantage of multiple cores,
+    some form of collector is still required. If you want to avoid heap fragmentation
+    issues, a compacting collector is generally recommended.
+  score: 0
+  posted_at: '2026-11-20T20:11:05Z'
+- id: '50581277'
+  parent_id: '50580761'
+  author: paulddraper
+  text: GC is fast.<p>GC is not memory efficient.<p>If a primary concern is optimizing
+    memory usage, you will avoid GC languages.
+  score: 0
+  posted_at: '2026-11-20T20:13:24Z'
+- id: '50581474'
+  parent_id: '50579820'
+  author: hashmash
+  text: Not really, other than OpenJ9. In my experience, it&#x27;s way behind OpenJDK
+    in terms of performance and stability.
+  score: 0
+  posted_at: '2026-11-20T20:24:34Z'
+- id: '50581629'
+  parent_id: '50581474'
+  author: pjmlp
+  text: Then you never embedded development with real time JVMs, for example.
+  score: 0
+  posted_at: '2026-11-20T20:33:51Z'
+- id: '50581738'
+  parent_id: '50579926'
+  author: gavinray
+  text: 'Modern JVM&#x27;s (JDK +10) have runtime detection for whether they&#x27;re
+    operating in a container environment, and apply sensible defaults based dynamically
+    on resources if so.<p>Google term: &quot;-XX:+UseContainerSupport&quot;'
+  score: 0
+  posted_at: '2026-11-20T20:41:34Z'
+- id: '50581762'
+  parent_id: '50581738'
+  author: gavinray
+  text: I just realized the username of the comment I replied to.<p>The OP undoubtedly
+    knows this, whoops.
+  score: 0
+  posted_at: '2026-11-20T20:42:48Z'
+- id: '50581824'
+  parent_id: '50581762'
+  author: froh
+  text: I (and presumably some others) didn&#x27;t.  TIL and thx for sharing.<p>and
+    I also read it not as contradiction but simply as useful additional information.
+  score: 0
+  posted_at: '2026-11-20T20:47:42Z'
+- id: '50581843'
+  parent_id: '50581172'
+  author: titzer
+  text: "&gt; GC became poplar only because it was hard for programmers to keep track
+    of memory management in languages like C and C++. And back then I was a huge proponent
+    of GC based languages.<p>As I said elsewhere in the thread, GC is not inherently
+    less efficient than manual memory management, so I don&#x27;t really agree with
+    this. It&#x27;s better for programmers <i>and</i> makes for more ergonomic and
+    evolvable APIs.<p>GC is a pervasive, system-wide service that makes ownership
+    and management orthogonal to program logic. It does this by being a runtime service
+    that comes with some runtime cost. Even manual memory management comes with runtime
+    cost--different ones.<p>&gt; With AI we don&#x27;t need expressive programming
+    languages for humans<p>Actually I think it&#x27;s completely the opposite. PL
+    is for humans to understand algorithms. We need AIs to reduce their thinking to
+    algorithms and then present their solutions as algorithms to us. When we want
+    to communicate precisely, reason and understand precisely, we don&#x27;t write
+    prompts, we write and understand programs.<p>That&#x27;s not really a popular
+    opinion right now because so many people are excited to be freed from thinking
+    and staring at shitty code, but that isn&#x27;t how it&#x27;s going to go down.
+    Programs are proofs that something has been reduced to a deterministic algorithm
+    instead of a sloppy, ill-defined prompt or skill.<p>And to that, I for one do
+    not want to have the communication medium be littered with memory management nonsense."
+  score: 0
+  posted_at: '2026-11-20T20:48:37Z'
+- id: '50581852'
+  parent_id: '50581277'
+  author: pron
+  text: 'That is not so simple. First, the differences among different GCs are bigger
+    than between some GCs and no GC. Second, moving GCs - of the kind used in HotSpot
+    (as well as V8 and .NET), but not Go or Python (which are as different from each
+    other as they are from moving GCs) - do, indeed have a higher memory utilisation,
+    but it&#x27;s not necessarily inefficient, because most of it comes into effect
+    when CPU is under higher pressure than RAM (that&#x27;s when you get a larger
+    young-gen, as the heap overhead is a function of the allocation rate, not of the
+    live set which, in turn, means a high CPU usage). RAM and CPU are not independent
+    resources; the most basic way to think about this is that your machine is exhausted
+    when the <i>first</i> of CPU and RAM is exhausted. For example, I can take your
+    car battery or I can take your petrol, but if I take your car battery when you
+    don&#x27;t have petrol, I&#x27;m not impacting your use of the car, so I&#x27;m
+    not really creating any &quot;inefficiency&quot;.<p>You are right, though, that
+    in a very memory-constrained environment, usually embedded devices, you may want
+    to lower memory consumption regardless of anything else, and in such environments
+    moving GCs are probably not what you want (although other kinds of GC could be).<p>More
+    here: <a href="https:&#x2F;&#x2F;youtu.be&#x2F;xr73mR7ii9M" rel="nofollow">https:&#x2F;&#x2F;youtu.be&#x2F;xr73mR7ii9M</a>'
+  score: 0
+  posted_at: '2026-11-20T20:49:45Z'
+- id: '50581895'
+  parent_id: '50581629'
+  author: hashmash
+  text: Nope. What kind of collectors do they use to be real time? I&#x27;ve never
+    understood how this is possible.
+  score: 0
+  posted_at: '2026-11-20T20:52:51Z'
+- id: '50581924'
+  parent_id: '50579840'
+  author: pron
+  text: 'That is just wrong. Moving GCs were invented because they&#x27;re more efficient
+    than manual memory management. In fact, in his famous 1986 paper, <i>Garbage Collection
+    Can Be Faster Than Stack Allocation</i>, Andrew Appel wrote: &quot;It is easy
+    to believe that one must pay a price in efficiency for this ease in programming…
+    But this is simply not true.&quot;<p>Moving GCs free you from the high overhead
+    of malloc&#x2F;free runtimes, something that us old C and C++ programmers have
+    had decades of experience with, and why our colleagues developed large, complex
+    runtimes such as TCMalloc and jemalloc to remove some of that overhead, even though
+    not nearly as much as moving GCs do.<p>The reason low-level languages don&#x27;t
+    use moving collectors despite their superior efficiency is because they must give
+    up on some performance optimisations for the abillity to interact with the hardware
+    or OS directly, and that means that pointers must be stable machine addresses
+    (this is why you need a richer FFI layer in Java). Moving collectors work in many
+    ways like arenas. They don&#x27;t need to maintain free lists whenever an object
+    is allocated or freed (in fact, they never free any object at all), and memory
+    is freed in bulk. This is not the only performance that low-level languages leave
+    on the table because above everything else they must be low level.<p>Every single
+    language that <i>can</i> use moving collectors does (it&#x27;s also a matter of
+    resources; moving collectors are hard to implement, especially the modern pauseless
+    ones).<p>Sadly, people who are not compiler or memory allocator engineers don&#x27;t
+    know that, so they believe &quot;popular wisdom&quot; disseminated by other non-experts.<p>P.S.<p>Re
+    AI: It&#x27;s certainly possible that AI will be able to write good, efficient,
+    large software some day, perhaps soon, but if it&#x27;s able to perform the global
+    program transformations required to replicate the optimisations of a moving collector
+    without one, it won&#x27;t need the simpler and more local optimisations done
+    by a compiler, and will be able to work better without one, directly in machine
+    code, in which case all compilers and programming languages are also done. In
+    other words, moving GCs will not be a relic of the past before compilers are (or
+    maybe roughly around the same time).'
+  score: 0
+  posted_at: '2026-11-20T20:54:39Z'
+- id: '50581981'
+  parent_id: '50581738'
+  author: hibikir
+  text: While you are replying to someone that definitely knows this, you&#x27;d be
+    surprised by the number of production containers out there, in big companies,
+    that haven&#x27;t turned on container support, or hand tuned their memory well,
+    and thus end up throwing away large parts of the memory they are allocated.<p>Having
+    used Java since the days where you needed to do very heavy tuning to get it to
+    run properly, it all seems alien, as understanding the old garbage collectors
+    was basically mandatory 20 year ago. But even if you reply to someone that does
+    understand the new features, you might be helping a bunch of people that don&#x27;t.
+    In my unit of about 100 programmers I am the only one that even bothered looking,
+    given how every single pod we deployed was either completely unconfigured, or
+    so badly misconfigured, using settings that haven&#x27;t been ideal since Java
+    6.<p>In one of the pods, running a batch job that was using way too much memory,
+    about a third of the memory in the old generation were millions of copies of the
+    very same string. Interning of strings loaded like that has been a JVM option
+    since 2014.
+  score: 0
+  posted_at: '2026-11-20T20:58:05Z'
+- id: '50582741'
+  parent_id: '50579926'
+  author: joosd
+  text: Hey man just wanted to let you know years ago our team used your Devoxx talk
+    as a starting point for tuning our Java apps that are running on K8s and it has
+    been of tremendous help. I still refer back to it every now and then!
+  score: 0
+  posted_at: '2026-11-20T21:50:10Z'
+- id: '50582824'
+  parent_id: '50581981'
+  author: gavinray
+  text: |-
+    On that note, here&#x27;s my favorite little-known tip for running Docker&#x2F;Container JVM apps:<p>The Redhat image distros, like UBI and the JDK ones, have a really handy bash script, &quot;run-java.sh&quot;. It&#x27;s a wrapper script for best-practice and intelligent JVM runtime args inside of container envs:<p><pre><code>  &#x2F;opt&#x2F;jboss&#x2F;container&#x2F;java&#x2F;run&#x2F;run-java.sh
+    </code></pre>
+    It started life as fabric8&#x27;s run-java-sh, and it&#x27;s what the Dockerfile.jvm generated by Quarkus apps uses as its entrypoint.<p>The script handles, among other things:<p>- Heap sized as a percentage of the container&#x27;s memory limit via -XX:MaxRAMPercentage (default 80%, compared with JVM&#x27;s default of 25%). Tunalbe with JAVA_MAX_MEM_RATIO env.<p>- -XX:+ExitOnOutOfMemoryError, so an OOM kills the container and your orchestrator restarts it<p>- Defaults for GC and metaspace<p>- JAVA_DEBUG=true &#x2F; JAVA_DEBUG_PORT=*:5005 turns on JDWP without you having to edit the Dockerfile<p>- http_proxy&#x2F;https_proxy&#x2F;no_proxy env vars get translated into -Dhttp.proxyHost etc
+  score: 0
+  posted_at: '2026-11-20T21:55:10Z'
+- id: '50583299'
+  parent_id: '50581895'
+  author: pron
+  text: Even ZGC now offers better predictablity than malloc&#x2F;free allocators
+    (which are a long way from predictable as far latency goes). But some hard-realtime
+    software uses (or at least used to) RTSJ, a hard-realtime version of Java, that
+    separates the heap to a part that uses a GC and a part that uses nested arenas.
+    It was a big deal twenty years ago, when I worked on such software. I don&#x27;t
+    know how much it&#x27;s still used. Probably not much. C is still king in that
+    world, and Ada too, to some extent.<p>It&#x27;s important to know that for hard
+    realtime, even C alone isn&#x27;t enough, though, and you need special kernels.
+    Ordinary OS schedulers aren&#x27;t predictable enough for hard realtime.
+  score: 0
+  posted_at: '2026-11-20T22:33:29Z'
+- id: '50583381'
+  parent_id: '50581895'
+  author: pjmlp
+  text: Real time algorithms, plenty of material on the matter.<p>Here is the book
+    on the first implementation that was on the genesis of Aicas JamaicaVM.<p><a href="https:&#x2F;&#x2F;www.amazon.com&#x2F;dp&#x2F;3831138931&#x2F;ref=mp_s_a_1_1"
+    rel="nofollow">https:&#x2F;&#x2F;www.amazon.com&#x2F;dp&#x2F;3831138931&#x2F;ref=mp_s_a_1_1</a>
+  score: 0
+  posted_at: '2026-11-20T22:42:15Z'
+- id: '50583859'
+  parent_id: '50580112'
+  author: bboreham
+  text: 'Nit: if your requests are equal to limits, and an integer, and the static
+    cpu manager is turned on inside Kubelet, then it will pin to core(s).<p><a href="https:&#x2F;&#x2F;kubernetes.io&#x2F;docs&#x2F;tasks&#x2F;administer-cluster&#x2F;cpu-management-policies&#x2F;#configuration"
+    rel="nofollow">https:&#x2F;&#x2F;kubernetes.io&#x2F;docs&#x2F;tasks&#x2F;administer-cluster&#x2F;cpu-mana...</a>'
+  score: 0
+  posted_at: '2026-11-20T23:30:01Z'
+- id: '50583986'
+  parent_id: '50579643'
+  author: jeffbee
+  text: Actually, setting your limit and request to exactly 1 does mean that, in some
+    common kubernetes configs. There will be exactly 1 visible CPU.
+  score: 0
+  posted_at: '2026-11-20T23:43:00Z'
+- id: '50583997'
+  parent_id: '50583859'
+  author: rileymichael
+  text: yeah, fair point. there&#x27;s all sorts of knobs available to pin to cpus,
+    numa alignment, etc.. my comment only covers vanilla workloads
+  score: 0
+  posted_at: '2026-11-20T23:43:52Z'
+- id: '50584095'
+  parent_id: '50581222'
+  author: solyin
+  text: But there&#x27;s the GC pause. Fundamentally there&#x27;s no way around that,
+    though I&#x27;m sure there are lots of modern techniques to make it not a problem.
+  score: 0
+  posted_at: '2026-11-20T23:53:40Z'
+- id: '50584207'
+  parent_id: '50584095'
+  author: quotemstr
+  text: The GC pause hasn&#x27;t been a problem for years. Myth that just won&#x27;t
+    die. Have you tried a modern latency-optimized JVM GC? No, it doesn&#x27;t pause
+    in any way you&#x27;ll care about.<p>Now, free&#x2F;Drop&#x2F;etc. the root a
+    tree of 100k nodes. That&#x27;s a pause.
+  score: 0
+  posted_at: '2026-11-21T00:04:26Z'
+- id: '50584260'
+  parent_id: '50584207'
+  author: solyin
+  text: Golang still got that issue.
+  score: 0
+  posted_at: '2026-11-21T00:11:04Z'
+article:
+  url: https://dev.java/learn/jvm/tool/garbage-collection/g1gc-overview/
+  title: The G1 Garbage Collector - Dev.java
+  fetch_status: success
+  content: "# The G1 Garbage Collector\n\n## Introduction\n\nThe Garbage-First Garbage
+    Collector (G1) is the default garbage collector on the JVM as of JDK 27, with
+    [JEP 523: Make G1 the Default Garbage Collector in All Environments](https://openjdk.org/jeps/523),
+    which made it the default in all environments. It had been the default garbage
+    collector in \"server\" environments since JDK 9, with [JEP 248: Make G1 the Default
+    Garbage Collector](https://openjdk.org/jeps/248). G1 seeks to balance throughput
+    and latency and is a good option for many workloads. In this article, we will
+    cover a brief history of G1, its key design concepts, and how to use it.\n\n##
+    A Brief History of G1\n\nG1 was originally introduced in JDK 6u14 as an experimental
+    feature, promoted to a standard feature in JDK 7u4, and designated the default
+    garbage collector in JDK 9, taking over that role from ParallelGC. While G1 has
+    taken over the role of default garbage collector from Parallel, it was originally
+    introduced to replace the CMS (Concurrent-Mark-Sweep) Garbage Collector, which
+    was deprecated in JDK 9 and removed in JDK 14.\n\nAt the time of its introduction,
+    G1 was designed for server environments. Systems using G1 were expected to have
+    multiple processors and large amounts of system memory (tens of GB) available.
+    Continued development of G1 has reduced its system requirements, and now G1 can
+    provide good performance even in resource constrained environments with only a
+    single CPU and less than 2 GB of available system memory. This is why, as of JDK
+    27, it is the default garbage collector across all system configurations.\n\nIn
+    garbage collector design, the three primary design constraints are throughput,
+    latency (pause time), and memory footprint. G1 seeks to maintain a balance between
+    latency and throughput, rather than heavily optimizing for either. By comparison,
+    ParallelGC primarily focuses on maximizing throughput, and ZGC focuses on minimizing
+    latency. G1 also aims for more consistent pause times than the CMS collector it
+    replaced.\n\nAs of the writing of this article, 12 JEPs relating to G1 have been
+    delivered since JDK 8, with more changes planned for the future. Continued development
+    has steadily improved G1's throughput, latency, and memory footprint.\n\n## G1
+    Design and Collection Cycle\n\nG1 is a generational, incremental, parallel, mostly
+    concurrent, stop-the-world, and evacuating garbage collector. For an explanation
+    of each of these terms, check the [Garbage Collection Concepts and JVM Collectors](/learn/jvm/tool/garbage-collection/java-specifics/)
+    article on dev.java. This section covers some of the key design characteristics
+    of G1.\n\nAs mentioned in the previous section, G1 was originally designed with
+    large \"server-like\" environments in mind. G1 is capable of efficiently marshalling
+    the resources of systems with dozens of cores and addressing heaps measured in
+    tens of GB.\n\n### G1 Heap Layout\n\n![G1 heap divided into equal-sized regions
+    labeled as empty, eden, survivor, or old. A humongous object, marked H, spans
+    three contiguous old-generation regions.](/assets/images/garbage-collection/g1-region.png)\n\n>
+    Figure 03-01: Simplified representation of the G1 heap layout\n\nG1 divides the
+    heap into a set of regions (increments) of uniform size. Figure 03-01 is a simplified
+    example of what the G1 heap space would look like. The size and number of regions,
+    unless otherwise configured, are based on internal heuristics, with the overall
+    heap size being the primary influence on both. These regions are then divided
+    up into eden, survivor, old, and humongous regions.\n\nEden and survivor regions
+    are both part of the \"young\" generation. On creation, an object is placed in
+    an eden region. If that object survives a collection, it is evacuated (copied)
+    into a survivor region. Unreachable objects are not deleted individually; rather,
+    the region they are a part of is considered empty and is eligible for reuse by
+    G1. Surviving objects, if they remain reachable, will be evacuated to a new survivor
+    region on subsequent collections. If an object survives enough collections, based
+    on internal heuristics unless otherwise configured, it will be evacuated to an
+    old region, which is checked less frequently.\n\nA humongous region is a contiguous
+    space of one or more regions, reserved for a single \"humongous\" object. An object
+    qualifies as \"humongous\" if it's larger than half the size of a single region.
+    Humongous objects bypass the eden and survivor regions and are treated as equivalent
+    to an old region by G1.\n\n### G1 Garbage Collection Cycle\n\n![G1 collection
+    cycle alternating between Young-Only and Space-Reclamation phases. Young collections
+    continue during concurrent marking, with Concurrent Start, Remark, and Cleanup
+    pauses preceding mixed collections that reclaim space from both young and old
+    regions.](/assets/images/garbage-collection/g1gc-cycle.png)\n\n> Figure 03-02:
+    Simplified representation of the G1 garbage collection cycle\n\nThe G1 garbage
+    collection cycle (GC cycle) consists of both stop-the-world and concurrent behavior,
+    both of which can run in parallel. Again, check [Garbage Collection Concepts and
+    JVM Collectors](/learn/jvm/tool/garbage-collection/java-specifics/) for definitions
+    of these terms. Figure 03-02 is a simplified visualization of the G1 GC cycle
+    and will help to contextualize this section.\n\nAt a high level, the G1 GC cycle
+    consists of two phases: Young-Only and Space-Reclamation. G1 will start in the
+    Young-Only phase, which, as the name suggests, means only young regions are collected.
+    In G1, when a collection happens, the application is _paused_ while G1 evacuates
+    objects to new regions or performs other GC work.\n\nThe concurrent behavior of
+    G1 is primarily concerned with determining which objects in old regions are still
+    active. The concurrent phase can be broken into three distinct parts and starts
+    when old-generation occupancy reaches a threshold.\n\n- _Concurrent Start_ is
+    the first step in the concurrent phase and is a special pause. During this pause,
+    normal evacuation of young regions still occurs, and G1 also initiates concurrent
+    marking of old-generation regions to determine which objects are still reachable.
+    It is also possible that G1 determines there is no need to follow through with
+    marking, in which case a Concurrent Mark Undo pause occurs, and the Young-Only
+    phase continues. \n\n- _Remark_ is the second step in the concurrent phase. This
+    is a special pause where no evacuation of young regions happens. Instead, during
+    this pause, G1 finalizes concurrent marking and performs other work, such as reference
+    processing, class unloading, and reclaiming empty regions. Between this phase
+    and Cleanup, G1 will concurrently calculate information to be used during the
+    Space-Reclamation phase.\n\n- _Cleanup_ is the third and final step in the concurrent
+    phase. This is also a special pause where no evacuation of young regions happens.
+    During this pause, G1 determines if it should proceed to the Space-Reclamation
+    phase. If a Space-Reclamation phase is determined to be necessary, the Young-Only
+    phase will complete with a single Prepare Mixed young collection.\n\nThe Space-Reclamation
+    phase consists of multiple mixed collections: collections where young and old
+    regions are evacuated. G1 uses an efficiency algorithm to determine which old
+    regions to collect first. A major factor in this algorithm is the amount of garbage
+    in each old region, as regions with more garbage are more likely to yield large
+    amounts of space. This is what \"Garbage-First\" in the G1 name refers to: it
+    will reclaim the regions with the most garbage first.\n\nThe Space-Reclamation
+    phase ends when G1 determines that evacuating more old regions is no longer worth
+    the effort. At this point, G1 shifts back to the Young-Only phase.\n\nFor more
+    technical details on G1, check the [Garbage-First Garbage Collector guide](https://docs.oracle.com/en/java/javase/27/gctuning/garbage-first-g1-garbage-collector.html)
+    and the G1 Stack Walker video at the b"
+  error:
+  fetched_at: '2026-11-21T01:59:57Z'
+archived_at: '2026-11-21T01:59:58Z'

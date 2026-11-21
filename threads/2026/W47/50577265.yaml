@@ -4,14 +4,14 @@ post:
   title: Language Models Can Rewrite Their Own Weights
   url: https://arxiv.org/abs/2611.21885
   hn_url: https://news.ycombinator.com/item?id=50577265
-  score: 225
+  score: 341
   author: ''
   posted_at: '2026-11-20T16:29:06Z'
-  fetched_at: '2026-11-20T19:42:05Z'
+  fetched_at: '2026-11-21T01:59:51Z'
   article_url: https://arxiv.org/abs/2611.21885
   article_fetch_status: success
   article_fetched_at: '2026-11-20T19:42:05Z'
-  raw_comment_count: 88
+  raw_comment_count: 112
 comments:
 - id: '50577693'
   parent_id: '50577265'
@@ -828,6 +828,139 @@ comments:
     instantly think &quot;Cool, now do it in a loop.&quot;"
   score: 0
   posted_at: '2026-11-20T19:34:00Z'
+- id: '50580682'
+  parent_id: '50578348'
+  author: fwlr
+  text: |-
+    Not just “basically the same”, it is <i>literally</i> the same result[0,1], except here the models without the flaw just so happen to be “smaller models from the same family”…  and presented <i>before</i> the flawed-and-patched model result, along with a conceptual framework that tries to spin this as a capability “emerging at scale”.<p>Since the paper is also wholly and excruciatingly LLM-generated prose, it is unclear whether the author is trying to pull a fast one on his audience, or the author’s chatbot pulled a fast one on him and he is unwittingly relaying this to his audience.<p>0: Transcribed from the paper:<p><pre><code>  The same task and tools for
+      Qwen3.5 2B
+      Qwen3.5 4B
+      Qwen3.5 9B
+      Qwen3.5 27B
+    </code></pre>
+    1: Transcribed from the paper:<p><pre><code>  (c) The same problem, the same seed
+      “... If the base were changed to four you would count as follows: 1,2,3,10,11,12,13,20,... The twentieth number would be:”
+
+      Base model: no answer, cut at 16,384 tokens
+      “... I will write the response.
+      I will write the response.
+      I will write the response.”
+
+      After its own edit: 110 (correct) 5,341 tokens
+
+      “... The 20th number in the sequence is 110.”</code></pre>
+  score: 0
+  posted_at: '2026-11-20T19:38:32Z'
+- id: '50580800'
+  parent_id: '50579200'
+  author: jcims
+  text: I don&#x27;t want to belabor the point because I don&#x27;t actually care,
+    but all we have is some evidence that it can fix a specific type of obvious flaw,
+    that it can&#x27;t fix others, that it can classify a model within a small domain
+    from looking at its weights and that it can create weights from nothing given
+    a spec.<p>That&#x27;s all we&#x27;ve got.  I think it&#x27;s a bit premature to
+    say that it can only make improvements when there&#x27;s an obvious problem.
+  score: 0
+  posted_at: '2026-11-20T19:46:47Z'
+- id: '50581284'
+  parent_id: '50579182'
+  author: jackb4040
+  text: Thank you! If were able to natively update weights as a way of learning in
+    real time during inference, that would be one thing. But using scripts to modify
+    weights in the same way as human researchers (and in all likelihood trained on
+    a massive corpus of them doing so) is just looped code generation which it&#x27;s
+    been doing for years now. It can be impressive &#x2F; interesting, but it&#x27;s
+    not a phase shift.
+  score: 0
+  posted_at: '2026-11-20T20:13:52Z'
+- id: '50581855'
+  parent_id: '50577265'
+  author: hoppp
+  text: People are hyping this but AI devs have been adjusting weights for a very
+    long time.
+  score: 0
+  posted_at: '2026-11-20T20:49:59Z'
+- id: '50582459'
+  parent_id: '50578673'
+  author: tsunamifury
+  text: Maybe use an LLM to figure it out.<p>It reasons via conversation with itself.
+    How is this word salad. Are you unaware of the fundamentals of this field?<p>Over
+    fitting is then reasoning on its already set states and not introducing any novel
+    data. Leading to jsut cyclically overfitting of an existing reward condition.<p>Also
+    the paper stated it didn’t work 4 out of 5 times. So I dunno? This is a big nothing.
+  score: 0
+  posted_at: '2026-11-20T21:30:43Z'
+- id: '50582587'
+  parent_id: '50579341'
+  author: LogicFailsMe
+  text: The overfitting possibilities are also amazing.
+  score: 0
+  posted_at: '2026-11-20T21:39:07Z'
+- id: '50582898'
+  parent_id: '50579576'
+  author: ex-aws-dude
+  text: Wouldn&#x27;t you get crazy overfitting?
+  score: 0
+  posted_at: '2026-11-20T22:00:44Z'
+- id: '50583074'
+  parent_id: '50579143'
+  author: ozgung
+  text: |-
+    I have been working on weight-space-programming as a side project since the blog post. Here is what I understand:<p>- We normally train deep neural networks with back-propagation. We compute gradients to find out how to tweak the weights toward the desired output.<p>- That&#x27;s a fixed recipe. And it&#x27;s not the only way to tweak the weights. It&#x27;s just the best one that works in scale. The brain, for instance, does not do back-propagation, as far as we know.<p>- There are other known mathematical methods (mostly from Linear Algebra) to analyze the activations and compute what weights to change and how, to push the output to the desired way.<p>- A sufficiently advanced LLM knows about these methods and can analyze data like activation maps. With a specific target in hand, it can combine them into new constructions. (see [2] for some of the methods they used and I collected in a repo)<p>- So it&#x27;s not a fixed training for-loop anymore. It&#x27;s a dynamic &quot;training&quot; iteration. The LLM looks at the model&#x27;s outputs, reads some of its layers on chosen inputs, computes an edit, applies it and tests it.<p>- It&#x27;s dynamic because LLM chooses that to do and how to do it at each iteration by reasoning. I think that&#x27;s the most interesting part and could be a new paradigm.<p>- I also compared it with gradient training. On my target, training was better (details in [1]), but WSP can find its niche. Its biggest advantage is that it needs no backward pass: less memory, and the model only has to run inference. It needs no differentiable loss, it can enforce constraints directly instead of through a penalty term, and the edit is easier to interpret.<p>[1] <a href="https:&#x2F;&#x2F;medium.com&#x2F;@ozgungenc&#x2F;weight-space-programming-on-a-real-coding-agent-what-worked-what-didnt-52723245d623" rel="nofollow">https:&#x2F;&#x2F;medium.com&#x2F;@ozgungenc&#x2F;weight-space-programming-on-a-...</a>
+    [2] <a href="https:&#x2F;&#x2F;github.com&#x2F;ozgung&#x2F;weightprog&#x2F;blob&#x2F;main&#x2F;docs&#x2F;methods.md" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ozgung&#x2F;weightprog&#x2F;blob&#x2F;main&#x2F;docs&#x2F;methods....</a>
+  score: 0
+  posted_at: '2026-11-20T22:14:25Z'
+- id: '50583367'
+  parent_id: '50579239'
+  author: Animats
+  text: That&#x27;s a key point. So far, weight rewriting may not be doing anything
+    really exciting. But that it&#x27;s possible at all suggests directions that get
+    very interesting if they work.
+  score: 0
+  posted_at: '2026-11-20T22:40:56Z'
+- id: '50583926'
+  parent_id: '50578304'
+  author: Jerrrrrrrrry
+  text: Order and entrophy arent opposites
+  score: 0
+  posted_at: '2026-11-20T23:37:22Z'
+- id: '50583937'
+  parent_id: '50579671'
+  author: catlifeonmars
+  text: Catastrophic forgetting is just lossy compression.
+  score: 0
+  posted_at: '2026-11-20T23:38:10Z'
+- id: '50584524'
+  parent_id: '50579036'
+  author: MrMetric
+  text: 'I believe the intended analogy is something like: Training on highly blurred
+    or degraded images, with the baseline targets also being malformed but not as
+    badly. Then, run the result on those baseline images and see if we get something
+    better than any image we currently know how to capture.<p>With LLM-based AIs,
+    we don&#x27;t actually have any ground-truth oracle for maximum-quality examples.
+    We don&#x27;t even know how to measure <i>relative</i> quality accurately, and
+    even if we did, different people disagree anyway. For example, a corporation may
+    want their AI to be &quot;aligned&quot;, like how older versions of ChatGPT claimed
+    large language models can&#x27;t do math (lol), or how Claude won&#x27;t tell
+    you how to make thermite even though it&#x27;s widespread knowledge and you can
+    get it from Wikipedia. Maybe <i>you</i> don&#x27;t want that kind of behavior.
+    And maybe your friend just wants an AI that&#x27;s really good at ERP and doesn&#x27;t
+    care how well it can do math.<p>But even if we can&#x27;t measure quality, we
+    <i>can</i> attempt to break things and use the broken sample as a training target
+    (the blurry degraded image) against the baseline (a common low-res image with
+    lots of JPEG artifacting). And <i>maybe</i> that&#x27;ll make something that learns
+    how to repair LLMs so well that something useful or interesting happens. Or maybe
+    it&#x27;ll just hallucinate faces where the JPEG noise was ¯\_(ツ)_&#x2F;¯'
+  score: 0
+  posted_at: '2026-11-21T00:47:53Z'
+- id: '50584979'
+  parent_id: '50580386'
+  author: keyle
+  text: Rag and mcp allow for always changing data. Modified weights take much longer
+    and would cement the information. At best you could fine train your company&#x27;s
+    documentation or training information.
+  score: 0
+  posted_at: '2026-11-21T01:43:30Z'
 article:
   url: https://arxiv.org/abs/2611.21885
   title: "[2611.21885] Language Models Can Rewrite Their Own Weights"
@@ -894,4 +1027,4 @@ article:
     Have an idea for a project that will add value for arXiv's community? Learn more about arXivLabs.
   error:
   fetched_at: '2026-11-20T19:42:05Z'
-archived_at: '2026-11-20T19:42:11Z'
+archived_at: '2026-11-21T01:59:57Z'
