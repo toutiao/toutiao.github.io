@@ -1,0 +1,123 @@
+---
+post:
+  id: lo-hcofqi
+  source: lobsters
+  title: Probabilistic data structures in Go, part 2
+  url: https://antonz.org/probabilistic-data-structures-2/
+  hn_url: https://lobste.rs/s/hcofqi
+  score: 10
+  author: cgrinds
+  posted_at: '2026-11-21T13:18:02Z'
+  fetched_at: '2026-11-21T18:48:34Z'
+  article_url: https://antonz.org/probabilistic-data-structures-2/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-21T18:48:36Z'
+  raw_comment_count: 0
+  tags:
+  - go
+comments: []
+article:
+  url: https://antonz.org/probabilistic-data-structures-2/
+  title: Probabilistic data structures in Go, part 2
+  fetch_status: success
+  content: "Probabilistic data structures give you approximate answers to questions
+    about the data they handle. Does the set contain a certain item? How many unique
+    items are in the collection? What is the 99th percentile in a stream of numbers?
+    How similar are two sets? Unlike deterministic structures, the answers might not
+    be exact, but in return, you can save a lot of memory.\n\nPreviously, we reviewed
+    the following [data structures](/probabilistic-data-structures): Bloom filter
+    (for checking if an item is in a set), Count-min sketch (for counting items),
+    HyperLogLog (for counting unique items), T-digest (for finding quantiles), and
+    Top-k (for finding the most frequent items).\n\nIn this post, we'll talk about
+    other probabilistic structures and compare them to the ones we've already covered.
+    We'll look at how they work and what kinds of guarantees they provide.\n\nAll
+    examples use [unsure](https://github.com/nalgeon/unsure) — a package that implements
+    these structures in Go.\n\n[Binary fuse filter](#binary-fuse-filter) •[UltraLogLog](#ultraloglog)
+    •[Log-linear histogram](#log-linear-histogram) •[MinHash](#minhash)\n\n## Binary
+    fuse filter\n\nA binary fuse filter is a set that trades certainty for space,
+    like a Bloom filter. It can tell you that an item is _definitely not_ in the set,
+    or that it _probably is_ (which might be a false positive). The filter doesn't
+    store the items, so it's much more compact than a regular set.\n\nUnlike a Bloom
+    filter, a binary fuse filter is static: you build it once from all the items,
+    and you can't add more later. In exchange, it uses less memory than a Bloom filter
+    with the same false positive rate. For example, a fuse filter for 1,000,000 items
+    with a 0.39% false positive rate takes 1.13 MB (9 bits per item), while a Bloom
+    filter takes 1.51 MB (12 bits per item).\n\nThis makes binary fuse filters a good
+    fit for data that is written once and read many times, like the key set of an
+    immutable file in a database (to skip files that don't have the key), or a list
+    of known bad items, such as leaked passwords or malicious URLs.\n\n    items :=
+    [][]byte{[]byte(\"alice\"), []byte(\"bob\")}\n    \n    // An 8-bit filter: 0.39%
+    false positive rate.\n    filter := fuse.New[uint8](slices.Values(items), len(items))\n
+    \   \n    filter.Contains([]byte(\"alice\")) // true\n    filter.Contains([]byte(\"carol\"))
+    // false (or, rarely, true)\n\nThe fingerprint type (`T` in `New[T]`) determines
+    the false positive rate and the memory use:\n\n| Type | False positive rate |
+    Bits per item |\n| --- | --- | --- |\n| `uint8` | 0.39% | 9 |\n| `uint16` | 0.0015%
+    | 18 |\n| `uint32` | 2.3e-10 | 36 |\n\nThe constructor takes an iterator of items
+    to add to the filter and the expected number of items (0 if unknown). The number
+    is only used to preallocate memory, so a good estimate makes the build faster.\n\nYou
+    can check if an item is in the filter, but you cannot add or delete an item, count
+    the number of items, or iterate over them.\n\n### How it works\n\nThe filter is
+    an array of _b_-bit fingerprints (for example, b = 8 for `uint8`). Each item is
+    hashed to a 64-bit value _h_, which gives the item's fingerprint _f_ (b bits computed
+    from h) and three positions in the array (cells). The array is filled so that
+    for every item, the XOR of its cells equals f.\n\n    ┌──────┐ ┌──► f (b bits)\n
+    \   item ──►│ hash │──► h ─────────┤\n            └──────┘ └──► i0, i1, i2\n    \n
+    \              i0 i1 i2\n    ┌───┬───┬──▼──┬───┬───┬──▼──┬───┬──▼──┬───┐\n    │
+    │ │ F0 │ │ │ F1 │ │ F2 │ │ F0 ^ F1 ^ F2 == f\n    └───┴───┴─────┴───┴───┴─────┴───┴─────┴───┘\n\nTo
+    check an item, you compute h, look up its three cells, and compare their XOR with
+    f. For an item in the set, they always match. For any other item, the XOR is a
+    random b-bit value, which matches f with probability 2^-b.\n\nEach check reads
+    three cells, so for large filters it's three cache misses, against one for a blocked
+    Bloom filter. However, since the reads are independent, the CPU can do them concurrently,
+    so the checks are about as fast as with a Bloom filter.\n\nThe filter uses the
+    local _wyhash_ implementation for hashing. It performs roughly the same as _xxh3_
+    but has a much simpler implementation, without SIMD or assembly.\n\n### Benchmarks\n\nHere's
+    an excerpt from the full benchmarks, comparing _unsure_ to _xorfilter_ (binary
+    fuse by the authors of the paper) and _bloom_ (_unsure_'s own Bloom filter) with
+    8-bit fingerprints (ns/op, lower is better):\n\n| Operation | Items | unsure |
+    xorfilter | bloom |\n| --- | --- | --- | --- | --- |\n| Build (per item) | 10K
+    | 23 | 25 | **13** |\n| | 1M | 30 | 31 | **12** |\n| Contains | 10K | **6.2**
+    | 8.0 | 9.3 |\n| | 1M | **7.0** | 9.3 | 10.2 |\n| | 50M | 39 | 42 | 40 |\n\nMemory,
+    bits per item (lower is better):\n\n| Items | Fingerprint | unsure | xorfilter
+    | bloom |\n| --- | --- | --- | --- | --- |\n| 100K | 8-bit | **9.50** | **9.50**
+    | 12.45 |\n| 10M | 8-bit | **9.02** | **9.02** | 12.10 |\n| 10M | 16-bit | **18.04**
+    | **18.04** | 27.99 |\n\n_Unsure_ is the same size as _xorfilter_ (same layout)
+    with up to 25% faster checks. Compared to the Bloom filter, it uses up to 36%
+    less memory, with checks as fast or faster, but up to 2.5× slower builds.\n\n1.
+    [Bloom filter overview](/probabilistic-data-structures#bloom-filter) and how it
+    works.&nbsp;[↩︎](#fnref:1)\n\n2. [Binary Fuse Filters paper](https://doi.org/10.1145/3510449)
+    by Thomas Mueller Graf and Daniel Lemire, 2022.&nbsp;[↩︎](#fnref:2)\n\n3. [Reference
+    wyhash implementation](https://github.com/wangyi-fudan/wyhash) by Wang Yi.&nbsp;[↩︎](#fnref:3)\n\n4.
+    [Reference xxHash implementation](https://github.com/Cyan4973/xxHash) by Yann
+    Collet.&nbsp;[↩︎](#fnref:4)\n\n5. [Binary fuse filter benchmarks](https://github.com/nalgeon/unsure/tree/main/fuse#benchmarks).&nbsp;[↩︎](#fnref:5)\n\n6.
+    [FastFilter/xorfilter](https://github.com/FastFilter/xorfilter) by Daniel Lemire.&nbsp;[↩︎](#fnref:6)\n\n##
+    UltraLogLog\n\nUltraLogLog is a unique items counter that trades accuracy for
+    space, like HyperLogLog. It tells you approximately how many _distinct items_
+    it has seen, no matter how many times each one appeared. UltraLogLog doesn't store
+    the items, so it's much more compact than a regular set.\n\nUltraLogLog is a newer
+    design (Otmar Ertl, 2024) that uses the space more efficiently: for the same error,
+    it needs about 43% less memory than HyperLogLog. For example, a HyperLogLog sketch
+    with 0.81% standard error takes 16 KB, while an UltraLogLog sketch with 0.86%
+    error takes 8 KB. However, adding, counting, and merging are slower than with
+    HyperLogLog.\n\nUltraLogLog is useful in the same places as HyperLogLog: counting
+    unique visitors, unique search queries, or distinct values in a database column,
+    possibly across many machines or segments.\n\n    // Standard error about 0.9%
+    of the true count.\n    sketch := ull.New()\n    \n    sketch.Add([]byte(\"alice\"))\n
+    \   sketch.Add([]byte(\"bob\"))\n    sketch.Add([]byte(\"alice\"))\n    sketch.Add([]byte(\"carol\"))\n
+    \   \n    sketch.Count() // 3 (approximately)\n\nYou can merge sketches to get
+    the total number of unique items from all of them, without counting shared items
+    twice.\n\n    home := ull.New() // visitors to the home page\n    docs := ull.New()
+    // visitors to the docs\n    // ...\n    home.Merge(docs)\n    home.Count() //
+    visitors to either page\n\nThe sketch has one setting: the precision _p_, which
+    gives a relative standard error of 0.782/√(2^p). The default is p=13 with 0.86%
+    error in 8 KB, close to the common HyperLogLog default (0.81% in 16 KB).\n\nYou
+    can add items to a sketch, get the estimated count, and merge sketches. You cannot
+    check if a specific item was added, remove items, or list them.\n\n### How it
+    works\n\n**HyperLogLog** hashes each item and uses the first _p_ bits of the hash
+    to pick one of m = 2^p _registers_. It calculates the _rank_ (the number of leading
+    zeros in the rest of the hash, plus one) and keeps the highest rank it has seen
+    in the register. Seeing a rank of _k_ suggests there were about 2^k items in the
+    register. The count is estimated from all the registers together.\n\n    p bits\n"
+  error:
+  fetched_at: '2026-11-21T18:48:36Z'
+archived_at: '2026-11-21T18:48:36Z'

@@ -4,14 +4,11 @@ post:
   title: 'Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3'
   url: https://github.com/rivet-dev/rivet
   hn_url: https://news.ycombinator.com/item?id=50381687
-  score: 119
+  score: 123
   author: NathanFlurry
   posted_at: '2026-11-05T17:17:42Z'
-  fetched_at: '2026-11-07T17:32:19Z'
-  article_url: https://github.com/rivet-dev/rivet
-  article_fetch_status: success
-  article_fetched_at: '2026-11-06T10:29:11Z'
-  raw_comment_count: 59
+  fetched_at: '2026-11-21T18:48:40Z'
+  raw_comment_count: 60
 comments:
 - id: '50381808'
   parent_id: '50381687'
@@ -521,7 +518,7 @@ comments:
   posted_at: '2026-11-06T07:19:00Z'
 - id: '50390248'
   parent_id: '50381687'
-  author: alexey_anshakov
+  author: _6b4z
   text: Moving state persistence to write-ahead SQLite tiered into S3 is a very clean
     answer to the latency-cost trap of raw object storage. The big operational win
     with decoupled actor state like this is avoiding zombie locks when an agent execution
@@ -608,12 +605,30 @@ comments:
   posted_at: '2026-11-07T07:31:35Z'
 - id: '50402730'
   parent_id: '50402458'
-  author: alexey_anshakov
+  author: _6b4z
   text: Not a bot, just a systems engineer genuinely interested in tiered storage
     and state durability. SQLite with S3 persistence is a topic I build around every
     day.
   score: 0
   posted_at: '2026-11-07T08:27:07Z'
+- id: '50559564'
+  parent_id: '50381687'
+  author: aman179102
+  text: 'When evaluating storage architectures for this scale, the primary trade-off
+    usually boils down to durability versus storage expansion.<p>1. Replication vs
+    Erasure Coding: Standard 3x replication is operationally simple with zero CPU
+    decode overhead, but imposes a 200% storage tax (3x raw disk footprint). Moving
+    to Reed-Solomon erasure coding (such as 4 data + 2 parity shards) cuts your storage
+    overhead down to 1.5x while still tolerating 2 concurrent disk&#x2F;node failures.
+    The trade-off is CPU reconstructive read penalty when a shard is degraded.<p>2.
+    Metadata Separation: Keep the block&#x2F;chunk storage decoupled from object metadata.
+    Storing chunk hashes (SHA-256) in a relational store like PostgreSQL gives you
+    instant deduplication and transactional consistency for object manifests, while
+    raw chunks stream directly to disk.<p>3. Failure Domains: Ensure your parity shards
+    span independent failure domains (separate racks or availability zones) rather
+    than just different drives on the same machine.'
+  score: 0
+  posted_at: '2026-11-19T13:03:08Z'
 article:
   url: https://github.com/rivet-dev/rivet
   title: 'GitHub - rivet-dev/rivet: The orchestrator for agentic workloads. A fast,
@@ -757,4 +772,4 @@ article:
     Yes. Rivet Cloud runs fully managed, dedicated clusters on AWS or GCP in any reg
   error:
   fetched_at: '2026-11-06T10:29:11Z'
-archived_at: '2026-11-07T17:32:41Z'
+archived_at: '2026-11-21T18:48:46Z'

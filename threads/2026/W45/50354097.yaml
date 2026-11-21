@@ -4,14 +4,11 @@ post:
   title: Can GROUP BY still be optimized after all these years?
   url: https://pivotlake.io/blog/know-your-limit-faster-top-k-aggregation/
   hn_url: https://news.ycombinator.com/item?id=50354097
-  score: 113
+  score: 125
   author: ntur1337
   posted_at: '2026-11-03T16:30:23Z'
-  fetched_at: '2026-11-07T17:32:22Z'
-  article_url: https://pivotlake.io/blog/know-your-limit-faster-top-k-aggregation/
-  article_fetch_status: success
-  article_fetched_at: '2026-11-07T17:32:22Z'
-  raw_comment_count: 21
+  fetched_at: '2026-11-21T18:48:40Z'
+  raw_comment_count: 28
 comments:
 - id: '50401087'
   parent_id: '50354097'
@@ -211,6 +208,90 @@ comments:
     very quickly ambiguous and problematic when N is not close to zero.'
   score: 0
   posted_at: '2026-11-07T17:06:09Z'
+- id: '50406379'
+  parent_id: '50402879'
+  author: lcnPylGDnU4H9OF
+  text: "&gt; (If something that took 10s now takes 1s, that&#x27;s “ten times as
+    fast”, not “zero point nine times faster”.)<p>It still works with speed as the
+    measurement (not as &quot;zero point nine&quot; but just &quot;nine&quot;), you
+    just have to inverse the relationship. Going from 10s to 1s can still be described
+    as &quot;9 times faster&quot; but it&#x27;s because, less intuitively as you say,
+    &quot;faster&quot; is comparing the 1s to the 10s (as in, &quot;9(1s) plus 1s
+    is 10s&quot;) rather than the other way around (&quot;9(10s) plus 10s is 1s&quot;
+    is obviously false). This works because we know that 1s is less time than 10s;
+    &quot;faster&quot; inverses the numerical relationship for time because increasing
+    it inherently means &quot;slower&quot;. Indeed, the difference between them is
+    9x where x = 1. And 10 to 0.1 is 99 times faster because 99x where x = 0.1 is
+    9.9 (measured by throughput, assuming only the rate changed, it&#x27;s also 99x
+    more things and 100x as many things).<p>(Not that I think you don&#x27;t know
+    all this, just nitpicking, really.)"
+  score: 0
+  posted_at: '2026-11-07T17:37:58Z'
+- id: '50406631'
+  parent_id: '50402070'
+  author: ozgrakkurt
+  text: Code being in a simple state also matters with the efficiency of agents ime.<p>It
+    is not just ergonomics but the point of using rust is to have solid abstraction
+    and a lot of high quality libraries to use.<p>If you are doing static allocation
+    + arenas then you can&#x27;t use nice abstraction, you can&#x27;t use libraries,
+    you have to write a ton of unsafe code because of these reasons. Then using rust
+    is actually working against you so there is no point in using it.
+  score: 0
+  posted_at: '2026-11-07T18:08:41Z'
+- id: '50406776'
+  parent_id: '50406102'
+  author: lmeyerov
+  text: Comparison feels more like to Motherduck for this kind of thing<p>(And I&#x27;m
+    unclear what will happen given the Amazon situation)
+  score: 0
+  posted_at: '2026-11-07T18:28:59Z'
+- id: '50411701'
+  parent_id: '50405236'
+  author: SkiFire13
+  text: |-
+    &gt; Then when you sum the counts across all partitions, it becomes the 10th most common.<p>They are already summing these counts _before applying their optimization_.<p>From what I see this is the &quot;base&quot; algorithm:<p><pre><code>    1. Get the data from disk, which will be partitioned by storage key.
+        2. Parallelizing by storage key, aggregate each partition according to the grouping key. The result are many partitions by grouping key holding partially aggregated data.
+        3. Parallelizing by grouping key, merge the partially aggregated results. The results are fully aggregated partitions (each item is present in one and only one partition)
+        4. Merge these partitions into a global list of aggregated results
+        5. Pick the top K of this list
+    </code></pre>
+    Both the optimization in the article and my proposal act on step 4. At that point the aggregation for an item is already guaranteed to exist in exactly one partition, so there&#x27;s no way it can be 11th in the partition but 10th in the overeall aggregation.
+  score: 0
+  posted_at: '2026-11-08T09:32:21Z'
+- id: '50412428'
+  parent_id: '50406102'
+  author: eden-u4
+  text: Hi, thanks for the reply! Sorry, to bother you but I&#x27;m not familiar with
+    Clickhouse. I&#x27;m trying to understand what you mean by &quot;spin up a cluster,
+    run a single query...&quot;. That&#x27;s the &quot;compute&quot; part of a &quot;suite&quot;
+    working on databases, like one could use Unity Catalog, but don&#x27;t use the
+    cluster compute on Databricks. So your main difference with duckdb or mother duck
+    is the interconnection between the DB solution and &quot;compute&quot; to use
+    the DB?
+  score: 0
+  posted_at: '2026-11-08T11:45:17Z'
+- id: '50414232'
+  parent_id: '50411701'
+  author: malisper
+  text: |-
+    I don&#x27;t believe they do step 2 in the base algorithm. They&#x27;re doing what&#x27;s known as a radix-partitioned hash table. The base algorithm looks like:<p><pre><code>  1. Get the data from disk, which will be partitioned by storage key
+      2. Partition the data by grouping key (without aggregating it)
+      3. In parallel, aggregate each partition
+      4. Take the top K from each partition
+      5. Take the top K overall
+    </code></pre>
+    Their optimization lets you save work across steps 3-5, as you only need to perform those steps on some partitions and not all of them.
+  score: 0
+  posted_at: '2026-11-08T15:44:16Z'
+- id: '50422329'
+  parent_id: '50414232'
+  author: SkiFire13
+  text: The article clearly shows each thread producing aggregation data for each
+    partition (by grouping key), see the second figure.<p>They also talk about &quot;merging&quot;
+    these partitions at the end, and even while talking about their optimization they
+    talk about this merging stage.
+  score: 0
+  posted_at: '2026-11-09T07:38:01Z'
 article:
   url: https://pivotlake.io/blog/know-your-limit-faster-top-k-aggregation/
   title: Can GROUP BY still be optimized after all these years? · Pivot blog
@@ -313,4 +394,4 @@ article:
     While this approach already gives a nice boost when the aggregation fits entirely in memory, we think the gains could be even bigger once Pivot adds MPP and spil
   error:
   fetched_at: '2026-11-07T17:32:22Z'
-archived_at: '2026-11-07T17:32:41Z'
+archived_at: '2026-11-21T18:48:48Z'

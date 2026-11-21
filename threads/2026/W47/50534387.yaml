@@ -4,14 +4,14 @@ post:
   title: Valkey kills the skiplist, cuts sorted set overhead by up to 43%
   url: https://valkey.io/blog/from-skiplist-to-b+tree/
   hn_url: https://news.ycombinator.com/item?id=50534387
-  score: 138
+  score: 188
   author: ''
   posted_at: '2026-11-17T16:58:30Z'
-  fetched_at: '2026-11-21T10:44:18Z'
+  fetched_at: '2026-11-21T18:48:22Z'
   article_url: https://valkey.io/blog/from-skiplist-to-b+tree/
   article_fetch_status: success
   article_fetched_at: '2026-11-21T10:44:18Z'
-  raw_comment_count: 47
+  raw_comment_count: 66
 comments:
 - id: '50534388'
   parent_id: '50534387'
@@ -395,6 +395,155 @@ comments:
     many attempts.'
   score: 0
   posted_at: '2026-11-21T09:21:56Z'
+- id: '50587920'
+  parent_id: '50585065'
+  author: bob1029
+  text: If cache misses are a huge concern and we have a highly skewed distribution
+    (mostly touching newer records), the splay tree starts to look interesting.<p>We
+    don&#x27;t like the O(n) worst case, but we really like that magical amortization
+    property. There are some simple ways to avoid getting into a linear hot path.
+  score: 0
+  posted_at: '2026-11-21T10:46:37Z'
+- id: '50588225'
+  parent_id: '50585091'
+  author: boricj
+  text: Compute speed has been outpacing memory speed for decades now. So when you
+    spend the cycles to fetch a cache line (64 bytes generally), you want to milk
+    it for all its worth, to minimize time spent waiting on memory.<p>On a cold cache,
+    you pay for each level of indirection, so you want to increase fan-out as much
+    as possible. B-trees do that intrinsically.
+  score: 0
+  posted_at: '2026-11-21T11:43:24Z'
+- id: '50588339'
+  parent_id: '50585849'
+  author: entrope
+  text: The comment I replied to claimed that B-trees are &quot;heavyweight&quot;
+    compared to binary trees. I thought it worth pointing out that the claim is only
+    true for quite small trees.
+  score: 0
+  posted_at: '2026-11-21T12:02:54Z'
+- id: '50588399'
+  parent_id: '50586041'
+  author: shiandow
+  text: Starting with an unnecessary list of touched files before the Reviewing Guide.
+    Talk about burying the lede!<p>Not sure about the name reviewing guide, but I
+    do like the contents. Then again I know <i>nothing</i> about code base.
+  score: 0
+  posted_at: '2026-11-21T12:12:19Z'
+- id: '50589341'
+  parent_id: '50585065'
+  author: ignoramous
+  text: "&gt; <i>skiplists are not simple</i><p>Can you please clarify: Simpler in
+    operation or simple in implementation? Or neither&#x2F;both?"
+  score: 0
+  posted_at: '2026-11-21T14:06:16Z'
+- id: '50589500'
+  parent_id: '50585203'
+  author: graemep
+  text: Redis is available under the AGPL which is not a headache for most people.
+  score: 0
+  posted_at: '2026-11-21T14:23:21Z'
+- id: '50589508'
+  parent_id: '50534387'
+  author: zaiyuan_dev
+  text: Curious how rank queries (ZRANK, ZRANGE by index) perform after the switch.
+    Skiplists made those cheap via span counters; does the B+tree keep per-node subtree
+    counts to match?
+  score: 0
+  posted_at: '2026-11-21T14:24:18Z'
+- id: '50589660'
+  parent_id: '50585048'
+  author: ch3nzhao
+  text: You might also want to try Lavik (<a href="https:&#x2F;&#x2F;github.com&#x2F;eloqdata&#x2F;lavik"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;eloqdata&#x2F;lavik</a>). I&#x27;m
+    one of the authors. It&#x27;s an open-source Redis-compatible server that uses
+    NVMe storage while delivering in-memory-class performance. It&#x27;s particularly
+    fast for strings and hashes, though sorted sets aren&#x27;t its strong suit yet.
+  score: 0
+  posted_at: '2026-11-21T14:41:17Z'
+- id: '50589856'
+  parent_id: '50587476'
+  author: antirez
+  text: 'EDIT: &quot;b+ trees instead of skiplists&quot; of course. Sorry, can&#x27;t
+    edit it anymore.'
+  score: 0
+  posted_at: '2026-11-21T14:58:54Z'
+- id: '50590033'
+  parent_id: '50589500'
+  author: load-bearing
+  text: Until they close it down again. Why would you trust someone after they&#x27;ve
+    already screwed you over?
+  score: 0
+  posted_at: '2026-11-21T15:16:14Z'
+- id: '50590157'
+  parent_id: '50588225'
+  author: hinkley
+  text: Can’t imagine valley is going to have a cold cache. Cache eviction on the
+    other hand…
+  score: 0
+  posted_at: '2026-11-21T15:27:43Z'
+- id: '50590180'
+  parent_id: '50585192'
+  author: hinkley
+  text: A binary tree would be strictly worse than a skip list for cache line efficiency.
+    Seeing as how skip lists were invented to improve on binary tree cache behavior.
+  score: 0
+  posted_at: '2026-11-21T15:29:45Z'
+- id: '50590255'
+  parent_id: '50587920'
+  author: hinkley
+  text: Timsort and powersort both have O(k) operations which rely on k being approximately
+    a cache line in size.<p>One of the last large dev blog entries for V8 was about
+    how they got pointer compression to be performance neutral and that’s down to
+    getting the translation down below the amortized cache hit penalty for 64 bit
+    pointers. IIRC the JVM gets close to that as well.
+  score: 0
+  posted_at: '2026-11-21T15:35:51Z'
+- id: '50590665'
+  parent_id: '50534387'
+  author: romange
+  text: Dragonfly lead with this idea in 2024:<p><a href="https:&#x2F;&#x2F;www.dragonflydb.io&#x2F;blog&#x2F;dragonfly-new-sorted-set"
+    rel="nofollow">https:&#x2F;&#x2F;www.dragonflydb.io&#x2F;blog&#x2F;dragonfly-new-sorted-set</a>
+  score: 0
+  posted_at: '2026-11-21T16:14:58Z'
+- id: '50590875'
+  parent_id: '50534387'
+  author: ummonk
+  text: Never could understand why sorted sets were implemented with skiplists instead
+    of B+ trees in the first place.
+  score: 0
+  posted_at: '2026-11-21T16:34:24Z'
+- id: '50590978'
+  parent_id: '50586785'
+  author: techscruggs
+  text: Why do you think another option was chosen instead?
+  score: 0
+  posted_at: '2026-11-21T16:43:00Z'
+- id: '50591736'
+  parent_id: '50587180'
+  author: senderista
+  text: Well, avoiding locks is one reason, since lockfree skiplists are fairly simple
+    but lockfree b-trees essentially don’t exist. Concurrent b-trees using locks are
+    pretty well-understood though and perform well.
+  score: 0
+  posted_at: '2026-11-21T17:50:04Z'
+- id: '50591900'
+  parent_id: '50585048'
+  author: ciupicri
+  text: For what it&#x27;s worth, Fedora replaced redis with valkey about two years
+    ago (<a href="https:&#x2F;&#x2F;fedoraproject.org&#x2F;wiki&#x2F;Changes&#x2F;Replace_Redis_With_Valkey"
+    rel="nofollow">https:&#x2F;&#x2F;fedoraproject.org&#x2F;wiki&#x2F;Changes&#x2F;Replace_Redis_With_Va...</a>).
+  score: 0
+  posted_at: '2026-11-21T18:07:45Z'
+- id: '50592187'
+  parent_id: '50587476'
+  author: noitpmeder
+  text: |-
+    One (of many) questions,<p><pre><code>  today no longer a problem
+    </code></pre>
+    To be sure, you think these problems are tackleable now due to AI (my impression of your comment)? Or to advances in {yourself}&#x2F;{else} in the ecosystem? How do you deal with managing the complexity now? Is it &#x27;easier&#x27; because we as humans no longer need to do the decently complex step of writing most of it? Or iterations&#x2F;... enabled by AI are able to reduce the long tails around experimenting&#x2F;benchmarking with these kinds of complex structures?
+  score: 0
+  posted_at: '2026-11-21T18:38:37Z'
 article:
   url: https://valkey.io/blog/from-skiplist-to-b+tree/
   title: 'Valkey · From Skiplists to B+ Trees: Making Valkey Sorted Sets More Memory
@@ -478,4 +627,4 @@ article:
     The change is internal: sorted set comm
   error:
   fetched_at: '2026-11-21T10:44:18Z'
-archived_at: '2026-11-21T10:44:20Z'
+archived_at: '2026-11-21T18:48:33Z'
