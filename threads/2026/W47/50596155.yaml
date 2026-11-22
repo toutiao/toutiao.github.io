@@ -1,0 +1,1105 @@
+---
+post:
+  id: '50596155'
+  title: 'Fast-Anything: Don''t rewrite it in Rust. Rewrite the 5% that''s slow'
+  url: https://github.com/EL4CTEO/fast-anything
+  hn_url: https://news.ycombinator.com/item?id=50596155
+  score: 152
+  author: ''
+  posted_at: '2026-11-22T04:10:09Z'
+  fetched_at: '2026-11-22T19:10:02Z'
+  article_url: https://github.com/EL4CTEO/fast-anything
+  article_fetch_status: success
+  article_fetched_at: '2026-11-22T19:10:02Z'
+  raw_comment_count: 110
+comments:
+- id: '50597321'
+  parent_id: '50596155'
+  author: anttiharju
+  text: Hah, pretty neat!<p>I recently discovered that one can apparently distribute
+    Rust projects on npm by compiling to wasm. action-validator used to do this. Had
+    been thinking about something like this.
+  score: 0
+  posted_at: '2026-11-22T08:04:36Z'
+- id: '50597503'
+  parent_id: '50596155'
+  author: diegocg
+  text: Better yet, stop writing large codebases in lenguajes that will have performance
+    troubles.
+  score: 0
+  posted_at: '2026-11-22T08:35:58Z'
+- id: '50597566'
+  parent_id: '50597321'
+  author: combobyte
+  text: Doesn&#x27;t that kind of defeat the purpose? Compiling to WASM is going to
+    erase any speed advantage you&#x27;d get from native Rust.
+  score: 0
+  posted_at: '2026-11-22T08:50:26Z'
+- id: '50597728'
+  parent_id: '50597566'
+  author: himata4113
+  text: wasm compiled to native is only ~62% slower (LLVM) and only 3% slower for
+    non memory bound operations.
+  score: 0
+  posted_at: '2026-11-22T09:17:01Z'
+- id: '50597758'
+  parent_id: '50596155'
+  author: perdy
+  text: 'We took this route in a Python web framework I maintain: route matching,
+    JSON encoding, request body parsing, compression and some other specific parts
+    moved to Rust with PyO3, everything else stayed in Python.'
+  score: 0
+  posted_at: '2026-11-22T09:21:06Z'
+- id: '50597767'
+  parent_id: '50597503'
+  author: tripledry
+  text: Genuine question, is this a common problem people see out in the wild? In
+    my dayjob(s) I&#x27;ve basically never seen major slowness that comes from using
+    something like nodejs &#x2F; python, the bigger culprits have been network &#x2F;
+    db &#x2F; bad architecture or code.
+  score: 0
+  posted_at: '2026-11-22T09:22:57Z'
+- id: '50597772'
+  parent_id: '50596155'
+  author: afdbcreid
+  text: Funny that this codebase is 62% Rust, 9% Python. And I&#x27;m a huge Rust
+    proponent.
+  score: 0
+  posted_at: '2026-11-22T09:24:22Z'
+- id: '50597799'
+  parent_id: '50597767'
+  author: FartyMcFarter
+  text: Yes. Python is usually 10-100x slower than languages like C, C++ or Rust.
+    If your program is CPU bound, this shows up very obviously. If it isn&#x27;t,
+    you may never notice at all.<p>Imagine being able to use only 1% of the machines
+    you used to require, by migrating away from Python. This is very realistic for
+    companies doing heavy computational work.
+  score: 0
+  posted_at: '2026-11-22T09:29:28Z'
+- id: '50597812'
+  parent_id: '50596155'
+  author: hendler
+  text: It&#x27;s also OK to rewrite in Rust because it&#x27;s not just about performance.
+    The fast part in other Python, Ruby, etc may be written in C&#x2F;C++, or call
+    an external library, and be the vulnerable part.
+  score: 0
+  posted_at: '2026-11-22T09:33:50Z'
+- id: '50597841'
+  parent_id: '50596155'
+  author: egorfine
+  text: 'What does %LANGUAGE% have anything to do with the goal? Totally same principles
+    apply for any other lower level language: Zig, C.<p>While Rust is awesome, a lot
+    of times the only apparent reason to chose Rust over C is virtue signaling.<p>Update:
+    like I said, Rust is awesome and has so many advantages over C it&#x27;s not worth
+    a discussion really. But again I see that many projects are choosing Rust not
+    because of merits but simply because it&#x27;s a fashion.'
+  score: 0
+  posted_at: '2026-11-22T09:38:59Z'
+- id: '50597859'
+  parent_id: '50597841'
+  author: jstanley
+  text: Rust&#x27;s incredibly strict and detailed static analysis, while a huge headache
+    for human developers, is really useful with LLMs.
+  score: 0
+  posted_at: '2026-11-22T09:41:48Z'
+- id: '50597982'
+  parent_id: '50597841'
+  author: jph
+  text: Today I added Rust checked arithmetic which detects and protects math bugs
+    such as integer addition overflow and division by zero.<p>Rust checked arithmetic
+    is built into Rust&#x27;s standard library (std) via explicit methods on primitive
+    integer types (such as checked_add, checked_sub, checked_mul, and checked_div),
+    which return Option&lt;T&gt; and evaluate to None on overflow. There&#x27;s a
+    known tradeoff of some speed, which is fine for my purposes because I need reliability
+    more than raw speed.<p>I&#x27;m longtime C coder so I know how to do this in C.
+    Rust strong types and static analysis make it so much easier to do correctly.
+  score: 0
+  posted_at: '2026-11-22T10:00:14Z'
+- id: '50598018'
+  parent_id: '50597767'
+  author: andyferris
+  text: Yeah, Python is one I where I find moderate amounts data can be a pain - I
+    end up tempted to move CPU work to the database or precompute more things, and
+    it’s hard to get the advantages of single binary programs (for deployment, startup
+    time, etc).<p>(For big data you can use Python to drive some native code frameworks
+    - it is good at that, for tiny data it’s irrelevant because there’s not much to
+    do, but the moderate case gets awkward).
+  score: 0
+  posted_at: '2026-11-22T10:04:23Z'
+- id: '50598086'
+  parent_id: '50597841'
+  author: IceDane
+  text: "&gt; While Rust is awesome, a lot of times the only apparent reason to chose
+    Rust over C is virtue signaling.<p>That seems like an extremely dubious claim.<p>Rust
+    is just a lot more pleasant to work with in every possible way. C has the abstractive
+    capabilities of a deaf-blind toddler."
+  score: 0
+  posted_at: '2026-11-22T10:11:25Z'
+- id: '50598100'
+  parent_id: '50597841'
+  author: booi
+  text: That&#x27;s actually why we chose Rust over C at my new company, Virtual Signaling
+    as a service™. We rewrite anything in Rust for companies looking to virtue signal.
+  score: 0
+  posted_at: '2026-11-22T10:12:44Z'
+- id: '50598117'
+  parent_id: '50597841'
+  author: eterm
+  text: "&gt; the only apparent reason to chose Rust over C is virtue signaling<p>If
+    you&#x27;d said another memory safe language I might have been on board, but C?
+    We&#x27;ve seen a complete collapse in the ability of software to go un-hacked
+    and un-exploited. Not all of that is down to poor memory safety of course, but
+    it&#x27;s a category of vulnerability that is massively increased in both surface
+    and risk by choosing to write C.<p>Choosing Rust alone might be virtue signalling,
+    but choosing a memory safe language is just pragmatic."
+  score: 0
+  posted_at: '2026-11-22T10:15:06Z'
+- id: '50598156'
+  parent_id: '50597841'
+  author: QuantumNomad_
+  text: "&gt; a lot of times the only apparent reason to chose Rust over C is virtue
+    signaling.<p>Quite the opposite. Outside of a couple of very specific kind of
+    cases (for example working with microcontrollers not supported by Rust toolchain),
+    there is no good reason to choose C when you could choose Rust.<p>Choosing C over
+    Rust means throwing away the memory safety features that Rust gives you for free.
+    And for what? There is just no upside to choosing C in the vast, vast majority
+    of cases."
+  score: 0
+  posted_at: '2026-11-22T10:20:12Z'
+- id: '50598162'
+  parent_id: '50597799'
+  author: cadamsdotcom
+  text: What you&#x27;re saying is valid too; but, the post you&#x27;re replying to
+    implied most slowness is network (i&#x2F;o bound) or bad architecture (accidental
+    cpu bound, fixable by tech debt cleanup).
+  score: 0
+  posted_at: '2026-11-22T10:21:02Z'
+- id: '50598170'
+  parent_id: '50597767'
+  author: chrismorgan
+  text: Performance is broader than just slowness; it’s also CPU and memory usage,
+    things which will force you to scale horizontally (multiple machines) <i>much</i>
+    sooner.<p>In mid-2013, NewsBlur described in some detail their deployment and
+    statistics. Python&#x2F;Django, 48 servers. I confidently calculated that, with
+    implementation efficient, <i>one</i> would be sufficient, though with little headroom,
+    and further vertical scaling might have started running into I&#x2F;O limitations.
+    (I doubt a single server would be possible any more.)<p>It’s popular to scale
+    horizontally <i>far</i> earlier than you actually need to. And if you can commit
+    to sticking with vertical scaling (single big machine), you can simplify (and
+    further speed up) things enormously.<p>I don’t know about now, but five years
+    ago HN ran on a single server &lt;<a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=28479595">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=28479595</a>&gt;,
+    though with a standby machine also present since 2017ish.
+  score: 0
+  posted_at: '2026-11-22T10:21:41Z'
+- id: '50598183'
+  parent_id: '50598162'
+  author: FartyMcFarter
+  text: That post was also asking if other people have seen language mattering. In
+    the places where I&#x27;ve worked programs are often CPU bound. Places like these
+    are why compiled languages are still alive and kicking.<p>I&#x27;m not denying
+    that domains exist where being I&#x2F;O bound is a thing. For those cases Python
+    can be a fine choice.
+  score: 0
+  posted_at: '2026-11-22T10:23:04Z'
+- id: '50598194'
+  parent_id: '50597841'
+  author: virtualritz
+  text: |-
+    That&#x27;s a pile of bollocks.<p>Rust protects you from a whole class of bugs (borrow checker) and lets you enforce almost as many invariants as you chose, through the type system.<p>LLM are just as bad as humans at enforcing&#x2F;tracking ownership and invariants.<p>We maintain two code bases; one is TS and the other Rust.<p>Both are by now written foremost by agents (since August 2025, I&#x27;d say).<p>We had numerous non-(business)-logic bugs in the TS code base over this period.<p>Zero such bugs in Rust.
+    Because the compiler catches them for us.
+    All bugs we had in that code where actual logic bugs. I.e. the spec already had the bug or contained an oversight.<p>Zero.<p>We have since started rewriting the TS code base in Rust and will likely switch over in the next three months.
+  score: 0
+  posted_at: '2026-11-22T10:24:01Z'
+- id: '50598248'
+  parent_id: '50597982'
+  author: Conscat
+  text: This is in the C23 standard library as well, just without nice sum types sadly.
+  score: 0
+  posted_at: '2026-11-22T10:30:42Z'
+- id: '50598408'
+  parent_id: '50598117'
+  author: tialaramex
+  text: In this particular topic (performance) Rust matters because it will deliver
+    excellent performance. You could write a container -&gt; map -&gt; map -&gt; container
+    flow in fifty memory safe languages, but probably it would be a bit slower than
+    the nasty hack you&#x27;d write in C to convert the data in place. Rust isn&#x27;t,
+    if you&#x27;re intrigued you will discover that Rust 1) figured out that the two
+    containers must be the same size in memory so it can re-use the original container
+    and 2) did the in-place conversion even though that wasn&#x27;t what you wrote,
+    because it&#x27;s faster.<p>So magically the Rust was just as fast, but much more
+    readable and when a junior (or an LLM) modifies it slightly so that the output
+    container is bigger it won&#x27;t suddenly segfault due to that scary in-place
+    conversion loop now being a bounds miss, the Rust won&#x27;t attempt the in-place
+    conversion now that it can&#x27;t work.
+  score: 0
+  posted_at: '2026-11-22T10:54:33Z'
+- id: '50598419'
+  parent_id: '50598183'
+  author: cadamsdotcom
+  text: 'We all have different lenses on the makeup of the entire set of software
+    out there, it&#x27;s likely you&#x27;re coming from that experience and the other
+    post was coming from experience mostly with i&#x2F;o bound software.<p>For cpu
+    bound stuff the language makes potentially an enormous difference; but then you
+    get to trade off: eg. if you&#x27;re not gonna need a fast language you are free
+    to choose based on other considerations.<p>Might still both pick the same language
+    though ;)'
+  score: 0
+  posted_at: '2026-11-22T10:56:35Z'
+- id: '50598547'
+  parent_id: '50596155'
+  author: tialaramex
+  text: Note that this strategy only works <i>if</i> 5% of your software is the problem
+    - because of Amdahl&#x27;s law.
+  score: 0
+  posted_at: '2026-11-22T11:15:30Z'
+- id: '50598556'
+  parent_id: '50597799'
+  author: rhdunn
+  text: Libraries generally write hot code in languages like C, C++, or Rust and bind
+    that to Python (PyTorch, etc.) or provide bindings&#x2F;wrappers around libraries
+    in those languages (SQLite, PostgreSQL, etc.).<p>As with anything performance
+    related you need to profile the code with realistic data&#x2F;workflows and identify
+    the parts that are slow.<p>Typically, doing things like changing algorithms, data
+    structures, careful use of caching, reusing calculations, etc. are more important
+    to performance than the choice of language.
+  score: 0
+  posted_at: '2026-11-22T11:16:44Z'
+- id: '50598595'
+  parent_id: '50598419'
+  author: pessimizer
+  text: 'This conversation is pointless. The answer to whether some people see <i>actual
+    problems in the real world©</i> with using very slow interpreted languages is
+    &quot;yes.&quot;<p>I&#x27;d make the case that everything on a computer is CPU
+    bound depending on scale, even your crud app. Half the time when somebody is saying
+    that X is I&#x2F;O bound, they actually mean that it&#x27;s bound by the performance
+    of their database - which wisely, in the real world, is not written in python.<p>edit:
+    and, of course, things in python that would run terribly slow if written in python
+    become primitives, which are written in C. Python is a C program.'
+  score: 0
+  posted_at: '2026-11-22T11:22:18Z'
+- id: '50598704'
+  parent_id: '50598117'
+  author: curt15
+  text: In the age of machine-generated code, why not ask LLMs to write &quot;safe
+    C&quot;?
+  score: 0
+  posted_at: '2026-11-22T11:39:16Z'
+- id: '50598784'
+  parent_id: '50596155'
+  author: searealist
+  text: This cope was common 20 years ago with Python. It rarely worked out. It&#x27;s
+    rare that 5% of your program is taking up that large a percentage of your execution.
+    It&#x27;s usually much more spread out than that.<p>Also, we have LLMs now. Rust
+    should be the default for many things.
+  score: 0
+  posted_at: '2026-11-22T11:54:53Z'
+- id: '50598795'
+  parent_id: '50596155'
+  author: ThouYS
+  text: neat, but in my experience bottlenecks that you could solve this way are low
+    hanging fruits and optimized away quickly.<p>the true performance hog is like
+    sand, spread across the system, a little bit in every place.
+  score: 0
+  posted_at: '2026-11-22T11:56:11Z'
+- id: '50598897'
+  parent_id: '50597758'
+  author: krmmalik
+  text: How do you feel about your decision now that this has been done? Was it worth
+    it or not?
+  score: 0
+  posted_at: '2026-11-22T12:10:00Z'
+- id: '50598970'
+  parent_id: '50597767'
+  author: austin-cheney
+  text: Maybe. When I stress test my JavaScript application I can push up to 6,000,000
+    WebSocket messages per second in Node (C++) but do experience some amount of memory
+    instability. When I run the same application on Bun (Rust) it’s not as fast but
+    it’s extremely stable.<p>In all fairness 6,000,000 messages per second across
+    a single socket is likely an unrealistic scenario but application stability over
+    multiple months pushing out message traffic across many sockets from many servers
+    under a single application process is a realistic concern as is number of simultaneous
+    open sockets.
+  score: 0
+  posted_at: '2026-11-22T12:21:04Z'
+- id: '50598991'
+  parent_id: '50598704'
+  author: eterm
+  text: You&#x27;ve received downvotes, but I&#x27;ll do you the kindness to actually
+    answer you.<p>Firstly the obvious, LLMs aren&#x27;t perfect yet, they still make
+    mistakes.<p>But even if they could achieve safe C by asking them to &quot;Write
+    Safe C, Make no mistakes&quot;, there would still be a significant benefit to
+    achieving safety by using Rust or a memory safe language.<p>LLMs work best when
+    they have a combination of clear objective functions and guardrails. In this case,
+    the compiler acts as a guardrail to keep it safe while trying to solve the problem
+    that needs solving.<p>Having a compiler step prevents the LLM taking a &quot;shortcut&quot;.
+    Despite models improving, they will still take shortcuts, sometimes absurd ones,
+    to meet some definition of a &quot;job done&quot;.<p>The other massive benefit
+    is cost and speed. Having an LLM analyze and reason about the safety is expensive
+    and wasteful. Having this done at compile time is cheaper and quicker. The earlier
+    in the feedback loop, the cheaper it will be.<p>Save your tokens for &quot;real&quot;
+    work, not stuff you can check at compile time.
+  score: 0
+  posted_at: '2026-11-22T12:24:24Z'
+- id: '50599081'
+  parent_id: '50597767'
+  author: fiedzia
+  text: Mostly because anything that needed to be fast already was written in a language
+    that allows that and most of web&#x2F;app development focuses on shuffling small
+    amounts of data around. Also pure Python is worse than node in this aspect. Still,
+    there many non-trivial cases. There is a reason most of infrastructure moves to
+    Rust. I&#x27;ve seen poetry spending 30min (!) on dependency resolution once.
+    Test runners and some background&#x2F;nightly data processing if often first place
+    where you realize you may want to rewrite.
+  score: 0
+  posted_at: '2026-11-22T12:35:37Z'
+- id: '50599119'
+  parent_id: '50598595'
+  author: pdhborges
+  text: The easiest way to have an I&#x2F;O bound workload is to use fast languages.
+  score: 0
+  posted_at: '2026-11-22T12:38:10Z'
+- id: '50599123'
+  parent_id: '50598784'
+  author: benjiro29
+  text: "&quot;Also, we have LLMs now. Rust should be the default for many things.&quot;
+    ...<p>Or C Or Go Or ... Its like people can not look past one language, to understand
+    that with LLMs, a ton of languages gotten way more easy.<p>Personal experience
+    that running a few subagents parallel with Rust, just slows everything down to
+    a crawl, even wit ccache and a ton of other tweaks. As long as your codebase is
+    a few 100k lines, Rust is ok. But start going in the 500k, 1 million... starting
+    to get C++ flashbacks where your spending more time waiting on the compile jobs,
+    that fight each other for resources then actual testing.<p>Until Rust can fix
+    their slow and resource munching compiler, its been off the menu for me. Ended
+    up having everything in C and the difference was very noticeable."
+  score: 0
+  posted_at: '2026-11-22T12:38:43Z'
+- id: '50599159'
+  parent_id: '50597767'
+  author: afavour
+  text: In my experience memory issues are more common. The way JS stores objects
+    in memory is fundamentally inefficient (though it’s deliberate, it’s why you can
+    do object.propertyIJustMadeUp = true on anything, any number can be a float, etc)
+    and if you’re moving a ton of data it can cause issues eventually.<p>The only
+    JS-native answer is to use typed arrays, which is using a sledgehammer to crack
+    a nut.
+  score: 0
+  posted_at: '2026-11-22T12:42:51Z'
+- id: '50599222'
+  parent_id: '50596155'
+  author: tomp
+  text: Or just rewrite in Numba.<p>Most often, Python is enough.
+  score: 0
+  posted_at: '2026-11-22T12:49:16Z'
+- id: '50599237'
+  parent_id: '50596155'
+  author: Bolwin
+  text: The results section feels a bit like a joke. They rewrote C and C++ to Rust
+    for performance?<p>And something tells me C# and Java could have gotten 90% of
+    the improvement without any rewrite. I&#x27;ll have to try later today.
+  score: 0
+  posted_at: '2026-11-22T12:51:13Z'
+- id: '50599266'
+  parent_id: '50598795'
+  author: sham1
+  text: A lot of lost performance also comes from things like the architectural decisions
+    and technical debt that would pile up over time. These considerations are also
+    like sand in that they&#x27;re coarse, rough, irritating, and they get everywhere
+    in the codebase.<p>Oh, and they can be annoying to refactor later on.
+  score: 0
+  posted_at: '2026-11-22T12:54:16Z'
+- id: '50599311'
+  parent_id: '50596155'
+  author: raincole
+  text: I&#x27;m... not so sure why you need a repo for that. It&#x27;s almost 2027.
+    You can literally just type &quot;profile this app and find out the performance
+    bottleneck&quot; then &quot;rewrite it in rust&quot; in your agent TUI...
+  score: 0
+  posted_at: '2026-11-22T13:00:45Z'
+- id: '50599322'
+  parent_id: '50599222'
+  author: toxik
+  text: Not my experience, actually. Numba and other such techniques (like having
+    some hot paths in C&#x2F;Rust&#x2F;whatever) works, but eventually just allocating
+    and deallocating Python objects starts to become a measurable problem. Especially
+    if you have any kind of fancy metaclasses, descriptors, etc. &quot;So don&#x27;t&quot;--ok,
+    so give up Python&#x27;s dynamic features? Why bother at that point. Now it is
+    so cheap to write code anyway, why bother with Python at all? Have a design document
+    in actual English.
+  score: 0
+  posted_at: '2026-11-22T13:02:23Z'
+- id: '50599345'
+  parent_id: '50598795'
+  author: IshKebab
+  text: Exactly my experience. You can make Python code faster by profiling and improving
+    the hotspots, but once you&#x27;ve done that it will still be 10x slower than
+    C++&#x2F;Rust <i>at least</i>, and that slowness is evenly spread through the
+    whole program.<p>The number of use cases where you actually can move just a small
+    part of the program to C++&#x2F;Rust and that solves performance is actually really
+    small. Basically highly numerical things like AI or SMT solving. Even supposedly
+    IO bound things like Django tend to be quite slow in Python.
+  score: 0
+  posted_at: '2026-11-22T13:05:23Z'
+- id: '50599368'
+  parent_id: '50597767'
+  author: IshKebab
+  text: Yes. Most often with Python. People think performance isn&#x27;t going to
+    be a problem and by the time it inevitably is, it&#x27;s far too late to use a
+    better language. (At least before AI.)<p>I&#x27;ve seen this at almost every company
+    I&#x27;ve worked at.
+  score: 0
+  posted_at: '2026-11-22T13:09:17Z'
+- id: '50599373'
+  parent_id: '50597772'
+  author: stavros
+  text: Why is that funny? He rewrote the slow 9% in Python.
+  score: 0
+  posted_at: '2026-11-22T13:09:50Z'
+- id: '50599386'
+  parent_id: '50599123'
+  author: jghn
+  text: Didn’t you know that rust is the awesomest most ultimate language ever!?!
+  score: 0
+  posted_at: '2026-11-22T13:12:17Z'
+- id: '50599498'
+  parent_id: '50599222'
+  author: fiedzia
+  text: |-
+    Hell no. Rust is easier to read, write, maintain and reason about.
+    Way more people know Rust than Python&#x2F;Python internals&#x2F;Numba interactions.
+    Numba will either get you relatively low gains with little effort,
+    or push into territory very you write code few people will understand, because reasoning about its performance requires deep knowledge of Numba and Python internals. Rust gives a lot more ROI and looks more like Python.
+  score: 0
+  posted_at: '2026-11-22T13:26:58Z'
+- id: '50599553'
+  parent_id: '50596155'
+  author: zodwick
+  text: 'I would like to argue that one could make most codebases 50% faster if rewritten
+    from scratch with performance in mind even in the same language.<p>Taking python
+    as an example, one could use benefit of hindsight and make better decisions from
+    the start ( offloading slow parts to C binaries, better DS decisions, eliminating
+    bloat etc.. ) if they rewrite the same app in Python. This is kind of what happens
+    when a program gets rewritten to another language ( Rust ) - better decisions
+    are made from the start and less bloat is copied over.<p>Yes, obviously there
+    are exceptions to this. But most of the time it is the choices we make that make
+    the program slow and not the language itself.<p>It used to be that rewriting programs
+    were almost always a dumb idea due to how much effort went into it - see: <a href="https:&#x2F;&#x2F;www.joelonsoftware.com&#x2F;2000&#x2F;04&#x2F;06&#x2F;things-you-should-never-do-part-i&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.joelonsoftware.com&#x2F;2000&#x2F;04&#x2F;06&#x2F;things-you-should-...</a>
+    . But AI has made this argument less compelling imo. I now regularly rewrite big
+    chunks of programs with various end goals given to the agent.'
+  score: 0
+  posted_at: '2026-11-22T13:33:22Z'
+- id: '50599571'
+  parent_id: '50596155'
+  author: solyin
+  text: Nah. Do it in Swift.
+  score: 0
+  posted_at: '2026-11-22T13:35:55Z'
+- id: '50599572'
+  parent_id: '50599311'
+  author: zodwick
+  text: reminded me of :- <a href="https:&#x2F;&#x2F;x.com&#x2F;karpathy&#x2F;status&#x2F;2116980174667583602"
+    rel="nofollow">https:&#x2F;&#x2F;x.com&#x2F;karpathy&#x2F;status&#x2F;2116980174667583602</a>
+  score: 0
+  posted_at: '2026-11-22T13:35:58Z'
+- id: '50599577'
+  parent_id: '50596155'
+  author: Almondsetat
+  text: This way the trickiest parts of the codebase get reweritten in a language
+    you don&#x27;t even know...<p>Doesn&#x27;t seem a recipe for success
+  score: 0
+  posted_at: '2026-11-22T13:36:31Z'
+- id: '50599680'
+  parent_id: '50597767'
+  author: xtracto
+  text: I recently built a small nextjs&#x2F;node application that basically makes
+    like $50 usd monthly. Initially built as a PoC, I wanted to place it in a vps
+    so that I didn&#x27;t have to maintain it in my home laptop, and also because
+    I wanted to move it to a Europe location for better business performance [im in
+    mexico and latency is high].<p>Thing is, the TS app weighted around 4GB overall
+    and took 2s to do its thing. [A backend process, an http api and a static website
+    generator].<p>I needed to decrease the size and increase performance dramatically,to
+    be able to put it in a 2GB 2vcpu instance, which costs $12 monthly. Otherwise
+    it would eat the profit.<p>Claude ported it to Rust, in around 2 days total. And
+    it went down to 1.5Gb max, and 1&#x2F;10 of the CPU usage. Now it sits in the
+    aws europe zone making money.
+  score: 0
+  posted_at: '2026-11-22T13:47:36Z'
+- id: '50599683'
+  parent_id: '50599553'
+  author: nicoburns
+  text: I mean, it&#x27;s definitely both. Of course there can be algorithmic improvements,
+    but a like-for-like rewrite of Python code into Rust can often be 10x faster.
+  score: 0
+  posted_at: '2026-11-22T13:47:59Z'
+- id: '50599715'
+  parent_id: '50599266'
+  author: embedding-shape
+  text: Using the right data structures for the right usage later on is like half
+    the battle. People get really annoyed when you show them a Python program that
+    is faster and shorter than someone&#x27;s C# program, merely because they used
+    the wrong data structures for how it&#x27;s being used.
+  score: 0
+  posted_at: '2026-11-22T13:52:08Z'
+- id: '50599729'
+  parent_id: '50599322'
+  author: tomp
+  text: No language will save you from inefficient memory allocation patterns.<p>But
+    if you can optimize C, most often you can also optimize Python.<p>I have a SLAM
+    implementation in pure Python+Numba where all points&#x2F;keyframes are kept in
+    a single flat table, no allocation.
+  score: 0
+  posted_at: '2026-11-22T13:54:11Z'
+- id: '50599734'
+  parent_id: '50599553'
+  author: rafram
+  text: See uv - replacing pip with a rewrite in Rust was a good stunt, but the big
+    performance gains came from eliminating dynamic features (uv doesn’t allow packages
+    to execute code when installed) and I&#x2F;O (better caching and parallelization).
+  score: 0
+  posted_at: '2026-11-22T13:54:32Z'
+- id: '50599870'
+  parent_id: '50598795'
+  author: jodrellblank
+  text: '&quot;&quot;&quot;If you&#x27;re looking for the next win, you don&#x27;t
+    have a hotspot. The CPU profile might look even-Stevens across the board. Let
+    me give you a really simple example of this, I used to work on the [Edge] browser
+    and you could find yourself with a significant regression one week and you&#x27;re
+    using way more CPU, and you look what the functions are and it&#x27;s the same
+    functions as always. It&#x27;s layout and it&#x27;s style computation, and that
+    code hasn&#x27;t changed a byte. It&#x27;s the same excellent layout engine, it&#x27;s
+    the same excellent style engine, and yet the profiler will tell you you&#x27;re
+    spending way more time in layout. What&#x27;s happened?<p>Somewhere in your code
+    is a little whammy where someone invalidated a bunch of tree nodes which took
+    about 8 nanoseconds and caused the layout engine to now do tons of computation
+    that it didn&#x27;t have to do before. No profiler in the world is going to save
+    you from this problem, it&#x27;s going to tell you that the problem is in the
+    layout code. Well duh, thanks for that, <i>of course</i> the compute is in the
+    layout code, it&#x27;s <i>always</i> in the layout code, <i>all we do</i> is layout
+    and draw. So I have to find the 3 nanoseconds where somebody invalidated something
+    that they have no business invalidating because it&#x27;s wrong. And the way you
+    fix that is [to have a sense of how to check that you&#x27;re invalidating the
+    right thing, regression testing, visualizations, logging, planning] and it could
+    be literally 4 or 5 instructions dirtying the cache and that&#x27;s not going
+    to show up in a profile.<p>[paraphrasing; Casey: if you&#x27;ve developed the
+    whole browser without caring about this, at the end you&#x27;re going to find
+    it very slow and not be able to squeeze any more performance out of the layout
+    engine? Rico: Right, this is not something you can fix at the finish line, it
+    needs a plan]&quot;&quot;&quot;<p>- Rico Mariani, interview: <a href="https:&#x2F;&#x2F;youtu.be&#x2F;48Rig6v-xYU?t=3615"
+    rel="nofollow">https:&#x2F;&#x2F;youtu.be&#x2F;48Rig6v-xYU?t=3615</a>'
+  score: 0
+  posted_at: '2026-11-22T14:10:57Z'
+- id: '50599888'
+  parent_id: '50599237'
+  author: stackskipton
+  text: It looks like it finds hot paths, rewrites them into Rust so you can just
+    insert them into Python code vs rewriting everything into C# or Java.
+  score: 0
+  posted_at: '2026-11-22T14:12:37Z'
+- id: '50599898'
+  parent_id: '50597841'
+  author: tialaramex
+  text: "&gt; virtue signaling<p>Seems like just virtue to me. The guy who volunteers
+    every week to pick up garbage from the beach isn&#x27;t virtue signalling, he&#x27;s
+    just virtuous. The guy who came once, with a film crew and left once they&#x27;d
+    got the shots they wanted - <i>that</i> is virtue signalling. They&#x27;re both
+    shown in the film, but only one of them actually does the signalled virtuous activity
+    when the cameras aren&#x27;t rolling.<p>You could argue that RIIR was conducted
+    as virtue signalling <i>if</i> what we saw was one of those translations smeared
+    in unexplained unsafe blocks, with rats nest logic that no human is going to untangle.
+    But that doesn&#x27;t seem to be the case here."
+  score: 0
+  posted_at: '2026-11-22T14:13:20Z'
+- id: '50599904'
+  parent_id: '50598897'
+  author: perdy
+  text: 'For the parts that scale, yes. I build a CI step for measuring the performance
+    with Callgrind since last pure-python release, and we achieved good numbers: matching
+    the last of 200 routes dropped to about half the cycles and serializing a large
+    JSON to about 25% less. So it pays off for work that grows with the input.'
+  score: 0
+  posted_at: '2026-11-22T14:13:49Z'
+- id: '50599941'
+  parent_id: '50596155'
+  author: Dwedit
+  text: This looks very AI-generated.
+  score: 0
+  posted_at: '2026-11-22T14:17:44Z'
+- id: '50599945'
+  parent_id: '50599683'
+  author: zodwick
+  text: Depends on the application. Tbh the comparison btwn python and rust is kind
+    of dumb. But for the sake of argument - I don&#x27;t think most well-written Python
+    codebases can get 10x faster by using Rust. Bit faster ? sure maybe. Remember
+    Python uses C under the hood. Unless there is a shit ton of looping or weird unrealistic
+    conditions i don&#x27;t think this is true
+  score: 0
+  posted_at: '2026-11-22T14:18:27Z'
+- id: '50599962'
+  parent_id: '50599734'
+  author: zodwick
+  text: Yes exactly, I think this article explains it well :- <a href="https:&#x2F;&#x2F;nesbitt.io&#x2F;2025&#x2F;12&#x2F;26&#x2F;how-uv-got-so-fast.html"
+    rel="nofollow">https:&#x2F;&#x2F;nesbitt.io&#x2F;2025&#x2F;12&#x2F;26&#x2F;how-uv-got-so-fast.html</a>
+  score: 0
+  posted_at: '2026-11-22T14:19:54Z'
+- id: '50599972'
+  parent_id: '50597767'
+  author: the8472
+  text: Python and Ruby are single-threaded (yesyes, there&#x27;s noGIL python now),
+    which in turn means they&#x27;re deployed as multi-process services, which means
+    they must be stateless, which means there is a lot less you can keep in-memory
+    and need to offload to external  stateful systems. And that&#x27;s how you get
+    your bad architecture.<p>And python being interpreted and dogslow means any heavy
+    computation you write in pure python needs to be offloaded too instead of just
+    putting it on a threadpool, again making your architecture more complicated.<p>Add
+    in serverless functions, which need startup, and now something that should have
+    taken microseconds will take seconds.<p>Node is JITed at least, but still no shared-memory
+    multithreading, so it still encourages all the architectural bloat.
+  score: 0
+  posted_at: '2026-11-22T14:20:55Z'
+- id: '50600039'
+  parent_id: '50599498'
+  author: odiroot
+  text: "&quot;Easier to read&quot; is really doing a lot of work in this statement.
+    \nHighly debatable."
+  score: 0
+  posted_at: '2026-11-22T14:29:19Z'
+- id: '50600063'
+  parent_id: '50600039'
+  author: simonask
+  text: Harder to read, easier to understand.
+  score: 0
+  posted_at: '2026-11-22T14:32:30Z'
+- id: '50600174'
+  parent_id: '50599683'
+  author: rapind
+  text: Don&#x27;t forget 10x iteration time and deploy time due to building on large
+    projects. Still can be worth it, but I highly recommend build costs (CPU, RAM,
+    Disk, Time) are considered in a rust rewrite decision. I&#x27;d even architect
+    around it from the start as it can really add up.
+  score: 0
+  posted_at: '2026-11-22T14:44:05Z'
+- id: '50600252'
+  parent_id: '50596155'
+  author: osigurdson
+  text: I did an experiment to see how small and efficient I could make a desktop
+    Linux app. One thing I learned is GPU adds a lot of memory overhead without much
+    benefit for very basic apps.
+  score: 0
+  posted_at: '2026-11-22T14:53:48Z'
+- id: '50600310'
+  parent_id: '50599553'
+  author: rented_mule
+  text: I rewrote a C++ batch process in Python 1.4 (this was 1997) and the Python
+    version was ~10x as fast.<p>The port was pretty direct, function for function.
+    It was even line for line where language and library differences didn&#x27;t offer
+    an easier way. I was just trying to see if Python was so slow that we couldn&#x27;t
+    consider using it in production, and this was the most speed critical batch we
+    had.<p>I assumed the speed difference was a bug that was skipping work, but that
+    seemed unlikely because the output was correct. It turned out to be a bug in the
+    C++ code that was needlessly reproducing work (an issue with cache keys). The
+    bug was extremely subtle. When I fixed the C++, there was very little difference
+    in speed as the batch was I&#x2F;O bound when the cache was working.<p>So, adding
+    to your point, sometimes you can greatly improve speed by rewriting in a slower
+    language, even without performance in mind.
+  score: 0
+  posted_at: '2026-11-22T14:59:22Z'
+- id: '50600341'
+  parent_id: '50599571'
+  author: Kuyawa
+  text: Exactly, if you are on Mac&#x2F;iOS there is no better language<p>&quot;When
+    in Rome, do as the Romans do&quot;
+  score: 0
+  posted_at: '2026-11-22T15:02:34Z'
+- id: '50600349'
+  parent_id: '50596155'
+  author: vkaku
+  text: There is the other argument to rewrite it in something - delayer complexity
+    where it doesn&#x27;t solve an understanding problem. This has led to a phenomenal
+    code decrease where rust primitives tackle a ton of structured case handling while
+    keeping code simple and readable.<p>Rust itself had an understandability issue
+    until LLMs came along and started speedrunning parts of the Rust development process,
+    so this argument is language AND time immaterial.
+  score: 0
+  posted_at: '2026-11-22T15:03:36Z'
+- id: '50600356'
+  parent_id: '50599715'
+  author: kamma4434
+  text: One of the nicest things of Java is that a list is a List&lt;&gt;. You can
+    start with the default ArrayList or use a ton of other variants, or write your
+    own, and all that changes is one line of code
+  score: 0
+  posted_at: '2026-11-22T15:04:30Z'
+- id: '50600384'
+  parent_id: '50598170'
+  author: kamma4434
+  text: True, but scaling out helps with more than load sharing. Singletons are always
+    a risky architecture - what happens when they go down?
+  score: 0
+  posted_at: '2026-11-22T15:08:44Z'
+- id: '50600492'
+  parent_id: '50599734'
+  author: dgacmu
+  text: Though to give credit where it&#x27;s due, it&#x27;s a lot easier to parallelize
+    things well in rust than in python. The coarse-grained download parallelism is
+    easy in both, of course (though with higher overhead in python), but the more
+    fine-grained solver parallelism favors rust (or c&#x2F;c++ but let&#x27;s not
+    do that).
+  score: 0
+  posted_at: '2026-11-22T15:22:18Z'
+- id: '50600532'
+  parent_id: '50600492'
+  author: jeffbee
+  text: Every cursed rust application I&#x27;ve been hired to fix has been diagnosed
+    as spending 90%+ of its time pointlessly jumping tokio threads because someone
+    thought that async means fast. I give these 10x throughput boosts by removing
+    concurrency or, sometimes, just rewriting them in Go.
+  score: 0
+  posted_at: '2026-11-22T15:26:30Z'
+- id: '50600557'
+  parent_id: '50598248'
+  author: uecker
+  text: It is very easy to add one yourself though.<p><a href="https:&#x2F;&#x2F;uecker.codeberg.page&#x2F;2026-10-24.html"
+    rel="nofollow">https:&#x2F;&#x2F;uecker.codeberg.page&#x2F;2026-10-24.html</a>
+  score: 0
+  posted_at: '2026-11-22T15:29:27Z'
+- id: '50600570'
+  parent_id: '50598086'
+  author: uecker
+  text: I found that you can not build good abstractions in C is mostly a myth.
+  score: 0
+  posted_at: '2026-11-22T15:30:34Z'
+- id: '50600584'
+  parent_id: '50600532'
+  author: dgacmu
+  text: You&#x27;re talking about concurrency and I&#x27;m talking about parallelism.
+    :-)<p>Rust&#x27;s async situation is still a pain in many ways.<p>But throwing
+    Rayon at something often results in very reasonable parallel performance gains
+    without cluttering things much. It usually won&#x27;t get you to an optimal solution,
+    but it&#x27;s good for 80% with 10% of the pain.
+  score: 0
+  posted_at: '2026-11-22T15:32:00Z'
+- id: '50600690'
+  parent_id: '50600310'
+  author: drfloyd51
+  text: To be technical about it, the Python program didn’t match the behavior of
+    the c++ program. ;)<p>But also technically I think your point still stands. Because
+    rewriting it helped you find a defect in the original. Which did improve performance
+    of the original.<p>It’s quite interesting the two implementations performance
+    was so close in the end. Do you consider one implementation “better” for non-performance
+    reasons? Maybe one type of dev is easier to find. Or one language is easier to
+    create and maintain correctly behaving programs in your environment?
+  score: 0
+  posted_at: '2026-11-22T15:44:22Z'
+- id: '50600742'
+  parent_id: '50600584'
+  author: jeffbee
+  text: 'It depends on what you are going for: service latency, or throughput. Rayon&#x27;s
+    work stealing is inappropriate for any throughput oriented work and questionable
+    for the majority of latency sensitive services. It does have a niche but it&#x27;s
+    not the first thing I would reach for. Unfortunately it IS the first thing Claude
+    reaches for.'
+  score: 0
+  posted_at: '2026-11-22T15:49:54Z'
+- id: '50601028'
+  parent_id: '50599553'
+  author: brunoarueira
+  text: About python, I did exactly small things and optimized a data pipeline really
+    well <a href="https:&#x2F;&#x2F;brunoarueira.com&#x2F;blog&#x2F;optimizing-19-million-rows-pipeline-without-rewriting-it&#x2F;#the-numbers"
+    rel="nofollow">https:&#x2F;&#x2F;brunoarueira.com&#x2F;blog&#x2F;optimizing-19-million-rows-pip...</a>
+  score: 0
+  posted_at: '2026-11-22T16:23:50Z'
+- id: '50601091'
+  parent_id: '50600384'
+  author: chrismorgan
+  text: They’re risky in that sense, but their very simplicity makes them less subject
+    to other sorts of failures—distributed systems have more and more <i>complex</i>
+    failure modes.<p>Personally I think it’s a very good trade-off for <i>vastly</i>
+    more businesses and services than actually practice it.<p>I suspect I may have
+    seen more systems run into availability problems from unnecessarily distributed
+    architectures than from hardware failure, and I’ve <i>definitely</i> seen costlier
+    development due to it.
+  score: 0
+  posted_at: '2026-11-22T16:29:58Z'
+- id: '50601120'
+  parent_id: '50599680'
+  author: embedding-shape
+  text: What exactly is it doing during these 2 seconds? What did it stop doing for
+    those 2 seconds to become whatever it is now? Did Claude use a different (more
+    fitting) design, architecture and data structures perhaps? Did Claude also write
+    the initial version?
+  score: 0
+  posted_at: '2026-11-22T16:32:49Z'
+- id: '50601219'
+  parent_id: '50598556'
+  author: fiedzia
+  text: "&gt; Typically, doing things like changing algorithms, data structures, careful
+    use of caching, reusing calculations, etc. are more important to performance than
+    the choice of language.<p>The choice of language determines the extent to which
+    those things are possible.  In case of Python using C libraries sometimes means
+    that you pull data from somewhere, hold them in Python memory in very inefficient
+    way, pay for transformation to another form that C library uses and then do the
+    same in reverse at the end. Perhaps even more times if C doesn&#x27;t handle everything.
+    &quot;Use C libraries&quot; often works, but is not universal solution."
+  score: 0
+  posted_at: '2026-11-22T16:40:38Z'
+- id: '50601490'
+  parent_id: '50599680'
+  author: owebmaster
+  text: Was it Claude that made the terrible choice of using nextjs in the first place?
+  score: 0
+  posted_at: '2026-11-22T17:03:37Z'
+- id: '50601512'
+  parent_id: '50599553'
+  author: kleiba2
+  text: 'A good point in time to mention Casey Muratori: <a href="https:&#x2F;&#x2F;www.computerenhance.com&#x2F;p&#x2F;clean-code-horrible-performance"
+    rel="nofollow">https:&#x2F;&#x2F;www.computerenhance.com&#x2F;p&#x2F;clean-code-horrible-perfor...</a>'
+  score: 0
+  posted_at: '2026-11-22T17:05:56Z'
+- id: '50601629'
+  parent_id: '50600252'
+  author: micahcc
+  text: Only put it on the GPU if you have thousands of nearly identical operations
+    to do
+  score: 0
+  posted_at: '2026-11-22T17:14:35Z'
+- id: '50601653'
+  parent_id: '50599945'
+  author: pastel8739
+  text: I think it totally depends, I’ve seen huge (100x) speed ups by moving a pure-python
+    CPU heavy task to a compiled language. If you’re using something like numpy already
+    to run compute natively, then yes it’s probably much more difficult to get gains.
+  score: 0
+  posted_at: '2026-11-22T17:17:13Z'
+- id: '50601794'
+  parent_id: '50597812'
+  author: Jnr
+  text: Exactly, seeing the AI vulnerability hunting apocalypse happening around,
+    I would rewrite in safe Rust to avoid certain types of security issues. Speed
+    and low memory usage is just another bonus.
+  score: 0
+  posted_at: '2026-11-22T17:28:58Z'
+- id: '50601952'
+  parent_id: '50599734'
+  author: chowells
+  text: I think the biggest win of going from pip to uv is that breaking your python
+    environment no longer breaks the tool to manage your python environment. Pip was
+    always fragile in that you could carelessly use it to break a library it is depending
+    on. (Yes, there are ways to avoid that - but they require not being careless.)
+  score: 0
+  posted_at: '2026-11-22T17:44:12Z'
+- id: '50601987'
+  parent_id: '50600690'
+  author: rented_mule
+  text: The Python version was far easier to maintain and add features to. We kept
+    it and rewrote other code in Python whenever we did significant work on it. All
+    new back-end code was also written in Python after that.<p>Hiring devs who already
+    knew Python was not really an option in 1997. But we quickly found that there
+    was not much difference in time to ramp up a C++ developer on our C++ codebase
+    vs. ramping up a developer on Python plus our Python codebase. It was just a matter
+    of finding developers who were happy to learn a language they may or may not have
+    heard of, but had likely never looked into.
+  score: 0
+  posted_at: '2026-11-22T17:47:49Z'
+- id: '50602294'
+  parent_id: '50601952'
+  author: Joker_vD
+  text: I once, on a fresh Ubuntu install, did &quot;apt install python-pip3&quot;,
+    and then &quot;apt install python3.8&quot; when I realized I actually needed Python
+    3.8. The pip3 complained that it was outdated and suggested a command to run to
+    update it. Naturally, I ran it, and it completely broke apt, it couldn&#x27;t
+    even do &quot;apt list&quot; never mind intalling&#x2F;removing packages, so I
+    had to rollback the VM to fix this bullshit. Wonderful, 10&#x2F;10 DevEx.
+  score: 0
+  posted_at: '2026-11-22T18:17:06Z'
+- id: '50602379'
+  parent_id: '50599553'
+  author: WalterBright
+  text: Over the many years I was writing code in C, I noticed that the original program
+    design and data structures were very persistent, i.e. they were never reorganized.
+    I suspect the cause is the tendrils of those choices found their way into everything,
+    so reorganizing it was thoroughly impractical.<p>One of the problems, for C, is
+    the use of . to access a field via a variable, and -&gt; to access a field via
+    a pointer. To switch between a pointer and a variable in a struct means you&#x27;ve
+    got to re-edit large quantities of code everywhere. The result is just too tedious.<p>This
+    was the motivation in D for using . for both. It turns out, it is completely unnecessary
+    for having both . and -&gt; as the compiler semantic pass can trivially figure
+    it out. Eliminating this issue makes for much easier redesign of a data structure.
+  score: 0
+  posted_at: '2026-11-22T18:25:42Z'
+- id: '50602445'
+  parent_id: '50601629'
+  author: osigurdson
+  text: Agree. I learned quite a few things in this exercise, actually. Another one
+    is that conventional font rendering uses a lot of memory as well. Link below if
+    anyone is interested:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;osigurdson&#x2F;mib"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;osigurdson&#x2F;mib</a>
+  score: 0
+  posted_at: '2026-11-22T18:32:25Z'
+- id: '50602475'
+  parent_id: '50599553'
+  author: yjftsjthsd-h
+  text: 'Or, as I have seen it succinctly put: The value is as much a <i>Rewrite</i>
+    in Rust as a Rewrite in <i>Rust</i>.'
+  score: 0
+  posted_at: '2026-11-22T18:34:33Z'
+- id: '50602478'
+  parent_id: '50600532'
+  author: toast0
+  text: That&#x27;s why the rust server I work on is an unholy mix of threads and
+    tokio...<p>The performance oriented (data plane) work happens on dedicated, cpu-pinned
+    threads and sockets outside the tokio runtime. The control plane work happens
+    in tokio async. Interaction between the two is tricky. But decreased latency and
+    increased throughput is valuable. And it&#x27;s a complex server, so we can&#x27;t
+    really try too many approaches.<p>It certainly doesn&#x27;t help that the data
+    structures are, by necessity, a cephalopod that have to be used across threads.
+  score: 0
+  posted_at: '2026-11-22T18:34:53Z'
+- id: '50602494'
+  parent_id: '50601219'
+  author: rhdunn
+  text: 'As always, it depends.<p>For example, PyTorch (and numpy IIUC) store matrices&#x2F;tensors
+    as a 1D array of numbers. This is more memory efficient as all the data is colocated.<p>They
+    use a technique to store the distance within the array to move when moving along
+    each axis (strides). This allows for operations such as transpose to be swapping
+    the array and stride values instead of performing an expensive array&#x2F;vector
+    copy.<p>Another example: using string formatter or join instead of separate concatenations
+    allows the compiler&#x2F;language to compute the size of the resulting string
+    up front (if the language&#x2F;library supports that) rather than allocating on
+    demand.<p>Another example: using a hash map&#x2F;set instead of an array to check
+    for the presence of strings.'
+  score: 0
+  posted_at: '2026-11-22T18:35:47Z'
+- id: '50602638'
+  parent_id: '50600356'
+  author: bartread
+  text: One of my biggest beefs when moving Java -&gt; C# back in 2004 was the paucity
+    of collections in C#&#x2F;.NET. There was C5, which was good, and the framework
+    itself did eventually improve a little, but it was still no match for the Java
+    standard library + Apache Commons Collections.<p>That and WinForms absolutely
+    <i>sucked</i> compared to Swing. Layout options, tables&#x2F;grids, and trees
+    in particular were very poor in WinForms. Not to mention custom control development
+    was far better in Swing than in WinForms. It was annoying because the one thing
+    I’d expected to be better with .NET was the desktop UI framework.
+  score: 0
+  posted_at: '2026-11-22T18:47:58Z'
+- id: '50602645'
+  parent_id: '50602379'
+  author: everforward
+  text: I actually don&#x27;t hate that part of C.  You have to acknowledge it&#x27;s
+    a pointer with a different accessor.  I liken it to = vs := in Go.  It&#x27;s
+    an unnecessary semantic, sure, but it elevates a technical detail to be part of
+    the syntax of the language.  Go has caught me a couple of times when I forgot
+    I had the same variable name in scope already (e.g. opening a second file descriptor
+    and trying to name it &quot;fd&quot; again).<p>My mind equates -&gt; to &quot;this
+    could be NULL&quot; without ever looking at the function signature.<p>It is way
+    more of a pain in the ass for refactors than = vs := though.
+  score: 0
+  posted_at: '2026-11-22T18:48:54Z'
+- id: '50602813'
+  parent_id: '50599972'
+  author: graemep
+  text: "&gt; deployed as multi-process services, which means they must be stateless,
+    which means there is a lot less you can keep in-memory and need to offload to
+    external stateful systems. And that&#x27;s how you get your bad architecture.<p>Depends
+    what you are doing. Not a problem for something like a CRUD web app. Not a problem
+    for most desktop apps.<p>&gt; heavy computation you write in pure python<p>Why
+    would you write heavy computation in pure Python?"
+  score: 0
+  posted_at: '2026-11-22T19:06:13Z'
+article:
+  url: https://github.com/EL4CTEO/fast-anything
+  title: 'GitHub - EL4CTEO/fast-anything: Don''t rewrite it in Rust. Rewrite the 5%
+    that''s slow: profile Python, Node or Ruby apps, port the hot functions with your
+    coding agent, prove they behave the same. · GitHub'
+  fetch_status: success
+  content: |-
+    ## Latest commit
+
+    ## History
+
+    ## Folders and files
+
+    ## Repository files navigation
+
+    Don't rewrite it in Rust. Rewrite the 5% that's slow.
+
+    Rewriting a whole app in Rust costs months, minute-long compiles and gigabytes of target/. Most of the runtime sits in a few functions anyway.
+
+    fast-anything finds those functions, has your coding agent port only them to Rust, proves the port gives the same results on real recorded calls, and swaps it in. One command, fully reversible.
+
+    ## Install
+
+    npm i -g @el4cteo/fast-anything # or: cargo install fast-anything
+
+    Ports are compiled with your Rust toolchain (rustup).
+
+    ## Use
+
+    fast-anything go --agent claude -- python app.py # or: -- node app.ts / bun app.ts / deno run -A app.ts / ruby app.rb / java App.java / mvn exec:java / gradle run / go run . / php app.php / clang -O2 main.c
+
+    Or step by step:
+
+    --agent takes claude, codex, or any command that reads a prompt on stdin. Without it, hand TASK.md to whatever you use.
+
+    ## Proof, not vibes
+
+    That port looked right but compared bytes instead of characters. 148 of 500 real calls caught it. On top of the recorded calls, fast-anything derives extra cases and lets the original answer them: edge cases (NaN, ±infinity, -0.0, zero and ±1, non-ASCII text, empty and up to 16× bigger inputs) and shrunk inputs (tiny and random slices). Nothing is enabled until every case matches: same values (floats within 1e-9), errors where the original errors. A port that is right but slower per call than the original (calling into Rust costs more than the work saved) isn't enabled either. FAST_ANYTHING_DISABLE=1 runs the original any time.
+
+    ## Results
+
+    Real runs on an i5-10500, Windows 11 (C and C++: a 4-core GitHub Actions Linux runner). Reproduce them from examples/.
+
+    fast-anything ports the outermost loop it can, not the tiny function called inside it, so the app crosses into Rust once instead of millions of times. Porting only the inner levenshtein gave 35× and 1.9×.
+
+    ## Why not rewrite it all?
+
+    - Compile time: each port is a one-function crate. Seconds, not minutes.
+
+    - Cache: every port shares one .fast/target. Delete it whenever you like.
+
+    - Risk: your code stays as it is. Rust is opt-in per function, checked against real behavior.
+
+    ## Agents
+
+    - Claude Code plugin: /plugin marketplace add EL4CTEO/fast-anything, then /plugin install fast-anything@fast-anything and /fast-anything:fast python app.py
+
+    - MCP server (Claude Code, Codex, Cursor…), built into the binary: claude mcp add fast-anything -- fast-anything mcp. 8 tools: fast_scan, fast_port, fast_verify, fast_enable, fast_disable, fast_bench, fast_report, fast_status.
+
+    - Skill: skills/fast-anything teaches any agent the loop.
+
+    ## Languages
+
+    It ports top-level, deterministic functions that take plain data (numbers, strings, lists, dicts, typed arrays…), including ones in your entry script when its main code sits under if __name__ == "__main__": (or if __FILE__ == $0, or if (import.meta.main) / if (require.main === module)). In Python that means module-level functions and @staticmethods (dataclasses, NamedTuples and numeric NumPy arrays count as plain data), in Java, C# and PHP static methods (and PHP functions), in Go plain functions, in C and C++ free functions and static methods. scan says why anything else can't move yet.
+
+    With Intel oneAPI on Windows, run fast-anything from a shell where setvars.bat ran (it sets up the linker). SYCL kernels run on the device and aren't ported; with -fsycl, only host functions are profiled and ported.
+
+    Ruby, Java, Go, PHP, C, C++ and C# need no headers, bindings or extra tools: the port is a plain Rust library with one C entry point taking and returning JSON, and fast-anything replays the recorded calls against it directly. Any language that can call C can use that bridge.
+
+    ## License
+
+    MIT
+
+    ## About
+
+    Don't rewrite it in Rust. Rewrite the 5% that's slow: profile Python, Node or Ruby apps, port the hot functions with your coding agent, prove they behave the same.
+
+    ### Topics
+
+    ### Resources
+
+    ### Stars
+
+    ### Watchers
+
+    ### Forks
+
+    ## Releases
+
+    ## Packages
+
+    ## Contributors
+
+    ## Languages
+  error:
+  fetched_at: '2026-11-22T19:10:02Z'
+archived_at: '2026-11-22T19:10:08Z'

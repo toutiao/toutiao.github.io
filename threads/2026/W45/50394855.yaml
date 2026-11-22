@@ -4,14 +4,11 @@ post:
   title: First steps in bare-metal programming using UEFI
   url: https://kevinboone.me/efitest_index.html
   hn_url: https://news.ycombinator.com/item?id=50394855
-  score: 249
-  author: ''
+  score: 259
+  author: LaSombra
   posted_at: '2026-11-06T16:50:29Z'
-  fetched_at: '2026-11-08T12:54:27Z'
-  article_url: https://kevinboone.me/efitest_index.html
-  article_fetch_status: success
-  article_fetched_at: '2026-11-06T18:59:59Z'
-  raw_comment_count: 52
+  fetched_at: '2026-11-22T19:10:15Z'
+  raw_comment_count: 57
 comments:
 - id: '50395644'
   parent_id: '50394855'
@@ -590,6 +587,138 @@ comments:
     itself allows.
   score: 0
   posted_at: '2026-11-07T22:01:02Z'
+- id: '50412875'
+  parent_id: '50408290'
+  author: Someone
+  text: <a href="https:&#x2F;&#x2F;iliazeus.lol&#x2F;articles&#x2F;js-string-optimizations-en&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;iliazeus.lol&#x2F;articles&#x2F;js-string-optimizations-en&#x2F;</a><p>“The
+    ECMAScript standard defines a string as a sequence of 16-bit elements. But in
+    a lot of cases, storing 2 bytes per character is a waste of memory. In fact, quite
+    a lot of strings in most code will be limited to ASCII. That is why V8 has both
+    one-byte and two-byte strings”<p><a href="https:&#x2F;&#x2F;github.com&#x2F;v8&#x2F;v8&#x2F;blob&#x2F;main&#x2F;src&#x2F;objects&#x2F;string.h"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;v8&#x2F;v8&#x2F;blob&#x2F;main&#x2F;src&#x2F;objects&#x2F;string.h</a>
+    confirms that.
+  score: 0
+  posted_at: '2026-11-08T12:56:50Z'
+- id: '50413144'
+  parent_id: '50408051'
+  author: skrellm
+  text: Yes, the code is very well-tested, mature and was finalized stable before
+    this entire AI madness.
+  score: 0
+  posted_at: '2026-11-08T13:27:38Z'
+- id: '50417372'
+  parent_id: '50412875'
+  author: kragen
+  text: |-
+    That sounds like strong evidence that V8 doesn&#x27;t have an internal representation similar to UTF-8: it has one-byte encodings, and it has UTF-16, both of which are flat arrays of UTF-16 elements (and of code points, except for surrogates).<p>Although the article doesn&#x27;t explain this, the one-byte encodings seem to be limited to Latin-1 (though not merely ASCII), in which the values of the bytes are literally the Unicode codepoints.  Here we see that ASCII strings and Latin-1 strings are ONE_BYTE_INTERNALIZED_STRING_TYPE, but Greek and Latin-2 strings are INTERNALIZED_STRING_TYPE:<p><pre><code>    : ~; node --allow-natives-syntax
+        Welcome to Node.js v18.19.0.
+        Type &quot;.help&quot; for more information.
+        &gt; %DebugPrint(&quot;hello&quot;)
+        DebugPrint: 0x32c6da5c48f9: [String] in OldSpace: #hello
+        0xee8766c1369: [Map] in ReadOnlySpace
+         - type: ONE_BYTE_INTERNALIZED_STRING_TYPE
+         - instance size: variable
+         - elements kind: HOLEY_ELEMENTS
+         - unused property fields: 0
+         - enum length: invalid
+         - stable_map
+         - back pointer: 0x0ee8766c15b9 &lt;undefined&gt;
+         - prototype_validity cell: 0
+         - instance descriptors (own) #0: 0x0ee8766c1269 &lt;Other heap object (STRONG_DESCRIPTOR_ARRAY_TYPE)&gt;
+         - prototype: 0x0ee8766c1339 &lt;null&gt;
+         - constructor: 0x0ee8766c1339 &lt;null&gt;
+         - dependent code: 0x0ee8766c1251 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+         - construction counter: 0
+
+        &#x27;hello&#x27;
+        &gt; %DebugPrint(&quot;dénouement&quot;)
+        DebugPrint: 0x19b3181b5941: [String] in OldSpace: #d\xe9nouement
+        0xee8766c1369: [Map] in ReadOnlySpace
+         - type: ONE_BYTE_INTERNALIZED_STRING_TYPE
+         - instance size: variable
+         - elements kind: HOLEY_ELEMENTS
+         - unused property fields: 0
+         - enum length: invalid
+         - stable_map
+         - back pointer: 0x0ee8766c15b9 &lt;undefined&gt;
+         - prototype_validity cell: 0
+         - instance descriptors (own) #0: 0x0ee8766c1269 &lt;Other heap object (STRONG_DESCRIPTOR_ARRAY_TYPE)&gt;
+         - prototype: 0x0ee8766c1339 &lt;null&gt;
+         - constructor: 0x0ee8766c1339 &lt;null&gt;
+         - dependent code: 0x0ee8766c1251 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+         - construction counter: 0
+
+        &#x27;dénouement&#x27;
+        &gt; %DebugPrint(&quot;dénouement∫&quot;)
+        DebugPrint: 0x19b3181b7f91: [String] in OldSpace: u#d\xe9nouement\u222b
+        0xee8766c2e69: [Map] in ReadOnlySpace
+         - type: INTERNALIZED_STRING_TYPE
+         - instance size: variable
+         - elements kind: HOLEY_ELEMENTS
+         - unused property fields: 0
+         - enum length: invalid
+         - stable_map
+         - back pointer: 0x0ee8766c15b9 &lt;undefined&gt;
+         - prototype_validity cell: 0
+         - instance descriptors (own) #0: 0x0ee8766c1269 &lt;Other heap object (STRONG_DESCRIPTOR_ARRAY_TYPE)&gt;
+         - prototype: 0x0ee8766c1339 &lt;null&gt;
+         - constructor: 0x0ee8766c1339 &lt;null&gt;
+         - dependent code: 0x0ee8766c1251 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+         - construction counter: 0
+
+        &#x27;dénouement∫&#x27;
+        &gt; %DebugPrint(&quot;κοκαλος&quot;)
+        DebugPrint: 0x268799d03a79: [String] in OldSpace: u#\u03ba\u03bf\u03ba\u03b1\u03bb\u03bf\u03c2
+        0xee8766c2e69: [Map] in ReadOnlySpace
+         - type: INTERNALIZED_STRING_TYPE
+         - instance size: variable
+         - elements kind: HOLEY_ELEMENTS
+         - unused property fields: 0
+         - enum length: invalid
+         - stable_map
+         - back pointer: 0x0ee8766c15b9 &lt;undefined&gt;
+         - prototype_validity cell: 0
+         - instance descriptors (own) #0: 0x0ee8766c1269 &lt;Other heap object (STRONG_DESCRIPTOR_ARRAY_TYPE)&gt;
+         - prototype: 0x0ee8766c1339 &lt;null&gt;
+         - constructor: 0x0ee8766c1339 &lt;null&gt;
+         - dependent code: 0x0ee8766c1251 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+         - construction counter: 0
+
+        &#x27;κοκαλος&#x27;
+        &gt; %DebugPrint(&quot;ł&quot;)
+        DebugPrint: 0x268799d08681: [String] in OldSpace: u#\u0142
+        0xee8766c2e69: [Map] in ReadOnlySpace
+         - type: INTERNALIZED_STRING_TYPE
+         - instance size: variable
+         - elements kind: HOLEY_ELEMENTS
+         - unused property fields: 0
+         - enum length: invalid
+         - stable_map
+         - back pointer: 0x0ee8766c15b9 &lt;undefined&gt;
+         - prototype_validity cell: 0
+         - instance descriptors (own) #0: 0x0ee8766c1269 &lt;Other heap object (STRONG_DESCRIPTOR_ARRAY_TYPE)&gt;
+         - prototype: 0x0ee8766c1339 &lt;null&gt;
+         - constructor: 0x0ee8766c1339 &lt;null&gt;
+         - dependent code: 0x0ee8766c1251 &lt;Other heap object (WEAK_ARRAY_LIST_TYPE)&gt;
+         - construction counter: 0
+
+        &#x27;ł&#x27;</code></pre>
+  score: 0
+  posted_at: '2026-11-08T21:17:42Z'
+- id: '50579320'
+  parent_id: '50398594'
+  author: yencabulator
+  text: As close as a mainstream PC ever gets, after you call ExitBootServices.
+  score: 0
+  posted_at: '2026-11-20T18:17:10Z'
+- id: '50579348'
+  parent_id: '50398751'
+  author: yencabulator
+  text: <a href="https:&#x2F;&#x2F;rust-osdev.github.io&#x2F;uefi-rs&#x2F;index.html"
+    rel="nofollow">https:&#x2F;&#x2F;rust-osdev.github.io&#x2F;uefi-rs&#x2F;index.html</a>
+  score: 0
+  posted_at: '2026-11-20T18:18:44Z'
 article:
   url: https://kevinboone.me/efitest_index.html
   title: |-
@@ -612,4 +741,4 @@ article:
     that refers to this one._"
   error:
   fetched_at: '2026-11-06T18:59:59Z'
-archived_at: '2026-11-08T12:54:50Z'
+archived_at: '2026-11-22T19:10:21Z'

@@ -4,14 +4,14 @@ post:
   title: PostgreSQL Extensions in Go
   url: https://jespino.github.io/gopgext/
   hn_url: https://news.ycombinator.com/item?id=50591260
-  score: 151
+  score: 164
   author: ''
   posted_at: '2026-11-21T17:08:04Z'
-  fetched_at: '2026-11-22T10:50:11Z'
+  fetched_at: '2026-11-22T19:10:02Z'
   article_url: https://jespino.github.io/gopgext/
   article_fetch_status: success
   article_fetched_at: '2026-11-22T01:01:22Z'
-  raw_comment_count: 25
+  raw_comment_count: 31
 comments:
 - id: '50592016'
   parent_id: '50591260'
@@ -52,6 +52,21 @@ comments:
     kernel modules in Go)'
   score: 0
   posted_at: '2026-11-21T19:49:40Z'
+- id: '50593127'
+  parent_id: '50591260'
+  author: collabspherestu
+  text: |-
+    The trickiest part with writing Postgres extensions in Go usually isn&#x27;t the Cgo bindings—it&#x27;s the runtime friction with Postgres&#x27;s process model:<p>Signal handling conflicts: Postgres relies heavily on signals (SIGINT, SIGTERM, SIGUSR1) for query cancellations, latch wakeups, and statement timeouts. The Go runtime aggressively installs its own signal handlers for preemption and stack management, which can lead to subtle deadlocks or unhandled interrupts inside a backend process.
+    Memory contexts vs. Go GC: Postgres manages memory via hierarchical memory contexts (CurrentMemoryContext, palloc), which automatically clean up on transaction aborts or errors (via longjmp). If Go code panics or a Postgres query gets cancelled mid-execution, reconciling Go’s GC-managed heap with Postgres memory lifecycles is notoriously tricky.
+    Process-per-connection overhead: Postgres forks a new process per connection. Spinning up the Go runtime, GC threads, and runtime scheduler in every spawned backend worker can add noticeable memory and startup overhead under high connection counts.<p>Rust with pgrx has gained a lot of traction recently precisely because it has zero runtime and integrates directly into palloc and Postgres error handlers. Still, having pure Go tooling for teams with deep Go codebases is an interesting space to watch.
+  score: 0
+  posted_at: '2026-11-21T20:08:01Z'
+- id: '50593328'
+  parent_id: '50592600'
+  author: jttnr
+  text: Same for me on my mobile phone with dark theme.
+  score: 0
+  posted_at: '2026-11-21T20:30:33Z'
 - id: '50593479'
   parent_id: '50591260'
   author: Icathian
@@ -179,6 +194,17 @@ comments:
     while Postgres extensions are more at the data plane level.
   score: 0
   posted_at: '2026-11-22T02:33:07Z'
+- id: '50595937'
+  parent_id: '50591260'
+  author: nonacosa
+  text: Using TinyGo instead of standard cgo is what makes this practical inside a
+    Postgres backend. With full Go, the runtime spawns background OS threads for scheduling
+    and sysmon, which creates headaches around Postgres process-per-connection forks
+    and signal handlers. TinyGo gives you a single-threaded C ABI binary that lives
+    inside the backend without fighting the host lifecycle, even if it means giving
+    up goroutines.
+  score: 0
+  posted_at: '2026-11-22T03:28:38Z'
 - id: '50595963'
   parent_id: '50594665'
   author: sitzkrieg
@@ -197,6 +223,26 @@ comments:
   text: anyone has good experice with vecor database ? is postgresql good ?
   score: 0
   posted_at: '2026-11-22T09:25:49Z'
+- id: '50599217'
+  parent_id: '50591260'
+  author: WanderZil
+  text: Nice that errors reported by Go are raised only after Go returns, avoiding
+    a `longjmp` through Go stack frames.
+  score: 0
+  posted_at: '2026-11-22T12:48:48Z'
+- id: '50601951'
+  parent_id: '50592811'
+  author: septune
+  text: and <a href="https:&#x2F;&#x2F;github.com&#x2F;jinjaghost&#x2F;pg-go-func"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;jinjaghost&#x2F;pg-go-func</a>
+  score: 0
+  posted_at: '2026-11-22T17:44:10Z'
+- id: '50601974'
+  parent_id: '50591260'
+  author: septune
+  text: Does it support Go&#x27;s goroutines ?
+  score: 0
+  posted_at: '2026-11-22T17:46:15Z'
 article:
   url: https://jespino.github.io/gopgext/
   title: gopgext — PostgreSQL extensions in Go
@@ -224,4 +270,4 @@ article:
     glue."
   error:
   fetched_at: '2026-11-22T01:01:22Z'
-archived_at: '2026-11-22T10:50:28Z'
+archived_at: '2026-11-22T19:10:08Z'
