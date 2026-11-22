@@ -6,14 +6,14 @@ post:
     (Búzios, Brazil)'
   url: https://herbsutter.com/2026/11/21/c26-is-done-again-trip-report-november-2026-iso-c-standards-meeting-buzios-brazil/
   hn_url: https://lobste.rs/s/fjueso
-  score: 11
+  score: 16
   author: olliej
   posted_at: '2026-11-21T13:57:53Z'
-  fetched_at: '2026-11-21T18:48:34Z'
+  fetched_at: '2026-11-22T01:01:33Z'
   article_url: https://herbsutter.com/2026/11/21/c26-is-done-again-trip-report-november-2026-iso-c-standards-meeting-buzios-brazil/
   article_fetch_status: success
-  article_fetched_at: '2026-11-21T18:48:35Z'
-  raw_comment_count: 8
+  article_fetched_at: '2026-11-22T01:01:34Z'
+  raw_comment_count: 16
   tags:
   - c++
 comments:
@@ -29,7 +29,7 @@ comments:
 
     What is the use case for wanting a default mode where the contract isn’t guaranteed to be enforced?
     It seems lots of very, very smart people have been thinking a lot about this, so there must be some reason or chain of reasons that lands the proposal in this “the default mode may or may not be enforced and there’s a sort of generics syntax where you can opt in to enforced contracts”, but as an outsider it seems super confusing
-  score: 6
+  score: 12
   posted_at: '2026-11-21T15:33:54Z'
 - id: lo-9u89u7
   parent_id: '0'
@@ -37,7 +37,7 @@ comments:
   text: |-
     My objections to contracts, and to be honest a lot of C++ since C++17, begin and end with "it's too complicated", and I've been programming in C++ for more than ten years.
     I can understand that people involved in standardization know more about this stuff than I do, but I also know more about how the products I work on work than my customers, and yet their perspectives still matter more than mine.
-  score: 5
+  score: 10
   posted_at: '2026-11-21T15:58:19Z'
 - id: lo-lraikr
   parent_id: '0'
@@ -46,7 +46,7 @@ comments:
     What is the use case for wanting a default mode where the contract isn’t guaranteed to be enforced?
 
     isn't the default mode "the end user chooses what behaviour they want from the compile flags they pass"? with e.g.  -fcontract-evaluation-semantic=...
-  score: 2
+  score: 4
   posted_at: '2026-11-21T16:01:26Z'
 - id: lo-dehdtv
   parent_id: '0'
@@ -85,7 +85,7 @@ comments:
     the circumstances, the C++ committee's proposed course seems like the textbook
     definition of insanity, trying something again, with minimal changes, and expecting
     a different result.
-  score: 1
+  score: 3
   posted_at: '2026-11-21T17:59:56Z'
 - id: lo-fo4vqd
   parent_id: '0'
@@ -94,8 +94,87 @@ comments:
     there are so many entities - corporates, individuals, organizations, each wanting
     something different. maybe someone''s employer''s coding guideline requires contracts
     to be ignorable by default, and now we all have to pay for it.'
-  score: 2
+  score: 4
   posted_at: '2026-11-21T18:28:00Z'
+- id: lo-rqeesy
+  parent_id: '0'
+  author: pyj
+  text: |-
+    What is the use case for wanting a default mode where the contract isn’t guaranteed to be enforced?
+
+    I write C++ professionally, but have done a lot of Ada open source on the side.
+    Ada has fantastic contract support, and you can enable/disable contracts on a per-module basis. Contracts can use slow checks but be in hot paths, so you can turn them off when shipping, but still have them there for documentation purposes and when running for debugging or development purposes. It's great to be able to look at only the spec for a module and know exactly what it lets you do from the pre/post aspects. Being able to use contracts with proofs in Ada's SPARK subset is just icing on the cake.
+    Unlike Ada, C++ doesn't let you natively put custom ranges on integers, or predicates on types. I'm quite excited at the prospect of having contracts in C++ to clarify more about what functions do, especially when dealing with libraries. C++ often uses assertions, but you can't see these hidden inside of libraries and assumptions are often not documented.
+  score: 2
+  posted_at: '2026-11-21T19:05:36Z'
+- id: lo-8h5igs
+  parent_id: '0'
+  author: aw1621107
+  text: |-
+    I thought the problem was that those compiler flags don’t apply if you accidentally do anything UB
+
+    One of the complaints about contracts was more precisely around what is called "mixed mode", where (approximately speaking) the same contract on a specific kind of functions function is compiled multiple times with different flags. This is technically not UB, but the standard did not guarantee exactly which flag(s) would be in effect in the final binary.
+    More concretely, say you have pre(x > 0) on a function in a header file for some library you wrote. You want/need this to always be enforced so you specify the appropriate flag in your build files. If a downstream consumer decides to build against the same header and specify that contracts are to be ignored, under the right circumstances the linker may choose the version with ignored contract checks for use in your library, effectively stripping out the checks you specified.
+    This behavior was a sticking point to say the least, and at least one NB (Romania IIRC) explicitly said so. A paper proposing something like enforced was rejected before the first failed NB vote, but I guess the failure changed enough minds to get a similar change through this time.
+
+    it seems it then doesn’t address the reason people voted down the first proposal.
+
+    There were multiple objections to the first draft standard. This change (supposedly) resolves some of them. Others (like "remove contracts entirely") were considered but the committee decided that no changes were warranted.
+  score: 3
+  posted_at: '2026-11-21T19:57:04Z'
+- id: lo-lzifbk
+  parent_id: '0'
+  author: wareya
+  text: |-
+    The syntax is unfortunate, but yay! Guaranteed contracts!
+    I guess I'm going to be writing #define always_enforce std::contracts::controls::enforced in my future C++ projects.
+    EDIT: Oh, I should've finished reading lol -- "using namespace std::contracts::controls;" yeah that's good and works.
+  score: 1
+  posted_at: '2026-11-21T21:52:04Z'
+- id: lo-u1guf4
+  parent_id: '0'
+  author: wareya
+  text: 'I think a plausible reason is that contracts are already being used in the
+    wild in some places and it''s important to not break those existing workflows.
+    But I''m just playing devil''s advocate. I would''ve preferred a simpler syntax
+    at least. edit: I didn''t finish reading: using namespace std::contracts::controls;
+    [...] pre<enforced>(x > 0) is fine IMO.'
+  score: 1
+  posted_at: '2026-11-21T21:52:54Z'
+- id: lo-k1zigw
+  parent_id: '0'
+  author: foonathan
+  text: Existing practice in many C++ assertion macros is that the shorter spelling
+    is disabled in release mode, and you need to use a special mode to have them enabled
+    all the time. That's just the culture of C++; the standard feature follows it.
+  score: 3
+  posted_at: '2026-11-21T22:25:50Z'
+- id: lo-nmelln
+  parent_id: '0'
+  author: foonathan
+  text: |-
+    Contracts were initially approved something like 100-16. Within WG21, there is consensus to have this feature. However, on the DIS stage it is no longer "one person = one vote" but "one country = one vote", and the opposition is geographically diverse and did an effective lobbying campaign, citing a paper by Bjarne et al that contains multiple factual errors and misrepresentation of the situation. That paper was then quoted as the reason for rejecting C++26 by multiple NBs, including ones that did not participate in the process before. That is why the first DIS failed.
+    WG21 reaffirmed their decision to keep contracts in, added an always-enforced syntax to resolve some of the more actionable concerns, and will sent out detailed rationale to the NBs, hopefully clearing up the misinformation they've received the last time around.
+  score: 2
+  posted_at: '2026-11-21T22:30:53Z'
+- id: lo-o40tdc
+  parent_id: '0'
+  author: madhadron
+  text: I find it so strange that we haven’t just all agreed that new versions of
+    C++ are a bad idea and the language should be frozen and exist only to support
+    the large existing codebase.
+  score: 1
+  posted_at: '2026-11-22T00:52:01Z'
+- id: lo-hmeiez
+  parent_id: '0'
+  author: olliej
+  text: |-
+    The syntax is
+    pre(x>0)
+
+    But at build time you can configure contract enforcement into an "observe" mode (generally for adoption, etc where you don't know if there are existing issues and don't want instant trap on any failure). There are cases where library authors want to be able to say "this is a security critical invariant" and so not have the trapping behavior overridden by build settings. This is that explicit "ignore any build time rules that attempt to suppress trapping on contract violation".
+  score: 1
+  posted_at: '2026-11-22T00:57:35Z'
 article:
   url: https://herbsutter.com/2026/11/21/c26-is-done-again-trip-report-november-2026-iso-c-standards-meeting-buzios-brazil/
   title: 'C++26 is done (again)! — Trip report: November 2026 ISO C++ standards meeting
@@ -171,4 +250,4 @@ article:
     We actually also did some work on C++29! Here are so
   error:
   fetched_at: '2026-11-21T18:48:35Z'
-archived_at: '2026-11-21T18:48:35Z'
+archived_at: '2026-11-22T01:01:35Z'
