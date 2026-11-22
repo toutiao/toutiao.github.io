@@ -4,14 +4,14 @@ post:
   title: 'Show HN: Zero C# – C# without a runtime or GC'
   url: https://onurgumus.github.io/zero-csharp/index.html
   hn_url: https://news.ycombinator.com/item?id=50590279
-  score: 124
+  score: 162
   author: ''
   posted_at: '2026-11-21T15:39:09Z'
-  fetched_at: '2026-11-22T01:01:23Z'
+  fetched_at: '2026-11-22T10:50:12Z'
   article_url: https://onurgumus.github.io/zero-csharp/index.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-22T01:01:23Z'
-  raw_comment_count: 96
+  article_fetched_at: '2026-11-22T10:50:12Z'
+  raw_comment_count: 110
 comments:
 - id: '50590654'
   parent_id: '50590279'
@@ -859,6 +859,111 @@ comments:
     manually free, use-afte-free, etc. that come with &quot;manual memory&quot;."
   score: 0
   posted_at: '2026-11-22T00:48:37Z'
+- id: '50595399'
+  parent_id: '50594629'
+  author: YuechenLi
+  text: Oh, right. Thanks for reminding me, kinda embarrassing since I just implemented
+    Result &lt;T, E&gt; in the new app I&#x27;m building with unions.
+  score: 0
+  posted_at: '2026-11-22T01:40:49Z'
+- id: '50595432'
+  parent_id: '50590949'
+  author: Rohansi
+  text: Reflection to do what? Getting&#x2F;setting fields, calling methods, etc.
+    uses `object` which means boxing, which means allocating. Going AOT also means
+    there is no JIT to compile methods (including generic instances) that were not
+    statically referenced.
+  score: 0
+  posted_at: '2026-11-22T01:47:32Z'
+- id: '50595578'
+  parent_id: '50594450'
+  author: raincole
+  text: In C# (and generally in programming) marshaling is the conversion between
+    your typical memory representation (in C# it&#x27;s your object) and the other
+    ways (be it C struct, C string, utf8 string, or whatever received from socket.)
+    that&#x27;s why AllocGlobal is under Marshal. Not saying one should use it though...
+    the only ones sane programmers would touch is probably to handle C structs returned
+    from native code.
+  score: 0
+  posted_at: '2026-11-22T02:19:06Z'
+- id: '50595692'
+  parent_id: '50595432'
+  author: wallstop
+  text: I mean, yes, but also, no - you can generate and cache (or return manual ownership
+    to the caller) IL&#x2F;whatever runtime code that doesn&#x27;t box for any reflection
+    thing that you need on the fly, assuming the type information is available. Like
+    you make it an explicit API to do the code gen, no JIT required.<p>Just because
+    the code isn&#x27;t baked into the binary doesn&#x27;t mean that it theoretically
+    can&#x27;t be done at runtime. At least, AFAICT.
+  score: 0
+  posted_at: '2026-11-22T02:40:18Z'
+- id: '50595948'
+  parent_id: '50595578'
+  author: jasomill
+  text: System.Marshal is a sort of catch-all for functions used to interact with
+    unmanaged code, including things like Win32 error handling and COM in addtion
+    to type conversion and unsafe memory access in general.
+  score: 0
+  posted_at: '2026-11-22T03:31:08Z'
+- id: '50596306'
+  parent_id: '50591983'
+  author: DeathArrow
+  text: "&gt;There&#x27;s also C++ and although it is a monstrosity the practical
+    thing would be to use that.<p>True, but can&#x27;t you work with a subset of C++
+    that you consider sane?"
+  score: 0
+  posted_at: '2026-11-22T04:40:41Z'
+- id: '50596547'
+  parent_id: '50590877'
+  author: vibebingo
+  text: Embedded
+  score: 0
+  posted_at: '2026-11-22T05:17:29Z'
+- id: '50597204'
+  parent_id: '50591360'
+  author: jasomill
+  text: Referring to Native AOT rather than this:<p>If your goal is to distribute
+    small, single-file executables, the size difference can be an order of magnitude.<p>The
+    difference in startup time can be similarly significant, which is important in
+    many applications.<p>Finally, the introduction of Native AOT has motivated the
+    development of fast compile-time alternatives to many things in both the framework
+    and third-party libraries that traditionally relied on comparatively slow runtime
+    code generation and&#x2F;or reflection, which benefit AOT and JIT alike.
+  score: 0
+  posted_at: '2026-11-22T07:42:48Z'
+- id: '50597281'
+  parent_id: '50590877'
+  author: nellacross
+  text: Concerns about GC pauses are real.<p>It would be interesting to see an official
+    time-bounded GC feature where you could manually trigger a collection with a specific
+    time budget, such as 5ms. The GC would collect a portion of objects and defer
+    the rest to the next cycle. The runtime could still perform automatic GC pauses.
+  score: 0
+  posted_at: '2026-11-22T07:56:29Z'
+- id: '50597587'
+  parent_id: '50595126'
+  author: jaen
+  text: Smart pointers ie. reference counting are a (not very good) form of GC...<p>Especially
+    in multi-threaded settings, smart pointers perform poorly (compared to GC) due
+    to requiring atomics on hot paths, and the alternative (epochs, hazard pointers,
+    RCU) is <i>orders of magnitude</i> more complicated to get exactly right than
+    just using GC.<p>This also explains why historically the most interesting concurrent
+    data structures were first implemented in Java, not C++.<p>eg. Java got a <i>decent</i>
+    concurrent hash table WAY before anything else - in 2003 vs. the 2006 initial
+    release of Intel TBB, and the performance was not as good for all use cases. C++
+    performance did not catch up until ~2017 with the release of folly::ConcurrentHashMap!
+  score: 0
+  posted_at: '2026-11-22T08:53:48Z'
+- id: '50597807'
+  parent_id: '50592329'
+  author: jaen
+  text: Memory leaks and memory corruption are two sides of the same thing.<p>They&#x27;re
+    just symptoms of managing the lifetime of memory incorrectly. Same solution for
+    both - either better (safe) explicit lifetime management or GC.<p>Arenas don&#x27;t
+    fundamentally solve leaks nor corruption.<p>(I&#x27;m excluding <i>resource</i>
+    leaks from the definition of memory leaks, to not muddy the discussion)
+  score: 0
+  posted_at: '2026-11-22T09:32:26Z'
 article:
   url: https://onurgumus.github.io/zero-csharp/index.html
   title: Zero C# | C# without a runtime, from Linux to a 386
@@ -968,9 +1073,9 @@ article:
 
     If you're new to it, these four pages take you from nothing to an interactive program.
 
-    - InstallWith dotnet on Linux, or from the repository for every target.
+    - InstallWith dotnet on Linux or Windows, or from the repository for every target.
 
-    With dotnet on Linux, or from the repository for every target.
+    With dotnet on Linux or Windows, or from the repository for every target.
 
     - Your first programBuild it, run it, see how small it is.
 
@@ -986,5 +1091,5 @@ article:
 
     Looking for something specific? The task guides answer one question each, and the reference lists every type in the library.
   error:
-  fetched_at: '2026-11-22T01:01:23Z'
-archived_at: '2026-11-22T01:01:33Z'
+  fetched_at: '2026-11-22T10:50:12Z'
+archived_at: '2026-11-22T10:50:28Z'

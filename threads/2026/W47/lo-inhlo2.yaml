@@ -1,0 +1,111 @@
+---
+post:
+  id: lo-inhlo2
+  source: lobsters
+  title: Advice for the next 100 Rust GUIs
+  url: https://linebender.org/blog/next-100-guis/
+  hn_url: https://lobste.rs/s/inhlo2
+  score: 16
+  author: bitshift
+  posted_at: '2026-11-21T23:10:07Z'
+  fetched_at: '2026-11-22T10:50:29Z'
+  article_url: https://linebender.org/blog/next-100-guis/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-22T10:50:30Z'
+  raw_comment_count: 4
+  tags:
+  - rust
+comments:
+- id: lo-cpmlte
+  parent_id: '0'
+  author: bitshift
+  text: |-
+    I like what he has to say about modularity.
+    One of the things the web ecosystem has done really well is encapsulation of some of the hard parts of GUIs. If you want to build your own web framework, you don't have to worry about opening a native window, or rendering text, or making widgets accessible. You get all that for free! That lowers the barrier to entry and allows the crowd to thoroughly explore the solution space.
+    The downside of thoroughly exploring the solution space is we got thousands upon thousands of different web frameworks, and it took a decade for things to settle. But on the whole, I think the competition of ideas was worth it.
+  score: 2
+  posted_at: '2026-11-22T00:15:59Z'
+- id: lo-vhxwzl
+  parent_id: '0'
+  author: travisgriggs
+  text: |-
+    I love Zed, not much of a rust guy at the moment, but maybe some day. Anyway, this:
+
+    There’s evidence that the LLM cost of writing Rust code is not significantly higher than other languages, and there is reason to believe that in large codebases, Rust will be more maintainable because its type system helps enforce invariants.
+
+    caught my eye. I was actually intrigued to go see the “evidence” (https://danluu.com/pl-tokens/). I actually didn’t find much evidence at this point. The article even concludes with “who knows?”. It’s more of an attempt to validate the claim, and ironically it does it domains (back end type algorithms) where static languages have been more prevalent, and doesn’t test much in the domains (user facing stuff) where dynamic languages have tended to thrive.
+    I would be curious how compelling some of the others felt the “evidence” was. I actually liked the evidence article a bit (I.e. was grateful for the ref). It just felt like this author is reaching if they see it as a support for what the hope is here.
+  score: 7
+  posted_at: '2026-11-22T00:28:50Z'
+- id: lo-1orvud
+  parent_id: '0'
+  author: keito
+  text: |-
+    I don't think the token cost of generating the initial code is necessarily the bottleneck or even the most important cost. Instead the quality of the generated code, and how well the model can maintain and make changes to the codebase over time, feel like the pertinent questions.
+    In my experience, the frontier models have gotten a lot better at Rust compared to early 2025. I don't know how much of that comes from Rust-specific pre-/post-training and how much carries over from training in other domains/languages.
+    I haven't asked frontier models to write enough Rust UI code to know how well they'd maintain a complex codebase built with a framework like GPUI over time. What I'd be curious to see measured is how well agents fix bugs and add new features - without introducing regressions or making the codebase hideous - in an existing UI app across a few different UI stacks. That would tell us more about the cost of the language + UI framework than the initial token cost alone.
+  score: 2
+  posted_at: '2026-11-22T06:41:40Z'
+- id: lo-hcz1kt
+  parent_id: '0'
+  author: ogoffart
+  text: |-
+    We don't need 100 new Rust GUI toolkits. We need stable and mature ones.
+    With AI, anyone can produce a GUI framework over a weekend. That's the easy part. The hard part is maturity: years of API stability, and enough users that someone can bet a product on it.
+  score: 1
+  posted_at: '2026-11-22T10:17:06Z'
+article:
+  url: https://linebender.org/blog/next-100-guis/
+  title: Advice for the next 100 Rust GUIs - Linebender
+  fetch_status: success
+  content: |-
+    # Advice for the next 100 Rust GUIs
+
+    ### Raph Levien, November 21, 2026
+
+    This is a followup to [Advice for the next dozen Rust GUIs](https://raphlinus.github.io/rust/gui/2022/07/15/next-dozen-guis.html), published 4.5 years ago. The world is different in many ways, but some of the advice there is still valid. There have been roughly 20 Rust GUI toolkits announced since that blog post (see [2026 survey](https://blog.wybxc.cc/blog/rust-gui-survey-2026/)), but also a recent rapid acceleration of interest in Rust GUI, fueled by AI.
+
+    ## Rust GUI is still compelling
+
+    The motivation to build GUI apps in Rust remains strong. Many shipping GUI apps suffer from poor performance, especially when built with cross-platform technology. GUI toolkits shipped by platforms have largely stagnated, and system vendors remain uninterested in solving the cross-platform problem, so Electron has grown in popularity. RAM remains expensive and the focus is shifting to mobile, so bloat has real consequences. Building high-performance UI in Rust is a practical alternative.
+
+    Adoption of Rust UI in the past few years has been slow. Few flagship apps use Rust for their UI. One of the most notable is the Zed editor, built on their own GPUI framework. It proves that shipping Rust UI is practical, and indeed, GPUI is emerging as a major choice for AI-driven rewrites, most notably Discord. My personal sense is that GPUI is well suited to the Zed use case, and shipping in a real project boosts its visibility and credibility quite a bit, but it’s not necessarily the ideal choice for more general purpose applications. Among other things, its 2D rendering engine is well suited to a text editor, but lacks full gradient support, blending, filters, and other features expected of a renderer in the same class as Vello or Skia.
+
+    The reasons for slow adoption may be melting away. Writing Rust code is harder than languages more traditionally used for UI (TypeScript, Kotlin, Swift), and finding engineers skilled in both Rust and UI is challenging. But AI is changing the game. There’s [evidence](https://danluu.com/pl-tokens/) that the LLM cost of writing Rust code is not significantly higher than other languages, and there is reason to believe that in large codebases, Rust will be more maintainable because its type system helps enforce invariants. So if all languages have roughly the same cost, then why not go with one that has a dramatically better combination of safety and performance?
+
+    For these reasons, Rust is rapidly becoming _the_ language for AI rewrites of existing codebases. But there is still no consensus on the strategy for the UI layer. I predict there will be a small explosion of trying lots of different things.
+
+    ## Native is complicated
+
+    My 2022 blog post had a large section on “native,” first pointing out that the term has no clear meaning, and more broadly pointing out that “native” UI toolkits are simply choices among many, and should be evaluated on the important quality criteria.
+
+    I think this is largely still true, but it depends greatly on which platform is being targeted. Windows still has no clear native choice (see [Microsoft Hasn’t Had a Coherent GUI Strategy Since Petzold](https://www.jsnover.com/blog/2026/03/13/microsoft-hasnt-had-a-coherent-gui-strategy-since-petzold/)) and on Mac there is a bit of fragmentation between AppKit and SwiftUI. However, SwiftUI has performance issues (see [Michael Tsai blog from 2025](https://mjtsai.com/blog/2025/06/18/swiftui-at-wwdc-2025/)) and so it is clearly possible to do better on the performance front.
+
+    While desktop UI has remained stagnant, the situation on mobile is a bit different. Platforms continue to invest, and there are many fine details that are important for an app to look and feel native. One very notable example is Liquid Glass on iOS – if you use UIKit or SwiftUI, you can get that with little effort, but apps built with cross-platform toolkits won’t quite seem right. In addition, making gesture recognition, scroll dynamics, and IME 100% match the platform are not yet fully solved problems.
+
+    Thus, for mobile, an extremely viable path is to use the native toolkit for UI but do the common “business logic” in Rust. I’m not sure about the business logic, but for the UI, this is the decision that Shopify has made recently, abandoning React Native. I believe 1Password has this architecture. This is also the "Phoenix" plan for Discord on mobile, while using GPUI on desktop.
+
+    That said, there's been considerable progress in trying to build mobile UI entirely in Rust. Below is a short screencast of the editor demo in [android-view](https://github.com/rust-mobile/android-view). You can see that a lot of IME functionality works, including swiping, moving the cursor by rolling the space bar, and deleting in semantic chunks. Not shown in the video below, but composition regions (needed for CJK) also work, and there's basic accessibility through AccessKit.
+
+    ## Text layout and accessibility infrastructure is basically solved
+
+    One of the big unsolved problems as of the 2022 blog post was text layout. It is of course a hard problem to get right. I’m pleased to say that the ecosystem now has a good solution, in the form of [Parley](https://github.com/linebender/parley). It’s gotten there as a result of sustained investment from Google, Canva, and Dioxus (now Cognition), as well as contributions from the community. It seems to be used in the majority of new Rust UI toolkits. In addition, to help mitigate the risk of monoculture, Cosmic Text is a viable alternative.
+
+    AccessKit was just getting started in 2022, but is now solid infrastructure as well, and used by most UI toolkits. I should note, though, there is a difference between a _good_ integration and a box ticking exercise. And there is more work to be done, for example to make rich text editing fully accessible. One other problem I'd like to see addressed is performance degradation when accessibility is enabled. This is a problem for egui in particular, as it has to build and diff a tree each animation frame, undercutting the benefits of its underlying immediate mode design.
+
+    ## System compositor is still unsolved
+
+    One topic I talked about extensively in the 2022 blog post is leveraging the system compositor. This issue is even more pressing today, especially with the increased importance of video. You _really_ want a video playing in a hardware accelerated layer when possible, and on low end devices it’s the only hope for getting smooth frame rates.
+
+    There has been some progress, notably the [subduction](https://github.com/forest-rs/subduction) library, but it certainly isn’t commonly integrated into UI toolkits yet. To do it well is a challenging problem, as the capabilities provided by the platform vary widely. Ideally there’s a rich and high level interface, something like CALayer on Apple platforms, and polyfills to implement that interface as well as possible on other platforms. On Android, when the task is something simple, like overlaying some GUI controls on a video, it would use SurfaceFlinger layers, but when it involves more sophisticated compositing, it would run shaders on the GPU.
+
+    This is absolutely something we should build, ideally as a high quality community project rather than something with dozens of vibe-coded forks. But even in the latter case it’s better for it to exist than not.
+
+    ## Immediate vs retained mode
+
+    One of the challenges of the Rust UI ecosystem is that different applications have different needs. The idea of a single, unified UI for completely general purpose use may be behind us, especially now that LLMs can optimize and fine tune for specific use cases.
+
+    That’s been playing out architecturally in the choice between immediate mode and retained mode. Immediate mode is very appealing because it’s less total code and seems quite a bit simpler. And for some applications (most especially development support for games) it works well. However, I am con
+  error:
+  fetched_at: '2026-11-22T10:50:30Z'
+archived_at: '2026-11-22T10:50:30Z'

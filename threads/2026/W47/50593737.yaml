@@ -1,0 +1,856 @@
+---
+post:
+  id: '50593737'
+  title: Advice for the next 100 Rust GUIs
+  url: https://linebender.org/blog/next-100-guis/
+  hn_url: https://news.ycombinator.com/item?id=50593737
+  score: 168
+  author: ''
+  posted_at: '2026-11-21T21:17:53Z'
+  fetched_at: '2026-11-22T10:50:11Z'
+  article_url: https://linebender.org/blog/next-100-guis/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-22T10:50:11Z'
+  raw_comment_count: 68
+comments:
+- id: '50594468'
+  parent_id: '50593737'
+  author: vkaku
+  text: I think the Rust GUI scene is fast catching up. After using ArtCraft on my
+    PC, I was amazed at the responsiveness and expressiveness of the GUIs being implemented
+    and I feel they&#x27;ve come a long way. I was used to running slow JS based apps
+    all the time, any of these native ones feel like an upgrade to me.<p>Having said
+    that, I think we&#x27;ve come to an era where concerns like these can be quickly
+    addressed and responsiveness tested, so looking forward to more of this kind of
+    analysis and more usable applications in the near future.
+  score: 0
+  posted_at: '2026-11-21T22:56:43Z'
+- id: '50594782'
+  parent_id: '50593737'
+  author: amelius
+  text: 'Or do as Mitcad does: use C++ to talk to Qt, and do the rest in Rust.'
+  score: 0
+  posted_at: '2026-11-21T23:46:41Z'
+- id: '50594838'
+  parent_id: '50593737'
+  author: JohnAaronNelson
+  text: Arguing about coding languages seems quite passé. If there is an imperative
+    reason to use something for performance reasons, I’ll bite. Otherwise, it seems
+    silly. The prompts will not differ much and the rewrites are trivial. What matters
+    to me is the experience, not the tech.
+  score: 0
+  posted_at: '2026-11-21T23:55:43Z'
+- id: '50594841'
+  parent_id: '50593737'
+  author: jacoplane
+  text: I just use Flutter for the UI and then use <a href="https:&#x2F;&#x2F;cjycode.com&#x2F;flutter_rust_bridge&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;cjycode.com&#x2F;flutter_rust_bridge&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-21T23:55:50Z'
+- id: '50594973'
+  parent_id: '50593737'
+  author: dv_dt
+  text: I found Qts signal&#x2F;slot system very nice to work with to help with bridging
+    the application logic to UI events and flows.  Maybe rust&#x27;s generic async
+    is all you need, but I suspect that a GUI should probably have some opinion of
+    how it interacts with async.
+  score: 0
+  posted_at: '2026-11-22T00:21:02Z'
+- id: '50595125'
+  parent_id: '50593737'
+  author: __benny__
+  text: 'Nice article, thank you for sharing it.<p>I do want to nitpick this part
+    however:<p>&gt; That’s been playing out architecturally in the choice between
+    immediate mode and retained mode. Immediate mode is very appealing because it’s
+    less total code and seems quite a bit simpler. And for some applications (most
+    especially development support for games) it works well. However, I am concerned
+    it won’t scale especially well. In short, it’s good at the first 90%, but it makes
+    the second 90% harder. To be considered really production-ready, it has to establish
+    stable widget identities to build and update the accessibility tree, and it has
+    to reliably cache expensive intermediate artifacts such as text layouts (simple
+    immediate mode often gets around this by cutting corners in text layout, which
+    may be fine for gamedev). And of course, it pulls strongly towards a model of
+    re-rendering everything every frame rather than exploiting layers in the compositor.<p>It&#x27;s
+    a common criticism but I don&#x27;t think it&#x27;s based on anything other than
+    preconceived notions about rendering being slow and doing a ton of caching makes
+    everything faster. but neither seem to be backed up by any sort of empirical evidence.
+    Anecdotally every imgui I&#x27;ve used has been lightening fast, and retained
+    mode UI&#x27;s like the browser, windows software, new Macos apps written in SwiftUI,
+    etc, have performance problems.<p>Egui has solved the accessibility problem and
+    does a lot of caching: galleys, glyphs, and layouts are cached, packed texture
+    atlases minimize GPU uploads, and it uses inputs &amp; animation state to draw
+    on demand.<p>I also don&#x27;t see how retained mode UI would scale better. Retained
+    mode UI&#x27;s are typically slow - they have a complex multi-pass general layout
+    system and a ton of bookkeeping, which is why you typically need to keep updates
+    to a minimum and ever-more-complex change tracking systems are being built to
+    reduce updates to a minimum. This doesn&#x27;t scream scalability to me - whereas
+    in an imgui there is a baseline overhead but adding more widgets or more frequent
+    updates have a negligible performance impact. the worst case for retained mode
+    is a UI which has many widgets frequently updating multiple times a second, which
+    means you approach the update and drawing of imgui but with the additional overhead
+    of the change tracking, bookkeeping, etc of the retained system.<p>Also there
+    is nothing fundamental about imgui layout systems being limited, and in my experience
+    it&#x27;s not that difficult to build custom widgets to implement pretty much
+    anything. Retained mode layout systems are usually declarative, where you describe
+    a layout and hope that the system is flexible enough to support what you want,
+    whereas with an imgui you can just directly draw and shade geometry to get whatever
+    you want.<p>Otherwise, great article and I look forward to the future of Rust
+    UI.'
+  score: 0
+  posted_at: '2026-11-22T00:48:17Z'
+- id: '50595239'
+  parent_id: '50594838'
+  author: palata
+  text: Given the price of RAM, I&#x27;d say it&#x27;s nice to think about performance?
+  score: 0
+  posted_at: '2026-11-22T01:09:26Z'
+- id: '50595363'
+  parent_id: '50594838'
+  author: bliteben
+  text: we&#x27;ve been circle jerking ever since win32 and vb6.
+  score: 0
+  posted_at: '2026-11-22T01:34:53Z'
+- id: '50595468'
+  parent_id: '50594468'
+  author: skhameneh
+  text: ArtCraft mostly uses egui and without egui there isn&#x27;t much that would
+    be considered mature, even GPUI doesn&#x27;t seem to have the same level of completeness.<p>I
+    suppose what I&#x27;m getting at is there isn&#x27;t much more movement that I&#x27;ve
+    noticed as far as professional UI development.  I thought there would be a lot
+    more than there is.
+  score: 0
+  posted_at: '2026-11-22T01:54:20Z'
+- id: '50595515'
+  parent_id: '50593737'
+  author: skhameneh
+  text: I&#x27;m building a custom GUI in Rust and it is such a slow process to build
+    out.  I find bits of the end result to be amazing, but it&#x27;s all in the details
+    that look like nothing compared to using something more &quot;complete&quot; with
+    a larger UI community.<p>I have some nice markdown rendering and phenomenally
+    fast smooth scrolling - but I look at everything ahead of me, I don&#x27;t even
+    have text selection implemented yet, text wrapping and input cursor placement
+    implementation wasn&#x27;t that smooth to begin with.  I have some amazing shader
+    based animations, but the amount of effort that went into far exceed anything
+    else I could have picked for a foundation.<p>I started with Typescript and kept
+    running into performance issues - it was fast to build and easy to scale, but
+    kept becoming harder to maintain.  With Rust it feels hard to build, hard to scale,
+    but it feels like scaling and maintaining might be starting to get easier.  The
+    performance ceiling is a night a day difference though.
+  score: 0
+  posted_at: '2026-11-22T02:04:36Z'
+- id: '50595520'
+  parent_id: '50595468'
+  author: the__alchemist
+  text: Concur. I started with EGUI years ago when there were fewer options. It still
+    seems to be one of the most mature, reliable, and flexible. I&#x27;m happy continuing
+    to use it for new projects, with an open mind towards experimenting with GPUI
+    and others.
+  score: 0
+  posted_at: '2026-11-22T02:05:25Z'
+- id: '50595540'
+  parent_id: '50595125'
+  author: adastra22
+  text: Egui solving accessibility is news to me. Has something changed in the last
+    year or two?
+  score: 0
+  posted_at: '2026-11-22T02:10:42Z'
+- id: '50595553'
+  parent_id: '50593737'
+  author: tauchunfall
+  text: |-
+    The &quot;2026 Survey of Rust GUI Libraries&quot; does not include Native Shell (nsh) [1] which is retained-mode and based on gpui-fast.<p>Maybe because the code repository was started on October 11th, just 1.5 months ago. More than 2,000 commits later it already looks great. I think, they do the (AI) software engineering part very well [2].<p>After using GTK and JavaFX, and React for a decade, Native Shell makes me really excited. I never got warm with Flutter, the desktop applications were very slow on my MacBook. So I&#x27;ve been doing frontend development for more than 25 years, and I&#x27;m completely mind-blown for the last few weeks.<p>Having a React background this feels very familiar, without the annoyances. Reactivity is inspired by Solid, styling by CSS (optionally with Tailwind syntax), the UI primitives are native views with layouting done by Taffy [3]. If you target web, the UI will be HTML. You can write the UI screens and components in Rust, but you can also use TypeScript&#x2F;JSX, it will transpile and interpret it using Rolldown and QuickJS.<p>It includes some components which are difficult to get right. A data table component, a rich-text editor component, and a plot component. As far as I can tell, they chose the currently best-known approach for them.<p>[1] <a href="https:&#x2F;&#x2F;nsh.dev&#x2F;" rel="nofollow">https:&#x2F;&#x2F;nsh.dev&#x2F;</a>
+    [2] <a href="https:&#x2F;&#x2F;github.com&#x2F;longbridge&#x2F;nsh&#x2F;commits&#x2F;main" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;longbridge&#x2F;nsh&#x2F;commits&#x2F;main</a>
+    [3] <a href="https:&#x2F;&#x2F;nsh.dev&#x2F;elements&#x2F;" rel="nofollow">https:&#x2F;&#x2F;nsh.dev&#x2F;elements&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-22T02:14:12Z'
+- id: '50595575'
+  parent_id: '50595125'
+  author: shooly
+  text: First you complain about lack of empirical evidence in discussions about rendering,
+    and then you yourself argue against retained mode UIs using purely anecdotal evidence.<p>You
+    are also often comparing imgui&#x2F;egui - a specific implementation of the immediate
+    mode concept to the whole concept of retained mode UI.<p>&gt; in an imgui [...]
+    adding more widgets or more frequent updates have a negligible performance impact<p>Absolute
+    nonsense.<p>&gt; Retained mode [...] hope that the system is flexible enough to
+    support what you want, whereas with an imgui you can just directly draw and shade
+    geometry<p>At least in browsers you can just use &lt;canvas&gt; or &lt;svg&gt;.
+    If you&#x27;re implementing retained mode in a custom application - well it also
+    must have some way to draw things on the screen.
+  score: 0
+  posted_at: '2026-11-22T02:18:45Z'
+- id: '50595594'
+  parent_id: '50594841'
+  author: himujjal
+  text: What is wrong with Dart? I genuinely want to understand why such a framework
+    exist in the first place? Why would someone write UI in Rust? That too in a framework
+    meant for Dart with excellent ecosystem.<p>Performance? What is that one problem
+    that Rust solves that Dart cannot?<p>If this is for fun. Great. But if this is
+    seriously taken to prod, well.
+  score: 0
+  posted_at: '2026-11-22T02:22:47Z'
+- id: '50595605'
+  parent_id: '50594838'
+  author: deterministic
+  text: I completely agree. I stopped caring about programming languages now that
+    AI writes all the code. And AI’s are <i>really</i> good at C++ so that’s my weapon
+    of choice.
+  score: 0
+  posted_at: '2026-11-22T02:24:18Z'
+- id: '50595690'
+  parent_id: '50593737'
+  author: weinzierl
+  text: "<i>&quot;You really want a video playing in a hardware accelerated layer
+    when possible, and on low end devices it’s the only hope for getting smooth frame
+    rates.&quot;</i><p>I hit this recently trying to play  video in Bevy efficiently.\nI
+    thought that must be easy, \nbut ended up with frames copied into a texture and
+    composited by the engine, because the app owns just one swapchain and the video
+    can&#x27;t get its own layer."
+  score: 0
+  posted_at: '2026-11-22T02:39:56Z'
+- id: '50595741'
+  parent_id: '50595575'
+  author: __benny__
+  text: I&#x27;m not arguing against retained mode UI systems, I&#x27;m arguing that
+    some of the criticisms of imgui&#x27;s are unfounded. A lack of empirical evidence
+    is relevant for that.<p>I used Egui as an example because that&#x27;s relevant
+    to the shared article. When I say &quot;imgui&quot; I am talking about the paradigm,
+    not Dear Imgui.<p>In manu retained mode UI systems you can break out of the paradigm
+    with a <i>Canvas</i> element, but that is quite different from an imgui - it&#x27;s
+    akin to using a 2d drawing API like Skia.<p>&gt; Absolute nonsense.<p>How so?
+  score: 0
+  posted_at: '2026-11-22T02:50:32Z'
+- id: '50595927'
+  parent_id: '50593737'
+  author: dafelst
+  text: I am constantly surprised how few mentions of Slint there are in these sorts
+    of articles.  It&#x27;s written by a team of funded ex-Qt alumni, is incredibly
+    fast, and their DSL approach, while having a bit of a learning curve, makes laying
+    out apps and managing data binding incredibly easy.<p>They also bypass a big part
+    of the issues mentioned in the article by just straight up using skia as a renderer
+    on desktop (you can use others if you want) which gives software and gpu accelerated
+    paths.<p>I&#x27;m not associated with the project at all, but have been using
+    it on and off for a couple years and have been quite satisfied.<p>It&#x27;s main
+    weakness is rich text rendering which lacks maturity for complex layouts, but
+    it is getting better all the time.
+  score: 0
+  posted_at: '2026-11-22T03:26:51Z'
+- id: '50595957'
+  parent_id: '50595239'
+  author: wmf
+  text: But there are more mature languages that are in the same performance class
+    as Rust (e.g. C++, ObjC, Swift). Rust with an immature toolkit may be worse than
+    WinUI + C++ or SwiftUI + Swift.
+  score: 0
+  posted_at: '2026-11-22T03:32:18Z'
+- id: '50595961'
+  parent_id: '50595927'
+  author: Onavo
+  text: They are not free. That&#x27;s a pretty big barrier to adoption. When QT was
+    launched there was no good alternative for cross platform if you want to support
+    Linux.<p>Honestly, if Slint doesn&#x27;t pivot or provide non GUI lib services,
+    I would expect an &quot;Our Incredible Journey&quot; blog post soon.<p>The only
+    way I can imagine them surviving is to go into aerospace and automobile where
+    the barriers are entry are mostly around certification and compliance. There&#x27;s
+    no moat anymore in consumer UI libs.
+  score: 0
+  posted_at: '2026-11-22T03:32:36Z'
+- id: '50595994'
+  parent_id: '50595961'
+  author: dafelst
+  text: On desktop and mobile, they&#x27;re free for open source products and for
+    any company with less than $2M in funding or revenue, and pretty reasonably priced
+    otherwise.<p>Embedded seems to be where they&#x27;re focusing, as they do charge
+    royalties for that, so you may be right.
+  score: 0
+  posted_at: '2026-11-22T03:37:34Z'
+- id: '50596110'
+  parent_id: '50595239'
+  author: kccqzy
+  text: It is possible to write software that conserves memory in almost any language.
+    It’s easier in some languages than others. But AI makes it so that the difference
+    between languages matters less.
+  score: 0
+  posted_at: '2026-11-22T04:01:03Z'
+- id: '50596147'
+  parent_id: '50595957'
+  author: bigyabai
+  text: "&gt; e.g. C++, ObjC, Swift<p>All of these languages have their own drawbacks
+    that Rust doesn&#x27;t. C++ is a toolchain management nightmare, ObjC is antique,
+    and Swift&#x27;s core team was called &quot;toxic&quot; by Lattner himself.<p>Which
+    is not to say that Rust is a perfect language (especially for GUIs) but it&#x27;s
+    no wonder we ended up in this situation. The 14 competing standards all drove
+    themselves into a lake."
+  score: 0
+  posted_at: '2026-11-22T04:08:40Z'
+- id: '50596173'
+  parent_id: '50593737'
+  author: pnkzin1024
+  text: |-
+    When I made a computer use tool on macOS, my tool could find the right button easily, because well made apps have buttons with a  role and a name.
+    But I made my tool find the right button using screenshots at bad apps.
+  score: 0
+  posted_at: '2026-11-22T04:13:54Z'
+- id: '50596234'
+  parent_id: '50593737'
+  author: soon_to_be_sb
+  text: '&gt;Windows still has no clear native choice<p>Wait, where did MFC go?<p>EDIT:
+    <a href="https:&#x2F;&#x2F;zendevy.com&#x2F;en&#x2F;tech&#x2F;mfc-history-and-current-status-2026&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;zendevy.com&#x2F;en&#x2F;tech&#x2F;mfc-history-and-current-status-2...</a>'
+  score: 0
+  posted_at: '2026-11-22T04:27:41Z'
+- id: '50596419'
+  parent_id: '50595594'
+  author: Rohansi
+  text: Bridges give me bad memories of React Native. There&#x27;s a reason why they
+    moved away from that - it was terrible for performance.
+  score: 0
+  posted_at: '2026-11-22T04:59:32Z'
+- id: '50596431'
+  parent_id: '50593737'
+  author: lelanthran
+  text: "&gt; The reasons for slow adoption may be melting away. Writing Rust code
+    is harder than languages more traditionally used for UI (TypeScript, Kotlin, Swift),
+    and finding engineers skilled in both Rust and UI is challenging. But AI is changing
+    the game. There’s evidence that the LLM cost of writing Rust code is not significantly
+    higher than other languages, and there is reason to believe that in large codebases,
+    Rust will be more maintainable because its type system helps enforce invariants.
+    So if all languages have roughly the same cost, then why not go with one that
+    has a dramatically better combination of safety and performance?<p>IOW, you&#x27;re
+    not going to write nor read any code, so choose Rust.<p>(Of course, if you&#x27;re
+    not going to write nor read any code, you might as well choose <i>anything</i>)."
+  score: 0
+  posted_at: '2026-11-22T05:00:41Z'
+- id: '50596470'
+  parent_id: '50596234'
+  author: Rohansi
+  text: Native in this context refers to the UI toolkit(s) native to the platform.
+    Microsoft has a big list of them, with different visual styles, and applications
+    are split between them.
+  score: 0
+  posted_at: '2026-11-22T05:06:57Z'
+- id: '50596567'
+  parent_id: '50595927'
+  author: ducktective
+  text: "&gt; by just straight up using skia<p>I think building up on wgpu is better"
+  score: 0
+  posted_at: '2026-11-22T05:20:33Z'
+- id: '50596595'
+  parent_id: '50594782'
+  author: throwaway2037
+  text: Yeah, I don&#x27;t get it.  What is wrong with Qt plus Rust bindings?  At
+    this point, is there a more mature cross-platform GUI toolkit?
+  score: 0
+  posted_at: '2026-11-22T05:28:06Z'
+- id: '50596690'
+  parent_id: '50595239'
+  author: Dylan16807
+  text: If you have multiple megabytes of RAM, the language you use for GUI-related
+    activity is basically meaningless in terms of performance.  Other factors dominate
+    massively.
+  score: 0
+  posted_at: '2026-11-22T05:51:17Z'
+- id: '50596733'
+  parent_id: '50595125'
+  author: raphlinus
+  text: 'Thanks.<p>The point I&#x27;m making is a subtle one. I do think you can go
+    very far with an immediate mode GUI paradigm, and it&#x27;s also certainly the
+    case that most of the imguis you see are performant. But I still wouldn&#x27;t
+    choose it for a design or productivity app.<p>Once you do all the caching of text
+    layouts and building of intermediate trees for a11y, you no longer have a pure
+    imgui, but rather a hybrid.<p>I&#x27;m going to try to get this point across in
+    an analogy, apologies to people not familiar with the referent.<p>Let&#x27;s say
+    you&#x27;re frustrated with the size and complexity of a modern C compiler like
+    clang or gcc, and want to do something simpler. One of the design decisions is
+    whether use SSA (static single assignment) as the basis for the intermediate representation.
+    If you&#x27;re going for simplicity, you might quite reasonably choose to skip
+    it; you can generate reasonably good code straight from the AST.<p>But then, you
+    and your users get dissatisfied with merely reasonably good code, and want some
+    of those optimizations that make production compilers generate actually fast code
+    – constant folding, common subexpression elimination, strength reduction, etc.
+    You can certainly implement them as AST transforms, but it gets difficult to track
+    everything? You add a bunch of logic and eventually get those optimizations to
+    work about as well as the SSA-based version in real compilers.<p>Another compiler
+    designer has similar goals but uses a different strategy: dive in and do SSA from
+    the beginning, which is not as simple at first, but then you can just do those
+    optimizations &quot;from the book,&quot; without a lot of friction.<p>Basically
+    what I&#x27;m saying is that I prefer the second compiler. It&#x27;s not to say
+    the first can&#x27;t be made to work.'
+  score: 0
+  posted_at: '2026-11-22T06:02:13Z'
+- id: '50596832'
+  parent_id: '50596567'
+  author: Narishma
+  text: wgpu is unusable without a modern GPU, unlike skia.
+  score: 0
+  posted_at: '2026-11-22T06:22:03Z'
+- id: '50596901'
+  parent_id: '50596595'
+  author: monocasa
+  text: The traditional model of mutable trees of objects that use heavy inheritance
+    is a rough fit for Rust.
+  score: 0
+  posted_at: '2026-11-22T06:39:04Z'
+- id: '50596926'
+  parent_id: '50596733'
+  author: __benny__
+  text: I guess it depends what you define as an &quot;imgui&quot;. To me, I think
+    it&#x27;s when the application describes the UI every frame. I don&#x27;t think
+    purity of approach is very relevant though. I&#x27;m happy to concede that a hybrid
+    approach is better - in all things, balance :)<p>If I understand the point of
+    the analogy, it&#x27;s basically that when you bolt sophisticated optimizations
+    onto a representation that wasn&#x27;t designed for them, the bookkeeping accumulates
+    in an ad hoc way, while a representation purpose built for those transforms makes
+    the same optimisations feel like they fall out of the structure. Would that be
+    valid?<p>If so I would actually swap imgui&#x27;s and retained mode ui&#x27;s
+    around. In an imgui, you can implement domain-specific caching and other performance
+    optimisations for your bottlenecks, whereas in retained mode UI you&#x27;re building
+    against a general system and you often need to resort to hacks to rescue performance,
+    or design your data model in a way that is amenable to change detection. Memoization,
+    keys and identity gymnastics, state sliced into atoms&#x2F;signals&#x2F;items,
+    &quot;this component only depends on X&quot; annotations, Equatable conformances,
+    Identifiable fake IDs, keeping structs small and pruned so the diff is cheap,
+    splitting views so diff granularity lines up with actual change granularity, id
+    resets to force identity, etc. Fixing performance in React is largely about reshaping
+    your data model until it&#x27;s legible to the framework&#x27;s change detection.
+    When you use fine-grained reactive systems you need to adopt the framework&#x27;s
+    data stores and it ends up infecting your entire application. You cannot just
+    pull in a dependency and use it&#x27;s state directly - you need to martial it
+    into signals or stores or set up subscribers.<p>Whereas in an imgui it&#x27;s
+    trivial to benchmark and if you notice that a list is performing a lot of work
+    on each update cycle you can apply an optimisation that is impossible in a more
+    general system.<p>SSA isn&#x27;t simply a retained representation of an AST. It&#x27;s
+    a representation with properties that make particular analyses and transformations
+    easier. What specific properties of a retained mode UI representation make the
+    important operations of a design application easier, and what is the cost of obtaining
+    those properties? If the answer is stable widget identity, incremental invalidation,
+    persistent layout relationships, and accessibility object lifetimes, thats fine,
+    but an immediate-mode system can introduce those capabilities selectively, without
+    necessarily adopting the entire retained-mode programming model.<p>In other words,
+    the question isn&#x27;t whether you need the equivalent of SSA, it&#x27;s if you
+    need to make SSA the foundation of your entire application.<p>Fwiw I&#x27;m building
+    a desktop application with Egui and Bevy and it&#x27;s been a breath of fresh
+    air compared to building applications with classical retained-mode systems. An
+    entire class of bugs and complexity regarding state management just goes away.
+    Performance is ~3ms including the entire render pass (more than just UI), and
+    all of the complex components that required caching and other performance optimisations
+    would have had to be hand-rolled in a retained-mode system anyways - except with
+    Egui those optimisations are simple to build. All of the state just lives in Bevy&#x27;s
+    ECS without any real considerations for the UI, because the UI systems can just
+    reach into the world and read it directly. Some parts of the UI live as entities
+    with relationships forming a tree, so you might say that&#x27;s approaching a
+    retained-mode system, but it&#x27;s implemented selectively where it&#x27;s useful
+    - most of the UI is transient.<p>But to each their own - some people seem to &quot;click&quot;
+    more with a retained mode approach and it&#x27;s still a valid choice to use it
+    if you prefer it.
+  score: 0
+  posted_at: '2026-11-22T06:46:26Z'
+- id: '50597010'
+  parent_id: '50596832'
+  author: mottosso
+  text: If you mean &quot;modern&quot; as in from within the last 15-20 years then
+    yes. It targets both WebGL2 and OpenGL, in addition to Metal and Vulkan.
+  score: 0
+  posted_at: '2026-11-22T07:00:22Z'
+- id: '50597101'
+  parent_id: '50593737'
+  author: locknitpicker
+  text: "&gt; RAM remains expensive and the focus is shifting to mobile, so bloat
+    has real consequences. Building high-performance UI in Rust is a practical alternative.<p>The
+    blogger is making the mistake of trying to come up with problems where Rust is
+    the solution.<p>The truth of the matter is that both Android and iOS have native,
+    high performance GUI toolkits. Yet, some mobile apps developed by sizeable professional
+    teams led by smart software engineers still opt to develop them with webview-based
+    technologies. Why would this happen if the blogger&#x27;s argument was grounded
+    on reality?<p>The truth of the matter is that webview-based technologies are already
+    quite performant and run well with the resources of your average phone. Native
+    GUI toolkits moreso.<p>Also, today&#x27;s mobile phones have far more computational
+    resources than your average workstation from 20 years ago, and back then people
+    were fine with using Java-based desktop applications. So to claim that today there
+    is a premium for performance that didn&#x27;t existed decades ago is an extraordinary
+    claim that is not really supported by reality.<p>But again that&#x27;s why the
+    blogger had to at least try to come up with a problem where Rust for GUI programming
+    was a reasonable solution. It&#x27;s a shame the problem simply isn&#x27;t real."
+  score: 0
+  posted_at: '2026-11-22T07:21:16Z'
+- id: '50597131'
+  parent_id: '50595927'
+  author: potato-peeler
+  text: "&gt; It&#x27;s written by a team of funded ex-Qt alumni, is incredibly fast<p>I
+    don’t know how you define fast, but slint is incredibly resource hungry on desktop."
+  score: 0
+  posted_at: '2026-11-22T07:27:26Z'
+- id: '50597149'
+  parent_id: '50594973'
+  author: pedro_caetano
+  text: I recently saw a presentation from Matthias Rauter who is actively working
+    on Qt bridges specifically for Rust.<p>So in theory you could have your business
+    logic in Rust and shoehorn a full blown QT frontend.<p>I am not sure if it&#x27;s
+    production ready and they are certainly open to feedback from industry but it
+    is definitely a path forward if you want to leverage all the conformity&#x2F;compliance
+    aspects that QT already worked out through the years.
+  score: 0
+  posted_at: '2026-11-22T07:30:50Z'
+- id: '50597158'
+  parent_id: '50593737'
+  author: cpursley
+  text: I quite like the Crux approach which uses native UI (mobile, desktop as well)
+    as well as Iced for desktop&#x2F;web, both of which use the Elm architecture.
+  score: 0
+  posted_at: '2026-11-22T07:32:15Z'
+- id: '50597192'
+  parent_id: '50595961'
+  author: ogoffart
+  text: I&#x27;m working at Slint.<p>First, Slint is fully open source and totally
+    free for desktop and mobile development. The article mostly focuses on that, so
+    the pricing argument is simply not applicable in this context.<p>You&#x27;re right
+    about certification being a differentiator. We&#x27;re currently in the process
+    of obtaining ISO 26262 ASIL B certification, and pursuing other certifications
+    relevant to industries such as automotive and medical.<p>Our customers don&#x27;t
+    necessarily want &quot;free&quot;. They want a serious technology they can build
+    products on, rely on and maintain for decades. They want a partner who takes responsibility
+    and stands behind the technology.<p>For products with 10–20 year lifecycles, that&#x27;s
+    worth a lot more than a free library. And I believe that&#x27;s where Slint&#x27;s
+    moat lies.
+  score: 0
+  posted_at: '2026-11-22T07:39:07Z'
+- id: '50597220'
+  parent_id: '50597131'
+  author: ogoffart
+  text: Could you elaborate on what you mean by resource hungry? What kind of application
+    and hardware are you using, and what resource usage are you seeing?<p>I&#x27;d
+    genuinely like to understand your experience. It might be a bug or something we
+    can improve. (I work at Slint)<p>For context, Slint is designed to be lightweight.
+    Especially compared to shipping an entire browser runtime, which appear to be
+    considered normal by many.
+  score: 0
+  posted_at: '2026-11-22T07:46:28Z'
+- id: '50597221'
+  parent_id: '50593737'
+  author: raincole
+  text: "&gt; Immediate vs retained mode<p>&gt; For this reason among others, I am
+    not impressed by the choice of the ArtCraft projects to use egui<p>ArtCraft apps
+    are incredibly snappy, and they&#x27;ve convinced me that the stigma surrounding
+    immediate mode is unwarranted."
+  score: 0
+  posted_at: '2026-11-22T07:46:31Z'
+- id: '50597237'
+  parent_id: '50597149'
+  author: dv_dt
+  text: I was actually thinking the most rust ui crates Ive tried don&#x27;t have
+    an equivalent to signal&#x2F;slots. I hope some will try to build a more friendly
+    bridging framework instead of leaving it adhoc. This article focused on the rendering
+    aspects, rightly so. But there are other untouched areas to explore for rust ui
+    libraries.  Focusing on making the app logic bridge easier and even smarter would
+    be a big differentiator to ui crates which otherwise there are a growing pile
+    that differ on rendering stacks and ui widgets only.
+  score: 0
+  posted_at: '2026-11-22T07:49:11Z'
+- id: '50597320'
+  parent_id: '50595994'
+  author: ogoffart
+  text: 'Small correction: Slint is free for proprietary desktop, mobile and web apps
+    under our Royalty-free license, regardless of company size.'
+  score: 0
+  posted_at: '2026-11-22T08:04:35Z'
+- id: '50597328'
+  parent_id: '50593737'
+  author: swiftcoder
+  text: "&gt; You really want a video playing in a hardware accelerated layer when
+    possible, and on low end devices it’s the only hope for getting smooth frame rates<p>The
+    other issue in this bucket is being able to embed a 3D rendering context into
+    the UI.<p>None of the native rust UI toolkits I tested at the time supported this,
+    and I ended up using Tauri -&gt; HTML-Canvas -&gt; WebGL for what ought to be
+    a native app."
+  score: 0
+  posted_at: '2026-11-22T08:05:44Z'
+- id: '50597329'
+  parent_id: '50597221'
+  author: malkia
+  text: but are they power-efficient?
+  score: 0
+  posted_at: '2026-11-22T08:05:51Z'
+- id: '50597346'
+  parent_id: '50595468'
+  author: ogoffart
+  text: |-
+    I&#x27;d like to consider Slint as mature. It hasn&#x27;t broken its API since 1.0 in 2023, it&#x27;s used in production, and it has accessibility, live-preview tooling
+    (I work at Slint.)
+  score: 0
+  posted_at: '2026-11-22T08:09:19Z'
+- id: '50597366'
+  parent_id: '50597328'
+  author: slopinthebag
+  text: the frameworks with wgpu backends can do this pretty trivially.<p>you can
+    even use egui with bevy and have an entire game engine.
+  score: 0
+  posted_at: '2026-11-22T08:11:23Z'
+- id: '50597367'
+  parent_id: '50597101'
+  author: swiftcoder
+  text: There is a significant trend, ever since LLMs arrived on the scene, of companies
+    porting their web-based UIs to native - at least in part driven by persistent
+    criticism of the RAM usage of Electron apps.
+  score: 0
+  posted_at: '2026-11-22T08:11:44Z'
+- id: '50597434'
+  parent_id: '50597366'
+  author: swiftcoder
+  text: "&gt; you can even use egui with bevy and have an entire game engine.<p>Indeed,
+    but I specifically don&#x27;t <i>want</i> an entire game engine. I want a UI with
+    an embedded 3D view.<p>Dealing with subpar clones of the whole text rendering,
+    IME, and accessibility stacks just to get an embedded 3D view is not worth."
+  score: 0
+  posted_at: '2026-11-22T08:21:23Z'
+- id: '50597437'
+  parent_id: '50596926'
+  author: SleepyMyroslav
+  text: Please consider other performance metrics like battery life. One of the new
+    experiences for me as a developer this year was finding that platform-provided
+    profiler can show me milliwatts spent alongside the milliseconds.
+  score: 0
+  posted_at: '2026-11-22T08:22:00Z'
+- id: '50597525'
+  parent_id: '50597328'
+  author: simonask
+  text: It&#x27;s because it is an unbelievably difficult and quite finicky thing
+    to support, especially if the 3D canvas uses a different rendering API than the
+    UI framework itself.<p>For example, say your UI is drawn with OpenGL, but you
+    need an embedded Vulkan canvas. This takes a huge amount of API-specific code
+    passing API-foreign texture handles and synchronization objects between contexts.
+    You need to do this for every possible combination of APIs, and it&#x27;s not
+    symmetrical (hosting Vulkan within OpenGL is different from hosting OpenGL within
+    Vulkan).<p>Every desktop-class rendering API does have extensions for dealing
+    with foreign APIs, but it&#x27;s a lot of work, to the point where rendering into
+    shared memory from a subprocess is sometimes the most viable option.
+  score: 0
+  posted_at: '2026-11-22T08:42:51Z'
+- id: '50597554'
+  parent_id: '50594782'
+  author: progbits
+  text: Interesting, mitcad was released few months ago, and looks very much like
+    <a href="https:&#x2F;&#x2F;physcad.io&#x2F;" rel="nofollow">https:&#x2F;&#x2F;physcad.io&#x2F;</a>
+    which was also released recently. The latter is commercial and closed source.<p>Both
+    are clearly vibecoded but the results seem decent (haven&#x27;t used them though).
+    I wonder if there&#x27;s some shared heritage or this is what you get when you
+    prompt for a desktop CAD.
+  score: 0
+  posted_at: '2026-11-22T08:47:51Z'
+- id: '50597668'
+  parent_id: '50597367'
+  author: locknitpicker
+  text: "&gt; There is a significant trend, ever since LLMs arrived on the scene,
+    of companies porting their web-based UIs to native - at least in part driven by
+    persistent criticism of the RAM usage of Electron apps.<p>I don&#x27;t think you
+    are seeing any trend.<p>I see a constant back and forth between webview-based
+    technologies, webview-to-native transpires, and native. This has been happening
+    constantly for a decade or so.<p>If anything, what you are seeing is the bar for
+    these rewrites to be lowered by code assistants.<p>On top of that, webview-based
+    UIs are the backbone of server-driven UI, which is a well established technique
+    to circumvent problems created by appstore reviews. Any team that has a healthy
+    throughput eventually migrates toward server-driven UI to avoid appstore bottlenecks.<p>So
+    no, I don&#x27;t think that you are seeing any trend at all. At best you are seeing
+    people doing unimportant tasks just because ai code assistants lowered the cost
+    of doing experiments."
+  score: 0
+  posted_at: '2026-11-22T09:07:11Z'
+- id: '50597705'
+  parent_id: '50597525'
+  author: swiftcoder
+  text: "&gt; especially if the 3D canvas uses a different rendering API than the
+    UI framework itself<p>See this is high on the list of <i>things I do not want</i>.
+    I don&#x27;t want my UI rendered from scratch in OpenGL, I want it drawn using
+    the native widget API, which already supports embedding 3D canvases.<p>This is
+    one of those things that is completely trivial in, say, Cocoa, but arbitrarily
+    hard in most cross-platform UI toolkits."
+  score: 0
+  posted_at: '2026-11-22T09:13:31Z'
+- id: '50597713'
+  parent_id: '50593737'
+  author: atillaisik
+  text: Thanks for the knowladge guys, thats ball knowladge!
+  score: 0
+  posted_at: '2026-11-22T09:14:27Z'
+- id: '50597754'
+  parent_id: '50595553'
+  author: franga2000
+  text: 'I&#x27;m not one of those anti-LLM people but holy ** this is the most unreadable
+    slop website I&#x27;ve had the misfortune of landing on recently.<p>Every sentence
+    has those instantly recognisable slop fillers that add nothing but make the paragraph
+    longer and the technical parts are complete nonsense.<p>This is probably the craziest
+    example one click from the front page: <a href="https:&#x2F;&#x2F;nsh.dev&#x2F;docs&#x2F;sandbox-and-capabilities&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;nsh.dev&#x2F;docs&#x2F;sandbox-and-capabilities&#x2F;</a><p>&gt;
+    An app written in Rust is native code compiled into the app that ships it, as
+    the rest of that app is, and runs with its trust; its calls into NSH’s services
+    ([...]) go through the same native checks as TSX’s, under what a host grants.<p>WHAT??'
+  score: 0
+  posted_at: '2026-11-22T09:19:58Z'
+- id: '50597796'
+  parent_id: '50597220'
+  author: potato-peeler
+  text: "Here is the resource usage for hello world counter app which comes as a template,
+    compared with the same app written in qt - <a href=\"https:&#x2F;&#x2F;ibb.co.com&#x2F;album&#x2F;7xCbWk\"
+    rel=\"nofollow\">https:&#x2F;&#x2F;ibb.co.com&#x2F;album&#x2F;7xCbWk</a><p><pre><code>
+    \   Slint - 70+Mb (gpu)    \n    Qt QML - 105Mb (gpu)    \n    Qt Widgets - 4.6Mb
+    (cpu)\n</code></pre>\nFor such a simple template, 70+mb is too high. I guess slint
+    is primarily targeted for custom styled graphical apps and marketed as an alternative
+    to Qt QML, but I imagine adding styles will only increase the consumption.<p>Add
+    to that, you can check the second screenshot, where the same Slint counter app
+    shoots up to 300MB+ Ram when i resize its window. This is strange behaviour. This
+    doesnt happen in QT apps, atleast such a dramatic increase.<p>When i was exploring
+    slint, it looked very appealing, markup and styling were not that too hard to
+    understand, but it turned me off when i saw the resource usage. I guess slint
+    is still better than Avalonia or even flutter, which touches 300MB, but I will
+    stick to QT, specifically QT Widgets. If i need to add some custom graphics to
+    qt widgets, QPainter is pretty powerful, and it only adds 5 to 10mb of ram use."
+  score: 0
+  posted_at: '2026-11-22T09:29:15Z'
+- id: '50597912'
+  parent_id: '50597796'
+  author: ogoffart
+  text: Thanks for the comparison! Keep in mind that there are fixed memory costs
+    for font caches and GPU&#x2F;driver resources that don&#x27;t scale with application
+    size. So a Hello World app might not be the most representative benchmark.<p>If
+    RAM is an issue, Slint&#x27;s software renderer uses considerably less memory.<p>(and
+    even 70 MB is not particularly resource-hungry compared to other UI frameworks,
+    especially browser-based ones.)<p>the spike when resizing is interesting and worth
+    investigating
+  score: 0
+  posted_at: '2026-11-22T09:51:08Z'
+- id: '50597957'
+  parent_id: '50593737'
+  author: singinwhale
+  text: I wonder if there are any UI libraries inspired by how Unreal Engine does
+    it (there it is called Slate). It does not lend itself to Rust 1:1 due to how
+    its TAttribute type would clash with the borrow checker but it is a proven retained
+    mode approach (with an IM adapter as of recently). It has IME, accessibility,
+    cross platform, performance and GPU all figured out (or at least good enough).
+    It has its issues, too, but I never see it mentioned in these discussions.
+  score: 0
+  posted_at: '2026-11-22T09:56:51Z'
+- id: '50598006'
+  parent_id: '50597912'
+  author: eddythompson80
+  text: "&gt; and even 70 MB is not particularly resource-hungry compared to other
+    UI frameworks, especially browser-based ones<p>Is it? A comparable Electron hello
+    world app is ~80-100 MBs"
+  score: 0
+  posted_at: '2026-11-22T10:03:30Z'
+- id: '50598068'
+  parent_id: '50597754'
+  author: tauchunfall
+  text: 'The commit messages (i.e. the pull request descriptions) are written in a
+    similar fashion.<p>For example [1]: &quot;core: Keep a device pixel for boxes
+    under a pixel thick (#2841) [...] Frames are rounded to device pixels edge by
+    edge (`rounded` in `core&#x2F;mod.rs`), so neighbouring views meet. A box thinner
+    than a pixel whose two edges round to the same pixel got no size at all and vanished.&quot;.<p>I
+    wonder if humans need special abilities to read and understand this. And if these
+    kind of bugs this commit attempts to fix could have been prevented in the first
+    place.<p>&gt; An app written in Rust is native code compiled into the app that
+    ships it, as the rest of that app is, and runs with its trust<p>This also makes
+    no sense if you use the Chinese version of the text and machine translate it to
+    English.<p>[1] <a href="https:&#x2F;&#x2F;github.com&#x2F;longbridge&#x2F;nsh&#x2F;commit&#x2F;70a45b59ea5813bbc5fb33548f1577cda7a5202c"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;longbridge&#x2F;nsh&#x2F;commit&#x2F;70a45b59ea5813bbc5f...</a>'
+  score: 0
+  posted_at: '2026-11-22T10:09:20Z'
+- id: '50598080'
+  parent_id: '50597328'
+  author: ogoffart
+  text: Slint can do that. You can render with wgpu or OpenGL into a texture and show
+    it as an Image. There are examples for wgpu, OpenGL and Bevy in the repository.
+  score: 0
+  posted_at: '2026-11-22T10:11:04Z'
+- id: '50598151'
+  parent_id: '50597754'
+  author: eddythompson80
+  text: "&gt; Host apps download NSH apps as signed packages and run them as plugins,
+    and an app that shipped may never be built again: its team moved on, its source
+    sits in a business process, the host app updated NSH on its own schedule.<p>It’s
+    indeed difficult when you keep your app’s source in a business process."
+  score: 0
+  posted_at: '2026-11-22T10:19:45Z'
+- id: '50598207'
+  parent_id: '50597912'
+  author: potato-peeler
+  text: "&gt; Keep in mind that there are fixed memory costs for font caches and GPU&#x2F;driver
+    resources that don&#x27;t scale with application size<p>&gt; If RAM is an issue,
+    Slint&#x27;s software renderer uses considerably less memory.<p>I can apply the
+    same optimisation to qml and even its resource use will not scale, since they
+    too have fixed costs with font, gpu context, js engine.<p>&gt; and even 70 MB
+    is not particularly resource-hungry compared to other UI frameworks, especially
+    browser-based ones<p>70mb is extremely resource hungry for something as simple
+    as this. When someone is using electron, they are aware of the trade off. For
+    something which is not electron, this type of resource use is inefficient.<p>If
+    I want something simple, I will use fltk. I can get far with graphics even with
+    fltk. And if I want something powerful and not bother writing things from scratch,
+    I can achieve that with qt easily and get fancy. I don’t know why I will use slint,
+    other than to hop on the rust bandwagon, which is the current fad right now.<p>Upto
+    you how you communicate about slint, but I am not using that, when my goal is
+    not to hog the users resources."
+  score: 0
+  posted_at: '2026-11-22T10:26:26Z'
+- id: '50598308'
+  parent_id: '50598068'
+  author: foldr
+  text: The commit message seems fine. The bug is the following. Because boxes are
+    rounded edge-by-edge, a box can end up with a zero size (and hence be invisible)
+    if its dimensions are smaller than a pixel. If the box is solid, then it should
+    display as a single device pixel in this case. That&#x27;s what the bug fix accomplishes.<p>As
+    for whether bugs like this could have been prevented in the first place, this
+    seems squarely in the category of the kind of bug that humans are capable of introducing.
+  score: 0
+  posted_at: '2026-11-22T10:41:37Z'
+article:
+  url: https://linebender.org/blog/next-100-guis/
+  title: Advice for the next 100 Rust GUIs - Linebender
+  fetch_status: success
+  content: |-
+    # Advice for the next 100 Rust GUIs
+
+    ### Raph Levien, November 21, 2026
+
+    This is a followup to [Advice for the next dozen Rust GUIs](https://raphlinus.github.io/rust/gui/2022/07/15/next-dozen-guis.html), published 4.5 years ago. The world is different in many ways, but some of the advice there is still valid. There have been roughly 20 Rust GUI toolkits announced since that blog post (see [2026 survey](https://blog.wybxc.cc/blog/rust-gui-survey-2026/)), but also a recent rapid acceleration of interest in Rust GUI, fueled by AI.
+
+    ## Rust GUI is still compelling
+
+    The motivation to build GUI apps in Rust remains strong. Many shipping GUI apps suffer from poor performance, especially when built with cross-platform technology. GUI toolkits shipped by platforms have largely stagnated, and system vendors remain uninterested in solving the cross-platform problem, so Electron has grown in popularity. RAM remains expensive and the focus is shifting to mobile, so bloat has real consequences. Building high-performance UI in Rust is a practical alternative.
+
+    Adoption of Rust UI in the past few years has been slow. Few flagship apps use Rust for their UI. One of the most notable is the Zed editor, built on their own GPUI framework. It proves that shipping Rust UI is practical, and indeed, GPUI is emerging as a major choice for AI-driven rewrites, most notably Discord. My personal sense is that GPUI is well suited to the Zed use case, and shipping in a real project boosts its visibility and credibility quite a bit, but it’s not necessarily the ideal choice for more general purpose applications. Among other things, its 2D rendering engine is well suited to a text editor, but lacks full gradient support, blending, filters, and other features expected of a renderer in the same class as Vello or Skia.
+
+    The reasons for slow adoption may be melting away. Writing Rust code is harder than languages more traditionally used for UI (TypeScript, Kotlin, Swift), and finding engineers skilled in both Rust and UI is challenging. But AI is changing the game. There’s [evidence](https://danluu.com/pl-tokens/) that the LLM cost of writing Rust code is not significantly higher than other languages, and there is reason to believe that in large codebases, Rust will be more maintainable because its type system helps enforce invariants. So if all languages have roughly the same cost, then why not go with one that has a dramatically better combination of safety and performance?
+
+    For these reasons, Rust is rapidly becoming _the_ language for AI rewrites of existing codebases. But there is still no consensus on the strategy for the UI layer. I predict there will be a small explosion of trying lots of different things.
+
+    ## Native is complicated
+
+    My 2022 blog post had a large section on “native,” first pointing out that the term has no clear meaning, and more broadly pointing out that “native” UI toolkits are simply choices among many, and should be evaluated on the important quality criteria.
+
+    I think this is largely still true, but it depends greatly on which platform is being targeted. Windows still has no clear native choice (see [Microsoft Hasn’t Had a Coherent GUI Strategy Since Petzold](https://www.jsnover.com/blog/2026/03/13/microsoft-hasnt-had-a-coherent-gui-strategy-since-petzold/)) and on Mac there is a bit of fragmentation between AppKit and SwiftUI. However, SwiftUI has performance issues (see [Michael Tsai blog from 2025](https://mjtsai.com/blog/2025/06/18/swiftui-at-wwdc-2025/)) and so it is clearly possible to do better on the performance front.
+
+    While desktop UI has remained stagnant, the situation on mobile is a bit different. Platforms continue to invest, and there are many fine details that are important for an app to look and feel native. One very notable example is Liquid Glass on iOS – if you use UIKit or SwiftUI, you can get that with little effort, but apps built with cross-platform toolkits won’t quite seem right. In addition, making gesture recognition, scroll dynamics, and IME 100% match the platform are not yet fully solved problems.
+
+    Thus, for mobile, an extremely viable path is to use the native toolkit for UI but do the common “business logic” in Rust. I’m not sure about the business logic, but for the UI, this is the decision that Shopify has made recently, abandoning React Native. I believe 1Password has this architecture. This is also the "Phoenix" plan for Discord on mobile, while using GPUI on desktop.
+
+    That said, there's been considerable progress in trying to build mobile UI entirely in Rust. Below is a short screencast of the editor demo in [android-view](https://github.com/rust-mobile/android-view). You can see that a lot of IME functionality works, including swiping, moving the cursor by rolling the space bar, and deleting in semantic chunks. Not shown in the video below, but composition regions (needed for CJK) also work, and there's basic accessibility through AccessKit.
+
+    ## Text layout and accessibility infrastructure is basically solved
+
+    One of the big unsolved problems as of the 2022 blog post was text layout. It is of course a hard problem to get right. I’m pleased to say that the ecosystem now has a good solution, in the form of [Parley](https://github.com/linebender/parley). It’s gotten there as a result of sustained investment from Google, Canva, and Dioxus (now Cognition), as well as contributions from the community. It seems to be used in the majority of new Rust UI toolkits. In addition, to help mitigate the risk of monoculture, Cosmic Text is a viable alternative.
+
+    AccessKit was just getting started in 2022, but is now solid infrastructure as well, and used by most UI toolkits. I should note, though, there is a difference between a _good_ integration and a box ticking exercise. And there is more work to be done, for example to make rich text editing fully accessible. One other problem I'd like to see addressed is performance degradation when accessibility is enabled. This is a problem for egui in particular, as it has to build and diff a tree each animation frame, undercutting the benefits of its underlying immediate mode design.
+
+    ## System compositor is still unsolved
+
+    One topic I talked about extensively in the 2022 blog post is leveraging the system compositor. This issue is even more pressing today, especially with the increased importance of video. You _really_ want a video playing in a hardware accelerated layer when possible, and on low end devices it’s the only hope for getting smooth frame rates.
+
+    There has been some progress, notably the [subduction](https://github.com/forest-rs/subduction) library, but it certainly isn’t commonly integrated into UI toolkits yet. To do it well is a challenging problem, as the capabilities provided by the platform vary widely. Ideally there’s a rich and high level interface, something like CALayer on Apple platforms, and polyfills to implement that interface as well as possible on other platforms. On Android, when the task is something simple, like overlaying some GUI controls on a video, it would use SurfaceFlinger layers, but when it involves more sophisticated compositing, it would run shaders on the GPU.
+
+    This is absolutely something we should build, ideally as a high quality community project rather than something with dozens of vibe-coded forks. But even in the latter case it’s better for it to exist than not.
+
+    ## Immediate vs retained mode
+
+    One of the challenges of the Rust UI ecosystem is that different applications have different needs. The idea of a single, unified UI for completely general purpose use may be behind us, especially now that LLMs can optimize and fine tune for specific use cases.
+
+    That’s been playing out architecturally in the choice between immediate mode and retained mode. Immediate mode is very appealing because it’s less total code and seems quite a bit simpler. And for some applications (most especially development support for games) it works well. However, I am con
+  error:
+  fetched_at: '2026-11-22T10:50:11Z'
+archived_at: '2026-11-22T10:50:28Z'

@@ -1,0 +1,310 @@
+---
+post:
+  id: '50594132'
+  title: PcapAnalyzer – self-hosted pcap analyzer with 27 problem detectors
+  url: https://github.com/sebaandrada-cell/PcapAnalyzer
+  hn_url: https://news.ycombinator.com/item?id=50594132
+  score: 119
+  author: ''
+  posted_at: '2026-11-21T22:09:58Z'
+  fetched_at: '2026-11-22T10:50:10Z'
+  article_url: https://github.com/sebaandrada-cell/PcapAnalyzer
+  article_fetch_status: success
+  article_fetched_at: '2026-11-22T10:50:10Z'
+  raw_comment_count: 17
+comments:
+- id: '50594432'
+  parent_id: '50594132'
+  author: tuckerpo
+  text: Neat! My team and I at CableLabs did something very similar, but with more
+    of a PNM and reactive self-fix angle. [1] [2]<p>We demoed it to the CEOs and CTOs
+    of the world&#x27;s largest broadband companies and unfortunately it never caught
+    traction.<p>[1] <a href="https:&#x2F;&#x2F;www.cablelabs.com&#x2F;wp-content&#x2F;uploads&#x2F;2025&#x2F;03&#x2F;62200_Publication.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.cablelabs.com&#x2F;wp-content&#x2F;uploads&#x2F;2025&#x2F;03&#x2F;62200_P...</a><p>[2]
+    <a href="https:&#x2F;&#x2F;www.cablelabs.com&#x2F;blog&#x2F;netllm-handy-automated-network-assistant"
+    rel="nofollow">https:&#x2F;&#x2F;www.cablelabs.com&#x2F;blog&#x2F;netllm-handy-automated-networ...</a>
+  score: 0
+  posted_at: '2026-11-21T22:51:03Z'
+- id: '50594611'
+  parent_id: '50594132'
+  author: tonyarkles
+  text: As a more general idea, I’ve had pretty great success using LLMs to write
+    “doctor” scripts. Similar idea to what’s going on here, instead of repeatedly
+    giving LLMs raw data files from hardware and having it find the same issues over
+    and over, I’ve started being careful to drive the lessons learned into automated
+    test scripts and just instinctively running them against telemetry files every
+    time someone sends me one, whether or not there’s something wrong (or they’re
+    just looking for some data analysis). It’s the kind of thing I’ve always wanted
+    to do, but under time pressure would always just knock out 20 lines of numpy code,
+    do whatever analysis or debugging, and then move onto the next fire.
+  score: 0
+  posted_at: '2026-11-21T23:17:29Z'
+- id: '50594888'
+  parent_id: '50594132'
+  author: TZubiri
+  text: Unclear what problem this solves
+  score: 0
+  posted_at: '2026-11-22T00:04:02Z'
+- id: '50595169'
+  parent_id: '50594611'
+  author: subscribed
+  text: 'Same here. Another upside is that I have a common &quot;library&quot; of
+    the solved problems (ie: tools), my sessions &#x2F; project reuse. It dramatically
+    improves the perceived results and quality (I get to what I need in a fraction
+    of the time it took me on the beginning)'
+  score: 0
+  posted_at: '2026-11-22T00:57:36Z'
+- id: '50595296'
+  parent_id: '50594888'
+  author: ba1afd89f34cb23
+  text: I guess it is if you haven’t worked with this sort of thing before<p>pcap
+    is a file format for packer captures. You can use tools to capture copies of all
+    packets traversing a network interface, both on clients and servers running operating
+    systems like Linux and Windows, and on network switches and routers that support
+    this (at a minimum, with enterprise gear you can at least send a copy of all traffic
+    from specific source and destination interfaces in both receive and transmit directions
+    to other interfaces you connect a “sniffer” to that you then run a pcap capture
+    on, or you can often even encapsulate the copied traffic in GRE tunnel payloads
+    and send them directly to a remote sniffer).<p>This is a local web app that uses
+    Python libraries to analyze these capture files and look for common tell tale
+    signs of specific issues, such as a TCP connection being opened and being immediately
+    reset, which is an excellent way to find firewalls in the path that are denying
+    connections. You can also, providing an API key, send the capture and analysis
+    result to an LLM to discuss things further.<p>A sufficiently talented network
+    engineer can do this by hand, but can save time with this tool. End users that
+    aren’t capable of interpreting the capture due to lack of knowledge of underlying
+    network protocols can also get results this way without escalation.
+  score: 0
+  posted_at: '2026-11-22T01:19:51Z'
+- id: '50595538'
+  parent_id: '50594132'
+  author: hallucinate
+  text: 'Another tool that solves that issue that I found: <a href="https:&#x2F;&#x2F;packetsnitch.com&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;packetsnitch.com&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-22T02:10:04Z'
+- id: '50595576'
+  parent_id: '50595296'
+  author: TZubiri
+  text: "&gt;pcap is a file format for packer<p>I&#x27;ve worked with pcap through
+    tcpdump and wireshark before.<p>&gt;This is a local web app that uses Python libraries
+    to analyze these capture files and look for common tell tale signs of specific
+    issues<p>The problem is that your &#x27;problem&#x27; is that it&#x27;s an app
+    to find problems. So you are just kicking the can down the road of defining your
+    problem. You present a specific example though:<p>&gt;such as a TCP connection
+    being opened and being immediately reset, which is an excellent way to find firewalls
+    in the path that are denying connections<p>So the customer has a specific problem
+    they are trying to debug and that&#x27;s when they use your tool? It&#x27;s not
+    like a proactive scan of issues?<p>I guess I see it, but I don&#x27;t get why
+    someone&#x27;s AI Agent wouldn&#x27;t just run &#x27;apt install tcpdump&#x27;
+    or &#x27;winget install wireshark-cli&#x27; and run the commands themselves and
+    interpret it.<p>Consider evaluating an MCP or a Skill file, the UX is like a plugin
+    in the user&#x27;s existing trusted LLM software, instead of downloading a separate
+    tool to find the problem. I&#x27;m just having trouble imagining how someone ends
+    up downloading this otherwise."
+  score: 0
+  posted_at: '2026-11-22T02:18:54Z'
+- id: '50595702'
+  parent_id: '50594132'
+  author: SilentM68
+  text: Can an uv environment be used in a similar way to install and use the app
+    if docker is not chosen?
+  score: 0
+  posted_at: '2026-11-22T02:42:48Z'
+- id: '50595763'
+  parent_id: '50594132'
+  author: rkagerer
+  text: I&#x27;m confused what is divulged if you use the AI feature.  Does it perform
+    bidirectional redaction of sensitive portions of captures (IP&#x27;s, MAC&#x27;s,
+    data, etc)?
+  score: 0
+  posted_at: '2026-11-22T02:57:10Z'
+- id: '50596914'
+  parent_id: '50594132'
+  author: amanverasia
+  text: I created something similar, incase anyone wants to check it out. No login
+    page.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;amanverasia&#x2F;estudely-packet-explorer"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;amanverasia&#x2F;estudely-packet-explorer</a>
+  score: 0
+  posted_at: '2026-11-22T06:41:42Z'
+- id: '50597165'
+  parent_id: '50594432'
+  author: dolmen
+  text: AI on the gateway?<p>What about malware impersonating the user and installing
+    a persistent backdoor or spy on the network?
+  score: 0
+  posted_at: '2026-11-22T07:33:40Z'
+- id: '50597490'
+  parent_id: '50595296'
+  author: Hikikomori
+  text: Firewalls generally dont sent a rst when blocking syn, they just silently
+    drop it.
+  score: 0
+  posted_at: '2026-11-22T08:33:37Z'
+- id: '50597491'
+  parent_id: '50594132'
+  author: ironmagma
+  text: Who needs a problem detector when you&#x27;ve got a wife?
+  score: 0
+  posted_at: '2026-11-22T08:33:43Z'
+- id: '50598189'
+  parent_id: '50597490'
+  author: ba1afd89f34cb23
+  text: Disagree. This is configuration dependent, and generally enterprise firewalls
+    send a reset to quickly close the connection and letting the client know about
+    that instead of retrying assumed lost SYNs.<p>Palo Alto and Cisco firewalls reset
+    by default (you can, of course, change that). Linux will if you REJECT instead
+    of DROP.<p>You may be configuring to silently drop, but many people don’t.<p>Either
+    way, the point wasn’t that you can find all firewalls that way, but that this
+    tool purports to be able to tell you quickly when this behavior does occur.
+  score: 0
+  posted_at: '2026-11-22T10:23:29Z'
+- id: '50598204'
+  parent_id: '50595576'
+  author: ba1afd89f34cb23
+  text: It’s not my tool. I have nothing to do with its development and have never
+    used it. You posted a statement of not understanding what this is for, with no
+    indication of your knowledge level around the problem, so I tried to help.<p>This
+    is a local tool so you don’t ship full payloads to an LLM that, depending on the
+    license level of your key, will be used for training. These payloads will contain
+    what at least some companies will consider sensitive information just in packet
+    headers, let alone potential clear text.
+  score: 0
+  posted_at: '2026-11-22T10:26:10Z'
+- id: '50598244'
+  parent_id: '50594611'
+  author: __padding
+  text: "This was kind of the idea I had behind pcapsql[1]<p>We end up having to do
+    a bunch of pcap analysis at work, and rather than having to write a bunch of one
+    off python scripts, a colleague had expressed that if we could just use sql, we
+    could more easily add&#x2F;share various checks analysis etc, and we’ve built
+    up a little library of easily shareable SQL statements \nThat, and adding the
+    ability to join with other data sources via DuckDB has been a fun project.<p>Thing
+    is - LLMs are really very good now, and there is always the temptation to just
+    throw it the pcap file and say “find the problem” (as long as tokens are cheap).<p>[1]
+    <a href=\"https:&#x2F;&#x2F;github.com&#x2F;mtottenh&#x2F;pcapsql\" rel=\"nofollow\">https:&#x2F;&#x2F;github.com&#x2F;mtottenh&#x2F;pcapsql</a>"
+  score: 0
+  posted_at: '2026-11-22T10:30:12Z'
+- id: '50598284'
+  parent_id: '50598189'
+  author: cenamus
+  text: Anecdotal, but I had the same experience debugging some incorrect firewall
+    configs at work.
+  score: 0
+  posted_at: '2026-11-22T10:36:24Z'
+article:
+  url: https://github.com/sebaandrada-cell/PcapAnalyzer
+  title: 'GitHub - sebaandrada-cell/PcapAnalyzer: Free, self-hosted pcap analyzer
+    with 27 problem detectors and AI investigation · GitHub'
+  fetch_status: success
+  content: |-
+    ## Latest commit
+
+    ## History
+
+    ## Folders and files
+
+    ## Repository files navigation
+
+    # PcapAnalyzer
+
+    Versión en español: README.es.md.
+
+    Find the network fault in seconds, not hours. Upload a .pcap / .pcapng capture (gzip too) and PcapAnalyzer tells you what is failing, why, and what to check next. It runs on your own machine, so captures never leave your network.
+
+    Free and open source (Apache 2.0). Status: beta.
+
+    - Try it without installing anything: https://pcap-analyzer-seven.vercel.app/#demo
+
+    - Download: https://sebaandrada6.gumroad.com/l/hspgx (free) or clone this repository.
+
+    ## What it does
+
+    - 27 detectors that run on every capture, each with a severity and a next step: TCP: firewall blocks (SYN→RST), retransmissions, duplicate ACKs, loss and reordering, zero and full windows, resets after the handshake, slow handshakes. Path: PMTUD black holes, low MSS, IP fragmentation, ICMP errors, routing loops. Name and address services: unanswered or slow DNS, SERVFAIL, NXDOMAIN bursts, DHCP NAK / DECLINE / no answer, duplicate IPs, ARP storms. Applications: HTTP 4xx / 5xx and slow responses, TLS alerts, SSL 3.0 / TLS 1.0 / 1.1. Tunnels: IPsec (IKE and ESP), WireGuard, OpenVPN, GRE, L2TP and Teredo that are one-way, never answer a handshake or keep renegotiating. Security: port scans and sweeps, cleartext logins (FTP, POP3, IMAP, SMTP AUTH, HTTP Basic; credentials are never stored or shown), Telnet / SMBv1 / SNMP v1-v2c, ARP spoofing, overlapping IP fragments.
+
+    - TCP: firewall blocks (SYN→RST), retransmissions, duplicate ACKs, loss and reordering, zero and full windows, resets after the handshake, slow handshakes.
+
+    - Path: PMTUD black holes, low MSS, IP fragmentation, ICMP errors, routing loops.
+
+    - Name and address services: unanswered or slow DNS, SERVFAIL, NXDOMAIN bursts, DHCP NAK / DECLINE / no answer, duplicate IPs, ARP storms.
+
+    - Applications: HTTP 4xx / 5xx and slow responses, TLS alerts, SSL 3.0 / TLS 1.0 / 1.1.
+
+    - Tunnels: IPsec (IKE and ESP), WireGuard, OpenVPN, GRE, L2TP and Teredo that are one-way, never answer a handshake or keep renegotiating.
+
+    - Security: port scans and sweeps, cleartext logins (FTP, POP3, IMAP, SMTP AUTH, HTTP Basic; credentials are never stored or shown), Telnet / SMBv1 / SNMP v1-v2c, ARP spoofing, overlapping IP fragments.
+
+    - Capture quality first. It warns when the capture itself limits the result: frames duplicated by a mirror port, traffic seen in one direction only, truncated packets, connections already open when the capture started.
+
+    - Wireshark-style views: packet list with real Wireshark display filters over the whole capture, colouring, CSV export, expert info, HTTP / DNS / DHCP / TLS tables, response times and a flow diagram per conversation.
+
+    - AI investigation (optional): an AI investigates the capture with tools (real filters, stream detail, statistics) and cites the packets behind every claim. You can then ask follow-up questions. It uses your own Anthropic API key; without one, a demo mode runs the full flow with text generated from the analysis, at no cost.
+
+    - PDF report, Spanish and English interface, light and dark theme.
+
+    ## Quick start
+
+    You need Docker with Docker Compose. On Windows, run the script from Git Bash or WSL.
+
+    git clone https://github.com/sebaandrada-cell/PcapAnalyzer.git cd PcapAnalyzer ./start.sh
+
+    The script creates a random access token (shown once, stored in .env) and starts the app. When the build finishes, open http://localhost:8080, paste the token into the "API token" field (top right) and upload a capture, or click "Try the sample capture".
+
+    The app listens on 127.0.0.1 only. Do not expose it on a network without an authenticated reverse proxy: the API can use your AI account. QUICKSTART.md has the details, the AI setup and troubleshooting.
+
+    ### Without Docker
+
+    You need Python 3.9+, Node 20+ and tshark (installed with Wireshark).
+
+    cd backend python3 -m venv .venv .venv/bin/pip install -r requirements-dev.txt export API_TOKENS="$(openssl rand -hex 32)" .venv/bin/uvicorn app.main:app --reload
+
+    cd frontend npm install npm run dev
+
+    Open http://localhost:5173 and paste the same token. If tshark is not on your PATH, set TSHARK_PATH to the binary.
+
+    ## Privacy
+
+    - The capture is analysed on your machine. While an AI investigation lasts it is kept encrypted (60 minutes of inactivity, or until you press "Delete capture now") and is then deleted.
+
+    - The AI is optional. It only sees what its tools return (packet metadata; packet content only if you switch it on for that session), never the pcap file.
+
+    - No telemetry and no accounts for the self-hosted version.
+
+    ## Tests
+
+    cd backend && .venv/bin/python -m pytest -q # needs tshark cd frontend && npm test
+
+    ## Feedback
+
+    PcapAnalyzer is a beta. It has been tested with synthetic fixtures and public sample captures, and the most useful feedback is a capture where it misses a problem or reports one that is not real. Please open an issue at https://github.com/sebaandrada-cell/PcapAnalyzer/issues and describe the case. Do not attach captures that contain real credentials or customer data; anonymise them first or describe the pattern.
+
+    The technical reference (JSON schema, detector thresholds, limits, API errors) is in README.es.md, in Spanish.
+
+    ## License
+
+    Apache License 2.0. See NOTICE for third-party software: tshark / Wireshark (GPL) runs as a separate program and is not distributed with PcapAnalyzer.
+
+    ## About
+
+    Free, self-hosted pcap analyzer with 27 problem detectors and AI investigation
+
+    ### Topics
+
+    ### Resources
+
+    ### Stars
+
+    ### Watchers
+
+    ### Forks
+
+    ## Releases
+
+    ## Packages
+
+    ## Contributors
+
+    ## Languages
+  error:
+  fetched_at: '2026-11-22T10:50:10Z'
+archived_at: '2026-11-22T10:50:28Z'

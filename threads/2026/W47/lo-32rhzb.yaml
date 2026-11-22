@@ -1,0 +1,150 @@
+---
+post:
+  id: lo-32rhzb
+  source: lobsters
+  title: Researcher plants 2m canaries into the AI supply chain. A privacy disaster
+    surfaced
+  url: https://arstechnica.com/security/2026/11/a-leaky-ai-supply-chain-is-exposing-secret-user-data-at-an-alarming-rate/
+  hn_url: https://lobste.rs/s/32rhzb
+  score: 28
+  author: itamarst
+  posted_at: '2026-11-22T02:03:46Z'
+  fetched_at: '2026-11-22T10:50:29Z'
+  article_url: https://arstechnica.com/security/2026/11/a-leaky-ai-supply-chain-is-exposing-secret-user-data-at-an-alarming-rate/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-22T10:50:29Z'
+  raw_comment_count: 3
+  tags:
+  - ai
+  - security
+comments:
+- id: lo-ukblhq
+  parent_id: '0'
+  author: itamarst
+  text: Mods removed the original referenced article ("This appears to be a marketing
+    press release / product announcement"), so maybe this one will be an issue too.
+    But this article does include additional information, like a list of at least
+    some of the services that were involved in the leaks.
+  score: 5
+  posted_at: '2026-11-22T02:05:09Z'
+- id: lo-7x6mek
+  parent_id: '0'
+  author: ltoop
+  text: Ugh, this is one of the most alarming things I've read all week, because the
+    extent of the data leak is just astounding. I'll be warning people at work about
+    this on monday, and probably rotating creds for one person in my team :(
+  score: 5
+  posted_at: '2026-11-22T06:01:36Z'
+- id: lo-ac82i3
+  parent_id: '0'
+  author: valpackett
+  text: What did people expect when using "brokers" that route your requests to the
+    lowest bidder?! The entire premise is thoroughly incompatible with any notion
+    of privacy!
+  score: 17
+  posted_at: '2026-11-22T06:17:46Z'
+article:
+  url: https://arstechnica.com/security/2026/11/a-leaky-ai-supply-chain-is-exposing-secret-user-data-at-an-alarming-rate/
+  title: Researcher plants 2m canaries into the AI supply chain. A privacy disaster
+    surfaced. - Ars Technica
+  fetch_status: success
+  content: "Story text\n\n\\* Subscribers only  \n &nbsp;&nbsp;[Learn more](/store/product/subscriptions/)\n\nResearchers
+    planted 2 million digital tripwires in requests sent through a sprawling network
+    of AI services to find out what happened to sensitive information entrusted to
+    them. What they discovered was an ecosystem that leaked highly sensitive data
+    like a sieve.\n\nThe exposure was found through an ingenious experiment designed
+    to test if sensitive information can leak through the vast chain of widely used
+    AI services and how that information is exploited when it does. Many of today’s
+    AI apps use services such as [OpenRouter](https://openrouter.ai) or [Vercel](https://vercel.com/)
+    that act as brokers. These “AI routers,” sometimes also known as “AI gateways,”
+    receive large numbers of prompts sent from AI app end users and route them to
+    an available inference engine based on criteria such as the one charging the lowest
+    price or being best suited for the given task. Instead of using Anthropic, OpenAI,
+    or another big provider, the developer hires an AI router to find the most suitable
+    model.\n\n**Update, Nov 21:** Posts on both [Hacker News](https://news.ycombinator.com/item?id=50585962)
+    and [X](https://x.com/michael_chomsky/status/2124008002571428224) report that
+    OpenRouter has sent customers an email notifying them that some of their prompts
+    may have been read. OpenRouter cited the research and said that it received a
+    report that the potential exposure involved prompts sent to MiniMax, a China-based
+    model provider. OpenRouter said the researchers’ planted URLs were accessed whether
+    the prompts were sent to MiniMax directly or through three other resellers: AtlasCloud,
+    Novita, and StreamLake. OpenRouter has removed a “Zero Data Retention” label from
+    MiniMax-model endpoints. Hat tip: [Sulat.com](https://news.sulat.com/2026/11/21/openrouter-minimax-prompts/).\n\n##
+    Security breaches, prompt theft, and privacy violations\n\nTo test for potential
+    leakage, researcher HD Moore assembled a collection of Amazon Web Services access
+    keys, functioning credentials tied to empty AWS accounts, passwords for services
+    such as SSH, and unique URLs, DNS names, and private git repository references.
+    None of the secrets had ever been used before, and he controlled the infrastructure
+    that received any requests using the credentials. He then seeded each secret into
+    exactly one prompt sent to a single provider. In the event any of the secrets
+    were leaked, these “canaries”—so called because they resemble the role of that
+    bird when taken into coal mines—would allow Moore to identify each link in the
+    chain that was responsible.\n\nThe findings are striking. They included:\n\n-
+    Evidence that at least three AI providers were compromised by attackers who used
+    their access to siphon prompts they received\n- Multiple resellers in the inference
+    marketplace that logged the prompts and somehow passed them along to people who
+    used the credentials\n- Multiple cases of AI providers not following end-user
+    privacy settings embedded into flags specifying terms such as Zero Data Retention
+    (ZDR) or “no data collection”\n\n“We sent nearly two million AI prompts containing
+    unique, trackable secrets to AI providers, then watched where those secrets surfaced,”
+    Moore, the chief research officer of security firm Dragos, [wrote Thursday](https://www.dragos.com/blog/ai-supply-chain-security-canary-tokens#how-do-canary-tokens-detect-prompt-leaks).
+    “What we found revealed security breaches, prompt theft, and widespread failures
+    to protect customer data.”\n\nAlthough prompts are encrypted in transit, they
+    are decrypted at each hop inside the large inference reseller network. The prompt
+    is first sent to an AI router, which reads the plaintext in it to determine the
+    most suitable inference providers to handle the request. Often, the prompt is
+    then sent to a pool of available models, which sometimes run inside different
+    hosting providers. Prompts can also pass from one AI router (such as Vercel) to
+    another one (e.g., OpenRouter). Each one of these players is likely to log the
+    prompt and store it for as long as its policies call for (if not indefinitely).\n\n##
+    The Wild West in the age of AI\n\nThe most concerning finding was the breach of
+    three separate hosting providers. The attackers who compromised one of the providers
+    reused “a couple hundred” of the AWS keys. Moore wrote:\n\n> Each key was sent
+    in exactly one request to one provider, all within a few short windows in late
+    October, and every request we sent during those windows was stolen. Some of the
+    stolen keys came from requests that the provider rejected before a model ever
+    ran—this tells us that the attacker was copying requests at the provider’s front
+    door, and not somewhere deeper in the inference stack. In the other two breaches,
+    some of the stolen requests were marked as ZDR. A privacy flag doesn’t help when
+    the attacker is already inside.\n\nParties tied to the hack of these three providers
+    then tested each key, in some cases within hours of being seeded, to see what
+    kind of resources it gave access to. The parties looked through S3 buckets, secrets
+    managers, and parameter stores in search of still more credentials. They also
+    tried to enable hosted models in AWS Bedrock and added their own IAM users to
+    maintain access. In all, the stolen bait keys were used “tens of thousands” of
+    times in AWS API calls.\n\nSecrets sent to two of the hacked providers were quickly
+    used together, almost immediately, from the same rented server. That means the
+    providers were almost certainly compromised by the same adversary.\n\nAs noted
+    earlier, some of the secrets were stolen by the resellers themselves. To lure
+    prompts to their servers, they offered low prices. Then they turned on request
+    logging and waited. Moore identified them by sending requests to the same model
+    through different sellers. When credentials were later reused when sent through
+    one seller and not another, the researcher knew it was the reseller, not the model
+    provider, that was responsible.\n\nLast, the canary experiment revealed that some
+    providers are scraping secret URLs put into the prompts, in violation of privacy
+    terms. Moore wrote:\n\n> The clearest example involves a Chinese AI lab. This
+    lab’s systems fetched the secret URLs from more than half of the prompts that
+    we sent to its models between July and October, including roughly two-thirds of
+    the requests marked as “no data collection” or Zero Data Retention. The scraper
+    typically showed up two or three days after the request.\n> \n> This wasn’t limited
+    to requests sent to the lab directly. Several US hosting providers resell this
+    lab’s models, and prompts sent to those providers triggered the exact same scraper—the
+    prompts were flowing back to the lab. A customer who picked a US provider specifically
+    to keep their data in the U.S. didn’t get what they paid for. Later on, a git
+    client on a different cloud started trying to clone the private repositories referenced
+    in our prompts, but only for prompts that used this lab’s models.\n\nThe researcher
+    said he found one US hosting provider crawling a secret URL more than two months
+    after it was used in a single inference call to its search endpoint. Another ran
+    a scraper that came back for URLs days after each request, regardless of the AI
+    router used to reach it.\n\nMoore said that the most effective means for preventing
+    leakage is to host models using on-premises servers. That option is expensive,
+    though. For those who can’t afford a self-hosted system, the next best option,
+    Moore said, is to receive service directly from a first-tier provider that provides
+    “one contract and a privacy policy to read.” Moore said that even then, there’s
+    no guarantee no data will leak, but that the measure minimizes the chances. AI
+    users should also avoid accepting default provider or reseller pools and instead
+    pick upstream providers themselves.\n\nThe blockbuster research is the latest
+    indictment exposing the lax privacy and security that’s endemic in mu"
+  error:
+  fetched_at: '2026-11-22T10:50:29Z'
+archived_at: '2026-11-22T10:50:29Z'

@@ -1,0 +1,158 @@
+---
+post:
+  id: '50369283'
+  title: 8088 Domination Post-Mortem
+  url: https://trixter.oldskool.org/2014/06/19/8088-domination-post-mortem-part-1/
+  hn_url: https://news.ycombinator.com/item?id=50369283
+  score: 89
+  author: cosmojg
+  posted_at: '2026-11-04T18:06:14Z'
+  fetched_at: '2026-11-22T10:50:34Z'
+  raw_comment_count: 16
+comments:
+- id: '50402524'
+  parent_id: '50369283'
+  author: exikyut
+  text: "([2014])"
+  score: 0
+  posted_at: '2026-11-07T07:46:11Z'
+- id: '50403119'
+  parent_id: '50369283'
+  author: Agingcoder
+  text: Having used these machines, this is mind boggling.
+  score: 0
+  posted_at: '2026-11-07T09:53:47Z'
+- id: '50403188'
+  parent_id: '50402524'
+  author: oddIdentities
+  text: a more civilized time
+  score: 0
+  posted_at: '2026-11-07T10:07:56Z'
+- id: '50403251'
+  parent_id: '50369283'
+  author: akoboldfrying
+  text: 'Always cool to see this come up. I really like the idea of &quot;encoding&quot;
+    the video as... x86 machine instructions!<p>The hairsplitting nerd in me can&#x27;t
+    help but point out that the claim in the Part 2 article that the problem of combining
+    deltas is NP hard isn&#x27;t true. In fact you can solve this optimally in O(n^3)
+    time with DP: Let g(i, j) be the minimum number of bytes needed to encode input
+    deltas i..j as a single (i.e., combined) output delta. Given g(i, j), computing
+    g(i, j+1) takes constant time, so we can compute all of this function&#x27;s values
+    in O(n^2) total time. Now let f(i, j) be the minimum number of bytes needed to
+    encode input deltas i..j using <i>any sequence of</i> output deltas (combined
+    or not). Note that any such sequence must consist of some number (possibly zero)
+    of optimally encoded output deltas followed by an optimally encoded output delta
+    that itself ends with input delta j. IOW, it must be that f(i, j) is equal to
+    f(i, k) + g(k+1, j) for some k, and there are at most n values of k that we need
+    to try, so we can compute each value of f() in O(n); there are O(n^2) values to
+    compute, so O(n^3) time overall. f(1, n) is then the minimum number of bytes needed
+    to encode the entire list of input deltas, and standard backtracing through the
+    DP matrix can be used to recover the actual sequence of output deltas.'
+  score: 0
+  posted_at: '2026-11-07T10:23:26Z'
+- id: '50403713'
+  parent_id: '50403188'
+  author: rnd0
+  text: Literally.
+  score: 0
+  posted_at: '2026-11-07T11:46:45Z'
+- id: '50405739'
+  parent_id: '50403119'
+  author: blackhaz
+  text: I remember literally seeing how text appears on the screen once you type &quot;dir&quot;.
+    Video? Colors? Are you joking?
+  score: 0
+  posted_at: '2026-11-07T16:15:35Z'
+- id: '50405987'
+  parent_id: '50405739'
+  author: vasac
+  text: Same. Then I switched from XT to AT (8086-&gt;286), the disk was faster too,
+    so I was forced to learn &#x2F;p parameter :)
+  score: 0
+  posted_at: '2026-11-07T16:52:15Z'
+- id: '50406856'
+  parent_id: '50369283'
+  author: notorandit
+  text: The mindboggling part is when you compare hardware constraints against software.
+  score: 0
+  posted_at: '2026-11-07T18:40:12Z'
+- id: '50406953'
+  parent_id: '50405739'
+  author: benlivengood
+  text: DOS and the BIOS were exceptionally slow at text.  Essentially one character
+    at a time winding their way through DOS to the BIOS and back.<p>Direct access
+    to the text mode segment (0xb800 if I remember correctly) was much faster.  The
+    fonts were blitted out by hardware for every scan line, so you just changed the
+    few thousand bytes of video memory at <i>hundreds of thousands</i> of bytes per
+    second.
+  score: 0
+  posted_at: '2026-11-07T18:52:37Z'
+- id: '50407236'
+  parent_id: '50369283'
+  author: liendolucas
+  text: This qualifies as pure obscure wizardry. Hats off to the author.
+  score: 0
+  posted_at: '2026-11-07T19:26:02Z'
+- id: '50409950'
+  parent_id: '50406953'
+  author: kragen
+  text: I think the ISA bus was potentially capable of 9.5 megabytes per second on
+    the original IBM PC 5150, but I don&#x27;t think the processor could come close
+    to that. But I wouldn&#x27;t be surprised if it was over a megabyte per second,
+    which would mean you could repaint a 4000-byte 80×25 screen in 4 milliseconds.  Clone
+    CGAs would give you snow if you did that, though, so you had to limit your updates
+    to the HBIs and VBIs, slowing the update speed visibly.  IBM&#x27;s actual hardware
+    used dual-ported VRAM to avoid this problem.
+  score: 0
+  posted_at: '2026-11-08T02:29:08Z'
+- id: '50410302'
+  parent_id: '50409950'
+  author: Tuna-Fish
+  text: The 8-bit ISA bus was theoretically capable of 1.19MB&#x2F;s. The bus architecture
+    always took 4 cycles per transfer (enforced by the 8288 which had a 4-cycle state
+    machine, iirc one cycle for address, one for data, and two wait states), transferred
+    8 bits per transfer, and ran at the 4.77MHz frequency.<p>The actual usable bandwidth
+    was always much lower, somewhere between 80kB&#x2F;s to a bit over 380kB&#x2F;s,
+    depending on how you were using the bus, because the cpu needed to fetch its instructions
+    on the same bus. In a way, the bus was usually always running at 1.19MB&#x2F;s
+    though, because all the basic devices (ROM, RAM, common simple ISA cards) were
+    able to always respond in the basic 4-cycle transfer, it&#x27;s just that most
+    cycles were spent fetching instructions instead of actual data.<p>Later machines
+    made the bus faster by increasing width, increasing clocks, and dropping one mandatory
+    wait state at AT for 5.55MB&#x2F;s theoretical, and dropping the last wait state
+    in the fast clones for 8.33MB&#x2F;s theoretical.
+  score: 0
+  posted_at: '2026-11-08T03:56:18Z'
+- id: '50410510'
+  parent_id: '50409950'
+  author: badc0ffee
+  text: IBM&#x27;s BIOS blanked the screen during scrolling because its own CGA hardware
+    had single ported RAM and produced snow. Later clones were usually better, not
+    the other way around.
+  score: 0
+  posted_at: '2026-11-08T04:54:13Z'
+- id: '50410583'
+  parent_id: '50410510'
+  author: kragen
+  text: I might be wrong about this, and I appreciate you sharing your knowledge.
+    The CGA I had that suffered snow was a clone, for what it&#x27;s worth.
+  score: 0
+  posted_at: '2026-11-08T05:12:39Z'
+- id: '50410592'
+  parent_id: '50410302'
+  author: kragen
+  text: Thank you; I didn&#x27;t even realize that the RAM chips on the motherboard
+    were physically connected to the actual ISA bus!  It sounds like you know a <i>lot</i>
+    more than I do about it.
+  score: 0
+  posted_at: '2026-11-08T05:14:31Z'
+- id: '50410896'
+  parent_id: '50410302'
+  author: akoboldfrying
+  text: This is interesting, thanks! Just wondering if the REP and REPcc prefixes
+    with LODSW&#x2F;STOSW&#x2F;MOVSW would have allowed higher transfer rates due
+    to there being no need to decode instructions after the first loop cycle?
+  score: 0
+  posted_at: '2026-11-08T06:22:54Z'
+article:
+archived_at: '2026-11-22T10:50:47Z'

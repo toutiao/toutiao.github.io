@@ -6,14 +6,14 @@ post:
     (Búzios, Brazil)'
   url: https://herbsutter.com/2026/11/21/c26-is-done-again-trip-report-november-2026-iso-c-standards-meeting-buzios-brazil/
   hn_url: https://lobste.rs/s/fjueso
-  score: 16
+  score: 18
   author: olliej
   posted_at: '2026-11-21T13:57:53Z'
-  fetched_at: '2026-11-22T01:01:33Z'
+  fetched_at: '2026-11-22T10:50:29Z'
   article_url: https://herbsutter.com/2026/11/21/c26-is-done-again-trip-report-november-2026-iso-c-standards-meeting-buzios-brazil/
   article_fetch_status: success
-  article_fetched_at: '2026-11-22T01:01:34Z'
-  raw_comment_count: 16
+  article_fetched_at: '2026-11-22T10:50:32Z'
+  raw_comment_count: 25
   tags:
   - c++
 comments:
@@ -29,7 +29,7 @@ comments:
 
     What is the use case for wanting a default mode where the contract isn’t guaranteed to be enforced?
     It seems lots of very, very smart people have been thinking a lot about this, so there must be some reason or chain of reasons that lands the proposal in this “the default mode may or may not be enforced and there’s a sort of generics syntax where you can opt in to enforced contracts”, but as an outsider it seems super confusing
-  score: 12
+  score: 15
   posted_at: '2026-11-21T15:33:54Z'
 - id: lo-9u89u7
   parent_id: '0'
@@ -37,7 +37,7 @@ comments:
   text: |-
     My objections to contracts, and to be honest a lot of C++ since C++17, begin and end with "it's too complicated", and I've been programming in C++ for more than ten years.
     I can understand that people involved in standardization know more about this stuff than I do, but I also know more about how the products I work on work than my customers, and yet their perspectives still matter more than mine.
-  score: 10
+  score: 12
   posted_at: '2026-11-21T15:58:19Z'
 - id: lo-lraikr
   parent_id: '0'
@@ -72,7 +72,7 @@ comments:
 
     A recurring problem in our times.
     The reality is, they should have removed all this contract bloat from C++23. All this stuff is useless and makes the language even larger and harder to understand than it already is. Take it from someone who learned Eiffel from Bertrand Meyer and realized first-hand that contracts add little value over assertions if they cannot be proven at compile-time.
-  score: 4
+  score: 9
   posted_at: '2026-11-21T17:53:47Z'
 - id: lo-a9orbv
   parent_id: '0'
@@ -105,7 +105,7 @@ comments:
     I write C++ professionally, but have done a lot of Ada open source on the side.
     Ada has fantastic contract support, and you can enable/disable contracts on a per-module basis. Contracts can use slow checks but be in hot paths, so you can turn them off when shipping, but still have them there for documentation purposes and when running for debugging or development purposes. It's great to be able to look at only the spec for a module and know exactly what it lets you do from the pre/post aspects. Being able to use contracts with proofs in Ada's SPARK subset is just icing on the cake.
     Unlike Ada, C++ doesn't let you natively put custom ranges on integers, or predicates on types. I'm quite excited at the prospect of having contracts in C++ to clarify more about what functions do, especially when dealing with libraries. C++ often uses assertions, but you can't see these hidden inside of libraries and assumptions are often not documented.
-  score: 2
+  score: 3
   posted_at: '2026-11-21T19:05:36Z'
 - id: lo-8h5igs
   parent_id: '0'
@@ -120,7 +120,7 @@ comments:
     it seems it then doesn’t address the reason people voted down the first proposal.
 
     There were multiple objections to the first draft standard. This change (supposedly) resolves some of them. Others (like "remove contracts entirely") were considered but the committee decided that no changes were warranted.
-  score: 3
+  score: 4
   posted_at: '2026-11-21T19:57:04Z'
 - id: lo-lzifbk
   parent_id: '0'
@@ -163,18 +163,141 @@ comments:
   text: I find it so strange that we haven’t just all agreed that new versions of
     C++ are a bad idea and the language should be frozen and exist only to support
     the large existing codebase.
-  score: 1
+  score: 2
   posted_at: '2026-11-22T00:52:01Z'
 - id: lo-hmeiez
   parent_id: '0'
   author: olliej
+  text: Comment removed by its author
+  score: 2
+  posted_at: '2026-11-22T00:57:35Z'
+- id: lo-d2qlgv
+  parent_id: '0'
+  author: olliej
   text: |-
-    The syntax is
+    That would imply that nothing should be done to aid improvement to the safety and correctness of existing C++.
+    Saying "this language is bad and so we should leave the standard bad" is not helpful, it basically means every implementation starts developing different but overlapping fixes and improvements and every project has to work out how to build in a way that uses all of those extensions.
+  score: 3
+  posted_at: '2026-11-22T01:01:39Z'
+- id: lo-jyidyn
+  parent_id: '0'
+  author: aw1621107
+  text: I'm a bit more ambivalent on using namespace std::contracts::controls. using
+    namespace in headers has been discouraged for quite a while now, and from my understanding
+    the guaranteed enforcement makes the most difference for (certain) functions in
+    headers since those are the most likely to be subject to mixed mode.
+  score: 1
+  posted_at: '2026-11-22T01:13:25Z'
+- id: lo-kkdtma
+  parent_id: '0'
+  author: olliej
+  text: |-
+    [note: I wrote a different reply earlier but it was poorly worded and the example was not good either so deleted it to avoid noise]
+    The syntax you would use normally is
     pre(x>0)
 
-    But at build time you can configure contract enforcement into an "observe" mode (generally for adoption, etc where you don't know if there are existing issues and don't want instant trap on any failure). There are cases where library authors want to be able to say "this is a security critical invariant" and so not have the trapping behavior overridden by build settings. This is that explicit "ignore any build time rules that attempt to suppress trapping on contract violation".
+    But at build time you can configure contract enforcement into an "observe" or "ignore" mode (generally for adoption, etc where you don't know if there are existing issues and don't want instant trap on any failure, or to allow static analysis without whole module analysis).
+    But even if you are not yet at the point where you don't yet want to enable contract enforcement globally, there are cases where you want to be able to say "this is a security critical invariant and must be enforced"
+    e.g imagine something like this
+    template <class T> struct Array {
+        size_t count;
+        T buffer[];
+        static Array *allocate(size_t count) pre(count > 0);
+        T &operator[](size_t idx) pre<enforced>(idx < count);
+        ...
+    }
+
+    Allocating a zero length array is inefficient but not a safety problem, reading out of bounds is a security bug. So during adoption you might be perfectly happy to accept only getting failure logging rather than a trap. Then once you're comfortable with the state of your project you drop the observe/ignore flag that you're passing to the compiler and they all become enforced.
+    Meanwhile if you don't want observe semantics you simply never build in that mode and the short pre (...) syntax just does the right thing by default.
+  score: 2
+  posted_at: '2026-11-22T01:16:24Z'
+- id: lo-6jtcgs
+  parent_id: '0'
+  author: olliej
+  text: I've never been super convinced by the library vs dev authored code argument.
+    I think a better argument is "I have a project adopting contracts, some of the
+    assertions I'm adding are fine simply being observed, but some actually are security
+    critical invariants". That is a case where you have two functions with assertions
+    declared next to each other where one can reasonably be compiled as ignore/observe
+    but the other cannot.
+  score: 3
+  posted_at: '2026-11-22T01:20:04Z'
+- id: lo-esvr3t
+  parent_id: '0'
+  author: wareya
+  text: It's reasonably okay in libraries as long as you only do it inside of your
+    own namespaces that users aren't supposed to extend or using themselves.
   score: 1
-  posted_at: '2026-11-22T00:57:35Z'
+  posted_at: '2026-11-22T02:36:37Z'
+- id: lo-iqfuy1
+  parent_id: '0'
+  author: aw1621107
+  text: That's fair, though that last condition feels a bit constraining to me.
+  score: 2
+  posted_at: '2026-11-22T03:33:18Z'
+- id: lo-gsxqzk
+  parent_id: '0'
+  author: aw1621107
+  text: |-
+    Hrm, don't think I've seen that particular argument before. I don't think it's too different from the "library + mixed mode" argument since it basically boils down to the desire to control how specific assertions are checked, but it at least sidesteps "just build everything with the same flags" or the like.
+    I sort of get the feeling that part of the reason contracts is so contentious is that people don't agree on what they should be doing in the first place. The notion that contracts shouldn't be used for checks that must be run seems to be a common sticking point in particular.
+  score: 1
+  posted_at: '2026-11-22T03:51:06Z'
+- id: lo-zl8ehn
+  parent_id: '0'
+  author: olliej
+  text: |-
+    The difference is that it is a case of "single person involved in choosing the compiler flags", thinking in terms of libraries somewhat muddies it I think, and I think putting the two side by side illustrates the issue directly.
+    As far as contentiousness: there are a bunch of people who disagree with the exact tradeoffs made in P2900 (the contracts design and specification paper), but understand that these are tradeoffs, and that it's possible for reasonable people to disagree on the balance of those trade offs.
+    P2900 was discussed a lot, and I would argue given a higher bar to climb than any other feature proposal I have witnessed. I voted in support for the inclusion of P2900 in C++26 multiple times, not because it has made the exact trade offs I would have chosen, but because the authors of the paper gave a sound technical rationale for why the particular tradeoffs had been made. This is not glib: I spent a lot of time questioning many of the design decisions that were made.
+    What happened with C++26 is that a tiny minority of committee members would not accept that any design is subject to trade offs, and went to great lengths to override the technical consensus. We also learned that it is possible to do this with relatively little effort, so that's concerning.
+    Please note that "consensus" does not mean a simple majority vote, but it also does not permit a method of perpetual objection (this is described at https://isocpp.org/std/standing-documents/sd-4-wg21-practices-and-procedures#consensus). IMO the people involved in this failed recognize that failing to convince other members of the committee were as bad as they felt does not mean that those concerns were not heard or recognized as potential problems. Again it is critical that people recognize that almost every feature involves tradeoffs, and there is seldom an objectively correct answer.
+  score: 3
+  posted_at: '2026-11-22T04:32:51Z'
+- id: lo-znqqr7
+  parent_id: '0'
+  author: aw1621107
+  text: |-
+    Right, I understand your example is different, and I think I agree that it's more focused than the library argument.
+    As far as tradeoffs go I sort of feel that you need to at least agree on the foundation to discuss tradeoffs in pursuit of building on those foundations? The sense I get from the entire brouhaha is less "I agree on the general idea but disagree on the tradeoffs" and more "I think the general idea is entirely wrong". I admittedly have not been following everything too closely (and in particular haven't read the rationale papers), especially compared to you, so I'm not sure what I have to say is particularly interesting.
+  score: 1
+  posted_at: '2026-11-22T09:08:33Z'
+- id: lo-kq5gje
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    Take it from someone who learned Eiffel from Bertrand Meyer and realized first-hand that contracts add little value over assertions if they cannot be proven at compile-time.
+
+    Assertions are contracts (they're the invariant part: contracts include preconditions, postconditions, and invariants).  The problem with C assertions in C++ is the on-definition rule (ODR).  This says that it's fine to have two definitions of the same symbol in different compilation units but they must the identical.  Identical is defined as having the same sequence of tokens.  So, imagine you have this trivial function that negates any twos complement number that can be safely negated:
+    inline int negate(int x)
+    {
+       assert(x != INT_MIN);
+       return -x;
+    }
+
+    If you compile without NDEBUG, this expands to something like:
+    inline int negate(int x)
+    {
+       if !((x != INT_MIN)) { abort(); }
+       return -x;
+    }
+
+    If you compile with NDEBUG, it instead expands to something like:
+    inline int negate(int x)
+    {
+       return -x;
+    }
+
+    In C++, inline means that the function is defined in line and will be emitted in each compilation unit, but only one copy will be kept during linking.  This means it becomes a COMDAT in typical object models and the linker picks one.
+    Now, consider what happens if you pop this function in a header and one compilation unit is compiled with NDEBUG defined and another without it.  This violates the one definition rule and is UB, but what can happen in practice?
+    First, the simple case.  Both inline the function.  Both call it with INT_MIN as the argument.  One causes an abort, the other doesn't.  This is slightly confusing, but it's something you can reason about at the source level: in the compilation unit compiled with assertions enabled, the assertion fired and it's fine.
+    But now the more complex case.  Neither inlines it.  The linker picks one at link time.  It picks the smaller one, on the basis that it's probably the best optimised one (PE/COFF lets you select policies for which should be picked for COMDATs, ELF doesn't).  So now the assertion doesn't fire anywhere.  But way, it's worse, because the compilation unit compiled without NDEBUG analysed the check and added some known-bits annotations to the function, so now calling code is optimised on the assumption that this function will never return a negative value for a negative argument.  Only it is called with INT_MIN, and negating that returns INT_MIN.  So now surrounding code is optimised on an assumption that is not valid.  That cascades outwards and no optimisation in that compilation unit is sound.
+    To make this well defined, the simplest thing is to say that any inline function is replaceable.  This means every inline function is an optimisation barrier.  That would completely kill C++ performance in any compiler.
+    P2900 contracts said that contract_assert, pre and post are special and that they don't violate ODR.  This introduces all of the above problems but now says that it's implementation defined how they are resolved.  The GCC implementers report said that all of the miscompilations that were trivial to introduce using contracts with mismatched semantics were 'just bugs' and could be fixed, but did not propose semantics for doing this in a way that preserved both the ability to reason at the source level and performance.
+    This is one of the many reasons that I don't think P2900 should be allowed anywhere near the standard.  Your point is another.  In Rust, I've seen huge value from contracts that can be statically verified.  They let you make code that is unsafe in the language sense, but which is statically verified with bespoke proofs to preserve a bunch of properties beyond what 'safe' Rust guarantees and that are vital for security-critical code.  This was out of scope.
+    I hope national bodies will vote down this DIS as well, but I suspect that they will blink first and we'll end up with a C++26 that causes immense long-term harm to the ecosystem as a result.
+  score: 1
+  posted_at: '2026-11-22T10:28:49Z'
 article:
   url: https://herbsutter.com/2026/11/21/c26-is-done-again-trip-report-november-2026-iso-c-standards-meeting-buzios-brazil/
   title: 'C++26 is done (again)! — Trip report: November 2026 ISO C++ standards meeting
@@ -250,4 +373,4 @@ article:
     We actually also did some work on C++29! Here are so
   error:
   fetched_at: '2026-11-21T18:48:35Z'
-archived_at: '2026-11-22T01:01:35Z'
+archived_at: '2026-11-22T10:50:32Z'

@@ -1,0 +1,134 @@
+---
+post:
+  id: lo-6jloca
+  source: lobsters
+  title: NixOS bring-up on an Alibaba RISC-V board
+  url: https://feyor.sh/blog/nixos-bringup-on-an-alibaba-riscv-board/
+  hn_url: https://lobste.rs/s/6jloca
+  score: 16
+  author: Shorden
+  posted_at: '2026-11-22T00:30:07Z'
+  fetched_at: '2026-11-22T10:50:29Z'
+  article_url: https://feyor.sh/blog/nixos-bringup-on-an-alibaba-riscv-board/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-22T10:50:29Z'
+  raw_comment_count: 1
+  tags:
+  - hardware
+  - nix
+comments:
+- id: lo-jnuhvv
+  parent_id: '0'
+  author: valpackett
+  text: |-
+    To call this GPU “dinky” would be an understatement
+
+    Hilarious duckduckgo snippet from imaginationtech.com:
+
+    IMG B-Series is a range of GPU IP that takes all the advances of IMG A-Series, the fastest GPU IP ever created, and adds even more performance.
+
+    …I guess it at least advertises "64 FP32 FLOPs/Clock" which is double what they had in the GE8300 (featured in the Mediatek MT8167)
+  score: 3
+  posted_at: '2026-11-22T04:45:23Z'
+article:
+  url: https://feyor.sh/blog/nixos-bringup-on-an-alibaba-riscv-board/
+  title: NixOS bring-up on an Alibaba RISC-V board | George Huebner
+  fetch_status: success
+  content: "# NixOS bring-up on an Alibaba RISC-V board\n\nIn the process of scouring
+    Alibaba for a cheap Versal devkit, I unexpectedly came into possession of a Zhihe
+    Computing [A210 RISC-V SoC](https://developer.zhcomputing.com/en/docs/A210/).\n\nIt’s
+    a cool board: there’s a ridiculous amount of IO exposed by the baseboard, not
+    to mention 8 cores clocked at 1.9 GHz is nothing to sniff at for a RISC-V CPU.
+    I’m not sure I could recommend buying any RISC-V SoC currently, but all these
+    distros that are starting to support RISC-V need to run tests _somewhere_ that
+    isn’t Spike/QEMU.\n\n![A210 block diagram](/blog/nixos-bringup-on-an-alibaba-riscv-board/a210.webp)\n\nI
+    decided to make this board into a NixOS build server so I could learn more about
+    the state of RISC-V support in NixOS and to get some practice in Linux bringup.\n\nMy
+    complete A210 NixOS configuration can be found [here](/nixos-bringup-on-an-alibaba-riscv-board/a210-nixos.tar.gz);
+    I confirmed sound, HDMI, Bluetooth/Wi-Fi, ethernet, and the GPU were all working,
+    but YMMV.\n\n## I use NixOS btw\n\n![NixOS my beloved](/blog/nixos-bringup-on-an-alibaba-riscv-board/beloved.gif)\n\nNix
+    makes cross compiling to RISC-V a breeze:\n\nNix\n\n    pkgs = import {\n      system
+    = \"x86_64-linux\";\n      crossSystem.system = \"riscv64-linux\";\n    };\n\nIt
+    really is that easy—building will produce a bona fide RISC-V executable (you don’t
+    even need a Nix file for one-off builds, just run ). Some black magic in ensures
+    that compile-time tools are built for and build artifacts are built for .\n\nIn
+    the process of compiling over a thousand packages I only ran into two issues:
+    a problem with [rust-bindgen using the wrong version of clang](https://github.com/NixOS/nixpkgs/pull/586150)
+    and [ministream not being properly configured for cross compilation](https://github.com/NixOS/nixpkgs/pull/587362),
+    neither of which was specific to RISC-V.\n\nThat having been said, I did run into
+    some pretty bizarre OOM issues for some of the heavy hitters like Clang and GFortran.
+    I was seeing \\>9GB memory usage per linking process(!) when compiling from `x86_64-linux`,
+    which will quickly exhaust all of your memory if you have `max-jobs`/`cores` set
+    to sane values. I sidestepped this issue by temporarily nerfing build parallelism
+    into oblivion and running the offending builds overnight:\n\nBash\n\n    nix-store
+    --realise /nix/store/...-clang-riscv64-unknown-linux-gnu-21.1.8.drv -j1 --cores
+    3 --builders \"\"\n\nI don’t (yet) have access to a RISC-V remote Nix builder,
+    but even if I did, it’s substantially faster to cross compile everything from
+    my desktop. Cross compilation can get a little wonky with Nix flakes because you
+    have to encode the in the output schema somehow, but does not allow nesting (
+    is valid, but isn’t).\n\nMy solution to this is to expose the relevant build artifacts
+    of the NixOS configuration (ISO + flashing script) under by creating a “wrapper”
+    NixOS configuration for each that extends :\n\nNix\n\n    packages = forAllSystems
+    (pkgs: let\n      nixosCross = self.nixosConfigurations.a210.extendModules {\n
+    \       modules = [\n          ({ ... }: {\n            nixpkgs = {\n              inherit
+    pkgs;\n              overlays = [\n                # ...\n              ];\n              buildPlatform
+    = { inherit (pkgs.stdenv.buildPlatform) system; };\n              hostPlatform
+    = \"riscv64-linux\";\n            };\n          })\n        ];\n      };\n    in
+    {\n      inherit (nixosCross.config.system.build) toplevel image initialRamdisk;\n
+    \   };\n\nThis way is agnostic to , and cross compilation is straightforward—running
+    on an `x86_64-linux` machine will use `x86_64-linux` as the , as one would expect.\n\n##
+    Boot flow\n\nOk, so the goal is to boot `U-Boot FSBL -> OpenSBI -> U-Boot SSBL
+    -> Linux -> NixOS userspace`, using the vendor’s Buildroot scripts as reference.\n\nUsing
+    vendor forks of U-Boot/Linux/OpenSBI is a simple matter of overriding and sprinkling
+    in a few patches (almost always to fix compiler warnings that have been promoted
+    to errors in the latest version of GCC/Clang in nixpkgs). All we really have to
+    do is slot in the vendor kernel by setting\n\nArmed with a bootloader and NixOS
+    image, I plugged in the A210 to my MacBook and turned on Fastboot flashing mode,
+    but to my dismay macOS refused to enumerate the device. Initially I figured the
+    board was a lemon (due to it being a freebie and all), but I wasn’t ready to give
+    up hope that easily.\n\nI pored over the datasheet looking for alternative boot
+    methods, and I investigated using PD resistors to [force QSPI boot](https://developer.zhcomputing.com/en/docs/A210/Hardware/Hardware-Design-Guide/Schematic_Diagram_Design_Suggestions#boot-mode-configuration)
+    (using [NORbert](https://github.com/ArthurHeymans/NORbert) in lieu of a real QSPI
+    device) to bootstrap into Linux userspace, at which point I could flash the eMMC
+    directly without relying on Fastboot. But before pulling out my soldering iron
+    I decided to try plugging the board into a different computer, which instantly
+    detected the board. D’oh!\n\nOk, so Fastboot works and I’m able to load the flasher
+    firmware and program eMMC (I based my Fastboot payload on [openEuler’s A210 guide](https://github.com/openeuler-riscv/bootloader-build/tree/master/zhihe-a210)
+    instead of the vendor’s script which flashes 7(!) different partitions), but after
+    that I still got dead silence on UART. At this point I was pretty suspicious of
+    my serial connection, so I decided to test it on a Pi Pico: lo and behold, it
+    turns out leaving my [BMP](https://black-magic.org/)’s `vRef` pin floating was
+    the culprit.\n\nAfter losing several hours and my dignity to the aforementioned
+    skill issue, I was greeted with the following panic:\n\n    sbi_trap_error: hart0:
+    trap1: illegal instruction handler failed (error -2)\n    \n    sbi_trap_error:
+    hart0: trap1: mcause=0x0000000000000002 mtval=0x00000000cc087057\n    sbi_trap_error:
+    hart0: trap1: mepc=0x000000008000bb24 mstatus=0x0000000a00001800\n    sbi_trap_error:
+    hart0: trap1: ra=0x0000000080007336 sp=0x0000000080062e68\n    sbi_trap_error:
+    hart0: trap1: gp=0x0000000082c50aa0 tp=0x0000000082c54c80\n    sbi_trap_error:
+    hart0: trap1: s0=0x0000000080062eb8 s1=0x0000000080062eb8\n    sbi_trap_error:
+    hart0: trap1: a0=0x0000000080062eb8 a1=0x0000000000000000\n    sbi_trap_error:
+    hart0: trap1: a2=0x0000000000000000 a3=0x0000000000000000\n    sbi_trap_error:
+    hart0: trap1: a4=0x0000000080027c94 a5=0x0000000080007330\n    sbi_trap_error:
+    hart0: trap1: a6=0x0000000000000004 a7=0x0000000000000010\n    sbi_trap_error:
+    hart0: trap1: s2=0x0000000080063000 s3=0x00000000fa685000\n    sbi_trap_error:
+    hart0: trap1: s4=0x0000000080200000 s5=0x0000000000000000\n    sbi_trap_error:
+    hart0: trap1: s6=0x00000000fff3661e s7=0x0000000000000000\n    sbi_trap_error:
+    hart0: trap1: s8=0x00000000fbf37c50 s9=0x0000000000000001\n    sbi_trap_error:
+    hart0: trap1: s10=0x00000000fbf44b90 s11=0x00000000fbf2d228\n    sbi_trap_error:
+    hart0: trap1: t0=0x0000040000000000 t1=0x000000008156c15d\n    sbi_trap_error:
+    hart0: trap1: t2=0x0000000002000000 t3=0x000000008156c158\n    sbi_trap_error:
+    hart0: trap1: t4=0x0000000000000007 t5=0x00000000fa688fff\n    sbi_trap_error:
+    hart0: trap1: t6=0x00000000fbf2c428\n\n## Are we RISC-V yet?\n\nJudging from the
+    above register dump, something seems to be amiss with OpenSBI itself:\n\nBash\n\n
+    \   echo '577008cc' | llvm-mc --triple=riscv64 --mattr=+v --hex --disassemble\n\n
+    \   vsetivli\tzero, 16, e8, m1, ta, ma\n\nThis confirmed my suspicion that the
+    illegal instruction was from an ISA extension (in this case, a vector instruction).
+    Initially I didn’t understand why this occurred: why would a CPU trap on an instruction
+    it supports? I consulted the [ISA spec](https://riscv.github.io/riscv-isa-manual/snapshot/spec/#_vector_context_status_in_mstatus)
+    and discovered that executing a vector instruction without the vector context
+    bits of the register configured properly will result in the exact illegal instruction
+    exception that I was seeing.\n\nSo roughly what was happening was the processor
+    was context switching to OpenSBI whe"
+  error:
+  fetched_at: '2026-11-22T10:50:29Z'
+archived_at: '2026-11-22T10:50:29Z'
