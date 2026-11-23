@@ -1,0 +1,454 @@
+---
+post:
+  id: '50600622'
+  title: I joined the NTP Pool, but not with my Stratum 1 Pi
+  url: https://www.jeffgeerling.com/blog/2026/i-joined-the-ntp-pool/
+  hn_url: https://news.ycombinator.com/item?id=50600622
+  score: 125
+  author: ''
+  posted_at: '2026-11-22T15:35:24Z'
+  fetched_at: '2026-11-23T01:27:10Z'
+  article_url: https://www.jeffgeerling.com/blog/2026/i-joined-the-ntp-pool/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T01:27:10Z'
+  raw_comment_count: 36
+comments:
+- id: '50601911'
+  parent_id: '50600622'
+  author: lightswitch05
+  text: 'Great write up! I too run a stratum 1 and am part of the pool. Except, I
+    have way less interesting hardware. One benefit on going cheap is having multiple
+    stratum 1s then you can have some redundancy and have more interesting local peers
+    to compare results against. I do see a more expensive setup in my future, though.<p>Anyways,
+    I use NTPSec- which is the default these days on Debian when you apt-get install
+    NTP. I’ve not tried Chrony, but I see it mentioned all the time.<p>I’m curious
+    what others here are running and their thoughts on the pros and cons?<p>Edit:
+    I forgot to add, one of my favorite parts of being in the pool is basically a
+    free uptime monitor of my ISP. There have been multiple cases where I see a blip
+    in my offset then a full blown ISP outage within 78 hours of the blip, then a
+    return to my normal offsets after to outage has resolved.'
+  score: 0
+  posted_at: '2026-11-22T17:40:53Z'
+- id: '50601991'
+  parent_id: '50600622'
+  author: aaronax
+  text: What speed did you choose in the pool dashboard? How many request per second
+    are you serving, and do you have a goal for that?
+  score: 0
+  posted_at: '2026-11-22T17:48:24Z'
+- id: '50601996'
+  parent_id: '50600622'
+  author: jeffrallen
+  text: 'PSA: The Swiss government has NTP servers on ntp{11,12,13}.metas.ch.<p>METAS
+    is the Federal Institute of Metrology.'
+  score: 0
+  posted_at: '2026-11-22T17:48:42Z'
+- id: '50602008'
+  parent_id: '50601911'
+  author: nahikoa
+  text: Some of the cool kids are moving to <a href="https:&#x2F;&#x2F;github.com&#x2F;pendulum-project&#x2F;ntpd-rs"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;pendulum-project&#x2F;ntpd-rs</a>
+  score: 0
+  posted_at: '2026-11-22T17:49:33Z'
+- id: '50602011'
+  parent_id: '50601911'
+  author: geerlingguy
+  text: 'In the NTP Pool community, I&#x27;ve seen a few people mention CenterClick
+    NTP servers; I&#x27;m happy to do my own DIY builds (Pi or otherwise), but this
+    looks like a nice option for SMBs or time-nuts who don&#x27;t want to manage their
+    own hardware: <a href="https:&#x2F;&#x2F;centerclick.com&#x2F;ntp&#x2F;" rel="nofollow">https:&#x2F;&#x2F;centerclick.com&#x2F;ntp&#x2F;</a><p>There
+    are also a lot of people who buy old Spectracom or other &#x27;enterprise&#x27;
+    time servers since they can be had for low hundreds of dollars with some nice
+    features like rubidium or OCXO oscillators, so they can hold over time much more
+    accurately when GPS is down, or upstream NTP providers are unreachable.<p>And
+    regarding chrony, it&#x27;s the default in many distros now, I like some of its
+    built-in monitoring and clock adjustments, it just feels easier to manage if you
+    want more than just base NTP features. It also supports hardware timestamping
+    if you have network hardware that has it, which IIRC NTPd doesn&#x27;t? I haven&#x27;t
+    messed with systemd-timesyncd or ntpd-rs, so can&#x27;t say much on them.'
+  score: 0
+  posted_at: '2026-11-22T17:49:53Z'
+- id: '50602073'
+  parent_id: '50601911'
+  author: Palomides
+  text: I think most people run chrony or ntpd-rs; not part of the pool, but I&#x27;ve
+    been using chrony for a while, and it seems like ntpd-rs&#x27;s support for PTP
+    (which I &quot;need&quot;) is still under development
+  score: 0
+  posted_at: '2026-11-22T17:55:01Z'
+- id: '50602078'
+  parent_id: '50601991'
+  author: geerlingguy
+  text: I started at 25 Mbit to see how things would go, and found the Oxtrys VPS
+    I have the public server running on could handle that without issue.<p>Over the
+    past few weeks I bumped it up to 50, then 100, and now it&#x27;s at 250 Mbit.
+    At 100 Mbit I was seeing 180-250 requests&#x2F;sec. At 250 (just switched earlier
+    this morning) I&#x27;m seeing 500-600 requests&#x2F;sec.<p>I&#x27;m monitoring
+    things on the server with chronytop[1], a tool I whipped up with Claude since
+    I didn&#x27;t see any other concise dashboards and hated `watch`ing chronyc sources
+    to get any kind of updated data.<p>[1] <a href="https:&#x2F;&#x2F;github.com&#x2F;geerlingguy&#x2F;chronytop"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;geerlingguy&#x2F;chronytop</a>
+  score: 0
+  posted_at: '2026-11-22T17:55:16Z'
+- id: '50602304'
+  parent_id: '50600622'
+  author: Avamander
+  text: |-
+    For the price and complexity of building a good Linux-based time server I&#x27;d heavily recommend looking at FPGA-based solutions instead. x86 platforms also have PCIe PTM and TGPIO options available[0], which are tad better than the common ARM equivalents and GPIO interrupts.<p>In general Pi-s are relatively bad for timekeeping. Not just the NIC (which can be replaced by hats with their own), there are also oscillator replacement mods[2] to work around this to some extent. Though all this still leaves many other sources of timekeeping error.<p>So if the goal is low-cost precise timekeeping, one can assemble something FPGA-based[2] for quite a bit less money, that can reach very low noise figures. You can spend the remaining money on the GNSS antenna and receiver instead.<p>I&#x27;m also sure a FPGA-based approach could be taken even further with some external timekeeping chips available and the FPGA could just do the NTP&#x2F;PTP protocol stuff.<p>[0]: <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=zxK0_j2Ah2I" rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=zxK0_j2Ah2I</a>
+    [1]: <a href="https:&#x2F;&#x2F;raspberrypi.stackexchange.com&#x2F;questions&#x2F;74482&#x2F;switch-out-the-x1-oscillator-on-a-rpi-2-3" rel="nofollow">https:&#x2F;&#x2F;raspberrypi.stackexchange.com&#x2F;questions&#x2F;74482&#x2F;switch...</a>
+    [2]: <a href="https:&#x2F;&#x2F;fy.chalmers.se&#x2F;~f96hajo&#x2F;fakernet&#x2F;board_Arty_A7-35-GPS-NTP.html" rel="nofollow">https:&#x2F;&#x2F;fy.chalmers.se&#x2F;~f96hajo&#x2F;fakernet&#x2F;board_Arty_A7-35-GP...</a>
+  score: 0
+  posted_at: '2026-11-22T18:18:02Z'
+- id: '50602428'
+  parent_id: '50602304'
+  author: jeffbee
+  text: Back when I thought this was true, I put together an x86 platform with PTM
+    and a fancy NIC and it would hard-lock the bus to such an extent that I had to
+    physically unplug it to recover. There are a lot of pieces required for a complete
+    solution and I&#x27;d caution against a categorical statement like &quot;x86 has
+    PTM&quot;.
+  score: 0
+  posted_at: '2026-11-22T18:30:55Z'
+- id: '50602431'
+  parent_id: '50600622'
+  author: omoikane
+  text: '&gt; <a href="https:&#x2F;&#x2F;www.jeffgeerling.com&#x2F;blog&#x2F;2026&#x2F;i-joined-the-ntp-pool&#x2F;clock-rack-in-studio.jpg"
+    rel="nofollow">https:&#x2F;&#x2F;www.jeffgeerling.com&#x2F;blog&#x2F;2026&#x2F;i-joined-the-ntp-pool...</a><p>I
+    wonder why the wall clock on top is 10 seconds ahead of the bottom one?'
+  score: 0
+  posted_at: '2026-11-22T18:31:11Z'
+- id: '50602725'
+  parent_id: '50600622'
+  author: zodwick
+  text: One of those posts which truly hits you in the face and calls you an idiot
+    for how much you don&#x27;t know. Definitely a rabbit hole I&#x27;m going down
+    this week. Thanks
+  score: 0
+  posted_at: '2026-11-22T18:56:08Z'
+- id: '50602768'
+  parent_id: '50601996'
+  author: rmoriz
+  text: Germany <a href="https:&#x2F;&#x2F;www.ptb.de&#x2F;cms&#x2F;ptb&#x2F;fachabteilungen&#x2F;abt9&#x2F;gruppe-95&#x2F;ref-952&#x2F;zeitsynchronisation-von-rechnern-mit-hilfe-des-network-time-protocol-ntp&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.ptb.de&#x2F;cms&#x2F;ptb&#x2F;fachabteilungen&#x2F;abt9&#x2F;gruppe-95&#x2F;re...</a><p>However
+    using a pool is the better way IMHO.<p>Or go Stratum 1 via DCF77 <a href="https:&#x2F;&#x2F;zeit.ptb.de&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;zeit.ptb.de&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-22T19:00:56Z'
+- id: '50602777'
+  parent_id: '50600622'
+  author: bityard
+  text: I thought I remembered reading that they did not allow VPSes to be part of
+    the pool because of the historical issues around VMs and timing, combined with
+    the fact that the VPS operator could make host-level changes at any time that
+    could impact the accuracy of the host. But now I&#x27;m not finding anything about
+    that. Maybe they have enough monitoring and automation that running nptd on bare
+    metal is not a strict requirement anymore?
+  score: 0
+  posted_at: '2026-11-22T19:02:39Z'
+- id: '50602852'
+  parent_id: '50602011'
+  author: unsnap_biceps
+  text: I have around a dozen CenterClick 270s at various locations and I think generally
+    I have one lock up every 6 months or so. A PoE power cycle on the switch recovers
+    it, so overall I&#x27;ve been really happy with them. I believe they&#x27;re a
+    one-person shop.
+  score: 0
+  posted_at: '2026-11-22T19:11:10Z'
+- id: '50602912'
+  parent_id: '50602431'
+  author: undersuit
+  text: Relativity. &#x2F;s
+  score: 0
+  posted_at: '2026-11-22T19:16:27Z'
+- id: '50602938'
+  parent_id: '50602777'
+  author: walrus01
+  text: I don&#x27;t recall the details but one of the historical problems with VPSes
+    is that people were trying to use things like openvz VPSes which are more like
+    a glorified chroot&#x2F;jail, rather than something like a QEMU&#x2F;KVM VPS (or
+    Xen PVH, or Xen HVM with virtualization extensions).<p>I still personally wouldn&#x27;t
+    try to run an NTP server on a VM unless I also owned&#x2F;controlled the bare
+    metal hardware the hypervisor is running on.
+  score: 0
+  posted_at: '2026-11-22T19:19:25Z'
+- id: '50602993'
+  parent_id: '50602428'
+  author: Avamander
+  text: As I said, tad better, not perfect. I&#x27;d say finding reasonably-priced
+    x86 hardware with that functionality is an even bigger hurdle.
+  score: 0
+  posted_at: '2026-11-22T19:25:41Z'
+- id: '50603153'
+  parent_id: '50602431'
+  author: geerlingguy
+  text: Bottom one is NTP, updating I think once or twice a day. The top one is using
+    WWVB radio time, but my studio is a little bit of a faraday cage, so to get it
+    to sync I have to bring it near the front door and point the back toward the West
+    overnight (STL to Ft. Collins).<p>I have a solution to that I&#x27;m working on—Pico
+    W that grabs time from NTP then broadcasts about 1m with a tiny antenna so I can
+    set my wall clock and watch (the one with the green band in the picture).
+  score: 0
+  posted_at: '2026-11-22T19:42:29Z'
+- id: '50603186'
+  parent_id: '50602938'
+  author: geerlingguy
+  text: 'KVM allows chrony to adjust the clock, which give much better stability.
+    With other VMs you can have a very jumpy clock and poor time service.<p>Some decent
+    discussion on this topic (though with broken links to a separate NTP Pool discussion)
+    here: <a href="https:&#x2F;&#x2F;a.osmarks.net&#x2F;content&#x2F;serverfault.com_en_all_2022-11&#x2F;questions&#x2F;812585&#x2F;things-to-consider-when-running-public-ntp-servers"
+    rel="nofollow">https:&#x2F;&#x2F;a.osmarks.net&#x2F;content&#x2F;serverfault.com_en_all_2022-11...</a>'
+  score: 0
+  posted_at: '2026-11-22T19:47:05Z'
+- id: '50603238'
+  parent_id: '50603186'
+  author: walrus01
+  text: I&#x27;m not sure if I would call answers from 2016 &#x27;recent&#x27; as
+    KVM linux-on-linux has advanced significantly in the years since then, particularly
+    with improvements focused on performance in something like a 6.1.x kernel in a
+    theoretical scenario like a debian trixie host (proxmox 9.2 or whatever) and a
+    trixie or fedora 44&#x2F;45 guest.
+  score: 0
+  posted_at: '2026-11-22T19:52:29Z'
+- id: '50603262'
+  parent_id: '50602993'
+  author: geerlingguy
+  text: 'It all depends on the gains you&#x27;re looking for. Almost any solution
+    with PPS input can get you under 1µs, even on Linux through GPIO.<p>If you want
+    to chase lower, you need a hardware-disciplined  clock. Either through FPGA, or
+    in the case of my Time Pi, I have a PTP NIC with a PHC disciplined from the ublox
+    F9T—which should be within 5-20ns of GPS time. This can be measured on higher-end
+    boards like the TimeHAT by comparing PPS out from the GNSS module, PPS from the
+    NIC, and PPS from a separate GPSDO, along with a timestamp comparison tool like
+    the tinyGTC or TAPR TICC: <a href="https:&#x2F;&#x2F;tapr.org&#x2F;product&#x2F;tapr-ticc&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;tapr.org&#x2F;product&#x2F;tapr-ticc&#x2F;</a><p>The
+    annoying thing is there are few PC hardware combos that include the relevant PPS
+    and frequency outputs to allow actual verification of your time in hardware. Software
+    can show numbers but even on my Pi dashboard, the sub-20ns sync reported is between
+    the system clock and the NIC PHC... but not currently accounting for the delay
+    when the kernel reads the PHC over PCIe.<p>Pi <i>could</i> support PTM on its
+    PCIe bus, that would be awesome. Overkill for 99.9% of its market though!'
+  score: 0
+  posted_at: '2026-11-22T19:54:39Z'
+- id: '50603363'
+  parent_id: '50602852'
+  author: cinntaile
+  text: What do you use them for?
+  score: 0
+  posted_at: '2026-11-22T20:05:05Z'
+- id: '50603436'
+  parent_id: '50603238'
+  author: geerlingguy
+  text: Touche, but the main point is KVM is fine for NTP timing. I don&#x27;t think
+    I&#x27;d try to virtualize a PTP server, that still needs to be closer to the
+    physical hardware.
+  score: 0
+  posted_at: '2026-11-22T20:12:52Z'
+- id: '50603664'
+  parent_id: '50602852'
+  author: toomuchtodo
+  text: Do you automate monitoring ntp health to power cycle the switch poe?
+  score: 0
+  posted_at: '2026-11-22T20:40:57Z'
+- id: '50603825'
+  parent_id: '50600622'
+  author: tomassirio
+  text: Hey Jeff, I learn a lot through your content.<p>Thanks a lot for sharing knowledge!
+  score: 0
+  posted_at: '2026-11-22T20:59:33Z'
+- id: '50604244'
+  parent_id: '50603153'
+  author: NooneAtAll5
+  text: how fast does the de-sync happen?
+  score: 0
+  posted_at: '2026-11-22T21:46:38Z'
+- id: '50604644'
+  parent_id: '50600622'
+  author: yardstick
+  text: It’s been a decade or more since I last used NTP pool on my servers, have
+    they fixed their quality issues with unreliable and misconfigured time sources?
+    With 10k+ servers polling them, I saw enough issues to abandon it in favour of
+    the likes of Google, Apple, Microsoft etc.<p>Issues included unresponsive servers,
+    and servers handing out time that was days&#x2F;weeks&#x2F;months out of realtime.
+  score: 0
+  posted_at: '2026-11-22T22:30:14Z'
+- id: '50604773'
+  parent_id: '50604244'
+  author: geerlingguy
+  text: The photo in the blog post was taken about a week after the last WWVB sync,
+    so the clock runs approximately 10s fast&#x2F;week, or +16ppm, which is typical
+    for cheap quartz crystals.<p>One annoying side effect of running faster is whenever
+    the clock gets a correction, since the gears only run <i>forward</i>, the clock
+    has to go all the way around almost 12 hours to get back to the corrected time
+    after a sync.
+  score: 0
+  posted_at: '2026-11-22T22:44:40Z'
+- id: '50604853'
+  parent_id: '50602768'
+  author: cf100clunk
+  text: 'Canadian government&#x27;s National Research Council: <a href="https:&#x2F;&#x2F;nrc.canada.ca&#x2F;en&#x2F;certifications-evaluations-standards&#x2F;canadas-official-time&#x2F;network-time-protocol-ntp"
+    rel="nofollow">https:&#x2F;&#x2F;nrc.canada.ca&#x2F;en&#x2F;certifications-evaluations-standard...</a><p>NTP
+    server: time.nrc.ca but use a pool instead'
+  score: 0
+  posted_at: '2026-11-22T22:52:05Z'
+- id: '50605301'
+  parent_id: '50602993'
+  author: gsich
+  text: Intel I225 has support.
+  score: 0
+  posted_at: '2026-11-22T23:37:46Z'
+- id: '50605504'
+  parent_id: '50602078'
+  author: syncsynchalt
+  text: You might see it grow over time (i.e. months in the pool), as clients tend
+    to pick an IP out of the pool and stick with it for a long time.<p>My server (which
+    is in the ipv4 @&#x2F;NA&#x2F;US pools at 12mbit) is seeing 250 requests&#x2F;sec,
+    measured across the 57th minute. (If I measured the 00&#x27;th minute it&#x27;d
+    spike due to top-of-the-hour SNTP requests in the crontabs of the world). It&#x27;s
+    been in the pool at that IP for years now.
+  score: 0
+  posted_at: '2026-11-23T00:00:37Z'
+- id: '50605632'
+  parent_id: '50603153'
+  author: isomorphic
+  text: The irony is that the bottom one appears to be the one behind the others.
+    Or at least, the top one seems to agree with the three digital clocks on the rack.<p>Speaking
+    of that, do you have a list somewhere of your gear, specifically those three digital
+    clocks (or maybe they&#x27;re just essentially <i>displays</i>)?<p>Thank you for
+    the article!
+  score: 0
+  posted_at: '2026-11-23T00:14:25Z'
+- id: '50605822'
+  parent_id: '50604644'
+  author: gerdesj
+  text: 'I&#x27;ve been using the ntp pools successfully for at least 20 years across
+    many 100s of systems.  I think you need to pick at least five sources.  Although
+    the docs suggest four: <a href="https:&#x2F;&#x2F;www.ntppool.org&#x2F;en&#x2F;use.html"
+    rel="nofollow">https:&#x2F;&#x2F;www.ntppool.org&#x2F;en&#x2F;use.html</a> for
+    an individual system.'
+  score: 0
+  posted_at: '2026-11-23T00:36:09Z'
+- id: '50605972'
+  parent_id: '50603664'
+  author: unsnap_biceps
+  text: I have our monitoring stack ping the device once a minute and after 5 minutes
+    of no pings, it will cycle the Poe on the port.
+  score: 0
+  posted_at: '2026-11-23T00:51:33Z'
+- id: '50605981'
+  parent_id: '50602011'
+  author: ianburrell
+  text: systemd-timesyncd is an SNTP client. It is meant to set time, not serve it
+    out, but there are lots more regular servers than time servers.
+  score: 0
+  posted_at: '2026-11-23T00:52:16Z'
+- id: '50606031'
+  parent_id: '50603363'
+  author: unsnap_biceps
+  text: |-
+    NTP :)
+    Honestly, they&#x27;re not needed. I just like being self-sufficient as much as possible. We have a quarter rack of machines in each location that sync data between them so they do need some time accuracy, but not nearly as much as these devices provide.
+  score: 0
+  posted_at: '2026-11-23T00:56:31Z'
+article:
+  url: https://www.jeffgeerling.com/blog/2026/i-joined-the-ntp-pool/
+  title: I joined the NTP Pool, but not with my Stratum 1 Pi - Jeff Geerling
+  fetch_status: success
+  content: |-
+    # I joined the NTP Pool, but not with my Stratum 1 Pi
+
+    Before I get too deep into the time-nuts rabbit hole, I figured I should share a little bit of the good time I now have in my studio, with everyone else.
+
+    Thus, I've finally joined the NTP Pool, offering one public Stratum 2 NTP time server (ntp-01.jeffgeerling.com), which gets its time from my Stratum 1 time server (time.jeffgeerling.com) in the studio.
+
+    My Time Pi is connected to an outside GNSS antenna through a TimeHAT v6, which I paired with a high quality timing-grade GNSS module, the u-blox ZED-F9T.
+
+    I posted a video about the setup today on YouTube:
+
+    I'd encourage anyone else interested in network time to contribute to the NTP Pool. However, there are some things you should know before contributing your own time services:
+
+    ## Time Commitment
+
+    You don't need to go all out with a timing-grade GNSS module like I'm using. Heck, you don't even need GNSS-backed time at all!
+
+    The main requirements for hosting a node in the global NTP pool are:
+
+    - Keeping the system online (servers are only made active in the pool if they're online and serving good time consistently for a long period)
+
+    - Maintaining a good time—which can mean Stratum 1 GNSS service, but could also mean pulling time from a few other reliable time servers, and running as Stratum 2 or 3
+
+    - A stable IP address (IPv4 and/or IPv6), and a long-term commitment
+
+    Just 'testing the waters' in the Pool wastes resources—when you bring a new server online, it will take at least a few hours just to spin up all the tests to verify the server's providing a good time.
+
+    If you just want to operate your own time server, that's fine; the NTP Pool is a shared global resource, so joining it is a little more of a commitment.
+
+    Two other important caveats:
+
+    - Your NTP server's IP address will be public
+
+    - NTP traffic will slowly decay, and some misconfigured systems could take months or even years before they'll stop sending NTP traffic at your IP
+
+    The first caveat matters a lot to me: back when I exposed my home IP address trying to self-host this website on a cluster of Raspberry Pis, some doofus decided to DDoS my website—and was persistently doing so for the better part of a month.
+
+    I had to cycle my home IP, then put my site behind Cloudflare, just to protect my poor Pis (and eventually the VPS I now host it on).
+
+    ## Secure and Measurable Time
+
+    For those reasons, I chose to have two layers to my public time services:
+
+    - Stratum 1: I have my Time Pi running in the studio, running a WireGuard tunnel to:
+
+    - Stratum 2: A VPS I host with a cloud provider in St. Louis, to keep the latency down (ideally with fewer hops across the Internet, which leads to better time sync via NTP)
+
+    I include the Stratum 2 time server in my Stratum 1 time server's chrony config as a noselect source, so I can easily compare the Internet delay between the two servers, outside the WireGuard tunnel:
+
+    server ntp-01.jeffgeerling.com noselect
+
+    This provides me with the following graph:
+
+    I've been tracking my time in comparison to an NTP time server hosted at WWV in Ft. Collins, CO (pictured below), one of NIST's NTP servers in Boulder, CO, and Cloudflare.
+
+    For typical NTP configurations, you shouldn't single out time servers like this; I'm only doing it for long-term measurement (and I only poll the servers every 1024 seconds). Most systems should use pool addresses, as documented here.
+
+    The line for Cloudflare steps up and down sometimes, most likely due to BGP routing: as routes and servers change, packets between St. Louis and time.cloudflare.com can take very different paths there and back.
+
+    > Note: You might be looking for info on NTS, or Network Time Security—I haven't explored it much, so expect more on that at a later time. Currently the NTP Pool doesn't support NTS, though some have experimented with it. I'm okay with basic NTP and would recommend anyone with critical timing needs to use other time sources as well (don't only rely on NTP!).
+
+    Note: You might be looking for info on NTS, or Network Time Security—I haven't explored it much, so expect more on that at a later time. Currently the NTP Pool doesn't support NTS, though some have experimented with it. I'm okay with basic NTP and would recommend anyone with critical timing needs to use other time sources as well (don't only rely on NTP!).
+
+    ## Chrony and GPS time tweaks
+
+    My Time Pi is not only serving as a Stratum 1 timing reference for my public NTP server, it's also my primary reference for local time in the studio.
+
+    The TimeHAT on top does most of the heavy lifting, with its built-in Intel i226 NIC. The i226 includes hardware timestamping, essential for accurate PTP timing on the LAN. To deliver the most accurate time possible, I installed a timing-grade GNSS receiver (u-blox ZED-F9T, built to the M.2 NGFF Sync Module specification.
+
+    The entire configuration (for both servers) is managed by Ansible in my time-pi project.
+
+    Using the i226, I'm able to discipline the NIC's hardware clock (called the 'PHC', or 'PTP Hardware Clock') in hardware, directly from the GPS module's PPS (Pulse Per Second) pin. Using linuxptp's ts2phc tool, I can discipline the PHC to within tens-of-ns of UTC, and distribute that time to other PTP-aware computers on the LAN.
+
+    The time on the PHC is shared to my Pi's system clock using refclock PHC inside Chrony, instead of phc2sys, because I was experiencing a weird 200ms jump every so often. Chrony then disciplines the system clock, but this can only be accurate to about a microsecond, because the pulse goes through the PCIe bus, which adds latency I can't measure.
+
+    > I'm actually trying to make this latency more measurable, since GPIO is routed through the RP1 chip deterministically. See ahmadexp's rp1-ptp-pps utility PR. PTM could reduce the error between the NIC's PHC and the system clock to a few ns, but the BCM2712 SoC on the Pi doesn't support it.
+
+    I'm actually trying to make this latency more measurable, since GPIO is routed through the RP1 chip deterministically. See ahmadexp's rp1-ptp-pps utility PR. PTM could reduce the error between the NIC's PHC and the system clock to a few ns, but the BCM2712 SoC on the Pi doesn't support it.
+
+    One other quirk I ran into was Debian's default sourcedir /run/chrony-dhcp directive, which was picking up another NTP server via DHCP, causing chrony to stampede my extremely accurate GNSS-derived time from phc2sys with a far-less-accurate time from a public NTP server! (This was another motivation behind moving clock steering to chrony instead of phc2sys.)
+
+    ## Time for an Outage
+
+    I'm hosting my public Stratum 2 server with Oxtrys, a VPS provider I'd never used before—and one thing I was nervous about was how they'd react to a VPS handling only UDP packets like this.
+
+    Some automated firewalls shut down public NTP servers because NTP traffic may look like abuse. I wondered if that was the case late on the night of November 16, because the server dropped offline while I was writing this blog post:
+
+    But looking at the logs further, it seems an unattended upgrade installed a new Debian kernel, then rebooted the server, and the new kernel caused problems. For now the server still runs automatic upgrades, but leaves reboots to me.
+
+    Oxtrys' live chat support has been responsive enough, though their account dashboard is broken until November 22, so it doesn't list my server's out-of-band management options.
+
+    As you can see in the graph above, the NTP Pool monitors have slowly brought the server's score back up past '10', at which point it can serve time in the pool again. It takes maybe 6–12 hours to recover if the server's been down long enough.
+
+    ## Conclusion
+
+    I've certainly learned a lot at every stage of this journey: NTP is loaded with utility, and is currently an essential piece of global timing infrastructure. I think I know about 1% (probably less) of what there is to know about hosting a public NTP server, and hopefully I can share more as I increase that
+  error:
+  fetched_at: '2026-11-23T01:27:10Z'
+archived_at: '2026-11-23T01:27:13Z'

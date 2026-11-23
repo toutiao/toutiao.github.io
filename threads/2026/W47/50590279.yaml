@@ -4,14 +4,14 @@ post:
   title: 'Show HN: Zero C# – C# without a runtime or GC'
   url: https://onurgumus.github.io/zero-csharp/index.html
   hn_url: https://news.ycombinator.com/item?id=50590279
-  score: 170
+  score: 176
   author: ''
   posted_at: '2026-11-21T15:39:09Z'
-  fetched_at: '2026-11-22T19:10:01Z'
+  fetched_at: '2026-11-23T01:27:09Z'
   article_url: https://onurgumus.github.io/zero-csharp/index.html
   article_fetch_status: success
-  article_fetched_at: '2026-11-22T10:50:12Z'
-  raw_comment_count: 118
+  article_fetched_at: '2026-11-23T01:27:09Z'
+  raw_comment_count: 125
 comments:
 - id: '50590654'
   parent_id: '50590279'
@@ -1021,6 +1021,45 @@ comments:
     application like network I&#x2F;O might not even notice.
   score: 0
   posted_at: '2026-11-22T15:01:50Z'
+- id: '50603025'
+  parent_id: '50590877'
+  author: riedel
+  text: 'There is other ways to manage heaps that might fit better or not. When building
+    compilers a long time ago, we had tons of issues with stuff dangling around in
+    subgraphs that we did not free. The approach was using obstacks. Seems the &#x27;arenas&#x27;
+    used here do a similar thing: simply tear down a whole memory area. Actually it
+    is a bit like writing a GC yourself: if you want to keep structures, you copy
+    them into the new &#x27;heap&#x27;. It is not that bad of a strategy depending
+    on what you are programming.'
+  score: 0
+  posted_at: '2026-11-22T19:29:19Z'
+- id: '50604344'
+  parent_id: '50599895'
+  author: wallstop
+  text: JIT != capability to dynamically generate and run code at runtime, was my
+    only point. A JIT can and does do that, but it is not the only way of doing that.
+    And if there&#x27;s a homegrown project like this, they can do whatever they want.
+    Such as explicitly provide an API to do reflection like things instead of requiring
+    JIT to implicitly handle it on the fly.<p>An approach that doesn&#x27;t need runtime
+    would be to allow reflection for types provided at compile time (say, with a config
+    file). There are many ways to approach reflection, from none to some to full.
+    This appears to have chosen none. It could have chosen some, or potentially even
+    full.
+  score: 0
+  posted_at: '2026-11-22T21:57:28Z'
+- id: '50605280'
+  parent_id: '50595126'
+  author: zdragnar
+  text: But smart pointers, RAII etc all yield some form of control to the compiler.
+    Manual memory management remains the pinnacle of control.
+  score: 0
+  posted_at: '2026-11-22T23:35:37Z'
+- id: '50605613'
+  parent_id: '50598711'
+  author: donkeylazy456
+  text: yes we do read warnings and errors they put. If needed we read IL.
+  score: 0
+  posted_at: '2026-11-23T00:12:55Z'
 article:
   url: https://onurgumus.github.io/zero-csharp/index.html
   title: Zero C# | C# without a runtime, from Linux to a 386
@@ -1030,7 +1069,7 @@ article:
 
     A fork of bflat compiles C# straight to a small native program: no .NET runtime, no garbage collector, nothing to install where it runs.
 
-    You keep C#'s syntax, type checking and generics. Memory comes from arenas you free all at once, and a small library gives you strings, collections, input and output on those terms. The same source runs on Linux, macOS and Windows, on WebAssembly, and on DOS on a 386.
+    You keep C#'s syntax, type checking and generics. Memory comes from arenas you free all at once, and a small library gives you strings, collections, input and output on those terms. The same source runs on Linux, macOS and Windows, on WebAssembly, on DOS on a 386, and on a bare PC with no operating system, started by its UEFI firmware.
 
     // Read into a stack buffer: nothing allocated per answer. Span<char> buffer = stackalloc char[32]; Out.Write($"Q{i}: {a} + {b} = "); int length = In.ReadLine(buffer); // Kept until the end, so it goes into an arena. mistakes.Add(Str.Format(keep, $"{a} + {b} = {a + b}, not {value}"));
 
@@ -1064,33 +1103,39 @@ article:
 
     - Reflection and asyncA type can be compared, but it has no name.
 
-    ## One program, five machines
+    ## One program, six machines
 
-    The hello-world sample, unchanged, built for each target. Each build is checked by the same test suite, which requires the same output everywhere.
+    A new project from dotnet new zero, built for each target by setting one property, ZeroTarget. The repository builds WebAssembly and DOS too, and one test suite requires the same output on every target.
 
-    $ ./build.sh Minimal $ ./run.sh Minimal Hello from zero-mode! $ wc -c bin/Minimal 39848 bin/Minimal
+    $ dotnet new zero -n Hello $ cd Hello && dotnet build -c Release $ bin/Release/zero03/Hello What's your name? Ada Hello, Ada!
 
     ### Linux, x64 or arm64
 
-    A native program that needs only the C library. On macOS it builds and runs in a container.
+    A native program that needs only the C library: 46 KB.
 
-    $ ./build.sh --mac Minimal $ bin/mac/Minimal Hello from zero-mode! $ wc -c bin/mac/Minimal 64728 bin/mac/Minimal
+    $ dotnet new zero -n Hello $ cd Hello && dotnet build -c Release $ bin/Release/zero03/Hello What's your name? Ada Hello, Ada!
 
     ### macOS on Apple Silicon
 
-    A native Mac program: bflat compiles it, the Mac's own clang links it. No container to run it.
+    A native Mac program, 66 KB, linked by the package's own linker. No Xcode needed.
 
-    $ ./build.sh --win Minimal $ ./run.sh --win Minimal Hello from zero-mode! $ wc -c bin/win/Minimal.exe 10752 bin/win/Minimal.exe
+    > dotnet new zero -n Hello > cd Hello && dotnet build -c Release > bin\Release\zero03\Hello.exe What's your name? Ada Hello, Ada!
 
     ### Windows x64
 
-    A console program on Windows' own C library, built from Linux or macOS. Tested under Wine.
+    A 14 KB console program on Windows' own C library, built on Windows, Linux or a Mac.
 
-    $ ./build.sh --wasm Minimal $ ./run.sh --wasm Minimal Hello from zero-mode! $ wc -c bin/wasm/Minimal.wasm 15833 bin/wasm/Minimal.wasm
+    dotnet build -p:ZeroTarget=uefi-x64 Shell> fs0: FS0:\> Hello.efi What's your name? Ada Hello, Ada!
+
+    ### UEFI, no operating system
+
+    A 15 KB program the PC's firmware starts by itself, from a USB stick. x64 or arm64.
+
+    $ wasmtime Minimal.wasm Hello from zero-mode! $ wc -c Minimal.wasm 15833 Minimal.wasm
 
     ### WebAssembly
 
-    A WASI module, through NativeAOT-LLVM. Runs under wasmtime.
+    A WASI module, through NativeAOT-LLVM. Runs under wasmtime, or in your browser.
 
     C:\>D: D:\>PROGRAM Hello from zero-mode! D:\>DIR PROGRAM.EXE PROGRAM EXE 16,384 D:\>
 
@@ -1130,9 +1175,9 @@ article:
 
     If you're new to it, these four pages take you from nothing to an interactive program.
 
-    - InstallWith dotnet on Linux or Windows, or from the repository for every target.
+    - InstallWith dotnet on Linux, Windows or a Mac, or from the repository for every target.
 
-    With dotnet on Linux or Windows, or from the repository for every target.
+    With dotnet on Linux, Windows or a Mac, or from the repository for every target.
 
     - Your first programBuild it, run it, see how small it is.
 
@@ -1148,5 +1193,5 @@ article:
 
     Looking for something specific? The task guides answer one question each, and the reference lists every type in the library.
   error:
-  fetched_at: '2026-11-22T10:50:12Z'
-archived_at: '2026-11-22T19:10:08Z'
+  fetched_at: '2026-11-23T01:27:09Z'
+archived_at: '2026-11-23T01:27:13Z'

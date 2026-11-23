@@ -1,0 +1,98 @@
+---
+post:
+  id: lo-bjoete
+  source: lobsters
+  title: Falsehoods Programmers Believe About ATProto
+  url: https://reiver.link/atproto/falsehoods-programmers-believe/
+  hn_url: https://lobste.rs/s/bjoete
+  score: 25
+  author: jacky
+  posted_at: '2026-11-22T16:37:12Z'
+  fetched_at: '2026-11-23T01:27:13Z'
+  article_url: https://reiver.link/atproto/falsehoods-programmers-believe/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T01:27:14Z'
+  raw_comment_count: 2
+  tags:
+  - api
+comments:
+- id: lo-0etthr
+  parent_id: '0'
+  author: singpolyma
+  text: |-
+    The handle specification only says “there must be at least two segments” (so a bare top-level domain like com is not allowed)
+
+    While in practise on the public network a TLD handle is unlikely today, banning it by spec just seems silly?
+  score: 2
+  posted_at: '2026-11-22T19:21:17Z'
+- id: lo-a3uhlu
+  parent_id: '0'
+  author: viraptor
+  text: It's weird... It's halfway between caring about preventing TLD as a handle,
+    and not going far enough (co.uk, com.au, etc.) There are public lists of TLDs
+    for that reason.
+  score: 1
+  posted_at: '2026-11-23T00:25:17Z'
+article:
+  url: https://reiver.link/atproto/falsehoods-programmers-believe/
+  title: Falsehoods Programmers Believe About ATProto
+  fetch_status: success
+  content: |-
+    In the year 2010, Patrick McKenzie wrote and published the article “Falsehoods Programmers Believe About Names” — a list of reasonable-sounding assumptions about people's names that not only were not true, but also (if assumed) would create bugs and even break software. That article started a whole genre of Falsehoods Programmers Believe articles. This article ("Falsehoods Programmers Believe About ATProto") is one of my contributions to that genre.
+
+    Every numbered statement below is false. Each one is followed by what is actually true — and where to read more.
+
+    These are not made up for effect. Each one is backed by the specification, or by a live request to real ATProto servers (made in November 2026).
+
+    # Handles
+
+    - A user's handle never changes. Handles can change. The account's DID is what is permanent — the accounts specification calls it (DIDs) “unique and immutable”. My handle changed! My handle was first reiver.bsky.social, then became reiver.myatproto.social, and then later became reiver.blacksky.team. You can see that if you dig through the data at plc.directory/did:plc:scewmn2pl3oz36mxme2b6czz/log/audit. (did:plc:scewmn2pl3oz36mxme2b6czz is my DID-PLC DID.)
+
+    A user's handle never changes.
+
+    Handles can change. The account's DID is what is permanent — the accounts specification calls it (DIDs) “unique and immutable”.
+
+    My handle changed! My handle was first reiver.bsky.social, then became reiver.myatproto.social, and then later became reiver.blacksky.team. You can see that if you dig through the data at plc.directory/did:plc:scewmn2pl3oz36mxme2b6czz/log/audit. (did:plc:scewmn2pl3oz36mxme2b6czz is my DID-PLC DID.)
+
+    - So, a handle is a good database key for a user. Use the DID. Store the handle only for display (cosmetic) purposes — and re-check what each DID's handle is from time to time. But, you need to normalize the DID before using it. DIDs are URIs, and URI schemes are case-insensitive (RFC 3986) — so DID:plc:scewmn2pl3oz36mxme2b6czz and did:plc:scewmn2pl3oz36mxme2b6czz are the same DID. ATProto requires the normalized (lowercase) form: normalize DIDs when they come from user input, store and compare only the normalized form, and reject non-normalized DIDs that arrive in protocol data.
+
+    So, a handle is a good database key for a user.
+
+    Use the DID. Store the handle only for display (cosmetic) purposes — and re-check what each DID's handle is from time to time.
+
+    But, you need to normalize the DID before using it. DIDs are URIs, and URI schemes are case-insensitive (RFC 3986) — so DID:plc:scewmn2pl3oz36mxme2b6czz and did:plc:scewmn2pl3oz36mxme2b6czz are the same DID. ATProto requires the normalized (lowercase) form: normalize DIDs when they come from user input, store and compare only the normalized form, and reject non-normalized DIDs that arrive in protocol data.
+
+    - When a user changes their handle, the first part stays the same — such as reiver.bsky.social → reiver.myatproto.social → reiver.blacksky.team. A new handle does not have to have anything in common with the old one. joeblow.bsky.social → me.example.com → bbqlover.net → ilikeicecream.com would be fine. Changing a handle just means pointing the account at a different domain — com.atproto.identity.updateHandle takes any valid handle, and only “Verifies handle validity”. For example, Bluesky's own account (did:plc:z72i7hdynmk6r22z27h6tvur) started out as bluesky-team.bsky.social, and then became bsky.app. You can see that in its audit log at plc.directory/did:plc:z72i7hdynmk6r22z27h6tvur/log/audit. (Another reason to key users by DID, and not by any part of their handle.)
+
+    When a user changes their handle, the first part stays the same — such as reiver.bsky.social → reiver.myatproto.social → reiver.blacksky.team.
+
+    A new handle does not have to have anything in common with the old one. joeblow.bsky.social → me.example.com → bbqlover.net → ilikeicecream.com would be fine. Changing a handle just means pointing the account at a different domain — com.atproto.identity.updateHandle takes any valid handle, and only “Verifies handle validity”.
+
+    For example, Bluesky's own account (did:plc:z72i7hdynmk6r22z27h6tvur) started out as bluesky-team.bsky.social, and then became bsky.app. You can see that in its audit log at plc.directory/did:plc:z72i7hdynmk6r22z27h6tvur/log/audit. (Another reason to key users by DID, and not by any part of their handle.)
+
+    - You can trust a handle you saw five minutes ago. A handle can change at any moment. The user can switch to a new handle. The domain's owner can point it at a different DID — or the domain can expire, and be registered by someone else. Or, its DNS record or /.well-known/atproto-did file can just disappear, and the handle stops resolving. The handle specification says “If the handle for a known DID is confirmed to no longer resolve, it should be marked as invalid.” So, a handle → DID mapping is only as good as when you last checked it. The specification recommends caching handle resolution “up to some lifetime”, and re-resolving “periodically”. Watch the firehose for #identity events, which announce handle changes. And, never use a cached handle to decide who someone is (for example, for permissions) — use the DID.
+
+    You can trust a handle you saw five minutes ago.
+
+    A handle can change at any moment. The user can switch to a new handle. The domain's owner can point it at a different DID — or the domain can expire, and be registered by someone else. Or, its DNS record or /.well-known/atproto-did file can just disappear, and the handle stops resolving. The handle specification says “If the handle for a known DID is confirmed to no longer resolve, it should be marked as invalid.”
+
+    So, a handle → DID mapping is only as good as when you last checked it. The specification recommends caching handle resolution “up to some lifetime”, and re-resolving “periodically”. Watch the firehose for #identity events, which announce handle changes. And, never use a cached handle to decide who someone is (for example, for permissions) — use the DID.
+
+    - Every user has a handle. An account might have no handle in its DID document (no at:// entry in alsoKnownAs), or a handle that no longer resolves back to it. The DID specification says “an account whose DID document does not contain a valid and confirmed handle can still participate in the atproto ecosystem. Software should be careful to either not display any handle for such account, or obviously indicate that any handle associated with it is invalid.” In API responses, such an account's handle may show up as the special value handle.invalid — which “can not be used in most situations (search queries, API requests, etc).” And, the handle field on the firehose's #identity event is optional. So, your code needs a “no handle” case.
+
+    Every user has a handle.
+
+    An account might have no handle in its DID document (no at:// entry in alsoKnownAs), or a handle that no longer resolves back to it. The DID specification says “an account whose DID document does not contain a valid and confirmed handle can still participate in the atproto ecosystem. Software should be careful to either not display any handle for such account, or obviously indicate that any handle associated with it is invalid.”
+
+    In API responses, such an account's handle may show up as the special value handle.invalid — which “can not be used in most situations (search queries, API requests, etc).” And, the handle field on the firehose's #identity event is optional. So, your code needs a “no handle” case.
+
+    - Every handle ends in .bsky.social. Any Internet domain can be a handle. And, other PDSes hand out their own — the blacksky.app PDS, for example, offers .blacksky.app, .myatproto.social, .cryptoanarchy.network, and others.
+
+    Every handle ends in .bsky.social.
+
+    Any Internet domain can be a handle. And, other PDSes hand out their own — the blacksky.app PDS, for example, offers .blacksky.app, .myatproto.social, .cryptoanarchy.network, and others.
+
+    - Even if a user's ha
+  error:
+  fetched_at: '2026-11-23T01:27:14Z'
+archived_at: '2026-11-23T01:27:14Z'

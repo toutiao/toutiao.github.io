@@ -4,14 +4,14 @@ post:
   title: 'Fast-Anything: Don''t rewrite it in Rust. Rewrite the 5% that''s slow'
   url: https://github.com/EL4CTEO/fast-anything
   hn_url: https://news.ycombinator.com/item?id=50596155
-  score: 152
+  score: 179
   author: ''
   posted_at: '2026-11-22T04:10:09Z'
-  fetched_at: '2026-11-22T19:10:02Z'
+  fetched_at: '2026-11-23T01:27:09Z'
   article_url: https://github.com/EL4CTEO/fast-anything
   article_fetch_status: success
-  article_fetched_at: '2026-11-22T19:10:02Z'
-  raw_comment_count: 110
+  article_fetched_at: '2026-11-23T01:27:09Z'
+  raw_comment_count: 148
 comments:
 - id: '50597321'
   parent_id: '50596155'
@@ -1006,6 +1006,174 @@ comments:
     would you write heavy computation in pure Python?"
   score: 0
   posted_at: '2026-11-22T19:06:13Z'
+- id: '50602827'
+  parent_id: '50600570'
+  author: preg_match
+  text: You can build okay abstractions and then to maintain them you have a pinky-promise
+    system so it doesn’t matter. You basically can’t build any abstraction in C because
+    you can’t make a guarantee about… well… anything. Anyone at any point can just
+    break your abstraction. And they will. At 100 lines of code maybe you can see
+    that they don’t, but most projects are bit larger than that.<p>Even very basic
+    abstractions possible in basically every language, like say a type that holds
+    JSON text, is not possible in C.
+  score: 0
+  posted_at: '2026-11-22T19:07:33Z'
+- id: '50602962'
+  parent_id: '50602813'
+  author: asdff
+  text: Fields like stats or data science are often heavy computation in python. Even
+    R. Single thread does not matter, because this python run might be one of some
+    thousands+ you have a cluster chewing through 1 per cpu core.
+  score: 0
+  posted_at: '2026-11-22T19:22:15Z'
+- id: '50602976'
+  parent_id: '50602827'
+  author: uecker
+  text: 'You can build types around structures and access them via wrappers. This
+    works perfectly fine for many abstractions.  Sure, one can break those abstractions,
+    but not accidentally, and this is true also in other languages.<p>Update: In fact,
+    you can also build quite reliable abstractions around incomplete structure types.
+    Those abstractions are better than what C++ adds, where the abstractions in the
+    header are all very fragile.'
+  score: 0
+  posted_at: '2026-11-22T19:23:49Z'
+- id: '50602981'
+  parent_id: '50602638'
+  author: kamma4434
+  text: Ow… Swing! I can definitely live without!
+  score: 0
+  posted_at: '2026-11-22T19:24:17Z'
+- id: '50603035'
+  parent_id: '50600532'
+  author: cogman10
+  text: |-
+    Rust makes it pretty hard to do fast async, IMO.<p>Everything wants to push you down the path of using `ARC&lt;Thing&gt;` even when `Thing` is immutable or the lifetime can be mostly guaranteed.<p>Here&#x27;s an example of that problem.  Let&#x27;s say I want to do 2 things concurrently against the same data set.  I might want to write code that looks like this:<p><pre><code>    let v = vec![1, 2, 3];
+        let taskA = tokio::spawn(async {
+            println!(&quot;Here&#x27;s a vec: {:?}&quot;, v);
+        });
+        let taskB = tokio::spawn(async {
+            println!(&quot;Here&#x27;s a vec: {:?}&quot;, v);
+        });
+        tokio::join!(taskA, taskB);
+    </code></pre>
+    But that immediately gets you in hot water because &quot;async block may outlive the current function, but
+                  it borrows `v`, which is owned by the current function&quot;<p>Now, you and I can clearly see that the async block does not, in fact, outlive the current function.  However, AFAIK, there&#x27;s no real way to convince rust that that is the case.<p>So now even though `v` is immutable, making this a thread safe operation, we need to introduce unnecessary concurrency constructs or break out unsafe in order to force the language to recognize that &quot;Yes, you can trust me&quot;.<p>For rust to actually be fast with concurrent operations, it needs to be smarter about lifetimes in terms of async.
+  score: 0
+  posted_at: '2026-11-22T19:30:44Z'
+- id: '50603157'
+  parent_id: '50599870'
+  author: Veserv
+  text: That is just due to not using good performance observability tools. These
+    sorts of problems are easy to see with a full instruction trace that uses good,
+    standard visualization on a problem case.
+  score: 0
+  posted_at: '2026-11-22T19:43:04Z'
+- id: '50603446'
+  parent_id: '50603157'
+  author: novok
+  text: What are your favorite perf observability tools.
+  score: 0
+  posted_at: '2026-11-22T20:13:27Z'
+- id: '50603649'
+  parent_id: '50601120'
+  author: xtracto
+  text: 'Processing input from a websocket, and then doing some calculationsand http
+    requests [which need low latency,  hence the Europe server].<p>Apparently a lot
+    of the node baggage was due to Garbage Collection, which Rust doesn&#x27;t need.
+    Also, immediately transforming incoming JSON to binary data helped.<p>Yes, to
+    both: claude wrote the initial architecture,  under my guidance.  As I mentioned
+    it was a PoC, so the first pass was &quot;quick and dirty&quot;. Shit the original
+    web server was React [which i didn&#x27;t count for the comparison because barebones
+    node can serve static pages as well.<p>It has been a cool experiment which started
+    as a crazy idea, but now as I said gives me some spare change. I just SSH tunnel
+    every day or two and load the web page to see how things are going.'
+  score: 0
+  posted_at: '2026-11-22T20:39:48Z'
+- id: '50603764'
+  parent_id: '50602813'
+  author: eszed
+  text: "&gt; Why would you write heavy computation in pure Python?<p>It didn&#x27;t
+    start that way, but people kept adding new features and finding new use-cases.<p>That&#x27;s
+    what I&#x27;m dealing with, anyway. It is, in some ways, a good problem to have:
+    people use it, like it, engage with it."
+  score: 0
+  posted_at: '2026-11-22T20:54:07Z'
+- id: '50603840'
+  parent_id: '50600584'
+  author: zbentley
+  text: I interpreted GP as talking about maintaining Rust code that was written with
+    performance in mind by people who were not familiar with the difference, and who
+    shot themselves in the foot as a result.
+  score: 0
+  posted_at: '2026-11-22T21:00:46Z'
+- id: '50603873'
+  parent_id: '50600532'
+  author: zbentley
+  text: Absolutely. I have the exact same problem dealing with Python people who have
+    done the same thing. &quot;This is all modern, async python and therefore can
+    scale. What do you mean our event loops are routinely blocked?!&quot;<p>I thought
+    we as an industry had hopefully moved past &quot;async == magic code-go-fast sauce&quot;,
+    but apparently we have not.<p>As much as Go annoys me, you&#x27;re right there
+    as well. I have to admit that Go did &quot;solve&quot; the make-concurrency-and-parallelism-accessible
+    (and relatively safe) space in a way that very, very few other programming languages
+    did (and none that people widely use).
+  score: 0
+  posted_at: '2026-11-22T21:03:24Z'
+- id: '50604222'
+  parent_id: '50597767'
+  author: sshine
+  text: Yep, I’ve rewritten a couple of backends that were critical to their projects
+    in Rust this year exactly because their Node&#x2F;Python predecessors did not
+    scale well with many concurrent users.<p>100x performance gain on on-prem hosting
+    means everything to hardware costs.<p>The biggest differentiator is proper thread
+    support. You can handle things concurrently within a single process and not start
+    one or more processes per concurrent user. Go can do this, too.<p>The secondary
+    is just having a chance to rethink the architecture. Do something smart.<p>The
+    third is language and ecosystem features that encourage more correct software.
+    Rust beats Go here. Too many specifics, nothing new. Haskell can do this, too.
+  score: 0
+  posted_at: '2026-11-22T21:44:04Z'
+- id: '50604534'
+  parent_id: '50603035'
+  author: jeffbee
+  text: Yeah, and the amount of work that rustc has to do contemplating the safety
+    of these async bodies, their witnesses, etc, especially if the signature is generic,
+    explains most of the reason why rust builds are so long.
+  score: 0
+  posted_at: '2026-11-22T22:18:02Z'
+- id: '50605071'
+  parent_id: '50602976'
+  author: preg_match
+  text: 'This is very unreliable overall and since the type system is so primitive,
+    you’re limited on what you can enforce on the structure. You can easily break
+    stuff accidentally.<p>For example: suppose you need a container to hold ints.
+    But it also needs to be able to hold other types. In C++ this is trivial, as in
+    virtually all modern languages. In C this is impossible.<p>You can have a generic
+    memory backed storage + accessors. But if you rely on void pointer functions,
+    you have to remember every time to cast and pinky promise to only store one type.
+    It’s very, very easy to make a mistake, and you will.<p>Most abstractions that
+    we take for granted in modern languages are straight up not possible in C, or
+    at least they are extremely incomplete. Part of that is because you can’t get
+    C to do <i>anything</i> automatically. Every function call must be manual.'
+  score: 0
+  posted_at: '2026-11-22T23:15:23Z'
+- id: '50605305'
+  parent_id: '50599237'
+  author: dellamonica
+  text: The C# version is single threaded, the Rust version is not.
+  score: 0
+  posted_at: '2026-11-22T23:38:05Z'
+- id: '50605428'
+  parent_id: '50605071'
+  author: uecker
+  text: 'You are switching topics to polymorphic types. But you can also implement
+    them in C in a type safe way without void pointers.<p>Here is an example for a
+    generic vector type: <a href="https:&#x2F;&#x2F;godbolt.org&#x2F;z&#x2F;7MdGqcdbq"
+    rel="nofollow">https:&#x2F;&#x2F;godbolt.org&#x2F;z&#x2F;7MdGqcdbq</a><p>Your
+    mistake is believing that you need native syntax for such feature to be possible.
+    But this is not true.'
+  score: 0
+  posted_at: '2026-11-22T23:51:24Z'
 article:
   url: https://github.com/EL4CTEO/fast-anything
   title: 'GitHub - EL4CTEO/fast-anything: Don''t rewrite it in Rust. Rewrite the 5%
@@ -1035,7 +1203,7 @@ article:
 
     ## Use
 
-    fast-anything go --agent claude -- python app.py # or: -- node app.ts / bun app.ts / deno run -A app.ts / ruby app.rb / java App.java / mvn exec:java / gradle run / go run . / php app.php / clang -O2 main.c
+    fast-anything go --agent claude -- python app.py # or: -- node app.ts / bun app.ts / deno run -A app.ts / ruby app.rb / java App.java / mvn exec:java / gradle run / go run . / php app.php / clang -O2 main.c / Rscript app.R
 
     Or step by step:
 
@@ -1073,7 +1241,7 @@ article:
 
     With Intel oneAPI on Windows, run fast-anything from a shell where setvars.bat ran (it sets up the linker). SYCL kernels run on the device and aren't ported; with -fsycl, only host functions are profiled and ported.
 
-    Ruby, Java, Go, PHP, C, C++ and C# need no headers, bindings or extra tools: the port is a plain Rust library with one C entry point taking and returning JSON, and fast-anything replays the recorded calls against it directly. Any language that can call C can use that bridge.
+    Ruby, Java, Go, PHP, C, C++, C# and R need no headers, bindings or extra tools: the port is a plain Rust library with one C entry point taking and returning JSON, and fast-anything replays the recorded calls against it directly. Any language that can call C can use that bridge.
 
     ## License
 
@@ -1101,5 +1269,5 @@ article:
 
     ## Languages
   error:
-  fetched_at: '2026-11-22T19:10:02Z'
-archived_at: '2026-11-22T19:10:08Z'
+  fetched_at: '2026-11-23T01:27:09Z'
+archived_at: '2026-11-23T01:27:13Z'
