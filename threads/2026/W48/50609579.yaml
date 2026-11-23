@@ -1,0 +1,994 @@
+---
+post:
+  id: '50609579'
+  title: Don't keep your SSH keys on disk
+  url: https://jola.dev/posts/you-cant-afford-ssh-keys-disk
+  hn_url: https://news.ycombinator.com/item?id=50609579
+  score: 144
+  author: ''
+  posted_at: '2026-11-23T09:55:38Z'
+  fetched_at: '2026-11-23T23:41:58Z'
+  article_url: https://jola.dev/posts/you-cant-afford-ssh-keys-disk
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T23:41:58Z'
+  raw_comment_count: 96
+comments:
+- id: '50613505'
+  parent_id: '50609579'
+  author: '201984'
+  text: Why not just use the regular SSH agent with a password? Still encrypted on
+    disk, so I don&#x27;t see what the difference is.
+  score: 0
+  posted_at: '2026-11-23T15:30:54Z'
+- id: '50613761'
+  parent_id: '50613505'
+  author: mingus88
+  text: If your threat model includes rogue LLM agents on your system then your passphrase
+    can be compromised by a logger or just getting it from memory<p>I use yubikey
+    Fido keys so I need to touch the key to unlock it<p>It’s quite wild to be working
+    and see my yubikey flash waiting for input because I have an agent running a task
+    and it’s trying things like GitHub auth without asking me. Not hard to imagine
+    it taking the next step and just grabbing tokens it needs to do whatever it needs
+    to complete its task
+  score: 0
+  posted_at: '2026-11-23T15:44:42Z'
+- id: '50613783'
+  parent_id: '50613505'
+  author: abound
+  text: Yeah I&#x27;m really curious why using a key passphrase is not an option for
+    the author. Seems like it has everything they&#x27;re looking for:<p>- Good ergonomics<p>-
+    No private key sitting unencrypted on disk<p>Hell, isn&#x27;t it even the <i>default</i>
+    when using `ssh-keygen`? As in, it prompts you for a passphrase if you don&#x27;t
+    explicitly tell it not to?
+  score: 0
+  posted_at: '2026-11-23T15:46:02Z'
+- id: '50613802'
+  parent_id: '50609579'
+  author: a3w
+  text: cat ~&#x2F;.ssh&#x2F;id_rsa | pbcopy<p>feels wrong. Unnecessary uses of cat.<p>`pbcopy
+    &lt; ~&#x2F;.ssh&#x2F;id_rsa`
+  score: 0
+  posted_at: '2026-11-23T15:47:17Z'
+- id: '50613839'
+  parent_id: '50609579'
+  author: jon-wood
+  text: I’m currently trying to get to a point where I don’t keep long lived credentials
+    on disk, and as much as possible keep them out of environment variables as well.
+    I don’t want random processes running as my user account to be able to go sniff
+    out my GitHub, AWS, and so on API tokens. Unfortunately It’s a massive pain to
+    get right at the moment. I particularly don’t want long lived credentials where
+    if a process sends them to a server somewhere they’re valid for ages afterwards.<p>SSH
+    keys are pretty much solved, I’m using 1Password’s SSH agent similar to what OP
+    is doing with Bitwarden. It works wonderfully.<p>Various API keys are a pain in
+    the backside. 1Password has some features which kind of maybe help by allowing
+    you to keep credentials in 1Password and then exposing them either as a named
+    pipe that requires auth to read, or via CLI wrappers that inject the credentials
+    at runtime. Both of those still require long lived credentials though.<p>At some
+    point I’ll probably snap and build something analogous to what 1Password are doing
+    but using OAuth or similar to request short lived, scoped, credentials as needed.
+    I assume there’s approximately six hundred things like this which are targeted
+    at agent use but I’d like something that doesn’t require me to run everything
+    in a sandbox.
+  score: 0
+  posted_at: '2026-11-23T15:49:34Z'
+- id: '50613861'
+  parent_id: '50613505'
+  author: praash
+  text: Just to clarify your point for others; SSH private key files can already be
+    encrypted with a passphrase. SSH will then prompt for the passphrase whenever
+    the key is used. The standard SSH agent can optionally keep keys unlocked for
+    a time period.<p>There&#x27;s no need to reveal your unencrypted keys to Bitwarden
+    or any other cloud service.
+  score: 0
+  posted_at: '2026-11-23T15:50:53Z'
+- id: '50613902'
+  parent_id: '50613505'
+  author: jon-wood
+  text: Typing a reasonably strong SSH key passphrase many times a day is deeply annoying,
+    and the alternative to that is running ssh-add once a session and then anything
+    else running as your user being able to use it with impunity.<p>Agents like Bitwarden
+    and 1Password are more granular in their authorisation, in 1Password’s case I
+    tap the fingerprint reader on my laptop when a process in a specific terminal
+    first requests SSH key access to authorise that, after which it can use it as
+    much as it likes until the session times out. Doing so however doesn’t mean that
+    some other process spawned by some malware can also use it, that’s going to pop
+    a prompt up again.
+  score: 0
+  posted_at: '2026-11-23T15:53:29Z'
+- id: '50613912'
+  parent_id: '50613505'
+  author: ethersteeds
+  text: I think the answer is more plainly and reasonably given in the article TFA
+    cites as inspiration, &quot;I deleted all my SSH keys&quot;:<p>&gt; First – Isn’t
+    using a passphrase enough? Probably. I don’t intend to imply that this post is
+    the only way that anyone should be doing SSH keys. [...] So yes, the ’traditional’
+    method is probably fine for most threat models.<p><a href="https:&#x2F;&#x2F;blog.infected.systems&#x2F;posts&#x2F;2026-11-03-i-deleted-all-my-ssh-keys&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;blog.infected.systems&#x2F;posts&#x2F;2026-11-03-i-deleted-all...</a>
+  score: 0
+  posted_at: '2026-11-23T15:54:06Z'
+- id: '50613924'
+  parent_id: '50613802'
+  author: zulux
+  text: I stopped fighting this war because the Cat version sort of follows the Subject-Verb-Object
+    order in English, depending on how you think about the subject.
+  score: 0
+  posted_at: '2026-11-23T15:54:40Z'
+- id: '50613931'
+  parent_id: '50609579'
+  author: handplane
+  text: While in theory, this adds at least some small layer of protection, I have
+    doubts that it adds anything meaningful to stop a smart attacker.<p>The problem
+    here is that everything is running as your user, so it&#x27;s all the same security
+    sphere.<p>You may be thinking, &quot;But Bitwarden requires me to approve each
+    key request&quot;. Problem is that if the attacker is already running as your
+    user, which I&#x27;m assuming here because to steal your bare keys, they&#x27;d
+    already need to be. This means they can also hit the approve button for you.<p>Ok,
+    now you say &quot;But it requires touchID!&quot;. Maybe that gets you just a little
+    bit of protection, but...<p>The next idea is to just steal the decrypted key out
+    of RAM. This requires a little bit of effort, because you generally can&#x27;t
+    attach to a sibling process without root on Linux with default configs. This will
+    only delay things slightly. Attaching to your child is allowed, so all an attacker
+    needs to do is replace your launch shortcut&#x2F;service for Bitwarden with a
+    thin wrapper that makes the attacker the parent process, and then they can just
+    ptrace it and steal the decrypted key next startup. On Mac, where the ptrace path
+    isn&#x27;t viable due to disallowing ptrace of signed binaries by default, you
+    could just replicate the Bitwarden GUI as a wrapper and steal the master password
+    at startup.<p>If you really want to protect your keys from attacks like this,
+    you need a real hardware device with OOB signaling.
+  score: 0
+  posted_at: '2026-11-23T15:55:04Z'
+- id: '50613946'
+  parent_id: '50609579'
+  author: submain
+  text: I use tokens for my SSH (yubikey, token2). Private key never leaves the hardware.
+    Requires both password and touch to unlock.
+  score: 0
+  posted_at: '2026-11-23T15:56:12Z'
+- id: '50613957'
+  parent_id: '50613802'
+  author: rpigab
+  text: This feels better, to have data flow from left to right, just like regular
+    pipelines:<p>`&lt;~&#x2F;.ssh&#x2F;id_rsa pbcopy`
+  score: 0
+  posted_at: '2026-11-23T15:56:41Z'
+- id: '50614041'
+  parent_id: '50613783'
+  author: handplane
+  text: There&#x27;s real ergonomic gain here if you ever forward your ssh agent to
+    another machine. With default SSH, you need to use the clunky askpass setup to
+    be able to approve each access of your keys from the remote machine, but with
+    Bitwarden, you can easily attach it to TouchID or similar.
+  score: 0
+  posted_at: '2026-11-23T16:01:24Z'
+- id: '50614131'
+  parent_id: '50609579'
+  author: tristor
+  text: 'Everyone is updating their threat models to include locally operating LLM
+    agents.  Here&#x27;s a random thought:  Don&#x27;t let LLM agents act on your
+    local system as you?  They should be operating in a constrained way with their
+    own account and privileges, rather than acting directly on your behalf with your
+    privileges and access.  Treat the agent as if its another user.'
+  score: 0
+  posted_at: '2026-11-23T16:06:30Z'
+- id: '50614250'
+  parent_id: '50613931'
+  author: stryan
+  text: I&#x27;m all aboard the Yubikey train[0] for securing SSH keys, but I&#x27;d
+    imagine most SSH keys aren&#x27;t being exfiltrated by smart attackers putting
+    in the work to steal decrypted keys from RAM. Most SSH keys are being exfiltrated
+    by scripts being run via curl | bash (or agents...) that quickly gather up every
+    potentially useful user file they can find and upload it to a remote endpoint
+    somewhere.<p>[0] I also use an SSH key in Bitwarden for lower priority concerns,
+    but my main SSH keys that get automatically installed on remote systems and used
+    for signing commits are stored via FIDO on Yubis.
+  score: 0
+  posted_at: '2026-11-23T16:13:19Z'
+- id: '50614266'
+  parent_id: '50609579'
+  author: lxgr
+  text: How is it “on disk” vs “in Bitwarden”? Guess where Bitwarden stores them in
+    the end…
+  score: 0
+  posted_at: '2026-11-23T16:13:57Z'
+- id: '50614293'
+  parent_id: '50613931'
+  author: Aurornis
+  text: "&gt; While in theory, this adds at least some small layer of protection,
+    I have doubts that it adds anything meaningful to stop a smart attacker.<p>You’re
+    not wrong, but for most of us the threat of a simple credential stealer is a million
+    times more likely than being targeted by a dedicated, intelligent hacker.<p>In
+    the most common compromise scenario, the attack comes along with some widely distributed
+    software and is going for quantity of keys compromised via automated scripts,
+    not precision extraction of one person’s keys through interactive exploration
+    of their computer.<p>Adjust your security model if you’re in an important position
+    at a big company or some other high value target.<p>For most of us, though, anything
+    that defeats a common credential stealer is highly valuable."
+  score: 0
+  posted_at: '2026-11-23T16:15:18Z'
+- id: '50614299'
+  parent_id: '50613761'
+  author: lxgr
+  text: And you’re 100% sure you’d do a diligent investigation every single time you
+    have to tap your Yubikey twice for unexplainable reasons?<p>If you grant an LLM
+    agent full system access, it’ll have full system access.
+  score: 0
+  posted_at: '2026-11-23T16:15:49Z'
+- id: '50614345'
+  parent_id: '50613931'
+  author: macNchz
+  text: 'A lot of your caveats here assume some level of sophisticated attacker that
+    has persistent access to the machine and is motivated to investigate when something
+    doesn&#x27;t work, rather than the extremely common case of a smash-and-grab credential
+    stealer script that quickly scans through the system and tries to grab anything
+    it can before being removed.<p>Even things that will not stand up to a motivated
+    attacker still add value towards reducing the likelihood of a breach, by increasing
+    friction for attackers that are simply grabbing at low-hanging fruit. A setup
+    with a bit more friction is a locked door in a long hallway of unlocked doors.
+    Yeah someone can get through it, but it&#x27;s not going to be their highest priority.
+    This is the case for almost anything security related: layers of imperfect protection
+    are good in combination.'
+  score: 0
+  posted_at: '2026-11-23T16:17:58Z'
+- id: '50614376'
+  parent_id: '50614250'
+  author: lokar
+  text: You could also setup the yubikey as a CA to sign short lived ssh keys.
+  score: 0
+  posted_at: '2026-11-23T16:19:22Z'
+- id: '50614435'
+  parent_id: '50614345'
+  author: handplane
+  text: I agree 100% here, and I had this argument running through my head as I wrote
+    this comment. The problem is I think these assumptions only hold up for a very
+    short time in today&#x27;s world. Even unsophisticated attackers will have access
+    to the sorts of methods involved here soon, if they don&#x27;t already. I&#x27;m
+    not up to date on the latest malware practices, but I would be surprised if they
+    weren&#x27;t already targeting popular credential managers like Bitwarden.
+  score: 0
+  posted_at: '2026-11-23T16:22:20Z'
+- id: '50614521'
+  parent_id: '50614266'
+  author: jmull
+  text: I think they mean unencrypted on disk vs. encrypted in bitwarden.
+  score: 0
+  posted_at: '2026-11-23T16:26:24Z'
+- id: '50614530'
+  parent_id: '50609579'
+  author: mococa
+  text: Mine are on enclave
+  score: 0
+  posted_at: '2026-11-23T16:26:50Z'
+- id: '50614636'
+  parent_id: '50609579'
+  author: K0IN
+  text: I might be tainted here (I&#x27;m building something for this), but maybe
+    short lived ssh certs are the way to go.
+  score: 0
+  posted_at: '2026-11-23T16:31:35Z'
+- id: '50614750'
+  parent_id: '50609579'
+  author: iririririr
+  text: biggest takeaway is that everyone just threw this hands up and accepted their
+    own computers are not theirs anymore.<p>is this a view of recent attacks everywhere?
+    is this everyone just handling the keys to remote-chatbots with exec permission?
+    is that just illiteracy?<p>i think that&#x27;s the best angle of this discussion.<p>(also,
+    extra funny they are worried about keys on disc stolen by local priviledged attakers,
+    but use an ssh agent)
+  score: 0
+  posted_at: '2026-11-23T16:38:00Z'
+- id: '50614755'
+  parent_id: '50614041'
+  author: eqvinox
+  text: ssh-add -c + ssh-askpass might be clunky, but - hitting TouchID is notably
+    worse security wise since you&#x27;ll get into a pattern of hitting it relatively
+    often, making it much easier to smuggle an illegitimate request into that, no?
+    It diminishes the value of TouchID.
+  score: 0
+  posted_at: '2026-11-23T16:38:21Z'
+- id: '50614811'
+  parent_id: '50614521'
+  author: eqvinox
+  text: Well, if you don&#x27;t put a passphrase on your SSH keys…
+  score: 0
+  posted_at: '2026-11-23T16:40:55Z'
+- id: '50614846'
+  parent_id: '50613861'
+  author: eqvinox
+  text: "&gt; The standard SSH agent can optionally keep keys unlocked for a time
+    period.<p>The default for keys added to ssh-agent without further config&#x2F;options
+    is to keep them unlocked indefinitely (as long as the ssh-agent process keeps
+    running anyway)."
+  score: 0
+  posted_at: '2026-11-23T16:42:31Z'
+- id: '50614998'
+  parent_id: '50613761'
+  author: cozzyd
+  text: why would you run an agent as your user, is probably the real question.
+  score: 0
+  posted_at: '2026-11-23T16:51:19Z'
+- id: '50615019'
+  parent_id: '50614131'
+  author: jpalawaga
+  text: It&#x27;s a nice thought and probably the right way to be thinking about things.
+    I take the view it&#x27;s where we&#x27;ll end up eventually.<p>The tooling is
+    all DIY however and most people aren&#x27;t used to operating multi-user environments,
+    nor do they have filesystem permissions set up correctly, nor do they have a good
+    way of handling secrets management, development environment credentials, etc etc
+    etc.<p>Essentially, I feel like there&#x27;s a lot of hand waving going on. Are
+    you operating in this style of environment already? Are you using Claude Code
+    or similar operating as another user on your local machine?
+  score: 0
+  posted_at: '2026-11-23T16:52:30Z'
+- id: '50615026'
+  parent_id: '50613839'
+  author: UltraSane
+  text: I like AWS Credential Manager and using a IAM API key that is IP restricted
+    and encrypted using the OS credential manager.
+  score: 0
+  posted_at: '2026-11-23T16:52:44Z'
+- id: '50615054'
+  parent_id: '50609579'
+  author: RIMR
+  text: Tailscale SSH solves a lot of this. You use your Tailscale identity to authenticate,
+    you can force SSO w&#x2F; MFA for every login, and Tailscale keys can be locked
+    behind a TPM.
+  score: 0
+  posted_at: '2026-11-23T16:54:32Z'
+- id: '50615067'
+  parent_id: '50614435'
+  author: timcobb
+  text: What is the intersection of unsophisticated attacker and enabling tools? That
+    is, what is today&#x27;s script kiddie? Is there a community around abliterated
+    models that people run to h4ck?
+  score: 0
+  posted_at: '2026-11-23T16:55:36Z'
+- id: '50615071'
+  parent_id: '50614376'
+  author: what
+  text: What benefit does this provide over just having the ssh key on the yubikey?<p>Also,
+    pretty sure you can’t use the CA for GitHub without enterprise.
+  score: 0
+  posted_at: '2026-11-23T16:55:44Z'
+- id: '50615220'
+  parent_id: '50609579'
+  author: usernametaken29
+  text: There was an article here a while ago promoting Secure Enclave. Been using
+    it since. It’s awesome, ticks all your boxes.
+  score: 0
+  posted_at: '2026-11-23T17:03:07Z'
+- id: '50615323'
+  parent_id: '50614750'
+  author: nobody42
+  text: Here&#x27;s an alternative view on the problem:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;roddhjav&#x2F;apparmor.d"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;roddhjav&#x2F;apparmor.d</a><p>(I&#x27;m
+    the contributor)<p>Still, validation without extraction (FIDO2), instead of read
+    to validate is the best solution in OP&#x27;s situation.
+  score: 0
+  posted_at: '2026-11-23T17:08:20Z'
+- id: '50615342'
+  parent_id: '50614131'
+  author: Majromax
+  text: "&gt; They should be operating in a constrained way with their own account
+    and privileges, rather than acting directly on your behalf with your privileges
+    and access.<p>That&#x27;s effective when possible, but it&#x27;s not quite the
+    correct level of permission.  Separation of users usually involves disjoint working
+    spaces&#x2F;sets, and that defeats many typical &#x27;assistant&#x27; roles.  For
+    example, &quot;look through my e-mail for the past month and remind me if anybody
+    needs something from me&quot; is a very useful task for an assistant (LLM or human),
+    but it necessarily involves access to one&#x27;s own information -- even on a
+    read-only basis.<p>IMO we&#x27;re missing a robust task-level permission system,
+    and this is difficult because a &#x27;task&#x27; does not have a 1:1 mapping to
+    a path, user, or application."
+  score: 0
+  posted_at: '2026-11-23T17:09:27Z'
+- id: '50615384'
+  parent_id: '50614998'
+  author: mingus88
+  text: If you want the agent to look at logs, create PRs, run tests that need network
+    access (grade, Basel, etc) then you are going to have to give it enough access
+    that there is probably very little functional difference from you running those
+    commands yourself<p>I can tell you at my work, a large enterprise, people have
+    pretty much just given Claude auto-mode free rein to do everything. Incidents
+    in production are honestly people just sharing the output of their Claude’s investigations
+    colored by whatever skills, memory and tokens available to it
+  score: 0
+  posted_at: '2026-11-23T17:11:30Z'
+- id: '50615394'
+  parent_id: '50615342'
+  author: tristor
+  text: Right, but I don&#x27;t need an LLM to do something as basic as read my email...
+    in fact, having an LLM read my email actually makes email less valuable.  The
+    &quot;assistant role&quot; is of no actual value or usefulness to most people.  On
+    the other hand, LLM assisted coding can be highly useful and does not need to
+    access anything that&#x27;s uniquely tied to my identity&#x2F;account&#x2F;privileges.
+  score: 0
+  posted_at: '2026-11-23T17:12:02Z'
+- id: '50615417'
+  parent_id: '50614131'
+  author: RALaBarge
+  text: I always scoff when I see people zoom into HN and say hey check out what I
+    am working on, but I agree with you and I made a 2 computer system -- one that
+    is the core with everything on it and another that is a sandbox.  They are both
+    their own physical machines and the sandbox is not attached to a network at all,
+    just directly to the core machine which allows you to modify firewall rules at
+    egress<p><a href="https:&#x2F;&#x2F;github.com&#x2F;RALaBarge&#x2F;enclave" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;RALaBarge&#x2F;enclave</a>
+  score: 0
+  posted_at: '2026-11-23T17:12:58Z'
+- id: '50615436'
+  parent_id: '50615019'
+  author: tristor
+  text: A modern Mac is already a multi-user environment.  Any Linux device is already
+    a multi-user environment.  Is there some particular reason why you can&#x27;t
+    set up a user account specifically for using coding agents? That&#x27;s effectively
+    what I&#x27;ve done on my system.  It&#x27;s not as if I&#x27;m using the computer
+    for other tasks when I&#x27;m running coding agents as they are monopolizing my
+    computer (with local LLMs) anyway, so clearly separating these tasks into a dedicated
+    user account with appropriate permissions is not a huge barrier and significantly
+    improves your security posture against various issues.
+  score: 0
+  posted_at: '2026-11-23T17:13:59Z'
+- id: '50615527'
+  parent_id: '50609579'
+  author: mmulqueen
+  text: 'Yubikey or another removable security key is the way to go in my opinion.
+    I&#x27;ve been doing this since I think 2018. There are few ways you can do it,
+    I&#x27;ve always used the GPG key option - you have the GPG key irretrievably
+    on the Yubikey, you set up SSH to talk to gpg-agent and you have to provide a
+    PIN every time you plug the USB back in. When I walk away, the Yubikey goes with
+    me. I&#x27;ve never had a problem getting it working with anything on Linux or
+    any external service. You can either let existing sessions continue or there are
+    ways you can break existing sessions when the key is unplugged. Works on Windows
+    and macOS too, from memory, macOS was almost as easy as Linux and Windows is more
+    fiddly.<p>By having it as a GPG key, you get signing and encryption on top of
+    SSH. You can pair it with gopass as a password vault.<p>I haven&#x27;t had to
+    make a new key for years, they&#x27;re very hard-wearing, mine lives on my key
+    ring with my house keys. But I wrote this script to automate setting up a new
+    key, I haven&#x27;t tested it with recent Yubikeys or a recent version of GPG,
+    but might be a useful starting point: <a href="https:&#x2F;&#x2F;github.com&#x2F;Method-B-Ltd&#x2F;auto-gpg-card"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;Method-B-Ltd&#x2F;auto-gpg-card</a>
+    - PRs welcome if it&#x27;s broken.<p>You still need to be really careful about
+    what can run as your user, but being able to take the key away physically remove
+    a load of risk.'
+  score: 0
+  posted_at: '2026-11-23T17:19:54Z'
+- id: '50615535'
+  parent_id: '50613931'
+  author: breakwaterlabs
+  text: |-
+    Just to note, it is not a given that &quot;running as same user&quot; implies &quot;has control over all other user processes&quot;. Wayland for instance (famously) blocks that kind of attack.<p>It is certainly possible to enable authentication methods whereby two processes at the same privilege level cannot grab each other&#x27;s secrets or tokens. Credential guard is one example, I am sure there are analogous implementations on Linux but I believe namespacing and SELinux attack this from different angles.<p><pre><code>    The next idea is to just steal the decrypted key out of RAM.
+    </code></pre>
+    It is also not a given that a userland process can do this.
+  score: 0
+  posted_at: '2026-11-23T17:20:27Z'
+- id: '50615607'
+  parent_id: '50615384'
+  author: blooalien
+  text: "&gt; If you want the agent to look at logs, create PRs, run tests that need
+    network access (grade, Basel, etc) then you are going to have to give it enough
+    access that there is probably very little functional difference from you running
+    those commands yourself<p>The difference is that <i>one</i> situation is logged
+    in the logs as <i>you</i> doing a thing, and the other is logged as the <i>agent</i>
+    doing the thing.  That&#x27;s why you should really run your agents as their own
+    separate user account and give that account whatever (minimal required) permissions
+    it needs to do the job.  For auditability purposes when tracing down a problem
+    (to implement a solution, or to lay blame), you probably <i>want</i> to know when
+    the &quot;bot&quot; screwed up so that it can be fixed (and so <i>you</i> don&#x27;t
+    have to take the blame for something you had absolutely no control over).  The
+    problem with that whole plan is this; I double-dog <i>dare</i> you to try to get
+    the &quot;bosses&quot; to implement <i>anything</i> that improves security and
+    auditability if it&#x27;s going to cost even just ten seconds of extra time, or
+    ten cents of extra money.  Ain&#x27;t gonna happen."
+  score: 0
+  posted_at: '2026-11-23T17:25:21Z'
+- id: '50615844'
+  parent_id: '50615067'
+  author: handplane
+  text: While I have no direct knowledge here, surely there must be. It takes approximately
+    20 min or less to set up a very capable ablated model on a local consumer-gaming-class
+    GPU. It&#x27;s not frontier levels right now, but it&#x27;s still very capable,
+    and with the pace things are going, current frontier power will probably be available
+    in no more than 1-2 years locally.
+  score: 0
+  posted_at: '2026-11-23T17:39:00Z'
+- id: '50615890'
+  parent_id: '50609579'
+  author: tabith
+  text: shameless plug<p><a href="https:&#x2F;&#x2F;venya.ai&#x2F;#&#x2F;security"
+    rel="nofollow">https:&#x2F;&#x2F;venya.ai&#x2F;#&#x2F;security</a><p>working on
+    SIEM now (for beta4, now testing against fluentd, logstash, splunk, rsyslog)
+  score: 0
+  posted_at: '2026-11-23T17:41:22Z'
+- id: '50616051'
+  parent_id: '50615071'
+  author: lokar
+  text: More niche situations where you can&#x27;t use the agent.  You need to use
+    it from somewhere you can&#x27;t forward the agent, or you need to make too many
+    calls (eg ssh to 10,000 machines).
+  score: 0
+  posted_at: '2026-11-23T17:51:27Z'
+- id: '50616059'
+  parent_id: '50615384'
+  author: cozzyd
+  text: Why does it need to create PR&#x27;s? It can work in a local branch that you
+    pull from your user and push to whatever upstream you want. Sure, it&#x27;s slightly
+    slower, but you&#x27;re not handing Anthropic keys to your kingdom.<p>Would you
+    give a contractor developer your private key, just because it&#x27;s somewhat
+    lower friction?
+  score: 0
+  posted_at: '2026-11-23T17:52:05Z'
+- id: '50616326'
+  parent_id: '50615535'
+  author: handplane
+  text: All of this is true, but would you notice if a malware swapped in a shim into
+    the place where your Bitwarden startup is (user systemd, WM startup, etc), and
+    all that shim did was spawn Bitwarden as a child process? You can generally ptrace
+    a child process.
+  score: 0
+  posted_at: '2026-11-23T18:08:41Z'
+- id: '50616453'
+  parent_id: '50609579'
+  author: kevsamuel
+  text: Few people know this, but yubikeys are not just fancy passphrase typers, they
+    also have writable memory.<p>You can enroll your ssh keys into a yubikey, and
+    have it securely stored in the hardware until you plug it in to ssh.
+  score: 0
+  posted_at: '2026-11-23T18:17:15Z'
+- id: '50616508'
+  parent_id: '50614755'
+  author: handplane
+  text: Absolutely, but what&#x27;s the better option? If you&#x27;re forwarding to
+    a remote and that remote isn&#x27;t fully trusted with your key, you need a manual
+    approval step of some sort whether that&#x27;s askpass, Bitwarden, or a yubikey.
+  score: 0
+  posted_at: '2026-11-23T18:20:15Z'
+- id: '50616510'
+  parent_id: '50616453'
+  author: InsidiousWombat
+  text: and you should never do that<p>If you want secure the key, generate one on
+    YK directly and use it. The entire point of hardware key storage is for key itself
+    to never touch anything else
+  score: 0
+  posted_at: '2026-11-23T18:20:20Z'
+- id: '50616524'
+  parent_id: '50609579'
+  author: InsidiousWombat
+  text: "&gt; I was keeping copies of my private keys in my password manager, for
+    safe-keeping, but I was still using the version on disk, loaded into memory with
+    ssh-add<p>Bitwarden can act as SSH agent if you want to keep them all in password
+    manager"
+  score: 0
+  posted_at: '2026-11-23T18:21:24Z'
+- id: '50616602'
+  parent_id: '50615342'
+  author: InsidiousWombat
+  text: Well, we&#x27;re missing permission levels full stop.<p>I&#x27;d love e-mail
+    provider that provides api-key-like IMAP creds I can just generate and hand out
+    to automation, with not only read&#x2F;write scope but also per-path one.
+  score: 0
+  posted_at: '2026-11-23T18:27:29Z'
+- id: '50616641'
+  parent_id: '50613802'
+  author: InsidiousWombat
+  text: |-
+    <p><pre><code>   cat &#x2F;a&#x2F;thing
+    </code></pre>
+    ok it looks right, let&#x27;s continue<p><pre><code>   cat &#x2F;a&#x2F;thing | thing doer
+    </code></pre>
+    HN: &quot;noooo you&#x27;re doing it wrooong, use my obscure syntaaax that reads baaadlyy&quot;
+  score: 0
+  posted_at: '2026-11-23T18:29:31Z'
+- id: '50616656'
+  parent_id: '50614131'
+  author: heartbreak
+  text: I would assume that almost everyone is running agents on their machines without
+    user separation or any other protection. Maybe some folks are using the Swiss
+    cheese built-in sandboxing.<p>I run mine on an isolated VM with an unprivileged
+    user. It&#x27;s a hassle, but I still get plenty of work done with these agents.
+    They can&#x27;t read my email, but I think I&#x27;m okay with that.
+  score: 0
+  posted_at: '2026-11-23T18:30:34Z'
+- id: '50616796'
+  parent_id: '50615527'
+  author: zikduruqe
+  text: You can use a GPG authentication sub-key without a hardware key.
+  score: 0
+  posted_at: '2026-11-23T18:39:11Z'
+- id: '50617022'
+  parent_id: '50616508'
+  author: eqvinox
+  text: "&gt; Absolutely, but what&#x27;s the better option? If you&#x27;re forwarding
+    to a remote and that remote isn&#x27;t fully trusted with your key<p>Honestly:
+    don&#x27;t use agent forwarding at all, use ProxyJump &#x2F; -J.  Agent forwarding
+    is really only for systems you do in fact fully trust."
+  score: 0
+  posted_at: '2026-11-23T18:52:07Z'
+- id: '50617037'
+  parent_id: '50609579'
+  author: '1317'
+  text: "...upload them to the internet instead?"
+  score: 0
+  posted_at: '2026-11-23T18:52:45Z'
+- id: '50617183'
+  parent_id: '50615067'
+  author: esseph
+  text: This answers some of those questions both directly, and indirectly...<p><a
+    href="https:&#x2F;&#x2F;www.techbuzz.ai&#x2F;articles&#x2F;hundreds-of-artex-ai-hacking-tools-left-wide-open-online"
+    rel="nofollow">https:&#x2F;&#x2F;www.techbuzz.ai&#x2F;articles&#x2F;hundreds-of-artex-ai-hackin...</a>
+  score: 0
+  posted_at: '2026-11-23T18:59:58Z'
+- id: '50617308'
+  parent_id: '50614345'
+  author: dns_snek
+  text: The article presumes that your attacker is more motivated than a simple smash-and-grab
+    credential stealer.<p>If they are motivated then this advice doesn&#x27;t really
+    buy you much. If they aren&#x27;t motivated then the advice is moot to begin with.
+    Passphrase-protected keys on disk are perfectly adequate for defending against
+    simple credential stealers.
+  score: 0
+  posted_at: '2026-11-23T19:07:02Z'
+- id: '50617342'
+  parent_id: '50613924'
+  author: adrian_b
+  text: The redirected input file can be moved before the command name, which improves
+    the syntax for pipes.
+  score: 0
+  posted_at: '2026-11-23T19:08:53Z'
+- id: '50617542'
+  parent_id: '50613931'
+  author: D13Fd
+  text: It&#x27;s defense-in-depth. Each hurdle you make an attacker jump over can
+    filter some types of attackers. Yes, some might still get through, but that doesn&#x27;t
+    make it valueless.<p>&gt; This means they can also hit the approve button for
+    you. . . . Ok, now you say &quot;But it requires touchID!&quot;. Maybe that gets
+    you just a little bit of protection, but...<p>That&#x27;s a pretty big leap. Systems
+    like Mac OS are designed so that other apps can&#x27;t easily click that Touch
+    ID button for you. The vast majority of attackers are going to be filtered at
+    this step. Beyond that, anything that &quot;clicks that button for you&quot; could
+    only work when you&#x27;re logged in - another hurdle - and will probably result
+    in some visible screen activity even if it&#x27;s &quot;clicked&quot; quickly.<p>When
+    compared to simple plaintext SSH keys stored on disk, it&#x27;s a night and day
+    difference.<p>This is like saying &quot;sure, you could wear a seatbelt, but it&#x27;s
+    not going to do anything for you if you drive your car off a cliff, so why wear
+    it at all?&quot;
+  score: 0
+  posted_at: '2026-11-23T19:20:07Z'
+- id: '50617745'
+  parent_id: '50616326'
+  author: breakwaterlabs
+  text: This is a strong argument for doing software installations using superuser
+    privileges and denying exec from user-writable locations.<p>Which is, in fact
+    a relatively common posture.
+  score: 0
+  posted_at: '2026-11-23T19:30:21Z'
+- id: '50617799'
+  parent_id: '50616524'
+  author: oarmstrong
+  text: That’s exactly what the article describes?
+  score: 0
+  posted_at: '2026-11-23T19:33:42Z'
+- id: '50617842'
+  parent_id: '50615054'
+  author: overflowy
+  text: The risk of this is the Tailscale control plane being blocked by the firewall
+    and you getting locked out of the machine. I had that happening in my company
+    thanks to Fortinet.
+  score: 0
+  posted_at: '2026-11-23T19:35:27Z'
+- id: '50618031'
+  parent_id: '50609579'
+  author: getfacl
+  text: The best answer for more than a handful of servers and the one arrived at
+    by Google, Netflix, and Uber is to not put the keys on the servers at all and
+    instead sign short lived (30-60 min) versions of them instead.<p>SSH CA is built
+    into the openssh server for a long time and there are multiple opensource management
+    platforms. You can even sign use limitations into the key.
+  score: 0
+  posted_at: '2026-11-23T19:46:12Z'
+- id: '50618438'
+  parent_id: '50613931'
+  author: tylergetsay
+  text: This is what the TPM was made for
+  score: 0
+  posted_at: '2026-11-23T20:10:10Z'
+- id: '50618440'
+  parent_id: '50609579'
+  author: rosencrantz
+  text: Someone said &quot;Software should not need a manual&quot;<p>He was right!
+    As soon as a procedure is awkward or even looks like it might not work the first
+    time I will deem it to be wrong.<p>Wrong because I don&#x27;t want to learn another
+    way and I don&#x27;t need to learn another way than what is supposed to be the
+    obvious way and if that is not immediately obvious to the user (customer) then
+    I&#x27;m not going for it.
+  score: 0
+  posted_at: '2026-11-23T20:10:14Z'
+- id: '50618461'
+  parent_id: '50609579'
+  author: tylergetsay
+  text: You can use your machines TPM to sign a key via ssh-tpm-keygen, basically
+    a built in yubikey.
+  score: 0
+  posted_at: '2026-11-23T20:11:47Z'
+- id: '50618512'
+  parent_id: '50609579'
+  author: OptionOfT
+  text: I wish there was a fool-proof way to do this with WSL.<p>If I put in a YubiKey
+    in Windows, I should be able to use it in WSL, and when I SSH into another machine.
+  score: 0
+  posted_at: '2026-11-23T20:14:14Z'
+- id: '50618618'
+  parent_id: '50609579'
+  author: binarin
+  text: |-
+    I just can&#x27;t stop preaching SSH certificates everytime similar discussions come up - they have expiration date, the scope can be as granular as possible. Then everything can be encoded:
+    - Daily cert for unprivileged daily work, with 24 expiration
+    - A 10-minute root access to a single server<p>And any combination of things in-between - it all depends only on you imagination (or paranoia:) )<p>The downside is that you can only use it on the infra you control, i.e. GitHub will never trust ssh CA your are using for cert signing. But speaking of git forges, at least self-hosted forgejo supports ssh certs natively.
+  score: 0
+  posted_at: '2026-11-23T20:19:53Z'
+- id: '50618704'
+  parent_id: '50614636'
+  author: binarin
+  text: Exactly! I just use my yubikeys as ssh CAs for my servers.<p>But one interesting
+    centralized implementation I saw was about having a separate ssh server which
+    you connected to with a forwarded ssh agent, and after doing 2FA dance it injected
+    the freshly signed temp cert into your forwarded agent.
+  score: 0
+  posted_at: '2026-11-23T20:24:46Z'
+- id: '50618715'
+  parent_id: '50617542'
+  author: bigbuppo
+  text: Besides, we know the best place to attack all this is the cloud-hosted MFA
+    solution that can bypass all this authentication nonsense.
+  score: 0
+  posted_at: '2026-11-23T20:25:16Z'
+- id: '50618769'
+  parent_id: '50615071'
+  author: medina
+  text: The key can be ephemeral.
+  score: 0
+  posted_at: '2026-11-23T20:29:07Z'
+- id: '50618810'
+  parent_id: '50615607'
+  author: cozzyd
+  text: plus the bosses are sure as hell running an AI assistant with full permisisons
+    to access all their spreadsheets, or whatever.
+  score: 0
+  posted_at: '2026-11-23T20:31:30Z'
+- id: '50618818'
+  parent_id: '50616641'
+  author: matvore
+  text: "&quot;reads badly&quot; is subjective. How many processes your pipeline starts
+    up is not."
+  score: 0
+  posted_at: '2026-11-23T20:32:11Z'
+- id: '50618849'
+  parent_id: '50613783'
+  author: SoftTalker
+  text: "&gt; it prompts you for a passphrase<p>Yes but you can just hit &lt;enter&gt;"
+  score: 0
+  posted_at: '2026-11-23T20:34:30Z'
+- id: '50618897'
+  parent_id: '50613931'
+  author: ozim
+  text: Tell that to software devs that were hit by Sha1-Hulud and other stealers.
+    They were taking all .ssh when you did ‘npm install’ and you might not knew what
+    happened and they were now able to access all your boxes.<p>Supply chain risks
+    are big nowadays.<p>That part of Touch ID would stop them.
+  score: 0
+  posted_at: '2026-11-23T20:37:49Z'
+- id: '50618946'
+  parent_id: '50618618'
+  author: SoftTalker
+  text: The security you understand and actually use normally wins. In my experience
+    very few people really even understand SSH keys, never mind certificates.
+  score: 0
+  posted_at: '2026-11-23T20:40:44Z'
+- id: '50619153'
+  parent_id: '50609579'
+  author: snailcoder
+  text: I’ve switched to yubikeys for humans and timed SSH certificates for deployment
+    operations. Pretty happy with the setup
+  score: 0
+  posted_at: '2026-11-23T20:56:45Z'
+- id: '50619158'
+  parent_id: '50613931'
+  author: keyle
+  text: Most people getting their credential stolen is purely through env or .config.
+    They have their keys either as env variables for any shell sessions of theirs
+    to read or just grepping through .config does the trick.<p>I moved all my security
+    keys to keychains and use basic shell scripts to auth on every use. That helps
+    a lot. On Linux this password protection can be different for every key.<p>I will
+    consider what you wrote about regarding ssh keys, but what do you mean about &quot;real
+    hardware with OOB signaling&quot;? &lt;insert meme about rooted crypto wallet
+    hardware&gt;
+  score: 0
+  posted_at: '2026-11-23T20:57:15Z'
+- id: '50619220'
+  parent_id: '50613931'
+  author: antihero
+  text: What about storing it in Secure Enclave? Is this not what 1password etc do?
+  score: 0
+  posted_at: '2026-11-23T21:02:02Z'
+- id: '50619270'
+  parent_id: '50618440'
+  author: chuckadams
+  text: Excessively complex security also has exploits lurking in all the moving parts.  Sometimes
+    by confusing the user, sometimes because the user weakens the system themselves
+    just to make it usable for them.
+  score: 0
+  posted_at: '2026-11-23T21:05:56Z'
+- id: '50619606'
+  parent_id: '50613931'
+  author: AceJohnny2
+  text: '&gt; <i>The problem here is that everything is running as your user, so it&#x27;s
+    all the same security sphere.</i><p>see also <a href="https:&#x2F;&#x2F;m.xkcd.com&#x2F;1200&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;m.xkcd.com&#x2F;1200&#x2F;</a> (2013)'
+  score: 0
+  posted_at: '2026-11-23T21:29:16Z'
+- id: '50619729'
+  parent_id: '50609579'
+  author: andai
+  text: I just run Claude as root on all my nodes, so Skynet already owns them — I&#x27;m
+    just ahead of the curve! :)
+  score: 0
+  posted_at: '2026-11-23T21:37:22Z'
+- id: '50620040'
+  parent_id: '50619606'
+  author: Gander5739
+  text: The first one that came to my mind was  <a href="https:&#x2F;&#x2F;xkcd.com&#x2F;2044&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;xkcd.com&#x2F;2044&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-23T22:02:27Z'
+- id: '50620098'
+  parent_id: '50613761'
+  author: subscribed
+  text: My model(s) run inside the sandbox with only CWD, a subset of &#x2F;bin and
+    a handful of files from &#x2F;etc and ~&#x2F;<p>And it couldn&#x27;t even do anything
+    on github because the only token it can use (which is in the config file outside
+    of its reach) can only do a very limited number of things on the repo.<p>I feel
+    like a lot can be done without relying on the mechanism you use.
+  score: 0
+  posted_at: '2026-11-23T22:08:09Z'
+- id: '50620228'
+  parent_id: '50609579'
+  author: evanjrowley
+  text: You can also put the decrypted keys into ephemeral storage at `&#x2F;dev&#x2F;shm`.
+    Regardless of ephemeral or persistent storage, use the `shred` command to delete
+    them when finished.
+  score: 0
+  posted_at: '2026-11-23T22:20:36Z'
+- id: '50620333'
+  parent_id: '50618810'
+  author: blooalien
+  text: "&gt; plus the bosses are sure as hell running an AI assistant with full permisisons
+    to access all their spreadsheets, or whatever.<p>I 100% <i>guarantee</i> that
+    at least some (far too many more than <i>should</i> be) absolutely <i>are</i>
+    doing exactly this..."
+  score: 0
+  posted_at: '2026-11-23T22:30:29Z'
+- id: '50620596'
+  parent_id: '50618512'
+  author: zanecodes
+  text: 'You can with something like this: <a href="https:&#x2F;&#x2F;github.com&#x2F;rupor-github&#x2F;wsl-ssh-agent#wsl-2-compatibility"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rupor-github&#x2F;wsl-ssh-agent#wsl-2-compatib...</a><p>I
+    run ssh-agent in Windows, and then have a socket-activated systemd service that
+    uses the above program to forward the SSH agent socket to the Windows ssh-agent.
+    I have a similar setup for my GPG agent. This lets me seamlessly use my Yubikey
+    for SSH&#x2F;GPG in both Windows and WSL.<p>You could also use something like
+    usbip to expose the Yubikey to your WSL distro as a USB device, but this has to
+    be done manually each time you want to use it, and you can&#x27;t use it in Windows
+    until you manually switch it back.'
+  score: 0
+  posted_at: '2026-11-23T22:54:00Z'
+- id: '50620609'
+  parent_id: '50617308'
+  author: macNchz
+  text: 'My understanding is that stealers are increasingly incorporating keyring
+    integrations to pull passphrases along with the keys themselves, where possible...I
+    think MacOS has some good segmentation for which apps can access what now, but
+    I know GNOME Keyring does not, and I think Windows is similar. There are also
+    stealers doing phishing that looks like a system prompt: <a href="https:&#x2F;&#x2F;www.jamf.com&#x2F;blog&#x2F;ghostclaw-ghostloader-malware-github-repositories-ai-workflows&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.jamf.com&#x2F;blog&#x2F;ghostclaw-ghostloader-malware-gith...</a>'
+  score: 0
+  posted_at: '2026-11-23T22:55:10Z'
+- id: '50620610'
+  parent_id: '50609579'
+  author: matltc
+  text: |-
+    I went down this rabbit hole after mini shai hulud. It was painful, but I learned a lot about ssh and gpg. It was a lot of work but gave me peace of mind and was empowering. I felt a bit paranoid afterward though and questioned whether it was worthwhile given my low profile&#x2F;unimportance.<p>That said, I don&#x27;t understand how a dev like bigballs from DOGE managed to push an exfil tool up to a public GitHub repo. Even private repos leak info; wrote this tool to check up on friends and myself and was surprised to see private repo info pop up:<p>#!&#x2F;bin&#x2F;sh
+    # gets recent GitHub activity for user.
+    user=&quot;${1:-your-username-here}&quot;
+    outfile=&quot;&#x2F;tmp&#x2F;hist-for.log&quot;<p>gh api --paginate &quot;&#x2F;users&#x2F;$user&#x2F;events&quot; --jq &#x27;.[] | &quot;\(.created_at) | \(.type) in \(.repo.name)&quot;&#x27; | tee &quot;$outfile&quot;<p>echo &quot;History for $user saved to $outfile.&quot;<p>exit 0
+  score: 0
+  posted_at: '2026-11-23T22:55:13Z'
+- id: '50620650'
+  parent_id: '50618818'
+  author: InsidiousWombat
+  text: yes, objectively it is &quot;doesn&#x27;t matter, it&#x27;s interactive shell
+    session&quot;, unless you&#x27;re throwing around 5GB&#x2F;s+ it doesn&#x27;t
+    matter, neither does few tens of KBs cat invocation would take
+  score: 0
+  posted_at: '2026-11-23T22:58:17Z'
+- id: '50621062'
+  parent_id: '50618897'
+  author: skydhash
+  text: Are the passphrase encrypted keys that easy to defeat? And maybe that depends
+    on your CI strategy, but why not have multiple users&#x2F;boxes with different
+    keys?<p>Security postures are not binary. There’s a wide range of techniques to
+    defeat some likely risks.
+  score: 0
+  posted_at: '2026-11-23T23:31:03Z'
+- id: '50621168'
+  parent_id: '50615342'
+  author: skydhash
+  text: For the email example, it’s as easy as syncing to maildir and set the group
+    of the files to something the agent cann access.<p>There’s plenty of way to share
+    specific information across boundaries and some are quite fairly simple to implement.
+    No need to create another complex project for each task.
+  score: 0
+  posted_at: '2026-11-23T23:40:00Z'
+article:
+  url: https://jola.dev/posts/you-cant-afford-ssh-keys-disk
+  title: You can't afford to keep your SSH keys on disk | jola.dev
+  fetch_status: success
+  content: |-
+    Although it's clear to me that some of the [panic is unwarranted](https://shelf.cafe/items/did:plc:bvraa6gajy4tfr3eh2sisdkr/3myom4aabu2nc), all the recent security vulnerability reports and company breaches are a good reason to think about what you're doing to avoid risk, and to mitigate exposure if something bad happens.
+
+    I'm a pathological self-hoster and I've been running all kinds of systems, from old toy projects to fun tools, and over time I've accumulated a lot of them. This has changed in the last couple of months, where I've instead been pruning my running services. I've taken down unused old apps, because anything can be an entry point into your system. And they were _unused_ anyway. I've also moved most of services behind my Tailscale, with some judicious use of `tailscale funnel` to poke little holes for specific things that do need to be publicly accessible. And I've been obssessively updating everything on my servers that can be updated.
+
+    That brings us to my personal computer. I've been trying to do the same kind of due diligence that I did for my servers, on my personal devices. I have been a long time user of password managers, and I recently wrote about [moving to Bitwarden](https://jola.dev/posts/migrating-from-1password-to-bitwarden), and I am careful to always enable 2FA or passkeys on every service I use. But one area I've fallen behind is **SSH keys**.
+
+    ## A better approach to SSH keys
+
+    I was keeping copies of my private keys in my password manager, for safe-keeping, but I was still using the version on disk, loaded into memory with `ssh-add`. To just make this absolutely clear, this means that the private keys are vulnerable to be exiltrated by malicious code scanning my disk. After reading articles like [I deleted all my SSH keys](https://shelf.cafe/items/did:plc:bvraa6gajy4tfr3eh2sisdkr/3mzzdhgqno2fu), I finally decided to take the next step and get them off disk.
+
+    I knew that for this to work for me, it had to be easy to use and the disruption had to be minimal, and so although things like the OSX Secure Enclave sounds incredibly cool, I needed something with better ergonomics. I already had Bitwarden set up, with the keys in it, and so that's the approach I ended up taking, and it has worked great for me.
+
+    ## Setting up the Bitwarden SSH agent
+
+    Ok, let's go through the steps. First, make sure your private keys are in Bitwarden. If they are not, you'll want to import them. Note that the Bitwarden UI for importing SSH keys is a bit awkward.
+
+    1. Create a new SSH key in Bitwarden, it'll automatically generate one for you.
+    2. Copy your existing private key into your clipboard, eg `cat ~/.ssh/id_rsa | pbcopy`.
+    3. On the Private Key header in the edit form, at the very far right of the asterisks hiding the value, there's an upload icon, click it.
+    4. Your private key has been imported. Give it a good name and save.
+
+    Once you're done with that, you can now move on to the next step, which is enabling the Bitwarden SSH agent. Note that these instructions are for the direct install, if you installed it through the App Store I think the [path is different](https://community.bitwarden.com/t/ssh-agent-in-macos-not-working/82609/8). Go to Preferences, App settings (all accounts), and find the checkbox for "Enable SSH agent". You'll also get the option of choosing how often it prompts you for permission, when something wants to use the key. I went for whenever the vault is locked, which I have set to every 4 hours, balancing security with convenience.
+
+    Next, add to your `~/.ssh/config` file:
+
+        Host *
+          IdentityAgent ~/.bitwarden-ssh-agent.sock
+
+    This tells `ssh` to use the Bitwarden SSH agent. This applies globally, so anything that calls `ssh` should now check the agent. Separately, you'll want to add this to your terminal config file, eg `.zshrc`:
+
+        export SSH_AUTH_SOCK=~/.bitwarden-ssh-agent.sock
+
+    This ensures anything that needs the SSH agent in your terminal, that isn't `ssh`, also go to the right place. This covers tools like `ssh-keygen`. Okay, now try it out with `ssh-add -L`. This should list all the keys loaded into `ssh-agent`. If you're confident you've copied all of your keys into your password manager, you can now delete the ones on disk.
+
+    ## Bonus: git commit signing
+
+    Git commits traditionally contain author information, but no proof that the author is who they say they are. This means it's trivial to impersonate someone else in a commit. It's still mitigated by the fact that git repositories generally have access controls, so a third party would not be able to push commits in the first place, but there is also a mechanism available for proving that the git originated from the claimed author: commit signing.
+
+    In the past, this was limited to GPG keys, but modern git supports signing using SSH keys. So I've set this up too, using a dedicated key that only has that job. This means that creating the commit and pushing it to the repo requires _two_ separate SSH keys, and each one has to be authorized separately.
+
+        git config --global gpg.format ssh
+        git config --global user.signingkey "key::$(ssh-add -L | grep 'YOURKEYNAME')"
+        git config --global commit.gpgsign true
+        git config --global tag.gpgsign true
+
+    Go to a repo and create a commit, then run `git cat-file -p HEAD`, and you should see your signature there.
+
+    To have forges recognize your signature you have to teach them what it is. For Github that means going to [https://github.com/settings/keys](https://github.com/settings/keys) and adding it as a signing key. Tangled automatically trusts your configured SSH keys as signing keys. Gitea and Forgejo require some extra steps to trust your key, just follow their instructions at `/user/settings/keys`.
+
+    ## My experience after a couple of weeks
+
+    I've adjusted quickly. Everything just works out of the box, the only added friction is that now and then Bitwarden prompts me for permission to use keys, which if it's unlocked just means clicking "approve" on a dialog. If it's locked, I can unlock it with touch ID.
+
+    If any Bitwarden employees happen to be reading this, it would be nice if instead of clicking approve, I could use touch ID to approve use of the key. Or at least by hitting enter. As it is, I always have to move to the touchpad to approve. It would also be great if I could separately configure the vault lock interval and the same interval for keys. But that's just minor requests, overall it works just great for me, and it's not too disruptive.
+
+    And now I get to sleep a bit easier!
+
+    Written by [Johanna Larsson](/about). Thoughts on this post? Find me on Bluesky at [@jola.dev](https://bsky.app/profile/jola.dev) .
+  error:
+  fetched_at: '2026-11-23T23:41:58Z'
+archived_at: '2026-11-23T23:42:02Z'

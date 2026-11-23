@@ -1,0 +1,336 @@
+---
+post:
+  id: '50611402'
+  title: 'NariQ: BF16-level Qwen3.8-27B in a 10 GB file'
+  url: https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF
+  hn_url: https://news.ycombinator.com/item?id=50611402
+  score: 105
+  author: ''
+  posted_at: '2026-11-23T13:42:38Z'
+  fetched_at: '2026-11-23T23:41:58Z'
+  article_url: https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T23:41:58Z'
+  raw_comment_count: 20
+comments:
+- id: '50617193'
+  parent_id: '50611402'
+  author: jedbrooke
+  text: "&gt; Apple M-series (Metal): build from source; on an M3 Pro (18 GB) decode
+    is about 3.8 tok&#x2F;s with the 3.0bpw file (4.9 with 2.0bpw), far slower than
+    CUDA. Other Macs are untested.<p>I wonder if it would be possible to squeeze it
+    into a 16GB mac. Comparisons to Bonsai 2 27B would be useful too.<p>Qwen 3.8 27B
+    has truly been such a gift to the self hosted model landscape. “normie” hardware
+    like a 16GB macbook being able to run “pretty useful” (obv not frontier level)
+    LLMs is crazy"
+  score: 0
+  posted_at: '2026-11-23T19:00:23Z'
+- id: '50617252'
+  parent_id: '50611402'
+  author: mmastrac
+  text: |-
+    EDIT: I&#x27;m not sure why there&#x27;s downvotes here - if you purport to come out with a new quantization format and it&#x27;s not front-and-center what your inspiration and trellis are, that&#x27;s a bit of a red flag (and especially any comparison to the mul1 codebook that it&#x27;s evolved from).<p>Its seems unnecessarily hard to understand what NariQ is, but it appears to be a derivative of exl3&#x27;s mul1 with k1-k6, costing ~2 IMAD + 2 LOP3 + 2 IDP + 1 pack IMAD. It&#x27;s not a real half-width codebook, just averaging k2&#x2F;k3 to make k2.5? Happy to see someone else discovering the integer addition tricks too.<p>FWIW in exlr8 we added a pmcgx codebook that likely does better than this at low bitrates, and has a real half-bit (it&#x27;s pairwise so you can feed an odd number of bits to it). Our team just finished a quant on Qwen 3.8 flash next, but I might be able to spin one up on Qwen3.8-27B to do a direct head-to-head.<p>Ran a quick head-to-head on some pseudo weights via Claude too:<p>- NariQ&#x27;s codebook comes out within ±0.3% of mul1 on every site. Neither of its two changes matters much at K2: the 6-bit digits and the skipped E4M3 rounding each move the error by about 0.1%.<p>- pmcgx L20 has 1.1% to 3.1% less error than mul1, so it beats NariQ by about the same margin.<p>Update:<p>- NariQ looks slightly better from K4-K6 f16 trellis (barely losing to mul1, which is the king there)<p>Side-by-side codebooks:<p><pre><code>  mul1(s):                         nariq(s):                        pmcgx(w):   # w = 20-bit state, 2 values
+        x = s * 0x83DCD12D               x = s * 0x83DCD12D               x1 = w * 0xCBAC1FED
+        t = sum(bytes(x))                t = sum(bytes(x) &gt;&gt; 2)           x2 = w * 0xBCA14C51
+        v = fp16(1024 + t)*c + d         v = t - 126                      m1 = (x1 &amp; 0x8FFF8FFF) ^ 0x3B603B60
+        return e4m3(v)                   return v      # int, exact       m2 = (x2 &amp; 0x8FFF8FFF) ^ 0x3B603B60
+                                                                        a  = fp16(m1.lo) + fp16(m2.hi)
+                                                                        b  = fp16(m1.hi) + fp16(m2.lo)
+                                                                        return e4m3(a), e4m3(b)</code></pre>
+  score: 0
+  posted_at: '2026-11-23T19:03:42Z'
+- id: '50617744'
+  parent_id: '50617193'
+  author: vorticalbox
+  text: At 3.8 t&#x2F;s it’s probably not worth it until the metal speed increases
+    it’s far better to have say ornith 1.5 which runs at 69 per second, while not
+    as smart can iterate far faster.<p>At 4 tokens a second a 1000 token reply is
+    around 4 minutes.
+  score: 0
+  posted_at: '2026-11-23T19:30:17Z'
+- id: '50617761'
+  parent_id: '50611402'
+  author: Retro_Dev
+  text: These quantizations seem really impressive, but I know that the file size
+    is decreasing... What information is actually lost? Surely it&#x27;s not just
+    reduced noise and more compact, because there&#x27;s no way that these benchmarks
+    can cover the entirety of the information in the training data.
+  score: 0
+  posted_at: '2026-11-23T19:31:15Z'
+- id: '50617970'
+  parent_id: '50617761'
+  author: salviati
+  text: It is possible that there is redundancy being removed. I&#x27;m not saying
+    I believe that is the case, but I think it can&#x27;t be ruled out. The information
+    being thrown away might just be redundant, already present.
+  score: 0
+  posted_at: '2026-11-23T19:42:58Z'
+- id: '50618082'
+  parent_id: '50617252'
+  author: andai
+  text: Thanks for the info. As for votes, I wouldn&#x27;t worry about it too much.
+    Votes are mostly noise in my experience.<p>Though I&#x27;ve noticed when I say
+    something important, it tends to get downvoted (uncomfortable?) and when I say
+    something silly, it tends to get upvotes (feels good?).<p>So slightly worse than
+    random, ime. (As far as the stated rules vs social rules go. Irks my autism!)<p>I&#x27;ve
+    hidden the votes and my score with a userscript to preserve my sanity.
+  score: 0
+  posted_at: '2026-11-23T19:49:32Z'
+- id: '50618147'
+  parent_id: '50611402'
+  author: exe34
+  text: Did you reduce the context to 64k? I thought I got 200k from qwen 3.8 27b
+    last time I tried.
+  score: 0
+  posted_at: '2026-11-23T19:53:33Z'
+- id: '50618217'
+  parent_id: '50617761'
+  author: mmastrac
+  text: 'The trellis quants basically rotate the weights in a way so you end up with
+    something that looks like Gaussian noise, then do a search over the optimum set
+    of bits to encode that noise. What you end up with is a close approximation to
+    the old weights (up to a certain point), but with the energy of the values &quot;shaved&quot;.<p>You
+    lose the fine detail but keep the higher structure. Models are generally pretty
+    resilient to it, especially larger ones. An over-quantized model tends to lose
+    fine detail in its knowledge, lose some ability to track&#x2F;accumulate accurately,
+    and occasionally loops (because the activations are rounded off too much and lose
+    energy, and it gets trapped in a state where it just can&#x27;t escape).<p>When
+    you quantize you try and get as big of a mix of calibration data as possible.
+    You don&#x27;t need to match the training _set_, just enough data that you exercise
+    99.999% of the most well-trod paths through the model. Anything outside of the
+    calibration set is a crap-shoot as to whether it gets kept or not, but a well-balanced
+    calibration set will keep performance near-unquantized.<p>On what calibration
+    does: during quantization you try to minimize the error between the run of the
+    model with original weights and the run of the model with the quant&#x27;d weights.
+    Calibration data lets you weight the error away from the paths that are actually
+    chosen with real data.<p>Apologies, this is a bit of a hand-wavey comment but
+    it&#x27;s sort of how you can look at it without needing to deal with the hairier
+    math.'
+  score: 0
+  posted_at: '2026-11-23T19:57:20Z'
+- id: '50618333'
+  parent_id: '50611402'
+  author: rao-v
+  text: I&#x27;ve been skeptical of these high compute QAT style quant efforts because
+    they tend to over optimize on benchmark-like datasets, so in real usage they don&#x27;t
+    quite deliver the &quot;almost as good&quot; guarentee the benchmark comparisions
+    suggest.<p>This project actually does the sort of basic checks I want (and typically
+    don&#x27;t get)! They show results on multiple types of long horizon tasks (not
+    just coding etc.) and even use the words &quot;held out&quot; a few times :)
+  score: 0
+  posted_at: '2026-11-23T20:04:01Z'
+- id: '50618692'
+  parent_id: '50611402'
+  author: roundup
+  text: How does this technique compare to <a href="https:&#x2F;&#x2F;github.com&#x2F;ShinMegamiBoson&#x2F;lookatmyquant"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ShinMegamiBoson&#x2F;lookatmyquant</a>?
+  score: 0
+  posted_at: '2026-11-23T20:23:58Z'
+- id: '50618898'
+  parent_id: '50618147'
+  author: contrahax
+  text: Same model Q4 in splash supports up to 262K context window
+  score: 0
+  posted_at: '2026-11-23T20:37:51Z'
+- id: '50619132'
+  parent_id: '50611402'
+  author: IronWolve
+  text: There are so many new quant methods that are coming up, TCQ, GSQ-RCO and a
+    dozen others. They are chopping the models down to usable size with close precision
+    to q8.<p>I&#x27;m still waiting for the benchmarks on which methods are the best
+    so far.
+  score: 0
+  posted_at: '2026-11-23T20:55:10Z'
+- id: '50619545'
+  parent_id: '50611402'
+  author: WithinReason
+  text: Based on the plots most of the gains are due to a difference in harness, not
+    the model.
+  score: 0
+  posted_at: '2026-11-23T21:24:49Z'
+- id: '50620377'
+  parent_id: '50618692'
+  author: xlayn
+  text: LOL, you are the same guy who posted that right?
+  score: 0
+  posted_at: '2026-11-23T22:35:00Z'
+- id: '50620428'
+  parent_id: '50617252'
+  author: xlayn
+  text: I have spent weeks now trying to improve performance of qwen 3.8 27B... up
+    to the point where if the issue is memory bandwith that is not enough to saturate
+    computing units  you can somehow compress decompress either the context or the
+    model but the thing is very probably close to non compressable... and that kind
+    of makes sense... because it&#x27;s unique data there..   so how we reduce 17GB
+    of gguf to 10 with the exact same output of the f16 begs the question of what
+    was lost?<p>I&#x27;m not saying it cannot be done, just like jpeg can represent
+    VERY closely a bmp.. or how youtube codec is almost black magic to condense so
+    much information in so small space...<p>Just saying, IF true, will be really nice
+  score: 0
+  posted_at: '2026-11-23T22:39:28Z'
+- id: '50620658'
+  parent_id: '50620428'
+  author: hugmynutus
+  text: '&gt; I&#x27;m not saying it cannot be done, just like jpeg can represent
+    VERY closely a bmp<p>You can just mjpeg (or the internal DCT) system for quants&#x2F;KV
+    compression, just FYI: <a href="https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2511.01815"
+    rel="nofollow">https:&#x2F;&#x2F;arxiv.org&#x2F;abs&#x2F;2511.01815</a>'
+  score: 0
+  posted_at: '2026-11-23T22:58:47Z'
+- id: '50620674'
+  parent_id: '50617193'
+  author: ricardobeat
+  text: "It&#x27;s possible to run Bonsai 2 PTQ1 in ~8.5GB of RAM, Macbook Air M3
+    at much faster speeds:<p><pre><code>    mtl chat: models&#x2F;Ternary-Bonsai-2-27B-PTQ1_0.gguf
+    | vocab 248320 | temp 0.70 top_k 20 top_p 0.80 rep 1.05 | dflash2 up to 7 draft(s)&#x2F;round,
+    n-gram recent up to 7 | ctx 32768 q8 kv\n    type &#x2F;help for commands, &#x2F;exit
+    to quit\n    you&gt; hi. Alice has 4 brothers and she also has 1 sister, so how
+    many sisters does Alice&#x27;s brother have?\n      To determine how many sisters
+    Alice&#x27;s brother has, let&#x27;s break down the family composition based on
+    the information provided:\n\n      1.  Alice is a female child.\n      2.  Alice
+    has 4 brothers.\n      3.  Alice has 1 sister.\n    \n      This means the total
+    children in the family are:\n      •   Girls: Alice + her 1 sister = 2 girls\n
+    \     •   Boys: Her 4 brothers = 4 boys\n    \n      Now, let&#x27;s look at it
+    from the perspective of one of Alice&#x27;s brothers:\n      •   He is male.\n
+    \     •   His sisters are all the female children in the family.\n      •   The
+    female children are Alice and her sister.\n    \n      Therefore, Alice&#x27;s
+    brother has 2 sisters.\n    [166 tok, 16.3 tok&#x2F;s | prefill 36 tok in 13010
+    ms | 205 tokens in context | stop im_end]\n</code></pre>\nThe speed is still not
+    quite there for coding, prefill is especially slow. But it is incredible that
+    it&#x27;s possible to condense such a great model into a tiny blob."
+  score: 0
+  posted_at: '2026-11-23T22:59:40Z'
+- id: '50620722'
+  parent_id: '50611402'
+  author: hugmynutus
+  text: The fact the control model performed *that much better* in your harness compared
+    to unsloth is fairly concerning. As it greatly undermines your point about the
+    model.<p>Interesting approach nevertheless.
+  score: 0
+  posted_at: '2026-11-23T23:03:16Z'
+- id: '50620937'
+  parent_id: '50620658'
+  author: xlayn
+  text: YES for sure, the question is what information is lost... to my eyes jpeg
+    may be exactly the same that bmp... in part because of smart layout of data representation,
+    in part because of parameters aim for a lot of information preservation, in part
+    because my eyes have limits and to those limits (and the screen, the medium the
+    environment, etc) they may see very close or the same... but to a graphic designer
+    may not...<p>the model is not a photo we observe, is a worker that operates on
+    it&#x27;s own data and I don&#x27;t know what&#x27;s the process get&#x27;s from
+    that jpegification... they may say... fine or output crap
+  score: 0
+  posted_at: '2026-11-23T23:21:01Z'
+- id: '50621073'
+  parent_id: '50618217'
+  author: andai
+  text: 'Thanks for the explanation.<p>Unrelated: Your blog goes back to <i>1998</i>,
+    and the first posts apologize about even older content being missing. That&#x27;s
+    amazing. (Maybe the old stuff is on Web Archive?)'
+  score: 0
+  posted_at: '2026-11-23T23:32:01Z'
+article:
+  url: https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF
+  title: nari-labs/Qwen3.8-27B-NariQ-GGUF · Hugging Face
+  fetch_status: success
+  content: |-
+    # NariQ: Qwen3.8-27B in a 10 GB file, BF16-level on long-horizon agentic tasks
+
+    (Nov 20, 2026) We are releasing NariQ v1 GGUFs of Qwen3.8-27B at 3, 2.5 and 2 bits per weight. Run them on our llama.cpp fork (required).
+
+    - The 3-bit and 2.5-bit files match BF16 on long-horizon agent tasks, math and image understanding. The 2-bit file scores lower.
+
+    - NariQ is a trellis-coded post-training quantization (PTQ), calibrated on real coding-agent traces and stored in a layout that runs on a single GPU.
+
+    - More details are in the tech report.
+
+    Each cell gives a percentage and a count in parentheses. For DeepSWE, the count is the mean number of fully solved tasks per round. Across the same three rounds, the mean share of each task's new tests that passed was 83.1% (BF16), 82.9% (3-bit), 83.2% (2.5-bit) and 77.2% (2-bit). One BF16 verifier timeout in round 3 counts as zero (338 of 339 trials graded). Each NariQ variant had all 339 trials graded. Terminal-Bench counts solved trials, and the remaining columns count correct answers. The agent runs use the Claude Code CLI (2.1.309, thinking on, effort max) driving the local model, with a 262,144-token context and the model's thinking-mode sampling (temperature 1.0, top-p 0.95, top-k 20).
+
+    KL divergence from the BF16 model on held-out coding-agent traces, against file size. Every point was measured by us with the same code. Lower is better.
+
+    DeepSWE fully solved tasks out of 113, against file size. Our NariQ points and solid BF16 line average three rounds with Claude Code. Our GSQ-RCO points use one round. The hollow diamonds show approximate averages from Unsloth's published Dynamic V3.1 chart (mini-swe-agent). Compare each point with the BF16 line for its harness. Higher is better.
+
+    Terminal-Bench 2.1 score over 82 tasks × 3 attempts, against file size. Filled circles are our runs (Claude Code); hollow diamonds are Unsloth's reported results (mini-swe-agent), read from its published Dynamic V3.1 chart (hence ≈; its scores are averages over several passes). The two harnesses differ, so compare each point with the BF16 line of its own harness (solid: ours, dashed: Unsloth's). Higher is better.
+
+    ## Quickstart
+
+    One command on Linux with an NVIDIA GPU and driver 570 or newer (downloads the fork's binaries and the files, checks them, and fits the context to your GPU):
+
+    curl -fsSLO https://github.com/nari-labs/nari-llama.cpp/releases/download/b12431-nariv0/run.sh bash run.sh 3.0 # or 2.5, 2.0
+
+    Or download and serve yourself, with llama-server from the fork:
+
+    hf download nari-labs/Qwen3.8-27B-NariQ-GGUF \ Qwen3.8-27B-NariQ-3.0bpw.gguf Qwen3.8-27B-NariQ-mmproj-BF16.gguf --local-dir . llama-server -m Qwen3.8-27B-NariQ-3.0bpw.gguf --mmproj Qwen3.8-27B-NariQ-mmproj-BF16.gguf \ -ngl 99 -c 131072 --jinja --port 8080 \ --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0
+
+    The sampling flags are the thinking-mode settings our scores used. -c 131072 fits a 24 GB GPU with little to spare; lower it if a display shares the GPU, or let run.sh pick the largest context that fits. Use -c 262144 (the model's full context) on 32 GB or more. GPU memory with the vision projector:
+
+    Prebuilt binaries, the Docker image, supported GPUs and build steps: the fork's README.
+
+    Decode speed on one NVIDIA RTX PRO 6000 (Blackwell), single session, 512 greedy output tokens, tokens/s:
+
+    NariQ on our llama.cpp fork with -fa on -ctk bf16 -ctv bf16 -t 1 -tb 16 --backend-sampling --samplers temperature (greedy sampling on the GPU, BF16 KV cache). UD-IQ3_XXS is Unsloth's file on llama.cpp, measured earlier on the same GPU type.
+
+    ## Known limits and future work
+
+    - Requires a NariQ-aware runtime: for now, our llama.cpp fork. Stock llama.cpp, Ollama and LM Studio can't load the new tensor types yet; we hope to merge support into upstream llama.cpp. Our internal SGLang plugin and our inference engine built on Resin are a work in progress for potential public release.
+
+    - The llama.cpp fork needs more work across hardware. The current fork is focused on SM120 performance (e.g. RTX PRO 6000). Ampere, Ada and Hopper GPUs and Apple M-series GPUs are slower than comparable GGUFs for now; we would love open-source contributions for speedups, as this has been a solo effort. GPUs older than Ampere fall back to slow CPU execution, and AMD and Intel GPUs are not supported yet. GeForce cards have not been tested yet; tested GPUs are RTX PRO 6000, H100, L4 and A10.
+
+    - Apple M-series (Metal): build from source; on an M3 Pro (18 GB) decode is about 3.8 tok/s with the 3.0bpw file (4.9 with 2.0bpw), far slower than CUDA. Other Macs are untested.
+
+    - The 2-bit file is weaker overall; use the 2.5-bit or 3-bit for higher overall performance.
+
+    - The vision tower stays in BF16; only the language model is quantized. The MTP (multi-token prediction) module is not included yet; it is still to be quantized.
+
+    - KV-cache and activation quantization are next, so the files fit long contexts on 16 GB consumer GPUs and run faster. Today the KV cache and activations stay in BF16.
+
+    ## Contact us
+
+    For technical consulting, compute sponsorships, or partnership inquiries, please contact founders@narilabs.com.
+
+    ## License
+
+    These files inherit the base model's Apache-2.0 license; see NOTICE.
+
+    ## Acknowledgements
+
+    Thanks to the Qwen team for the amazing Qwen3.8-27B, and to the Unsloth, ExLlamaV3, GSQ-RCO (IST Austria DASLab) and GGML teams, whose open-source work this release builds on. NariQ's trellis codes build on QTIP (Tseng et al., 2024).
+
+    ## Citation
+
+    If you use NariQ, please cite the technical report:
+
+    @techreport{kim2026nariq, title = {NariQ: Sub-3-Bit Quantization for Long-Horizon Agentic Tasks}, author = {Doyeob (Toby) Kim}, institution = {Nari Labs}, year = {2026}, month = nov, eprint = {2611.26157}, archivePrefix = {arXiv}, url = {https://arxiv.org/abs/2611.26157} }
+
+    # Qwen3.8-27B
+
+    Following the widespread community adoption of the Qwen3.5 and Qwen3.6 series, we are pleased to introduce Qwen3.8, the most capable generation in the Qwen open-model family to date.
+
+    Built on the architectural foundation of Qwen3.5, Qwen3.8 delivers substantial gains across coding, professional work, research, and long-horizon agentic tasks. Qwen3.8-27B brings these advances to a compact, deployment-friendly dense model: a native vision-language model that understands images and videos, with flexible thinking control, designed to carry complex, multi-step tasks through to completion with greater reliability.
+
+    ## Qwen3.8 Highlights
+
+    Qwen3.8-27B features the following enhancements:
+
+    - Core Capabilities: Comprehensive improvements across coding, professional work, research, and long-horizon agentic tasks.
+
+    - Agent Execution: Stronger autonomous planning and better handling of environment feedback, leading to more reliable end-to-end task completion.
+
+    - Downstream Compatibility: Broader support for popular harnesses and development tools, making it easier to integrate into your existing stack.
+
+    - Flexible Thinking Control: Thinking mode is on by default and can be disabled per request; reasoning depth can be tuned with reasoning_effort, and reasoning context from historical messages is retained via preserve_thinking.
+
+    - Vision-Language Understanding: Native support for image and video understanding, from STEM diagrams and documents to hour-scale videos.
+
+    ## Model Overview
+
+    - Type: Causal Language Model with Vision Encoder
+
+    - Training Stage: Pre-training & Post-training
+
+    - Language Model Number of Parameters: 27B Hidden Dimension: 5120 Token Embedding: 248,320 (Padded) Number of Layers: 64 Hidden Layout: 16 × (3 × (Gated DeltaNet → FFN) → 1 × (Gated Attention → FFN)) Gated DeltaNet: Number of Linear Attention Heads: 48 for V and 16 for QK Head Dimension: 128 Gated Attention: Number of Attention Heads: 24 for Q and 4 for KV Head Dimension: 256 Rotary Position Embedding Dimension: 64 Feed Forward Network: Intermediate Dimension: 17,408 LM Output: 248,320 (Padded) MTP (Multi-Token Prediction): trained with multiple steps
+
+    - Numbe
+  error:
+  fetched_at: '2026-11-23T23:41:58Z'
+archived_at: '2026-11-23T23:42:02Z'

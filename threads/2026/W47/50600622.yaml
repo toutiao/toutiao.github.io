@@ -4,14 +4,14 @@ post:
   title: I joined the NTP Pool, but not with my Stratum 1 Pi
   url: https://www.jeffgeerling.com/blog/2026/i-joined-the-ntp-pool/
   hn_url: https://news.ycombinator.com/item?id=50600622
-  score: 158
+  score: 170
   author: ''
   posted_at: '2026-11-22T15:35:24Z'
-  fetched_at: '2026-11-23T11:57:01Z'
+  fetched_at: '2026-11-23T23:41:57Z'
   article_url: https://www.jeffgeerling.com/blog/2026/i-joined-the-ntp-pool/
   article_fetch_status: success
   article_fetched_at: '2026-11-23T01:27:10Z'
-  raw_comment_count: 61
+  raw_comment_count: 71
 comments:
 - id: '50601911'
   parent_id: '50600622'
@@ -674,6 +674,125 @@ comments:
     rel="nofollow">https:&#x2F;&#x2F;www.npl.co.uk&#x2F;products-services&#x2F;time-frequency&#x2F;netwo...</a>
   score: 0
   posted_at: '2026-11-23T10:26:09Z'
+- id: '50611419'
+  parent_id: '50608288'
+  author: bityard
+  text: That&#x27;s where I looked
+  score: 0
+  posted_at: '2026-11-23T13:44:14Z'
+- id: '50611568'
+  parent_id: '50602852'
+  author: ectospheno
+  text: I had that issue with older firmware. Hasn’t popped up lately. They are nice
+    hands off cheap devices for what they provide.
+  score: 0
+  posted_at: '2026-11-23T13:59:34Z'
+- id: '50613257'
+  parent_id: '50605972'
+  author: toomuchtodo
+  text: Very cool, thanks so much for sharing.
+  score: 0
+  posted_at: '2026-11-23T15:18:45Z'
+- id: '50614374'
+  parent_id: '50607948'
+  author: geerlingguy
+  text: My Time Pi setup is in the single-digit ns range, on the hardware side—the
+    PPS from GPS goes into the NIC&#x27;s PHC, and disciplines that clock on the HAT.
+    That time is distributed with hardware timestamping over the network (PTP), and
+    other devices can get hardware level sync sub-10ns.<p>The Pi still has to handle
+    its own PPS through interrupts, and without PTM, that means &quot;less than a
+    microsecond&quot; is about as good as I can currently say _in Linux_ on the Pi.<p>Most
+    people who get serious about timing in the ns (and now sub-ns) range move to FPGAs
+    now, especially considering how inexpensive they&#x27;ve become. I haven&#x27;t
+    made that jump but most of my actual timing-focused hardware runs on an FPGA inside
+    (like the NetTimeLogic PPS analyzer I have all my clocks plugged into).
+  score: 0
+  posted_at: '2026-11-23T16:19:18Z'
+- id: '50614917'
+  parent_id: '50604644'
+  author: syncsynchalt
+  text: Newer versions of ntpd have the `pool` directive which will re-resolve a new
+    IP to clear out bad servers. I suspect that would have resolved your issue.<p>FWIW
+    I&#x27;ve been serving time in the pool for years now, it&#x27;s a fun little
+    hobby.
+  score: 0
+  posted_at: '2026-11-23T16:47:15Z'
+- id: '50615421'
+  parent_id: '50608209'
+  author: jeffbee
+  text: The 210 is a better NIC in the sense that it actually works, unlike the 225,
+    and it has PPS pins on some implementations, but it never supported PTM in the
+    first place. The 210 predates the PTM standard altogether.
+  score: 0
+  posted_at: '2026-11-23T17:13:03Z'
+- id: '50617370'
+  parent_id: '50609287'
+  author: Avamander
+  text: You can of course discipline your local rubidium against GNSS and have some
+    amazing holdover numbers during an outage. But it would be a waste to try and
+    run a time server against an LW transmission, which doesn&#x27;t get you anywhere
+    close the same accuracy (nor holdover).
+  score: 0
+  posted_at: '2026-11-23T19:10:56Z'
+- id: '50618402'
+  parent_id: '50608881'
+  author: bradknowles
+  text: So, on EC2 nodes, the internal Stratum-2 servers provide time to the NTP client
+    on the hypervisor card.  From there, it is provided via the link-local address
+    to the EC2 instances.  That’s the best quality of time sync that you could possibly
+    get to those instances.  The Stratum-1 servers inside the AWS network in each
+    availability zone are providing the signal to the Stratum-2 distribution servers,
+    and those Stratum-2 distribution servers are what feed the hypervisors across
+    all regions, all availability zones, and all datacenters.<p>On the newer instances,
+    your local NTP client could also be configured to receive a 1PPS signal from the
+    hypervisor card, and in that case you can get an SLA of 20 microseconds or better
+    from “true time”.  For these systems, there are Stratum-1 servers within the same
+    datacenter as the hardware where your instance is running.  That’s what allows
+    AWS to run a custom fabric for 1PPS signals that is very high fidelity, low jitter
+    and wander, etc….<p>Older instances aren’t running on hardware that has access
+    to that proprietary fabric where 1PPS is transmitted with very high fidelity,
+    and so there is no 1PPS signal that can be fed to your instance.  In that case,
+    you get an SLA of one millisecond (or better).<p>Either way, this is at least
+    an order of magnitude better than you can get from any other source, since that
+    source would have to be from outside of the AWS network.  You might be able to
+    get yourself down to single-digit millisecond accuracy, but still not down as
+    low as you can get from AWS if you just use the link-local service.
+  score: 0
+  posted_at: '2026-11-23T20:08:29Z'
+- id: '50618421'
+  parent_id: '50611419'
+  author: bradknowles
+  text: I will talk to him about that page, and see if I can get him to update it
+    with the latest information.
+  score: 0
+  posted_at: '2026-11-23T20:09:27Z'
+- id: '50618639'
+  parent_id: '50609168'
+  author: bradknowles
+  text: So, the cool thing about `ntpd` and Chrony is that they do exponential backoff,
+    once they have gathered enough statistical information about the upstream servers
+    they are using.  They will typically keep a tighter loop on their selected SYSPEER,
+    but the others will be allowed to relax.<p>This will reduce the load on any additional
+    upstream time servers that you configure, but obviously it won’t go all the way
+    down to zero.<p>You still want to be considerate of your neighbors, and not abuse
+    their servers.  But it is generally considered fine to be connected to as many
+    as ten upstream time servers.<p>Now, if you use the “pool” directive, when you
+    get back multiple IP addresses for the same name, you will connect to each of
+    those servers in that pool.  If you do the numbered server trick that I explain
+    elsewhere, and each name comes back with just three IP addresses, that means that
+    you will actually be connecting to four or five names, times three IP addresses
+    per name.  That’s twelve to fifteen servers, probably.<p>But that’s okay, because
+    you’re just connecting to the servers you were told about when you did the DNS
+    query, and given the DNS load balancing built into the pool, when the next person
+    asks the same question about those same machines, they will probably get different
+    answers.<p>Whether it’s `ntpd` or Chrony, when your client goes through the periodic
+    re-evaluation process of those configured upstream time servers, that’s when it
+    should pick up any IP addresses per name changes.  And if the IP address is different,
+    then it doesn’t matter that the name is the same.  The design of the NTP protocol
+    is such that you must have one and only one unique clock behind each IP address.  That’s
+    why load balancing switches don’t work with NTP.
+  score: 0
+  posted_at: '2026-11-23T20:21:02Z'
 article:
   url: https://www.jeffgeerling.com/blog/2026/i-joined-the-ntp-pool/
   title: I joined the NTP Pool, but not with my Stratum 1 Pi - Jeff Geerling
@@ -776,4 +895,4 @@ article:
     I've certainly learned a lot at every stage of this journey: NTP is loaded with utility, and is currently an essential piece of global timing infrastructure. I think I know about 1% (probably less) of what there is to know about hosting a public NTP server, and hopefully I can share more as I increase that
   error:
   fetched_at: '2026-11-23T01:27:10Z'
-archived_at: '2026-11-23T11:57:06Z'
+archived_at: '2026-11-23T23:42:01Z'

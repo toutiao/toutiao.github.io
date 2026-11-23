@@ -1,0 +1,151 @@
+---
+post:
+  id: lo-g5msf2
+  source: lobsters
+  title: Testing Terraform with AWS Emulator
+  url: https://notes.hatedabamboo.me/terraform-tests-with-aws-emulator/
+  hn_url: https://lobste.rs/s/g5msf2
+  score: 15
+  author: winter
+  posted_at: '2026-11-22T21:44:04Z'
+  fetched_at: '2026-11-23T23:42:02Z'
+  article_url: https://notes.hatedabamboo.me/terraform-tests-with-aws-emulator/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T23:42:07Z'
+  raw_comment_count: 4
+  tags:
+  - programming
+comments:
+- id: lo-ce4mac
+  parent_id: '0'
+  author: kevinc
+  text: I've been pounding on this emulator since hearing about it a week or two ago.
+    Service by service, many endpoints are unimplemented, but it seems to be fleshing
+    out day by day. Basic resources deployed with terraform or AWS CLI work fine;
+    queues and eventbridge run, lambda executes a code bundle you deploy to it. I
+    look forward to it being good enough at the resources I use to run integration
+    tests in the local dev cycle.
+  score: 2
+  posted_at: '2026-11-23T06:32:20Z'
+- id: lo-dqqm1u
+  parent_id: '0'
+  author: igorclark
+  text: Mind-boggling that this is only coming from AWS now. Obviously they have the
+    counter-motivation that without it people have to spin up largely paid instances
+    of everything in order to be able to test their AWS-reliant apps, but it’s been
+    a pain point for so long that things like Localstack sprung up to address it,
+    and GCP provided emulators for their main services even a decade ago. Emulation
+    isn’t perfect but it’s a lot better than nothing and a lot cheaper than everything.
+  score: 2
+  posted_at: '2026-11-23T09:46:57Z'
+- id: lo-cszcdx
+  parent_id: '0'
+  author: amw-zero
+  text: 'New architecture unlocked: deploy with AWS emulator services in prod.'
+  score: 1
+  posted_at: '2026-11-23T18:52:58Z'
+- id: lo-bj7dfc
+  parent_id: '0'
+  author: nickmonad
+  text: The amount of production deployments that would actually be improved by this
+    is definitely non-zero.
+  score: 1
+  posted_at: '2026-11-23T20:37:10Z'
+article:
+  url: https://notes.hatedabamboo.me/terraform-tests-with-aws-emulator/
+  title: Testing Terraform with AWS Emulator
+  fetch_status: success
+  content: "Nov 12, 2026 • 11 minute read • [#aws](/tags/#tag:aws)[#iac](/tags/#tag:iac)[#terraform](/tags/#tag:terraform)\n\n#
+    Testing Terraform with AWS Emulator\n\nTerraform plan passes and shows all green
+    and all the necessary resource changes. You trigger apply and... the job fails
+    with some obscure error that a resource can't be changed. You open another pull
+    request and try again. And perhaps you encounter an error again. Sounds familiar?
+    I bet it does. I encountered issues like this so many times I'm afraid to count.
+    But recently [AWS released](https://aws.amazon.com/about-aws/whats-new/2026/11/aws-emulator-now-available/)
+    a new tool called Emulator that emulates actual AWS API endpoints. And it should
+    be great for tasks just like that!\n\n![Title image](/assets/terraform-tests-with-aws-emulator.webp)\n\n##
+    Defining the problem [#](#defining-the-problem)\n\nThe problem with the difference
+    between plan and apply jobs is that plan can't possibly emulate every actual API
+    call against a live infrastructure. It's a safe assumption based on the static
+    declarations we put into it – the order of application, the necessary parameters,
+    the proper configuration values. These mock calls can't know for a fact that you
+    already have a resource in AWS called \"my-bucket-asdasdasd\" or that you're trying
+    to upgrade a PostgreSQL RDS instance from version 14 to version 18 without an
+    explicit \"apply immediately\" flag. One may argue that one can always try to
+    apply changes locally, but this kinda undermines the whole automation workflow.
+    So what is the answer?\n\nThere are multiple tools that can emulate AWS services
+    either [partially](https://github.com/guenter/aws-oss-alternatives) or in [full](https://ministack.org/),
+    but what they lack is the actual knowledge of the service architecture. It may
+    be similar, but it won't be authentic, and sometimes this small difference may
+    cause a lot of problems. After all, what can be the closest to an AWS API, if
+    not the same AWS API, but ephemeral?\n\n## AWS Emulator [#](#aws-emulator)\n\nThe
+    benefit of the AWS Emulator is that it's a self-contained binary (or Docker container)
+    that can be utilized locally or in a CI workflow. This means the usual \"Plan
+    \\> Apply\" terraform workflow changes to \"Plan \\> Apply against mock AWS infrastructure
+    to test the plan \\> Apply on actual AWS Infrastructure\". This means slightly
+    longer jobs, but if you're like me and apply jobs run on commits to the `main`
+    branch after a PR, this saves you the hassle of creating a new branch just to
+    fix the issue.\n\n### Running Terraform against local AWS Emulator [#](#running-terraform-against-local-aws-emulator)\n\nLet's
+    start with a local setup and see how we can utilize AWS Emulator with the actual
+    Terraform code. All code is available in my example [GitHub repository](https://github.com/hatedabamboo/terraform-tests-with-aws-emulator).\n\nFirst
+    up, installation. You can either install aws-emulator via [package manager](https://docs.aws.amazon.com/emulator/latest/userguide/getting-started-linux.html),
+    or build it [with Docker](https://docs.aws.amazon.com/emulator/latest/userguide/getting-started-docker.html).
+    I'll use Docker to keep my system clear of _yet another_ package:\n\n    bash$
+    docker build -t aws-emulator .\n    $ docker images\n    IMAGE ID DISK USAGE CONTENT
+    SIZE EXTRA\n    aws-emulator:latest 3c8fdb957b45 1.24GB 0B # wow it's chonky\n
+    \   $ docker run --rm -d -p 9297:9297 aws-emulator -a off\n    dcc416f234aaa3ec2966c9e8dcde7870f8d03057ec8a465cb8960617af82e501\n
+    \   $ docker logs dcc416f234aaa3ec2966c9e8dcde7870f8d03057ec8a465cb8960617af82e501\n
+    \   {\"timestamp\":\"2026-11-12T14:51:16.261883Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"aws-emulator
+    emulator starting\"},\"target\":\"aws_emulator\"}\n    This emulator collects
+    usage and error telemetry: enabled (on by default; opt out any time); disable
+    with EMULATOR_TELEMETRY=off or [telemetry] enabled = false in /home/emulator/.aws/emulator/config.toml\n
+    \   {\"timestamp\":\"2026-11-12T14:51:16.270635Z\",\"level\":\"INFO\",\"fields\":{\"message\":\"emulator
+    server information\",\"endpoint_url\":\"https://127.0.0.1:9297\",\"health_check_url\":\"https://127.0.0.1:9297/__admin/health\",\"config_file\":\"/home/emulator/.aws/emulator/9297/config\",\"ca_file\":\"/home/emulator/.aws/emulator/9297/ca.pem\",\"java_truststore_file\":\"/home/emulator/.aws/emulator/9297/truststore.p12\"},\"target\":\"aws_emulator_server\"}\n
+    \   {\"timestamp\":\"2026-11-12T14:51:16.270655Z\",\"level\":\"WARN\",\"fields\":{\"message\":\"the
+    emulator listens on 0.0.0.0, not loopback: other machines that can reach port
+    9297 can call it; bind 127.0.0.1 (-b 127.0.0.1) unless that is intended\",\"bind_address\":\"0.0.0.0\"},\"target\":\"aws_emulator_server\"}\n
+    \   {\"timestamp\":\"2026-11-12T14:51:16.270659Z\",\"level\":\"WARN\",\"fields\":{\"message\":\"request
+    authentication is off: the emulator accepts any request, signed or not; start
+    it with -a on to require signatures\",\"bind_address\":\"0.0.0.0\"},\"target\":\"aws_emulator_server\"}\n\nAnd
+    it's up and running! In the example above I set the container to live without
+    limits (official AWS documentation proposes to set memory and swap limits: `--memory=2g
+    --memory-swap=2g`, but for local that's fine). I also disabled authorization (flag
+    `-a off`) to simplify things a bit.\n\nTo be sure aws-emulator is up and running,
+    let's query the admin endpoint:\n\n    bash$ curl -sk https://127.0.0.1:9297/__admin/health\n
+    \   ok\n\nOkay, fake AWS is live, let's deploy some infrastructure!\n\nI created
+    an example AWS stack for Terraform and will use it in this article. First, let's
+    configure Terraform to act against aws-emulator and not real AWS APIs. `providers.tf`
+    will look like this:\n\n    hclprovider \"aws\" {\n      access_key = var.access_key\n
+    \     secret_key = var.secret_key\n      region = var.region\n    \n      insecure
+    = true # The emulator serves HTTPS with a self-signed certificate. Skip verification.\n
+    \   \n      s3_use_path_style = true # The emulator uses one IP endpoint. Put
+    the bucket name in the path.\n    \n      # Do not call the real AWS or the instance
+    metadata service.\n      skip_credentials_validation = true\n      skip_metadata_api_check
+    = true\n      skip_requesting_account_id = true\n      skip_region_validation
+    = true\n    \n      # Send every service to the emulator instead of AWS.\n      endpoints
+    {\n        ec2 = var.emulator_endpoint\n        lambda = var.emulator_endpoint\n
+    \       iam = var.emulator_endpoint\n        sts = var.emulator_endpoint\n        cloudwatch
+    = var.emulator_endpoint\n        logs = var.emulator_endpoint\n        events
+    = var.emulator_endpoint\n        sns = var.emulator_endpoint\n      }\n    \n
+    \     default_tags {\n        tags = var.tags\n      }\n    }\n\nThe difference
+    between actual live infrastructure and a fake one is that we set up a bunch of
+    flags to allow insecure connections (perhaps turning authentication off wasn't
+    actually simpler?) and we set up an endpoint for each service we use in the setup
+    to an emulator endpoint, which lives in the local Docker container:\n\n    hcl#
+    variables.tf\n    variable \"emulator_endpoint\" {\n      description = \"Base
+    URL of the AWS Emulator\"\n      type = string\n      default = \"https://127.0.0.1:9297\"\n
+    \   }\n    ...\n\nThe rest of the configuration is as usual: resources, variables,
+    modules (if any). Just what your project has.\n\nLet's proceed and test our setup.
+    (I'll omit full terraform output otherwise this article would be 3 kilometers
+    long)\n\n    bash$ cd terraform/\n    $ terraform init\n    Initializing the backend...\n
+    \   ...\n    Terraform has been successfully initialized!\n    ...\n    $ terraform
+    plan\n    ...\n    Plan: 15 to add, 0 to change, 0 to destroy.\n    \n    Changes
+    to Outputs:\n      + alarm_name = \"ttwae-lambda-errors\"\n      + event_rule_arn
+    = (known after apply)\n      + lambda_function_arn = (known after apply)\n      +
+    security_group_id = (known after apply)\n      + sns_topic_arn = (known after
+    apply)\n      + subnet_id = (known after apply)\n      + vpc_id = (known after
+    apply)\n\nPlan works! That's good to see, but not what we're here for. Still,
+    a good sign. Now for"
+  error:
+  fetched_at: '2026-11-23T23:42:07Z'
+archived_at: '2026-11-23T23:42:07Z'

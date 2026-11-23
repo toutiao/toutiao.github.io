@@ -1,0 +1,368 @@
+---
+post:
+  id: '50607627'
+  title: A Partial Evaluator for C
+  url: https://phoenix.labri.fr/software/tempo/
+  hn_url: https://news.ycombinator.com/item?id=50607627
+  score: 101
+  author: ''
+  posted_at: '2026-11-23T04:51:48Z'
+  fetched_at: '2026-11-23T23:41:59Z'
+  article_url: https://phoenix.labri.fr/software/tempo/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T23:41:59Z'
+  raw_comment_count: 28
+comments:
+- id: '50608313'
+  parent_id: '50607627'
+  author: RossBencina
+  text: 'While unsuccessfully searching for the Tempo source code I found LLPE, a
+    partial evaluator for LLVM bitcode: <a href="https:&#x2F;&#x2F;www.llpe.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;www.llpe.org&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-23T06:48:34Z'
+- id: '50608832'
+  parent_id: '50607627'
+  author: dmitrygr
+  text: GCC does quite a bit of this nowadays. It is quite impressive to see when
+    you disassemble its output.
+  score: 0
+  posted_at: '2026-11-23T08:12:04Z'
+- id: '50609126'
+  parent_id: '50607627'
+  author: MiroslavPokorny
+  text: "&gt; The Tempo specializer has been made publicly available under a licence
+    in April 1998. At of March 99, it was being used by about thirty people around
+    the world. The binary version of Tempo has just (July 2000) been made available
+    without any restrictions, and we expect a full unrestricted source release under
+    GPL to follow soon."
+  score: 0
+  posted_at: '2026-11-23T08:58:03Z'
+- id: '50609165'
+  parent_id: '50607627'
+  author: rramadass
+  text: <i>Partial Evaluation</i> - <a href="https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Partial_evaluation"
+    rel="nofollow">https:&#x2F;&#x2F;en.wikipedia.org&#x2F;wiki&#x2F;Partial_evaluation</a><p><i>Partial
+    Evaluation and Automatic Program Generation</i> by Neil Jones et al. - <a href="https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20071012081310&#x2F;http:&#x2F;&#x2F;www.itu.dk&#x2F;people&#x2F;sestoft&#x2F;pebook&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;web.archive.org&#x2F;web&#x2F;20071012081310&#x2F;http:&#x2F;&#x2F;www.itu.dk...</a>
+  score: 0
+  posted_at: '2026-11-23T09:03:45Z'
+- id: '50609220'
+  parent_id: '50608832'
+  author: rramadass
+  text: AFAIK, GCC toolchain does not have a separate partial evaluator, so how do
+    you do it?
+  score: 0
+  posted_at: '2026-11-23T09:11:54Z'
+- id: '50609304'
+  parent_id: '50609220'
+  author: pjmlp
+  text: GDB, calling C code from the interactive prompt?<p>Even though it is its own
+    project, most folks use it alongside GCC.<p><a href="https:&#x2F;&#x2F;sourceware.org&#x2F;gdb&#x2F;current&#x2F;onlinedocs&#x2F;gdb.html&#x2F;Calling.html"
+    rel="nofollow">https:&#x2F;&#x2F;sourceware.org&#x2F;gdb&#x2F;current&#x2F;onlinedocs&#x2F;gdb.html&#x2F;Calli...</a>
+  score: 0
+  posted_at: '2026-11-23T09:22:16Z'
+- id: '50609390'
+  parent_id: '50607627'
+  author: looperhacks
+  text: "I know this has nothing to do with TFA, just want to check my understanding
+    of C. Doesn&#x27;t the code example have a bug?<p><pre><code>  miniprintf(char
+    fmt[], int val[])\n  {\n    int i = 0;\n    while( *fmt != &#x27;\\0&#x27; ) {\n
+    \     if( *fmt != &#x27;%&#x27; )\n         putchar(*fmt);\n      else\n        switch(*++fmt)
+    {\n          case &#x27;d&#x27; : putint(val[i++]); break;             \n          case
+    &#x27;%&#x27; : putchar(&#x27;%&#x27;);     break;\n          default  : prterror(*fmt);
+    \  break;\n        }\n      fmt++;\n    }\n  }\n</code></pre>\nIf the static string
+    was &quot;%&quot;, the else branch would move past the end of the string. Assuming
+    prterror doesn&#x27;t crash the program, this reads out-of-bounds, right?"
+  score: 0
+  posted_at: '2026-11-23T09:33:08Z'
+- id: '50609416'
+  parent_id: '50609390'
+  author: carlosneves
+  text: Was suspecting the same thing. But I think, because C strings are null-terminated,
+    they allow reading up to 1 byte after its end.<p>In your example, &quot;%&quot;
+    would cause switch (&#x27;\0&#x27;) which would fall in the default case.
+  score: 0
+  posted_at: '2026-11-23T09:38:33Z'
+- id: '50609524'
+  parent_id: '50609390'
+  author: ChrisRR
+  text: "++fmt increments the counter before it&#x27;s read, so it&#x27;ll point at
+    the null terminator and enter the default case.<p>Edit: I guess it may not technically
+    be a bug as it&#x27;s just a small function, but using a single % instead of %%
+    (which is what printf expects) would be a format error, hence prterror()"
+  score: 0
+  posted_at: '2026-11-23T09:50:15Z'
+- id: '50609547'
+  parent_id: '50609416'
+  author: ginko
+  text: Yeah, but that only prints an error and keeps going, so next loop it will
+    read past the null terminator. So I think looperhacks is correct.<p>The function
+    should probably return on error.
+  score: 0
+  posted_at: '2026-11-23T09:52:37Z'
+- id: '50609563'
+  parent_id: '50609390'
+  author: dcuthbertson
+  text: Yup, it&#x27;s a bug. The &#x27;%&#x27; character gets you into the while
+    loop and into the else clause. The switch increments to the nul terminator, which
+    then executes prterror(0). Then fmt is incremented again so it points just outside
+    of the string. As long as that out-of-bounds byte is not also the nul value the
+    loop continues into out-of-bounds territory.<p>Wait - does prterror cause the
+    program to exit? It&#x27;s not defined, so maybe the program does terminate, maybe
+    it doesn&#x27;t.
+  score: 0
+  posted_at: '2026-11-23T09:54:03Z'
+- id: '50609567'
+  parent_id: '50609390'
+  author: oguz-ismail2
+  text: Right. If fmt was &quot;%d%d&quot; and val had only one element that&#x27;d
+    cause an out-of-bounds read as well. Can&#x27;t say it&#x27;s a bug without seeing
+    the rest of the code though; if the function is used correctly everywhere, there&#x27;s
+    no bug.
+  score: 0
+  posted_at: '2026-11-23T09:54:26Z'
+- id: '50609717'
+  parent_id: '50609304'
+  author: rramadass
+  text: 'That is not Partial Evaluation but interactive REPL evaluation. See also
+    <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50609165">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50609165</a><p>For
+    Partial Evaluation, you must generate a &quot;residual&quot; version of the original
+    program by specialization where all static data is already bound and evaluated.<p>Simplest
+    example would be compiling in configuration parameters, so a specific code-path
+    is preselected before runtime. Another classic example would be C++ template meta-programming
+    where that part of the program is not evaluated at runtime.<p>I first came to
+    know of these techniques from the classic <i>Generative Programming: Methods,
+    Tools, and Applications</i> by Krzysztof Czarnecki and Ulrich W. Eisenecker which
+    is still relevant today.<p>Checking with Google, it seems GCC does not have a
+    separate partial evaluator but one can use coding techniques+aggressive optimization
+    switches to approximate it. For separate &quot;Futamura Projection&quot; like
+    partial evaluators there seem to be C-Mix&#x2F;LLPE etc.'
+  score: 0
+  posted_at: '2026-11-23T10:10:00Z'
+- id: '50609778'
+  parent_id: '50607627'
+  author: hizlikovboy27
+  text: Does anyone know if there&#x27;s a modern build of it? the download on the
+    page is an i386 Linux binary tested on RedHat 6.1
+  score: 0
+  posted_at: '2026-11-23T10:17:18Z'
+- id: '50610076'
+  parent_id: '50607627'
+  author: alex7o
+  text: We need a partial evaluator for llvm bytecode imo so it works with all languages
+  score: 0
+  posted_at: '2026-11-23T10:59:21Z'
+- id: '50610301'
+  parent_id: '50609567'
+  author: tgv
+  text: "&gt; there&#x27;s no bug<p>That&#x27;s a bit of an ontological conundrum:
+    does a bug exist when it never occurs? I&#x27;d say there is a bug, unless the
+    function has a contract that guarantees there&#x27;s always a character following
+    every first % (and something about the length of the second array, of course).
+    So I see a bug as something wrong with the design.<p>But if you see a bug as something
+    purely pertaining to runtime, then you are right. But when is &quot;never&quot;?
+    If it is proven not to occur, or is it enough that the circumstances in which
+    it is used just happen no to trigger it? (Note that in the last phrase, &quot;it&quot;
+    refers to the bug, and implies it exists...)<p>BTW, in the example, the partial
+    evaluator could prove the presence or absence of bugs."
+  score: 0
+  posted_at: '2026-11-23T11:29:34Z'
+- id: '50610332'
+  parent_id: '50609390'
+  author: reillyrider
+  text: Format strings in C are generally assumed to be valid, so it&#x27;s a precondition
+    to use the function.
+  score: 0
+  posted_at: '2026-11-23T11:33:55Z'
+- id: '50610344'
+  parent_id: '50609390'
+  author: '1718627440'
+  text: That&#x27;s kinda what you get for writing non-idiomatic terse code in a language
+    with footguns.  There are no braces around an else branch, that spans multiple
+    lines.  It uses a while loop instead of a for loop, meaning that the check gets
+    separated from the increment and thus also a second unchecked increment sneaked
+    in.
+  score: 0
+  posted_at: '2026-11-23T11:36:04Z'
+- id: '50610358'
+  parent_id: '50609220'
+  author: '1718627440'
+  text: Isn&#x27;t inlining followed by constant propagation an example of applying
+    a partial evaluator?
+  score: 0
+  posted_at: '2026-11-23T11:38:15Z'
+- id: '50610445'
+  parent_id: '50610076'
+  author: Harvesterify
+  text: You mean <a href="https:&#x2F;&#x2F;www.llpe.org&#x2F;" rel="nofollow">https:&#x2F;&#x2F;www.llpe.org&#x2F;</a>
+    ?
+  score: 0
+  posted_at: '2026-11-23T11:48:54Z'
+- id: '50611856'
+  parent_id: '50609524'
+  author: RicardoLuis0
+  text: but then it&#x27;s incremented again after the else, and the while condition
+    reads one-past-the end, entirely skipping the null terminator
+  score: 0
+  posted_at: '2026-11-23T14:16:19Z'
+- id: '50613048'
+  parent_id: '50611856'
+  author: ChrisRR
+  text: I guess it&#x27;s the embedded engineer in me that stupidly assumed that prterror()
+    would&#x27;ve been a fatal error handler and so wouldn&#x27;t continue to run
+    after that.<p>If it&#x27;s not a fatal error, then yes it would continue past
+    the end of the string
+  score: 0
+  posted_at: '2026-11-23T15:06:35Z'
+- id: '50614380'
+  parent_id: '50610445'
+  author: alex7o
+  text: Oh ty I didn&#x27;t know about it
+  score: 0
+  posted_at: '2026-11-23T16:19:33Z'
+- id: '50614915'
+  parent_id: '50610358'
+  author: dmitrygr
+  text: That’s basically how it works. And the passes are applied repeatedly
+  score: 0
+  posted_at: '2026-11-23T16:47:07Z'
+- id: '50615583'
+  parent_id: '50614915'
+  author: '1718627440'
+  text: Thanks.  The rogative aspect was whether the statements truthiness isn&#x27;t
+    sufficient indication to support your statement, not whether my statement itself
+    is true.
+  score: 0
+  posted_at: '2026-11-23T17:23:18Z'
+- id: '50616691'
+  parent_id: '50610358'
+  author: rramadass
+  text: Just FYI - There is lots more that GCC can apparently do w.r.t. partial evaluation.
+    Google AI mode gave me 1) Code level constructs 2) Compile time switches and 3)
+    Runtime partial evaluation using &quot;libgccjit&quot;!
+  score: 0
+  posted_at: '2026-11-23T18:32:09Z'
+- id: '50617198'
+  parent_id: '50609390'
+  author: rramadass
+  text: Note that C&#x2F;C++ explicitly allows you to form a pointer to one past the
+    last element of a string&#x2F;array. You can compare with it but you cannot dereference
+    it.<p>It is used extensively in STL algorithms so that raw pointers and  container.end()
+    behave the same.
+  score: 0
+  posted_at: '2026-11-23T19:00:32Z'
+- id: '50620844'
+  parent_id: '50616691'
+  author: '1718627440'
+  text: I honestly don&#x27;t understand your first two points, and I think the third
+    point is something different, as it is a deliberate by the programmer and also
+    it just invokes the compiler at runtime completely, meaning it does not partially
+    compile it at actual compile time and only parametrize it at runtime.  Or am I
+    wrong on the last point?
+  score: 0
+  posted_at: '2026-11-23T23:13:30Z'
+article:
+  url: https://phoenix.labri.fr/software/tempo/
+  title:
+  fetch_status: success
+  content: "* * *\n\n| \n- [What is Tempo?](#what)\n- [An overview of Tempo](#Tempo)\n-
+    [Applications](#applications)\n- [Related projects](#related)\n- [Workshop](#workshop)\n-
+    [Distribution](#distribution)\n- [References](#references)\n- [Contact information](#info)\n
+    | |\n\n* * *\n\n## What is Tempo?\n_Partial evaluation_ is program transformation
+    that automates a _program specialization_ process. _[Tempo](#Tempo)_ is a _partial
+    evaluator_ for C programs. It has been applied in various domains such as operating
+    systems and networking, computer graphics, scientific computation, software engineering
+    and domain specific languages. A first [workshop](#workshop) on Tempo has been
+    organized in March 1998. Tempo is now being [distributed](#distribution). Its
+    [documentation](doc/) is available on line, as well as [tutorial slides](../../publications/talks/#tempo).
+    \  \n\n* * *\n\n## An Overview of Tempo\n_Tempo_ is a partial evaluator for C
+    programs. It is being developed in the Compose project at [IRISA / INRIA](http://www.irisa.fr)
+    - [LABRI](http://www.labri.fr) (France). \n\nTempo is an _off-line_ specializer;
+    it is divided into two phases: analysis and specialization.\n\nThe input to the
+    analysis phase consists of a program and a description of which inputs will be
+    known during specialization and which will be unknown. Based on this knowledge,
+    dependency analyses propagate information about known and unknown values throughout
+    the code and produce an annotated program, indicating how each program construct
+    should be transformed during specialization. Because C is an imperative language
+    including pointers, the analysis phase performs alias and side-effect analyses
+    in addition to _[binding-time analyses](#bta)_. The accuracy of these analyses
+    is targeted towards keeping track of known values across procedures, data structures,
+    and pointers. \n\nFollowing the analysis phase, the specialization phase generates
+    a specialized program based on the annotated program and the values of the known
+    inputs. Tempo can specialize programs at [compile time](#ctspec) (i.e., source-to-source
+    tranformation) as well as [run time](#rtspec) (i.e., run-time binary code generation).\n\n
+    For more details, please consider reading some of our papers, most of which are
+    available at the following URL: .   \n\n#### Program Analysis\n As a first step,
+    the user provides a program and specifies what arguments (including global variables)
+    are static. For example, the user provides the following code for a function,
+    and specifies in this way that the first argument is static whereas the second
+    is dynamic: . From this Tempo produces a program file with analysis annotations.
+    These annotations can be visualized using colors that highlight the propagation
+    of the known/unknown information throughout the program.   \n&nbsp; The blue color
+    (bold face for black and white display) represent static constructions, _i.e._
+    values that can be computed at specialization time. The red color (standard font
+    for black and white display) is for dynamic expressions, whose value cannot be
+    precomputed knowing only the static arguments. Basically, everything in blue (bold)
+    will disappear after specialization; only red (standard font) parts will remain.
+    \n\nThe visualization of the analysis is very important for the user to assess
+    the amount of specialization in the code. Furthermore, the analysis speeds up
+    the specialization process (as opposed to _on-line_ partial evaluators). The analysis
+    is inter-procedural and takes into account pointer aliases and side-effects.\n\n####
+    Compile-Time Specialization\n When the user is satisfied with the analysis (_i.e._,
+    what the user expects to specialize indeed appears as static), actual specialization
+    values must be provided. For example, giving as the actual specialization value
+    for the argument of the function yields the following specialized code. Many specializations
+    can be made, sharing the same analysis. Only different specialization values have
+    to be provided. \n\n#### Runtime Specialization\n Tempo can also perform runtime
+    specialization, using optimized binary code templates. A dedicated runtime specializer
+    is generated from the analysis of the program. In the case of the function, Tempo
+    generates a runtime specializer which can be used as in the following example.
+    The function is a dedicated runtime specializer. It returns a pointer to the specialized
+    function. Several specialized versions can also be generated and used at the same
+    time. \n\n* * *\n\n## Applications of Tempo\n Tempo has been successfully applied
+    in various domains, yielding substantial speedups. \n- Operating system and networking:\n\n
+    \ - Sun RPC, Chorus IPC, BSD packet filter, Unix signals, active networks,\n-
+    Computer graphics (various filtering algorithms),\n- Scientific computation (trajectory,
+    FFT, math libraries),\n- Software architectures and mechanisms:\n\n  - Domain
+    specific languages GAL, [PLAN-P](../plan-p/)),\n  - Selective broadcast (implicit
+    invocation),\n  - Pattern matching,\n  - Interpreters,\n  - Software layers,\n
+    \ - Generic libraries.\n For an up-to-date list of non-confidential, published
+    applications, please browse our ``papers'' web page: .   \n&nbsp; \n\nBesides
+    C, Tempo is currently being used as a back-end for specializing Java programs
+    using Harissa, a JavaVM-to-C compiler. Fortran and C++ programs have also been
+    specialized using translators to C.\n\n* * *\n\n## Projects Related to Tempo\n\n*
+    * *\n\n## Workshop\n A workshop (actually closer to a ``winter school'') on Tempo
+    has been organized at [IRISA](http://www.irisa.fr), March 16-18, 1998. The aim
+    of this workshop was to present a three-day tutorial on Tempo and its applications
+    to real size programs. We had 24 participants, coming from universities as well
+    as industries. We believe it was a large success. The [talks](../../publications/talks/#tempo)
+    are now available on-line. \n\nDepending on request, if the [distribution](#distribution)
+    of Tempo is a success, we might organize another workshop later. It would less
+    be like a ``winter school'' but rather like a real workshop with users presenting
+    applications and open discussions about possible improvements. It would be preceded
+    by an optional one-day tutorial for people not knowing partial evaluation or Tempo.\n\n*
+    * *\n\n## Distribution\n The Tempo specializer has been made publicly available
+    under a licence in April 1998. At of March 99, it was being used by about thirty
+    people around the world. The binary version of Tempo has just (July 2000) been
+    made available without any restrictions, and we expect a full unrestricted source
+    release under GPL to follow soon. \n\nGetting access to Tempo no longer requires
+    signing a license agreement. Tempo is simply available via anonymous FTP, as described
+    below. In any case, we would _very much_ like to hear from you if you are an active
+    Tempo user. If you are, please also let us know if and for what purpose you are
+    using Tempo, by sending an email to . We will by default add you to our tempo
+    talk mailing list , where future Tempo releases will be announced, and Tempo users
+    can discuss practical problems using Tempo.\n\nTempo can be downloaded :\n\n-
+    Here is a Tempo release that have been made publicly available: [i386 Linux](distribution/tempo.tar.gz)\n-
+    Most recent Tempo binary distribution for [i386 Linux](distribution/tempo.tar.gz)
+    (tested on RedHat 6.1).\n (Please remember to send an email to to let us know
+    who you are and why you are using Tempo. Remember to explicitly indicate if you
+    are not interested in joining the mailing list.)   \n&nbsp; \n\nIn case of any
+    problem with getting or installing the distribution, get in touch with us: [mailto:tempo@labri.fr](mailto:tempo@labri.fr)\n\n*
+    * *\n\n## References\n Here are general papers about Tempo and its architecture.
+    More focused and up-to-date information regarding Tempo can be found in the main
+    [on-line papers](../../publications/papers/) tank. \n* * *\n\n## Contact Information\n\n-
+    Developers and maintainers: \n- Tempo Specializer home page:"
+  error:
+  fetched_at: '2026-11-23T23:41:59Z'
+archived_at: '2026-11-23T23:42:02Z'

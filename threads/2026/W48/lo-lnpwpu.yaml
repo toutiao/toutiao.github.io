@@ -1,0 +1,125 @@
+---
+post:
+  id: lo-lnpwpu
+  source: lobsters
+  title: 'Quality IMAP, Part 2: Mailbox Concurrency'
+  url: https://aerogramme.deuxfleurs.fr/blog/2026-quality-imap-part-2/
+  hn_url: https://lobste.rs/s/lnpwpu
+  score: 25
+  author: armael
+  posted_at: '2026-11-23T11:05:08Z'
+  fetched_at: '2026-11-23T23:42:02Z'
+  article_url: https://aerogramme.deuxfleurs.fr/blog/2026-quality-imap-part-2/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T23:42:03Z'
+  raw_comment_count: 0
+  tags:
+  - distributed
+  - email
+  - testing
+comments: []
+article:
+  url: https://aerogramme.deuxfleurs.fr/blog/2026-quality-imap-part-2/
+  title: 'Quality IMAP, Part 2: Mailbox Concurrency | Aerogramme blog'
+  fetch_status: success
+  content: "# Quality IMAP, Part 2: Mailbox Concurrency \n[\n\n](/blog/ \"Back to
+    blog posts\")\n\nPublished on\n\n 15 min reading time 2969 words \n\n_In the past
+    year, we have been significantly improving the reliability and correctness of
+    Aerogramme's IMAP implementation. This is the second part in a series discussing
+    why implementing IMAP correctly is not so easy, and presenting our work on making
+    Aerogramme's IMAP code as high-quality as we can. Today we focus on challenges
+    that arise when considering concurrent access to a mailbox._\n\n* * *\n\n_[Aerogramme](https://aerogramme.deuxfleurs.fr/)
+    is an experimental email server (& calendar, contacts), designed to be geo-distributed,
+    hosted outside of datacenters, on refurbished hardware, and reliable even in presence
+    of network issues and hardware failures. It is built on top of[Garage](https://garagehq.deuxfleurs.fr/)
+    and shares the same philosophy. Aerogramme is AI-free: we do not wish to use unethical
+    technology and prefer to spend effort on careful craftmanship and community-building._\n\nThis
+    is the second post in a series in which we argue that _implementing an IMAP server
+    is not easy_, essentially due to two classes of features that are fundamentally
+    challenging to implement. [In the previous post](/blog/2026-quality-imap-part-1/),
+    we talked about the first class of features: fine-grained retrieval and querying
+    of email contents. In this post, we talk about the second class of features that
+    make implementing an IMAP server tricky: **concurrent access to user mailboxes**.\n\nConcurrent
+    and distributed software are famously hard to get right; concurrency bugs are
+    known to be hard to find. In our recent work on refining Aerogramme we have tried
+    to approach the problem from different angles. This is the topic of this post:
+    the different ways in which we have improved the **correctness of Aerogramme in
+    concurrent settings**.\n\n_This work was funded by [NLNet](https://nlnet.nl) under
+    the \"[Aerogramme 1.0](https://nlnet.nl/project/Aerogramme-1.0/)\" grant, and
+    could not have been possible without their support._\n\n_Feel free to join the
+    Aerogramme [matrix channel](https://matrix.to/#/#aerogramme:deuxfleurs.fr) for
+    updates or if you just want to chat!_\n\n# Concurrent mailbox access in IMAP\n\nA
+    core feature of IMAP is that multiple email clients can simultaneously access
+    the same mailbox. For example, we may want to access our emails both from our
+    phone and our computer. Concurrent access to a mailbox can also happen when a
+    single client is involved: some clients (including Thunderbird) _open multiple
+    concurrent connections to a same mailbox_ to speed up processing. In any case,
+    clients accessing the same mailbox should be able to coordinate between themselves
+    and avoid stepping on each other's toes.\n\n_Why must clients be able to coordinate
+    when accessing the same mailbox?_ Assume that we are an email client that sends
+    two commands to read information from a mailbox. Since another client can modify
+    the mailbox in between the two commands, the information we read may have been
+    invalidated by the other client and is now inconsistent! _Clients thus need to
+    be able to detect concurrent changes made by other clients_. Similarly, a client
+    that reconnects to the server after being offline needs to fetch the changes that
+    happened while it was disconnected. This is possible thanks to mechanisms defined
+    by the IMAP specification and that specifically exist because concurrent access
+    is allowed.\n\nThe overall consistency of the mailbox data must be taken seriously:
+    an IMAP server exposing inconsistent views of a mailbox could result in a confused
+    client deleting the wrong emails, for example.\n\nTo our best knowledge, concurrent
+    mailbox behaviors are tackled in the following (parts of) specifications:\n\n###
+    Base IMAP\n\nThe [base IMAP4 specification](https://datatracker.ietf.org/doc/html/rfc3501)has
+    few explicit mentions of concurrent mailbox access, but does talk about re-synchronizing
+    disconnected clients, which can be seen as a restricted form of concurrent access.
+    It defines mechanisms for assigning IDs to emails (`UIDNEXT`/`UIDVALIDITY`) and
+    associated properties which can be extrapolated to concurrent contexts. This is
+    relevant when **concurrently adding new emails** to a mailbox. After an email
+    has been added to a mailbox _it cannot be modified_, so there are no issues with
+    reading emails concurrently.\n\nThe improvements that we will talk about in this
+    post are related to these aspects of the base IMAP specification.\n\nAs an additional
+    complication, IMAP defines in fact two (!) email-numbering systems. One of these
+    has the drawback that **deleting an email can invalidate email IDs used in concurrent
+    commands**. This is purely a quirk of a numbering system that can nowadays be
+    considered legacy, but must still be supported. This issue is not acknowledged
+    in the base IMAP specification, leaving a class of problematic behaviors completely
+    unspecified, but is later addressed in an[informational RFC](https://datatracker.ietf.org/doc/html/rfc2180)
+    which specifies what to do in such cases.\n\nAerogramme's latest release includes
+    changes and bugfixes to make sure that we follow the recommendations of this informational
+    RFC, but we won't enter into the details of these legacy quirks in this post.\n\n###
+    Extensions\n\n**Email flags can be modified concurrently** , but the base IMAP
+    specification does not specify a mechanism for clients to coordinate around flag
+    changes. This is done in the later [CONDSTORE specification](https://datatracker.ietf.org/doc/html/rfc4551)
+    that extends IMAP with mechanisms to coordinate flag changes across concurrent
+    connections. Aerogramme has preliminary support for CONDSTORE, but we disabled
+    it in the last release, as we found out it needs a redesign to be nicer to email
+    clients.\n\nA [later specification](https://datatracker.ietf.org/doc/html/rfc7162)
+    further extends IMAP and CONDSTORE by adding a more general mechanism (QRESYNC)
+    for **synchronizing all mailbox changes** across concurrent sessions. Aerogramme
+    does not supports QRESYNC at the moment.\n\n# Context: Concurrency in Aerogramme\n\nOn
+    top of the complexity carried by the IMAP specification, Aerogramme's distributed
+    infrastructure comes with its own challenges. Not only we need to think about
+    concurrency at the IMAP protocol level, but also _internally in Aerogramme_: how
+    do we handle concurrent changes to the server internal data storage? Can we simply
+    take a lock or a transaction over mailbox data each time we need to update it,
+    serializing all concurrent updates? The answer is no: things are a bit more complicated...\n\nRecall
+    that Aerogramme is a _distributed_ IMAP server. A typical Aerogramme deployment
+    looks like this:\n\nIn this schema, `A` nodes are Aerogramme instances running
+    on separate servers. Running multiple Aerogramme nodes provides fault-tolerance:
+    even if some of the nodes crash, the Aerogramme cluster stays operational as long
+    as one node remains available. When an email client (a `C` node) connects to the
+    \"Aerogramme cluster\" (the dashed potato), it can open a connection to any of
+    the Aerogramme nodes, depending on what kind of load-balancing is implemented.\n\nAerogramme
+    nodes do not talk to each other directly and do not store data themselves. Instead,
+    they connect a shared Garage cluster (itself geo-distributed with fault-tolerance
+    properties) which stores data for the whole Aerogramme cluster (emails, mailbox
+    state, etc.).\n\nThis means that an Aerogramme node deals with concurrency at
+    two levels. It must handle **concurrent connections from email clients** to a
+    mailbox, as we explained before. But it must also handle **concurrent changes
+    made by other Aerogramme nodes to the data stored in Garage**. These concurrent
+    accesses must be coordinated properly so that the Aerogramme cluster exposes **a
+    consistent view of a mailbox** (according to IMAP's consistency requirements),
+    even when connecting concurrently to different nodes of the Aerogramme cluster.\n\nA
+    centra"
+  error:
+  fetched_at: '2026-11-23T23:42:03Z'
+archived_at: '2026-11-23T23:42:04Z'

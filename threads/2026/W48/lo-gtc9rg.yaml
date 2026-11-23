@@ -1,0 +1,224 @@
+---
+post:
+  id: lo-gtc9rg
+  source: lobsters
+  title: 'Held together by spare time: Reviving wiki.alpinelinux.org during PHP2Shell'
+  url: https://lambdacreate.com/posts/held-together-by-spare-time
+  hn_url: https://lobste.rs/s/gtc9rg
+  score: 15
+  author: durrendal
+  posted_at: '2026-11-23T15:16:31Z'
+  fetched_at: '2026-11-23T23:42:02Z'
+  article_url: https://lambdacreate.com/posts/held-together-by-spare-time
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T23:42:03Z'
+  raw_comment_count: 10
+  tags:
+  - devops
+comments:
+- id: lo-cr6dwm
+  parent_id: '0'
+  author: wink
+  text: It's a good story and I nearly completely agree about packaging the dependencies,
+    but keeping just the bespoke mediawiki version unpackaged for a 2nd, later step
+    sounds like a reasonable compromise to me, but I've not reread every paragraph
+    here to make sure I didn't miss anything. I guess I'm a fan of 80:20 solutions
+    and making a good chunk of something nicer and keeping the chaos contained is
+    more acceptable to me.
+  score: 3
+  posted_at: '2026-11-23T16:05:22Z'
+- id: lo-ajyijg
+  parent_id: '0'
+  author: skydhash
+  text: I'm not really informed about the technical details of the wiki, but why don't
+    a static HTML backup is present?. When such vulnerability occurs, at least the
+    userbase will have access to something.
+  score: 2
+  posted_at: '2026-11-23T16:09:39Z'
+- id: lo-ycnb3b
+  parent_id: '0'
+  author: calvin
+  text: In my experience, distro packaging of web applications (in particular PHP
+    that runs in the context of a web server and not an app server of its own) tends
+    not to mesh very well with how the applications work, or how they're deployed
+    (i.e. multiple instances). So your 80:20 solution would make more sense anyways.
+  score: 3
+  posted_at: '2026-11-23T17:38:36Z'
+- id: lo-cefpgf
+  parent_id: '0'
+  author: calvin
+  text: |-
+    The rest were the kind of thing that just ate time, and they make for a pretty dull story. $wgMainCacheType = CACHE_ACCEL needs php83-pecl-apcu, and opcache doesn't count.
+
+    Opcache just handles (automatic) code caching, APCu handles (application opt-in) data caching.
+  score: 4
+  posted_at: '2026-11-23T17:39:24Z'
+- id: lo-db8ghv
+  parent_id: '0'
+  author: legoktm
+  text: |-
+    This is a great writeup, I hope that some of the lessons learned can be leveraged into improving the docs on mediawiki.org. I do fear that some of the issues are potentially self-inflicted (not to shame, it's just a complicated system), e.g. most single-server installs should never need to set $wgCacheEpoch manually.
+
+    Which means the next time a PHP2Shell comes along, the fix is apk upgrade, run.php update, and a php-fpm restart.
+
+    This is great, and the workflow we've also strived to make possible for users of the MediaWiki Debian package. I would expect your work to also benefit a lot of other users, so kudos.
+
+    ...and then break out all of the various extensions that comprise the core system into a proper APKBUILD.
+
+    I don't think this is a good idea tbh. There's a reason MediaWiki bundles these extensions, they're essentially "core" functionality from a user-perspective, even if they are implemented as extensions. And as you noted, it causes extra work on the package maintenance side. In Debian we just ship them all in the main "mediawiki" package.
+  score: 2
+  posted_at: '2026-11-23T18:16:07Z'
+- id: lo-eglpih
+  parent_id: '0'
+  author: aae
+  text: Or just put the whole thing in an SSG
+  score: 2
+  posted_at: '2026-11-23T18:17:07Z'
+- id: lo-yocvue
+  parent_id: '0'
+  author: durrendal
+  text: |-
+    This is a great writeup
+    Thank you! That means a ton, especially coming from someone as intimate with Mediawiki as yourself.
+
+
+    some of the issues are potentially self-inflicted
+    You're absolutely right, there's probably still some misconfiguration in our deployment even, that's a side effect of people owning the problems without being fully versed in them. I would by no means call myself an expert mediawiki admin, so it's likely I've injected some self-inflicted problems too.
+
+
+    I hope that some of the lessons learned can be leveraged into improving the docs on mediawiki.org.
+    This was my thinking in writing the article initially. I try and work in a way that leaves it better for whomever comes after me, both from an infrastructure and packaging perspective. I hope that in making it easier for me to help administer this infrastructure that it also helps someone else deploy it new, and that all of it outlives my direct contributions. Especially if the next person does it better than me because they faced different problems!
+
+
+    In Debian we just ship them all in the main "mediawiki" package
+    I'm glad you mentioned this, I didn't think to go and look at the Debian packaging when I put together the APKBUILD, but that sounds like a saner approach. Right now I have it split into mediawiki and a mediawiki-default-extensions, and you need to apk add both. Fortunately very easy to fix, I just wouldn't have thought to do so.
+  score: 1
+  posted_at: '2026-11-23T19:19:26Z'
+- id: lo-qfeqm7
+  parent_id: '0'
+  author: durrendal
+  text: I didn't know this! Thank you for taking the time to point it out.
+  score: 1
+  posted_at: '2026-11-23T19:26:29Z'
+- id: lo-h7fqle
+  parent_id: '0'
+  author: durrendal
+  text: A static backup is a good idea, we've had a few contributors kick around the
+    idea of packaging our documentation as a set of mandocs as well. It just takes
+    time to implement everything we want.
+  score: 1
+  posted_at: '2026-11-23T19:31:50Z'
+- id: lo-s1xcjk
+  parent_id: '0'
+  author: durrendal
+  text: |-
+    Well the wiki has been around since about at least 2010, possibly a little earlier than that. SSG's weren't really mainstream at that point, but mediawiki had 8 years of development and support by that point.
+    Plus the intent of the wiki was to give the community a space to collaboratively document the distribution. Wiki's are really great for this specific use case, you don't need to worry about knowing git, or how to make a merge request, etc. All you need is a login and to write prose.
+    We do use SSGs for our main site and blog, hugo and antora depending where you look; so we're not opposed to this. It's just a different tool for a different job.
+  score: 1
+  posted_at: '2026-11-23T19:37:11Z'
+article:
+  url: https://lambdacreate.com/posts/held-together-by-spare-time
+  title: Held together by spare time - ((lambda (x) (create x)) '(knowledge))
+  fetch_status: success
+  content: "# Held together by spare time\n\n_Reviving wiki.alpinelinux.org during
+    PHP2Shell_ · November 21, 2026\n\nIt feels like this month (and last month..)
+    has been nonstop chaos. [PHP2Shell](https://en.wikipedia.org/wiki/PHP2Shell) threw
+    a nice little grenade into an already busy month, and while that was happening
+    a [GitLab RCE took down Alpine's GitLab instance](https://alpinelinux.org/posts/GitLab-security-incident-CVE-2026-97229.html).
+    It was a whole thing, and as frustrating as it was, I'm kind of proud to say that
+    I got to help respond to the event and write the incident announcement. Ikke did
+    all of the real heavy lifting, but it takes a community to keep a distribution
+    together. Everything, and I mean everything, is kept together by volunteers lending
+    their time and talent with no expectation that there will be a reward for the
+    effort.\n\nWe do it because we care for the work being done. Whether it's a critical
+    service enabling a community of tens of thousands to distribute [hundreds of petabytes
+    of data](https://gist.github.com/ncopa/b1515f99f5efbc82fcc8b15dcc5e1b4f) that
+    we call \"Alpine\", or simply enabling a small piece of software to work for personal
+    desires. All of it happens because someone cares enough to do the work. I love
+    this so much, frankly. It's absolutely flabbergasting what we as a community can
+    do with our spare time.\n\nI enjoy giving my time to Alpine Linux, because there's
+    a community, and because we can have an outsized impact on the world by collaborating
+    together. It's not perfect, but it's rewarding. I think I owe my career to it
+    in a sense. I've learned so much by simply raising my hand and being willing to
+    give my time and learn a few new things. But there's a limit to how far you get
+    on donated time, both personally, and as a project.\n\n## Wiki.alpinelinux.org
+    has been languishing a bit\n\nNot in the sense that it wasn't used; it gets tons
+    of traffic and contains a treasure trove of useful information that people depend
+    on and are excited to contribute to. But between keeping the infrastructure afloat,
+    migrating off of Equinix to new sponsored compute, and mitigating the constant
+    wave of problems, from scale to RCE, that plague a small engineering team trying
+    to serve a massive consumer base, well, it's no wonder that once alice was no
+    longer contributing, the infrastructure languished a bit. This wasn't intentional,
+    nor was it bad. There simply wasn't spare time to contribute to it.\n\nSo in November
+    of last year ikke asked if anyone was interested in lending a bit of spare time
+    to fixing that problem. Naturally, I raised my hand, happy to have an opportunity
+    to do so.\n\n> 2025-11-13 15:40:43 @ikke Anyone helping with infra that wants
+    to help maintaining the wiki?  \n> 2025-11-13 15:57:01 durrendal ikke: I don't
+    mind helping out, just let me know what you need done  \n> 2025-11-13 16:10:46
+    @ikke durrendal: the wiki is hosted in an LXC container  \n> 2025-11-13 16:18:11
+    durrendal that makes sense, it tracks how most everything else is deployed. It's
+    mediawiki, so php + a db. Is it using postgres on the backend, and do you have
+    it behind traefik or something else?  \n> 2025-11-13 16:22:07 @ikke It uses mariadb
+    \ \n> 2025-11-13 16:22:26 @ikke There is an nginx proxy in front  \n> 2025-11-13
+    16:22:51 @ikke The database is in a separate container  \n> 2025-11-13 16:26:56
+    durrendal That's not bad, seems like a straight forward setup at first glance.
+    I use mariadb for my zabbix deployments so that's nice and familiar  \n> 2025-11-13
+    16:34:47 @ikke The current setup uses a combination of git submodules and composer
+    from what I can tell (alice was the last one taking care of it)\n\n_All IRC timestamps
+    in this post are in UTC._\n\nThis was essentially the sum of information I got
+    about the wiki; it was all that was really documented. And despite my eagerness
+    to jump in immediately and lift it up from whatever state it happened to be in,
+    it took time to get access. We had a release to get out. We were fighting to get
+    3.23 finished and didn't even get it wrapped up until 12/3/25! So it's no wonder
+    that it took until 1/16/26 before I got access to the server itself to start poking
+    around and even begin to understand how the deployment was handled.\n\nAnd as
+    you can guess by the fact that I'm writing this post in October of 2026, I did
+    not get in there and immediately upgrade it and move on.\n\n## I'm never one to
+    half-ass something\n\nAnd I think that's important. Even if I'm only giving away
+    a limited amount of time, I hate to rush through things without fully understanding
+    them. There's just no way I can improve something if I don't have a solid grounding.
+    More importantly, I actually really love spelunking inside of old systems other
+    sysadmins have set up. Everyone has a unique flair to how they deploy something.
+    Enterprise admins end up deploying things in a real textbook manner, and when
+    you deal with small businesses it's usually a hodgepodge of \"just get it done\".
+    I haven't had a ton of opportunities to spelunk FOSS infrastructure though! What
+    I found was interesting in its own right, mostly because I don't think I'd have
+    deployed the service this way.\n\nWhat ikke told me was spot on: MediaWiki was
+    a git checkout with extensions and skins vendored as submodules inside the repo.
+    You could slot in new modules using composer, and as long as you had an appropriate
+    underlying PHP version to work with, you were golden. But that was then mixed
+    with actual wiki data, like images, all of it lumped together in /var/www. Very
+    simple, but not obvious if you'd not dealt with it before.\n\nWhen I got into
+    the server, MediaWiki 1.40.0 was running on PHP 8.2 on top of Alpine 3.20, but
+    the LocalSettings.php that controlled the wiki was generated under 1.25.3. Just
+    to give you a sense, 1.40.0 is from July 2023, and 1.25.3 is from October of 2015!
+    It's really neat to get a sense for how long something was tended for. Of course,
+    our friends at the Internet Archive have been archiving the Alpine Wiki since
+    [April of 2010](https://web.archive.org/web/20100427195607/http://wiki.alpinelinux.org/wiki/Main_Page),
+    and based on the main page I can tell you we've been using MediaWiki for a solid
+    16 years now, if not longer. I'm positive it's not the same exact server, but
+    probably the same-ish data. I [made notes](/static/files/86/README.org) about
+    all the little important bits I found, everything from extension inventories to
+    known issues and interesting shell snippets I found in the server's history file.
+    Anything can be, and is, helpful when you're spelunking. Truthfully, given the
+    age of the deployment, the public facing nature of the server, and my relative
+    newness to administering MediaWiki servers, I was approaching the problem with
+    the utmost caution.\n\nBy the end of February I had MediaWiki figured out, [but
+    it wasn't committed until March](https://git.alpinelinux.org/aports/commit/?id=7367609f39c95b464799ca81ea6ae36343d069e2).
+    And not to bury the lede, but I mean that in the most me way possible. I went
+    through the process of setting up a clone of the staging server in my homelab.
+    From there I worked out how to package MediaWiki itself, and then break out all
+    of the various extensions that comprise the core system into a proper APKBUILD.
+    After packaging it, I was no longer surprised it hadn't been done before. The
+    core extension list alone is absurdly long, and all told we use 36 different extensions
+    for our wiki, so this isn't even a complete list.\n\n    subpackages=\"\n    \t$pkgname-doc\n
+    \   \t$pkgname-nginx:_nginx\n    \t$pkgname-default-extensions:_default_extensions\n
+    \   \t\"\n    source=\"https://releases.wikimedia.org/mediawiki/$_pkgvermaj/mediawiki-$pkgver.tar.gz\n
+    \   \tmediawiki_nginx.conf\n    \tmediawiki_fpm.conf\n    \t\"\n    \n    # Extensions
+    bundled in the tarball that we split into subpackages.\n    # Core/mandatory extensions
+    (always shipped with core) are NOT listed here.\n    # Only optional bundled extensions
+    that users may want to enable individually.\n    _extensions=\"\n    \tAbuse"
+  error:
+  fetched_at: '2026-11-23T23:42:03Z'
+archived_at: '2026-11-23T23:42:03Z'
