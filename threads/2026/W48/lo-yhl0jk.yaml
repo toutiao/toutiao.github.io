@@ -1,0 +1,272 @@
+---
+post:
+  id: lo-yhl0jk
+  source: lobsters
+  title: What If Netscape Did SSL the HTTP Way?
+  url: https://owl.billpg.com/what-if-netscape-did-ssl-the-http-way/
+  hn_url: https://lobste.rs/s/yhl0jk
+  score: 10
+  author: cript0nauta
+  posted_at: '2026-11-22T14:48:20Z'
+  fetched_at: '2026-11-23T11:57:07Z'
+  article_url: https://owl.billpg.com/what-if-netscape-did-ssl-the-http-way/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T11:57:10Z'
+  raw_comment_count: 16
+  tags:
+  - cryptography
+  - web
+comments:
+- id: lo-ltnvte
+  parent_id: '0'
+  author: fanf
+  text: |-
+    It’s a mistake to push TLS up the stack: it’s much better to move the security layer as low as possible (like QUIC) so that it can secure the transport, and so that different application protocols can share the security layer. TLS has been very good at application neutrality: basically only ssh has its own security layer and that’s largely due to it being too early.
+    Another interesting parallel universe is one in which IPSEC had been usable by applications without cooperation from the kernel, and supported single-end authentication with a PKI. (I don’t know enough about IPSEC’s key distribution and authentication model, but I guess that’s another reason it’s only used in VPNs.)
+  score: 21
+  posted_at: '2026-11-22T15:09:42Z'
+- id: lo-rqvgyi
+  parent_id: '0'
+  author: adrien
+  text: The premise seemed interesting to me but the page is completely AI-generated
+    unfortunately.
+  score: 11
+  posted_at: '2026-11-22T15:10:04Z'
+- id: lo-iqmy7f
+  parent_id: '0'
+  author: ryan-duve
+  text: |-
+    they can’t make one that’s valid for shop.example.com without a CA’s help, and if they can get one of those, you have bigger problems.
+
+    I used to share this stance before eMudhra.
+  score: 3
+  posted_at: '2026-11-22T15:29:36Z'
+- id: lo-kwauqm
+  parent_id: '0'
+  author: hanno
+  text: |-
+    Just want to point out that "connect in plaintext first, then upgrade" is a recipe for security vulnerabilities. If you want to know how that looks, just look at STARTTLS (I co-authored that paper):
+    https://nostarttls.secvuln.info/
+    The HTTP-upgrade-to-TLS thing mentioned (RFC 2817) that is still implemented by some obscure HTTP servers is also flawed:
+    https://opossum-attack.com/
+  score: 20
+  posted_at: '2026-11-22T16:16:07Z'
+- id: lo-elawbq
+  parent_id: '0'
+  author: classichasclass
+  text: Yeah, any interloper can just foul the necessary handshake requests and force
+    a fallback to unencrypted HTTP. We had the same problem when people proposed adding
+    facultative TLS to Gopher. The better solution was to just leave that to the Geminists.
+  score: 3
+  posted_at: '2026-11-22T17:16:26Z'
+- id: lo-4d3plf
+  parent_id: '0'
+  author: Pomax
+  text: 'The parallel universe gives that up. Its security is opportunistic: the browser
+    asks whether the server can do encryption and uses it if so. That’s great, right
+    up until someone hides the opportunity before the handshake completes. The negotiation
+    happens in the clear, so an attacker sitting in the middle doesn’t need to break
+    the encryption. They just stop it from ever starting. Anyone who has set up STARTTLS
+    for email will recognize this one.'
+  score: 2
+  posted_at: '2026-11-22T17:45:53Z'
+- id: lo-6buhht
+  parent_id: '0'
+  author: freddyb
+  text: And there was Opportunistic Encryption in HTTP too, for some brief time. See
+    https://en.wikipedia.org/wiki/Opportunistic_encryption.
+  score: 2
+  posted_at: '2026-11-22T19:27:33Z'
+- id: lo-uo3jxc
+  parent_id: '0'
+  author: hanno
+  text: |-
+    That's the obvious flaw, but you can sorta fix that by enforcing the STARTTLS upgrade and refuse to connect if it doesn't happen.
+    But there's a whole can of worms of additional problems. You now have a complex state transition where your server and client have to know which part of the communication is before and after the transition.
+  score: 3
+  posted_at: '2026-11-22T19:27:43Z'
+- id: lo-9of5jz
+  parent_id: '0'
+  author: owen
+  text: |-
+    What’s the alternative?
+    I just looked at the number of DNS resolutions my resolver has performed over the last week and it’s frankly staggering. And somebody has to provide a trust root for all of those - there’s no world I can think of where TOFU or WOT would scale to it.
+    WebPKI sucks, but it seems like the least sucky option.
+  score: 1
+  posted_at: '2026-11-22T20:26:43Z'
+- id: lo-6ixgr0
+  parent_id: '0'
+  author: keito
+  text: We shouldn't forget the fact that HTTP was almost entirely unencrypted before
+    2010, when Firesheep made everyone realize that it was a good idea to encrypt
+    even "non-sensitive" traffic. It was entirely normal back then to have a secure
+    subdomain for your payments that only spoke TLS, so I suspect that a STARTTLS-like
+    approach wouldn't have made sense anyway (in the same way that for SMTP submission
+    it makes sense to use TLS out of the gate).
+  score: 5
+  posted_at: '2026-11-22T21:53:28Z'
+- id: lo-bxqgey
+  parent_id: '0'
+  author: alandekok
+  text: |-
+    I have fond memories of sitting at the hotel bar at one of the Minneapolis IETFs, talking to one of the FreeSWAN developers.  This could have been 20 years ago.
+    Dev: Why aren't you running FreeSWAN?
+    Me:  Sure, I'd like to!  Here's my laptop.
+    ... 3 hours later ...
+    Dev: Hmm... I don't know why it doesn't work.
+    OpenSSL was a user-space library.  So it was easy for applications to link to it, and start using it.  IPSec required kernel modifications.
+    That alone was a huge barrier to adoption.  If IPSec was available as a user-space library, thngs might have been different.
+  score: 5
+  posted_at: '2026-11-22T22:58:26Z'
+- id: lo-da6y4z
+  parent_id: '0'
+  author: dvogel
+  text: This blog post is the result of an LLM prompt paired with a copy/paste. The
+    prose is off-putting. This is the part that matters.
+  score: 5
+  posted_at: '2026-11-22T23:56:16Z'
+- id: lo-xswefq
+  parent_id: '0'
+  author: czarkoff
+  text: |-
+    Things seem to be moving towards helping people hide the desired hostname in the request by starting the connection encrypted. And that is a pretty damn good thing to have in a world where single IP happens to be a gateway to many very diverse resources, while the infrastructure all the way up to that IP is actively participating in an evesdropping operation. This proposal sort of requires to negotiate everything in plain text, which is a step backwards.
+    Anyway, I never really figured out why anyone would look at STARTTLS and think "That's a good design, I want that in my protocol." All you get is backwards compatibility exactly where you don't want it and a wide array of ways to accidentally mess things up.
+    And the fact that Netscape made TLS a transport protocol that cares not about the inner protocol is exactly the reason why we didn't have to reinvent the wheel every time we remembered that another service is transmitting in clear text.
+  score: 1
+  posted_at: '2026-11-23T01:10:07Z'
+- id: lo-wmjrbv
+  parent_id: '0'
+  author: fanf
+  text: |-
+    The rough history is that in the late 1990s, SSL/TLS were retrofitted onto a bunch of protocols in the same manner as http, so they got allocated a second port with an “s” appended to the protocol’s URL scheme. (Principally imaps, pops, smtps; it didn’t happen to telnet and ftp in the same manner.)
+    There were a couple of problems with this approach. More broadly, some in the IETF didn’t like the duplication, especially because there was a risk that another security layer might turn up (kerberos? ipsec?) then every application might need 5 ports and 5 URL schemes. And specifically for SMTP it wasn’t obvious how smtps should be negotiated between sites, made more difficult because at that time there was not yet a clear distinction between mx, submission, and relaying.
+    So STARTTLS was invented to deal with these problems in the mail protocols, and adapted in similar style for jabber/xmpp, and http Upgrade: TLS. (Compare and contrast the layer cake of SASL + GSSAPI + Kerberos which can also establish a security layer with client authentication.)
+    But then it was realised that it’s very difficult to avoid downgrade attacks. (It could have been better for the MUA protocols, in theory, if MUA software had done sensible things like automatically setting a strict transport security flag when the server offers TLS. But in practice MUA configuration was a shitshow.) And it transpired that TLS had won the secure protocol wars. So everything went back to the original design with separate cleartext and TLS ports.
+    Except for SMTP to MX servers, which has awkward naming issues that were not clarified until far too late, and even more awkward compatibility issues, so it’s stuck on STARTTLS.
+  score: 2
+  posted_at: '2026-11-23T03:57:36Z'
+- id: lo-mrtc68
+  parent_id: '0'
+  author: DustyFuzzy
+  text: |-
+    The usual answer for the issue with WebPKI is that it's got way too many companies involved, where an issue with a single one will cause the entire system to break for a short while.
+    One of the issues I have is that it relies on the CA paying for audits of themselves, which causes an issue in that the incentive for auditors is to not find things, because if you get known as the ones who fail everyone, no one will buy your services when they can get someone to skim over your documentation and rubber-stamp an audit. There's a reason restaurants don't get to pick and choose who comes to inspect them.
+    Not everyone will be trying to skirt the requirements that come with being a CA, but all it takes is for one to do so and then end up compromised over it.
+  score: 1
+  posted_at: '2026-11-23T09:35:00Z'
+- id: lo-xuhtgg
+  parent_id: '0'
+  author: mxey
+  text: It’s funny that the decoupled approach is portrayed as a bad thing. I much
+    prefer the HTTPS approach over STARTTLS in other protocols where you always have
+    to know the application protocol to be able to do anything.
+  score: 1
+  posted_at: '2026-11-23T11:33:50Z'
+article:
+  url: https://owl.billpg.com/what-if-netscape-did-ssl-the-http-way/
+  title: What If Netscape Did SSL the HTTP Way? – billpg industries™
+  fetch_status: success
+  content: "When you visit a secure website today, your browser connects to port 443
+    and immediately starts speaking TLS. Only once the encryption is up and running
+    does it get around to speaking HTTP. That’s two protocols stacked on top of each
+    other, and the one at the bottom doesn’t know or care about anything the one on
+    top has learned over the decades.\n\nThis is why so many good ideas from HTTP
+    had to be reinvented, years later, inside TLS. The most notorious is SNI, which
+    is a Host header with extra steps.\n\nIt didn’t have to be this way. Let’s take
+    a trip into a parallel universe where Netscape didn’t take the easy way out.\n\n##
+    \U0001F570️ The Fork in the Road\n\nWhen Netscape released SSL in 1995, it came
+    with a new URL scheme (https://) and a new port number (443). Plenty of people
+    grumbled. The web already had a protocol and a port, so why invent new ones? Why
+    not secure the conversation you’re already having?\n\nTo be fair to Netscape,
+    in 1995 there wasn’t really a “proper” way to do that. HTTP/1.0 had no mechanism
+    for handing a connection over to another protocol. The Upgrade header didn’t arrive
+    until HTTP/1.1 in 1997, and the Host header, which made it possible to run many
+    websites on one IP address, came with it. Netscape couldn’t have used either of
+    them because neither existed yet.\n\nBut this is my parallel universe, so let’s
+    say HTTP grew those headers a couple of years early and Netscape decided to wait
+    for them.\n\n## \U0001F310 Hello, Parallel Universe\n\nIn our universe, a TLS
+    connection begins with a ClientHello and the server replies with its certificate.
+    In the parallel universe, that first exchange is just plain HTTP in the clear.\n\nThe
+    browser wants to buy something from shop.example.com. It connects to port 80,
+    the same as always, and asks for the server’s certificate.\n\nGET /.well-known/tls-cert
+    HTTP/1.1 Host: shop.example.com Accept: application/pkix-cert\n\n(Yes, /.well-known/
+    is from 2010. It’s a parallel universe. Let me have this one.)\n\nThe server responds
+    with its certificate, and the certificates of any intermediate CAs, as an ordinary
+    HTTP response. The browser checks the chain against its list of root CAs, exactly
+    as it would in our universe. Is it signed by someone we trust? Is it for shop.example.com?
+    Has it expired?\n\nIf you’re worried about sending the certificate in the clear,
+    don’t be. Every version of SSL and TLS up to 1.2 sent the certificate unencrypted
+    too. A certificate is public by design. An attacker can swap it for a different
+    one, but they can’t make one that’s valid for shop.example.com without a CA’s
+    help, and if they can get one of those, you have bigger problems.\n\nOnce the
+    browser is happy, it knows the server’s public key. It invents a random secret,
+    encrypts it with that key and asks to upgrade.\n\nGET /checkout HTTP/1.1 Host:
+    shop.example.com Connection: Upgrade Upgrade: TLS/1.0 TLS-Key: (the random secret,
+    encrypted with the server's public key, in base-64)\n\nOnly the real server, holding
+    the private key, can decrypt that secret. It replies with a random value of its
+    own and switches protocols.\n\nHTTP/1.1 101 Switching Protocols Connection: Upgrade
+    Upgrade: TLS/1.0 TLS-Nonce: (the server's random value, in base-64)\n\nBoth sides
+    now derive their encryption keys from the browser’s secret, the server’s random
+    value and a hash of everything that was said in the clear up to this point. Mixing
+    in that hash means that if anyone tampered with the plaintext part, the two sides
+    end up with different keys and the connection fails. From this point on everything
+    on the connection is encrypted, starting with the response to GET /checkout.\n\nI’m
+    describing the 1995 approach, where the browser encrypted a secret with the server’s
+    RSA key. When Diffie-Hellman key exchange came along, it would have been just
+    a different pair of headers: the browser sends its half of the exchange, and the
+    server replies with its half, signed by the key in its certificate. Changing how
+    keys are exchanged becomes header negotiation, which HTTP is already very good
+    at.\n\nOr, to put it another way:\n\n> Browser: Hello, shop.example.com. Who are
+    you?Server: Here’s my certificate.Browser: That checks out. Here’s a secret only
+    you can read. Shall we go somewhere private?Server: 101.Eavesdropper: Aw.\n\nBrowser:
+    Hello, shop.example.com. Who are you?Server: Here’s my certificate.Browser: That
+    checks out. Here’s a secret only you can read. Shall we go somewhere private?Server:
+    101.Eavesdropper: Aw.\n\n\"So why don't we go somewhere only we know?\"\n\n##
+    \U0001F3E0 Virtual Hosting From Day One\n\nThe first thing we get for free is
+    the one that took our universe the longest to sort out.\n\nThat very first request
+    for the certificate has a Host header. A server hosting a thousand websites on
+    one IP address knows exactly which certificate to send back, because the browser
+    told it, using a header the server already understands. There’s nothing to retrofit.\n\nIn
+    our universe, the server had to pick a certificate before it knew which website
+    you wanted. For years, every secure website needed its own IP address, which was
+    one of the reasons HTTPS stayed expensive and rare for so long. The fix was SNI,
+    standardized in 2003: an extension that lets the browser mention the website’s
+    name at the very start of the TLS handshake. In other words, a Host header, reinvented
+    inside TLS. The parallel universe never needs it.\n\nAnd it’s all on one port.
+    Firewalls, proxies and load balancers deal with port 80 and nothing else. A URL
+    is a URL.\n\n## \U0001F4E6 A Smaller Black Box\n\nSo if SNI was standardized in
+    2003, why couldn’t a website rely on it until the mid-2010s? This is the part
+    I find most interesting.\n\nIn our universe, TLS is a black box. Your application
+    hands a socket to a TLS library, and the library takes care of everything: negotiating
+    versions, swapping certificates, exchanging keys and the encryption itself. The
+    box comes with a large “do not touch” sign, which is good advice. People who write
+    their own cryptography tend to get it wrong.\n\nThe trouble is that a black box
+    that does everything can only be improved by whoever owns it. Browsers couldn’t
+    use SNI until their TLS library supported it, and on many platforms that library
+    was part of the operating system. Internet Explorer on Windows XP never got SNI
+    at all. A website couldn’t rely on SNI until XP was finally gone.\n\nIn the parallel
+    universe, the black box is much smaller. Finding the certificate, checking it
+    and exchanging keys all happen in HTTP, in code that browsers and web servers
+    already update all the time. What’s left inside the box is the genuinely hard
+    part: given these keys, encrypt and authenticate everything that follows. That
+    still deserves a “do not touch” sign, but it’s a box that rarely needs touching.
+    The bits people keep wanting to change live outside it.\n\n## \U0001F3DB️ Room
+    for New CAs\n\nThe parallel universe’s first request can do another job, too:
+    it makes life much easier for new certificate authorities.\n\nIn our universe,
+    a server sends one certificate chain to everyone, before it knows anything about
+    who’s asking. In practice, that means a server operator can only use a CA that
+    every browser on Earth already trusts. Nobody will pick a CA with less than 100%
+    support, however good it is, so a new CA can’t get started. Even Let’s Encrypt,
+    which had about the most compelling offer imaginable (free certificates, issued
+    automatically), had to launch with a cross-signature from IdenTrust, an established
+    CA, so that older browsers would accept its certificates. When that old IdenTrust
+    root expired in 2021, devices that had never learned to trust Let’s Encrypt directly
+    started failing.\n\nIn the parallel universe, the browser simply says which CAs
+    it trusts, in the request:\n\nGET /.well-known/tls-cert HTTP/1.1 Host: shop.example.com
+    Accept: application/pkix-cert Accept-CA: (a list of the root CAs this browser
+    trusts)\n\nThe server can hold certificates from several CAs and pick one the
+    browser will accept. That’s content negotiation, which HTTP has done since the
+    beginni"
+  error:
+  fetched_at: '2026-11-23T11:57:10Z'
+archived_at: '2026-11-23T11:57:11Z'

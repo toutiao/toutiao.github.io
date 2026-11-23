@@ -1,0 +1,130 @@
+---
+post:
+  id: lo-oeamed
+  source: lobsters
+  title: 'scriptura: a cozy corner for your scripts'
+  url: https://alanpearce.eu/post/scriptura/
+  hn_url: https://lobste.rs/s/oeamed
+  score: 16
+  author: winter
+  posted_at: '2026-11-22T19:13:26Z'
+  fetched_at: '2026-11-23T11:57:07Z'
+  article_url: https://alanpearce.eu/post/scriptura/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T11:57:09Z'
+  raw_comment_count: 5
+  tags:
+  - programming
+comments:
+- id: lo-vxcgyy
+  parent_id: '0'
+  author: ianthehenry
+  text: hey super cool! i mostly switched to the flag style so i could up-arrow edit
+    more easily when a command didn’t work. gave up the nice elegance of the commands
+    themselves just being regularscripts though. -sd person
+  score: 1
+  posted_at: '2026-11-23T03:22:32Z'
+- id: lo-obsmdr
+  parent_id: '0'
+  author: zk
+  text: |-
+    I've always liked how (iirc) in plan9's rc shell you can just refer to scripts by directory. So you really could just setup your /bin like the scripts directory and type:
+    ; bin/os/update/linde <args>
+
+    I think that's how that works, it's been a while since I've used rc.
+  score: 1
+  posted_at: '2026-11-23T05:02:51Z'
+- id: lo-x9ttbc
+  parent_id: '0'
+  author: landon
+  text: That kinda sounds like the same ~/bin/... problem this and sd are tryna avoid.
+  score: 1
+  posted_at: '2026-11-23T05:13:48Z'
+- id: lo-hhnt3r
+  parent_id: '0'
+  author: Crestwave
+  text: |-
+    Not quite. The unique thing about rc is that it resolves directories in your $path as well.
+    This means that you can have /bin/os/update/linde and call it by typing os/update/linde rather than the full path, since it is able to resolve os/ to /bin/os/.
+  score: 4
+  posted_at: '2026-11-23T06:38:34Z'
+- id: lo-etdmqm
+  parent_id: '0'
+  author: zk
+  text: Thank you! This is what I meant.
+  score: 2
+  posted_at: '2026-11-23T10:06:13Z'
+article:
+  url: https://alanpearce.eu/post/scriptura/
+  title: 'scriptura: a cozy corner for your scripts'
+  fetch_status: success
+  content: "I’ve created a new little tool to help run and manage scripts in a folder
+    tree, called [scriptura](https://git.alin.ovh/scriptura). It is based on the idea
+    behind [sd](https://github.com/ianthehenry/sd) and is made for fish users.\n\nGiven
+    a script folder like so:\n\n    $ set -x SCRIPTURA_ROOT ~/scripts\n    $ tree
+    ~/scripts\n    ~/scripts\n    ├── os\n    │   └── update\n    │   ├── linde\n
+    \   │   └── r5 -> linde\n    └── scriptura\n        └── tree\n\nIf I type in `scriptura
+    run os update linde`, it will run the script at `~/scripts/os/update/linde`, whilst
+    providing tab completion for each element. Pressing tab after a script has been
+    resolved will first add `--` to clearly show the end of the script part of the
+    command line, then use the default shell filename completion.\n\n    $ scriptura
+    run os update linde -- <tab>\n    bin/ flake.nix LICENSES/ private/ scripts/ system/\n
+    \   flake.lock lib/ packages/ REUSE.toml secrets/ user/\n\nThe usage information
+    gives more detail on what can be done.\n\n    $ scriptura\n    Usage: scriptura
+    <subcommand> <script_name>\n    SCRIPTURA_ROOT: ~/scripts\n    \n    Subcommands:\n
+    \   \n      run Run a script\n      help Display help information\n      new Create
+    new script\n      edit Edit existing script\n      which Display script path\n
+    \     cat Display script content\n      cmd Execute shell command from target
+    directory\n    \n    User Subcommands:\n    \n      tree print a tree of files
+    under $SCRIPTURA_ROOT\n    \n    Scripts:\n    \n    os ... -- os commands\n\n##
+    Typing shortcuts\n\nTo reduce the amount of typing required, I have set the following
+    aliases.\n\n    alias sfm=\"scriptura\"\n    alias sf=\"scriptura run\"\n\nThe
+    fish completion system handles these well: `sf <tab>` will show me scripts to
+    be run, whereas `sfm` will show me the subcommands of the tool.\n\n## Documenting
+    scripts\n\nTo aid documentation, `scriptura` will look in a couple of places:\n\n1.
+    an adjacent file with the `.help` extension \n2. comments inside the script (currently
+    only supports one comment syntax `#`) Additionally, folders can be documented
+    by adding a file called `help`. This information is then provided during tab completion,
+    via the `help` subcommand or when listing scripts (the default action if a the
+    command line does not resolve to a script). \n\n## Language support\n\nWhilst
+    scriptura is written in fish, scripts don’t have to be; it’s just the default.
+    `scriptura new` will create scripts with a fish shebang, which can be freely edited.
+    I also plan to add a command-line option to set a different interpreter.\n\n##
+    Changes from sd\n\nThe [blog post version of `sd`](https://ianthehenry.com/posts/sd-my-script-directory/)
+    and the version [published to Github](https://github.com/ianthehenry/sd) already
+    differ in that the blog post version uses subcommands like `sd new`, whereas the
+    Github version uses flags for actions that don’t involve running a script (e.g.
+    `sd --new`). I prefer the subcommand style, at least when there is a short alias
+    to the `run` subcommand.\n\nAdditionally, I’ve added some new features.\n\n##
+    New features\n\n### Tab completion after `new`\n\nThe `new` subcommand invokes
+    the underlying command’s tab-completion after a script name is given:\n\n    $
+    scriptura new mac svc restart -- launchctl k<tab>\n    kickstart (Forces an existing
+    service to start)\n    kill (Sends a signal to the service instance)\n\n### Run
+    ad-hoc commands in the script root\n\n    $ scriptura cmd tree\n\nwill run the
+    `tree` command with the working directory set to `$SCRIPTURA_ROOT`.\n\n### Custom
+    subcommands\n\nOne thing that I thought would be useful is a `tree` subcommand.
+    However, I don’t want to force that on any other potential users. Whilst I could
+    have settled with the `cmd` subcommand mentioned in the previous section, I decided
+    I wanted it to be even easier. Scripts under the special _scriptura_ subdirectory
+    are exposed as subcommands, which pass flags to the underlying command and interpret
+    positional arguments as script path components:\n\n    # create a new script at
+    ~/scripts/scriptura/tree which just calls tree\n    $ scriptura new scriptura
+    tree -- tree\n    $ scriptura tree\n    .\n    ├── os\n    │   └── update\n    │  
+    ├── linde\n    │   └── r5 -> linde\n    └── scriptura\n        └── tree\n    \n
+    \   4 directories, 3 files\n    $ scriptura tree -L1 os\n    os\n    └── update\n
+    \   \n    2 directories, 0 files\n\n## Motivation\n\nRecently, I found [sd](https://github.com/ianthehenry/sd),
+    which is designed to help run and manage scripts under a specific directory tree.\n\nThere
+    are two reasons I’m not using this tool directly:\n\n- It’s called `sd`, which
+    is a name that’s already taken on my system by another tool: [sd (sed alternative)](https://github.com/chmln/sd).
+    \n- It doesn’t ship with completions for the `fish` shell. There was a gist with
+    these, but it seems to have disappeared. The completions are, in my opinion, the
+    biggest feature. \n\nAlso, I expected a fish implementation to be easier to read
+    and write, as well as not requiring so many external command calls.\n\nIn the
+    introductory [blog post](https://ianthehenry.com/posts/sd-my-script-directory/),
+    Ian writes .\n\nIt took me more than one sitting, but I enjoyed it.\n\n## Try
+    it out\n\nVisit the repository for installation instructions, including a [home-manager](https://nix-community.github.io/home-manager/)
+    module:\n\n- [git.alin.ovh](https://git.alin.ovh/scriptura/)\n- [codeberg](https://codeberg.org/alinnow/scriptura)\n-
+    [sr.ht](https://git.sr.ht/~alinnow/scriptura)\n\n Tags: \n- [#shell](/tags/shell)"
+  error:
+  fetched_at: '2026-11-23T11:57:09Z'
+archived_at: '2026-11-23T11:57:09Z'

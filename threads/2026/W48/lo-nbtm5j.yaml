@@ -1,0 +1,122 @@
+---
+post:
+  id: lo-nbtm5j
+  source: lobsters
+  title: Fixing Google’s Feedburner problem, and caching that half works
+  url: https://joshua.hu/fixing-google-feedburner-cache-problem-atom-rss
+  hn_url: https://lobste.rs/s/nbtm5j
+  score: 10
+  author: mtlynch
+  posted_at: '2026-11-22T12:30:56Z'
+  fetched_at: '2026-11-23T11:57:07Z'
+  article_url: https://joshua.hu/fixing-google-feedburner-cache-problem-atom-rss
+  article_fetch_status: success
+  article_fetched_at: '2026-11-23T11:57:11Z'
+  raw_comment_count: 0
+  tags:
+  - web
+comments: []
+article:
+  url: https://joshua.hu/fixing-google-feedburner-cache-problem-atom-rss
+  title: Fixing Google's Feedburner problem, and caching that half works | Joshua
+    Rogers' Scribbles
+  fetch_status: success
+  content: "## Getting around Feedburner \n\nIn a [previous post](https://joshua.hu/wtf-google-feedburner-cache-problem-atom-rss),
+    I talked about how Google’s [Chrome Releases blog](https://chromereleases.googleblog.com/)
+    was serving stale results on its Atom feed, and had set up a redirect from its
+    RSS feed (which was serving up-to-date results) to … the stale Atom feed. This
+    meant results were up to a few days old. This was particularly annoying because
+    my [CCBot](https://joshua.hu/ccbot-chrome-checker-bot-googlechromereleases-chromium-updates)
+    parsed the blog’s feed to notify me (Opera!) about Chromium vulnerabilities which
+    were fixed. When I wrote that post, the Atom feed was days behind:\n\n    $ date\n
+    \   Sun Feb 23 22:33:37 AEDT 2025\n    $ curl --silent \"https://feeds.feedburner.com/GoogleChromeReleases\"
+    | grep -o '2025-02-..' | sort -n | head -n5\n    2025-02-16\n    2025-02-13\n
+    \   2025-02-13\n    2025-02-13\n    2025-02-13\n\nAnd the RSS feed (which historically
+    was serving fresh results) was redirecting to the Atom feed:\n\n    $ hcurl 'https://www.blogger.com/feeds/8982037438137564684/posts/default'\n
+    \   HTTP/2 302\n    location: http://feeds.feedburner.com/GoogleChromeReleases\n\nWell,
+    lo and behold, a few days ago I came to discover that the RSS feed could still
+    be accessed, if you added a secret parameter, `?redirect=false`:\n\n    $ hcurl
+    'https://www.blogger.com/feeds/8982037438137564684/posts/default?redirect=false'\n
+    \   HTTP/2 200\n    cross-origin-resource-policy: cross-origin\n    server: blogger-renderd\n
+    \   x-content-type-options: nosniff\n    x-xss-protection: 0\n    x-frame-options:
+    SAMEORIGIN\n    date: Sat, 21 Nov 2026 22:20:58 GMT\n    expires: Sat, 21 Nov
+    2026 22:20:59 GMT\n    cache-control: public, must-revalidate, proxy-revalidate,
+    max-age=1\n    last-modified: Sat, 21 Nov 2026 14:45:03 GMT\n    content-type:
+    application/atom+xml; charset=UTF-8\n    age: 0\n    alt-svc: h3=\":443\"; ma=2592000,h3-29=\":443\";
+    ma=2592000\n    accept-ranges: none\n    vary: Accept-Encoding\n\nSince we can
+    now pull in fresh results from the Chrome Releases blog, it means that CCBot can
+    start working properly again. Its source is still [on GitHub](https://github.com/MegaManSec/CCBot),
+    and I’m sure Opera still uses it (lol).\n\n## Caching with If-Modified-Since \n\nIn
+    terms of the [feed caching problem](https://joshua.hu/google-feedburner-broken-caching-if-modified-since)
+    I also previously wrote about, where the Feedburner Atom feed refused any caching
+    techniques which RSS feeds typically allow to be utilized, it turns out the `redirect=false`
+    feed supports them. Sort of.\n\nFeedburner itself hasn’t changed at all. It still
+    doesn’t send an `ETag`, it still ignores `If-Modified-Since`, and it still tells
+    everybody not to cache anything:\n\n    $ hcurl -H 'if-modified-since: Mon, 20
+    Jan 2035 10:39:12 GMT' 'https://feeds.feedburner.com/GoogleChromeReleases'\n    HTTP/2
+    200\n    content-type: text/xml; charset=utf-8\n    feedburnerv2:\n    last-modified:
+    Sat, 21 Nov 2026 15:27:08 GMT\n    cache-control: no-cache, no-store, max-age=0,
+    must-revalidate\n    pragma: no-cache\n    expires: Mon, 01 Jan 1990 00:00:00
+    GMT\n    date: Sat, 21 Nov 2026 22:35:16 GMT\n\nIt’s also still serving outdated
+    results. For example, on the 30th of October, a post published at 07:58 PT was
+    still missing from the Feedburner feed nearly two hours later.\n\nThe `redirect=false`
+    feed, on the other hand, does respond with `304 Not Modified`. Sometimes. Because
+    of course it’s inconsistent. The same request, with an `If-Modified-Since` in
+    the future, made twelve times in a row:\n\n    $ URL='https://www.blogger.com/feeds/8982037438137564684/posts/default?redirect=false'\n
+    \   $ for i in $(seq 12); do hcurl -H 'if-modified-since: Mon, 20 Jan 2035 10:39:12
+    GMT' \"$URL\" | tr -d '\\r' | grep -iE '^(http|date|age)' | paste -sd ' ' -; done\n
+    \   HTTP/2 200 date: Sat, 21 Nov 2026 22:35:17 GMT\n    HTTP/2 200 date: Sat,
+    21 Nov 2026 22:35:18 GMT\n    HTTP/2 304 date: Sat, 21 Nov 2026 22:35:18 GMT age:
+    0\n    HTTP/2 304 date: Sat, 21 Nov 2026 22:35:18 GMT age: 0\n    HTTP/2 304 date:
+    Sat, 21 Nov 2026 22:35:18 GMT age: 0\n    HTTP/2 200 date: Sat, 21 Nov 2026 22:35:19
+    GMT\n    HTTP/2 304 date: Sat, 21 Nov 2026 22:35:19 GMT age: 0\n    HTTP/2 304
+    date: Sat, 21 Nov 2026 22:35:19 GMT age: 0\n    HTTP/2 200 date: Sat, 21 Nov 2026
+    22:35:20 GMT\n    HTTP/2 200 date: Sat, 21 Nov 2026 22:35:21 GMT\n    HTTP/2 304
+    date: Sat, 21 Nov 2026 22:35:21 GMT age: 0\n    HTTP/2 304 date: Sat, 21 Nov 2026
+    22:35:21 GMT age: 0\n\nLooking at the `date` and `age` headers, we see the first
+    request in each second gets a full `200`, and every request after it in that same
+    second gets a `304` with an `age: 0` header.\n\n`age` is the header a cache adds
+    when it answers with its own stored copy instead of asking the server behind it.
+    The feed is served with `cache-control: public, must-revalidate, proxy-revalidate,
+    max-age=1`, so whatever sits in front of Blogger’s `blogger-renderd` server (presumably
+    some Google frontend) is allowed to keep a copy for one second. While that copy
+    is fresh, the cache handles the `If-Modified-Since` itself, correctly, and replies
+    with a `304`. Once it has expired, the request goes through to `blogger-renderd`,
+    which ignores `If-Modified-Since` completely and sends back the whole feed.\n\nAdding
+    a cache-busting parameter to the URL makes every request miss the cache, and then
+    it’s a `200` every single time:\n\n    $ for i in $(seq 10); do curl -s -o /dev/null
+    -w '%{http_code} ' -H 'if-modified-since: Mon, 20 Jan 2035 10:39:12 GMT' \"$URL&nocache=$RANDOM\";
+    done; echo\n    200 200 200 200 200 200 200 200 200 200\n\nSo for anything that
+    polls the feed every few minutes, the one-second copy will always have expired
+    by the time the next request comes in, and `If-Modified-Since` never gets a `304`.\n\n##
+    Caching with If-None-Match \n\nWhat’s also interesting is that `If-None-Match`
+    _does_ work on the `redirect=false` feed. The catch is that you get an `ETag`
+    if and only if you ask for a compressed response (wtf). Without `Accept-Encoding:
+    gzip`, there’s no `ETag` at all:\n\n    $ hcurl \"$URL\"\n    HTTP/2 200\n    server:
+    blogger-renderd\n    cache-control: public, must-revalidate, proxy-revalidate,
+    max-age=1\n    last-modified: Sat, 21 Nov 2026 22:21:34 GMT\n    content-type:
+    application/atom+xml; charset=UTF-8\n    vary: Accept-Encoding\n\nAnd with it:\n\n
+    \   $ hcurl --compressed \"$URL\"\n    HTTP/2 200\n    content-encoding: gzip\n
+    \   server: blogger-renderd\n    content-length: 57817\n    cache-control: public,
+    must-revalidate, proxy-revalidate, max-age=1\n    last-modified: Sat, 21 Nov 2026
+    22:21:34 GMT\n    etag: W/\"19973aaeb10ce867051869871443ee4e1f782e6a97a91bff8e8b5422e5f7f357\"\n
+    \   content-type: application/atom+xml; charset=UTF-8\n    vary: Accept-Encoding\n\nAsking
+    for only `br` or `zstd` doesn’t help, because the server doesn’t support them,
+    so it sends the feed uncompressed, without an `ETag`.\n\nOnce you have the `ETag`,
+    sending it back in `If-None-Match` gets a `304` every time, even with the cache-busting
+    parameter (so these all come from `blogger-renderd` itself), and with or without
+    `--compressed`:\n\n    $ for i in $(seq 10); do curl -s --compressed -o /dev/null
+    -w '%{http_code} ' -H 'if-none-match: W/\"19973aaeb10ce867051869871443ee4e1f782e6a97a91bff8e8b5422e5f7f357\"'
+    \"$URL&nocache=$RANDOM\"; done; echo\n    304 304 304 304 304 304 304 304 304
+    304\n\nThis saves quite a bit, which I had originally intended and wanted to do.
+    The full feed is 1,725,860 bytes uncompressed and 57,817 bytes gzipped, and a
+    `304` is practically nothing. Feedburner still sends 55,792 gzipped bytes (1,615,960
+    uncompressed) every time.\n\n## Where the redirect came from \n\nAll of this is
+    different to what I found in my original post. Back then, the blogger.com URL
+    was still served by the old GData API (that’s what the `sunset` and `link` headers
+    in that post were about), and it answered `If-Modified-Since` with a `304`. Those
+    headers are gone now, and the responses come from `server: blogger-renderd` (see
+    the `redirect=false` response a"
+  error:
+  fetched_at: '2026-11-23T11:57:11Z'
+archived_at: '2026-11-23T11:57:12Z'

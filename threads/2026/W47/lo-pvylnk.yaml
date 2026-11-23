@@ -5,14 +5,14 @@ post:
   title: How I Got Postgres into a Single Binary
   url: https://progrium.xyz/articles/2026/single-binary-postgres
   hn_url: https://lobste.rs/s/pvylnk
-  score: 25
+  score: 29
   author: rrampage
   posted_at: '2026-11-21T19:32:22Z'
-  fetched_at: '2026-11-22T19:10:09Z'
+  fetched_at: '2026-11-23T11:57:07Z'
   article_url: https://progrium.xyz/articles/2026/single-binary-postgres
   article_fetch_status: success
-  article_fetched_at: '2026-11-22T19:10:11Z'
-  raw_comment_count: 4
+  article_fetched_at: '2026-11-23T11:57:12Z'
+  raw_comment_count: 5
   tags:
   - databases
 comments:
@@ -22,7 +22,7 @@ comments:
   text: |-
     “ SQLite-style apps that need Postgres features. JSONB, full text search, window functions, extensions like pgvector or PostGIS.”
     Doesn’t SQLite have JSONB, FTS and window functions?
-  score: 10
+  score: 11
   posted_at: '2026-11-21T19:42:45Z'
 - id: lo-stmaex
   parent_id: '0'
@@ -40,7 +40,7 @@ comments:
   author: cajually
   text: SQLite's jsonb can't be compared to PostgreSQL's. Postgres allows inverted
     indexing, complex operators while SQLite just shaves off some bytes for syntax
-  score: 7
+  score: 9
   posted_at: '2026-11-22T04:30:39Z'
 - id: lo-bmekw8
   parent_id: '0'
@@ -48,8 +48,18 @@ comments:
   text: SQLite's JSONB is also an internal spec, so its not usable with User Defined
     Function's in the host language, which is what you kinda want to do a lot of times
     when its SQLite
-  score: 1
+  score: 3
   posted_at: '2026-11-22T16:55:37Z'
+- id: lo-mtpmru
+  parent_id: '0'
+  author: eest
+  text: |-
+    A common pattern is to start a transaction, then make another query on a separate connection before committing.
+
+    Be careful with this pattern if doing it as part of a possibly concurrent operation (e.g. per HTTP request). I try to make sure all database access for a single operation/request can complete with a single connection (by limiting the pool to one connection in tests). Otherwise you will risk a deadlock if a sudden burst in requests goes past whatever current connection pool limit you have set.
+    That can become one of those annoying "oops, lets raise the limit a bit more" each time the app hangs, and there really is no way to tell what is "high enough" if you don't also control the clients.
+  score: 1
+  posted_at: '2026-11-23T09:28:07Z'
 article:
   url: https://progrium.xyz/articles/2026/single-binary-postgres/
   title: How I Got Postgres into a Single Binary · progrium
@@ -146,4 +156,4 @@ article:
     I'll be posting more about Plan 9 soon, but with a little extra magic, I was able to run the same Postgres at
   error:
   fetched_at: '2026-11-22T01:01:35Z'
-archived_at: '2026-11-22T19:10:12Z'
+archived_at: '2026-11-23T11:57:13Z'

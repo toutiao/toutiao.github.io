@@ -1,0 +1,519 @@
+---
+post:
+  id: '50416014'
+  title: Playing with the STM32MP2
+  url: https://serd.es/2026/11/08/playing-with-stm32mp2.html
+  hn_url: https://news.ycombinator.com/item?id=50416014
+  score: 79
+  author: dverlaeckt80
+  posted_at: '2026-11-08T19:04:07Z'
+  fetched_at: '2026-11-23T11:57:13Z'
+  raw_comment_count: 46
+comments:
+- id: '50417754'
+  parent_id: '50416014'
+  author: ranger_danger
+  text: "&gt; And a lot of these parts either don’t have crypto acceleration or security-by-obscurity
+    lock up the docs to the crypto accelerator, which is an absolute dealbreaker for
+    me.<p>I have to wonder if locking up the docs is some kind of export control or
+    government contract requirement."
+  score: 0
+  posted_at: '2026-11-08T21:55:16Z'
+- id: '50418077'
+  parent_id: '50416014'
+  author: throwaway81523
+  text: Despite STM32 in the product name, this is a dual core Cortex-A35 SOC intended
+    to run Linux, though he brings it up as bare metal.  The STM32MP257F-EV1 dev board
+    that he used costs $425 at Digikey.  His thing is interfacing it to FPGA&#x27;s.  So
+    this seems to be a hardware person&#x27;s product.  Most of us can probably use
+    simpler stuff.  The Pocketbeagle 2 looks interesting to me.
+  score: 0
+  posted_at: '2026-11-08T22:26:10Z'
+- id: '50418165'
+  parent_id: '50418077'
+  author: Neywiny
+  text: I think you mean &quot;despite the STM32 in the product name, they&#x27;re
+    64 bit compatible cores.&quot; Because STM8 was 8 bit (though I&#x27;ve never
+    seen one in any design ever, I&#x27;m sure they&#x27;re just before my time) and
+    STM32 MCUs and MPUs were always 32-bit.<p>I&#x27;m worried they dug too deep a
+    trench with the 32. Like how do much from Espressif is an ESP32 now despite them
+    ranging from slower single core to faster dual core, now even with mmu, some with
+    Wi-Fi some not...<p>What is in a name?
+  score: 0
+  posted_at: '2026-11-08T22:34:52Z'
+- id: '50418312'
+  parent_id: '50418165'
+  author: ranger_danger
+  text: Or they could have just meant STM32 is normally synonymous with &quot;typical
+    slow single-core MCU&quot; compared to multi-ghz Cortex SoCs that we see in higher-end
+    devices that run Linux?
+  score: 0
+  posted_at: '2026-11-08T22:47:05Z'
+- id: '50418497'
+  parent_id: '50416014'
+  author: dlcarrier
+  text: |-
+    From STMicro:<p><pre><code>    STM32MP257 application processors (STM32 MPUs) are based on a dual Arm® Cortex®-A35 cores running at up to 1.5 GHz and Cortex®-M33 cores running at 400 MHz.
+    </code></pre>
+    Why do they put a full-desktop-capable A35 processor in the sme product line as the M0 microcontrollers?  I presume they&#x27;re trying to milk value out of the name recognition but they&#x27;re just diluting the name.
+  score: 0
+  posted_at: '2026-11-08T23:02:30Z'
+- id: '50418673'
+  parent_id: '50418077'
+  author: kvemkon
+  text: There is STM32MP257F-DK for $103 (without PCIe).<p>&gt; The Pocketbeagle 2
+    looks interesting to me.<p>If only it had 2GB+ RAM. Since it has 4 cores, even
+    more RAM would be better.<p>And 1Gbit Ethernet is what I&#x27;m missing.
+  score: 0
+  posted_at: '2026-11-08T23:15:47Z'
+- id: '50418766'
+  parent_id: '50416014'
+  author: jauntywundrkind
+  text: 'I&#x27;m so glad we are finally seeing small cores, something to threaten
+    the Cortex A7, which harkens back to 2011!!<p>But also: Cortex A35 is from 2015!
+    And it&#x27;s still just a trickle of these small application processor cores.
+    Having a MMU enables so much more. Look at what Baochip and Xous are doing, with
+    small cores but with MMU, for radically better interesting OS &#x2F; systems architectures.<p>It
+    just feels so cursed, is so beyond my surprise here well past half way through
+    202X that so many cores from early 201X are still not just alive but utterly dominant.
+    Something has gone super super super wrong in the House of ARM!'
+  score: 0
+  posted_at: '2026-11-08T23:24:24Z'
+- id: '50418870'
+  parent_id: '50418497'
+  author: zwieback
+  text: The idea is to move realtime-ish stuff to a popular processor many people
+    have worked with and moving the Linux stuff over to an appropriate platform.<p>When
+    it came out we used STM32MP257 to demo a quadrature encoder debugger&#x2F;logger
+    (for internal use, not a product) since the IO supports easy interfacing of encoders.
+    The micro&#x27;s peripherals (SPI, I2C, GPIO etc.) are easy to program at the
+    register level and you can run a simple mainloop+interrupts thing on the micro,
+    then run Linux for your UI, networking, etc.<p>The fact that there&#x27;s not
+    much activity around these kinds of platforms (CPU+micro or CPU+FPGA) suggests
+    it&#x27;s too hard to combine the two in a way that makes sense for enough people,
+    easier to just use standard components and have them side-by-side on the PCB.<p>It
+    is nice to have them on the same die, though, for people like myself who like
+    to work on both ends but don&#x27;t know how to make their own PCBs.
+  score: 0
+  posted_at: '2026-11-08T23:32:00Z'
+- id: '50419135'
+  parent_id: '50418870'
+  author: ACCount39
+  text: The truth is that those are just niche items. Having a need for both a Linux-grade
+    CPU and a real time MCU-like core is not that common. It tends to show up in projects
+    too advanced for most to attempt.
+  score: 0
+  posted_at: '2026-11-09T00:01:10Z'
+- id: '50419174'
+  parent_id: '50419135'
+  author: azzentys
+  text: That&#x27;s untrue. Almost all the products I worked with in my last company
+    had such architecture - which we leveraged (this was Ag industry). It&#x27;s very
+    easy to work as they have shared memory to talk to each other.
+  score: 0
+  posted_at: '2026-11-09T00:05:41Z'
+- id: '50419181'
+  parent_id: '50418497'
+  author: dragontamer
+  text: Seems normal to me. Microchip also puts their 32-bit and 64-bit chips with
+    their SAM and PIC64 names.<p>Must be an embedded thing.
+  score: 0
+  posted_at: '2026-11-09T00:06:44Z'
+- id: '50419234'
+  parent_id: '50418165'
+  author: throwaway81523
+  text: STM32 processors have traditionally been M-series 32-bit ARM cores including
+    M7.  I don&#x27;t know if there have been any exceptions before this.  But A-series
+    is application processors with MMU&#x27;s, DRAM interfaces, etc.<p>STM8 is still
+    a thing and they were popular cheap embedded boards before ESP32 took over.  They
+    were ok as a cheap alternative to Arduino-compatible AVR boards.  I have a few
+    of the boards around.  They were around $1 each on Aliexpress and have 8K of flash
+    and 1K of ram, which is enough to run interactive Forth, and there&#x27;s an SDCC
+    compiler target for them.
+  score: 0
+  posted_at: '2026-11-09T00:12:49Z'
+- id: '50419422'
+  parent_id: '50419174'
+  author: ACCount39
+  text: That&#x27;s at least a tier more advanced than mainstream.<p>And if by &quot;very
+    easy to work&quot; you mean &quot;just allocate a shared memory block and put
+    a mailbox in there for the Linux userspace and the RT MCU to talk to each other&quot;,
+    you may have inflated expectations of what an average developer using an SBC can
+    easily do. It&#x27;s &quot;very easy&quot; in the same way rolling your own PCBs
+    or writing your own drivers is very easy. Seasoned developers do it without thinking
+    twice, and then stand dumbstruck when they see entry level developers avoid that
+    like the plague.<p>Not like we&#x27;re lacking for the offerings. Plenty of modern
+    SoCs have MCU-like real time cores in them - intended for low power operation,
+    real time control, or both. Even the mainstream RPi 5 boards ship spare PIO and
+    MCU cores - in the RP1 chip. The vendor just couldn&#x27;t be bothered to document
+    that.
+  score: 0
+  posted_at: '2026-11-09T00:36:04Z'
+- id: '50419594'
+  parent_id: '50419422'
+  author: nateglims
+  text: What do you mean by mainstream?<p>There’s whole sectors of industrial and
+    automotive using these AMP SoMs. And relative to these RPi only recently began
+    providing options that you could design into an embedded product at all. Their
+    FAE and supply presence is way behind.
+  score: 0
+  posted_at: '2026-11-09T00:56:42Z'
+- id: '50419702'
+  parent_id: '50418165'
+  author: hackingonempty
+  text: That&#x27;s marketing.  The iMac was a huge hit so Apple started releasing
+    iEverything.  Denny&#x27;s had a hit with its &quot;Grand Slam&quot; breakfast
+    now they have ten different &quot;slams&quot; on their menu,
+  score: 0
+  posted_at: '2026-11-09T01:11:36Z'
+- id: '50419757'
+  parent_id: '50419594'
+  author: ACCount39
+  text: By &quot;mainstream&quot; I mean &quot;the bulk of development work done&quot;,
+    not &quot;the bulk of units shipped&quot;.<p>The boards that people reach for
+    when they roll their first projects, the hardware that ends up in early prototypes
+    and one-off devices, the hardware that gets targeted by open source projects.
+    The chips that return more than a &quot;databrief&quot; 8 pages long and a single
+    page on a vendor site inviting you to visit the snake pit with &quot;contact sales
+    for more information&quot;. The boards you can actually buy with a fixed price
+    tag and a delivery to door, and can find writeups on how to use them for specific
+    things.<p>If you know what &quot;FAE&quot; is, let alone can get into a meeting
+    with one, you&#x27;re deep in the trenches, and are pretty much expected to wrangle
+    an extremely poorly documented MCU core that happens to be shipped in a SoC as
+    an afterthought into submission.
+  score: 0
+  posted_at: '2026-11-09T01:21:07Z'
+- id: '50419834'
+  parent_id: '50419234'
+  author: Neywiny
+  text: The MP1 is 7.5 years old now.
+  score: 0
+  posted_at: '2026-11-09T01:30:43Z'
+- id: '50419882'
+  parent_id: '50419234'
+  author: pseudohadamard
+  text: That&#x27;s the thing, STM32s are jellybean devices that you can tenth-source
+    from anywhere, including some guy cooking them up in his kitchen in Shenzhen.
+    This thing is an STM32 in name only (SINO? STINO?).
+  score: 0
+  posted_at: '2026-11-09T01:37:29Z'
+- id: '50419888'
+  parent_id: '50416014'
+  author: brcmthrowaway
+  text: wtf is this? This is not hobbyist domain
+  score: 0
+  posted_at: '2026-11-09T01:38:36Z'
+- id: '50419986'
+  parent_id: '50419882'
+  author: duskwuff
+  text: Eh... that really depends on the part. Some common, old parts like STM32F103
+    are more or less second-sourcable; others like the STM32H7 series aren&#x27;t.
+  score: 0
+  posted_at: '2026-11-09T01:52:20Z'
+- id: '50420007'
+  parent_id: '50418077'
+  author: Aurornis
+  text: "&gt; The STM32MP257F-EV1 dev board that he used costs $425 at Digikey<p>Most
+    would start with the significantly cheaper Discovery Kit version.<p>With ST, the
+    developer kit is usually only needed if you need every pin and function exposed
+    because you’re developing your own board."
+  score: 0
+  posted_at: '2026-11-09T01:54:48Z'
+- id: '50420030'
+  parent_id: '50418497'
+  author: Aurornis
+  text: It’s common for embedded systems to have some powerful cores running Linux
+    and some microcontroller cores running real time code.<p>The fusion of the two
+    is very valuable if you have applications that require real time work.<p>&gt;
+    I presume they&#x27;re trying to milk value out of the name recognition but they&#x27;re
+    just diluting the name.<p>No, absolutely not. This is a very valuable structure
+    for embedded work and it’s very common. I don’t know why you’d jump to such a
+    cynical conclusion.
+  score: 0
+  posted_at: '2026-11-09T01:57:21Z'
+- id: '50420039'
+  parent_id: '50419135'
+  author: Aurornis
+  text: These parts aren’t designed to be your next Raspberry Pi that mostly gets
+    tossed in a drawer.<p>Engineers actually use these in real products and embedded
+    systems.<p>The combination of Linux and microcontrollers isn’t new. It’s a very
+    valuable and common structure.<p>The comments here trying to dismiss it or call
+    it uncommon are bizarre.
+  score: 0
+  posted_at: '2026-11-09T01:58:58Z'
+- id: '50420148'
+  parent_id: '50417754'
+  author: mastax
+  text: Judging by how ST has reacted in the past it’s likely to discourage people
+    finding vulnerabilities and causing an embarrassment.
+  score: 0
+  posted_at: '2026-11-09T02:16:13Z'
+- id: '50420152'
+  parent_id: '50419986'
+  author: pseudohadamard
+  text: Yeah, I was thinking specifically of the STM32F103 and its infinite, ah, informal
+    second sources.
+  score: 0
+  posted_at: '2026-11-09T02:16:53Z'
+- id: '50421045'
+  parent_id: '50418497'
+  author: dingi
+  text: Even desktop and smartphone platforms come with MCU grade co-processors these
+    days for low level tasks like power and sleep management.
+  score: 0
+  posted_at: '2026-11-09T04:22:22Z'
+- id: '50421512'
+  parent_id: '50419757'
+  author: dragontamer
+  text: 'There&#x27;s multiple embedded companies, NXP i.MX, TI AM355x, STMicro STM32MP1
+    and MP2, Xilinx Zynq... that offer either Linux-CPU + realtime MCU, or Linux-CPU
+    + FPGA. If we include Rasp. Pi PIO, there&#x27;s even more companies offering
+    main processor + coprocessor (including ESP32).<p>Those are just the ones off
+    the top of my head. I&#x27;m sure there&#x27;s more if I used Google to search.
+    And of those companies, there&#x27;s *multiple* lines of chips that offer these
+    capabilities.<p>Its... pretty mainstream in the embedded world. The fact is that
+    Linux is very bad for realtime, so adding a non-Linux coprocessor is one of the
+    easiest ways to solve the problem. Run Linux for &quot;regular&quot; code, and
+    then run the hard-realtime code on a dedicated chip (either Cortex M4 or some
+    other MCU... or maybe a Cortex-R(something)). Or in the case of Xilinx, run the
+    realtime stuff in FPGA-land.<p>Alternatively, you spend a ton of money on an OS
+    that&#x27;s well suited for hard-realtime (ex: VxWorks or something), but that
+    also requires a processor with some guarantees (usually L1-like cache that&#x27;s
+    reserved by the programmer, some &quot;always active&quot; hard-realtime memory).
+    This is more difficult in practice compared to just having a 2nd MCU or FPGA handle
+    the realtime tasks though in a coprocessor like arrangement.<p>-------<p>I dunno
+    what you&#x27;re arguing for. Are you trying to say that the world of Linux capable
+    core + Realtime core is somehow... niche?'
+  score: 0
+  posted_at: '2026-11-09T05:43:30Z'
+- id: '50422490'
+  parent_id: '50418497'
+  author: harrouet
+  text: We do this (on different SoC) for real-time application protocols.<p>You keep
+    the linux on the beafy cheip, and hand over the real-time stuff to the M0.
+  score: 0
+  posted_at: '2026-11-09T07:59:32Z'
+- id: '50422569'
+  parent_id: '50418497'
+  author: Schlagbohrer
+  text: The processor by Texas Instruments used in the Beaglebone boards had a main
+    CPU plus two small cores inside the die. Unfortunately those two smaller cores
+    didn&#x27;t get their own compiler until the Beaglebone was many years old and
+    easier to use, more open source products ate TI&#x27;s lunch in that domain. (Although
+    TI has never been concerned with the hobbyist domain).<p>But once TI provided
+    that compiler it was easier for people to have the two smaller cores handle peripherals
+    in real time, while the main processor was busy. Those kinds of heterogenous chips
+    are super interesting if you&#x27;re into bare metal programming.
+  score: 0
+  posted_at: '2026-11-09T08:10:14Z'
+- id: '50422696'
+  parent_id: '50418766'
+  author: duskwuff
+  text: "&gt; But also: Cortex A35 is from 2015!<p>The pipeline from new ARM cores
+    to shipping silicon is surprisingly long. Cortex-M85 was announced in 2022, and
+    there&#x27;s still almost nothing on the market that implements it."
+  score: 0
+  posted_at: '2026-11-09T08:27:35Z'
+- id: '50422705'
+  parent_id: '50419135'
+  author: kragen
+  text: 'Virtually all big computers (mainframes, workstations, rackmount servers,
+    PCs, laptops, tablets, cellphones, and e-readers) use this architecture: the Linux-grade
+    CPU doesn&#x27;t directly drive things like the USB port, the HDMI signal, the
+    SSD&#x27;s flash translation layer, or the hard disk head movements.  Instead,
+    real-time MCU-like cores do it.<p>The only difference is that a lot of them are
+    on separate chips.<p>Probably programming a computer is too advanced for most
+    to attempt, so that doesn&#x27;t seem like a legitimate criticism.'
+  score: 0
+  posted_at: '2026-11-09T08:28:30Z'
+- id: '50422713'
+  parent_id: '50420039'
+  author: iamflimflam1
+  text: There’s a huge gap between what hobbyists think and what people who work in
+    the embedded industry think.
+  score: 0
+  posted_at: '2026-11-09T08:29:29Z'
+- id: '50422721'
+  parent_id: '50419757'
+  author: kragen
+  text: The bulk of software development work done is probably people editing formulas
+    in Excel, so that doesn&#x27;t seem like a reasonable thing to say.
+  score: 0
+  posted_at: '2026-11-09T08:30:10Z'
+- id: '50422875'
+  parent_id: '50418497'
+  author: adrian_b
+  text: Calling Cortex-A35 &quot;full-desktop-capable&quot; is quite a stretch.<p>Even
+    if it supports the 64-bit ARM ISA, it is a very small and slow core, much slower
+    than even the little Cortex-A53 and Cortex-A55 cores, which were used in the early
+    Raspberry Pi versions.<p>As mentioned in TFA, at the same clock frequency Cortex-A35
+    is much slower than the fastest microcontroller cores, i.e. Cortex-M85 and Cortex-M7.<p>The
+    only advantage of Cortex-A35 is that it has a deeper pipeline, which increases
+    the latency of many things, like interrupt handling, but it allows a higher clock
+    frequency, thus a greater throughput.<p>Having a MMU, it is suitable for Linux,
+    but using it for a desktop would be ridiculous, as even the slowest Atom CPU from
+    17 years ago was much faster.
+  score: 0
+  posted_at: '2026-11-09T08:49:15Z'
+- id: '50422956'
+  parent_id: '50419834'
+  author: adrian_b
+  text: Yes, but Cortex-A7 (the big core of MP1) is a 32-bit core, unlike Cortex-A35.<p>Nonetheless,
+    the 64-bit Cortex-A35 is not the 64-bit replacement for Cortex-A7, but for the
+    smaller core Cortex-A5, so it is actually slower than Cortex-A7 at the same clock
+    frequency.<p>Cortex-A53, then Cortex-A55, were the 64-bit replacements for Cortex-A7.
+  score: 0
+  posted_at: '2026-11-09T08:59:33Z'
+- id: '50422960'
+  parent_id: '50422875'
+  author: mizmar
+  text: Seems to be the specs are aiming to be a minimum required for Android.
+  score: 0
+  posted_at: '2026-11-09T08:59:59Z'
+- id: '50423013'
+  parent_id: '50418766'
+  author: adrian_b
+  text: As I have already mentioned in another comment, Cortex-A35 is not the replacement
+    for Cortex-A7, but for the smaller and slower Cortex-A5. Because of that, Cortex-A35
+    is slower at the same clock frequency than Cortex-A7.<p>The successor of Cortex-A7
+    was Cortex-A53, which was followed by Cortex-A55, then by Cortex-A510, and so
+    on, until the current Arm C1-Nano.<p>The line of Cortex-A5 and Cortex-A35, which
+    includes Cortex-A32 and Cortex-A34, can be considered dead, because using so slow
+    CPUs instead of the best Cortex-M or Cortex-R cores (like Cortex-M85 and Cortex-R82)
+    does not make sense.
+  score: 0
+  posted_at: '2026-11-09T09:05:49Z'
+- id: '50423081'
+  parent_id: '50422696'
+  author: adrian_b
+  text: Renesas uses them, but the Renesas MCUs are quite expensive, even if they
+    seem to be the best.<p>So if you are willing to pay a high price, which might
+    not be worthwhile, it is not difficult to find MCUs or development systems with
+    Cortex-M85.
+  score: 0
+  posted_at: '2026-11-09T09:12:35Z'
+- id: '50423187'
+  parent_id: '50422960'
+  author: adrian_b
+  text: I doubt that. Android has advantages only for consumer devices.<p>Anything
+    with Cortex-A35&#x2F;Cortex-A32&#x2F;Cortex-A34 may be useful only for some embedded
+    devices which run Linux. They are much slower than even the chips with Cortex-A53
+    that were used in the cheapest smartphones from more than a decade ago.<p>In fact
+    anything with Cortex-A35&#x2F;Cortex-A32&#x2F;Cortex-A34 is too slow to be useful
+    for anything, because much faster chips with Cortex-A55 are available at much
+    lower prices from vendors like Rockchip and several others. Even some much better
+    SBCs with Intel Atom CPUs are available for a price 4 times lower.<p>A board with
+    Cortex-A55, PCIe, USB 3 and with everything else that the author of the TFA desired
+    can be bought for a 10 times lower price than that ST development system.<p>I
+    am using a lot of ST development boards, but they are various versions of the
+    cheap Nucleo boards, which have an excellent price&#x2F;performance ratio.<p>Their
+    more expensive boards and more expensive microcontrollers that can run Linux are
+    not competitive in price and features with the boards using cheaper N-series Intel
+    CPUs or with the boards using various Cortex-A55, Cortex-A520, Cortex-A76, Cortex-A78
+    or Cortex-A720 that are available from Chinese vendors.
+  score: 0
+  posted_at: '2026-11-09T09:26:55Z'
+- id: '50423424'
+  parent_id: '50421045'
+  author: Gibbon1
+  text: Interrupts trash high end cores throughput and they have high latency and
+    non deterministic execution times. Smaller cores like an Cortex-M series handle
+    interrupts quickly and deterministically. And they are very power efficient.<p>That
+    was a gut feel of mine 30 years ago. And it wasn&#x27;t as bad then.<p>Newer gut
+    feel but I remember a processor designer saying the same thing a few years ago.
+    Modern systems the processor very often is doing basically jack all nothing 95%
+    of the time. They aren&#x27;t very power efficient in that mode. Where Cortex-M
+    processors are.<p>A soft poke. An Arm Cortex-M4 is as powerful as an 486 of yore
+    that was what people were running windows 3.1 on and playing DOOM.
+  score: 0
+  posted_at: '2026-11-09T09:56:12Z'
+- id: '50424145'
+  parent_id: '50421512'
+  author: ACCount39
+  text: Yes. I&#x27;m saying that it&#x27;s niche.<p>The parts are there, but the
+    support and the usage? Very much not. It took years for vendors to even start
+    shipping remoteproc support in some of the parts.
+  score: 0
+  posted_at: '2026-11-09T11:30:10Z'
+- id: '50425011'
+  parent_id: '50422696'
+  author: zokier
+  text: I don&#x27;t think it&#x27;s merely long pipeline. Simpler explanation is
+    that there is just not much demand for these middle-class cores; A55 cores are
+    from same generation and started appearing in socs pretty quickly. I suspect that
+    the benefits of A3x (compared to A5x) just werent there for vendors to justify
+    adding them to their portfolios
+  score: 0
+  posted_at: '2026-11-09T13:01:55Z'
+- id: '50426552'
+  parent_id: '50424145'
+  author: dragontamer
+  text: 'What?<p>NXP&#x27;s i.MX 7 was released in 2013 with Cortex-A7 + Cortex-M4
+    and well supported back then. And there probably were earlier chips.<p>Yeah Linux
+    is slow at developing features for embedded systems. That&#x27;s why embedded
+    programmers run code outside of Linux. Fortunately, Linux has kernel modules to
+    make it easy to do things like that.<p>Historically, Linux isn&#x27;t even a proper
+    embedded OS. Linux continues to get better-and-better for embedded but I&#x27;d
+    expect that 2013-era was dominated by VxWorks or other embedded OSes with a better
+    featureset for embedded. It was _LINUX_ that was the problem in my experience,
+    at least back then.<p>But then WindRiver (makers of VxWorks) added a bunch of
+    features to the Linux kernel and now today Linux is acceptable for embedded. I
+    dunno exactly when the switchover from majority VxWorks embedded systems -&gt;
+    WindRiver Linux -&gt; and now each manufacturer has their own BSP &#x2F; Linux
+    support... but a lot of what you&#x27;re complaining about was software development.<p>Even
+    then, a ton of older embedded crap ran their own custom versions of Linux 2.4
+    or whatever and just maintained a separate branch. I&#x27;m guessing these older
+    embedded systems got their start in the early 00s and just had issues upgrading
+    past the Linux 2.4 -&gt; Linux 2.6 jump.<p>Or in other words: it was far more
+    likely that Linux wouldn&#x27;t support Chip X, rather than Chip X was unable
+    to support Linux. Or maybe a chip did support Linux but most of the codebase was
+    stuck on Linux 2.4. Or if Linux support existed, it was effectively proprietary
+    custom kernel modules that individual teams wrote for themselves rather than a
+    community-driven internet-based workflow. Etc. etc. Linux was harder back then.<p>But
+    the stuff you&#x27;re talking about is early 2010s, if not 00s. Damn well over
+    a decade, might be closer to TWO decades (and the only reason I don&#x27;t know
+    that is because I was a wee-little ignorant student back then and don&#x27;t really
+    know things older than 2010s....)'
+  score: 0
+  posted_at: '2026-11-09T14:59:23Z'
+- id: '50433212'
+  parent_id: '50426552'
+  author: ACCount39
+  text: The days of VxWorks, vendor-specific paid-for IDEs, licensed compilers and
+    proprietary BSPs pinned to a 2.x Linux kernel are long behind us - and thank fuck
+    for that.<p>Back then, the way you were supposed to get into embedded development
+    was &quot;don&#x27;t&quot;.<p>Things have changed since. You can now buy a bunch
+    of microcontroller and SoC boards and get something to work just by following
+    a simple tutorial you found online. Accessibility and ease of use have advanced
+    in leaps and bounds.<p>But all of those secondary MCU-like cores? They&#x27;re
+    still in the old embedded hell. Things are getting better, but they are getting
+    better very slowly.
+  score: 0
+  posted_at: '2026-11-09T22:30:06Z'
+- id: '50435437'
+  parent_id: '50433212'
+  author: dragontamer
+  text: "&gt; Back then, the way you were supposed to get into embedded development
+    was &quot;don&#x27;t&quot;.<p>Hmmmmmm. I dunno, it feels like people today could
+    do everything we did back then. That&#x27;s how we all got into it, and back then
+    we mostly were excited for how easy it was in the 00s or 10s compared to the 90s.<p>It&#x27;s
+    a weird thing but maybe it doesn&#x27;t feel that hard in retrospect."
+  score: 0
+  posted_at: '2026-11-10T02:42:56Z'
+- id: '50454734'
+  parent_id: '50424145'
+  author: azzentys
+  text: Calling it niche is overlooking &quot;product&quot; needs. People have been
+    needing a smaller MCU for doing anything meaningful with a bigger SoC. This is
+    due to complex power sequencing for powering the SoC + desire for realtime IO
+    on these &quot;products&quot;. Offering combined solution makes it easier.<p>--<p>&gt;
+    support<p>You are 100% right on this aspect. AMP based SoCs fall in weird range
+    - some with great documentation, better isolation, and software support. While
+    others basically feel like rotting in hell.<p>--<p>On that note, I picked STM32MP1
+    for my grad project for a Embedded Linux course for exactly this reason - &quot;how
+    interesting and challenging would it be for developing on a SoC like this&quot;.
+    Kudos to ST for making it easier than others!
+  score: 0
+  posted_at: '2026-11-11T15:43:17Z'
+article:
+archived_at: '2026-11-23T11:57:38Z'
