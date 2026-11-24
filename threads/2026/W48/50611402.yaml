@@ -4,14 +4,14 @@ post:
   title: 'NariQ: BF16-level Qwen3.8-27B in a 10 GB file'
   url: https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF
   hn_url: https://news.ycombinator.com/item?id=50611402
-  score: 105
+  score: 166
   author: ''
   posted_at: '2026-11-23T13:42:38Z'
-  fetched_at: '2026-11-23T23:41:58Z'
+  fetched_at: '2026-11-24T08:52:11Z'
   article_url: https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF
   article_fetch_status: success
   article_fetched_at: '2026-11-23T23:41:58Z'
-  raw_comment_count: 20
+  raw_comment_count: 34
 comments:
 - id: '50617193'
   parent_id: '50611402'
@@ -229,6 +229,167 @@ comments:
     amazing. (Maybe the old stuff is on Web Archive?)'
   score: 0
   posted_at: '2026-11-23T23:32:01Z'
+- id: '50621568'
+  parent_id: '50621073'
+  author: mmastrac
+  text: I put this together to hopefully better help show what goes on...<p><a href="https:&#x2F;&#x2F;quantwiki.kindlingai.dev&#x2F;codebooks&#x2F;mul1"
+    rel="nofollow">https:&#x2F;&#x2F;quantwiki.kindlingai.dev&#x2F;codebooks&#x2F;mul1</a><p>(claude
+    assisted, obviously!)<p>And yes, hah, that blog has been through a long, long
+    number of years.
+  score: 0
+  posted_at: '2026-11-24T00:13:23Z'
+- id: '50622021'
+  parent_id: '50619545'
+  author: toebee
+  text: |-
+    Fair point about harnesses. But if you look at DeepSWE (the primary comparison), BF16 on our harness passes 45.0 tasks per round vs Unsloth&#x27;s reported 45.65, so I wouldn&#x27;t say there are gains due to the harness. Also if we compare scores as % of BF16 in the same harness:<p>DeepSWE v1.1, 113 tasks, fully solved<p><pre><code>  Our harness (Claude Code, mean of 3 runs per task)
+      File                Size  Solved  of BF16
+      BF16             53.8 GB    45.0   100.0%
+      NariQ 2-bit      6.75 GB    32.3    71.9%
+      NariQ 2.5-bit    8.44 GB    47.3   105.2%
+      NariQ 3-bit     10.12 GB    46.3   103.0%
+    </code></pre>
+    Unsloth&#x27;s harness (mini-swe-agent, read from their V3.1 chart):<p><pre><code>  File                   Size  Solved  of BF16
+      BF16                53.8 GB   ~45.7   100.0%
+      Unsloth UD-IQ2_XS   7.63 GB   ~14.5    31.8%
+      Unsloth UD-IQ2_S    8.42 GB   ~24.5    53.7%
+      GSQ-RCO IQ2_XS      8.42 GB   ~19.0    41.6%
+      GSQ-RCO IQ2_S       9.26 GB   ~28.0    61.3%
+      EXL3 2.20           9.78 GB   ~11.0    24.1%
+      Unsloth UD-Q2_K_XL  9.95 GB   ~33.0    72.3%
+      GSQ-RCO IQ3_XXS    10.09 GB   ~29.0    63.5%
+      GSQ-RCO IQ3_S      11.77 GB   ~40.4    88.5%
+      Unsloth UD-IQ3_S   12.04 GB   ~39.0    85.4%
+      EXL3 3.00          12.67 GB   ~35.3    77.3%
+      Unsloth UD-Q3_K_XL 13.15 GB   ~42.5    93.1%
+      Unsloth UD-IQ4_XS  14.35 GB   ~41.0    89.8%
+    </code></pre>
+    cf) We did not run Unsloth&#x27;s files ourselves, their numbers are read off their published chart. Both sides are averages over several runs. Also we&#x27;d like to run more experiments on our harness for future releases.
+  score: 0
+  posted_at: '2026-11-24T00:58:05Z'
+- id: '50622057'
+  parent_id: '50617193'
+  author: toebee
+  text: 'My goal too is to build something that works well on my 18GB Mac and my 16GB
+    5060Ti that runs fast + is the smartest. Will be looking into inference speedups
+    and KV &#x2F; Activation quantization to make possible! It does run on my Mac
+    alright, but as the comments say, it is pretty slow atm.<p>Also on Bonsai&#x27;s
+    performance - it doesn&#x27;t seem to do too well on long horizon benchmarks:<p>Long-context
+    and coding performance. This release also delivers on the roadmap set out in our
+    initial Bonsai 27B release [2], where we identified long-horizon, tool-driven
+    software engineering as the next major capability to improve. With Ternary Bonsai
+    2 27B, that progress now shows up directly in agentic performance. Evaluated for
+    the first time on Terminal-Bench 2.1 and SWE-bench Verified, the Ternary Bonsai
+    2 27B reaches 52.8 and 60.8, respectively, compared with 69.7 and 80.6 for Qwen3.5-27B,
+    retaining roughly three quarters of the full-precision performance on both benchmarks.<p>from
+    their tech report: <a href="https:&#x2F;&#x2F;github.com&#x2F;PrismML-Eng&#x2F;Bonsai-demo&#x2F;blob&#x2F;main&#x2F;bonsai-2-27b-whitepaper.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;PrismML-Eng&#x2F;Bonsai-demo&#x2F;blob&#x2F;main&#x2F;bonsai-...</a>'
+  score: 0
+  posted_at: '2026-11-24T01:02:00Z'
+- id: '50622069'
+  parent_id: '50618147'
+  author: toebee
+  text: No. All benchmarks ran at the full 262K context. The speed comparison table
+    just stops at 64K. The 3-bit file fits ~135K context on a 24 GB GPU and the full
+    262K in ~30 GB without KV &#x2F; Activation quantization.
+  score: 0
+  posted_at: '2026-11-24T01:03:17Z'
+- id: '50622180'
+  parent_id: '50620674'
+  author: jedbrooke
+  text: yep I’ve been running Bonsai 2 27B on my mac mini 16 GB. I can juuust about
+    fit 100k context. I get best case 8 tok&#x2F;s with typical more like 4. It’s
+    almost usable for coding assistants but it’s great for async workflows<p>Excited
+    to see more “27B” class models that can fit in 16GB
+  score: 0
+  posted_at: '2026-11-24T01:17:00Z'
+- id: '50622379'
+  parent_id: '50617252'
+  author: toebee
+  text: Hey, thanks for the feedback. Agreed that comparison against MUL1 is lacking.
+    Still doing experiments on what the best format might be (hence the &quot;v1 GGUF&quot;
+    naming). I did internally run against MUL1 in the experiment process and got similar
+    results to yours. But chose it because the weights stay exact on BF16 and INT8
+    tensor cores, which may come in handy later (e.g. activation quants)<p>I&#x27;m
+    happy to changing the format to whatever works best, and I&#x27;d say it isn&#x27;t
+    our core contribution. And very cool work on pmcgx, will look into it!<p>I think
+    our contribution here is that we calculate loss counting only the tokens the model
+    writes in agent sessions, which then drives a width allocator. + banded output-layer
+    widths with two-sided rounding. This lowers KL by around 3x, compared to plain
+    Trellis.
+  score: 0
+  posted_at: '2026-11-24T01:39:35Z'
+- id: '50622392'
+  parent_id: '50620722'
+  author: toebee
+  text: If you look at DeepSWE (the primary comparison), BF16 on our harness passes
+    45.0 tasks per round vs Unsloth&#x27;s reported 45.65.
+  score: 0
+  posted_at: '2026-11-24T01:41:09Z'
+- id: '50622402'
+  parent_id: '50618333'
+  author: toebee
+  text: thank you for the kind words!
+  score: 0
+  posted_at: '2026-11-24T01:42:47Z'
+- id: '50622432'
+  parent_id: '50618692'
+  author: toebee
+  text: I think lookatmyquant and existing quantization methods do well for most simple
+    tasks with shorter horizons. What I&#x27;m interested in is long-horizon agentic
+    tasks, since that&#x27;s where I spend most of our time nowadays (e.g. inside
+    Claude Code or Codex). Our method is the first to hit parity with BF16 on those
+    types of tasks at 3-bpw-or-lower.
+  score: 0
+  posted_at: '2026-11-24T01:45:32Z'
+- id: '50623885'
+  parent_id: '50622379'
+  author: mmastrac
+  text: Interesting - we&#x27;ve been working on something similar, but found that
+    calibration on the full sessions, but with the bit allocation on model-written
+    tokens only was the most successful approach. I&#x27;ll have to see if it improves
+    our output if we weight error only on model-written tokens, but from my experiments
+    it seemed that this was getting us the best results in terms of KL.<p>Our approach
+    might be slightly different however, as we encode multiple bit widths and then
+    select per-profile manifest with the lowest KL we can solve at a given size using
+    the per-expert&#x2F;layer encoded chunks. The most recent quantization run we
+    did for GLM 5.3 has some of the numbers and all of the slices as well.<p><a href="https:&#x2F;&#x2F;huggingface.co&#x2F;kindlingai&#x2F;glm-5.3-exlr8-k2-k3-k4"
+    rel="nofollow">https:&#x2F;&#x2F;huggingface.co&#x2F;kindlingai&#x2F;glm-5.3-exlr8-k2-k3-k4</a><p>Appreciate
+    the response. Happy to chat more. I did find the paper with a bit more info and
+    I&#x27;ll have to see if there&#x27;s anything we can learn from your approach!
+  score: 0
+  posted_at: '2026-11-24T04:52:57Z'
+- id: '50624582'
+  parent_id: '50622069'
+  author: exe34
+  text: Oh right yes I think I had kv quantization on. So I&#x27;ll have to try your
+    model! Thanks for the explanation!
+  score: 0
+  posted_at: '2026-11-24T06:47:16Z'
+- id: '50624825'
+  parent_id: '50622021'
+  author: WithinReason
+  text: If the comparison doesn&#x27;t use the same harness, it&#x27;s much harder
+    to read
+  score: 0
+  posted_at: '2026-11-24T07:25:14Z'
+- id: '50624871'
+  parent_id: '50611402'
+  author: wds
+  text: Wish this supported Volta&#x2F;sm_70 cards. It&#x27;s ancient in LLM space,
+    but the 700GB&#x2F;s+ memory bandwidth for such a low price makes it pretty valuable...
+    when it works!
+  score: 0
+  posted_at: '2026-11-24T07:31:59Z'
+- id: '50625098'
+  parent_id: '50618217'
+  author: alfiedotwtf
+  text: Is there a way to reverse engineer or trace the model’s internals so that
+    instead of trying to find a corpus that covers everything like you said, you instead
+    find the set of paths you haven’t walked yet and then keep stepping backward all
+    the way to the input token?
+  score: 0
+  posted_at: '2026-11-24T07:56:13Z'
 article:
   url: https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF
   title: nari-labs/Qwen3.8-27B-NariQ-GGUF · Hugging Face
@@ -333,4 +494,4 @@ article:
     - Numbe
   error:
   fetched_at: '2026-11-23T23:41:58Z'
-archived_at: '2026-11-23T23:42:02Z'
+archived_at: '2026-11-24T08:52:15Z'

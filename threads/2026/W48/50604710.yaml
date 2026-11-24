@@ -1,0 +1,208 @@
+---
+post:
+  id: '50604710'
+  title: Modernizing iperf/iperf3 and introducing fireperf
+  url: https://blog.daniel-baumann.ch/posts/20261122-1.html
+  hn_url: https://news.ycombinator.com/item?id=50604710
+  score: 90
+  author: ''
+  posted_at: '2026-11-22T22:37:51Z'
+  fetched_at: '2026-11-24T08:52:13Z'
+  article_url: https://blog.daniel-baumann.ch/posts/20261122-1.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-24T08:52:13Z'
+  raw_comment_count: 8
+comments:
+- id: '50623964'
+  parent_id: '50604710'
+  author: zamadatix
+  text: Super glad to see the default systemd service profile. That was always a bit
+    annoying.<p>I don&#x27;t think &quot;iperf&quot; should assume either version,
+    lest there be even more confusion than there already is. If it was ever going
+    to be cleaned up it would need to be done in a way that &quot;iperf&quot; could
+    do both 2 or 3 based on server&#x2F;client detection (or forced CLI argument override),
+    but I&#x27;m not sure anyone cares enough to try to make that possible as it was
+    never designed to work that way.
+  score: 0
+  posted_at: '2026-11-24T05:04:41Z'
+- id: '50624115'
+  parent_id: '50604710'
+  author: hizlikovboy27
+  text: |-
+    Nice work modernizing the debian packages.
+    So, how does Fireperf perform compared to iperf3 under heavy network loads
+    especially when handling multiple clients simultaneously?
+  score: 0
+  posted_at: '2026-11-24T05:21:19Z'
+- id: '50624530'
+  parent_id: '50604710'
+  author: vanshiglobal
+  text: 'The parallel-clients-on-one-port change is the one that matters most to me.
+    With iperf3, a shared test server needs a separate port per concurrent client
+    — hence the systemd template with 5201&#x2F;5202&#x2F;5203 in this packaging —
+    which is awkward behind firewalls and NAT. The CPU side matters too: at 10G+ I&#x27;ve
+    more often measured the test tool&#x27;s single-threaded CPU limit than the link,
+    and a single flow hashing to one LACP member makes bonded links look slower than
+    they are, so io_uring&#x2F;zerocopy plus many workers is a real fix, not just
+    a nice-to-have.<p>One question the post doesn&#x27;t answer: does fireperf do
+    UDP tests with jitter&#x2F;loss reporting like iperf2&#x2F;3, or is it TCP-only
+    for now? That&#x27;s the main thing that keeps iperf2 around in my experience.'
+  score: 0
+  posted_at: '2026-11-24T06:37:07Z'
+- id: '50624697'
+  parent_id: '50623964'
+  author: adrian_b
+  text: In TFA it is said that the fireperf interface for iperf2&#x2F;iperf3 auto-detects
+    the server and uses the appropriate client.<p>Thus if you install that package
+    it does what you want.
+  score: 0
+  posted_at: '2026-11-24T07:06:22Z'
+- id: '50624886'
+  parent_id: '50604710'
+  author: riobard
+  text: "&gt; therefore the one is not replacing the other (iperf2 in general is the
+    better tool than iperf3, eventhough the common misconception is that iperf3 is
+    supposedly better than iperf2 because the number 3 is greater than the number
+    2)<p>Note to open source contributors: please make a new name if the intention
+    isn&#x27;t to maintain the legacy codebase. Using the same name with higher version
+    number for completely new codebase is too confusing."
+  score: 0
+  posted_at: '2026-11-24T07:34:39Z'
+- id: '50625321'
+  parent_id: '50604710'
+  author: bacaw
+  text: I&#x27;d love to use fireperf but it doesn&#x27;t seem to support UDP or bandwidth
+    limiting, so I think I&#x27;ll still be using iperf2
+  score: 0
+  posted_at: '2026-11-24T08:24:28Z'
+- id: '50625409'
+  parent_id: '50624886'
+  author: QuantumNomad_
+  text: "&gt; Using the same name with higher version number for completely new codebase
+    is too confusing.<p>Proprietary software do this too.<p>It quickly gets into Ship
+    of Theseus territory anyway to make a rule about changing name when changing some
+    amount of the code.<p>For example I doubt that there is any meaningful amount
+    of code left over in the latest version of Photoshop that is exactly the same
+    as it was in version 1.0. At the very least the code has been rewritten in another
+    language by now even if it came from 1.0 originally. As Photoshop 1.0 was written
+    in Pascal and Assembly."
+  score: 0
+  posted_at: '2026-11-24T08:36:02Z'
+- id: '50625476'
+  parent_id: '50625321'
+  author: wtch98
+  text: That is a significant problem which relegates this from &quot;Oh this could
+    be the future&quot; to &quot;oh how cute someone&#x27;s skinned iperf&quot;
+  score: 0
+  posted_at: '2026-11-24T08:43:44Z'
+article:
+  url: https://blog.daniel-baumann.ch/posts/20261122-1.html
+  title: Daniel Baumann
+  fetch_status: success
+  content: |-
+    # Debian: Modernizing iperf/iperf3 and introducing fireperf
+
+    Recently I spend some time on modernizing the packaging of the Internet Protocol bandwidth measuring tools iperf and iperf3 in Debian, as well as uploading fireperf to Debian.
+
+    ## Modernizing iperf
+
+    Previously, src:iperf only built iperf. If you wanted to run an iperf server, you had to do it on your own, i.e. there was no systemd service for that.
+
+    Apart from tidying the Debian package, src:iperf now builds the new iperf-client and iperf-server packages, the latter contains the systemd and ufw integration. iperf-server runs with a dynamic systemd user and systemd service hardening.
+
+    The iperf package is now a transitional package, that also cleans up any leftovers from before the package split into iperf-client and iperf-server (e.g. when upgrading from trixie to forky).
+
+    For historical reasons, iperf2 is packaged in debian as iperf, not iperf2. Now the iperf packages have provides for iperf2, iperf2-client, and iperf2-server respectively (so they can be installed by these names too).
+
+    Updated iperf packages are available in sid, and backports for trixie are available at Debian Fast Forward.
+
+    It might make sense in the future…
+
+    > given that iperf2 and iperf3 are completely different tools with different advantages and disadvantages depending on the use-case therefore the one is not replacing the other (iperf2 in general is the better tool than iperf3, eventhough the common misconception is that iperf3 is supposedly better than iperf2 because the number 3 is greater than the number 2)
+
+    - given that iperf2 and iperf3 are completely different tools with different advantages and disadvantages depending on the use-case
+
+    given that iperf2 and iperf3 are completely different tools with different advantages and disadvantages depending on the use-case
+
+    - therefore the one is not replacing the other (iperf2 in general is the better tool than iperf3, eventhough the common misconception is that iperf3 is supposedly better than iperf2 because the number 3 is greater than the number 2)
+
+    therefore the one is not replacing the other (iperf2 in general is the better tool than iperf3, eventhough the common misconception is that iperf3 is supposedly better than iperf2 because the number 3 is greater than the number 2)
+
+    …to maybe rename iperf to iperf2 to match both upstream naming and also to harmonize the packaging of iperf2 with other distributions.
+
+    ## Modernizing iperf3
+
+    Previously, src:iperf3 only built iperf3. If you wanted to run an iperf3 server, iperf3 had a debconf yes/no question which would then start one iperf3 server on the default port 5201.
+
+    Apart from tidying the Debian package, src:iperf3 now builds the new iperf3-client and iperf3-server packages, the latter contains the systemd and ufw integration. iperf3-server runs with a dynamic systemd user instead of the previous local system account, and has systemd service hardening.
+
+    Since iperf3 (contrary to iperf, also see here and here for iperv vs. iperf3) does not allow using multiple connections on the same port, you have to run multiple iperf3 servers, each on their own port, in order to serve more than one client at the time.
+
+    The old debconf question for enabling a single iperf3 server has been removed as well as the obsolete sysvinit integration.
+
+    In order to allow running multiple iperf3 servers at the same time (but on different ports), iperf3-server now contains a systemd service template so you can enable multiple iperf3 servers (e.g. 3 servers on subsequent port numbers, but you can run as many as you want on any ports you like) either manually with:
+
+    or by using debconf interactively to do it automatically for you (which defaults to one instance on port 5201):
+
+    or by using debconf non-interactively to do it automatically for you:
+
+    The iperf3 package is now a transitional package, that also cleans up any leftovers from before the package split into iperf3-client and iperf3-server.
+
+    Updated iperf3 packages are available in sid, and backports for trixie are available at Debian Fast Forward.
+
+    ## Introducing fireperf
+
+    Image 1: fireperf interactive terminal interface
+
+    Image 1: fireperf interactive terminal interface
+
+    Image 2: fireperf non-interactive terminal interface
+
+    Image 2: fireperf non-interactive terminal interface
+
+    fireperf is a modern take on the iperf3 network performance and stress-testing tool under the IPFire project umbrella:
+
+    > measures upload or download individually, or concurrent upload and download allows to serve many clients in parallel (on the same port) allows to use many workers in parallel (for maxing out bandwith of servers with LACP instead of ECMP) allows to use and track many connection sessions in parallel (for maxing out firewalls) can also be used as a client for both iperf and iperf3 (autodetecting the target) can also be used as a iperf3 server can output results in JSON has a live graph (ncurses) uses less CPU ressources on both the client and the server (io_uring, zerocopy, …)
+
+    - measures upload or download individually, or concurrent upload and download
+
+    measures upload or download individually, or concurrent upload and download
+
+    - allows to serve many clients in parallel (on the same port)
+
+    allows to serve many clients in parallel (on the same port)
+
+    - allows to use many workers in parallel (for maxing out bandwith of servers with LACP instead of ECMP)
+
+    allows to use many workers in parallel (for maxing out bandwith of servers with LACP instead of ECMP)
+
+    - allows to use and track many connection sessions in parallel (for maxing out firewalls)
+
+    allows to use and track many connection sessions in parallel (for maxing out firewalls)
+
+    - can also be used as a client for both iperf and iperf3 (autodetecting the target)
+
+    can also be used as a client for both iperf and iperf3 (autodetecting the target)
+
+    - can also be used as a iperf3 server
+
+    can also be used as a iperf3 server
+
+    - can output results in JSON
+
+    can output results in JSON
+
+    - has a live graph (ncurses)
+
+    has a live graph (ncurses)
+
+    - uses less CPU ressources on both the client and the server (io_uring, zerocopy, …)
+
+    uses less CPU ressources on both the client and the server (io_uring, zerocopy, …)
+
+    fireperf packages are in sid, and backports for trixie are available at Debian Fast Forward.
+
+    Happy bandwidth measuring!
+  error:
+  fetched_at: '2026-11-24T08:52:13Z'
+archived_at: '2026-11-24T08:52:16Z'
