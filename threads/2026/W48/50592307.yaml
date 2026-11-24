@@ -1,0 +1,164 @@
+---
+post:
+  id: '50592307'
+  title: 'Arctic: A Practical Lock-Free Adaptive Radix Tree'
+  url: https://www.usenix.org/conference/osdi26/presentation/ni
+  hn_url: https://news.ycombinator.com/item?id=50592307
+  score: 92
+  author: ''
+  posted_at: '2026-11-21T18:49:45Z'
+  fetched_at: '2026-11-24T20:00:57Z'
+  article_url: https://www.usenix.org/conference/osdi26/presentation/ni
+  article_fetch_status: success
+  article_fetched_at: '2026-11-24T20:00:57Z'
+  raw_comment_count: 12
+comments:
+- id: '50627157'
+  parent_id: '50592307'
+  author: nwtnni
+  text: Hi, first author here!<p>I&#x27;ve actually been working on a more approachable
+    blog post introducing the data structure; wasn&#x27;t expecting to see the paper
+    here first! The repository is [here](<a href="https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic</a>) and our
+    latest benchmark results are [here](<a href="https:&#x2F;&#x2F;nwtnni.github.io&#x2F;index-bench&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;nwtnni.github.io&#x2F;index-bench&#x2F;</a>)
+    (forgive the janky UI). I&#x27;m happy to answer any questions--have been quite
+    excited about this work since I believe it&#x27;s the first time we have a lock-free
+    tree that outperforms lock-based alternatives.
+  score: 0
+  posted_at: '2026-11-24T12:23:06Z'
+- id: '50627439'
+  parent_id: '50627157'
+  author: benjaminogles
+  text: Any stories yet of your property based tests and&#x2F;or shuttle based tests
+    exposing surprising bugs that required a particular  thread schedule and particular
+    sequence of operations?<p>I&#x27;ve always been curious whether there was a way
+    to specify the behavior of a concurrent data structure in something like an LTL
+    to prove it correct without having to implement a reference implementation or
+    write an invariant checker. Although I guess the spec itself plays the role of
+    a reference implementation if it is that sophisticated.
+  score: 0
+  posted_at: '2026-11-24T12:52:20Z'
+- id: '50627496'
+  parent_id: '50627157'
+  author: benjaminogles
+  text: I&#x27;m also curious why linearizability might be desirable over a weaker
+    guarantee (IIUC) like sequential consistency? Apologies if this question doesn&#x27;t
+    make sense. Based on my googling, linearizability is a stricter requirement than
+    just staying consistent with some global ordering of the interleaved operations.
+  score: 0
+  posted_at: '2026-11-24T12:57:39Z'
+- id: '50627606'
+  parent_id: '50592307'
+  author: colesantiago
+  text: Great work, always looking for new and neat algorithms and data structures.<p>This
+    video is very helpful.<p><a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=n8lhCeefQzg"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=n8lhCeefQzg</a>
+  score: 0
+  posted_at: '2026-11-24T13:05:02Z'
+- id: '50627782'
+  parent_id: '50627439'
+  author: nwtnni
+  text: The most subtle bug I&#x27;ve been able to reproduce with shuttle-based testing
+    is [this race in Node47](<a href="https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic&#x2F;blob&#x2F;efad26c696f28cfdbeec11377689d03f7ebed27d&#x2F;src&#x2F;raw&#x2F;node&#x2F;node_47.rs#L140-L147"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic&#x2F;blob&#x2F;efad26c696f28cfdbeec11...</a>),
+    with [this test](<a href="https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic&#x2F;blob&#x2F;efad26c696f28cfdbeec11377689d03f7ebed27d&#x2F;src&#x2F;raw&#x2F;node&#x2F;header.rs#L199-L244"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic&#x2F;blob&#x2F;efad26c696f28cfdbeec11...</a>).
+    I did run into some issues trying to compose proptest with shuttle, i.e., writing
+    a test that exercises both random inputs and random interleavings on that input.<p>For
+    non-concurrent code, the [state machine tests](<a href="https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic&#x2F;blob&#x2F;efad26c696f28cfdbeec11377689d03f7ebed27d&#x2F;tests&#x2F;state_machine.rs"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;nwtnni&#x2F;arctic&#x2F;blob&#x2F;efad26c696f28cfdbeec11...</a>)
+    comparing arctic against std::collections::BTreeMap was invaluable for finding
+    edge cases.<p>&gt; I&#x27;ve always been curious whether there was a way to specify
+    the behavior of a concurrent data structure in something like an LTL to prove
+    it correct without having to implement a reference implementation or write an
+    invariant checker.<p>I&#x27;ve toyed with [Alloy](<a href="https:&#x2F;&#x2F;alloytools.org&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;alloytools.org&#x2F;</a>) to verify a small piece
+    of lock-free code in the past, but am no expert. I think verification of lock-free
+    data structures (esp. under weak memory models) is an area of active research.
+  score: 0
+  posted_at: '2026-11-24T13:19:31Z'
+- id: '50627884'
+  parent_id: '50627496'
+  author: nwtnni
+  text: 'By my understanding, linearizability is a property of a <i>single</i> object
+    accessed concurrently, like a data structure, whereas sequential consistency is
+    a property of <i>multiple</i> objects accessed concurrently, like transactions
+    over multiple database rows.<p>EDIT: actually I suppose that&#x27;s not quite
+    right, since you could view arctic as multiple key-value pair objects. Then I
+    think linearizability is usually used because it&#x27;s a composable property,
+    whereas sequential consistency is not (<a href="https:&#x2F;&#x2F;concurrencyfreaks.blogspot.com&#x2F;2015&#x2F;11&#x2F;the-importance-of-sequential-consistency.html"
+    rel="nofollow">https:&#x2F;&#x2F;concurrencyfreaks.blogspot.com&#x2F;2015&#x2F;11&#x2F;the-importanc...</a>)'
+  score: 0
+  posted_at: '2026-11-24T13:27:34Z'
+- id: '50628293'
+  parent_id: '50592307'
+  author: p11p
+  text: 'The authors should have compared against the practical lock-free ART-tree
+    implementation in flock, which IIUC is extremely fast: <a href="https:&#x2F;&#x2F;github.com&#x2F;cmuparlay&#x2F;flock"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;cmuparlay&#x2F;flock</a>'
+  score: 0
+  posted_at: '2026-11-24T14:01:08Z'
+- id: '50628474'
+  parent_id: '50628293'
+  author: nwtnni
+  text: Oops, thanks for the pointer. I searched for standalone concurrent data structure
+    papers and missed this one.<p>That said, it seems like their lock-free variant
+    only beats the original lock-based ART under high skew? Whereas arctic out-performs
+    ART for both uniform and skewed key distributions.
+  score: 0
+  posted_at: '2026-11-24T14:12:23Z'
+- id: '50629750'
+  parent_id: '50592307'
+  author: vvern
+  text: I like the use of 16-byte atomics. We’ve reached the point that for servers
+    and general-purpose computers we should assume they exist.
+  score: 0
+  posted_at: '2026-11-24T15:37:22Z'
+- id: '50630137'
+  parent_id: '50627157'
+  author: grep_it
+  text: 'I came across the paper on google scholar while looking into radix trees.
+    Funny enough there was a recent post from valkey on dropping the skiplist in favour
+    of a btree for their sorted set[0].<p>Looking forward to the blog post!<p>0: <a
+    href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50534387">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=50534387</a>'
+  score: 0
+  posted_at: '2026-11-24T16:02:21Z'
+- id: '50630956'
+  parent_id: '50628474'
+  author: p11p
+  text: 'I think their follow-up in VerLib handles uniform well as well.  I&#x27;m
+    not an expert here---just saw this talk once and remembered.  Please do take a
+    look---might be relevant for any follow-up work you&#x27;re doing: <a href="https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;pdf&#x2F;10.1145&#x2F;3627535.3638501"
+    rel="nofollow">https:&#x2F;&#x2F;dl.acm.org&#x2F;doi&#x2F;pdf&#x2F;10.1145&#x2F;3627535.3638501</a>'
+  score: 0
+  posted_at: '2026-11-24T16:54:44Z'
+- id: '50633663'
+  parent_id: '50592307'
+  author: BiraIgnacio
+  text: this is super cool, thanks for sharing.<p>Something very hard to do correctly
+    and that still performs better than a lock-full version of it (in my very own
+    experience, that is)
+  score: 0
+  posted_at: '2026-11-24T19:53:23Z'
+article:
+  url: https://www.usenix.org/conference/osdi26/presentation/ni
+  title: 'Arctic: A Practical Lock-Free Adaptive Radix Tree | USENIX'
+  fetch_status: success
+  content: |-
+    # Arctic: A Practical Lock-Free Adaptive Radix Tree
+
+    Newton Ni, Nicolas Garza, Jenny Stinehour, and Michael Goppert, The University of Texas at Austin; Michal Friedman, ETH Zürich; Emmett Witchel, The University of Texas at Austin
+
+    Indexing data structures are vital to the modern systems ecosystem, but there are no indexes that offer high performance, lock freedom, and range scans. Arctic is a lock-free adaptive radix tree that achieves all three: Arctic outcompetes lock-based indexes, including a concurrent hash map, on many YCSB configurations, guarantees non-blocking operation through careful metadata layout and an (eponymous) freezing-based coordination protocol, and offers non-linearizable range and prefix scans. Arctic also contributes a novel safe memory reclamation scheme that uses operation keys to approximate reachable pointers. We integrate Arctic into RocksDB and Turso, improving throughput up to 40% and 12% on their write-heavy benchmarks relative to their default skiplist indexes.
+
+    OSDI '26 Open Access Sponsored byKing Abdullah University of Science and Technology (KAUST)
+
+    ## Open Access Media
+
+    USENIX is committed to Open Access to the research presented at our events. Papers and proceedings are freely available to everyone once the event begins. Any video, audio, and/or slides that are posted after the event are also free and open to everyone. Support USENIX and our commitment to Open Access.
+
+    ## Presentation Video 
+  error:
+  fetched_at: '2026-11-24T20:00:57Z'
+archived_at: '2026-11-24T20:01:00Z'

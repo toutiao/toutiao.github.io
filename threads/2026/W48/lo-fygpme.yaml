@@ -5,18 +5,58 @@ post:
   title: 'Release: Roto v0.14.0'
   url: https://community.nlnetlabs.nl/t/release-roto-v0-14-0/3511
   hn_url: https://lobste.rs/s/fygpme
-  score: 12
+  score: 17
   author: fanf
   posted_at: '2026-11-23T21:32:07Z'
-  fetched_at: '2026-11-24T08:52:16Z'
+  fetched_at: '2026-11-24T20:01:01Z'
   article_url: https://community.nlnetlabs.nl/t/release-roto-v0-14-0/3511
   article_fetch_status: success
-  article_fetched_at: '2026-11-24T08:52:24Z'
-  raw_comment_count: 0
+  article_fetched_at: '2026-11-24T20:01:17Z'
+  raw_comment_count: 5
   tags:
   - release
   - rust
-comments: []
+comments:
+- id: lo-n64ces
+  parent_id: '0'
+  author: terts
+  text: Didn't expect this mostly bugfix release to be posted here! Anyway, happy
+    to answer any questions about Roto!
+  score: 3
+  posted_at: '2026-11-24T09:48:19Z'
+- id: lo-zujoyt
+  parent_id: '0'
+  author: evrimzone
+  text: |-
+    I was looking at serialisable runtimes while shopping for a Rust-based scripting language for a game engine I'm working on, and quite a few of the candidates failed. IIRC, Roto also doesn't have a serialisable runtime state.
+    The reason is simple: The in-game world has hundreds of live scripts running various story events, and there is no point during which there are no active events. If a player wants to save the game, I cannot really stop them. All of the Lua interpreters I came across had this problem, for example.
+    In the end, I implementing a custom runtime with a parser library.
+    I'm wondering, was I correct in my understanding that Roto doesn't have a serialisable runtime state, or is it simply not advertised?
+  score: 2
+  posted_at: '2026-11-24T12:53:43Z'
+- id: lo-esixys
+  parent_id: '0'
+  author: terts
+  text: That is indeed correct. You can share Rust types to Roto so there's also no
+    way to provide this really. Of course, you could work around this by ensuring
+    that all the scripts only manipulate some state object that you serialize, but
+    I understand that this would be cumbersome and error prone.
+  score: 1
+  posted_at: '2026-11-24T14:42:09Z'
+- id: lo-yp0woo
+  parent_id: '0'
+  author: evrimzone
+  text: |-
+    Right, but this proposal fails quickly with my use case, whereby the scripts yield to the engine to resolve user prompts, thus their 'program counter' could be anywhere in the script, including inside a loop. At that point, it's not possible to segregate runtime state from script state (from game state).
+    Thanks nonetheless for the good work!
+  score: 1
+  posted_at: '2026-11-24T15:10:39Z'
+- id: lo-ghbicx
+  parent_id: '0'
+  author: terts
+  text: Yep, for sure. I hope you find a language that can do what you want!
+  score: 2
+  posted_at: '2026-11-24T15:19:47Z'
 article:
   url: https://community.nlnetlabs.nl/t/release-roto-v0-14-0/3511
   title: 'Release: Roto v0.14.0! - Roto - NLnet Labs Community'
@@ -28,7 +68,7 @@ article:
 
     [Terts](https://community.nlnetlabs.nl/u/Terts)1
 
-    Roto version 0.14.0 is now available on [crates.io](http://crates.io)! This is mostly a bugfix release and most users should be able to upgrade without any problems. The only breaking change is around `List::contains` and `List::index` when they are used from Rust.
+    Roto version 0.14.0 is now available on [crates.io](https://crates.io/crates/roto/0.14.0)! This is mostly a bugfix release and most users should be able to upgrade without any problems. The only breaking change is around `List::contains` and `List::index` when they are used from Rust.
 
     For this release, I’d like to thank sha90w and [@algernon](/u/algernon) in particular for both reporting and fixing many issues!
 
@@ -47,11 +87,11 @@ article:
 
     #### Bug fixes
 
-    - Report an error instead of crashing when trying to assign to a constant. Thanks, @sha90w! ([#477](https://codeberg.org/NLnetLabs/roto/pulls/477))
-    - The lexer now properly handles multi-byte characters in all places. Thanks, @sha90w! ([#482](https://codeberg.org/NLnetLabs/roto/pulls/482))
-    - Fix parsing of `char` and `String` literals at the end of input. This issue did not affect Roto in its current state, but enables [future work](https://codeberg.org/NLnetLabs/roto/pulls/486). Thanks, @sha90w! ([#488](https://codeberg.org/NLnetLabs/roto/pulls/488))
+    - Report an error instead of crashing when trying to assign to a constant. Thanks, @sha90wsha90w! ([#477](https://codeberg.org/NLnetLabs/roto/pulls/477))
+    - The lexer now properly handles multi-byte characters in all places. Th@sha90wnks, @sha90w! ([#482](https://codeberg.org/NLnetLabs/roto/pulls/482))
+    - Fix parsing of `char` and `String` literals at the end of input. This issue did not affect Roto in its current state, but enables [future wo](https://codeberg.org/NLnetLabs/roto/pulls/486)@sha90w[k](https://codeberg.org/NLnetLabs/roto/pulls/486). Thanks, @sha90w! ([#488](https://codeberg.org/NLnetLabs/roto/pulls/488))
     - Fix the module name of the `pkg.roto` file of a dependency, which interfered with the `pkg.roto` of the main package. ([#485](https://codeberg.org/NLnetLabs/roto/pulls/485))
-    - Fix panics in cases where an error needs to display a hint in another file than where the error occurred. Thanks, @sha90w! ([#505](https://codeberg.org/NLnetLabs/roto/pulls/505))
+    - Fix panics in cases where an error needs to display a hint in another file than where the error @sha90wccurred. Thanks, @sha90w! ([#505](https://codeberg.org/NLnetLabs/roto/pulls/505))
     - Ensure that labels generated by the conversion to MIR are always unique in a function. This didn’t lead to any known problems, but is generally good practice. ([#507](https://codeberg.org/NLnetLabs/roto/pulls/507))
 
     ### Crate
@@ -76,5 +116,5 @@ article:
 
     - The manual has a new look and has been improved in a few places. ([#480](https://codeberg.org/NLnetLabs/roto/pulls/480))
   error:
-  fetched_at: '2026-11-24T08:52:24Z'
-archived_at: '2026-11-24T08:52:25Z'
+  fetched_at: '2026-11-24T20:01:17Z'
+archived_at: '2026-11-24T20:01:18Z'

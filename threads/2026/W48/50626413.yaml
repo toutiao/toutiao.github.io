@@ -1,0 +1,414 @@
+---
+post:
+  id: '50626413'
+  title: Worshipping at the altar of Brendan Gregg
+  url: https://fzakaria.com/2026/11/12/worshipping-at-the-altar-of-brendan-gregg
+  hn_url: https://news.ycombinator.com/item?id=50626413
+  score: 197
+  author: ''
+  posted_at: '2026-11-24T10:50:14Z'
+  fetched_at: '2026-11-24T20:00:21Z'
+  article_url: https://fzakaria.com/2026/11/12/worshipping-at-the-altar-of-brendan-gregg
+  article_fetch_status: success
+  article_fetched_at: '2026-11-24T20:00:21Z'
+  raw_comment_count: 30
+comments:
+- id: '50626776'
+  parent_id: '50626413'
+  author: zinc_chest63
+  text: Flame graphs alone justify the worship, found a hot regex in our billing service
+    in ten minutes
+  score: 0
+  posted_at: '2026-11-24T11:39:47Z'
+- id: '50626796'
+  parent_id: '50626413'
+  author: perdy
+  text: 'Determinism is the underrated part of all this. For a Python framework I
+    maintain we moved the CI benchmarks to Callgrind: instruction counts instead of
+    time, with the cache geometry pinned so it doesn&#x27;t matter which runner you
+    land on. The numbers basically stopped moving between runs, which wall-clock never
+    gave us on shared runners. The catch is that you lose everything off-CPU, which
+    is exactly what this post is about, so the critical path view is a bit enviable.'
+  score: 0
+  posted_at: '2026-11-24T11:41:56Z'
+- id: '50627409'
+  parent_id: '50626776'
+  author: db48x
+  text: Yea, I love being able to go from the new guy at a new job straight to the
+    performance wizard in the first week, or even on the first day. It’s so fun to
+    stare into the depths of a flamechart and then point out where the problems are.<p>At
+    one job they had built this whole nifty SQL library and used it everywhere. In
+    the first profile I took I saw that repeatedly preparing a query took more time
+    than running it and using the data. Each call to prepare took the same amount
+    of time as the others, so it was obvious at a glance that they weren’t caching
+    and reusing the results. The documentation said that they did, and their tests
+    all worked, so they had used it for years even though it was fundamentally broken.
+    That was a fun week.
+  score: 0
+  posted_at: '2026-11-24T12:47:50Z'
+- id: '50627447'
+  parent_id: '50626776'
+  author: sgerenser
+  text: When I worked at Microsoft, I found a particular hot function using flame
+    graphs in a C++ application covering roughly 50% of all call paths in some runs.
+    It was the constructor for a hand-rolled map-like data structure that was used
+    all over the app. Switching to IIRC an abseil hash map cut the overhead by something
+    like 98%. The app was a simulation-type thing that ran on a server for millions
+    of cycles and runs dropped from something like 2 hours to 1 hour, as you’d expect.<p>Unfortunately
+    since then most wins haven’t been nearly as dramatic, but still a happy user of
+    flame graphs.
+  score: 0
+  posted_at: '2026-11-24T12:53:31Z'
+- id: '50627471'
+  parent_id: '50627409'
+  author: skydhash
+  text: Any loop is the prime suspect for optimization. I’ve seen a lot of naive implementation
+    of something instead of using standard algorithms.
+  score: 0
+  posted_at: '2026-11-24T12:55:29Z'
+- id: '50627597'
+  parent_id: '50626776'
+  author: sdevonoes
+  text: I struggle with measuring performance. I cannot run such tools in prod envs.
+    Not even in dev envs, only locally. This is because only platform engs have prod
+    access.<p>But everything usually looks fine on local env, and can’t really replicate
+    the intricacies of prod locally. How do you guys do it?
+  score: 0
+  posted_at: '2026-11-24T13:04:35Z'
+- id: '50627702'
+  parent_id: '50626413'
+  author: sightlinemac
+  text: 'On a live machine you have to start tracing before the slow run happens,
+    and tracing has a cost, so you only get a few attempts. Here every recording already
+    logs every context switch because the VM needs them to replay, so the off-CPU
+    and wakeup analysis can be done afterwards, on any run. The hrtime test is a useful
+    distinction too: it accounts for 3.38s of the critical path, but the sleep is
+    intentional, so the drag you can actually remove is zero.'
+  score: 0
+  posted_at: '2026-11-24T13:12:15Z'
+- id: '50627865'
+  parent_id: '50627597'
+  author: muststopmyths
+  text: They should still be able to provide you with traces from prod even if you
+    can&#x27;t directly access the systems. Most of perf work is analyzing, not collecting.
+  score: 0
+  posted_at: '2026-11-24T13:25:49Z'
+- id: '50628146'
+  parent_id: '50626413'
+  author: despacito
+  text: Disappointed it doesn’t involve more screaming
+  score: 0
+  posted_at: '2026-11-24T13:49:16Z'
+- id: '50628206'
+  parent_id: '50626413'
+  author: aidanhs
+  text: 'I really like the idea of a deterministic VM (I like Antithesis for a similar
+    reason!), though I saw on another post that your VM is single threaded which I
+    feel like must compromise a lot of performance analyses? E.g. when you have very
+    high throughput multithreaded pipelines.<p>Personally I&#x27;ve really cooled
+    on flamegraphs for the purpose of doing multithreaded performance analysis - it&#x27;s
+    so hard to infer cross-thread dependencies. I&#x27;d encourage people interested
+    in performance analysis to read <a href="https:&#x2F;&#x2F;thume.ca&#x2F;2023&#x2F;12&#x2F;02&#x2F;tracing-methods&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;thume.ca&#x2F;2023&#x2F;12&#x2F;02&#x2F;tracing-methods&#x2F;</a>
+    (and I&#x27;d love to hear if there&#x27;s something more recent than end of 2023
+    that has an updated census of tools) which makes a decent case for perfetto, though
+    in my own use-cases I&#x27;ve just ended up creating low latency language-specific
+    trace output library that I can aggregate and load into jaeger-ui, as you can
+    actually add metadata indicating spans you follow from etc.<p>For the author:
+    your product looks very cool, but I encourage you (or someone you pay!) to do
+    an extensive proof reading pass to remove LLM-isms, reading stuff like &quot;process,
+    with what it started&quot; as a column header of ps-like output is like nails
+    on a chalkboard.'
+  score: 0
+  posted_at: '2026-11-24T13:54:16Z'
+- id: '50628287'
+  parent_id: '50627447'
+  author: Sesse__
+  text: Do you really need flame graphs for that? Wouldn&#x27;t any normal profiler
+    tell you if a function and its children used 50% of your CPU?<p>I always struggle
+    to see why people think flame graphs are so great, but I&#x27;m not sure if people
+    are comparing them to a normal (non-graphical) profile or not.
+  score: 0
+  posted_at: '2026-11-24T14:00:38Z'
+- id: '50628987'
+  parent_id: '50626796'
+  author: jiuge1926
+  text: "[flagged]"
+  score: 0
+  posted_at: '2026-11-24T14:45:19Z'
+- id: '50629108'
+  parent_id: '50628146'
+  author: usrme
+  text: 'Reference for one of today&#x27;s lucky 10,000^1: <a href="https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=tDacjrSCeq4"
+    rel="nofollow">https:&#x2F;&#x2F;www.youtube.com&#x2F;watch?v=tDacjrSCeq4</a><p>^1:
+    <a href="https:&#x2F;&#x2F;xkcd.com&#x2F;1053&#x2F;" rel="nofollow">https:&#x2F;&#x2F;xkcd.com&#x2F;1053&#x2F;</a>'
+  score: 0
+  posted_at: '2026-11-24T14:54:29Z'
+- id: '50629263'
+  parent_id: '50626413'
+  author: uvdn7
+  text: Does this type of analysis and deterministic VM help async workloads (e.g.
+    c++ coroutine, fiber, future, etc.)? My understanding is that they don&#x27;t.
+    I would love to know how to find the critical path for async code. It feels very
+    hard (maybe impossible) to do without changing the framework code (e.g. embedding
+    something like a request context so we know a later task on thread A is actually
+    a continuation for request R).
+  score: 0
+  posted_at: '2026-11-24T15:05:29Z'
+- id: '50629504'
+  parent_id: '50628987'
+  author: dang
+  text: Some of your recent comments have been killed by our software because they&#x27;ve
+    been classified as genai text, which is not allowed on HN itself (see <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html#generated">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;newsguidelines.html#generated</a>
+    and <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=47340079">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=47340079</a>).<p>(It&#x27;s
+    fine, of course, to use AI tools—we use them heavily ourselves. Just please don&#x27;t
+    use them to generate or edit text to be read by fellow humans on Hacker News.)<p>It&#x27;s
+    impossible to know for sure what was LLM generated or edited, but we have to rely
+    on imperfect classifiers or else the site would be completely flooded by genai
+    text, which is not what the community here wants to read, nor in the intended
+    spirit of HN.
+  score: 0
+  posted_at: '2026-11-24T15:20:45Z'
+- id: '50629672'
+  parent_id: '50629263'
+  author: setheron
+  text: Yes it does. Everything is deterministic even the thread orderings and all
+    randomness that would decide asyc scheduling in user space.
+  score: 0
+  posted_at: '2026-11-24T15:31:16Z'
+- id: '50630186'
+  parent_id: '50629672'
+  author: uvdn7
+  text: I see. I am not familiar with deterministic VMs. I can see how it can intercept
+    all system calls. I guess randomness is deterministic as well because all the
+    inputs to the RNG are deterministic. So everything is a deterministic state machine.
+  score: 0
+  posted_at: '2026-11-24T16:05:36Z'
+- id: '50630228'
+  parent_id: '50630186'
+  author: setheron
+  text: I wrote <a href="https:&#x2F;&#x2F;fzakaria.com&#x2F;2026&#x2F;10&#x2F;24&#x2F;dafuq-is-a-deterministic-vm"
+    rel="nofollow">https:&#x2F;&#x2F;fzakaria.com&#x2F;2026&#x2F;10&#x2F;24&#x2F;dafuq-is-a-deterministic-vm</a>
+    this for a friend to better understand what it is.
+  score: 0
+  posted_at: '2026-11-24T16:07:55Z'
+- id: '50630342'
+  parent_id: '50628287'
+  author: manwe150
+  text: Flamegraphs sort the samples by location, rather than ordered by time. They
+    also show hierarchy, rather than just leafs. All combinations on those two axis
+    can be useful to present. Strictly speaking a normal profiler is probably one
+    that gives leaf calls only in order, which is probably the least useful quadrant,
+    but the fastest to generate (works better for hand annotated events and to see
+    latency rather than time)
+  score: 0
+  posted_at: '2026-11-24T16:14:42Z'
+- id: '50630402'
+  parent_id: '50628206'
+  author: xyzzy_plugh
+  text: "&gt; I really like the idea of a deterministic VM (I like Antithesis for
+    a similar reason!)<p>I agree, and I also like Antithesis, but I am a bit dismayed
+    that deterministic high-performance VMs haven&#x27;t become commodity yet.<p>I
+    know, I know, I am impatient, and it <i>will</i> happen eventually, but it&#x27;s
+    frustrating to see Antithesis corner the market so hard with a closed solution.<p>Maybe
+    this is a sign I should start yet another side project?"
+  score: 0
+  posted_at: '2026-11-24T16:18:36Z'
+- id: '50630424'
+  parent_id: '50630228'
+  author: uvdn7
+  text: 'Thanks for sharing.<p>&gt; Give a CPU the same registers, the same memory
+    and the same instructions, and it computes the same result.<p>So is branch prediction,
+    cacheline misses, memory accesses I guess.<p>&gt; One more outside influence is
+    easy to miss: other CPUs. On two cores, which thread wins a race comes down to
+    cache misses and pipeline stalls, so Rewind provides a single virtual CPU and
+    the threads take turns on it.<p>Is this a limitation in practice? With a single
+    virtual cpu, data races simply can&#x27;t happen?'
+  score: 0
+  posted_at: '2026-11-24T16:19:56Z'
+- id: '50630802'
+  parent_id: '50626413'
+  author: adsharma
+  text: Things like this could be done via sleep profiling or CPU stall profiling.<p>But
+    they involve a trade-off in the Linux kernel or spending more transistors in CPU
+    design.
+  score: 0
+  posted_at: '2026-11-24T16:45:06Z'
+- id: '50630887'
+  parent_id: '50626776'
+  author: d675
+  text: scripts got significantly faster using isoformat for parsing date times over
+    str. These were critical recovery&#x2F;startup scripts for an ultra low latency<p>no
+    one ever bothered to look. a profile found it instantly
+  score: 0
+  posted_at: '2026-11-24T16:50:56Z'
+- id: '50631034'
+  parent_id: '50626413'
+  author: mixmastamyk
+  text: Weird title.  Also, the post just ends with identifying but not solving the
+    problem?
+  score: 0
+  posted_at: '2026-11-24T17:00:23Z'
+- id: '50631074'
+  parent_id: '50626413'
+  author: disperso
+  text: Seems very interesting. Is there some parallel to make with RR (record and
+    replay) in terms of features, limitations, etc.?<p><a href="https:&#x2F;&#x2F;github.com&#x2F;rr-debugger&#x2F;rr"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;rr-debugger&#x2F;rr</a>
+  score: 0
+  posted_at: '2026-11-24T17:02:52Z'
+- id: '50631533'
+  parent_id: '50630342'
+  author: Sesse__
+  text: "&gt; Flamegraphs sort the samples by location, rather than ordered by time.<p>I&#x27;m
+    not sure if I understand. Do you mean ordered by amount of time spent, or by event
+    time in the executable? (Most profilers do the former, and flame graphs are implicitly
+    a variant of that by scaling the blocks visually by execution time.)<p>&gt; They
+    also show hierarchy, rather than just leafs.<p>Like any profiler in graph mode?
+    Every profiler I&#x27;ve used over the last 20 years (even gprof!) can show function
+    hierarchy, both top-down and bottom-up."
+  score: 0
+  posted_at: '2026-11-24T17:33:45Z'
+- id: '50631591'
+  parent_id: '50631074'
+  author: Veserv
+  text: Everything they described about their runtime is just a time travel debugger
+    using a single-threaded record and replay model. So yes.<p>Their visualizations
+    are techniques based around leveraging the extra data available in a full instruction
+    trace. As such, they can be applied to any time travel debugger datastream, which
+    trivially has a full instruction trace, or just raw instruction trace if that
+    is all you have.
+  score: 0
+  posted_at: '2026-11-24T17:38:36Z'
+- id: '50632075'
+  parent_id: '50628287'
+  author: sgerenser
+  text: Probably could have done it without flame graphs, but the flame graphs made
+    the problem incredibly obvious to anyone including non programmers. I was not
+    originally on the project to work on performance per se, so I had to justify the
+    work.
+  score: 0
+  posted_at: '2026-11-24T18:12:22Z'
+- id: '50633613'
+  parent_id: '50627447'
+  author: ferguess_k
+  text: Thanks for sharing. Can you please hint what is the purpose of that simulation
+    application? Is it for stress testing Azure compute?
+  score: 0
+  posted_at: '2026-11-24T19:51:44Z'
+- id: '50633640'
+  parent_id: '50626413'
+  author: jiveturkey
+  text: 'sadly the answer to the investigation was just a footnote.<p>&gt; 4 Turns
+    out that the test sleeps on purpose: it is checking how far uv_hrtime moves across
+    a sleep. There is nothing to optimize in this case.<p>also, no explanation of
+    why he didn&#x27;t look into the epoll_wait(). i guess because this is a blocking
+    call, not intentionally asleep, and also the intentional sleep is magnified 600
+    times? epoll_wait() shows up as consuming 3x of the wall time but in the shortening
+    analysis the nanosleeps are shown to add up to more time asleep. i&#x27;m a little
+    confused on that.<p>good article, would have been great with more editing. and
+    it would be great to also see an example where a problem is fixed.'
+  score: 0
+  posted_at: '2026-11-24T19:52:37Z'
+article:
+  url: https://fzakaria.com/2026/11/12/worshipping-at-the-altar-of-brendan-gregg
+  title: Worshipping at the altar of Brendan Gregg | Farid Zakaria’s Blog
+  fetch_status: success
+  content: "Okay, I am the first to admit that I’m a bit manic with AI. When you are
+    working on a problem that has endless possibilities, it is difficult to constrain
+    yourself to a limited set of features.\n\nCan I just add one more?\n\nI have been
+    amazed at all the fun and useful things that a deterministic VM like [Rewind](https://rewindvm.dev)
+    enables. I have been using it to help [find heisenbugs](/2026/10/03/rewind-vm-a-flaky-build-you-only-catch-once),
+    to make [profile-guided optimization reproducible](/2026/11/07/making-profile-guided-optimization-reproducible),
+    and to make [Nix builds bit-reproducible](/2026/11/09/what-if-every-nix-build-were-bit-reproducible).
+    But the most fun has been using it to understand performance.\n\nTurns out that
+    performance is yet another area where Rewind shines. I have been using it to analyze
+    the critical path of builds.\n\nWhat is the critical path?\n\nThe critical path
+    is the longest chain of dependent work in a program. It is the minimum time that
+    the program can take to complete, regardless of how many resources you throw at
+    it. The only way to make a program faster is to shorten the critical path.\n\nIf
+    you worship at the altar of Brendan Gregg, you know he spent years turning performance
+    analysis from a dark art into a science. This is a small offering to him. \U0001F932\n\nI
+    added a new `rewind time` command to Rewind that analyzes a recording and tells
+    you where the time went and what would make the run finish sooner. You can drill
+    into any part of that answer and see the source lines responsible for it. It’s
+    like [Brendan Gregg’s flame graphs](https://www.brendangregg.com/flamegraphs.html)
+    but on steroids for the critical path and with a debugger attached.1All the ideas
+    for the command are either inspired by or directly influenced by [Brendan Gregg’s
+    work](https://www.brendangregg.com/). Kneel before Zod!&nbsp;\n\n> **Aside:**
+    New to Rewind? Start with [a flaky build you only catch once](/2026/10/03/rewind-vm-a-flaky-build-you-only-catch-once)
+    and [dafuq is a deterministic VM?](/2026/10/24/dafuq-is-a-deterministic-vm)\n\nLet’s
+    see how it works by analyzing the critical path of a [libuv](https://github.com/libuv/libuv)
+    build and test run. The build and test suite takes 78 seconds inside Rewind, and
+    even with 64 cores it still takes 47 seconds. Why?\n\nThe usual answer is to look
+    at a CPU profile, and in this case a CPU profile would be almost useless. For
+    two thirds of those 47 seconds, the work the build is waiting on is not computing
+    at all: it is _asleep_. \U0001F4A4\U0001F4A4\U0001F4A4\n\n## [§](#where-the-time-goes)Where
+    the time goes\n\nEvery `rewind time` starts with two numbers:\n\n    $ rewind
+    time 7a29e716\n    libuv-1.51.0\n        78.0 s elapsed on the VM's one CPU 47.4
+    s critical path: the least it can take on any number of CPUs 67% asleep (epoll_pwait
+    23.1 s, clock_nanosleep 8.53 s, futex 100 ms), 33% computing\n\nThe first is how
+    long the run took on the VM’s one virtual CPU. The second is the **critical path**
+    : the longest chain of work where each step had to wait for the one before.\n\nNo
+    number of CPUs makes a run shorter than its critical path, so the gap between
+    the two numbers is all that parallelism can buy you.\n\nThe line under the two
+    numbers applies Gregg’s [thread state analysis](https://www.brendangregg.com/tsamethod.html).
+    Here the biggest state is asleep: 23 seconds in `epoll_pwait` and 8.5 in `clock_nanosleep`.\n\nA
+    sleeping thread is invisible to a CPU profiler. Gregg’s answer is [off-CPU analysis](https://www.brendangregg.com/offcpuanalysis.html):
+    look at where threads block, not only where they compute.\n\nOn a live machine,
+    off-CPU analysis is hard. Linux can trace which thread woke which, and Gregg built
+    [wakeup and off-wake profiling](https://www.brendangregg.com/blog/2016-02-01/linux-wakeup-offwake-profiling.html)
+    on top of that, but you have to be tracing before the slow run happens, the tracing
+    has a cost, and most of the sleeps you capture are noise. Rewind already logs
+    every context switch because it needs them to replay, and now it records every
+    wakeup and who caused it too. All that _juicy_ information is in every recording.
+    \U0001F924\n\nHere is the whole output for libuv:\n\n    $ rewind time 7a29e716\n
+    \   libuv-1.51.0\n        78.0 s elapsed on the VM's one CPU\n        47.4 s critical
+    path: the least it can take on any number of CPUs\n                67% asleep
+    (epoll_pwait 23.1 s, clock_nanosleep 8.53 s, futex 100 ms), 33% computing\n    \n
+    \   The critical path by phase\n        3.54 s configurePhase ██\n        1.67
+    s buildPhase █\n        42.0 s checkPhase █████████████████████\n         99 ms
+    5 other phases\n    \n    The critical path by process\n       on path pid process,
+    with what it started\n        47.4 s 34 init › bash -e source-stdenv.sh default-builder.sh\n
+    \       41.9 s 4076 ├─ make -j8 SHELL=bash-5.3p3/bin/bash VERBOSE=y check\n        36.4
+    s 4910 │ ├─ make › bash › lt-run-tests\n        3.38 s 5412 │ │ ├─ lt-run-tests
+    hrtime hrtime asleep in clock_nanosleep 3.38 s\n        2.00 s 5013 │ │ ├─ lt-run-tests
+    delayed_accept delayed_accept asleep in epoll_pwait 2.00 s\n        1.62 s 5126
+    │ │ ├─ lt-run-tests fs_event_watch_dir fs_event_watch_dir asleep in epoll_pwait
+    1.62 s\n        1.60 s 5103 │ │ ├─ lt-run-tests fs_event_close_in_callback fs_event_close_in…
+    asleep in epoll_pwait 1.60 s\n        1.60 s 5508 │ │ ├─ lt-run-tests metrics_idle_time
+    metrics_idle_time asleep in epoll_pwait 1.00 s, computing 600 ms\n        1.24
+    s 6095 │ │ ├─ lt-run-tests tcp_write_ready tcp_write_ready\n        1.14 s 5510
+    │ │ ├─ lt-run-tests metrics_idle_time_thread metrics_idle_time_t… asleep in epoll_pwait
+    1.00 s\n        1.10 s 5132 │ │ ├─ lt-run-tests fs_event_watch_file_current_dir
+    fs_event_wat… asleep in epoll_pwait 1.10 s\n        22.6 s │ │ └─ 279 more\n        5.59
+    s 4077 │ └─ make test/run-tests\n        2.22 s 4183 │ ├─ gcc -fPIC -fstack-clash-protection
+    -O2 -U_FORTIFY_SOURCE …\n        2.10 s 4189 │ │ └─ cc1 /build/source/test/test-fs.c\n
+    \       3.35 s │ └─ 20 more\n        1.99 s 68 ├─ sh ./autogen.sh\n        1.99
+    s │ └─ 9 more\n        1.67 s 2642 ├─ make -j8 SHELL=bash-5.3p3/bin/bash\n        1.67
+    s │ └─ 5 more\n        1.53 s 403 └─ bash ./configure --disable-static --disable-dependency-tracking…\n
+    \       1.47 s └─ 581 more\n    \n    What would shorten it\n        sooner pid
+    if this took no time\n        36.1 s every lt-run-tests, 600 processes\n        6.66
+    s every cc1, 283 processes\n        3.38 s 5412 75 sleeps in clock_nanosleep:
+    lt-run-tests hrtime hrtime\n        2.00 s 5013 2 sleeps in epoll_pwait: lt-run-tests
+    delayed_accept delayed_accept\n        1.76 s 4189 cc1 /build/source/test/test-fs.c\n
+    \       1.62 s 5126 30 sleeps in epoll_pwait: lt-run-tests fs_event_watch_dir
+    fs_event_watc…\n        1.60 s 5103 16 sleeps in epoll_pwait: lt-run-tests fs_event_close_in_callback
+    fs_ev…\n        1.60 s 5508 lt-run-tests metrics_idle_time metrics_idle_time\n
+    \       1.22 s every perl, 9 processes\n        1.14 s 5510 lt-run-tests metrics_idle_time_thread
+    metrics_idle_time_thread\n    \n    Look closer\n      rewind time 7a29e716 --in
+    PID one process: its threads, sleeps and waits\n      rewind time 7a29e716 --folded
+    the path for flamegraph.pl or speedscope.app\n      rewind time 7a29e716 --perfetto
+    F every process on a timeline, for ui.perfetto.dev\n\nThe second table is the
+    path as a **tree of processes** based on Gregg’s [colony graph](https://www.brendangregg.com/ColonyGraphs/execution.html)
+    idea. Each line is a process with everything it started, and its time on the critical
+    path.2A `ps` snapshot might miss short-lived process invocations; the recording
+    has every fork, regardless of how brief.&nbsp;\n\nIn this build, `make check`
+    needs 41.9 of the total 47.4 seconds, and 36.4 of that is `lt-run-tests`, libuv’s
+    test runner. The test runner invokes 287 tests each spending 1-3 seconds.\n\nAll
+    of those tests are on the path, and the path is a single chain, so the runner
+    ran them one after another. Worse, most of each test is spent asleep, waiting
+    on timers.\n\nDrag can be less than time on the path.\n\nThe la"
+  error:
+  fetched_at: '2026-11-24T20:00:21Z'
+archived_at: '2026-11-24T20:01:00Z'

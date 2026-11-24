@@ -1,0 +1,83 @@
+---
+post:
+  id: lo-rfcgkx
+  source: lobsters
+  title: Security incident on Hex.pm
+  url: https://hex.pm/blog/security-incident-on-hexpm
+  hn_url: https://lobste.rs/s/rfcgkx
+  score: 29
+  author: munksgaard
+  posted_at: '2026-11-24T14:52:19Z'
+  fetched_at: '2026-11-24T20:01:01Z'
+  article_url: https://hex.pm/blog/security-incident-on-hexpm
+  article_fetch_status: success
+  article_fetched_at: '2026-11-24T20:01:02Z'
+  raw_comment_count: 5
+  tags:
+  - elixir
+  - erlang
+  - gleam
+comments:
+- id: lo-3sycky
+  parent_id: '0'
+  author: srcrip
+  text: Been reading over this, its really fascinating. I did not realize that Hexpm
+    (or I guess this is built in to part of Plug?) has this ability to accept Erlang
+    terms over the network with the mime type of application/vnd.hex+erlang. I have
+    to say, in my personal opinion, I think passing erlang terms around over the network
+    is not a safe choice. JSON is the normal choice here... whatever it is you need
+    to pass around, surely converting it to and from JSON is fine.
+  score: 8
+  posted_at: '2026-11-24T15:03:21Z'
+- id: lo-icgy4c
+  parent_id: '0'
+  author: olegkovalov
+  text: |-
+    Holly-molly. What a bug! I mean, yeah, it’s a standart-ish way to get RCE but the way how it’s triggered is something.
+    I want to believe at some moment all languages will stick to 2-3 formats and will not reinvent the wheel.
+  score: 4
+  posted_at: '2026-11-24T15:10:30Z'
+- id: lo-njsoxe
+  parent_id: '0'
+  author: aggsol
+  text: Those response times are impressive. This looks like text book example how
+    to handle these situations.
+  score: 7
+  posted_at: '2026-11-24T16:57:37Z'
+- id: lo-kai9qp
+  parent_id: '0'
+  author: pushcx
+  text: The overall shape of this is quite similar to CVE-2013-0156, blast from the
+    past. And to compare responses between the languages, the matter-of-fact log of
+    the obviously responsible reporting to authorities is a refreshing improvement.
+  score: 5
+  posted_at: '2026-11-24T17:05:26Z'
+- id: lo-pmijeq
+  parent_id: '0'
+  author: technojamin
+  text: |-
+    Hex implemented accepting Erlang's external term format over the network for their own purposes in HexpmWeb.ErlangFormat, it's (thankfully) not built into Plug. You can see the fix to that module in the linked commit.
+    ETF is really useful for avoiding encoding/parsing overhead. It makes a lot of sense to use when 2 parties both speak in Erlang terms, and for something at the scale of a package registry like Hex, it's a good choice from a performance perspective.
+    Erlang is a hardened, network-first language, and my guess is that you can trust the :safe in :erlang.binary_to_term(..., [:safe]). The issue is that Elixir has decided to build structs on top of Erlang's existing map data type. On top of that, structs open the door to a lot of implicit code calling given how they interact with protocols.
+    It seems like the big miss here was that it was assumed that terms that would be safe in Erlang would also be safe in Elixir. Given how structs interact with protocols, that is absolutely not the case (as the attack clearly shows).
+    I think the Elixir community, and ideally the core Elixir team, should remedy this situation by providing safe term conversion functions of its own. A stricter subset on top of ETF that disallows structs (or maybe converts safely between standard library structs) would be nice, and that's what Hex has implemented ad-hoc in HexpmWeb.ErlangFormat. If that gets implemented, compilation warnings on usage of binary_to_term that suggest the use of the safe Elixir variant could prevent a vulnerability like this in the future.
+  score: 3
+  posted_at: '2026-11-24T18:27:21Z'
+article:
+  url: https://hex.pm/blog/security-incident-on-hexpm
+  title: Security incident on hex.pm | Hex
+  fetch_status: success
+  content: "## Search filters \n\nType any of these into the search box. They can
+    be combined with free text which searches package names and descriptions.\n\n|
+    Operator | Description | Example |\n| --- | --- | --- |\n| name: | Match package
+    name. Supports \\* wildcards and repo/package form | name:phx\\* or name:hexpm/phoenix
+    |\n| description: | Full-text search of package descriptions | description:auth
+    |\n| depends: | Packages depending on a given package. Supports repo:package form
+    | depends:ecto or depends:hexpm:ecto |\n| build\\_tool: | Filter by build tool
+    | build\\_tool:mix |\n| updated\\_after: | Packages updated after an ISO8601 datetime
+    | updated\\_after:2025-01-01T00:00:00Z |\n| extra: | Match custom metadata (key,value).
+    Nested keys are separated by commas | extra:license,MIT |\n\nWrap values in double
+    quotes to include spaces, e.g. `name:\"my package\"`."
+  error:
+  fetched_at: '2026-11-24T20:01:02Z'
+archived_at: '2026-11-24T20:01:02Z'

@@ -4,14 +4,11 @@ post:
   title: A primer on GPUs and kernel optimization
   url: https://www.nabo.dev/blogs/kernel-primer
   hn_url: https://news.ycombinator.com/item?id=50386246
-  score: 181
-  author: ''
+  score: 191
+  author: nomi_uw
   posted_at: '2026-11-05T23:48:04Z'
-  fetched_at: '2026-11-10T16:50:49Z'
-  article_url: https://www.nabo.dev/blogs/kernel-primer
-  article_fetch_status: error
-  article_fetched_at: '2026-11-10T16:50:49Z'
-  raw_comment_count: 16
+  fetched_at: '2026-11-24T20:01:18Z'
+  raw_comment_count: 26
 comments:
 - id: '50432557'
   parent_id: '50386246'
@@ -141,6 +138,124 @@ comments:
   text: Sure, that might be worth discussing, I agree
   score: 0
   posted_at: '2026-11-10T14:23:49Z'
+- id: '50443103'
+  parent_id: '50437812'
+  author: nomi_uw
+  text: The post is actually mostly human written! I personally am not a fan of Claude&#x27;s
+    writing and don&#x27;t even use Claude (my main subscription is Codex).
+  score: 0
+  posted_at: '2026-11-10T17:03:28Z'
+- id: '50443109'
+  parent_id: '50434708'
+  author: nomi_uw
+  text: I appreciate the compliment, yes this is spot on
+  score: 0
+  posted_at: '2026-11-10T17:03:50Z'
+- id: '50443113'
+  parent_id: '50434738'
+  author: nomi_uw
+  text: Will update, thanks for pointing out.
+  score: 0
+  posted_at: '2026-11-10T17:04:06Z'
+- id: '50443148'
+  parent_id: '50432557'
+  author: nomi_uw
+  text: Hmm, this is a good point. I tried to be fairly brief on this part and separated
+    a lot of the profiling to a separate page since I usually use AI for benchmarking
+    these days. I do think there are a lot of principles that humans should learn
+    in practice, even if most of this is done with LLMs.<p>I&#x27;ll update the post
+    in the coming week with a section on benchmarking. The current post does have
+    some details on measurement, but I agree that maybe it&#x27;s not covered in the
+    required depth.
+  score: 0
+  posted_at: '2026-11-10T17:06:44Z'
+- id: '50446460'
+  parent_id: '50443148'
+  author: augment_me
+  text: 'It&#x27;s a bit of a footgun to do benchmarking with AI models. If you worked
+    with really performant GPU kernels (SOTA, better-than cuBLAS&#x2F;FlashInfer level),
+    you know that the LLMs reward hack:<p>Primer: <a href="https:&#x2F;&#x2F;ornith.ai&#x2F;defense_kernel_hack.html"
+    rel="nofollow">https:&#x2F;&#x2F;ornith.ai&#x2F;defense_kernel_hack.html</a><p>In-depth(follow
+    links etc): <a href="https:&#x2F;&#x2F;x.com&#x2F;myainotez&#x2F;article&#x2F;2037258418843771349"
+    rel="nofollow">https:&#x2F;&#x2F;x.com&#x2F;myainotez&#x2F;article&#x2F;2037258418843771349</a><p>Parts
+    relevant: <a href="https:&#x2F;&#x2F;www.coreauto.com&#x2F;blog&#x2F;when-ai-starts-writing-systems-code"
+    rel="nofollow">https:&#x2F;&#x2F;www.coreauto.com&#x2F;blog&#x2F;when-ai-starts-writing-systems...</a><p>----<p>When
+    you do this with benchmarking, the same thing happens but on a much deeper, shittier,
+    harder to understand level. It will set up the caches to benefit your kernels,
+    it will set up the timing to benefit your kernels, it will set up the evaluation
+    order to benefit your kernels. I&#x27;ve seen half-cache flushes, which only benefit
+    large shapes.<p>I wouldn&#x27;t be surprised if you pointed a language model on
+    your benchmarking with the comment above, and it found something that is reward-hacking
+    your task.'
+  score: 0
+  posted_at: '2026-11-10T21:20:50Z'
+- id: '50448481'
+  parent_id: '50446460'
+  author: nomi_uw
+  text: |-
+    Yes, they can reward hack. However, making sure the model knows what your requirements are (e.g., &quot;do not quantize, meet this set of specifications&quot;) can mitigate that, and simply looking at the code briefly (or having the LLM describe it back to you) can mitigate it quite easily. Often, such issues are a result of insufficient specificity by the user. If you tell it just to make the model faster, it&#x27;ll do it and not assume additional requirements.<p>Same thing applies to benchmarking, a few guardrails goes a long way. As long as you aren&#x27;t completely vague (&quot;set up benchmarks&quot;, vs. &quot;write tests over a variety of common shapes, be careful to control for environmental variables&quot;) the models do quite well. I&#x27;ve checked over the code it&#x27;s written and it&#x27;s all fairly reasonable. I do mention cache eviction in the article, this generally wasn&#x27;t an issue and the model did this automatically on the first pass (back in Opus 4.6 days). I think you might not be giving them enough credit here.<p>I&#x27;m not completely familiar with the writers of this article, but I&#x27;ve never had an LLM try to hack this, even sometimes telling me a target was impossible without quantization or approximation:<p>&quot;Code based analysis already tells a detailed story, but there is an overlooked parameter: &quot;boundaries of the hardware&quot;. &quot; - the myainotez post<p>This project has spanned several models since Opus 4.5. I think even then such details were trivially known by them, thought they required much more handholding than they do now. I&#x27;m honestly not sure how the article writers ran into the hacks they did.<p>edit: I should mention this article is based on my experience developing an RL and inference framework dealing with trainer-inference mismatch. I don&#x27;t know if hill-climbing a kernel in an isolated set of benchmarks would perform differently. At the end of the article, I mention what my hill-climber looks like:
+    <a href="https:&#x2F;&#x2F;www.nabo.dev&#x2F;blogs&#x2F;kernel-primer#section-in-the-age-of-agents" rel="nofollow">https:&#x2F;&#x2F;www.nabo.dev&#x2F;blogs&#x2F;kernel-primer#section-in-the-age-...</a>
+    It has to go through numerics and correctness checks, then isolated tests for common shapes (where launch parameters are determined by an autotuner, not the agent), followed by end-to-end throughput tests.
+  score: 0
+  posted_at: '2026-11-11T00:56:50Z'
+- id: '50448931'
+  parent_id: '50448481'
+  author: augment_me
+  text: A good harness is great, but if it was that was all, everyone would have SOTA
+    perf and we would be done with GPU kernels.<p>Look at this challenge:<p><a href="https:&#x2F;&#x2F;openkernelchallenge.dev&#x2F;#leaderboard"
+    rel="nofollow">https:&#x2F;&#x2F;openkernelchallenge.dev&#x2F;#leaderboard</a><p>If
+    you have the tokens, let your harness go at let&#x27;s say the first bf16 problem,
+    I am curious how far you will get with it (1.73x is the leader and 2.04x is roofline).
+    I think if you manage to get above 1.63x, I would be really interested in learning
+    how you did that.
+  score: 0
+  posted_at: '2026-11-11T01:57:46Z'
+- id: '50449310'
+  parent_id: '50448931'
+  author: nomi_uw
+  text: 'Seems like the kernel portion of that competition is closed. I can probably
+    compare whatever the serving winner is against JamInfer when it&#x27;s out (seems
+    like they start that track on the 12th). Main issue being any submission code
+    goes straight to SGLang which I don&#x27;t think my advisor or university will
+    appreciate spending resources on.<p>The top of the article shows the e2e times
+    on some math RL tasks, with fp8 weights&#x2F;activations&#x2F;KV, comparing against
+    SGLang on two models. They use the same concurrent batch size, quantization scheme,
+    and the final lengths were about the same. I think Qwen3 models are probably very
+    mature compared to Muse by now.<p>30B-A3B MoE<p>Jam    - 67,241<p>SGLang - 44,696<p>+50.4%<p>8B
+    Dense<p>Jam    - 58,821<p>SGLang - 41,759<p>+40.9%<p>Math RL is pure decode, so
+    kernels are the most major factor here.<p>Also-- I feel as if this has gone a
+    bit off-track. The point of my reply was to comment on agents being actually decent
+    at benchmark development and usage if you tell them to be, not as a comment on
+    how great the harness is (I even state in the article: &quot;it&#x27;s a fairly
+    simple and minimal setup that seems to work well.&quot;).<p>I don&#x27;t think
+    it&#x27;s a footgun at all, and generally feel like (at least OpenAI&#x27;s models)
+    tend to do well in stating when there is some caveat to watch out for (they&#x27;ll
+    probably say when they&#x27;re about to hack for the user to catch). The benchmarking
+    suite they&#x27;ve made is actually very similar to what&#x27;s in the open kernel
+    challenge. Given that this was initially made many months ago, I&#x27;d think
+    Opus and GPT did a pretty good job if someone is betting $100k+ (in prize money)
+    on a similar suite being decent.'
+  score: 0
+  posted_at: '2026-11-11T03:03:52Z'
+- id: '50449826'
+  parent_id: '50449310'
+  author: augment_me
+  text: Oh sorry I didn&#x27;t know it closed. I understand, I was mostly curious
+    because I hear this every now and then, people seemingly not running into the
+    issues of reward-hacking with agentic harnesses which contradicts a lot of findings
+    from people and myself in these competitions.
+  score: 0
+  posted_at: '2026-11-11T04:43:09Z'
+- id: '50449903'
+  parent_id: '50449826'
+  author: nomi_uw
+  text: I don&#x27;t think it&#x27;s not a problem, and I&#x27;m sure it pops up extremely
+    often in the case of competitions when things are won by margins of +0.01x and
+    hundreds of people are chipping at it with agents for days. This is a very different
+    scenario to what I assume most people might be doing, though.<p>Thanks for bringing
+    up these points, it&#x27;s definitely good food for thought to add to the blog!
+  score: 0
+  posted_at: '2026-11-11T04:59:43Z'
 article:
   url: https://www.nabo.dev/blogs/kernel-primer
   title:
@@ -148,4 +263,4 @@ article:
   content:
   error: 'gate: too_short'
   fetched_at: '2026-11-10T16:50:49Z'
-archived_at: '2026-11-10T16:50:57Z'
+archived_at: '2026-11-24T20:02:18Z'
