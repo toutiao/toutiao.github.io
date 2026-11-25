@@ -1,0 +1,130 @@
+---
+post:
+  id: lo-lyyksp
+  source: lobsters
+  title: Optimizing Rustc's next trait solver
+  url: https://donsz.nl/blog/optimizing-rustcs-next-trait-solver
+  hn_url: https://lobste.rs/s/lyyksp
+  score: 15
+  author: jana
+  posted_at: '2026-11-25T13:09:22Z'
+  fetched_at: '2026-11-25T16:54:58Z'
+  article_url: https://donsz.nl/blog/optimizing-rustcs-next-trait-solver
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T16:54:59Z'
+  raw_comment_count: 1
+  tags:
+  - compilers
+  - performance
+  - rust
+comments:
+- id: lo-6ovsm3
+  parent_id: '0'
+  author: kiwec
+  text: You should optimize this website so that it displays text before the youtube
+    video is fully loaded.
+  score: 1
+  posted_at: '2026-11-25T16:37:54Z'
+article:
+  url: https://donsz.nl/blog/optimizing-rustcs-next-trait-solver
+  title: Optimizing Rustc's next trait solver
+  fetch_status: success
+  content: "# Optimizing Rustc's next trait solver \nPress for table of Contents\n\nThe
+    next rust trait solver, a large subsystem of the rust compiler that we've been
+    trying to replace, will finally land in rust 1.102.0. In the last stages, before
+    stabilizing it, its performance was a major blocker. But what is \"a trait solver\"?
+    And why is its performance a problem? My goal for this blog post is to answer
+    those questions in a way where you don't need _any_ prior knowledge. I think discussions
+    of the trait solver can quickly become quite involved, and daunting. So today,
+    we'll start from the very basics!\n\nThis is a writeup of my [eurorust 2026 talk](https://youtu.be/OFZxcds9HRc?si=uRHxj8WO2Aewq7rX)
+    of the same name, that I gave on October 15, 2026.\n\nAnd if you'd rather watch
+    than read this talk, you can do so here on youtube:\n\nThe new solver is the codebase
+    I work on daily, and I've done so for about a year full-time. I'm not the main
+    person driving its stabilization though, that would be [![lcnr's github avatar](https://github.com/lcnr.png)lcnr](https://github.com/lcnr),
+    who's worked on it for far longer than I've been around in the Rust project. My
+    main focus has been optimizing the new solver's performance.\n\n> Many people
+    have worked avery hard, for years, to make the new solver a reality. You can find
+    some of them [here](https://rust-lang.org/governance/teams/#team-project-trait-system-refactor),
+    and [here](https://rust-lang.org/governance/teams/#team-types).\n\nMy work here
+    is only possible because of Hexcat and RustNL paying me and others to work on
+    rust compiler development. Consider whether you or your company could sponsor
+    [Hexcat](https://hexcat.nl/) or the [RustNL maintainer team](https://rustnl.org/maintainers/).\n\n##
+    History of the new solver\n\nOn the 15th of May, 2015, Rust reached a major milestone.
+    The very first stable version of rust was released. [Version 1.0.0](https://blog.rust-lang.org/2015/05/15/Rust-1.0/).
+    Just 72 days later, on the 24th of July, work started on a new trait solver. Or
+    well, that's when the [Chalk](https://github.com/rust-lang/chalk) project got
+    its first commit. It seems the initial goal was to formalize the trait system
+    so we could prove its correctness. One reason that didn't work well is because
+    the trait system wasn't very correct at all.\n\nChalk is, according to its github
+    description, \"An implementation and definition of the Rust trait system using
+    a PROLOG-like logic solver\". The fact that it's \"PROLOG-like\" we'll come back
+    to in a few paragraphs, it's quite interesting! However, Chalk isn't around anymore.
+    Its README.md says it has been \"sunset in favor of the newer next-generation
+    trait solver\". In October 2022, this project was [officially started](https://github.com/rust-lang/types-team/issues/58)
+    to turn the lessons learned from Chalk, into an actual new subsystem of the rust
+    compiler, that, once finished, could replace the code of the old trait solver.\n\nThe
+    goal of the new trait solver is to make sure we wouldn't have as many correctness
+    bugs in the trait system. We now call this project [\"project zero\"](https://goals.rust-lang.org/2026/roadmap-project-zero.html),
+    referring to the number of soundness bugs we'd ideally like to have in our type
+    system. There have been several very long standing bugs in Rust's (old) trait
+    solver. Like [this one](https://github.com/rust-lang/rust/issues/25860), that
+    has been open since May 28, 2015 (just 13 days after Rust 1.0!). It abuses something
+    called \"implied bounds\" to convince the Rust compiler to turn a short lifetime
+    `'a` _into_ a `'static` lifetime, allowing you to use a reference after its already
+    freed. Some of these bugs were fundamentally impossible to fix with the way the
+    old trait solver worked.\n\n> Note: Chalk and the new trait solver aren't the
+    same thing. Chalk came first, and learned a lot of lessons incorporated in the
+    new solver.\n\nBut what is a trait system? And how does a trait solver solve it?\n\n##
+    What is a trait solver?\n\nThe first place to look for documentation about the
+    Rust compiler is the \"rustc dev guide\". It [says](https://rustc-dev-guide.rust-lang.org/solve/trait-solving.html?highlight=trait%20solving%20core#core-concepts)
+    \"The goal of the trait system is to check whether a given trait bound is satisfied.
+    Most notably when typechecking the body of - potentially generic - functions.\".
+    But I promised I'd start at absolute zero, so what's a trait?\n\nSome types act
+    in similar ways. They share certain properties. For example, a lot of different
+    types can be cloned, or copared for equality. To codify these properties, we can
+    use traits. In other words, a trait is a _property of a type_.\n\n    // Declare
+    that a property called \"Clone\" exists.\n    trait Clone {\n        // ...\n
+    \   }\n    \n    // Declares that the type `u64` has this property\n    impl Clone
+    for u64 {\n        // ...\n    }\n\nNotably, you can associate behaviors with
+    these properties. The standard library's [definition of `Clone`](https://doc.rust-lang.org/stable/std/clone/trait.Clone.html)
+    also includes two methods that can be called to perform this cloning operation.\n\nTo
+    check whether the code you wrote is correct, the Rust compiler sometimes has to
+    check that these properties hold. If you're trying to clone a value, the compiler
+    has to check whether that value _can_ be cloned.\n\n### Prolog\n\nProlog is a
+    cool programming language that works and looks very differently to what you may
+    be used to. However, it is just as powerful (i.e. turing complete) as any other.
+    The way it works has strong parallels to our trait system, let me show you. Here's
+    an example:\n\n    Copy(u64).\n    Clone(String).\n    \n    Clone(x) :- Copy(x).\n
+    \   \n    ?- Clone(String)\n    ?- Clone(u64)\n\nA Prolog program consists of
+    a set of statements, called \"facts\", as well as relationships between facts.
+    In the above program, there are two facts: `u64` has the property `Copy`, `String`
+    has the property `Clone`, And there's also a relationship between these two properties.
+    If some variable `x` has the `Copy` property, it also has the `Clone` property.\n\nFinally,
+    we can ask the prolog program some questions. For example, Does the type `u64`
+    have the `Clone` property? To answer that question, the runtime of a prolog program
+    has to analyze all the known facts and relations. In this program we haven't said
+    that `u64` has the `Clone` property. However, we have said that it has the `Copy`
+    property. And by using the relationship between `Copy` and `Clone`, the solver
+    can derive that both questions (starting with `?-`) are true!\n\nThe reason Chalk
+    was using a \"prolog-like\" solver, is because as you can see, the trait system
+    is extremely similar to a logic solver. Both \"facts\" and \"relations\" can be
+    written using `impl` blocks. In fact, I can write the above program as a Rust
+    program:\n\n    struct u64;\n    struct String;\n    \n    trait Copy {}\n    trait
+    Clone {}\n    \n    impl Copy for u64 {}\n    impl Clone for String {}\n    \n
+    \   impl<T> Clone for T\n        where T: Copy\n    {}\n    \n    // To ask direct
+    questions to the solver,\n    // we have to get a tiny bit creative:\n    fn foo()\n
+    \       where\n            String: Clone,\n            u64: Clone\n    {}\n\nNeither
+    the new solver or the old solver state as plainly as chalk does that they're using
+    a \"prolog-like solver\". However, given the similarities, both the old solver
+    and the new solver really aren't so different from how you'd implement a prolog
+    runtime.\n\n### A note about type inference\n\nTrait solving is not the same as
+    type inference. This is a common misconception. Inside the Rust compiler, the
+    two are completely different subsystems. Type inference is the process of replacing
+    blanks with types. Throughout this text I'll refer to some the following example
+    code (with slight variations):\n\n    fn weird_add<T>(a: T, b: T) -> T\n        where
+    T: Add<T, Output = T>\n    {\n        a + b + b\n    }\n    \n    fn main() {\n
+    \       let a = 4;\n        let b = 5\n    \n        println!(\"{}\", weird_add(a,
+    b))\n    }\n\nWe use"
+  error:
+  fetched_at: '2026-11-25T16:54:59Z'
+archived_at: '2026-11-25T16:54:59Z'

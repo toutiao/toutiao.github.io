@@ -1,0 +1,144 @@
+---
+post:
+  id: '50633424'
+  title: 'From CUDA and Jax to TorchTPU: Lessons from a Cayley Graph Solver'
+  url: https://andlukyane.com/blog/cayley-graphs-and-torchtpu
+  hn_url: https://news.ycombinator.com/item?id=50633424
+  score: 87
+  author: ''
+  posted_at: '2026-11-24T19:40:43Z'
+  fetched_at: '2026-11-25T16:54:50Z'
+  article_url: https://andlukyane.com/blog/cayley-graphs-and-torchtpu
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T16:54:50Z'
+  raw_comment_count: 2
+comments:
+- id: '50635587'
+  parent_id: '50633424'
+  author: fl1pper
+  text: With T=51 and head_dim=32 giving only ~2.5% MXU tile occupancy, did you consider
+    packing multiple puzzle states into a single tile while keeping their attention
+    independent? Or does XLA already exploit the batch dimension for this?
+  score: 0
+  posted_at: '2026-11-24T22:17:51Z'
+- id: '50639737'
+  parent_id: '50635587'
+  author: Artgor
+  text: 'Good question. As far as I know, XLA won&#x27;t do it on its own: both attention
+    operands are different for each state, so there&#x27;s no shared operand to fold
+    the batch into - each small 51×32 tile gets padded separately.<p>I haven&#x27;t
+    tried packing yet, but I think it could work. In my benchmarking experiments,
+    StableHLO attention at T=256 was 2.6x faster than at T=51. The only extra cost
+    would be the block-diagonal mask.<p>I can try it. In fact, it would be easier
+    and better to change the model architecture so that it fits hardware better. It
+    just won&#x27;t work as a comparison.'
+  score: 0
+  posted_at: '2026-11-25T07:51:32Z'
+article:
+  url: https://andlukyane.com/blog/cayley-graphs-and-torchtpu
+  title: 'From CUDA and JAX to TorchTPU: Lessons from a Cayley Graph Solver | Andrey
+    Lukyanenko'
+  fetch_status: success
+  content: "# From CUDA and JAX to TorchTPU: Lessons from a Cayley Graph Solver\n\n24
+    November 2026\n\n## From CUDA and JAX to TorchTPU: Lessons from a Cayley Graph
+    Solver\n\nSome time ago, I shared a blog post about working with Cayley graphs,
+    where I solved combinatorial puzzles using AI coding agents, PyTorch on GPUs,
+    and JAX on TPUs. Recently, Google released TorchTPU, a native PyTorch backend
+    for TPUs, and I wanted to see how well it works on the same task: whether a PyTorch-native
+    TPU stack could match my A100 training pipeline and my JAX beam search in speed
+    and solution quality, or maybe even beat them.\n\nThe short version: getting TorchTPU
+    to work was easy; getting it to work efficiently was considerably harder. My initial
+    training port was 1.65x slower than the A100 implementation, while the first TPU
+    beam search was 5.7x slower than its JAX counterpart.\n\nAfter optimizing eager
+    execution, rewriting attention, eliminating dynamic tensor shapes, fixing a subtle
+    deduplication bug, and investigating an attention-routing regression, the results
+    changed substantially. Training reached comparable wall-clock performance to the
+    A100, and the optimized TorchTPU beam search became 25% faster per level than
+    JAX on the same eight-chip v6e machine, producing the same total solution length
+    across six test puzzles.\n\nAlong the way, the investigation improved the solver
+    itself and resulted in an upstream TorchTPU GitHub issue that led to attention-routing
+    fixes.\n\nThe code is available on Kaggle notebooks running on a free TPU v5e-8:\n\n-
+    Training\n\n- Beam search, TorchTPU vs JAX\n\nAs in the previous post, the code
+    and the experiments were done by coding agents (Claude Code and Codex): I decided
+    what to port, what to measure, and how to judge the results, and they did the
+    implementation and the profiling.\n\n### The problem\n\nThe CayleyPy Professor
+    Tetraminx competition requires finding the shortest sequence of moves that solves
+    1000 scrambled puzzles. Formally, it is a shortest-path problem in a Cayley graph
+    (each puzzle state is a node, and each of the 24 possible moves is an edge) with
+    an 88-sticker state.\n\nMy solver uses beam search guided by a learned neural
+    heuristic — a 3.4M-parameter PieceTransformer. Instead of treating the 88 stickers
+    individually, it groups them into 50 physical pieces, turns each piece into a
+    token, adds a class token (51 tokens in total), and runs four small transformer
+    layers with eight heads of size 32. At the end, an all-neighbours Q head (a head
+    that predicts, for each of the 24 moves, the distance to solved after that move)
+    outputs 24 numbers. So the beam scores all 24 children of a state with one forward
+    pass on the parent.\n\nFor training, the signal is a mix of cheap random walks
+    and exact ground truth:\n\n- Random walks of 2–40 moves from the solved state.
+    A state p moves into a walk has two known labels: undoing the last move gives
+    distance p - 1, and continuing the walk gives p + 1.\n\n- Exact 24-way labels
+    from a breadth-first search (BFS) table at depth 5 or less.\n\n- The puzzle’s
+    24 spatial symmetries, used as data augmentation.\n\nOn the A100, one epoch takes
+    142.7 seconds. My best checkpoint is epoch 1500 of a 2000-epoch run, about 80
+    hours in total.\n\n### What is TorchTPU\n\nTorchTPU is not PyTorch/XLA: there
+    is no LazyTensor tracing, no xm.mark_step(), and no xla_device(). Instead, TorchTPU
+    lowers ATen ops directly to StableHLO and runs through PJRT and libtpu (PyTorch’s
+    core ops are translated straight into XLA’s input format and executed by the TPU
+    runtime). Once you import torch, \"tpu\" works as a device string just like \"cuda\".\n\nIt
+    has three execution modes:\n\n- Eager (the default): runs one op at a time asynchronously.\n\n-
+    Fused eager (TORCH_TPU_DEFER_AND_FUSE=1): defers ops and fuses them across op
+    boundaries without needing torch.compile.\n\n- Compiled (torch.compile(fn, dynamic=False)):
+    graph compilation targeting the TPU backend.\n\nThree rules matter in practice:\n\n-
+    Static shapes were the reliable path: with the TorchTPU builds and operators I
+    used, fixed tensor shapes and torch.compile(..., dynamic=False) worked best, and
+    every new shape meant a full recompile.\n\n- Data-dependent output sizes were
+    the most expensive: ops like nonzero, masked_select, unique, bincount, and even
+    x[bool_mask] still run in eager mode, but they force a .cpu().item() host round-trip
+    to learn their output size, and a compiled graph gets specialized to that one
+    size, so each new size means another compile.\n\n- Nothing falls back silently
+    to the CPU: an op that TorchTPU doesn’t implement raises an error instead of quietly
+    running slowly.\n\n### Part 1: training, from 1.65x slower to 1.08x faster\n\nI
+    ran the first port on a Cloud TPU machine with four v6e chips, using DDP with
+    one process per chip and a global batch of 512, so each epoch saw exactly the
+    same number of samples as on the A100. Before the code could run on the TPU at
+    all, I had to remove four GPU idioms (masked_select in the loss, boolean-mask
+    indexing when expanding labels, 12 .item() metric reads per step, and sampling
+    training anchors on the CPU instead of keeping the 0.19 GB anchor table in TPU
+    memory). This first working version took 234.8 seconds per epoch, 1.65x slower
+    than the A100. I was able to bring it down to 132 seconds with two changes.\n\n####
+    Fused eager\n\nThe first win was practically free: turning on fused eager (TORCH_TPU_DEFER_AND_FUSE=1).
+    Only the model’s forward and backward pass ran under torch.compile; the rest of
+    the trainer (the random-walk sampler with its 40-iteration loop, label expansion,
+    the loss, and the metrics) ran in eager mode, one op at a time. In default eager
+    mode, that data pipeline took 61.3 ms per step. Wrapping it in torch.compile brought
+    it down to 29.7 ms, while fused eager, which fuses the ops at run time without
+    any code changes, got it to 13.1 ms. The pipeline is many tiny ops, and on this
+    workload they fused better than they compiled; I didn’t profile why, since the
+    cheaper option was also the faster one. Setting that single environment variable
+    dropped the epoch time from 234.8 s to 176.5 s.\n\n#### The attention rewrite
+    that was almost thrown away\n\nStill, 176.5 s was slower than the A100, and the
+    GPU profile didn’t help. On the A100, the input stage and embedding gradient took
+    67% of the step; on the TPU, the same stage took only 0.96 ms (0.8%), and the
+    model was spending ~90% of its time in attention.\n\nA roofline at the model’s
+    own shapes explained why. A square 8192³ GEMM hits 361 TFLOP/s on one v6e chip,
+    and the model’s QKV and FFN GEMMs hit 212–259 TFLOP/s, while attention ran at
+    3.0 TFLOP/s. With T = 51 and head_dim = 32, every attention matmul is 51x32x51
+    on a 128x128 matrix unit (MXU) — roughly 2.5% tile occupancy. Padding head_dim
+    to 128 or T to 64 actually made things slower (0.83x and 0.81x). As a result,
+    attention is about 3% of the model’s FLOPs but about 90% of its time on the TPU.\n\nIf
+    you want to keep the same model (for a fair comparison), you need to keep the
+    same shapes and find other improvements. Standard scaled_dot_product_attention
+    (SDPA) expects (B, H, T, Dh), so the QKV tensor has to be permuted to move the
+    heads to the second dimension. Rewriting attention with torch.einsum keeps the
+    heads in their original dimension and avoids the permutes:\n\nq, k, v = qkv.view(B,
+    T, 3, H, Dh).unbind(2) # heads never leave dim 2 s = torch.einsum(\"bthd,bshd->bhts\",
+    q, k) * scale p = s.float().softmax(-1).to(v.dtype) # fp32 softmax, on purpose
+    a = torch.einsum(\"bhts,bshd->bthd\", p, v)\n\nThe fp32 softmax is there for numerics.
+    On the TPU, the einsum and SDPA versions disagreed by a relative 3.3e-3, so I
+    checked both against a float64 reference on the CPU: both were about 4.6e-3 away
+    from it, because the TPU’s matrix unit uses a single-pass bf16 multiply even for
+    “fp32” matmuls unless you raise torch.tpu.precision. In bf16, keeping only the
+    softmax in fp32 closed the remaining gap between the two versions.\n\nThis change
+    was almost rejected. The agent first measured "
+  error:
+  fetched_at: '2026-11-25T16:54:50Z'
+archived_at: '2026-11-25T16:54:57Z'

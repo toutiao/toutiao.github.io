@@ -1,0 +1,500 @@
+---
+post:
+  id: lo-sj2pkv
+  source: lobsters
+  title: Abolish Lock Poisoning
+  url: https://lucumr.pocoo.org/2026/11/25/poisoning/
+  hn_url: https://lobste.rs/s/sj2pkv
+  score: 33
+  author: fanf
+  posted_at: '2026-11-25T05:10:37Z'
+  fetched_at: '2026-11-25T16:54:58Z'
+  article_url: https://lucumr.pocoo.org/2026/11/25/poisoning/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T16:54:59Z'
+  raw_comment_count: 39
+  tags:
+  - rust
+comments:
+- id: lo-q4geue
+  parent_id: '0'
+  author: rtpg
+  text: |-
+    I went into this pretty against the idea, but I see the arguments reading through this.
+    I do feel like there's a big tent idea here already in making Poison<T> be a thing and then having Mutex<T> be in fact Mutex<Poison<T>>. Poisoning doesn't seem entirely coupled to mutexes!
+    The thing that really got me though just looking at the docs and seeing the following:
+
+    In addition, the panic detection is not ideal, so even unpoisoned mutexes need to be handled with care, since certain panics may have been skipped.
+
+    So you're in this world where even if you're saying "poisoning as a principle is good", it sounds like in practice the poisoning done by Mutex isn't 100% solid anyways (and thus you might want to opt for something way more expensive but that has stronger guarantees.... if that's even possible. I imagine some "poison by default" strategy.)
+
+    I struggle with Rust and panics though. In theory I'd expect panics to happen way less than they actually do, and the pedantic thing to do in that case is often just "OK assume the whole program is no longer following invaraints". But this feels entirely unreasonable from an availability perspective.
+    Actual Rust code seems to end up calling panic way more than I'd expect it to (from a Python dev's perspective: it feels like a bunch of people throwing BaseExceptions , which won't get caught without explicit checks...).
+    A part of me ends up thinking that my Rust code that has any chance of panicking should just be message passing between independent processes. But I don't really want to re-invent OTP.
+  score: 3
+  posted_at: '2026-11-25T06:02:52Z'
+- id: lo-paqwvc
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    I struggle with Rust and panics though. In theory I'd expect panics to happen way less than they actually do, and the pedantic thing to do in that case is often just "OK assume the whole program is no longer following invaraints". But this feels entirely unreasonable from an availability perspective.
+
+    What is not really covered in the post here is that there really are two separate worlds of Rust. There is the world of Rust where you might as well disable panicking and just go straight to abort. A lot of code can work in that environment and it's the better default for that type of code.
+    On the other hand though there are entire ecosystems that cannot live in that world at all because panics are frequent in practice, and concurrency will turn those panics into denial of service vectors. In remote applications quite a few of these can be attacker triggered.
+    There is an alternative world where Rust wouldn't have relied on panics for quite as many operations, but panics are very common in the standard library and some operations can only work because panics exist (eg: overflow checks, there is just no syntax support for checking operations today). So that world needs to be supported somehow and it has to work better.
+  score: 9
+  posted_at: '2026-11-25T08:13:50Z'
+- id: lo-riz6qh
+  parent_id: '0'
+  author: rix0rrr
+  text: To me it looks like Rust is taking the long way round to reinventing Exceptions.
+  score: 4
+  posted_at: '2026-11-25T08:19:35Z'
+- id: lo-84gh7m
+  parent_id: '0'
+  author: rtpg
+  text: |-
+    ecosystems that cannot live in that world at all because panics are frequent in practice, and concurrency will turn those panics into denial of service vectors. In remote applications quite a few of these can be attacker triggered.
+
+    Right, there I’m just thinking more and more “ok… well maybe we should rely on process separation and maybe a panic knocks out 20 threads in a process but your coordinator is at the other side of a process boundary and we’re fine”
+    Like if you are actually often hitting panics but want to rely on structural, whole program guarantees the language helps you define , it feels like the safe thing to do is figure out a way to work that gives you proper protection without throwing out the guarantees that we end up relying on to think about bugs
+    Shorter: maybe panic recovery in itself is “the problem”. I joke but tearing my hair out cuz some thread crash broke a bunch of invariants on some shared data structure doesn’t sound worth it
+    (EDIT: this doesn’t resolve the DoS claims really but I feel like even with panic recovery you’re gonna be in pain if you get panic-causing requests over and over)
+  score: 2
+  posted_at: '2026-11-25T08:58:31Z'
+- id: lo-onwvax
+  parent_id: '0'
+  author: atk
+  text: |-
+    Not sure why you think so. I don't agree
+    Exceptions have the issue of being too easy to use while also being too easy to ignore. This puts you in a situation where people are encouraged to produce code where common and uncommon errors both end up handled in the same way, and where nobody actually knows which exceptions some code might throw. Catching exceptions is also more fanfare than ideal in most languages (although, of course, you could make it as ergonomic as rust's try operator if you wanted to).
+    What I think rust is missing is an easy and reliable way of requiring that a function does not panic. At which point it just needs good default panicking APIs with alternatives which don't panic. Not sure how feasible that is for it at this stage in its life though...
+  score: 4
+  posted_at: '2026-11-25T08:59:16Z'
+- id: lo-ogygpt
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Shorter: maybe panic recovery in itself is “the problem”. I joke but tearing my hair out cuz some thread crash broke a bunch of invariants on some shared data structure doesn’t sound worth it
+
+    ...unless the reason you have a shared data structure is because truly avoiding shared mutability isn't a viable solution and then you just wind up reinventing "some thread crash broke a bunch of invariants on some shared data structure" with less help from the compiler using OS-level cross-process shared memory and synchronization primitives.
+    Sometimes, it really is a case of "If the problem truly does have a simple solution, then it could have been implemented using Rust's type system within the same address space. If it doesn't, then forcing it to cross process boundaries won't have fixed anything once you meet the acceptance criteria".
+  score: 4
+  posted_at: '2026-11-25T09:06:13Z'
+- id: lo-kqd5ci
+  parent_id: '0'
+  author: rtpg
+  text: To be clear I’m saying “use a process, communicate via chosen IPC, don’t share
+    memory”. Like just go full Erlang
+  score: 4
+  posted_at: '2026-11-25T09:15:24Z'
+- id: lo-bsan4h
+  parent_id: '0'
+  author: rix0rrr
+  text: |-
+    Panics were intended to always abort, which makes the story nice and easy: there is no way to recover from panics, and if you want recoverable errors you need to use return values.
+    But now we are in a world where unwinding from supposedly fatal errors is a thing, with all the care and thought you need to put into every line because you can always be aborted. With exceptions, you always needed to write code that is safe to abort at any point. And turns out that with panic unwinding, you need do the same. So what have we gained, exactly?
+    (I will grant that perhaps the machine code to do result code checking can be made to be more efficient than the instructions required to do stack unwinding, but I'm talking about the programmer-facing language level here.)
+    I don't really buy the argument that exceptions are too easy or too verbose. Exceptions behave either like unwinding panics or return codes, and importantly: it's the caller that chooses how they behave. The consumer knows how the function slots into their program best, so putting the control into their hands seems right to me. And the strategies for handling exceptions are well-known: handle only very specific ones, let the rest bubble up, and catch-and-present-to-user at the very highest level. The days of "catch-and-continue" or "catch-and-log-and-rethrow" are well behind us.
+    I agree knowing the types of errors that can be returned by code you call into would be very useful to know; this was true for exceptions and it is of course still is true for panicking (or not) code. Java tried something with checked exceptions as we all know, and it was bothersome and apparently declared unworkable.
+    I really don't understand what the fuss about exceptions is. I think they're a great way of error reporting.
+  score: 3
+  posted_at: '2026-11-25T09:46:37Z'
+- id: lo-xkgc3x
+  parent_id: '0'
+  author: yorickpeterse
+  text: |-
+    I think the root of the issue here is that panics can in fact be handled (sort of), rather than being the equivalent of abort(3). The result is that you end up with errors as return values (e.g. Result), and an alternative error handling mechanism that has all the drawbacks of exceptions but without any benefits that justify it.
+    The usual counter-argument is that you need to be able to catch panics for certain applications, such as mission critical embedded systems. I argue that this is the wrong way of thinking about it: panics are meant to signal "this code is utterly broken", and such errors aren't meant to be handled at runtime. If your car engine explodes while driving you're not going to say "Oh well oopsie-woopsie, let me apply some duct tape to it and then try driving again while pretending this didn't happen". Instead, you stop driving immediately, get out the car and call the fire brigade.
+    For mission critical systems the approach would be an external supervisor of sorts, perhaps combined with some form of formal verification (ish) that all errors are handled correctly; something that's a lot easier when the possible errors are in fact part of the type signatures. Actually I would argue the former is sensible everywhere (and indeed is often used for server applications as well), the latter would be nice too but often comes at a high cost. Having Claudette-opus-420-69-whatever write the proof isn't much better, as a proof nobody understands is about as useful as no proof at all.
+    There's also a nice side effect of panics being aborts: they force developers to do something once they hit production, because their impact is very visible, i.e. you can't just slap a catch_unwind() call on top of things and call it a day.
+    I suspect that in the few cases the above wouldn't be sufficient the requirements are likely such that a highly specialized approach is necessary anyway, and I sincerely doubt Rust's current panic strategy (and all the issues it brings) would suffice in such a case.
+  score: 5
+  posted_at: '2026-11-25T09:51:40Z'
+- id: lo-4rsdal
+  parent_id: '0'
+  author: peter
+  text: |-
+    Panics are not bad exceptions just because you can catch them.
+
+    panics are meant to signal "this code is utterly broken"
+
+    Yes!
+
+    the approach would be an external supervisor of sorts
+
+    Yes!
+    But does that supervisor need to be at a process level?
+    Imagine you're writing S3 in Rust. You have many requests in flight, they're mostly independent and stateless, and some of them are extremely long running and costly to abort. If one request panics, why should that take down the entire server process? If the code using shared resources within the server is written to be cancel-safe (i.e. using RAII types, scope guards, etc), panics can unwind the request task/thread, and the server to continue handling other requests without interruption.
+    That's a request-level supervisor, rather than process-level. And panics remain a path of last resort to bail out of a truly broken request when it cannot continue.
+
+    I suspect that in the few cases the above wouldn't be sufficient the requirements are likely such that a highly specialized approach is necessary anyway
+
+    This is not highly specialized. A Rust S3 service would likely use async, and therefore also need cancellation safety, which is accomplished with all the same techniques (i.e. using RAII types, scope guards, etc). Add some discipline about propagating panics from subtasks—which can be done reliably with project-specific helpers and clippy rules—and you're done.
+  score: 17
+  posted_at: '2026-11-25T10:40:47Z'
+- id: lo-psfh4b
+  parent_id: '0'
+  author: BenjaminRi
+  text: The longer they're not reinvented, the better for the ecosystem because it
+    means people are forced to actually handle errors as they occur. Rust not having
+    exceptions is one of the major points in its favor.
+  score: 4
+  posted_at: '2026-11-25T10:54:53Z'
+- id: lo-unz2yg
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    And I'm saying that, sometimes, it's not viable to communicate via IPC instead of sharing memory. For example, because the amount of data that would need to be moved back and forth or duplicated would present too significant a bottleneck, either in throughput (moving around) or in RAM requirements (duplicating).
+    In situations like that, some (but not all) cases can be solved in-process with the Rust compiler ensuring correctness by using something like a Vec<T> where the backing memory is shared/un-moving, while the handle to access it is passed around.
+  score: 3
+  posted_at: '2026-11-25T11:24:03Z'
+- id: lo-prcspy
+  parent_id: '0'
+  author: andyferris
+  text: |-
+    I think you are right, the thing that is unergonomic is:
+
+    ... (i.e. using RAII types, scope guards, etc). Add some discipline about propagating panics from subtasks—which can be done reliably with project-specific helpers and clippy rules ...
+
+    Now... really we aren't in a signficantly better place than a moderately complex C++ project. I just want the type checker to enforce this stuff, the async library to enforce structured concurrency where we can just say "oh this task aborted, I cleaned it up and am letting you know", the language async features to enforce that the async library enforces structured concurrency correctly, etc. (Not claiming such a language is easy to design and implement - but that this is the bar).
+  score: 5
+  posted_at: '2026-11-25T12:10:47Z'
+- id: lo-qqdpct
+  parent_id: '0'
+  author: wofo
+  text: Strongly agree! Every time I need locking in my Rust code I use the parking_lot
+    crate merely because I don't want poisoning. I look forward to the nonpoison mutexes
+    becoming available on the standard library, even if they don't become the default.
+  score: 3
+  posted_at: '2026-11-25T12:25:03Z'
+- id: lo-vflujj
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    If your car engine explodes while driving you're not going to say "Oh well oopsie-woopsie, let me apply some duct tape to it and then try driving again while pretending this didn't happen".
+
+    The reason this analogy does not work is because you are not driving just one car, but hundreds of thousands of cars out of the same company. When one car explodes while driving you don't cycle out all cars and replace them with new cars. You take that one bad car out of rotation.
+    That's the situation lots of server code finds itself today.
+  score: 6
+  posted_at: '2026-11-25T12:45:17Z'
+- id: lo-se9wj9
+  parent_id: '0'
+  author: hyperpape
+  text: |-
+    It seems to me that panics (and exceptions) are almost like an even worse version of the old function coloring problem. First, they’re not even part of the type system—whether some code can panic is only tracked via documentation, not types (well, Java sort of tried the types with checked exceptions, but it half-assed it and messed up the ergonomics). Second, the question isn’t really “can this code panic?” it’s “can this code panic and if so, is it recoverable, or would recovery corrupt your program’s invariants (and which ones)?” Whether code can panic can be conservatively approximated with static analysis, but whether recovery is possible is not generally going to be decidable.
+    The net effect is that panics and exceptions really ruin composition and encapsulation.
+  score: 1
+  posted_at: '2026-11-25T12:52:37Z'
+- id: lo-cstr9a
+  parent_id: '0'
+  author: sph
+  text: 'And thus: Any sufficiently complicated distributed system contains an ad
+    hoc, informally-specified, bug-ridden, slow implementation of half of Erlang.'
+  score: 8
+  posted_at: '2026-11-25T12:58:42Z'
+- id: lo-sd72pp
+  parent_id: '0'
+  author: bryce
+  text: I would simply not panic while holding a lock that protects invalid state
+    another thread might want to recover and reuse.
+  score: 1
+  posted_at: '2026-11-25T13:00:04Z'
+- id: lo-4tbn47
+  parent_id: '0'
+  author: mxey
+  text: What if you have a bug and use a too high index for a vector? That’s a panic.
+  score: 1
+  posted_at: '2026-11-25T13:37:20Z'
+- id: lo-m8myzx
+  parent_id: '0'
+  author: emk
+  text: |-
+    Lock poisoning has always seemed sensible to me, from an Erlang-inspired perspective.
+
+    Your code shouldn't panic. Outside of highly concurrent server applications and test suites, I'm a huge fan of mapping panics to abort.
+    You definitely should never panic while holding a lock. In this case, it seems perfectly reasonable to me to poison the lock. This is similar to Erlang supervisor trees: Crashed threads propagate until they hit a known firebreak much higher up. Anything which even looks at a corrupted lock should be under massive suspicion. Alternatively, treat panics while holding a lock as an automatic abort, even if you use Rust's fallback mechanisms to catch them otherwise (I'd love a mechanism to do this).
+
+    Realistically, if you panic inside a locked section, you're on a rare error path. And rare error paths are notoriously buggy at the best of times.
+  score: 2
+  posted_at: '2026-11-25T14:08:56Z'
+- id: lo-9eemfz
+  parent_id: '0'
+  author: yorickpeterse
+  text: |-
+    But does that supervisor need to be at a process level?
+
+    I believe it does. Assuming one follows the guidelines established by articles such as The Error Model, panics should be rare and not common. For example, triggering a panic because reading from a file failed is usually dumb; unless the program simply can't proceed in a meaningful way, though even then I believe it's best to try and handle it in a less destructive way.
+    However, if a memory allocation fails or some function always receives the wrong arguments due to a programmer error (i.e not something caused by user input), then you should abort while screaming very loudly. Handling such cases in-process is at best naive and at worst broken, as there are entire classes of errors that upon occurring mean your program is in an unreliable/untrustworthy state. The classic example of this is a segmentation fault: if one occurs you could in theory try to handle it and march on, but there's no guarantee your entire program isn't replaced with a talking parrot at this point, such that whatever you try to do may in fact make matters worse.
+    In a server environment the way you'd deal with this is to have servers crash and burn loudly, and rely on hardware/software redundancy (= multiple servers), along with building an infrastructure setup that can resist chaotic behavior; intentional or not, instead of trying to make this perfect unicorn program that magically handles every error in-process.
+    Basically it's the Erlang school of thought, but with supervisors that exist outside of the OS process instead of it being part of the program.
+  score: 2
+  posted_at: '2026-11-25T14:42:24Z'
+- id: lo-ovclrf
+  parent_id: '0'
+  author: yorickpeterse
+  text: |-
+    The analogy actually works well, even in your example. If you follow the pattern of using panics only for "shit's fucked up, abandon all hope", then a panic occurring in one car (= the engine exploding) means it will happen for all other cars as well, and so you very much want to take them out of rotation ASAP.
+    This of course changes when you start littering panic! and the likes all over your codebase for cases that are expected to happen (e.g. a file read failing), but that's not what panics should be used for.
+    This is also the mistake Rust makes: it built its standard library (or at least the Mutex type) around the assumption that panics happen frequently (enough) and that the program is supposed to continue running (or at least be able to) when they occur.
+    The presence of poisoning and the foot guns it introduces is just one side effect of this, but you also see this for example when joining threads: a thread may panic and this is propagated to the Handle::join method, but 99% of the time there's nothing you can do but panic again, so you end up with the same do_the_thing().unwrap() pattern that you end up with when using mutexes.
+    Basically as it's implemented today, panics in Rust are effectively Java's unchecked exceptions, complete with all the problems those suffer from.
+  score: 1
+  posted_at: '2026-11-25T14:55:48Z'
+- id: lo-4vnddh
+  parent_id: '0'
+  author: ghoti
+  text: |-
+    I suspect that in the few cases the above wouldn't be sufficient the requirements are likely such that a highly specialized approach is necessary anyway, and I sincerely doubt Rust's current panic strategy (and all the issues it brings) would suffice in such a case.
+
+    This would be incorrect. If you are shipping a plugin that your customers are intended to install into their server processes, potentially wrapped into a Javascript, Python, or Ruby facade, you cannot simply allow an error in your code to bring down your customer's server processes.
+    To "catch" a panic is merely to establish an in-process failure isolation boundary. Most programs do not need this. Most programs should not do this and rightly do not do this. The capability is invaluable regardless.
+  score: 2
+  posted_at: '2026-11-25T14:56:30Z'
+- id: lo-qaggss
+  parent_id: '0'
+  author: ghoti
+  text: Erlang's model of distributed systems is excellent. But single-process concurrency
+    is not best modeled as a distributed system.
+  score: 2
+  posted_at: '2026-11-25T14:58:35Z'
+- id: lo-5xtrgk
+  parent_id: '0'
+  author: ghoti
+  text: I wish it were the bar. I know of no extant language that makes the sacrifices
+    necessary to achieving the dream of structured concurrency.
+  score: 2
+  posted_at: '2026-11-25T15:03:24Z'
+- id: lo-vuim7a
+  parent_id: '0'
+  author: yorickpeterse
+  text: |-
+    If you are building such a program then you should not panic in the first place, unless there is no sensible alternative (e.g. the plugin's configuration it needs to function is straight up garbage).
+    Panics are not meant for (or at least shouldn't be used for) error handling, but rather for signalling the equivalent of "the laws of physics have been violated and we can't proceed".
+    If you follow that thought, the amount of places where code may panic will reduce drastically and mostly be limited to broadly speaking two cases:
+
+    Errors that when they occur can't be handled in a meaningful way and mean the program is utterly broken, such that the only sensible course of action is to abort and restart the program from scratch
+    Errors that are in fact handled (e.g. due to some precondition) but this can't be asserted statically/at compile-time, so you do something like "unwrap the OK value or panic if there somehow was an error after all"
+
+    In this setup it's perfectly fine to abort and abandon, and if it truly isn't and you are indeed the 1% of people that need something else, then, well, my point stands of you probably needing something highly specific in the first place (though you will still benefit massively from the above thought process/approach).
+  score: 2
+  posted_at: '2026-11-25T15:04:34Z'
+- id: lo-wx0ahd
+  parent_id: '0'
+  author: ghoti
+  text: The premise is incorrect. Panics were never intended to always abort. Panics
+    in Rust have unwound from the outset and did not gain the ability to be translated
+    into aborts until later. Rust takes this terminology from Go which likewise does
+    not abort on panic.
+  score: 5
+  posted_at: '2026-11-25T15:10:38Z'
+- id: lo-ym4zxb
+  parent_id: '0'
+  author: ghoti
+  text: Panics and exceptions aren't the cause of function coloring in this case.
+    The cause is the division between partial functions and total functions. A partial
+    function using exit(3) or an infinite loop would exhibit the same problem.
+  score: 1
+  posted_at: '2026-11-25T15:19:22Z'
+- id: lo-dg75ry
+  parent_id: '0'
+  author: 5d22b
+  text: If one cares to avoid panicking, one can use only non-panicking methods and
+    use Clippy to enforce this for some region of code. (This is assuming one knows
+    in advance which methods may panic, as for Vec; Clippy is not the fabled call
+    graph analyzing panic detector.)
+  score: 1
+  posted_at: '2026-11-25T15:39:52Z'
+- id: lo-bsk5wk
+  parent_id: '0'
+  author: quasi_qua_quasi
+  text: Comment removed by its author
+  score: 1
+  posted_at: '2026-11-25T16:04:45Z'
+- id: lo-ojmxv7
+  parent_id: '0'
+  author: quasi_qua_quasi
+  text: |-
+    The analogy actually works well, even in your example. If you follow the pattern of using panics only for "shit's fucked up, abandon all hope", then a panic occurring in one car (= the engine exploding) means it will happen for all other cars as well, and so you very much want to take them out of rotation ASAP.
+
+    In my experience deploying a rust service, this is absolutely not true. Sometimes a panic (which we do only use for "there is a bug in our code") appens because only one request hits a particular code path.
+    Conversely, if panic was required to lead to an immediate abort, you have no way of recovering the stack track and shipping it off to Sentry or whatever.
+  score: 2
+  posted_at: '2026-11-25T16:10:48Z'
+- id: lo-gqzxjm
+  parent_id: '0'
+  author: hyperpape
+  text: |-
+    In which case, lock poisoning is a complication you don’t need, and the code should be deleted.
+    The entire issue concerns handling panics.
+  score: 1
+  posted_at: '2026-11-25T16:12:12Z'
+- id: lo-yxfz6p
+  parent_id: '0'
+  author: jamesw
+  text: |-
+    panics are very common in the standard library and some operations can only work because panics exist (eg: overflow checks, there is just no syntax support for checking operations today).
+
+    There are methods for checked operations (e.g. i32::checked_add), but do you mean when a stdlib API internally does something that could panic even on a valid input?
+    Maybe there will eventually be some kind of #![no_panic] that can prove that nothing could panic on valid inputs, and checked alternatives to all std APIs that could panic. I could have sworn there was an RFC for this but can't find it.
+  score: 2
+  posted_at: '2026-11-25T16:17:37Z'
+- id: lo-smrgwm
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    If you follow the pattern of using panics only for "shit's fucked up, abandon all hope", then a panic occurring in one car (= the engine exploding) means it will happen for all other cars as well, and so you very much want to take them out of rotation ASAP.
+
+    Well let's play with this analogy and put some numbers to it. Because I think it's important to actually comprehend what that analogy does, and really what it means to not catch panics.
+    Let's assume an event processing service handling 1 Million events a second. Given a chance of panic p (0.001%, very low), and c * N being the cluster capacity (events per second per process times number of processes, which here would be 1000 for the number of processes) and T being the time a service takes to reboot (out of service, let's say 10 seconds) with littles law 10% of all processes would be out of service at any point in time! If there was only 25% headroom, at twice the panic rate (0.002%) there is no slack left! At 10% the panic rate, so (0.01%) your backlog grows at 1.6B events per hour and half the fleet of processes is permanently down. Since there is very little isolation, an attacker just needs to find one panic to poison 10 seconds worth of compute for 1/1000ths of the fleet.
+    And you're taking down everything in the process. Imagine the exploding engine would also immediately take down emergency services sharing that engine type at the same moment. There is no slack at all! In your proposed case you would take out all the cards, not just 1/1000th of the fleet lie in my example above.
+    Now you can always try to build a service that does not panic, but given how Rust works as a language that is just not an option today. That's a different language all entirely.
+  score: 1
+  posted_at: '2026-11-25T16:20:55Z'
+- id: lo-5g8ze0
+  parent_id: '0'
+  author: orib
+  text: Core dumps are still around , and generally better than anything you can do
+    in process. They capture everything you may want to inspect, and not just a small
+    list of stack pointers.
+  score: 2
+  posted_at: '2026-11-25T16:21:52Z'
+- id: lo-mrebox
+  parent_id: '0'
+  author: sunshowers
+  text: |-
+    Folks can read this one and mine (linked in this one) and make up their own minds. I'd just like to point out one thing, though:
+
+    While not live services, test suites show the same general issue. One failing test poisons a shared static and every test after it fails with PoisonError. This problem showed up for cargo, deno, polars and rustc itself.
+
+    This is not an issue if you use cargo-nextest, which uses a separate process for each test for this among many other reasons. I think shared state across tests being corrupted is quite bad, and nextest is my vision for addressing this.
+    (You might say I'm biased in favor of my tools. Of course I am. If I didn't think my tools were significantly better than the status quo, I wouldn't have built them. Nextest is widely used across Rust projects, which shows that many people agree.)
+  score: 1
+  posted_at: '2026-11-25T16:36:23Z'
+- id: lo-vailvu
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    There are methods for checked operations (e.g. i32::checked_add), but do you mean when a stdlib API internally does something that could panic even on a valid input?
+
+    In theory yes, a lot of operations do exist checked now but that does not mean your code is going to do that. Very little code actually writes against checked math. I cannot tell you how many panics I observed based on working with binary data in just a slightly wrong way. From reading out of bounds often from some operations overflowing and silently accessing things. Don't forget that math in release mode does not panic, it just overflows. And then you have the entire class of RefCell related issues that only really panic at runtime, and often only once you start seeing bad inputs.
+    It's one thing if you control 100% of your code and never write against the stdlib, but that's just not really the case in practice. And even the stdlib is full of panic hazards such as println!.
+  score: 2
+  posted_at: '2026-11-25T16:41:52Z'
+- id: lo-pstpud
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    Core dumps are still around , and generally better than anything you can do in process.
+
+    As someone who worked at Sentry for a decade, and wrote a lot of the crash handling code of native code, I can tell you that core dumps are playing little role in production services these days. They have been largely been replaced with minidumps and similar because of the negative impact core dumps have on production services.
+  score: 1
+  posted_at: '2026-11-25T16:43:09Z'
+- id: lo-2qsp7s
+  parent_id: '0'
+  author: orib
+  text: I count minidumps as a variant of core dumps.
+  score: 1
+  posted_at: '2026-11-25T16:43:59Z'
+- id: lo-cdakyk
+  parent_id: '0'
+  author: mitsuhiko
+  text: They are predominantly taken in process.
+  score: 1
+  posted_at: '2026-11-25T16:47:20Z'
+article:
+  url: https://lucumr.pocoo.org/2026/11/25/poisoning/
+  title: Abolish Lock Poisoning | Armin Ronacher's Thoughts and Writings
+  fetch_status: success
+  content: "[Armin Ronacher](/about/)'s Thoughts and Writings \n\n- [blog](/)\n- [archive](/archive/)\n-
+    [projects](/projects/)\n- [talks](/talks/)\n- [about](/about/)\n\n# Abolish Lock
+    Poisoning\n\nwritten on November 25, 2026\n\nRust has a curious feature that I
+    don’t think the language would land today, if it was not there for a long time:
+    mutex poisoning. When some Rust code panics while holding a `std::sync::Mutex`,
+    the mutex is _poisoned_. That means that any further call to `lock()` returns
+    a `PoisonError`. The motivation for this feature is that an object might have
+    some internal invariants that need to be upheld and panicking in the wrong moment
+    might invalidate reasonable at and leave an object behind in a broken state.\n\nPersonally
+    I absolutely hate this feature as it has bitten me so many times and I cannot
+    once remember it helping me. The libs team is[discussing](https://github.com/rust-lang/rust/issues/149359)
+    making the non-poisoning locks the default in the next edition but entirely expectedly
+    it has caused quite a few people to jump to the defence of the feature.\n\nIn
+    this post I want to make my personal case why poisoned locks should either be
+    entirely removed or be made the exception.\n\nPrimarily this is because I have
+    yet to come across code in the wild that handles a poisoned lock correctly. On
+    the other hand I have come across enough code that mishandles it and as a result
+    behaves worse than a[parking\\_lot](https://docs.rs/parking_lot) lock would which
+    does not support poisoning.\n\n[Josh Triplett](https://news.ycombinator.com/item?id=46041342)
+    put it quite strongly in a hackernews comment: “In the entire history of the standard
+    library, we have never once seen a single report of anyone attempting to recover
+    from poison.”\n\nWhen a panic happens with a lock held, there are two reasonable
+    reactions: shut the process down, or carry on and ignore the flag. With `panic
+    = \"abort\"` you get the former and poisoning never comes up. From all the evidence
+    I have seen, with unwinding, the idiomatic `lock().unwrap()` picks the worst option
+    of all.\n\nThat’s because it neither stops the process nor lets it continue as
+    it will turn every further lock into a panic with sometimes disastrous effects.
+    But that is not the only issue with the system today. So here I want to share
+    some of the issues and with some references to real world code of how people got
+    bitten.\n\n## The Error Holds the Lock\n\nOne subtle aspect to the poisoning is
+    that the `PoisonError` needs to hold the guard. That’s because in order to ignore
+    the poison flag, you need to fetch the guard from the error object. Holding on
+    to the error means holding on to the lock!\n\nThat can cause common code that
+    does error wrapping / error conversions into a deadlock hazard. The innocent looking
+    `m.lock()?` in a function returning`Box<dyn Error>` or similar keeps the mutex
+    locked for as long as the error lives ([#159930](https://github.com/rust-lang/rust/issues/159930)).\n\nThis
+    can also happen with if let. For instance in[cc-switch](https://github.com/farion1231/cc-switch/commit/43077f5539235f0255642ec9aab558d29f3f1b33)you
+    can see that they had a test hung because a `if let Ok(..) = lock() { .. } else
+    { .. }` fallback locked the same mutex again while the unnamed`PoisonError` from
+    the condition still owned the guard.[PC-AI](https://github.com/David-Martel/PC-AI/pull/273/changes)
+    had the same bug in a `match` arm. Another case can be found in[ox-embed-server](https://github.com/anatolykoptev/ox-embed-server/issues/152).\n\n##
+    Panic To Outage\n\nDeviously poisoning does not fail fast and done wrong, it fails
+    forever. The original panic happens once, on one thread, often somewhere unrelated
+    from future failures. Every later `lock().unwrap()` on that lock now however panics
+    as well, and because so much Rust code survives panics (thread pools, request
+    handlers, tokio tasks, FFI boundaries), the process stays up and becomes useless:\n\n-
+    In RLS a failed cargo build panicked with `ENV_LOCK` held [which made any subsequent
+    runs impossible](https://github.com/rust-lang/rls/pull/492).\n- Mozilla’s[application-services](https://github.com/mozilla/application-services/issues/4661)saw
+    `PoisonError` [rise to rank 5](https://github.com/mozilla/application-services/issues/4658)
+    in crash stats and [moved to parking\\_lot](https://github.com/mozilla/application-services/pull/4663)
+    after they concluded they did not benefit of poisoning handling.\n- A [Neon safekeeper](https://github.com/neondatabase/neon/issues/2200)
+    on staging failed every timeline lookup after a panic with a global lock held,
+    and the original panic could not even be found in the logs.\n\nWhile not live
+    services, test suites show the same general issue. One failing test poisons a
+    shared static and every test after it fails with `PoisonError`. This problem showed
+    up for[cargo](https://github.com/rust-lang/cargo/pull/12264),[deno](https://github.com/denoland/deno/pull/6567),[polars](https://github.com/pola-rs/polars/pull/26627)
+    and[rustc](https://github.com/rust-lang/rust/issues/43155#issuecomment-315535095)itself.\n\n##
+    Attempt At Recovery\n\nIf you recover with `into_inner()`, the flag stays set
+    and every later access takes the recovery path again. And remember that for the
+    first nine years of Rust after the poisoning feature landed, you could not even
+    clear it as`clear_poison` arrived only in 1.77. Not clearing the flag means that
+    potentially expensive side effects will happen from that point onwards:\n\n[goose-in-a-pond](https://github.com/jarida-io/goose-in-a-pond/commit/8c7e7fed06385d3dfd2958ba86ef0bb119d56688)rebuilt
+    its decoder state on every transcription after a single panic,[librefang](https://github.com/librefang/librefang/commit/5edca0bfcf856324a6fc3701bf441d87ec7c9cca)logged
+    the same warning on every access, and a[pool](https://github.com/anatolykoptev/ox-embed-server/issues/94)
+    threw its model away on every return.\n\n## Nobody Relies on It, Not Even std\n\nSo
+    who is handling poisonings? I’m really not sure, definitely not the standard library.
+    Every place where the standard library’s own code ignores it. Standard I/O has
+    done so since [March 2015](https://github.com/rust-lang/rust/commit/2e8e8ab5648),
+    two months before 1.0, because “any poison must have been the result of user code
+    which the lock isn’t protecting”. A common issue with a lot of poisoning errors
+    that never had anything to do with the mutex that was held.\n\nSame with the [panic
+    output capture](https://github.com/rust-lang/rust/commit/72e96604c01), the [backtrace
+    lock](https://github.com/rust-lang/rust/commit/2d2c9e44939) and the [WASI environment
+    lock](https://github.com/rust-lang/rust/commit/9530ba0fe21). They all do the same
+    and unsurprisingly there is an [open PR](https://github.com/rust-lang/rust/pull/148689)
+    to move std’s internal mutexes to `nonpoison`.\n\nAnd I would argue the ecosystem
+    has largely come to the same conclusion. Tokio’s own locks don’t poison. Internally
+    it wraps the std one in an [adapter that removes poison](https://github.com/tokio-rs/tokio/blob/master/tokio/src/loom/std/mutex.rs).
+    When it landed Carl Lerche remarked “[I rather pretend lock poisoning isn’t a
+    thing](https://github.com/tokio-rs/tokio/pull/2814#discussion_r485760722).” In
+    one case Eliza Weisman [needed`into_inner`](https://github.com/tokio-rs/tokio/pull/2828#discussion_r492350077)to
+    unlink a waiter during drop, or “we’ll leave the list with a potentially dangling
+    pointer”. I want to point to this in particular because this is a case where poisoning
+    stood in the way of memory safety which is commonly argued as a reason you want
+    poisoning.\n\nWasmtime, crossbeam-channel, tracing-subscriber always ignores lock
+    poisoning. rust-analyzer [switched to parking\\_lot](https://github.com/rust-lang/rust-analyzer/pull/1359)
+    after cancellation poisoned its solver like RLS did before. The parking\\_lot
+    maintainer[described it](https://github.com/Amanieu/parking_lot/issues/324#issuecomment-1059616487)as
+    an anti-feature that hurts usability and reliabili"
+  error:
+  fetched_at: '2026-11-25T16:54:59Z'
+archived_at: '2026-11-25T16:55:00Z'

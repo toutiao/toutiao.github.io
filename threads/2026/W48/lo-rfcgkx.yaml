@@ -5,14 +5,14 @@ post:
   title: Security incident on Hex.pm
   url: https://hex.pm/blog/security-incident-on-hexpm
   hn_url: https://lobste.rs/s/rfcgkx
-  score: 29
+  score: 69
   author: munksgaard
   posted_at: '2026-11-24T14:52:19Z'
-  fetched_at: '2026-11-24T20:01:01Z'
+  fetched_at: '2026-11-25T16:54:58Z'
   article_url: https://hex.pm/blog/security-incident-on-hexpm
   article_fetch_status: success
-  article_fetched_at: '2026-11-24T20:01:02Z'
-  raw_comment_count: 5
+  article_fetched_at: '2026-11-25T16:55:01Z'
+  raw_comment_count: 9
   tags:
   - elixir
   - erlang
@@ -27,7 +27,7 @@ comments:
     to say, in my personal opinion, I think passing erlang terms around over the network
     is not a safe choice. JSON is the normal choice here... whatever it is you need
     to pass around, surely converting it to and from JSON is fine.
-  score: 8
+  score: 12
   posted_at: '2026-11-24T15:03:21Z'
 - id: lo-icgy4c
   parent_id: '0'
@@ -35,14 +35,14 @@ comments:
   text: |-
     Holly-molly. What a bug! I mean, yeah, it’s a standart-ish way to get RCE but the way how it’s triggered is something.
     I want to believe at some moment all languages will stick to 2-3 formats and will not reinvent the wheel.
-  score: 4
+  score: 5
   posted_at: '2026-11-24T15:10:30Z'
 - id: lo-njsoxe
   parent_id: '0'
   author: aggsol
   text: Those response times are impressive. This looks like text book example how
     to handle these situations.
-  score: 7
+  score: 25
   posted_at: '2026-11-24T16:57:37Z'
 - id: lo-kai9qp
   parent_id: '0'
@@ -50,7 +50,7 @@ comments:
   text: The overall shape of this is quite similar to CVE-2013-0156, blast from the
     past. And to compare responses between the languages, the matter-of-fact log of
     the obviously responsible reporting to authorities is a refreshing improvement.
-  score: 5
+  score: 11
   posted_at: '2026-11-24T17:05:26Z'
 - id: lo-pmijeq
   parent_id: '0'
@@ -61,8 +61,40 @@ comments:
     Erlang is a hardened, network-first language, and my guess is that you can trust the :safe in :erlang.binary_to_term(..., [:safe]). The issue is that Elixir has decided to build structs on top of Erlang's existing map data type. On top of that, structs open the door to a lot of implicit code calling given how they interact with protocols.
     It seems like the big miss here was that it was assumed that terms that would be safe in Erlang would also be safe in Elixir. Given how structs interact with protocols, that is absolutely not the case (as the attack clearly shows).
     I think the Elixir community, and ideally the core Elixir team, should remedy this situation by providing safe term conversion functions of its own. A stricter subset on top of ETF that disallows structs (or maybe converts safely between standard library structs) would be nice, and that's what Hex has implemented ad-hoc in HexpmWeb.ErlangFormat. If that gets implemented, compilation warnings on usage of binary_to_term that suggest the use of the safe Elixir variant could prevent a vulnerability like this in the future.
-  score: 3
+  score: 12
   posted_at: '2026-11-24T18:27:21Z'
+- id: lo-g3fb4a
+  parent_id: '0'
+  author: sph
+  text: |-
+    It is a serialization format like Python’s pickle: built-in, can serialize native objects and types, so flexible you can execute commands with so you should avoid it in anything user-facing.
+    Yeah it’s scary, and I have encountered it in other libraries: one used ETF to encode SQL pagination cursors, and I opened a PR to switch to using the “safe” encoder that disallows remote command execution. Funnily enough, hex.pm was using the “safe” one as well, but there evidently was still a way to outsmart it.
+  score: 1
+  posted_at: '2026-11-25T06:48:02Z'
+- id: lo-j0ypdx
+  parent_id: '0'
+  author: munksgaard
+  text: Yeah, that was actually my key takeaway here. It seems like they handled this
+    maturely, responsibly and efficiently.
+  score: 4
+  posted_at: '2026-11-25T09:39:26Z'
+- id: lo-xtyqzo
+  parent_id: '0'
+  author: lpil
+  text: |-
+    ETF is really useful for avoiding encoding/parsing overhead. It makes a lot of sense to use when 2 parties both speak in Erlang terms
+
+    ETF isn't the in-memory representation of data on the BEAM, so there is still a cost to encoding and decoding it. It might be faster than JSON, but that depends on what encoding + parser is being used and what the payload is.
+  score: 1
+  posted_at: '2026-11-25T10:13:57Z'
+- id: lo-a3mm7t
+  parent_id: '0'
+  author: lpil
+  text: |-
+    I'm consistently impressed with the professionalism and capability of the Hex+Erlang Ecosystem Foundation security team.
+    At the recent CodeBEAM Europe conference they shared that they are in need of funding to continue their work. The video isn't available yet, but I can share their sponsorship page: https://sponsor.erlef.org/
+  score: 7
+  posted_at: '2026-11-25T10:17:50Z'
 article:
   url: https://hex.pm/blog/security-incident-on-hexpm
   title: Security incident on hex.pm | Hex
@@ -80,4 +112,4 @@ article:
     quotes to include spaces, e.g. `name:\"my package\"`."
   error:
   fetched_at: '2026-11-24T20:01:02Z'
-archived_at: '2026-11-24T20:01:02Z'
+archived_at: '2026-11-25T16:55:01Z'

@@ -5,14 +5,14 @@ post:
   title: Per Vognsen on the effect of AVX-512 on lexing and parsing
   url: https://mastodon.social/@pervognsen/117668394962974183
   hn_url: https://lobste.rs/s/m7gqr6
-  score: 27
+  score: 33
   author: dvogel
   posted_at: '2026-11-24T18:11:49Z'
-  fetched_at: '2026-11-25T03:58:53Z'
+  fetched_at: '2026-11-25T16:54:58Z'
   article_url: https://mastodon.social/@pervognsen/117668394962974183
   article_fetch_status: error
-  article_fetched_at: '2026-11-25T03:58:54Z'
-  raw_comment_count: 5
+  article_fetched_at: '2026-11-25T16:55:01Z'
+  raw_comment_count: 19
   tags:
   - compilers
   - performance
@@ -23,7 +23,7 @@ comments:
   text: I thought this was a really insightful experience report highlighting how
     the CPU doesn't see abstractions and optimizes across what we perceive as different
     parts of a program.
-  score: 8
+  score: 13
   posted_at: '2026-11-24T18:15:08Z'
 - id: lo-ssgy5n
   parent_id: '0'
@@ -56,7 +56,7 @@ comments:
     The experiment I was reporting on was for one of my single-pass compilers. The
     code generation quality for that particular compiler is somewhere in the middle
     between gcc and clang's -O0 and -O1.
-  score: 14
+  score: 18
   posted_at: '2026-11-24T19:56:29Z'
 - id: lo-weqckg
   parent_id: '0'
@@ -71,11 +71,176 @@ comments:
     BUT maybe Zig has some sort of ultra fast code gen + type checking + comptime, making parsing more of a bottleneck, and then I would be surprised and interested ...
   score: 1
   posted_at: '2026-11-24T23:41:12Z'
+- id: lo-hnoxuy
+  parent_id: '0'
+  author: calvin
+  text: I just wish SIMD programming was easier to comprehend. Especially outside
+    of the context of simple autovectorizable arrays. Compared to a serial algorithm,
+    a SIMD algorithm contains a bunch of masking at best and is full of often architecture-specific
+    shuffles at worst. Then you get to implement it again for another architecture,
+    since the abstractions aren't perfect either.
+  score: 3
+  posted_at: '2026-11-25T04:23:14Z'
+- id: lo-gavhpv
+  parent_id: '0'
+  author: pervognsen
+  text: I don't know what you mean by a real compiler. As opposed to a fake compiler?
+    Independent of the specific issue I reported on in the Mastodon thread, it's certainly
+    true that if you have a slow compiler, the slowness is not likely to be the lexer.
+    That's an unrelated issue. The issue I reported on is pretty specifically about
+    how TAGE-style branch predictors interact with pass fusion.
+  score: 7
+  posted_at: '2026-11-25T04:24:07Z'
+- id: lo-a8jwgq
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    Vectorized text processing tends to be on the more awkward end of the spectrum because of a higher fraction of horizontal and compaction operations, and you often have to come up with specific tricks for every sub-problem to make it fast. If you're working on more naturally data-parallel problems than text processing but still something far beyond the reach of auto-vectorization, I'd recommend taking a look at ISPC; I used it recently to write an AVX-512 software rasterizer and it was a very pleasant experience.
+    As for explicit vectorization with intrinsics, AVX-512 helps a lot by having a more complete set of operations and operand types and being much more orthogonal. Intel's older SIMD extensions have a deservedly bad reputation for being full of holes and quirks. Fabian gives a bunch of examples (with workarounds) in SSE: mind the gap, but AVX2 is still terrible compared to AVX-512; it'll just take a long time for AVX-512 to become universally available on x86 computers in the wild.
+    I used https://docs.rs/fearless_simd/latest/fearless_simd/ for the AVX-512 code I wrote for the fast lexer, so all the uses of AVX-512 intrinsics in my code were at least safe in the Rust sense. But yes, it was completely AVX-512 specific.
+  score: 3
+  posted_at: '2026-11-25T04:52:03Z'
+- id: lo-dgod1j
+  parent_id: '0'
+  author: andyc
+  text: |-
+    I put "real" in quotes ... So let's leave that term aside, to avoid any bad connotation.
+    Is there any widely used compiler that uses the single pass architecture?  I interpret "single pass" as a Wirth-style compiler with no AST or IR -- you generate code as you lex/parse.
+    I think the V compiler was originally designed like this, but that's the only one I can think of.  (edit: I looked it up, and they pretty quickly replaced it with a more traditional architecture -- one with an AST)
+    The fundamental limitation is that most compilers optimize for the speed of the generated code, or they have a tradeoff between the generated code speed and the runtime of the compiler itself (debug builds).  And that genuinely requires IRs, and IRs change the design of the compiler by a lot.
+    AFAIK with single pass compilers there is no tradeoff -- you are fixed at one point in the design space.  The generated code has some speed limitations, in favor of the speed of the compiler itself.
+
+    Although on second thought, these types of lexer optimizations could be very useful in a single pass  baseline compiler for say JavaScript, since there the lex/parse time counts as runtime.  I know v8 has optimized its lexer and parser a lot for that exact reason - trying to get past all the megabytes of downloaded JS code.  And actually I think they do some kind of "coarse" parsing to get function or module names first, and then do more precise parsing to generate code.
+  score: 1
+  posted_at: '2026-11-25T05:20:28Z'
+- id: lo-dr4cxc
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    Is there any widely used compiler that uses the single pass architecture?
+
+    There's tcc in the C compiler space, which targets -O0 quality machine code. There's PUC Lua and LuaJIT's bytecode compilers and a bunch of other bytecode compilers. If the language is amenable to it and you care about compilation speed, you should consider architecting a new compiler so it can compile in one pass in the baseline mode. As it happens, C is pretty miserable to compile in one pass for a bunch of reasons, but it's still doable; it's not hard to design a language at a similar level of abstraction to C which is much more friendly to single-pass compilation (in the sense of implementation complexity, compilation speed and code generation quality).
+
+    The fundamental limitation is that most compilers optimize for the speed of the generated code, or they have a tradeoff between the generated code speed and the runtime of the compiler itself. And that genuinely requires IRs, and IRs change the design of the compiler by a lot.
+
+    No, IR doesn't have to change the design of the compiler frontend at all. You design the logical stages of the compiler in the tagless-final style so they can be fused together to run in one pass in the fast baseline mode while stage implementations (which can be internally multi-pass for an optimizing backend stage) can be freely swapped and can be run and tested separately. The tagless-final interface to a stage is like an immediate-mode IR interface that in one pluggable implementation can process the operations inline or in another pluggable implementation can build the corresponding initial encoding (data-oriented IR representation) so it can transformed or replayed in further passes like you would with a conventional compiler IR.
+  score: 4
+  posted_at: '2026-11-25T05:32:10Z'
+- id: lo-pfsje4
+  parent_id: '0'
+  author: gnubison
+  text: |-
+    it's not hard to design a language at a similar level of abstraction to C which is much more friendly to single-pass compilation (in the sense of implementation complexity, compilation speed and code generation quality).
+
+    I’m super curious if you want to elaborate or post references about this. Is it because C is generally annoying to parse (e.g., typedefs)?
+  score: 1
+  posted_at: '2026-11-25T08:13:47Z'
+- id: lo-cmodis
+  parent_id: '0'
+  author: lemon
+  text: |-
+    As it happens, C is pretty miserable to compile in one pass for a bunch of reasons, but it's still doable.
+
+    What makes you say that? I think C is pretty easy to compile in one pass. And it must be, since a multi pass architecture would not have been feasible for the kinds of resource-constrained machines that the first C compilers were written for.
+    People bring up the declaration syntax, but while convoluted I don't think it's a barrier in any way to single pass compilation. As I see it, the lexer hack required to parse declarations with typedefs is only an inelegant solution when viewed from the lens of a separate lexer pass. In a single pass design, parser context-dependent identifier disambiguation is pretty simple at least with a hand-written parser IMO.
+  score: 1
+  posted_at: '2026-11-25T09:34:59Z'
+- id: lo-jkueai
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    What makes you say that?
+
+    I've previously implemented a Wirthian single-pass C front-end. It was not fun, and I say that as someone whose idea of fun is implementing compilers. I've also carefully studied how tcc is implemented, which as far as I know is the only publicly available single-pass C compiler (there's probably a bunch of slopped-up versions nowadays that no-one would want to use).
+
+    And it must be, since a multi pass architecture would not have been feasible for the kinds of resource-constrained machines that the first C compilers were written for.
+
+    If you look at the early compiler implementation strategy from Ritchie's Primeval C you can see it's not true that any of the original C compilers were single pass, at least not in the Wirthian sense. There's 2 passes just in cc itself, which run as separate programs in separate processes (called c0 and c1 in the first compiler on the Primeval C page).
+    But that's the tip of the iceberg. The classic C compiler design in the Unix tradition is a pipeline with the shape cpp | cc | as. Even if they're running as multi-process FIFO-buffered streaming transducers, all the data is re-processed (and cpp needs a slightly different notion of token compared to cc) multiple times and everything travels in an inefficient human-readable textual form. That pipeline is minimally 3 passes given the choice of interchange formats, but realistically at least 4 passes because batch assemblers like as use 2 passes (and +1 if they implement branch relaxation) to resolve forward references.
+    It's easy enough to fuse machine code generation into cc itself (using backpatching to sparsely fix-up forward references), which leaves at least 2 passes if you use the standard cpp implementation approach, even if you move the preprocessing in process and improve the interchange format from from a byte stream to a preprocessor token buffer.
+    You can study tcc to see how Fabrice Bellard fused the preprocessor into the lexer (i.e. what almost no-one else is crazy enough to do), with great care and clever hacks, accompanied by a very long history of wack-a-mole compatibility bugs with the C preprocessor specification that took many years to fix (and I'm pretty sure that part of the compiler is still not watertight after 2 decades of fixes).
+    I believe tcc uses a separate pass to emit ELF/PE object files but when emitting runnable in-memory machine code ("JIT mode") it's a true single-pass compiler in the Wirthian sense. I'm saying all of that is hard for C compared to a language (of comparable abstraction level) designed to make it easy.
+    If you want to count the classic 4+ pass architecture I outlined as 2 passes (the 2nd pass in a traditional batch assembler is not really debatable) because they're running as concurrent processes operating in a batched streaming mode via Unix pipes, it's definitely one definition you could use. But what I meant by my original statement was a Wirthian single-pass compiler, where everything is operating ideally at LL(1) granularity throughout so you don't have to buffer or re-process data beyond the minimum granularity. The LL(1) restriction can be slightly loosened.
+    There's a laundry list of other things that are needlessly annoying to implement compared to a language ideally suited for single-pass compilation. There are many small (and some big) fixable issues in the design of the semantics which you would do differently if you were trying to help out a single-pass baseline compiler in all three senses I listed originally: implementation complexity, compilation speed and code generation quality.
+
+    In a single pass design, parser context-dependent identifier disambiguation is pretty simple at least with a hand-written parser IMO.
+
+    Yes, that problem goes away in any C compiler where parsing and (at least some) semantic analysis happens in the same pass.
+  score: 4
+  posted_at: '2026-11-25T10:34:13Z'
+- id: lo-s7mfie
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    I replied to the sibling thread with a list of some top-level issues. Maybe that's enough to satisfy your curiosity, but there's a bunch of other things I could say; it would probably demand a long article which I don't have the fortitude to write. If you're curious about anything in specific I didn't cover in the other reply, I can try to answer them here.
+    I dug through some of my old Gists to see if any of them could be linked directly as a self-explained example. Here's one on just some of the issues with aliasing. Another thing I should have mentioned explicitly in that Gist is that even if you keep everything else about C's aliasing-related semantics (not recommended), you would want to flip the default sense of 'register', not as a register hint but the semantic meaning, so that locals can't have their addresses taken by default and you have to declare locals that want that explicitly. There are a lot of examples like that: const/let variables should be the ergonomic default so you can tell in advance which variables will be loop invariant. A multi-pass optimizing compiler really doesn't care about that since it's going to do the fixpoint dataflow analysis anyway. Even 1.5 forward and 1 backward pass similar to LuaJIT [1] can get you there in most cases. But a single-pass compiler that wants to optimize based on loop invariants really cares about knowing constraints in advance, whereas checking a forward-declared constraint is usually not a problem in a single-pass compiler.
+    [1] A forward pass followed by a backward pass (with fused backward liveness propagation, backward register allocation and backward code generation) is the next magical sweet spot and should probably be your first stop beyond a single-pass compiler if you're aiming at roughly -O1 code quality with a fast-as-possible compiler. LuaJIT's optimization pipeline is not truly 2 passes since it replays the loop body of a lasso-shaped trace in addition to the first peeled iteration, and it only handles lasso-shaped traces (side exits go to the interpreter or other lassos, but IIRC the SSA and machine code of lassos are mostly opaque to each other except for inheriting the initial register/stack slot assignment from the parent's side exit); there's a pretty natural extension of the same idea to block-structured control flow. I tend to think of LuaJIT's optimization and code generation pipeline as 2.5 passes.
+  score: 1
+  posted_at: '2026-11-25T10:37:52Z'
+- id: lo-wgcqc6
+  parent_id: '0'
+  author: lemon
+  text: |-
+    Thank you for the thorough reply, that primeval page is very interesting, I didn't know about that early c0/c1 pipeline separation.
+    The preprocessor being a separate process is a good point, I kind of took that for granted.
+    Though,
+
+    You can study tcc to see how Fabrice Bellard fused the preprocessor into the lexer (i.e. what almost no-one else is crazy enough to do),
+
+    I guess I'm crazy too :o)
+  score: 1
+  posted_at: '2026-11-25T11:45:41Z'
+- id: lo-0luce1
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    I guess I'm crazy too :o)
+
+    One of us! Like I indicated, I went through that experience too (mostly adapting Fabrice's design for the lexer-fused preprocessor). I hadn't heard of your compiler but I will add it to my benchmark suite. :)
+  score: 2
+  posted_at: '2026-11-25T11:48:46Z'
+- id: lo-8gmbzv
+  parent_id: '0'
+  author: DustyFuzzy
+  text: |-
+    it'll just take a long time for AVX-512 to become universally available on x86 computers in the wild.
+
+    A long, long time, since Intel stopped putting it on consumer CPUs, and it's only coming back in Nova Lake as part of AVX10.
+  score: 2
+  posted_at: '2026-11-25T11:51:24Z'
+- id: lo-zz3ugn
+  parent_id: '0'
+  author: andyc
+  text: |-
+    OK I see what you are saying -- you could use an emitter interface, and then if you are writing in a language with monomorphized generics like C++ or Rust, you can share the front end.
+    First with the single pass compiler, and second with an IR that eventually goes to say LLVM.  I think that's an interesting architecture.  I think it could be restrictive with respect to the type system design, but that's not my area of expertise.
+    I was too dismissive -- I thought of all these V  claims about single pass compilers that ended up backtracking.  TCC is obviously cool and influential but I doubt many people are using hardware every day running lots of TCC-compiled code.  I think it's mostly used for some rare bootstrapping cases.
+    If you're also doing language design, I think it would be cool to combine the v8 lazy parsing and the SIMD lexing -- i.e. "coarse lexing" with SIMD.
+    Basically you would to skip string literals with \" and comments // , so now you know that any {} chars are actual block delimiters.  And then have some kind of rule for the signatures, possibly starting with fn.
+    Then you don't need all the hacks for JS mentioned here: https://www.youtube.com/watch?v=Fg7niTmNNLg .  The two-pass lazy lexing/parsing is made difficult by the JS language design.
+    Maybe you can get your 40% down that way -- you save twice: by having a simpler lexing rule for all the text, and then by avoiding lexing, parsing, and code gen for the functions not reachable from main().  (Although realistic benchmark data for this may not be easy to generate)
+
+    And those rules actually remind me a lot of simdjson, which you mentioned.  So then after the SIMD pass you have a whole bunch of functions (and perhaps modules), whhich you can compile lazily and in parallel too.  I think that is basically what Zig does, except they don't have the coarse lexing trick.
+    Though honestly at 0.75 GB/s you can lex something the size of the whole C++ standard library  very quickly, probably around 100 ms.  Although that's the other case besides JS I've heard of where lexing matters: the C preprocessor, simply because all the #include in  C++ standard library expands to a huge amount of text.   But that problem is also better solved with language design where you can.
+  score: 1
+  posted_at: '2026-11-25T15:14:27Z'
+- id: lo-q8hdtd
+  parent_id: '0'
+  author: pervognsen
+  text: |-
+    OK I see what you are saying -- you could use an emitter interface, and then if you are writing in a language with monomorphized generics like C++ or Rust, you can share the front end.
+
+    Correct. It arguably works even better in C! You can do a very respectable facsimile of ML modules and generative functors using the C preprocessor to configure, instantiate and hook together stages in multiple different graph topologies within the same C translation unit. My first few experiments with the tagless-final approach for single-pass compilers that can be modularly reconfigured into multi-pass were actually implemented in C. Recently I tend to use Rust for most compiler work, but Zig, C, C++ and Rust all have very reasonable ways of achieving this kind of architecture with the expected performance.
+    One restriction on single-pass compilation (even with a hand-written compiler) is that it corresponds more or less to L-attributed grammars. As a result, you're effectively doing a depth-first in-order traversal of the CST. I haven't found anything else with my exact take on tagless-final for Wirth-style single-pass compilers. If you look at the stuff on Oleg's tagless-final page it tends to correspond to post-order traversals of syntax. Post-order is sufficient for a lot of things in a single-pass compiler, e.g. emitting eagerly evaluated code for non-short-circuiting expressions. But in general you need to restructure the tagless-final interface so it visits tokens and other items in-order. Even for expressions, this is necessary for short-circuiting operators like && and ||. Notice how Wirth uses And1/And2 and Or1/Or2 in his book's example Oberon-0 compiler: https://people.inf.ethz.ch/wirth/CompilerConstruction/OSG.Mod.txt.
+    Anyway, you absolutely can support an in-order traversal interface and that's what I do; it just needs a lot finer event granularity in the traversal interface than what you usually see.
+    I should mention that some of these specific comments are for left-to-right parsing of a conventional infix language. A prefix language can help here with some things, especially something like S-expressions where the end is explicitly delimited, which enables more single-pass computations to be expressible: such computations correspond to L-attributed grammars and the left-to-right token visit order matters for that. And you usually prefer to know ahead of time what the operator is and to immediately know the end of an expression. In a standard left-associative operator-precedence parse of an infix language, the first thing you see left-to-right is a leftmost leaf potentially buried arbitrarily deeply along the left spine in the implicit parse tree corresponding to the left fold, so that part of the single-pass computation actually corresponds to S-attributed grammars (a subset of L-attributed grammars) because of the bottom-up structure.
+  score: 1
+  posted_at: '2026-11-25T16:41:02Z'
 article:
   url: https://mastodon.social/@pervognsen/117668394962974183
   title:
   fetch_status: error
   content:
   error: 'gate: too_short'
-  fetched_at: '2026-11-25T03:58:54Z'
-archived_at: '2026-11-25T03:58:55Z'
+  fetched_at: '2026-11-25T16:55:01Z'
+archived_at: '2026-11-25T16:55:02Z'

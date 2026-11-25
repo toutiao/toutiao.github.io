@@ -1,0 +1,133 @@
+---
+post:
+  id: lo-khb1yv
+  source: lobsters
+  title: From formal verification to bug-finding in CHERIoT
+  url: https://cheriot.org/verification/2026/11/24/griotte-verification-effort.html
+  hn_url: https://lobste.rs/s/khb1yv
+  score: 13
+  author: nwf
+  posted_at: '2026-11-24T23:52:41Z'
+  fetched_at: '2026-11-25T16:54:58Z'
+  article_url: https://cheriot.org/verification/2026/11/24/griotte-verification-effort.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T16:55:03Z'
+  raw_comment_count: 1
+  tags:
+  - formalmethods
+  - security
+comments:
+- id: lo-rozkrm
+  parent_id: '0'
+  author: david_chisnall
+  text: |-
+    I cannot overstate how impressed I am with June’s work. The jump from ‘we have proven things against a simplified model of the ISA’ to ‘actually we’ve rerun the proofs against the official ISA spec’ was amazingly quick. The bugs she’s found were subtle and the confidence we now have in the core of the trusted computing base is much improved.
+    For a bit of additional context: the switcher is the most privileged part of the system, roughly equivalent to the kernel in a microkernel system.
+  score: 3
+  posted_at: '2026-11-25T08:55:27Z'
+article:
+  url: https://cheriot.org/verification/2026/11/24/griotte-verification-effort.html
+  title: From formal verification to bug-finding in CHERIoT | CHERIoT Platform
+  fetch_status: success
+  content: "The [Cerise](https://cerise-project.org/) project was started almost 10
+    years ago at Aarhus University. Its goal is to develop formal methods to verify
+    properties of capability machines, in particular involving non-monotonicity, and
+    to prove end-to-end results in the presence of unknown code. Cerise has been extended
+    to model different aspects of capability machines, and has involved work by and
+    collaborations with several other universities, including Dominique Devriese’s
+    research group at KU Leuven, and the universities of Cambridge and Edinburgh.\n\nCerise
+    started as pen-and-paper proofs about idealised machines and focused initially
+    on reasoning about control-flow integrity of encapsulation for stack-based calling
+    conventions, but over time our research group has scaled up the approach along
+    three dimensions. First, we made our proofs foundational: Cerise now builds on
+    the Iris separation logic framework inside the Rocq theorem prover, which has
+    been critical to ensure correctness despite the growing intricacy of our proofs.
+    Second, we have investigated how to reason about a wider range of properties,
+    e.g., involving MMIO and attestation. Third, we made Cerise work with an instruction
+    set closer to the CHERIoT Sail model, and verified programs using those instructions.\n\nWhen
+    I started my PhD, CHERIoT had just been announced. I seized the opportunity to
+    apply the verification techniques of Cerise to the CHERIoT switcher, for example
+    to check that it isolates compartments and enforces no-capture. To that end, we
+    started a sub-project of Cerise, which we call Griotte.\n\nAs part of our verification
+    effort in this Griotte project, we uncovered two bugs in the CHERIoT switcher:
+    (1) the ability for a malicious (or buggy) scheduler to resuscitate an exited
+    thread in a deprecated state, thereby getting access to a capability that it should
+    not be able to have access to anymore, and (2) the ability for a malicious caller
+    to leverage the stack high watermark register to trigger a fault in the switcher,
+    thereby getting access to the callee’s stack frame and thus private data.\n\n##
+    Reasoning about unknown code\n\nThe CHERI/CHERIoT threat model includes interactions
+    with unknown compartments containing arbitrary code, which can be buggy or malicious,
+    and which can share objects in memory. Reasoning about arbitrary code is hard,
+    because it requires characterising all the possible behaviours of that code. The
+    challenge is that when trying to characterise what an unknown compartment can
+    affect, we have to account not only for what it is passed directly (if an unknown
+    compartment is physically passed a write capability to a region of memory, then
+    it is behaviourally passed the ability to overwrite that region of memory), but
+    also what it is passed indirectly—and this involves not only recursive access
+    (if an unknown compartment is physically passed a read capability to a region
+    of memory, then it is behaviourally passed the ability to acquire whatever ability
+    is given by the capabilities in that region of memory), but also access through
+    non-monotonic domain transitions (if an unknown compartment is physically passed
+    a sealed entry point capability to a “counter” compartment’s `incr` function,
+    then it is behaviourally passed the ability to affect the counter—but only by
+    incrementing it). A unique feature of Cerise is the ability to reason also about
+    the latter part of the challenge.\n\nWhat makes it difficult to design such a
+    characterisation is that it should at the same time be precise enough, and simple
+    enough to verify the programs that we care about. At a very high level, Griotte
+    defines a language to succinctly describe what is affected—and to state that something
+    is _not_ affected. The kind of properties that we want to describe are not only
+    memory safety properties (if I share a buffer to the caller, then I have the guarantee
+    that it cannot access the global data that I never shared), but also no-capture
+    properties (if I share a buffer to the caller with its global permission stripped,
+    then I have the guarantee that it cannot preserve a copy across calls), and many
+    others (including secrecy, etc.).\n\n## Separation logic and logical relations\n\nTechnically,
+    we developed a reasoning system in two parts. First, we defined (and proved sound)
+    a separation logic that allows us to verify known code line by line, showing that
+    it satisfies expected pre- and post-conditions, and that it preserves the expected
+    invariants. We used this both on the code of the switcher, and on the code of
+    specific compartments of interest, for example a key-value store. We designed
+    this separation logic so it is reusable, and we expect that other such compartments
+    of interest could be verified with it.\n\nSecond, we defined a logical relation
+    in separation logic, which is effectively an over-approximation of the effect
+    of unknown code that can be used by the separation logic to reason about a jump
+    to unknown code (through the switcher) in one single step. As such, it works like
+    a universal contract for CHERIoT. Crucially, the frame rule of separation logic
+    tells us that if we can establish that the resources (both in an informal sense,
+    and in the technical sense of separation logic) of the caller are disjoint from
+    those of the logical relation, then they will be preserved by the call.\n\nFor
+    example, if calling unknown code with a capability to a shared buffer, while keeping
+    some private data, the logical relation requires that the unknown code is only
+    passed capabilities that are _safe to share_in a technical sense.\n\nWe then define
+    a universal contract, stating that if an adversary has only access to_safe to
+    share_ capabilities, it can then execute safely and only produce other _safe to
+    share_ capabilities.\n\n## Verification in the presence of compartments and a
+    trusted switcher\n\nWe started by developing a simplified model of CHERIoT and
+    a mini version of the CHERIoT-RTOS. In particular, we modelled the compartmentalisation
+    mechanisms and the cross-compartment call path of the switcher. Our simplified
+    model mirrors the main features of the CHERIoT hardware (including the new deep
+    locality and deep immutability permissions). While our mini switcher doesn’t follow
+    CHERIoT’s switcher instruction-by-instruction, it implements the same steps.\n\nIn
+    this model, we proved on a range of small examples that the CHERIoT hardware-software
+    co-design implements the expected memory-safety properties, and that the switcher’s
+    _overall design_ enforces both compartmentalisation and stack safety.\n\nOur “end-to-end”
+    results about concrete examples assume that the machine starts in a state that
+    corresponds to the firmware image having been properly loaded. We have not verified
+    the loader itself, and so it is part of our TCB. Technically, we consider executions
+    only starting from a “loader-final” state. The loader is deterministic and so
+    it is relatively easy to dump the contents of memory from a device (or simulator)
+    after the loader has run and verify that a specific execution of the loader meets
+    the properties required by our “loader-final” state.\n\nWe expect that it should
+    be possible to prove the loader correct, but this is future work for now.\n\n##
+    The cherry on top: Concurrency, exception handling and optimisations\n\nOur initial
+    model was a simplification of CHERIoT: it didn’t support exceptions or concurrency/context
+    switching, and some optimisations of the switcher (such as the stack high watermark)
+    were left out.\n\nThe CHERIoT team has been dedicated to making CHERIoT trustworthy,
+    and has been very supportive of our verification effort. To that end, they included,
+    in the switcher’s source, detailed comments about the expected invariants and
+    behaviour of the switcher, in the form of pre- and post-conditions for the execution
+    blocks. They pointed out that the complicated control flow in the switcher’s exception
+    path was a likely source of errors.\n\nOur efforts showed that the cross-compartments
+    call (and return) path "
+  error:
+  fetched_at: '2026-11-25T16:55:03Z'
+archived_at: '2026-11-25T16:55:04Z'

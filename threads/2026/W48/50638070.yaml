@@ -1,0 +1,220 @@
+---
+post:
+  id: '50638070'
+  title: Serving Qwen via AWS Lambdas for fun and 80x negative profit
+  url: https://noahbuilt.it/writing/qwen-on-5600-lambdas
+  hn_url: https://news.ycombinator.com/item?id=50638070
+  score: 123
+  author: ''
+  posted_at: '2026-11-25T03:28:06Z'
+  fetched_at: '2026-11-25T16:54:48Z'
+  article_url: https://noahbuilt.it/writing/qwen-on-5600-lambdas
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T16:54:48Z'
+  raw_comment_count: 18
+comments:
+- id: '50638375'
+  parent_id: '50638070'
+  author: cebert
+  text: I love it when folks experiment and try random approaches like this to see
+    if it would even work.
+  score: 0
+  posted_at: '2026-11-25T04:12:09Z'
+- id: '50638388'
+  parent_id: '50638375'
+  author: octember
+  text: LOL thank you. Learn by doing
+  score: 0
+  posted_at: '2026-11-25T04:14:29Z'
+- id: '50638404'
+  parent_id: '50638070'
+  author: catlifeonmars
+  text: I’m sure it’s still quite expensive but lambda can now access GPU instances
+    via managed instances. I’d like to see the same thing implemented on some beefier
+    GPU compute.<p><a href="https:&#x2F;&#x2F;docs.aws.amazon.com&#x2F;lambda&#x2F;latest&#x2F;dg&#x2F;lambda-managed-instances-gpu.html"
+    rel="nofollow">https:&#x2F;&#x2F;docs.aws.amazon.com&#x2F;lambda&#x2F;latest&#x2F;dg&#x2F;lambda-managed-...</a>
+  score: 0
+  posted_at: '2026-11-25T04:16:31Z'
+- id: '50638456'
+  parent_id: '50638070'
+  author: jdw64
+  text: |-
+    &gt;I need a GPU
+    Who wouldn’t need a GPU? We all need one.
+  score: 0
+  posted_at: '2026-11-25T04:25:28Z'
+- id: '50638481'
+  parent_id: '50638404'
+  author: octember
+  text: God damn it, nerd sniped again. ill be back
+  score: 0
+  posted_at: '2026-11-25T04:28:10Z'
+- id: '50638768'
+  parent_id: '50638481'
+  author: geophph
+  text: Hell yeah
+  score: 0
+  posted_at: '2026-11-25T05:14:06Z'
+- id: '50638857'
+  parent_id: '50638070'
+  author: janalsncm
+  text: Hey that’s pretty impressive even if it’s not economical.<p>First thing that
+    came to mind is that you’re using a 4B model. If you can get away with something
+    half the size, I think the numbers will be more favorable.<p>In order to do that
+    you need an eval set, which you’ll want anyways if you care whether Jev or Open
+    AI decisions or Gemini decisions are best for your problem.<p>Another thing is,
+    you’ll probably be crushed on cold start unless you deliberately keep your lambdas
+    warm.
+  score: 0
+  posted_at: '2026-11-25T05:28:37Z'
+- id: '50638910'
+  parent_id: '50638857'
+  author: octember
+  text: 'All good points! I did pick somewhat randomly - would be interesting to sweep.
+    But at least in 2026 it doesn&#x27;t seem like these smaller models are holding
+    up. Maybe there is a sweet spot but I&#x27;m skeptical<p>For the eval set I took
+    a sample from here: <a href="https:&#x2F;&#x2F;stanfordnlp.github.io&#x2F;contract-nli&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;stanfordnlp.github.io&#x2F;contract-nli&#x2F;</a><p>If
+    it&#x27;s done right, answers are 100% identical so it&#x27;s easy to verify you
+    didn&#x27;t break it<p>And yeah I kept them warm, pinging every function every
+    4 minutes'
+  score: 0
+  posted_at: '2026-11-25T05:36:37Z'
+- id: '50639367'
+  parent_id: '50638070'
+  author: enjoyyourlife
+  text: Needs to try Cloudflare Workers next
+  score: 0
+  posted_at: '2026-11-25T06:55:31Z'
+- id: '50639408'
+  parent_id: '50638070'
+  author: hizlikovboy27
+  text: |-
+    I love this madness. Its serves as an answer to that &quot;what if?&quot; question you have been harboring all this time.
+    Im looking forward to seeing your new experiments with AWS Lambda documentation :)
+  score: 0
+  posted_at: '2026-11-25T07:01:20Z'
+- id: '50640118'
+  parent_id: '50638404'
+  author: alex_duf
+  text: Reading this, it&#x27;s almost what I need, but not quite.<p>Why do I have
+    to worry about it provisioning GPU instances in my account? That kinda breaks
+    the mental model of lambdas. It feels like a billing constraint turned into a
+    technical constraint. Then you wonder how well is it going to scale up and down
+    to follow the load I&#x27;m giving it, which is supposed to be their problem to
+    worry about, not mine.
+  score: 0
+  posted_at: '2026-11-25T08:57:33Z'
+- id: '50641081'
+  parent_id: '50638070'
+  author: iknownothow
+  text: "&gt; splitting a model call across 5,600 Lambdas is kinda wild.<p>100% wild!
+    Absolutely amazing idea and implementation! The advantage (theorectical) I see
+    with this approach is that you can run an abritrarily large open model yourself
+    using this approach without having access to a large machine or GPU*.<p>* When
+    cost, speed and practicality are of no concern :D<p>Do you know if a diffusion
+    model lends itself better to this approach? Since token generation may not be
+    serial?"
+  score: 0
+  posted_at: '2026-11-25T11:21:28Z'
+- id: '50641222'
+  parent_id: '50638070'
+  author: iknownothow
+  text: Keep in mind that AWS Lambda has different performance characteristics based
+    on how much memory you provide it.<p>1. For example a 10GB instance may have access
+    to 6-ish cores. Also lambda instances under 1.3GB tend to have slower cores. [1].<p>2.
+    There&#x27;s the new aws managed lambda instances that can allow 32GB and 16vCPU
+    instances [2]<p>3. Larger lambdas tend to have more network bandwidth so may be
+    downloading layers from S3 might be faster [3]<p>Do you think it would make sense
+    to stuff two or more layers into a larger lambda instances given that there&#x27;s
+    multiple cores and more memory available? I wouldn&#x27;t be surprised if some
+    optimizations would lead to only 20x negative profit :)<p>[1] <a href="https:&#x2F;&#x2F;aws.amazon.com&#x2F;blogs&#x2F;compute&#x2F;optimizing-compute-intensive-serverless-workloads-with-multi-threaded-rust-on-aws-lambda"
+    rel="nofollow">https:&#x2F;&#x2F;aws.amazon.com&#x2F;blogs&#x2F;compute&#x2F;optimizing-compute-inte...</a><p>[2]
+    <a href="https:&#x2F;&#x2F;aws.amazon.com&#x2F;about-aws&#x2F;whats-new&#x2F;2026&#x2F;03&#x2F;lambda-32-gb-memory-16-vcpus&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;aws.amazon.com&#x2F;about-aws&#x2F;whats-new&#x2F;2026&#x2F;03&#x2F;lambda-32...</a><p>[3]
+    <a href="https:&#x2F;&#x2F;aws.amazon.com&#x2F;blogs&#x2F;compute&#x2F;improving-lambda-function-latency-with-scalable-network-bandwidth&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;aws.amazon.com&#x2F;blogs&#x2F;compute&#x2F;improving-lambda-functi...</a>
+  score: 0
+  posted_at: '2026-11-25T11:42:45Z'
+- id: '50641663'
+  parent_id: '50641222'
+  author: mkesper
+  text: Also ensure you&#x27;re using the Graviton (arm64) lambdas.
+  score: 0
+  posted_at: '2026-11-25T12:48:22Z'
+- id: '50642955'
+  parent_id: '50638910'
+  author: quiet_ledger44
+  text: 5600 functions, every 4 minutes? does the ping load the model?
+  score: 0
+  posted_at: '2026-11-25T14:58:27Z'
+- id: '50643499'
+  parent_id: '50638375'
+  author: bikemike026
+  text: Same.  Bravo!
+  score: 0
+  posted_at: '2026-11-25T15:43:02Z'
+- id: '50644014'
+  parent_id: '50642955'
+  author: octember
+  text: Not 5,600 functions, more like ~100 (a few per layer). 5,600 is invocations
+    per read. The first ping loads the layer&#x27;s weights, after that it&#x27;s
+    basically a no-op since the instance keeps them warm
+  score: 0
+  posted_at: '2026-11-25T16:18:19Z'
+- id: '50644034'
+  parent_id: '50641222'
+  author: octember
+  text: Yeah I did some optimizations I removed from the blog post, I did get it ~3x
+    cheaper&#x2F;faster doing some hill climbing. But the gap is pretty wide. feels
+    like the best lever is GPU backed instances which im now testing
+  score: 0
+  posted_at: '2026-11-25T16:19:30Z'
+article:
+  url: https://noahbuilt.it/writing/qwen-on-5600-lambdas
+  title: Serving Qwen via 5,600 Lambdas for fun and 80x negative profit · Noah Lindner
+  fetch_status: success
+  content: "## Who needs a GPU?\n\nIn my work at [Bevyl](https://www.bevyl.ai) I was
+    really impressed by the performance and cost characteristics of AWS Lambdas. They
+    can massively distribute and fan out CPU-bound work, which is amazing for things
+    like ffmpeg on long videos.\n\nSo I was curious if it was possible to run inference
+    on self-hosted models using Lambdas. It was a random idea built on a hunch, and
+    I like to prove such ideas right or wrong by building. In this case I was very
+    wrong, but it was a good lesson!\n\nI picked [H2O-Lightning](https://huggingface.co/h2oai/h2o-lightning-4b),
+    a fine-tune of Qwen3.5-4B, because I wanted a small model built for decisions.
+    I figured if this architecture had any legs, only doing decision models (a single
+    forward pass) is the move. A decision model reads a document and answers a question
+    about it by picking one option.\n\n## Fanning out\n\nSo the trick, if it's possible,
+    would be fanning out. I was inspired how Remotion uses massively parallelized
+    Lambdas to render videos.\n\nI wanted to prove this was possible to do, so I kept
+    a constraint of a 3 GB limit for Lambdas. The whole model is 9.3 GB, so it does
+    not fit in one. But it has 32 layers of about 225 MB each, and one layer fits.
+    That gave me one Lambda job per layer per block of tokens.\n\nThink of the Lambda
+    as a simple idempotent API. A job reads inputs from S3, does the math, and writes
+    one object back.\n\n    x = load(f\"{doc}/{layer - 1}/{block}\")\n    memory =
+    load(f\"{doc}/{layer}/{block - 1}\")\n    \n    y, memory = model.layers[layer](x,
+    memory)\n    \n    s3.put_object(\n        Key=f\"{doc}/{layer}/{block}\",\n        Body=pack(y,
+    memory),\n    )\n\nEach job waits on the layer above for the same block and on
+    its own previous block. Each layer starts one step after the layer above it, like
+    a staircase 32 layers deep.\n\n92% of the work parallelizes, 8% is serial\n\n_Parallel
+    but not._\n\nI'm proud of the win: splitting a model call across 5,600 Lambdas
+    is kinda wild.\n\nOne request, 32 layers, 5,600 Lambda invocations\n\nLambda job
+    that has to run in orderLambda job that can run any timePoint at a job to follow
+    its block.\n\n_Win: the math worked; I had split a model call into 5,600 Lambda
+    invocations.Fail: 17 seconds to read ~4k tokens._\n\n## The bill\n\nIf it was
+    40x slower but 50% cheaper, that'd be interesting.\n\nReading a 4,000-token document
+    takes 17 seconds and costs 3.4 cents. That works out to $8.40 per million tokens.
+    Google sells a hosted decision model, [Gemini Decision 1](https://ai.google.dev/gemini-api/docs/pricing),
+    for $0.10 per million tokens, so the same read costs 0.04 cents there. Mine is
+    more than 80 times more expensive.\n\nMore than 80 times the price of a hosted
+    decision model\n\n## Takeaways\n\n### Model engineering is not so hard in 2026!\n\nI'm
+    a [dumb application developer](https://noahbuilt.it), but I was able to play with
+    model layers and transformers API pretty easily! With good devex, it feels like
+    open models are just another API at this point.\n\n### I need a GPU\n\nLearned
+    this the hard way but a very powerful lesson! One layer over a few thousand tokens
+    is a big matrix multiply, which is what GPUs are built for. My goal was to learn
+    anyway so it's a good lesson.\n\n### Freedom ain't free\n\nCPU still costs dollars,
+    there's no arbitrage here."
+  error:
+  fetched_at: '2026-11-25T16:54:48Z'
+archived_at: '2026-11-25T16:54:57Z'
