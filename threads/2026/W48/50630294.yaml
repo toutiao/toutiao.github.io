@@ -1,0 +1,177 @@
+---
+post:
+  id: '50630294'
+  title: 'Show HN: Mason – A lightweight Postgres read-replica, built on columnar
+    storage'
+  url: https://masondata.ai/
+  hn_url: https://news.ycombinator.com/item?id=50630294
+  score: 88
+  author: ''
+  posted_at: '2026-11-24T16:11:52Z'
+  fetched_at: '2026-11-25T03:58:44Z'
+  article_url: https://masondata.ai/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T03:58:44Z'
+  raw_comment_count: 16
+comments:
+- id: '50632359'
+  parent_id: '50630294'
+  author: hum3hum3
+  text: I did something sort of similar which is to rewrite postgres so that I could
+    use  it against a single file sqlite DB and run in a browser with WASM.  <a href="https:&#x2F;&#x2F;github.com&#x2F;drummonds&#x2F;go-postgres"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;drummonds&#x2F;go-postgres</a>
+  score: 0
+  posted_at: '2026-11-24T18:29:32Z'
+- id: '50632613'
+  parent_id: '50630294'
+  author: richardmeng
+  text: Very cool.
+  score: 0
+  posted_at: '2026-11-24T18:46:02Z'
+- id: '50632799'
+  parent_id: '50632359'
+  author: tagspace
+  text: Ah nice.  What do you use it for?
+  score: 0
+  posted_at: '2026-11-24T18:58:15Z'
+- id: '50633088'
+  parent_id: '50630294'
+  author: nylonstrung
+  text: Outside of the dashboard and team features stuff what does this add over just
+    DuckDB + ADBC connected to postgres?<p>Is pglite and the node stuff even necessary
+    here?
+  score: 0
+  posted_at: '2026-11-24T19:19:10Z'
+- id: '50633577'
+  parent_id: '50633088'
+  author: tagspace
+  text: Good question. The majority of the work was two things:<p>1. the replication
+    logic that keeps duckdb in sync with your postgres (like you&#x27;d expect from
+    a read replica)<p>2. the query rewriter that takes incoming postgres queries and
+    turns them into queries that run fast on duckdb (we&#x27;ve spent a lot of time
+    making sure that most queries are answered in a few 100 milliseconds, even on
+    10+M rows).<p>So, I guess the main differences are:<p>- with ADBC the load still
+    hits your postgres (which is what we wanted to avoid)<p>- with ADBC you&#x27;re
+    not guaranteed to get the same answer as postgres (we want confidence that our
+    queries will answer the same, not faster but different)<p>- you&#x27;d have to
+    build your own ETL (if you want to avoid the load on your postgres)<p>Does that
+    make sense?
+  score: 0
+  posted_at: '2026-11-24T19:49:47Z'
+- id: '50633905'
+  parent_id: '50630294'
+  author: aleda145
+  text: Cool! DuckDB is awesome<p>I&#x27;m very curious with the use case, why do
+    you need to run analytical queries against the postgres read replica? Why not
+    read the WAL and CDC them elsewhere? Especially if it&#x27;s adhoc then the (short)
+    delay wouldn&#x27;t be noticeable.<p>Also did you tried transpiling SQL if you
+    wanted to match the postgres dialect? I&#x27;ve had great success with duckdb
+    &lt;=&gt; postgres using <a href="https:&#x2F;&#x2F;github.com&#x2F;tobilg&#x2F;polyglot"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;tobilg&#x2F;polyglot</a>
+  score: 0
+  posted_at: '2026-11-24T20:06:44Z'
+- id: '50634522'
+  parent_id: '50633905'
+  author: NewJazz
+  text: Sounds like they saw clickhouse as too operationally cumbersome and too much
+    of a shift for their use cases. They seemed to want to reuse existing sql queries
+    or fragments and just get a performance boost, and then also easy spin up these
+    analytical DBs in customer environments on an ad-hoc basis.
+  score: 0
+  posted_at: '2026-11-24T20:52:06Z'
+- id: '50634579'
+  parent_id: '50632359'
+  author: ForHackernews
+  text: Sounds like <a href="https:&#x2F;&#x2F;pglite.dev&#x2F;" rel="nofollow">https:&#x2F;&#x2F;pglite.dev&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-24T20:56:30Z'
+- id: '50634651'
+  parent_id: '50634522'
+  author: tagspace
+  text: Yeah, exactly. Our customers have lots of postgres dbs, and we needed something
+    plug and play that we can throw the existing (postgres) queries at, without having
+    to rewrite them. Also saves setting up a warehouse each time.<p>And yeah, it uses
+    CDC via the WAL if you sync via logical replication.
+  score: 0
+  posted_at: '2026-11-24T21:01:48Z'
+- id: '50635342'
+  parent_id: '50634651'
+  author: aleda145
+  text: Ah a fleet of customer postgres dbs! Makes sense, thanks for taking the time
+    to explain
+  score: 0
+  posted_at: '2026-11-24T21:56:35Z'
+- id: '50635378'
+  parent_id: '50630294'
+  author: alex_hirner
+  text: Can replicated tables live on s3&#x2F;parquet only, as in did you try so?
+  score: 0
+  posted_at: '2026-11-24T21:59:33Z'
+- id: '50635464'
+  parent_id: '50630294'
+  author: neilsimp1
+  text: There are too many software projects with this name.
+  score: 0
+  posted_at: '2026-11-24T22:06:45Z'
+- id: '50635485'
+  parent_id: '50635464'
+  author: akshay180
+  text: I have too many friends with this name
+  score: 0
+  posted_at: '2026-11-24T22:08:27Z'
+- id: '50635515'
+  parent_id: '50635378'
+  author: tagspace
+  text: Haven&#x27;t tried it to be honest. Currently very lightweight and just syncs
+    directly to the disk where you run it.<p>But duckdb supports both S3 and parquet
+    so would likely be easy to support.<p>What&#x27;s the usecase, if you don&#x27;t
+    mind me asking?<p>I guess the advantage is lower storage costs, but the read latency
+    would take a hit (which would definitely affect query speeds). Would be interesting
+    to try.
+  score: 0
+  posted_at: '2026-11-24T22:11:04Z'
+- id: '50636070'
+  parent_id: '50630294'
+  author: pratikgcet1985
+  text: This is really good! We are an avid user of ClickHouse and this is awesome
+    work.
+  score: 0
+  posted_at: '2026-11-24T23:03:17Z'
+- id: '50637179'
+  parent_id: '50635485'
+  author: rightisleft
+  text: There are too many software projects…
+  score: 0
+  posted_at: '2026-11-25T01:12:45Z'
+article:
+  url: https://masondata.ai/
+  title: 'Mason: a drop-in Postgres read replica for analytics'
+  fetch_status: success
+  content: "_One query over 10 million rows: the Postgres primary took 15.7 seconds,
+    Mason as its read replica took 0.193 seconds, and both returned the same answer
+    to the same SQL: 81 times faster._\n\n    SELECT response_code, count(*)\n    FROM
+    requests\n    GROUP BY response_code\n\nQuerying **10M rows** /\n\nPostgres primary15.7\n\nMason
+    read replica0.193\n\nSame SQL, same answer, 81× faster\n\n| response\\_code |
+    count |\n| --- | --- |\n| 200 | 7,412,604 |\n| 304 | 1,502,931 |\n| 404 | 846,118
+    |\n| 500 | 238,347 |\n\nAWS&nbsp;m7g.xlarge · 4&nbsp;vCPU · 16&nbsp;GiB&nbsp;RAM
+    · EBS&nbsp;gp3\n\n| Query | Postgres (s) | Mason (s) | Mason is |\n| --- | ---
+    | --- | --- |\n| Count by status10M rows, 10 clients | 21.721 | 0.2595 | 84× faster
+    |\n| Count by status, 100M rows, 1 client | 216.068 | 0.4624 | 467× faster |\n|
+    \n\n    SELECT status, count(*)\n    FROM orders\n    GROUP BY status\n    ORDER
+    BY status\n\n |\n| Revenue by month (a join)10M rows, 10 clients | 43.909 | 2.758
+    | 16× faster |\n| Revenue by month (a join), 100M rows, 1 client | 335.059 | 6.685
+    | 50× faster |\n| \n\n    SELECT date_trunc('month', o.created_at) AS month,\n
+    \          date_trunc('year', c.created_at) AS signup_year,\n           sum(o.amount)
+    AS revenue\n    FROM orders o\n    JOIN customers c ON c.id = o.customer_id\n
+    \   GROUP BY 1, 2\n    ORDER BY 1, 2\n\n |\n| Lookup by primary key10M rows, 10
+    clients | 0.0388 | 0.2341 | 6.0× slower |\n| Lookup by primary key, 100M rows,
+    1 client | 0.0366 | 0.1013 | 2.8× slower |\n| \n\n    SELECT *\n    FROM orders\n
+    \   WHERE id = '7c9e6679-7425-40de-944b-e07fc1f90ae7'\n\n |\n\nFrom a cold start:
+    each engine restarted and the page cache dropped before every run. 1 or 10 clients
+    send the query at the same moment, and the time is until every client has its
+    answer, the median of 3 runs. Actual results will vary, depending on the size
+    and distribution of your data.\n\n[How it was measured](https://github.com/embeddable-hq/mason-data/blob/main/docs/MEASUREMENTS.md)AWS&nbsp;m7g.xlarge
+    · 4&nbsp;vCPU · 16&nbsp;GiB&nbsp;RAM · EBS&nbsp;gp3"
+  error:
+  fetched_at: '2026-11-25T03:58:44Z'
+archived_at: '2026-11-25T03:58:53Z'

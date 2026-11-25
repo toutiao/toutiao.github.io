@@ -1,0 +1,953 @@
+---
+post:
+  id: '50632883'
+  title: Cloudflare hides shortcomings of the underlying infrastructure
+  url: https://charlie.fish/posts/2026/11/what-cloudflare-doesnt-tell-you/
+  hn_url: https://news.ycombinator.com/item?id=50632883
+  score: 147
+  author: ''
+  posted_at: '2026-11-24T19:03:55Z'
+  fetched_at: '2026-11-25T03:58:44Z'
+  article_url: https://charlie.fish/posts/2026/11/what-cloudflare-doesnt-tell-you/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-25T03:58:44Z'
+  raw_comment_count: 98
+comments:
+- id: '50633072'
+  parent_id: '50632883'
+  author: riazrizvi
+  text: This has got SNL &quot;fix it&quot; vibes. They are exactly doing what we
+    want here. It takes time.
+  score: 0
+  posted_at: '2026-11-24T19:17:35Z'
+- id: '50633096'
+  parent_id: '50632883'
+  author: marcta
+  text: What&#x27;s the technical reason behind Cloudflare preferring IPv4 over IPv6
+    for the origin connection?
+  score: 0
+  posted_at: '2026-11-24T19:19:29Z'
+- id: '50633117'
+  parent_id: '50632883'
+  author: e63f67dd-065b
+  text: "&gt; I also believe the industry should consider adding functionality so
+    CDNs and other intermediate networks can expose origin TLS connection information
+    alongside their own. This would allow users and network researchers to better
+    understand the encryption state of the entire path and hold website owners accountable
+    for bad security practices. A similar mechanism could expose which IP version
+    is being used to communicate with the origin server.<p>The whole point of cloudflare
+    is to <i>shield</i> origin servers from the internet, why would I want them to
+    expose more info about origins than they currently do?"
+  score: 0
+  posted_at: '2026-11-24T19:20:39Z'
+- id: '50633127'
+  parent_id: '50632883'
+  author: Thaxll
+  text: "&quot;But Cloudflare&#x27;s connection to the origin server might be entirely
+    unencrypted and rely exclusively on IPv4&quot;<p>Cloudflare can generate a certificate
+    to connect to the origin server, you should use that."
+  score: 0
+  posted_at: '2026-11-24T19:21:16Z'
+- id: '50633137'
+  parent_id: '50632883'
+  author: Velocifyer
+  text: If you have both equivelent IPv4 to origin and IPv6 to origin, IPv4 to origin
+    saves 4 bytes per packet of overhead. (Remember, the internet runs on layer 2
+    packets of 1500 bytes, after layer 2 overhead)<p>If you want IPv6 to origin (EG
+    to bypass NAT), then you can still tell it do to that by setting a proxied AAAA
+    and deleting the A.
+  score: 0
+  posted_at: '2026-11-24T19:21:51Z'
+- id: '50633146'
+  parent_id: '50633096'
+  author: bluGill
+  text: Historically a lot of IPv6 was broken.  I&#x27;m not sure if that is still
+    true. Many consumer ISPs have great IPv6 support (and have for nearly a decade),
+    but companies often lag behind and may not have IPv4 at all on their network.
+  score: 0
+  posted_at: '2026-11-24T19:22:40Z'
+- id: '50633181'
+  parent_id: '50632883'
+  author: ipsum2
+  text: 'Non click-bait title: Cloudflare prefers IPv4 over IPv6 for internal connections.'
+  score: 0
+  posted_at: '2026-11-24T19:25:02Z'
+- id: '50633197'
+  parent_id: '50633127'
+  author: pamcake
+  text: "&gt; Cloudflare can generate a certificate to connect to the origin server,
+    you should use that.<p>You should generate origin server cert yourself and not
+    let Cloudflare touch that private key.<p>This is anyway beside their point that
+    I as a user can&#x27;t know how it looks between Cloudflare and your origin."
+  score: 0
+  posted_at: '2026-11-24T19:26:11Z'
+- id: '50633240'
+  parent_id: '50633117'
+  author: fishcharlie
+  text: Hmm. Good point. I&#x27;d personally argue that Cloudflare is mainly meant
+    to hide the origin servers IP address, not the metadata about the connection.
+    DDoS attacks are really what they are protecting with that. So what would be the
+    harm in exposing that metadata?
+  score: 0
+  posted_at: '2026-11-24T19:28:53Z'
+- id: '50633254'
+  parent_id: '50632883'
+  author: TZubiri
+  text: same thing with those consumer product vpns, if you want to connect with a
+    server in your country and you use a vpn in switzerland, your connection goes
+    encrypted to switzerland, and then unencrypted (the vpn part) all the way back
+    to your country.<p>some people think of security like an additive consumable,
+    you are hungry you eat a food product, you are sick you apply a medicine, you
+    are insecure you apply a security thing<p>that said, it does work to deidentify
+    your traffic by effectively pooling your connections and laundering them to appear
+    as coming from switzerland, if that’s your threat model it can work for you, but
+    it works for avoiding the ISP employee knowing where you like to get your porn
+    from (and maybe for criminals that don’t want to make subpoenas more complex),
+    but it does not for any kind of corporate grade security whose threat model os
+    a mitm, not because of the quality of the product, but by its category
+  score: 0
+  posted_at: '2026-11-24T19:30:13Z'
+- id: '50633278'
+  parent_id: '50633197'
+  author: oarsinsync
+  text: "&gt; &gt; &gt; Cloudflare can generate a certificate to connect to the origin
+    server, you should use that.<p>&gt; You should generate origin server cert yourself
+    and not let Cloudflare touch that private key.<p>What difference does key ownership
+    make in this scenario? Cloudflare is encrypting the plain text to send to you,
+    because they terminate the end user TLS session themselves."
+  score: 0
+  posted_at: '2026-11-24T19:32:05Z'
+- id: '50633283'
+  parent_id: '50633254'
+  author: TeMPOraL
+  text: "&gt; <i>some people think of security like an additive consumable, you are
+    hungry you eat a food product, you are sick you apply a medicine, you are insecure
+    you apply a security thing</i><p>That&#x27;s how it&#x27;s ideally supposed to
+    work. TLS is built on that idea."
+  score: 0
+  posted_at: '2026-11-24T19:32:16Z'
+- id: '50633307'
+  parent_id: '50633096'
+  author: cbg0
+  text: IPv6 route optimization was handled poorly by some ISPs in the past with big
+    differences in latency versus IPv4.<p>I&#x27;d assume given Cloudflare&#x27;s
+    traffic that they know on average the performance will be better on IPv4 so they
+    default to that.
+  score: 0
+  posted_at: '2026-11-24T19:33:49Z'
+- id: '50633313'
+  parent_id: '50633240'
+  author: drakythe
+  text: That metadata may expose more than we realize. I can&#x27;t tell you everything
+    it reveals about the origin server or site itself, and until I can, I&#x27;d rather
+    err on the side of not revealing that information because a lot of people smarter
+    than me might be able to misuse it.
+  score: 0
+  posted_at: '2026-11-24T19:34:11Z'
+- id: '50633331'
+  parent_id: '50632883'
+  author: dktbs
+  text: In my experience, Cloudflare will pretty loudly encourage users to set up
+    Full strict encryption to origins.
+  score: 0
+  posted_at: '2026-11-24T19:35:24Z'
+- id: '50633363'
+  parent_id: '50632883'
+  author: dantillberg
+  text: "&gt; ... they actively prefer IPv4 over IPv6 when making origin server requests,
+    which is particularly disappointing ...<p>I understand how lack of TLS from Cloudflare
+    to origin server materially impacts privacy&#x2F;security.<p>But how does it matter
+    whether Cloudflare uses IPv4 or IPv6 to connect to the origin server? Or if the
+    origin even supports IPv6?"
+  score: 0
+  posted_at: '2026-11-24T19:37:14Z'
+- id: '50633370'
+  parent_id: '50633197'
+  author: mobilio
+  text: Another way to serve HTTP is to run it over CF Tunnels. Since everything is
+    unencrypted (HTTP) but Tunnel is encrypted you shouldn&#x27;t be hesitated about
+    certificates.
+  score: 0
+  posted_at: '2026-11-24T19:37:30Z'
+- id: '50633408'
+  parent_id: '50632883'
+  author: NoahZuniga
+  text: I haven&#x27;t been able to figure out whether my origin connection is quantum
+    secure, not for a lack of trying.
+  score: 0
+  posted_at: '2026-11-24T19:39:49Z'
+- id: '50633429'
+  parent_id: '50633240'
+  author: 9dev
+  text: I can tell you for sure that Cloudflare is also used to protect servers from
+    the absolute barrage of automated attacks out there. And that was the case even
+    before LLMs!<p>At some point I locked them down completely, all external ports
+    closed; Cloudflare reaches them via a tunnel daemon. Since then, I have peace,
+    and I don’t want that compromised just for some cozy feeling of transparency.
+  score: 0
+  posted_at: '2026-11-24T19:40:53Z'
+- id: '50633470'
+  parent_id: '50632883'
+  author: huijzer
+  text: My biggest problem with Cloudflare is that most people do not need DDoS protection,
+    and that choosing Cloudflare lowers uptime when compared to a simple VPS at reliable
+    provider. Like GitHub and other massive providers, it’s just very common for one
+    of the parts of that massive system to go haywire and take the whole thing down
+    for a few hours. Datacenters with VPSes as far as I know don’t often go down.
+  score: 0
+  posted_at: '2026-11-24T19:43:22Z'
+- id: '50633499'
+  parent_id: '50632883'
+  author: mannyv
+  text: I use Fastly, but I also use straight http for origin. Why? Because it’s marginally
+    faster and I don’t really care about the security of my static content. And less
+    processing is always better. And as a bonus I don’t have to worry about my origin
+    showing up in some certificate list scraper.<p>If I was handling HIPAA data it
+    would be different.
+  score: 0
+  posted_at: '2026-11-24T19:44:59Z'
+- id: '50633552'
+  parent_id: '50633146'
+  author: PaulHoule
+  text: The big picture is that people don’t see a huge amount of value in IPv6.  Like
+    hypothetically it’s a good idea but the various compensations we have for the
+    limitations of IPv4 are good enough for most people (even corporate persons)
+  score: 0
+  posted_at: '2026-11-24T19:48:26Z'
+- id: '50633598'
+  parent_id: '50633470'
+  author: lezojeda
+  text: Most people do not need it _until_ they do need it. I guess for many the trade-off
+    between knowing that is taken care of vs the uptime cost is worthwhile.
+  score: 0
+  posted_at: '2026-11-24T19:50:51Z'
+- id: '50633643'
+  parent_id: '50632883'
+  author: bastawhiz
+  text: "&gt; I also believe the industry should consider adding functionality so
+    CDNs and other intermediate networks can expose origin TLS connection information
+    alongside their own.<p>This is like if SSH announced to anyone who connected that
+    the admin user&#x27;s password was set to a well known default. Surely that&#x27;ll
+    hold negligent system administrators accountable!"
+  score: 0
+  posted_at: '2026-11-24T19:52:43Z'
+- id: '50633648'
+  parent_id: '50633499'
+  author: clhodapp
+  text: How does this not put your users at about as much risk as if they connected
+    to your site over unencrypted HTTP end-to-end? Someone can MITM the connection
+    from Fastly back to your content and replace it with things that are <i>not</i>
+    your static content.
+  score: 0
+  posted_at: '2026-11-24T19:52:50Z'
+- id: '50633664'
+  parent_id: '50632883'
+  author: ectospheno
+  text: I ran an origin server that only had port 443 open and only had an ipv6 address
+    for a year behind cloudflare. Never had any issues.
+  score: 0
+  posted_at: '2026-11-24T19:53:36Z'
+- id: '50633683'
+  parent_id: '50633470'
+  author: bastawhiz
+  text: Most people choose Cloudflare because they have much more generous egress
+    bandwidth pricing than other providers.
+  score: 0
+  posted_at: '2026-11-24T19:54:17Z'
+- id: '50633724'
+  parent_id: '50633470'
+  author: enlyth
+  text: I use their tunnels to host public websites from my home server, that&#x27;s
+    something I <i>definitely</i> don&#x27;t want to expose, especially these days
+  score: 0
+  posted_at: '2026-11-24T19:56:51Z'
+- id: '50633731'
+  parent_id: '50633499'
+  author: hnav
+  text: you know that an on the-path attacker can poison your fastly cache, right?
+  score: 0
+  posted_at: '2026-11-24T19:57:04Z'
+- id: '50633782'
+  parent_id: '50633552'
+  author: hnav
+  text: Ubiquitous IPv6 is in a way the antithesis of the kind of centralization big
+    corps want. P2P communication without STUN, TURN, UPnP and other jank.
+  score: 0
+  posted_at: '2026-11-24T19:59:42Z'
+- id: '50633806'
+  parent_id: '50633181'
+  author: hnav
+  text: The IPv4 angle is a weird tangent, but CF et al allowing plaintext backhaul
+    without any indication to end users is still an issue.
+  score: 0
+  posted_at: '2026-11-24T20:00:44Z'
+- id: '50633811'
+  parent_id: '50633117'
+  author: robomc
+  text: It&#x27;s an insane suggestion.<p>How about the industry also consider returning
+    a header that includes all current CVEs in the upstream stack?<p>You can argue
+    that seeing a site uses TLS at the edge creates a presumption that you&#x27;re
+    getting TLS all the way through, and it&#x27;s bad for consumers of websites to
+    be mislead in this way. But ... if the website isn&#x27;t doing TLS from CF to
+    origin, they&#x27;re not doing 10 other things that are probably worse anyway.
+    You ultimately have to trust the upstream, and this signal wouldn&#x27;t confirm
+    that the trust is warranted.
+  score: 0
+  posted_at: '2026-11-24T20:01:03Z'
+- id: '50633817'
+  parent_id: '50633499'
+  author: bastawhiz
+  text: 'It&#x27;s marginally faster when the cache is cold and there&#x27;s no open
+    connection. But you also lose out on the benefits of H2, with header compression
+    and the ability to pull many files concurrently over a single connection. The
+    performance difference is almost certainly either exactly a wash or slightly slower
+    with H1, unless you have so few files that no connection stays open for very long
+    anyway: multiple TCP handshakes and header size is going to dominate the single
+    TLS negotiation. Server to server, the cost of encrypting and decrypting is almost
+    unmeasurable compared to network cost.'
+  score: 0
+  posted_at: '2026-11-24T20:01:39Z'
+- id: '50633819'
+  parent_id: '50632883'
+  author: megous
+  text: So how do site operators deal with revealing full user credentials (usernames,
+    passwords, etc.) and other information to a third party like this?<p>One of the
+    other things cf does not tell you.
+  score: 0
+  posted_at: '2026-11-24T20:01:51Z'
+- id: '50633838'
+  parent_id: '50632883'
+  author: devy
+  text: Connecting to the origin server via IPv4 or lower grade TLS requirements is
+    how Cloudflare can service more webmasters than not. As a for-profit enterprise,
+    they choose not to lose their customer over strict Internet standard. I don&#x27;t
+    see CF intentionally hiding anything. In fact, it&#x27;s extremely hard to change
+    behaviors the free tier customer let alone the paid ones. At the end of the day,
+    they are making less-tech savvy webmasters conveniently connect to the modern
+    software defined networks and the Internet as a whole painlessly at a very generous
+    free tier allowance than most providers. I don&#x27;t see why they deserve this
+    type of article &#x2F; critisism.
+  score: 0
+  posted_at: '2026-11-24T20:02:51Z'
+- id: '50633876'
+  parent_id: '50633664'
+  author: hirako2000
+  text: The author is referring to the many servers that don&#x27;t communicate over
+    TLS (totally unencrypted) with Cloudflare.<p>Which makes the security posture
+    worse for users as they <i>think</i> their communication is secured, but in fact
+    just part of the way.<p>I don&#x27;t get the argument against CF preferring ipv4.
+  score: 0
+  posted_at: '2026-11-24T20:04:29Z'
+- id: '50633887'
+  parent_id: '50633470'
+  author: jppope
+  text: I love Cloudflare for a variety of reasons. Needing protection against DDoS
+    for my personal site was not one of those, however it is a nice piece of mind
+    if it were to happen.
+  score: 0
+  posted_at: '2026-11-24T20:04:59Z'
+- id: '50633888'
+  parent_id: '50633470'
+  author: robomc
+  text: You don&#x27;t get Cloudflare for DDOS generally because like you say, DDOS
+    is unlikely for most services. You get it for the managed WAF ruleset and the
+    hope that &quot;huh it is behind the CF WAF&quot; is enough to put it lower on
+    the list of targets for attacks of all sorts. And to a lesser degree, free edge
+    caching.
+  score: 0
+  posted_at: '2026-11-24T20:05:06Z'
+- id: '50633891'
+  parent_id: '50633408'
+  author: fishcharlie
+  text: I&#x27;m SURE I&#x27;m in the same boat for some of my sites. Just a tiny
+    bit more visibility and I&#x27;d spend time fixing it.
+  score: 0
+  posted_at: '2026-11-24T20:05:18Z'
+- id: '50633897'
+  parent_id: '50632883'
+  author: jollymonATX
+  text: |-
+    &quot;Exposing the origin&quot; - um nope, ngh and a somewhat draft proposal.
+    What kind of article is this?
+  score: 0
+  posted_at: '2026-11-24T20:05:56Z'
+- id: '50633929'
+  parent_id: '50633470'
+  author: selfmodruntime
+  text: Come on. This is a complete non-argument and your VPS provider will most likely
+    have more downtime than Cloudflare.
+  score: 0
+  posted_at: '2026-11-24T20:08:28Z'
+- id: '50633933'
+  parent_id: '50633363'
+  author: fishcharlie
+  text: I think this is less egregious than TLS for sure. I&#x27;m just a big advocate
+    for IPv6 adoption right now. The more IPv6 traffic that shows up on the internet,
+    the more networks will modernize their systems.<p>If website owners or other networks
+    see more IPv4 traffic, they question why they should prioritize IPv6. I think
+    small changes, can start to add up and lead to better IPv6 adoption.<p>I know
+    there are a ton of arguments and cases that show that IPv6 adoption is slow. Maybe
+    naively I&#x27;m holding out hope that at some point some small change from a
+    major internet player will cause a snowball effect and get our world to use IPv6
+    for real.
+  score: 0
+  posted_at: '2026-11-24T20:08:35Z'
+- id: '50633937'
+  parent_id: '50632883'
+  author: viraptor
+  text: "&gt; they actively prefer IPv4 over IPv6 when making origin server requests<p>This
+    feels extremely irrelevant. If you want IPv6, you can disable IPv4. Why would
+    you expose both for CloudFlare to choose from? What&#x27;s the actual problem
+    here?"
+  score: 0
+  posted_at: '2026-11-24T20:08:54Z'
+- id: '50633944'
+  parent_id: '50632883'
+  author: jmtulloss
+  text: I think they should heavily push Cloudflare tunnels and encourage 0 ingress
+    backends. The open internet is an increasingly terrifying place and I want no
+    part of it.
+  score: 0
+  posted_at: '2026-11-24T20:09:07Z'
+- id: '50633980'
+  parent_id: '50633470'
+  author: bearjaws
+  text: I thought that was true until I ran a vaccination website, good luck predicting
+    what websites do and do not need it!<p>Also I&#x27;ve had a forum for cancer survivors
+    DDOS&#x27;d, yup.
+  score: 0
+  posted_at: '2026-11-24T20:10:56Z'
+- id: '50633993'
+  parent_id: '50633724'
+  author: taraindara
+  text: I think that’s a false sense of security though. You can definitely still
+    be compromised even with Cloudflare in front of you. A vulnerable service is still
+    vulnerable, you’re just praying that Cloudflare recognizes the signature to stop
+    an exploit for you.<p>But the onus is still on you to monitor your environment
+    and keep things updated and secure.
+  score: 0
+  posted_at: '2026-11-24T20:11:21Z'
+- id: '50634008'
+  parent_id: '50633648'
+  author: M3L0NM4N
+  text: Even Hacker News didn&#x27;t realize this for a long time.
+  score: 0
+  posted_at: '2026-11-24T20:12:11Z'
+- id: '50634031'
+  parent_id: '50633929'
+  author: BenjiWiebe
+  text: If you put cloudflare in front of your vps, though, you&#x27;re adding more
+    points of failure.
+  score: 0
+  posted_at: '2026-11-24T20:13:41Z'
+- id: '50634033'
+  parent_id: '50633096'
+  author: AtNightWeCode
+  text: There is absolutely no value gained by using IPv6 for that use case.
+  score: 0
+  posted_at: '2026-11-24T20:13:42Z'
+- id: '50634058'
+  parent_id: '50632883'
+  author: nwroot
+  text: 'Why is this #1.'
+  score: 0
+  posted_at: '2026-11-24T20:15:29Z'
+- id: '50634065'
+  parent_id: '50633127'
+  author: amluto
+  text: Cloudflare’s mechanisms for securing the origin connection are, at least historically,
+    massively overcomplicated and horrendously poorly documented.  Maybe it’s better
+    now.<p>Even with a tunnel, there is still very little clarity as to what the various
+    JWT options do or what the considerations are.
+  score: 0
+  posted_at: '2026-11-24T20:15:53Z'
+- id: '50634082'
+  parent_id: '50633819'
+  author: encom
+  text: 'Since CloudFlare is MITM, I wish browsers would do more to alert the user
+    that the connection is not E2E encrypted, with a red address bar or whatever.<p>On
+    an unrelated note: It would be interesting to have an addon that adds up how much
+    of my life has been wasted on &quot;security checks&quot;. Am I the only one who&#x27;s
+    about to reach a breaking point with this nonsense?'
+  score: 0
+  posted_at: '2026-11-24T20:17:00Z'
+- id: '50634155'
+  parent_id: '50634058'
+  author: fortran77
+  text: Because a lot of people, including me, upvoted it.
+  score: 0
+  posted_at: '2026-11-24T20:21:39Z'
+- id: '50634164'
+  parent_id: '50632883'
+  author: AtNightWeCode
+  text: I think this post mostly misunderstands how to view Cloudflare. Cloudflare
+    should be viewed as corps servers hosted at Cloudflare.
+  score: 0
+  posted_at: '2026-11-24T20:22:19Z'
+- id: '50634245'
+  parent_id: '50633819'
+  author: tancop
+  text: It&#x27;s not hard to wrap the sensitive parts in another layer of encryption
+    so Cloudflare can&#x27;t see them. Most site owners just don&#x27;t know it&#x27;s
+    an option or realize TLS termination might be a problem.
+  score: 0
+  posted_at: '2026-11-24T20:28:18Z'
+- id: '50634251'
+  parent_id: '50633724'
+  author: cliche
+  text: I love cloudflare for tunnels, happy to host compute and storage for small
+    services myself on my hardware but leave all the networking to cloudflare and
+    Tailscale.
+  score: 0
+  posted_at: '2026-11-24T20:29:01Z'
+- id: '50634258'
+  parent_id: '50633648'
+  author: amluto
+  text: And these days an attacker can <i>persistently</i> poison you using service
+    workers.<p>TLS isn’t just about confidentiality - integrity is at least as important.
+  score: 0
+  posted_at: '2026-11-24T20:29:43Z'
+- id: '50634262'
+  parent_id: '50633278'
+  author: AtNightWeCode
+  text: That comment is wrong. For full end to end encryption you must use the cert
+    from CF on your local server. Kinda goes without saying but it is also pointless
+    but it is the best practice I would say.
+  score: 0
+  posted_at: '2026-11-24T20:30:06Z'
+- id: '50634294'
+  parent_id: '50633240'
+  author: j45
+  text: The less that is exposed, the better.<p>What was previously hard to manually
+    check about different chains of metadata is now gone.  Every permutation and combination
+    of approaches can be semi intelligently tried by ai bot. It’s many orders of magnitude
+    higher than before.<p>The internet is entering a less safer time right now with
+    the biggest question being which routers and core networking equipment are and
+    can stay the most secure, and respond and repair the quickest, when they are inevitably
+    hit by something?<p>Microsoft’s outage could be any cloud provider in the future.<p>On
+    the other hand, the more that is known internally, the better. Maybe there can
+    be more data internally.
+  score: 0
+  posted_at: '2026-11-24T20:33:18Z'
+- id: '50634301'
+  parent_id: '50632883'
+  author: joshchaney
+  text: I think this is a non-issue, but if we are going to complain -- It&#x27;s
+    a problem for Akamai, Fastly, AWS, etc. etc. If you don&#x27;t want the origin
+    to be hit over IPv4, use a name that only resolves IPv6?
+  score: 0
+  posted_at: '2026-11-24T20:33:35Z'
+- id: '50634321'
+  parent_id: '50634301'
+  author: essfrmexistence
+  text: Yeah, its as they say &quot;Don&#x27;t blame the players - Blame the system&quot;
+  score: 0
+  posted_at: '2026-11-24T20:35:34Z'
+- id: '50634338'
+  parent_id: '50633240'
+  author: Bender
+  text: If that is the case then those people would really only need a simple layer
+    4 proxy and there would be no need to decrypt at the CDN.  <i>e.g. options like
+    TCPShield, NeoProtect, or Path.net</i>  I think even Cloudflare offers simple
+    layer 4 tunnels.
+  score: 0
+  posted_at: '2026-11-24T20:36:52Z'
+- id: '50634344'
+  parent_id: '50633598'
+  author: huijzer
+  text: 'If someone DDoSses my services, I just don’t use them till they are bored
+    of DDoSsing me. Or I disconnect my Pi and connect directly or something.<p>All
+    hypotheticals by the way. I keep having a big mouth at these DDoS discussions
+    and how my servers have never been taken down, and yet they are never taken down.
+    Here is the previous discussion: <a href="https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=45965060">https:&#x2F;&#x2F;news.ycombinator.com&#x2F;item?id=45965060</a>'
+  score: 0
+  posted_at: '2026-11-24T20:37:20Z'
+- id: '50634410'
+  parent_id: '50633993'
+  author: huijzer
+  text: I also wonder sometimes what people are doing that they’re so afraid of hacks?
+    Rust web server with password auth having explicit auth tests on each sensitive
+    endpoint plus constant time string check goes a long way. Sure there are many
+    nuances for more complex applications, but regular joe will usually not need more
+    than this. If this is not safe then please tell me. Or use Caddy basic auth implementation
+    plus HTTPS if you want an even more foolproof method.
+  score: 0
+  posted_at: '2026-11-24T20:42:59Z'
+- id: '50634414'
+  parent_id: '50633117'
+  author: hinkley
+  text: There is no way to “include” a certificate in a communications channel and
+    know that it isn’t replay unless you have the private key.<p>Mechanically, the
+    way you would do this instead would be for the origin to countersign a certificate
+    for Cloudflare to use. Deputizing them as the man in the middle formally. But
+    that would be adding functionality, as browsers don’t report that and Let’s Encrypt
+    doesn’t issue certs for that at present. But those who care could vote with their
+    feet and upgrade or switch browsers in order to get what they want.<p>Cloudflare
+    could even use the same certs for all customers. People are used to thinking of
+    “certificate chains” but they can in fact be inverted trees. The browser needs
+    to find one chain it trusts, not all. That’s how Let’s Encrypt got started after
+    all. Then Cloudflare can prune the tree down to the relevant actors before sending
+    it out.<p>However that would not address Cloudflare using http for upstream connections.
+    But who the hell is still exposing http without a redirect in 2026?
+  score: 0
+  posted_at: '2026-11-24T20:43:10Z'
+- id: '50634439'
+  parent_id: '50632883'
+  author: RKearney
+  text: 'The post introduces an IPv4&#x2F;IPv6 discussion which distracts from the
+    more egregious design flaw, Flexible SSL[0]. I wish the discussion focused more
+    on this because I&#x27;ve tried raising awareness of this multiple times over
+    the last decade.<p>Letting the users browser feel safe by thinking it&#x27;s using
+    a strong TLS connection (and unlocking certain APIs gated by HTTPS such as geoLocation)
+    only to blast the connection over the internet using plain-text is antithetical
+    to the design of HTTPS (notwithstanding first-hop&#x2F;mile attacks).<p>[0]: <a
+    href="https:&#x2F;&#x2F;developers.cloudflare.com&#x2F;ssl&#x2F;origin-configuration&#x2F;ssl-modes&#x2F;flexible&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;developers.cloudflare.com&#x2F;ssl&#x2F;origin-configuration&#x2F;s...</a>'
+  score: 0
+  posted_at: '2026-11-24T20:45:17Z'
+- id: '50634446'
+  parent_id: '50633331'
+  author: micah94
+  text: This is my experience as well.  I don&#x27;t understand this post at all.  Have
+    they actually used Cloudflare?
+  score: 0
+  posted_at: '2026-11-24T20:46:01Z'
+- id: '50634501'
+  parent_id: '50633313'
+  author: hinkley
+  text: Part of the reason you use TLS is because the moment you used edge networking
+    or even just regional distribution there is no canonical “there” there. You and
+    I do not connect to the same google.com. And probably never have.<p>Also packet
+    switched, routed networks, you don’t have any way to know that the resquest you
+    sent to 1.1.1.1 actually got there instead of being intercepted. In fact service
+    providers have done this for ages which is a big part of why we went TLS always
+    in the first place.<p>All TLS tells you actually is that someone trustworthy said
+    the certificate used to establish the session was issued to the party you believe
+    you are talking to. Nota bene, that doesn’t say that the trusted party can prove
+    the person you are actually talking to is the people they said they are or that
+    someone else hasn’t stolen that certificate and is impersonating them. That’s
+    why it’s so important to protect your private keys, and why signing authorities
+    try hard to get a positive ID. They do occasionally get fooled, and keys lose
+    containment, which is why revocation exists.
+  score: 0
+  posted_at: '2026-11-24T20:51:06Z'
+- id: '50634539'
+  parent_id: '50632883'
+  author: jgrahamc
+  text: '&gt; One of my biggest problems with this is the fact that Cloudflare doesn&#x27;t
+    do enough to notify website administrators about these issues.<p>I think we made
+    a very large effort to make sure our customers were using TLS to the origin.<p>In
+    2022, we released the SSL&#x2F;TLS Recommender (<a href="https:&#x2F;&#x2F;blog.cloudflare.com&#x2F;ssl-tls-recommender"
+    rel="nofollow">https:&#x2F;&#x2F;blog.cloudflare.com&#x2F;ssl-tls-recommender</a>)
+    which helps a customer figure out what settings they can use for their origin
+    connection. This is a bigger deal than you might think at Cloudflare scale because
+    end customers aren&#x27;t always in control of their TLS configuration on their
+    server (e.g. imagine they are using a WordPress hosting company).<p>In 2024, we
+    had confidence that at scale the recommender worked and announced we were going
+    to automatically set the TLS level for origin connections (<a href="https:&#x2F;&#x2F;blog.cloudflare.com&#x2F;introducing-automatic-ssl-tls-securing-and-simplifying-origin-connectivity&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;blog.cloudflare.com&#x2F;introducing-automatic-ssl-tls-se...</a>).<p>In
+    2025, we followed up on that with a review of how that roll out had gone and announced
+    post-quantum origin connections (<a href="https:&#x2F;&#x2F;blog.cloudflare.com&#x2F;automatically-secure"
+    rel="nofollow">https:&#x2F;&#x2F;blog.cloudflare.com&#x2F;automatically-secure</a>).<p>Doing
+    something at Cloudflare scale is always... weird. For example, we&#x27;d see situations
+    where a customer had configured HTTP to their origin and if we switched to HTTPS
+    automatically we&#x27;d get different content! You can read about those issues
+    in this 2020 research paper: <a href="https:&#x2F;&#x2F;www.cs.umd.edu&#x2F;~dml&#x2F;papers&#x2F;https_tma20.pdf"
+    rel="nofollow">https:&#x2F;&#x2F;www.cs.umd.edu&#x2F;~dml&#x2F;papers&#x2F;https_tma20.pdf</a>'
+  score: 0
+  posted_at: '2026-11-24T20:53:32Z'
+- id: '50634748'
+  parent_id: '50633552'
+  author: bluGill
+  text: It should be an invisible technology. It matters for reasons most people shouldn&#x27;t
+    care about. That doesn&#x27;t mean it doesn&#x27;t matter
+  score: 0
+  posted_at: '2026-11-24T21:08:38Z'
+- id: '50634842'
+  parent_id: '50634410'
+  author: breezey3po
+  text: That&#x27;s all application level protocol. TCP sits below that. You can create
+    a connection to a server running a web application and never send a single HTTP
+    command<p>Having application level auth does nothing if the vulnerability is lower
+    in the stack.
+  score: 0
+  posted_at: '2026-11-24T21:16:30Z'
+- id: '50634844'
+  parent_id: '50633240'
+  author: Grimburger
+  text: Would you really be learning much in a ddos, it&#x27;s all bot farms, iot
+    devices and booters, doubt you&#x27;d be discovering much without a dedicated
+    team.<p>As someone on the edge of these things I&#x27;m happy to trust them with
+    the info and internal response instead of handing it over to anyone who might
+    happen to be under attack. It would be the easiest way for these people to work
+    out how cf works and why they block certain requests and not others
+  score: 0
+  posted_at: '2026-11-24T21:16:56Z'
+- id: '50634886'
+  parent_id: '50633993'
+  author: Grimburger
+  text: cloudflare tunnels are updated all the time, by one of the best security teams
+    on the planet<p>there&#x27;s simply no way it can compete with some random guy
+    in Nebraska who just wants to host a webserver
+  score: 0
+  posted_at: '2026-11-24T21:20:28Z'
+- id: '50634915'
+  parent_id: '50634344'
+  author: Capricorn2481
+  text: "&gt; If someone DDoSses my services, I just don’t use them till they are
+    bored of DDoSsing me.<p>Why even complain that choosing Cloudflare &quot;reduces
+    uptime&quot; if you admit you would just let your site be taken down at the whims
+    of other people? That&#x27;s astronomically worse.<p>If don&#x27;t care if <i>your</i>
+    websites stay up, that&#x27;s fine, but don&#x27;t say &quot;most people don&#x27;t
+    need it.&quot; You&#x27;d be surprised what small sites can get attacked if people
+    are vindictive enough."
+  score: 0
+  posted_at: '2026-11-24T21:22:56Z'
+- id: '50634929'
+  parent_id: '50633937'
+  author: venussnatch
+  text: I actually ran into this issue a while ago. I thought it would give more redundancy
+    if ipv6 was down that it would fallback to ipv4 like a browser would.
+  score: 0
+  posted_at: '2026-11-24T21:24:07Z'
+- id: '50635025'
+  parent_id: '50634410'
+  author: winddude
+  text: some ISP also make it very hard to unblock inbound connections, or don&#x27;t
+    let you ublock, ports 80 or 443.
+  score: 0
+  posted_at: '2026-11-24T21:30:53Z'
+- id: '50635184'
+  parent_id: '50633888'
+  author: sixothree
+  text: Yeah, it&#x27;s a bit scary to have clients connecting directly to services
+    hosted in a VPS.
+  score: 0
+  posted_at: '2026-11-24T21:44:51Z'
+- id: '50635349'
+  parent_id: '50633724'
+  author: aeonik
+  text: Why not? I&#x27;m curious.
+  score: 0
+  posted_at: '2026-11-24T21:57:33Z'
+- id: '50635350'
+  parent_id: '50633980'
+  author: pixl97
+  text: "&quot;You have a small site, you won&#x27;t get DDOS&#x27;ed&quot;<p>The
+    only people that say this are the ones that have never been randomly DDOS&#x27;ed.<p>I
+    had been in the ISP business for years and have seen all kind of crap. I&#x27;ve
+    seen hundred megabit floods to IPs that have never had anything assigned to them
+    on port 80. And if you&#x27;re on a dynamic IP you have no idea of its history
+    and who or why someone would try to attack it.<p>Other times you&#x27;ll have
+    Google cache something that once existed in the past and something that is trying
+    to exploit the thing that doesn&#x27;t exist just send absolute floods of traffic
+    getting 404&#x27;s.<p>The internet is a weird and unsafe place."
+  score: 0
+  posted_at: '2026-11-24T21:57:33Z'
+- id: '50635363'
+  parent_id: '50634031'
+  author: pixl97
+  text: And removing other points of failure.
+  score: 0
+  posted_at: '2026-11-24T21:58:32Z'
+- id: '50635432'
+  parent_id: '50634414'
+  author: hinkley
+  text: After further consideration, perhaps this is something Let’s Encrypt should
+    do directly, doing a three party signing ceremony and adding metadata to their
+    signature. Something to the effect of:<p>Signed for CloudFlare on behalf of Bank
+    of America.
+  score: 0
+  posted_at: '2026-11-24T22:04:00Z'
+- id: '50635493'
+  parent_id: '50634844'
+  author: pixl97
+  text: A lot of people just don&#x27;t understand how hostile the internet is.<p>&#x27;Reverse
+    hacking&#x27; has been talked about for years and the ethics or lack of ethics
+    behind it debated, but I&#x27;m really getting to the point that believing the
+    nuclear option is the only way forward.<p>This is, if your devices&#x2F;machines
+    are in part of a botnet they should be hacked and deleted, and if possible the
+    hardware made inoperable. People will start caring more about security when there
+    are harsh and absolute costs for being involved. The &quot;oh it&#x27;s not the
+    users fault when they get hacked&quot; model of internet security is not working
+    and is presenting even larger risks as AI can automate absolutely massive hacking
+    campaigns.  As they say, Darwin wins, when there are less hosts to spread on disease
+    dies out.
+  score: 0
+  posted_at: '2026-11-24T22:09:09Z'
+- id: '50635560'
+  parent_id: '50632883'
+  author: sholladay
+  text: I think most people who use Cloudflare ought to be using Cloudflare Tunnel
+    to make the connection to the origin server, instead of just proxied DNS. That
+    won’t work for everyone, but it should be presented as the default. Doing so would
+    solve the underlying concerns here and allow a lot of firewalls to remain closed.
+  score: 0
+  posted_at: '2026-11-24T22:14:41Z'
+- id: '50635564'
+  parent_id: '50633993'
+  author: itake
+  text: CF lets me limit which countries or emails have access to my home services.<p>CF
+    acts as a firewall protecting my home machine’s ssh ports.<p>You are correct about
+    the service itself, but everything around the service still needs to be protected
+    too
+  score: 0
+  posted_at: '2026-11-24T22:15:22Z'
+- id: '50635571'
+  parent_id: '50632883'
+  author: lwarfield
+  text: Must be a busy day for southdakota (matts) I don&#x27;t see a response here
+    yet :)
+  score: 0
+  posted_at: '2026-11-24T22:15:46Z'
+- id: '50635858'
+  parent_id: '50633470'
+  author: snowwrestler
+  text: DDOSes have been happening randomly for well over a decade. I say this as
+    someone who has run hundreds of little sites over that time, and they all got
+    DOS’d occasionally.<p>It’s even more of an issue now due to poorly behaved scrapers
+    for AI training.<p>And you can’t hide a site that offers TLS because of cert transparency
+    logs. As soon as a new cert pops up, it will attract scripts and spiders.<p>That
+    said, most little sites will not cause any problem by being down for a little
+    while. But if you don’t want your site to go down every now and then, you’ll need
+    a layer to soak up requests.
+  score: 0
+  posted_at: '2026-11-24T22:43:12Z'
+- id: '50635934'
+  parent_id: '50634245'
+  author: megous
+  text: It&#x27;s a bit hard. You need challenge response (or otherwise limited single
+    use token) + assumption cloudflare will not change the served page&#x2F;code&#x2F;add
+    a keylogger.<p>Just hashing or encrypting the password alone would not help. Since
+    that just transforms the value used for authentication, but attacker only needs
+    to know tranformed value.<p>What works is FIDO2&#x2F;passkeys in this scenario.
+    Not with privacy though.
+  score: 0
+  posted_at: '2026-11-24T22:51:15Z'
+- id: '50635937'
+  parent_id: '50635858'
+  author: dspillett
+  text: "<i>&gt; And you can’t hide a site that offers TLS because of cert transparency
+    logs.</i><p>You can on a subdomain with a wildcard cert. Though that probably
+    isn&#x27;t as convenient as you are looking for."
+  score: 0
+  posted_at: '2026-11-24T22:51:57Z'
+- id: '50636034'
+  parent_id: '50632883'
+  author: everybodyknows
+  text: 'My own little gripe is that they made it harder to set up a static-only site
+    rather than spin up Cloudflare Workers: the steps to put up a simple site were
+    buried inside upsell verbiage.'
+  score: 0
+  posted_at: '2026-11-24T22:59:51Z'
+- id: '50636074'
+  parent_id: '50634031'
+  author: vntok
+  text: If the VPS fails, Cloudflare&#x27;s &quot;Always Online&quot; feature continues
+    to serve pages in its place for a little while. Using Cloudflare does not, in
+    fact, add more points of failure for the vast vast majority of websites hosted
+    on VPS (mostly reads, barely any write), for the vast majority of VPS outages
+    (crash&#x2F;unplanned reboot, core freeze, huge lags&#x2F;swapping for a few minutes).
+  score: 0
+  posted_at: '2026-11-24T23:03:26Z'
+- id: '50636193'
+  parent_id: '50632883'
+  author: steeleduncan
+  text: "&gt; This creates a huge mismatch between what is being presented to users
+    and the reality of the connection<p>Of course it does, the mismatch between what
+    is presented to users and the reality of the connection is Cloudflare&#x27;s fundamental
+    source of value.<p>&gt; Even when website administrators invest in deploying IPv6
+    on their origin servers, Cloudflare still prioritizes IPv4.<p>Who cares, the result
+    is the same. I want everything to be available via IPv6. If they want to pay extra
+    to pointlessly use IPv4 for what is essentially an internal connection, it makes
+    no difference to me or you."
+  score: 0
+  posted_at: '2026-11-24T23:13:36Z'
+- id: '50636198'
+  parent_id: '50633993'
+  author: jgalt212
+  text: Yes and No. For example, CF was protecting sites against PHP Shell before
+    the announcement was even made public.
+  score: 0
+  posted_at: '2026-11-24T23:14:04Z'
+- id: '50636283'
+  parent_id: '50633117'
+  author: lxgr
+  text: "&gt; hold website owners accountable for bad security practices<p>This indeed
+    seems like it&#x27;s focusing on the 1% of the attack surface of a service&#x2F;company
+    that can be observed externally, simply because it can, not because it necessarily
+    makes sense."
+  score: 0
+  posted_at: '2026-11-24T23:23:11Z'
+- id: '50636301'
+  parent_id: '50633933'
+  author: lxgr
+  text: "&gt; The more IPv6 traffic that shows up on the internet, the more networks
+    will modernize their systems.<p>But who will notice that? If your site is behind
+    Cloudflare, it&#x27;ll be seen as natively supporting IPv6, including by all possible
+    future &quot;IPv6 census&quot; scans."
+  score: 0
+  posted_at: '2026-11-24T23:25:26Z'
+- id: '50636454'
+  parent_id: '50633470'
+  author: the_solenoid
+  text: I dunno, we use cloudflare for DDoS, DNS, Proxy, CDN, and some other stuff.
+    Yes, it sucks when it goes down, but thankfully it also takes down all the other
+    services we connect to so it ends up not mattering &gt;_&lt;<p>[ yes, this is
+    a little tongue in cheek, but lighten up, its Friday! Oh wait, it&#x27;s not Friday...
+    ]
+  score: 0
+  posted_at: '2026-11-24T23:40:18Z'
+- id: '50636617'
+  parent_id: '50634748'
+  author: ianburrell
+  text: Good example of it being invisible is that Hacker News has supported IPv6
+    for a couple of years. If you have IPv6 from provider, like most Americans, you
+    are probably using it without knowing.<p>I just noticed that Reddit is using IPv6.
+    I haven&#x27;t seen announcement so that may just be testing.
+  score: 0
+  posted_at: '2026-11-24T23:59:35Z'
+- id: '50636636'
+  parent_id: '50632883'
+  author: sakesun
+  text: Cloudflare does often hide many shorcomings of my underlying infrastructure
+    skills.
+  score: 0
+  posted_at: '2026-11-25T00:01:58Z'
+- id: '50637002'
+  parent_id: '50633993'
+  author: HackerThemAll
+  text: You can configure your service to only communicate with Cloudflare, and enable
+    WAF, and perhaps block countries or IP ranges you&#x27;re not addressing your
+    service for. It helps stop almost all bots.<p>This is not to say the service shouldn&#x27;t
+    be fixed, but using Cloudflare is not &quot;false sense of security&quot;. It&#x27;s
+    great value added, at least from my experience.
+  score: 0
+  posted_at: '2026-11-25T00:47:05Z'
+article:
+  url: https://charlie.fish/posts/2026/11/what-cloudflare-doesnt-tell-you/
+  title: What Cloudflare Doesn't Tell You | Charlie's Blog
+  fetch_status: success
+  content: |-
+    # What Cloudflare Doesn't Tell You
+
+    Cloudflare has arguably done more to push modern internet technologies than any other company. The work they have done to enable TLS, IPv6, post quantum encryption, and other modern standards for millions of websites deserves a tremendous amount of credit.
+
+    While this is great, Cloudflare also hides many of the shortcomings of the underlying infrastructure from both users and website owners. Yes, you can connect to a Cloudflare website and it'll allow for IPv6, post quantum encryption, and TLS. But Cloudflare's connection to the origin server might be entirely unencrypted and rely exclusively on IPv4. This creates a huge mismatch between what is being presented to users and the reality of the connection.
+
+    One of my biggest problems with this is the fact that Cloudflare doesn't do enough to notify website administrators about these issues. While Cloudflare provides tools to inspect these, comprehensive visibility is lacking. The Cloudflare dashboard should notify you about each of these issues where Cloudflare is following better practices than your origin server, without website administrators having to dig through and specifically look for this information. Clear warnings and proactive alerts to administrators would help greatly.
+
+    Not only that, but according to Cloudflare's own documentation, they actively prefer IPv4 over IPv6 when making origin server requests, which is particularly disappointing for a company that has done so much to advance IPv6 adoption:
+
+    > For proxied DNS records that have both an IPv6 and IPv4 origin address, Cloudflare will prefer the IPv4 address when connecting to your origin server.
+
+    For proxied DNS records that have both an IPv6 and IPv4 origin address, Cloudflare will prefer the IPv4 address when connecting to your origin server.
+
+    Even when website administrators invest in deploying IPv6 on their origin servers, Cloudflare still prioritizes IPv4.
+
+    I also believe the industry should consider adding functionality so CDNs and other intermediate networks can expose origin TLS connection information alongside their own. This would allow users and network researchers to better understand the encryption state of the entire path and hold website owners accountable for bad security practices. A similar mechanism could expose which IP version is being used to communicate with the origin server.
+
+    Cloudflare has an opportunity to not only make modern internet technologies accessible to users, but also encourage adoption of those technologies throughout the underlying infrastructure. Cloudflare should be a catalyst for modernizing the internet, not a mechanism that allows website owners to avoid modernization indefinitely. Improving transparency would be a meaningful step toward achieving that goal.
+  error:
+  fetched_at: '2026-11-25T03:58:44Z'
+archived_at: '2026-11-25T03:58:53Z'

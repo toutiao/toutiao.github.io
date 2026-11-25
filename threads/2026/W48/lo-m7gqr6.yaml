@@ -1,0 +1,81 @@
+---
+post:
+  id: lo-m7gqr6
+  source: lobsters
+  title: Per Vognsen on the effect of AVX-512 on lexing and parsing
+  url: https://mastodon.social/@pervognsen/117668394962974183
+  hn_url: https://lobste.rs/s/m7gqr6
+  score: 27
+  author: dvogel
+  posted_at: '2026-11-24T18:11:49Z'
+  fetched_at: '2026-11-25T03:58:53Z'
+  article_url: https://mastodon.social/@pervognsen/117668394962974183
+  article_fetch_status: error
+  article_fetched_at: '2026-11-25T03:58:54Z'
+  raw_comment_count: 5
+  tags:
+  - compilers
+  - performance
+comments:
+- id: lo-eimaqq
+  parent_id: '0'
+  author: dvogel
+  text: I thought this was a really insightful experience report highlighting how
+    the CPU doesn't see abstractions and optimizes across what we perceive as different
+    parts of a program.
+  score: 8
+  posted_at: '2026-11-24T18:15:08Z'
+- id: lo-ssgy5n
+  parent_id: '0'
+  author: andyc
+  text: |-
+    Hm I am missing context - does Zig have a single pass compiler anywhere?  (for debug builds or something)
+
+    The TL; DR is that if you're writing a very fast compiler like this where lexing is a significant time cost, it's almost certainly not worth it to use even a hyper-optimized SIMD lexer.
+
+    That is what I would have expected with any "real" compiler like the Zig compiler.  I would expect code gen even in debug builds to take a lot longer than lexing or parsing, so there wouldn't be much speedup from using SIMD in the lexer
+  score: 1
+  posted_at: '2026-11-24T19:00:35Z'
+- id: lo-wwko9e
+  parent_id: '0'
+  author: dvogel
+  text: |-
+    I would expect code gen even in debug builds to take a lot longer than lexing or parsing, ...
+
+    Regardless of what a "real" compiler might look like, in this specific case that he was investigating the code gen took half as long as the lexing:
+
+    The CPU time distribution in my single-pass compiler is roughly 40% lexing + 40% parsing and semantic analysis + 20% code generation (x86-64).
+  score: 2
+  posted_at: '2026-11-24T19:29:58Z'
+- id: lo-cb0r0f
+  parent_id: '0'
+  author: pervognsen
+  text: Zig doesn't really have anything to do with anything here. I just happened
+    to link an article by someone else that describes how to do AVX-512 lexing for
+    a language like Zig, written for people who don't know how to do SIMD lexing.
+    The experiment I was reporting on was for one of my single-pass compilers. The
+    code generation quality for that particular compiler is somewhere in the middle
+    between gcc and clang's -O0 and -O1.
+  score: 14
+  posted_at: '2026-11-24T19:56:29Z'
+- id: lo-weqckg
+  parent_id: '0'
+  author: andyc
+  text: |-
+    OK sorry I clicked through to a Mastodon thread, and I didn't realize the article you linked is by someone else.
+    https://validark.dev/posts/deus-lex-machina/
+
+    the new implementation can tokenize up to 2.75x faster than the mainline implementation, currently at 1.4GB/s on a single core on my laptop
+
+    So yeah I would be very surprised if speeding the lexer 2.75x makes any difference in a real compiler.  I sort learned that the hard way myself, by speeding up something that is not a bottleneck :-)
+    BUT maybe Zig has some sort of ultra fast code gen + type checking + comptime, making parsing more of a bottleneck, and then I would be surprised and interested ...
+  score: 1
+  posted_at: '2026-11-24T23:41:12Z'
+article:
+  url: https://mastodon.social/@pervognsen/117668394962974183
+  title:
+  fetch_status: error
+  content:
+  error: 'gate: too_short'
+  fetched_at: '2026-11-25T03:58:54Z'
+archived_at: '2026-11-25T03:58:55Z'
