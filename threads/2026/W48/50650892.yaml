@@ -4,14 +4,14 @@ post:
   title: 'Minipg: PostgreSQL as a Single Executable'
   url: https://progrium.github.io/minipg/
   hn_url: https://news.ycombinator.com/item?id=50650892
-  score: 156
+  score: 279
   author: ''
   posted_at: '2026-11-26T03:00:48Z'
-  fetched_at: '2026-11-26T11:59:03Z'
+  fetched_at: '2026-11-26T21:23:27Z'
   article_url: https://progrium.github.io/minipg/
   article_fetch_status: success
   article_fetched_at: '2026-11-26T11:59:03Z'
-  raw_comment_count: 24
+  raw_comment_count: 43
 comments:
 - id: '50651294'
   parent_id: '50650892'
@@ -205,6 +205,178 @@ comments:
     actually run as a library, like sqlite does, with no separate process'
   score: 0
   posted_at: '2026-11-26T11:44:25Z'
+- id: '50654756'
+  parent_id: '50650892'
+  author: WanderZil
+  text: Nice that a command starts a shared background server if needed, then shuts
+    it down after a minute idle.
+  score: 0
+  posted_at: '2026-11-26T12:49:49Z'
+- id: '50655013'
+  parent_id: '50650892'
+  author: jgarzik
+  text: 'In Other Words, RooDB: <a href="https:&#x2F;&#x2F;github.com&#x2F;jgarzik&#x2F;roodb"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;jgarzik&#x2F;roodb</a>'
+  score: 0
+  posted_at: '2026-11-26T13:18:50Z'
+- id: '50655422'
+  parent_id: '50650892'
+  author: t3ntxcles
+  text: Cool hack, getting fork-per-connection postgres running with no kernel is
+    quite interesting<p>I&#x27;m struggling to see the use case for minipg itself.
+    For embedded or in-process postgres there&#x27;s pglite as mentioned in comments.
+    For dev&#x2F;test parity there&#x27;s embedded-postgres (go, java, node, python),
+    which downloads native binaries and gives you a throwaway postgres with no docker.
+    These by themselves cover what most people would want from &quot;sqlite-style
+    postgres,&quot; without the hypervisor layer or significant slow down.<p>Is minipg
+    intended to become a real tool, or is it mainly a showcase for h9, with Postgres
+    as the hard case that proves it works?
+  score: 0
+  posted_at: '2026-11-26T14:03:10Z'
+- id: '50655586'
+  parent_id: '50651294'
+  author: t3ntxcles
+  text: There are a couple of very early attempts. lite4mariadb (<a href="https:&#x2F;&#x2F;github.com&#x2F;shyim&#x2F;lite4mariadb"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;shyim&#x2F;lite4mariadb</a>)
+    compiles MariaDB&#x27;s embedded server (InnoDB) to WASM with a PGlite-style API
+    and IndexedDB persistence, and mysql-wasm (<a href="https:&#x2F;&#x2F;github.com&#x2F;benmerckx&#x2F;mysql-wasm"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;benmerckx&#x2F;mysql-wasm</a>)
+    does the same for MySQL 9.7.<p>Can&#x27;t recommend it but I experimented myself
+    with lite4mariadb and hit a few rough edges, e.g. transactions aren&#x27;t isolated
+    when the callback is async, memory use is insane. Issues are also disabled on
+    the repo (it&#x27;s a github fork), so there&#x27;s nowhere to report bugs.<p>General
+    issue of both is them being single-connection and being less battle tested.<p>If
+    translation is acceptable, wordpress playground&#x27;s sqlite driver (sqlite-database-integration)
+    parses mysql into an ast which is based on my experience is the most proven approach
+    in browser today.<p>Would be genuinely excited if mysql in WASM gets more attention.
+  score: 0
+  posted_at: '2026-11-26T14:20:24Z'
+- id: '50655598'
+  parent_id: '50655422'
+  author: gavinray
+  text: |-
+    I was confused about the use case as well but the authors blog post linked in this thread clears it up. I&#x27;m not sure I agree with it, personally would just run WASM postgres:<p><pre><code>  &gt; So when you find self-hostable open source software you&#x27;d like to run on your own computer, it can be daunting when it says it requires Postgres. Now you&#x27;re responsible for setting up a database and getting it ready for the software to use.
+
+      &gt; Sure, you can run Postgres in Docker, and plenty of projects recommend it. But now you have two dependencies. If you don&#x27;t already have Docker, you have to install it, which can mean a VM and a daemon on your machine. Then you have to run Postgres in it and make sure it&#x27;s running whenever you use the software. That&#x27;s a lot just to try something you don&#x27;t know you want yet.
+
+      &gt; Wouldn&#x27;t it be great to have the SQLite   experience, but with Postgres?
+
+      &gt; That&#x27;s miniPG . It isn&#x27;t Postgres as a library. There&#x27;s already a WASM project for that, reasonably called PGlite. miniPG is closer to the SQLite CLI</code></pre>
+  score: 0
+  posted_at: '2026-11-26T14:21:36Z'
+- id: '50655631'
+  parent_id: '50653636'
+  author: pelasaco
+  text: i am exactly looking into that right now
+  score: 0
+  posted_at: '2026-11-26T14:24:26Z'
+- id: '50655714'
+  parent_id: '50650892'
+  author: dolmen
+  text: Looks useful for CI.
+  score: 0
+  posted_at: '2026-11-26T14:32:29Z'
+- id: '50656167'
+  parent_id: '50655598'
+  author: singpolyma3
+  text: I just don&#x27;t understand what&#x27;s daunting about apt install postgresql
+  score: 0
+  posted_at: '2026-11-26T15:15:17Z'
+- id: '50656194'
+  parent_id: '50650892'
+  author: msrbuilds
+  text: This can be a good testing tool
+  score: 0
+  posted_at: '2026-11-26T15:18:24Z'
+- id: '50656932'
+  parent_id: '50650892'
+  author: canadiantim
+  text: Can this be used on in a mobile app? Is there any postgres that can be used
+    in a mobile app with extensions? Like pg_search?
+  score: 0
+  posted_at: '2026-11-26T16:37:47Z'
+- id: '50657109'
+  parent_id: '50652546'
+  author: actionfromafar
+  text: Too bad these are not open source. Interesting with another compiled python,
+    I only knew of the Shedskin python to C++ compiler.
+  score: 0
+  posted_at: '2026-11-26T16:55:12Z'
+- id: '50657441'
+  parent_id: '50655586'
+  author: anilgulecha
+  text: Very cool - thanks for these pointers.
+  score: 0
+  posted_at: '2026-11-26T17:28:20Z'
+- id: '50657537'
+  parent_id: '50652424'
+  author: progrium
+  text: good call, thanks for mentioning!
+  score: 0
+  posted_at: '2026-11-26T17:37:08Z'
+- id: '50657610'
+  parent_id: '50655598'
+  author: progrium
+  text: The answer is in there, but I think you&#x27;re referencing the wrong part
+    of the post. The real kicker was PGlite not being able to be a drop-in replacement
+    for an application expecting multiple connections&#x2F;sessions, where it might
+    need to query while in a separate transaction.
+  score: 0
+  posted_at: '2026-11-26T17:44:26Z'
+- id: '50657843'
+  parent_id: '50650892'
+  author: progrium
+  text: Keep in mind there are two ways to think about SQLite. Most commonly, as these
+    comments show, it&#x27;s thought of as a library. An embedded SQL engine. The
+    second is as a simple CLI-friendly SQL database. Minipg is more about the latter
+    use.<p>That said, PGlite is great and would have been ideal for the motivating
+    problem, but as my blog post mentions (eventually), it only runs in single connection
+    mode. For better or worse, applications will sometimes perform another query while
+    in another transaction, causing deadlock with PGlite. It&#x27;s fine if you can
+    avoid that in your app, but makes it not work as a general drop-in replacement
+    for existing apps.<p>The way I&#x27;d rather it be looked at, though, is just
+    as a more convenient, &quot;friendly&quot; way to work with Postgres on the CLI.
+    So maybe it&#x27;s not for Postgres experts.
+  score: 0
+  posted_at: '2026-11-26T18:04:54Z'
+- id: '50658046'
+  parent_id: '50656167'
+  author: rpdillon
+  text: |-
+    I hate people that recite credentials, but suffice to say I&#x27;m very familiar with postgres at-scale in production. I can give details if that&#x27;s not compelling.<p>I <i>still</i> don&#x27;t use postgres for my small projects, because sqlite gets you so far, so fast.  You <i>can</i> just apt install postgres, but then you have all the aux questions:<p><pre><code>    When do you upgrade?
+        How is authentication handled?
+        How are we doing backups?
+        How do I deploy in production?
+        How do I restore from a backup?
+    </code></pre>
+    With sqlite, these are either not as relevant or they have trivial answers. With postgres, each is another project&#x2F;process to track.<p>But of course, the way you frame your question sides-steps these challenges, and instead focuses on how to install the software, which was never the challenge being tackled.
+  score: 0
+  posted_at: '2026-11-26T18:24:19Z'
+- id: '50658098'
+  parent_id: '50650892'
+  author: iamcalledrob
+  text: Does this do anything interesting that postgres in a Nix dev shell doesn&#x27;t?
+  score: 0
+  posted_at: '2026-11-26T18:29:04Z'
+- id: '50658270'
+  parent_id: '50657843'
+  author: ronfriedhaber
+  text: "&gt; The second is as a simple CLI-friendly SQL database.<p>If one needs
+    an ACID database, he would also like programs to perform CRUD operations upon
+    it, which requires a stable ABI. I can&#x27;t see why one would want a CLI relational
+    database. On the other hand, embedded OLAP databases such as DuckDB are mostly
+    CLI-first and lib-second."
+  score: 0
+  posted_at: '2026-11-26T18:44:15Z'
+- id: '50659321'
+  parent_id: '50658046'
+  author: singpolyma3
+  text: |-
+    The question was for self hosting though. So not at scale.<p>So upgrade when you&#x27;re working in your stack and upgrading things.
+    Auth using Unix socket as per defaults
+    Backup by backing up your whole server<p>Is any of this quite sufficient for at scale? Often not, I agree. But that wasn&#x27;t the context of the question.
+  score: 0
+  posted_at: '2026-11-26T20:22:42Z'
 article:
   url: https://progrium.github.io/minipg/
   title: 'minipg: PostgreSQL as a single executable'
@@ -277,4 +449,4 @@ article:
     - [xterm.js](https://xtermjs.org/), the demo's terminal
   error:
   fetched_at: '2026-11-26T11:59:03Z'
-archived_at: '2026-11-26T11:59:07Z'
+archived_at: '2026-11-26T21:23:33Z'

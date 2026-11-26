@@ -5,17 +5,97 @@ post:
   title: Make the Plan a Value
   url: https://jackkelly.name/blog/archives/2026/11/26/make_the_plan_a_value
   hn_url: https://lobste.rs/s/9imhob
-  score: 12
+  score: 22
   author: jackdk
   posted_at: '2026-11-26T00:12:06Z'
-  fetched_at: '2026-11-26T11:59:08Z'
+  fetched_at: '2026-11-26T21:23:34Z'
   article_url: https://jackkelly.name/blog/archives/2026/11/26/make_the_plan_a_value
   article_fetch_status: success
-  article_fetched_at: '2026-11-26T11:59:16Z'
-  raw_comment_count: 0
+  article_fetched_at: '2026-11-26T21:23:39Z'
+  raw_comment_count: 5
   tags:
   - haskell
-comments: []
+comments:
+- id: lo-rj1t7z
+  parent_id: '0'
+  author: mayonnaise
+  text: |-
+    Even in strict languages, the decoupling benefits are great enough that the extra memory use is often worth it.
+
+    If I got it right, Gary Bernhardt made this famous for the Ruby world some 10+ years ago through Functional Core Imperative Shell in his Destroy All Software series and his Boundaries talk.
+    One challenge I have found sometimes when trying to apply this is performance optimizations requiring IO to decide whether a plan goes one way or another. You can front load the IO, but then you make every plan pay a high fixed cost.
+    The answer might be breaking out into multiple smaller plans, which is awkward, or making your plan interpreter smarter, but a big point of FCIS was making the imperative shell dumb and exercisable with simple happy path testing.
+    It might be certain domains lend themselves better to FCIS than others.
+  score: 3
+  posted_at: '2026-11-26T13:30:51Z'
+- id: lo-8ynt7l
+  parent_id: '0'
+  author: andyc
+  text: |-
+    To untangle things, I resolved to make one of my favourite programming moves, “make the plan a value” or “decide what to do, and then do it”. This move decouples two parts of a program by introducing an intermediate data structure (a “plan”, or a value of a “plan type”) describing what is to be done before any action is taken.
+
+    FWIW in most instances I think of this as "the Interpreter pattern" from the GoF Design Patterns book
+    Although now when I look on the web, people writing about the interpreter pattern talk about parsing, which IMO is unnecessary for the interpreter pattern.  I often express it like something like:
+    class Migrate:
+      def __init__(foo, bar)
+      def Run()
+
+    class Test:
+      def __init__(s)
+      def Run()
+
+    class OptionalWork:
+      def __init__(i, j, k)
+      def Run()
+
+
+    And then a "plan" can is list of objects with a Run() method (which is a value).  And the harness can do error handling and logging, etc.
+    And yes the harness can be parameterized too by --dry-run, so that is useful too.
+    If you want, you can make a "composite" value obeying the Run() interface, which also contains other Runnables.  You might run them on another thread, or on another machine, etc.
+    It's trivial to add an Retry wrapper too, and then if and for (but then you're getting a bit crazy)
+    Just like a real interpreter.  No parsing involved!
+  score: 2
+  posted_at: '2026-11-26T16:48:47Z'
+- id: lo-hraakt
+  parent_id: '0'
+  author: jackdk
+  text: 'I was going to write a couple of sentences about the Interpreter Pattern,
+    but it turned into too much of a tangent. I read that pattern as a way to provide
+    a scripting-type interface to the programmer in a world where embeddable languages
+    like Lua hadn''t yet taken over. The backend of an interpreter will look very
+    similar to an executable plan but I see it as a slightly different purpose: the
+    plan is about providing a narrow waist between two parts of a program, rather
+    than between the programmer and the compiled program.'
+  score: 1
+  posted_at: '2026-11-26T19:06:34Z'
+- id: lo-uym33m
+  parent_id: '0'
+  author: jackdk
+  text: |-
+    Isn't the idea of the executable plan the opposite? You have an imperative core (or subsystem) and you aim to isolate it by creating a functional shell for it?
+    Your point about needing a side-effect to decide which way a plan should go maps pretty cleanly onto whether a plan type needs to be a powerful structure like a monad or whether a simpler structure like a list of steps is enough. You might find you can still build a plan by describing the computation graph statically (so you'd have nodes for should_optimise? as well as nodes that are essentially control structures within your plan).
+  score: 1
+  posted_at: '2026-11-26T19:24:21Z'
+- id: lo-gkqduu
+  parent_id: '0'
+  author: KOMON
+  text: |-
+    The ideological framework that FCIS comes from places business logic at the core, insulated from concerns about I/O or how side effects come to pass which are the concerns of layers above it. The "functional core" is a pure function of the data given to it, the "imperative shell" takes the result of that business logic running and actually executes it.
+    signal --> shell --> core --> shell --> side effects
+
+    Your framing follows more of a control plane/data plane idea, where your business logic is coordinating subsystems through a pure API:
+                ------------ Functional space ---------
+                          +--> control plane --+
+                         /                      \
+                --------/--- Imperative space ---\------
+                       /                          \
+         +--> input handling                       +--> side effects
+        /
+    signal
+
+    Which is kinda the same thing, just depends on how you tilt the diagram and think about what is wrapping what
+  score: 2
+  posted_at: '2026-11-26T20:36:38Z'
 article:
   url: https://jackkelly.name/blog/archives/2026/11/26/make_the_plan_a_value/
   title: Make the Plan a Value | Blog | jackkelly.name
@@ -116,4 +196,4 @@ article:
     works well in any la"
   error:
   fetched_at: '2026-11-26T11:59:16Z'
-archived_at: '2026-11-26T11:59:17Z'
+archived_at: '2026-11-26T21:23:40Z'

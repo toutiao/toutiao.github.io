@@ -1,0 +1,172 @@
+---
+post:
+  id: lo-3lkriu
+  source: lobsters
+  title: Ansible Fails waiting for privilege escalation on Ubuntu 26
+  url: https://www.jeffgeerling.com/blog/2026/ansible-fails-become-ubuntu2604/
+  hn_url: https://lobste.rs/s/3lkriu
+  score: 11
+  author: ema-pe
+  posted_at: '2026-11-26T09:45:42Z'
+  fetched_at: '2026-11-26T21:23:34Z'
+  article_url: https://www.jeffgeerling.com/blog/2026/ansible-fails-become-ubuntu2604/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T21:23:39Z'
+  raw_comment_count: 12
+  tags:
+  - devops
+  - linux
+comments:
+- id: lo-xktemj
+  parent_id: '0'
+  author: ema-pe
+  text: |-
+    From the article:
+
+    Apparently Ubuntu's been rewriting system utilities in Rust, and the sudo-rs version that ships on Ubuntu 26.04 has some incompatiblities with the sudo I've used on servers for 20+ years.
+    It prints an extra string before the password prompt, which sudo doesn't do, and that can confuse automation tools like Ansible that wait for a specific prompt.
+
+    This reminds me a lot of this xkcd comic: https://xkcd.com/1172/
+  score: 5
+  posted_at: '2026-11-26T09:51:10Z'
+- id: lo-7sato6
+  parent_id: '0'
+  author: gerikson
+  text: |-
+    Except that the output format of an established command is seldom a bug.
+    If you want to make a drop-in replacement for a utility, ensuring it responds in the same way is essential. You can do all you want to improve the internals, the documentation etc but why mess with the output?
+  score: 9
+  posted_at: '2026-11-26T09:55:40Z'
+- id: lo-xjne1o
+  parent_id: '0'
+  author: mort
+  text: |-
+    Yeah no. I read the issue and it seems pretty reasonable. Ansible makes sudo's prompt into a string which contains a key, and then match on that string; meaning they use the --prompt option to turn Sudo's prompt into something like:
+    [sudo via ansible, key=spnnznrgscgdxdontsjkwrlyghiiglxk] password:
+
+    and then look for a line which matches that.
+    So when sudo-rs instead prints the line:
+    [sudo: [sudo via ansible, key=spnnznrgscgdxdontsjkwrlyghiiglxk] password:] Password:
+
+    then Ansible intentionally doesn't match that, because it doesn't match the intended, explicitly provided output.
+    And Ansible looks for the expected string at the start of the line, because some configurations cause every command that's executed to be printed, and they don't want to match a line like:
+    +sudo --prompt '[sudo via ansible, key=spnnznrgscgdxdontsjkwrlyghiiglxk] password:'
+
+    which you would get with e.g set -x.
+    So it's that extra "[sudo: " prefix which messes up the match; that's the "extra string" that sudo-rs prints before the prompt.
+
+    When I first read the part you quoted I assumed that Ansible just got confused by an extra line that sudo-rs prints, and I would've agreed, that's not very robust. But to me, it seems like Ansible has implemented this "wait for the sudo prompt" logic in a way that's impressively robust. I probably would've either done it in the same way or found a worse solution.
+  score: 9
+  posted_at: '2026-11-26T14:21:37Z'
+- id: lo-z2kvrg
+  parent_id: '0'
+  author: ema-pe
+  text: Yep, reading the issue, it's much more complex than I thought. The only thing
+    left is why sudo-rs changed how prompts are handled
+  score: 2
+  posted_at: '2026-11-26T14:38:06Z'
+- id: lo-adgemj
+  parent_id: '0'
+  author: mort
+  text: |-
+    The issue seems to hint at an answer:
+
+    sudo implemented this by capturing the pam password prompt, and rewriting it, which the sudo-rs maintainers did not implement.
+
+    I don't know anything about the pam API, but it wouldn't surprise me if this "capturing and rewriting the pam password prompt" stuff is pretty messy.
+  score: 1
+  posted_at: '2026-11-26T14:52:50Z'
+- id: lo-fzric8
+  parent_id: '0'
+  author: caboteria
+  text: |-
+    If other distros plan on moving to sudo-rs that's one thing, but if it's just Ubuntu, maybe I should hop back to Debian for everything, and not just my cloud servers.
+
+    Speaking as a long-time Debian user, is there a compelling reason to switch to Ubuntu? In my casual (and possibly cynical) understanding, Ubuntu is just Debian plus a bunch of failed experiments like Unity, Snap, and whatever that proprietary init system was. There must be something about it, though, because it seems so much more popular than Debian.
+  score: 3
+  posted_at: '2026-11-26T15:11:50Z'
+- id: lo-zyreza
+  parent_id: '0'
+  author: miah
+  text: No. Stick with Debian unless you went half baked ideas and slow security updates.
+  score: 4
+  posted_at: '2026-11-26T15:17:49Z'
+- id: lo-yozqf6
+  parent_id: '0'
+  author: fanf
+  text: PAM allows an application to control the IO of the authentication conversation
+    with pam_conv and suppress other messages with PAM_SILENT so it’s possible to
+    rewrite the password prompt without grievous hacking around the PAM API. But it’s
+    still pretty messy.
+  score: 2
+  posted_at: '2026-11-26T15:55:44Z'
+- id: lo-hyug01
+  parent_id: '0'
+  author: johnklos
+  text: |-
+    I tell people I generally don't use Linux because it's messy and changes gratuitously, and when people ask me to explain what I mean, I tell them as an example that any how-to, book, manual, or script that's meant for one version of Ubuntu is often likely to not work with the next version, unless or until the how-to, book, manual or script is updated.
+    This is a perfect example.
+  score: 5
+  posted_at: '2026-11-26T16:28:11Z'
+- id: lo-ndrint
+  parent_id: '0'
+  author: greg_loscombe
+  text: |-
+    So i really want to like Ubuntu, they push alternative CPUs, seem to have big input into RV32 for RiscV...  actually, thats it.  I can't think of any other reason to like them.
+    Mir, snap, upstart, coreutils to rust.  Just a stench of not invented here.  No, I can't think of any reason to use Ubuntu other than 'nothing else is available'
+  score: 1
+  posted_at: '2026-11-26T16:37:50Z'
+- id: lo-wvpfqq
+  parent_id: '0'
+  author: robalex
+  text: |-
+    I used Ubuntu twenty years ago because it "just worked", giving me working WiFi for my laptop in college with minimal fuss. I remember trying Debian at the time and being bothered that all the software used some older versions.
+    Around ten years ago I switched to Debian, wanting something that was more stable. My WiFi still doesn't work out of the box but I know how to compile the driver and get DKMS working. I'm much more likely to be bothered these days by new features versus wanting to run the latest version of everything.
+    I briefly used Linux Mint for a desktop computer my kids use, but as long as I was managing it there was no usability benefit over Debian. I also used Ubuntu in a Docker container for a while, but only because I needed a newer version of a package and that was the path of least resistance. I switched that to Debian when debian:latest caught up.
+    I think there is a strong need for a distro that is easy for new users, but anyone who gets hooked on Linux will gravitate towards stable projects like Debian.
+  score: 1
+  posted_at: '2026-11-26T16:58:30Z'
+- id: lo-ihizdi
+  parent_id: '0'
+  author: deivid
+  text: Vendor support. Many hardware vendors only provide ubuntu drivers and immediately
+    drop support cases if running something else
+  score: 1
+  posted_at: '2026-11-26T19:34:06Z'
+article:
+  url: https://www.jeffgeerling.com/blog/2026/ansible-fails-become-ubuntu2604/
+  title: Ansible Fails waiting for privilege escalation on Ubuntu 26 - Jeff Geerling
+  fetch_status: success
+  content: |-
+    # Ansible Fails waiting for privilege escalation on Ubuntu 26
+
+    I've slowly been moving my servers from Ubuntu 22 and 24 to 26 this year, and noticed my Ansible automation starts failing if I have password protection for sudo use:
+
+    $ ansible-playbook main.yml -K BECOME password: PLAY [Security] ******************************************************* TASK [Gathering Facts] *********************************************************************** fatal: [my-server.local]: FAILED! => msg: 'Timeout (12s) waiting for privilege escalation prompt: '
+
+    Apparently Ubuntu's been rewriting system utilities in Rust, and the sudo-rs version that ships on Ubuntu 26.04 has some incompatiblities with the sudo I've used on servers for 20+ years.
+
+    It prints an extra string before the password prompt, which sudo doesn't do, and that can confuse automation tools like Ansible that wait for a specific prompt.
+
+    There's a thread in the Ansible project covering the issue: validate sudo become plugin against sudo-rs . The fix landed in Ansible Core 2.22.0, and is being backported into updates in 2.16, 2.18, 2.19, 2.20, and maybe also 2.21 (it's quite disruptive!). It looks like it also broke pyinfra, and their fix is in the latest release of 3.11.
+
+    I updated Ansible (pip install -U ansible) and now -K (--ask-become-pass) works again.
+
+    Another alternative is to use the traditional version of sudo that still ships with Ubuntu 26. For that, the easiest way is to set the become_exe inside your hosts file:
+
+    dell-precision.local ansible_become_exe=sudo.ws
+
+    Or you could even revert sudo systemwide on your Ubuntu host:
+
+    update-alternatives --config sudo
+
+    I'm not sure why Ubuntu sees the need to rewrite common Linux utils in Rust. I don't mind Rust, but these are foundational tools every Linux system relies on. This isn't a window manager, where experimentation is more acceptable1.
+
+    If other distros plan on moving to sudo-rs that's one thing, but if it's just Ubuntu, maybe I should hop back to Debian for everything, and not just my cloud servers.
+
+    - Yes, I know this makes me sound like "old man yells at [rust]," but major changes to structural components of Linux should take longer, IMO. At least on the Red Hat side, we have Fedora, which is more bleeding edge, then at least a few years' gap before it hits 'production' systems. With Ubuntu, there is no cutting edge upstream where things like this can be fixed or worked around before hitting prod! (And no, I don't consider non-LTS Ubuntu releases the same thing.) ↩︎
+
+    Yes, I know this makes me sound like "old man yells at [rust]," but major changes to structural components of Linux should take longer, IMO. At least on the Red Hat side, we have Fedora, which is more bleeding edge, then at least a few years' gap before it hits 'production' systems. With Ubuntu, there is no cutting edge upstream where things like this can be fixed or worked around before hitting prod! (And no, I don't consider non-LTS Ubuntu releases the same thing.) ↩︎
+  error:
+  fetched_at: '2026-11-26T21:23:39Z'
+archived_at: '2026-11-26T21:23:39Z'

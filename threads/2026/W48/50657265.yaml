@@ -1,0 +1,535 @@
+---
+post:
+  id: '50657265'
+  title: AMD Specific Patches for Llama.cpp
+  url: https://devnull.land/amd-specific-llama-cpp
+  hn_url: https://news.ycombinator.com/item?id=50657265
+  score: 196
+  author: ''
+  posted_at: '2026-11-26T17:11:29Z'
+  fetched_at: '2026-11-26T21:23:29Z'
+  article_url: https://devnull.land/amd-specific-llama-cpp
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T21:23:29Z'
+  raw_comment_count: 50
+comments:
+- id: '50657386'
+  parent_id: '50657265'
+  author: pixelesque
+  text: I know it&#x27;s not completely trivial to do this given how stochastic they
+    are with normal (non-0-temperature) settings, but is anyone actually checking
+    the output quality of the tokens with some of these optimisations, or just chasing
+    pure speed like some of the projects at least appear to be doing?
+  score: 0
+  posted_at: '2026-11-26T17:24:05Z'
+- id: '50657417'
+  parent_id: '50657265'
+  author: rsolva
+  text: Interesting! I have had Claude improve llama.cpp the last few days to get
+    Inkling 2 Mini to fly on my 7900XTX, the improvement has been dramatic both for
+    decode and prefill!<p><a href="https:&#x2F;&#x2F;forge.dmz.skyfritt.net&#x2F;ruben&#x2F;llama-inkling-2-mini"
+    rel="nofollow">https:&#x2F;&#x2F;forge.dmz.skyfritt.net&#x2F;ruben&#x2F;llama-inkling-2-mini</a>
+  score: 0
+  posted_at: '2026-11-26T17:26:10Z'
+- id: '50657426'
+  parent_id: '50657265'
+  author: woadwarrior01
+  text: Incidentally, llama.cpp is now owned by NVIDIA (via their Huggingface acquisition).
+  score: 0
+  posted_at: '2026-11-26T17:27:22Z'
+- id: '50657483'
+  parent_id: '50657386'
+  author: throwa356262
+  text: I think you can set the rng seed and that should make the output reproducable.
+  score: 0
+  posted_at: '2026-11-26T17:33:11Z'
+- id: '50657526'
+  parent_id: '50657265'
+  author: pyrolistical
+  text: Why won’t llama.cpp take these as PRs?
+  score: 0
+  posted_at: '2026-11-26T17:36:38Z'
+- id: '50657591'
+  parent_id: '50657265'
+  author: dofm
+  text: I saw some blurb a while ago that described llama.cpp as a “model zoo”, which
+    is a great description of its utility and generality.<p>In the last couple of
+    days I have been playing with Erik Paperniuk’s M1 port of Inco’s Splash, which
+    has completely transformed the speed of Qwen 3.8 27B and Inkling 2 Mini; it has
+    essentially tripled the speed of the former and more than doubled the speed of
+    the latter.<p>This means the Qwen model is fully viable on an M1 Max, where before
+    I had found it a bit of a waiting game. And it arguably transforms the utility
+    of Inkling 2 Mini; extra speed means it can be left to reason for longer, the
+    downside of needing to do more tool use for search to patch its knowledge is reduced,
+    and it provides a good rough chat model (though this is not its area of greatest
+    strength).<p>I have not yet found anything that can boost Muse Glimmer to the
+    same extent; I would still prefer that.<p>But for me I now find that only the
+    rather slow prefill speed really holds the M1 Max back; I suspect these new custom
+    kernels have made the M5 Pro Mac Mini a really cost-effective option if you want
+    to tinker with local AI.
+  score: 0
+  posted_at: '2026-11-26T17:42:46Z'
+- id: '50657733'
+  parent_id: '50657426'
+  author: Phemist
+  text: |-
+    ~False~<p>Edit:
+     Looks like I missed an announcement. This is actually now true.
+  score: 0
+  posted_at: '2026-11-26T17:55:47Z'
+- id: '50657734'
+  parent_id: '50657483'
+  author: HarshithKala
+  text: 'true'
+  score: 0
+  posted_at: '2026-11-26T17:56:05Z'
+- id: '50657758'
+  parent_id: '50657265'
+  author: hypercube33
+  text: If I&#x27;m not mistaken there was&#x2F;is an lm studio for strix halo. seems
+    like it quit working but it was able to punch Qwen 3.6 as fast as the 8060s when
+    it worked.<p>There is also a llama fork for Ryzen AI and Radeon cards but I&#x27;m
+    on mobile.
+  score: 0
+  posted_at: '2026-11-26T17:57:27Z'
+- id: '50657769'
+  parent_id: '50657417'
+  author: skullone
+  text: I&#x27;ve been wondering what I can reasonably run on a 7800x3d with 6GB and
+    a 7900xtx with I believe 12 or 24GB vram. Looks like AMD stuff might be back in
+    the races?
+  score: 0
+  posted_at: '2026-11-26T17:58:23Z'
+- id: '50657791'
+  parent_id: '50657265'
+  author: rao-v
+  text: Early in 2025 a bunch of folks realized that AMD made a bunch of cards with
+    mediocre compute but incredibly fast HBM2 memory in their circa 2018 gfx906 datacenter
+    series, so you could get 32GB VRAM capable of incredible 1 TB &#x2F; s bandwidth
+    for $200 (the closest in today’s cards is north of $3000)<p>There has been a rich
+    little ecosystem of folks optimizing llama.cpp for these odd cards (no tensor
+    cores, no native bf16 etc.) including my little personal repo <a href="https:&#x2F;&#x2F;github.com&#x2F;kinchahoy&#x2F;llama-of-vega.cpp"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;kinchahoy&#x2F;llama-of-vega.cpp</a>.
+    Stuff like this focused on more modern RDNA doesn’t help us at all.<p>It’s been
+    interesting to see how much each new frontier model can figure out in terms of
+    optimizing for these GPUs and what they can’t!<p>Fable and Astra will regularly
+    run out of ideas until I point them to someone’s actually thoughtful repo and
+    then they’ll diligently incorporate ideas.<p>The optimization wins are huge (I
+    was initially skeptical that per model kernel optimizations would be worth much).
+    27B at a pristine Q8 quant goes from base llama.cpp at some 250 pp &#x2F; 25 tg
+    to 600 pp &#x2F; 40 tg even before speculative decoding.
+  score: 0
+  posted_at: '2026-11-26T17:59:58Z'
+- id: '50657815'
+  parent_id: '50657733'
+  author: tredre3
+  text: The core llama.cpp team joined Hugging Face in February this year. Thus Hugging
+    Face &quot;owns&quot; llama.cpp.<p>Nvidia will soon own Hugging Face, this is
+    well known and the deal was finalized in August. Thus, Nvidia owns Hugging Face.<p>It
+    follows to me that one could say Nvidia now owns llama.cpp. They likely do not
+    own the brand or exert any specific control over it, and hopefully whatever deals
+    gregory signed allows him to walk away with the project if he wants.
+  score: 0
+  posted_at: '2026-11-26T18:02:55Z'
+- id: '50657834'
+  parent_id: '50657758'
+  author: 9x39
+  text: Strix Halo has Halogen dedicated to Qwen Flash Next, which is substantially
+    better than anything else for that model on Strix.<p>GUFO for Strix runs Qwen
+    3.8 27B faster than llama.cpp and also runs Qwen Flash Next.<p>Lemonade can let
+    you call all of these on Strix Halo.
+  score: 0
+  posted_at: '2026-11-26T18:04:08Z'
+- id: '50657839'
+  parent_id: '50657733'
+  author: woadwarrior01
+  text: Completely true. Please read the following links:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;ggml-org&#x2F;llama.cpp&#x2F;discussions&#x2F;19759"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;ggml-org&#x2F;llama.cpp&#x2F;discussions&#x2F;19759</a><p><a
+    href="https:&#x2F;&#x2F;blogs.nvidia.com&#x2F;blog&#x2F;nvidia-to-acquire-hugging-face&#x2F;"
+    rel="nofollow">https:&#x2F;&#x2F;blogs.nvidia.com&#x2F;blog&#x2F;nvidia-to-acquire-hugging-face...</a>
+  score: 0
+  posted_at: '2026-11-26T18:04:29Z'
+- id: '50657883'
+  parent_id: '50657526'
+  author: julianlam
+  text: Any number of reasons, but likely they are not cross-compatible with their
+    entire list of supported architectures, which means regressions for some.<p>That
+    in and of itself could be a dealbreaker.
+  score: 0
+  posted_at: '2026-11-26T18:08:41Z'
+- id: '50657969'
+  parent_id: '50657526'
+  author: ortekk
+  text: llama.cpp is now an Nvidia project (as in, they own it)
+  score: 0
+  posted_at: '2026-11-26T18:16:20Z'
+- id: '50657972'
+  parent_id: '50657791'
+  author: wolvoleo
+  text: Yeah these cards are great, I have one too. There&#x27;s the Radeon VII Pro
+    16GB and the Instinct MI50 with 16 or 32GB. For the latter you need to come up
+    with your own cooling though.<p>Unfortunately they lack the right matrix processor
+    to accelerate prefill so time to first token can be slow. And software support
+    is getting bad. ROCm dropped them already so there&#x27;s only Vulkan<p>Ps I don&#x27;t
+    think this architecture is supported by the port in this link. It seems to be
+    specific to RDNA.
+  score: 0
+  posted_at: '2026-11-26T18:16:40Z'
+- id: '50658097'
+  parent_id: '50657969'
+  author: jasonvorhe
+  text: So? That doesn&#x27;t mean they&#x27;re denying AMD optimization contributions
+    and the deal isn&#x27;t even closed. You only have a public agreement so far.
+  score: 0
+  posted_at: '2026-11-26T18:29:04Z'
+- id: '50658142'
+  parent_id: '50657265'
+  author: peter_d_sherman
+  text: "&gt;&quot;Some examples of these new inference engines* are Strata, Basalt,
+    RustingStrata, etc…<p>These new forks generally all have a few things in common:<p><i>o
+    They focus on a specific subset of models and&#x2F;or hardware</i><p>o They use
+    a frontier model to vibe-code the entire thing<p>o They chase ever-higher token
+    generation speeds<p>… and the results are stunning! <i>Strata is able to run a
+    heavily-quantized model of Qwen 3.8 Flash Next, a 180B parameter model, on a 16GB
+    VRAM graphics card, and 16GB system RAM, and have it generate tokens at a surprisingly
+    high rate.</i><p>Nice!<p>Hardware specific optimizations are definitely one key
+    to faster local tokens, algorithmic optimizations (i.e., all of the academic papers
+    published about different Matrix&#x2F;Tensor algorithm optimizations as pertains
+    to LLMs) are another...<p>Anyway, great article!"
+  score: 0
+  posted_at: '2026-11-26T18:33:40Z'
+- id: '50658147'
+  parent_id: '50657972'
+  author: tosapple
+  text: 'alignment and introspection call for standardization, homogenization. science
+    calls for evolution: iteration, exploration, divergence.'
+  score: 0
+  posted_at: '2026-11-26T18:34:03Z'
+- id: '50658161'
+  parent_id: '50657972'
+  author: rao-v
+  text: Checkout the repo - you can get surprisingly good prefill with kernel optimization
+    (not the 3K &#x2F; s that a 5090 will do but competitive with a modern 9700 XTX
+    or Intel Arc etc)
+  score: 0
+  posted_at: '2026-11-26T18:34:39Z'
+- id: '50658164'
+  parent_id: '50657969'
+  author: InsidiousWombat
+  text: but the andy hung told us they are all a big family!
+  score: 0
+  posted_at: '2026-11-26T18:35:13Z'
+- id: '50658242'
+  parent_id: '50657769'
+  author: rsolva
+  text: The 7900xtx is a beast! But 6 GB of system RAM is not enough I think.
+  score: 0
+  posted_at: '2026-11-26T18:41:38Z'
+- id: '50658252'
+  parent_id: '50657791'
+  author: jhonof
+  text: 2 MI50 32 GBs in my rig I got for $300 a piece about 6 months ago. There is
+    also a great discord for people tinkering and optimizing with these cards. I get
+    like 70 t&#x2F;s with my setup right now running QFN using Strata.
+  score: 0
+  posted_at: '2026-11-26T18:42:38Z'
+- id: '50658314'
+  parent_id: '50657417'
+  author: jakswa
+  text: Oh it&#x27;s ruben! Thank you for publishing your work. I was randomly running
+    &quot;ruben llama&quot; for a couple days :D And the article does a great job
+    describing my situation lately -- I think I was earlier in your speed curves,
+    and ended up finding a little more speed from Maya <a href="https:&#x2F;&#x2F;github.com&#x2F;mw00&#x2F;project-maya"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;mw00&#x2F;project-maya</a>
+  score: 0
+  posted_at: '2026-11-26T18:48:56Z'
+- id: '50658355'
+  parent_id: '50658252'
+  author: rao-v
+  text: Woah 70 t&#x2F;s on IQ3 on long context?? Need to test again. I find strata
+    tricky because it’s super willing to degrade quality for tps - I really want as
+    close to the OG model as possible for agentic work.
+  score: 0
+  posted_at: '2026-11-26T18:54:05Z'
+- id: '50658420'
+  parent_id: '50658355'
+  author: jhonof
+  text: On my benchmarks it performs equally as well quality wise as q8 3.8 27B, tool
+    calls are marginally worse though. It also runs way way cooler on my cards which
+    is important to me because the blowers for the cards are super loud at high speed.
+    Max context is 200k right now for ref.
+  score: 0
+  posted_at: '2026-11-26T18:59:23Z'
+- id: '50658431'
+  parent_id: '50657265'
+  author: d3Xt3r
+  text: Julian, are you also able to benchmark Strata, HaloPFX and Hipfire please?
+    All of these are optimised for AMD and perform much better than vanilla llama.cpp.
+  score: 0
+  posted_at: '2026-11-26T18:59:56Z'
+- id: '50658454'
+  parent_id: '50657834'
+  author: stymaar
+  text: Has Halogen been open-sourced?
+  score: 0
+  posted_at: '2026-11-26T19:01:45Z'
+- id: '50658571'
+  parent_id: '50657265'
+  author: fiddlerwoaroof
+  text: 'I have a MI100, and I managed to get Claude to double or triple the performance
+    of Qwen3.8 by aggressively optimizing the AMD code and porting some of the Nvidia
+    kernels to ROCm: <a href="https:&#x2F;&#x2F;github.com&#x2F;fwoar-greenhouse&#x2F;vicuna.cpp"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;fwoar-greenhouse&#x2F;vicuna.cpp</a><p>I&#x27;ve
+    been running this for a while and it seems pretty stable, plus I had Claude validate
+    the ported kernels against the originals to make sure they were reasonably close
+    numerically to the validated implementations.'
+  score: 0
+  posted_at: '2026-11-26T19:10:57Z'
+- id: '50658612'
+  parent_id: '50658431'
+  author: badsectoracula
+  text: But the point of choosing this is that these other projects don&#x27;t just
+    make inference go fast but they also change how the results are calculated:<p>&gt;
+    as these projects have evolved, that relentless chase toward higher token generation
+    speeds has taken an unfortunate turn, in that the optimizations are less about
+    hardware-specific changes, but more about changing how the model thinks so that
+    it goes brrr faster.<p>&gt; Strata specifically has taken to preferring to poll
+    experts loaded in VRAM even if other experts (pushed to system RAM&#x2F;disk)
+    would have been normally chosen. This is just one example, but certainly not the
+    last.<p>Changes like the one in Strata can degrade the model&#x27;s performance.<p>And
+    TBH it seems to be so common all these videcoded &quot;make stuff go faster&quot;
+    do changes like that that personally i have a hard time trusting anything other
+    than llama.cpp (and TBHv2, that includes the linked repository - i&#x27;d rather
+    wait for all those improvements reach the mainline llama.cpp).
+  score: 0
+  posted_at: '2026-11-26T19:15:18Z'
+- id: '50658667'
+  parent_id: '50657265'
+  author: '0xbadcafebee'
+  text: I&#x27;ve tried patches like this for my gfx1103, and I got a 15% boost to
+    pp, 3% boost to tg... but it also couldn&#x27;t use all my VRAM (unified memory),
+    only the BIOS GART reserved mem - so I couldn&#x27;t load larger models anymore,
+    and had to go back to Vulkan.
+  score: 0
+  posted_at: '2026-11-26T19:20:56Z'
+- id: '50658673'
+  parent_id: '50658242'
+  author: skullone
+  text: Oh I meant 64GB
+  score: 0
+  posted_at: '2026-11-26T19:21:27Z'
+- id: '50658683'
+  parent_id: '50657591'
+  author: SparkyMcUnicorn
+  text: This might deserve a standalone post, but MTPLX is worth checking out.<p>Youssof&#x27;s
+    goal is squeezing the most performance out of apple hardware, but not at the expense
+    of model quality. I was testing all of the different projects, all different configs,
+    and I could get some impressive tps numbers, but wasn&#x27;t actually usable over
+    longer sessions. MTPLX has been the most stable results for me, with acceptable
+    speed&#x2F;performance and not feeling like the model&#x27;s capability was chopped.<p>Definitely
+    worth checking out for anyone that has apple hardware, and might be using llama.cpp,
+    oMLX, lmstudio, mlx-serve, etc.<p><a href="https:&#x2F;&#x2F;github.com&#x2F;youssofal&#x2F;MTPLX"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;youssofal&#x2F;MTPLX</a>
+  score: 0
+  posted_at: '2026-11-26T19:22:15Z'
+- id: '50658695'
+  parent_id: '50658673'
+  author: skullone
+  text: Ihave this machine mainly for helldivers2 but it&#x27;s idle 99.9% of the
+    time, id love to get some more value out of it :p
+  score: 0
+  posted_at: '2026-11-26T19:23:40Z'
+- id: '50658741'
+  parent_id: '50658454'
+  author: Lanedo
+  text: Halogen for Qwen Flash Next is here:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;peonist-ai&#x2F;halogen-flash-server"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;peonist-ai&#x2F;halogen-flash-server</a>
+  score: 0
+  posted_at: '2026-11-26T19:28:41Z'
+- id: '50658826'
+  parent_id: '50657769'
+  author: ljosifov
+  text: 7900xtx 24gb vram, on a 128gb ddr4 10-core Xeon 10+yrs old Linux box, I run
+    Strata + Qwen3.8-flash-next (QFN) at 80 tok&#x2F;s most of the time. Sometimes
+    (when I need the ram) switch over to Hipfire + Qwen3.8-27B, that runs 80 tok&#x2F;s
+    to 120 tok&#x2F;s (with MTP now; used to be tops 45 tok&#x2F;s). Usually I run
+    the QFN as I have ram to spare, and QFN&#x27;s AAII index is 29, versus 20 for
+    the 27B dense. So I consider QFN more intelligent all other things being equal.
+  score: 0
+  posted_at: '2026-11-26T19:36:38Z'
+- id: '50658865'
+  parent_id: '50657417'
+  author: Sha1rholder
+  text: I heard that if Anthropic recognizes that it&#x27;s machine learning jobs,
+    they might deliberately poison the output.
+  score: 0
+  posted_at: '2026-11-26T19:39:28Z'
+- id: '50658900'
+  parent_id: '50657972'
+  author: rlpb
+  text: "&gt; ROCm dropped them already...<p>I think this kind of thing matters less
+    nowadays. The codebase contains enough information that if you throw these things
+    at AI they can do the backporting. It works well because there&#x27;s a straightforward
+    feedback loop (&quot;does it work?&quot; and &quot;measure performance of &lt;X&gt;
+    and &lt;Y&gt;&quot;)."
+  score: 0
+  posted_at: '2026-11-26T19:43:47Z'
+- id: '50658949'
+  parent_id: '50657265'
+  author: mszcz
+  text: It&#x27;s sort of astonishing seeing the contrast of what last bit of performance
+    people are squeezing out of all kinds of GPUs, old &amp; new &amp; weird, because
+    there&#x27;s a shortage vs. how the apparently abundant resources are being used
+    in an &quot;electron app&quot; (the disk space, the RAM, the compute!).<p>I know
+    it&#x27;s apples to oranges but the difference I&#x27;m talking about is in the
+    attitude and approach.
+  score: 0
+  posted_at: '2026-11-26T19:48:19Z'
+- id: '50658980'
+  parent_id: '50657526'
+  author: PaulKeeble
+  text: LLama.cpp is now the stable product that moves with intent and doesn&#x27;t
+    break things and largely isn&#x27;t just taking anything the AI kicks out as a
+    patch. They also have a tonne of legacy having been around for so long compared
+    to the new engines that can throw a lot of the older models away and make software
+    designed for the new architectures.
+  score: 0
+  posted_at: '2026-11-26T19:52:31Z'
+- id: '50658990'
+  parent_id: '50657265'
+  author: newusertoday
+  text: |-
+    does anyone maintains patches like this for intel? intel&#x27;s xmx engine is strong on paper but lags behind due to improper utilization of hardware especially on linux.
+    Even on llama.cpp coopmat for vulkan is only enabled on windows for arrow lake.
+  score: 0
+  posted_at: '2026-11-26T19:53:35Z'
+- id: '50659038'
+  parent_id: '50658683'
+  author: dofm
+  text: It is good, but it is still a generalist, model-zoo isn&#x27;t it?<p>It does
+    seem to have good general advantages over llama.cpp for more modern Apple Silicon
+    (M3 and up, when they tweaked the neural engine architecture I think?)<p>For my
+    own situation, I think MLX-plus-MTP does&#x27;t generally do better on the M1
+    Max than llama.cpp does with GGUFs. In fact it is usually worse (same on the M2
+    Max AFAIR) because the bandwidth overhead outweighs the draft prediction advantage.<p>The
+    bespoke kernels are worth it once you have toured the zoo a few times and know
+    which animal you are really interested in.
+  score: 0
+  posted_at: '2026-11-26T19:57:05Z'
+- id: '50659040'
+  parent_id: '50657791'
+  author: yieldcrv
+  text: The same just happened with nvidia’s crypto mining cards<p>Turns out there
+    are 80gb A100s but we’re advertised as 8gb with only 8gb addressable<p>They were
+    a couple hundred just 6 months ago, now $5000 and getting closer in parity to
+    normal A100s
+  score: 0
+  posted_at: '2026-11-26T19:57:08Z'
+- id: '50659090'
+  parent_id: '50658673'
+  author: rsolva
+  text: That makes more sense, haha! Then you could clone my repo and be up and running
+    in notime with Inkling 2 Mini.
+  score: 0
+  posted_at: '2026-11-26T20:02:58Z'
+- id: '50659505'
+  parent_id: '50657426'
+  author: girvo
+  text: Which is interesting because Nvidia’s Hyperflare server for Q38FN is going
+    down the “optimised for a few models and one bit of hardware” path
+  score: 0
+  posted_at: '2026-11-26T20:37:01Z'
+- id: '50659581'
+  parent_id: '50657265'
+  author: readyblue
+  text: I have tried to use it with RPC server and it did not work. Waste of time.
+  score: 0
+  posted_at: '2026-11-26T20:44:13Z'
+- id: '50659647'
+  parent_id: '50657265'
+  author: jsrcout
+  text: Awesome, I need this!
+  score: 0
+  posted_at: '2026-11-26T20:50:39Z'
+- id: '50659700'
+  parent_id: '50657265'
+  author: malicz
+  text: |-
+    I have a r9700 card and I highly recommend the radiance engine. With a single card it processes (prefill) at 2400 tok&#x2F;s and decodes at 150 tok&#x2F;s. With a 4-bit model that is intelligently quantised to have a KLD of 0.006 and top-1 of 0.972
+    I have been working this engine for a month, throwing a lot of agentic and coding work and it has been doing great! I can run 3 concurrent agent streams all with a 200k context, entirely in vram.
+    EDIT: model: Qwen3.8-27b - <a href="https:&#x2F;&#x2F;codeberg.org&#x2F;StillDeadcode&#x2F;radiance" rel="nofollow">https:&#x2F;&#x2F;codeberg.org&#x2F;StillDeadcode&#x2F;radiance</a>
+  score: 0
+  posted_at: '2026-11-26T20:56:06Z'
+- id: '50659824'
+  parent_id: '50657591'
+  author: rahimnathwani
+  text: 'Link: <a href="https:&#x2F;&#x2F;github.com&#x2F;paperniuk&#x2F;splash&#x2F;releases&#x2F;tag&#x2F;1.7.3-m1"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;paperniuk&#x2F;splash&#x2F;releases&#x2F;tag&#x2F;1.7.3-m1</a>'
+  score: 0
+  posted_at: '2026-11-26T21:06:21Z'
+article:
+  url: https://devnull.land/amd-specific-llama-cpp
+  title: AMD-specific fork of llama.cpp  | devnull.land
+  fetch_status: success
+  content: "**tl;dr** — I recommend using [llama-cpp-rdna-boosts](https://github.com/stew675/llama-cpp-rdna-boosts)
+    if you have an AMD graphics card. It’s lean, and increased my token generation
+    from 35 to 55 tokens/second, and my prefill from 700 to 1300 tokens per second.
+    YMMV.\n\n* * *\n\nAs of November 2026, an explosion in the number of bespoke inference
+    engines has taken place. Many of them take inspiration from the engines that enabled
+    much of the LLM inference up 'til now: llama.cpp, SGLang, vLLM, etc.\n\nThe rationale
+    isn’t that those options are bad, but merely that they are _generalist_ engines,
+    optimized for no particular hardware and with a focus on broad compatibility.
+    Others feel the development pace of those engines have slowed down, and with the
+    help of LLMs, they can move faster on their own.\n\nSome examples of these new
+    inference engines\\* are Strata, Basalt, RustingStrata, etc…\n\nThese new forks
+    generally all have a few things in common:\n\n1. They focus on a specific subset
+    of models and/or hardware\n2. They use a frontier model to vibe-code the entire
+    thing\n3. They chase ever-higher token generation speeds\n\n… and the results
+    are stunning! Strata is able to run a heavily-quantized model of Qwen 3.8 Flash
+    Next, a **180B parameter model** , on a 16GB VRAM graphics card, and 16GB system
+    RAM, and have it generate tokens at a surprisingly high rate.\n\nIn and of itself
+    those three things are not red flags (the second is concerning, of course, but
+    it may be SOP in a year’s time — who knows!), but as these projects have evolved,
+    that relentless chase toward higher token generation speeds has taken an unfortunate
+    turn, in that the optimizations are less about hardware-specific changes, but
+    more about changing how the model **thinks** so that it goes brrr faster.\n\nStrata
+    specifically has taken to preferring to poll experts loaded _in VRAM_ even if
+    other experts (pushed to system RAM/disk) would have been normally chosen. This
+    is just one example, but certainly not the last.\n\n* * *\n\nThat said, I was
+    fortunate to stumble upon yet another project that promised improvements, delivered,
+    and was more aligned with my software development philosophy.\n\nEnter [**llama-cpp-rdna-boosts**](https://github.com/stew675/llama-cpp-rdna-boosts).
+    It is a repository that contains a minimal set of changes that you apply against
+    a pinned commit of llama.cpp. It is in essence a fork, but one whose changeset
+    is continually re-applied to newer versions of llama.cpp. It contains AMD-specific
+    improvements that drastically improve prefill and token-generation speeds.\n\n1.
+    I appreciate llama.cpp’s approach to software development. They are a stable base
+    to branch off from. Contributions are vetted throughly and applied judiciously.
+    ✅\n2. The _rdna-boosts_ repo is a set of small patches that are applied to base
+    llama.cpp. Fewer moving parts mean fewer things to maintain ✅\n3. The changes
+    are (somewhat opaquely, it’s all straight Claudish \U0001F62C) outlined in the
+    documentation, ensuring some degree of transparency. ✅\n\n### The setup\n\nIf
+    you have ROCm libraries installed on your system, you can build the image yourself.
+    I didn’t want to mess with that, so I used the pre-built images published.\n\n`podman
+    pull ghcr.io/stew675/llama-cpp-rdna-boosts:server-rocm-10.1`\n\nThis sets up an
+    image that you can run sandboxed via podman to launch the inference server:\n\n
+    \   podman run --rm -it \\\n        --network=host \\\n        --device /dev/kfd
+    \\\n        --device /dev/dri \\\n        --group-add video \\\n        -v \"$HOME/models:/models\"
+    \\\n        \"ghcr.io/stew675/llama-cpp-rdna-boosts:server-rocm-10.1\" \\\n\nMy
+    actual launch script passes a few additional flags, but those are the important
+    lines.\n\nI imagine upgrading would be pulling a new image down, though I have
+    not tried this yet.\n\n### The numbers\n\nOn my setup, an AMD R9700 connected
+    to my laptop via an eGPU interface, this improved prefill and token generation
+    rates when running [ukisai/Swift-1.5-Qwen3.8-27B-GGUF (Q6\\_K\\_L)](https://huggingface.co/ukisai/Swift-1.5-Qwen3.8-27B-GGUF)
+    with MTP enabled:\n\n| | Before | After |\n| --- | --- | --- |\n| Prefill | ~700
+    t/s | ~1300 t/s |\n| Token Generation | ~35 t/s | ~55 t/s |\n\n* * *\n\nStrata
+    and its ilk were always promising the moon and it was never clear what steps they
+    took to make that happen. I’m very much looking forward to what the rdna-boosts
+    community come up with next.\n\n\\* It’s worth noting that between these two groups,
+    [vllm-radiance](https://codeberg.org/StillDeadcode/vllm-radiance/) made an appearance,
+    which was a fork of vLLM with AMD-specific patches. I tried this too, but the
+    build steps were so onerous and vLLM so overbuilt for my specific use case (1
+    machine, 1 developer), that I abandoned it and went back to vanilla llama.cpp\n\n[←
+    Back to all posts](/)"
+  error:
+  fetched_at: '2026-11-26T21:23:29Z'
+archived_at: '2026-11-26T21:23:33Z'

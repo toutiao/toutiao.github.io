@@ -1,0 +1,174 @@
+---
+post:
+  id: lo-wpylec
+  source: lobsters
+  title: In defense of lock poisoning in Rust (2025)
+  url: https://sunshowers.io/posts/on-poisoning/
+  hn_url: https://lobste.rs/s/wpylec
+  score: 20
+  author: m0th
+  posted_at: '2026-11-26T11:51:23Z'
+  fetched_at: '2026-11-26T21:23:34Z'
+  article_url: https://sunshowers.io/posts/on-poisoning/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T21:23:37Z'
+  raw_comment_count: 6
+  tags:
+  - rust
+comments:
+- id: lo-439sfd
+  parent_id: '0'
+  author: m0th
+  text: |-
+    This was previously posted a year ago: https://sunshowers.io/posts/on-poisoning/
+    But I wanted to resubmit it because I found it a compelling counter-argument to https://lobste.rs/s/sj2pkv/abolish_lock_poisoning
+  score: 6
+  posted_at: '2026-11-26T11:51:23Z'
+- id: lo-zcuoev
+  parent_id: '0'
+  author: realkc
+  text: |-
+    I think we should both get Poison<T> and make std::sync::poison::Mutex's lock panic on poison tbh
+    I wonder if std::sync::Mutex should be removed in favour of users choosing explicitly if they want poisoning or not tho
+  score: 1
+  posted_at: '2026-11-26T17:48:25Z'
+- id: lo-apgieq
+  parent_id: '0'
+  author: ssokolow
+  text: Identifiers in std/alloc/core cannot be removed (only marked as deprecated)
+    because they need to remain accessible so code written against newer editions
+    can name types needed to interoperate with code written against older editions.
+  score: 1
+  posted_at: '2026-11-26T18:28:28Z'
+- id: lo-egtipj
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    I think we should both get Poison<T> and make std::sync::poison::Mutex's lock panic on poison tbh
+
+    See my post from a day ago about why this would be a pretty terrible outcome.
+  score: 3
+  posted_at: '2026-11-26T18:49:55Z'
+- id: lo-qryyec
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    Since you did post this as a response to my post, you probably won't be surprised that I disagree with most of this. But I do want to point out a one interesting thing now that I re-read that one:
+
+    The answer depends on a bunch of things, but in general (and especially in library code) that is indeed what I’m suggesting. For instance, this critical section in parity-db is quite large. Reasoning about whether it’s unwind-safe seems very difficult to me; this is exactly the kind of code that mutex poisoning does well to guard against.
+
+    The picking of parity-db's commit_raw function quite interesting here because it shows exactly the type of failure that I also mentioned in my blog post: early returns. That function uses ? after taking a critical section so you have early returns in that function while the mutex is held for error handling. In fact the only case I can find in this function of leaving broken state behind is from that error handling and not from panics!
+  score: 3
+  posted_at: '2026-11-26T19:05:13Z'
+- id: lo-vtukia
+  parent_id: '0'
+  author: mqudsi
+  text: I don’t see any benefit to keeping poisoning but making lock() panic when
+    everyone not interested in (properly or improperly) handling poison does .lock().unwrap()
+    or .lock().expect() today. In addition to always taking the slow path, it is just
+    churn for the sake of churn.
+  score: 1
+  posted_at: '2026-11-26T20:37:42Z'
+article:
+  url: https://sunshowers.io/posts/on-poisoning/
+  title: In defense of lock poisoning in Rust · sunshowers
+  fetch_status: success
+  content: "# [In defense of lock poisoning in Rust](../../posts/on-poisoning/)\n\n2025-12-02
+    (updated 12-06)·21 min read[rust](https://sunshowers.io/tags/rust/)\n\n## Table
+    of contents\n\nThere’s recently been some discussion about the benefits and downsides
+    of lock (mutex) poisoning in Rust, spurred by [a recent proposal](https://github.com/rust-lang/rust/issues/149359)
+    to make the default mutex non-poisoned, i.e. **silently unlock on panic** (see
+    also, [recent discussion on Hacker News](https://news.ycombinator.com/item?id=46036883)).
+    As a passionate defender of lock poisoning, I thought I’d gather and write about
+    my thoughts on this matter.\n\nTo summarize, I believe:\n\n- Unexpected cancellations
+    in critical sections cause real harm to system correctness.\n- Lock poisoning
+    is an important part of ensuring the correctness of critical sections in Rust.\n-
+    Poisoning applies more generally than mutexes, and providing an easy way to track
+    that (via e.g. a `Poison<T>` wrapper) is valuable.\n- While there is conceptual
+    elegance in separating out locking from poisoning on panic, the importance of
+    lock poisoning overrides these concerns.\n\n## What is poisoning?[#](#what-is-poisoning)\n\nRust,
+    like most multithreaded languages, has [mutexes](https://doc.rust-lang.org/std/sync/struct.Mutex.html):
+    a construct to ensure that a particular piece of data can only be accessed by
+    one thread at a time. The way mutexes work in Rust is particularly well-considered:\n\n-
+    Rust uses a single-ownership model, and the notion of shared (`&`) and exclusive
+    (`&mut`) references to some data. Most data structures are written such that mutations
+    always require a `&mut` reference to it.\n- In Rust, the data guarded by a mutex
+    is owned by the mutex. (In many other languages, you have to track the mutex and
+    data separately, and it’s easy to get it wrong.)\n- When you lock a mutex, you
+    start from a shared reference: a `&Mutex<T>`. Once you have obtained the lock,
+    you get back a [`MutexGuard<T>`](https://doc.rust-lang.org/std/sync/struct.MutexGuard.html),
+    which indicates that you now have exclusive access to the guarded data.\n- The
+    `MutexGuard` can give you a `&mut T`, so you have exclusive access to it.\n- When
+    the `MutexGuard` is dropped, the lock is released. The period during which the
+    lock is held is called the _critical section_ (generally, not just in Rust).\n\nThis
+    is all quite reasonable! Let’s look at an example that processes incoming messages
+    for a set of tracked operations. Let’s assume that multiple threads could be processing
+    messages, so we have to guard the internal state with a mutex. (We’ll discuss
+    alternative approaches to this problem later.)\n\nA simple implementation:\n\n
+    \   use std::{collections::HashMap, sync::Mutex};\n    \n    struct OperationId(/*
+    ... */);\n    \n    enum OperationState {\n        InProgress { /* ... */ },\n
+    \       Completed { /* ... */ },\n    }\n    \n    impl OperationState {\n        //
+    Here, `process_message` consumes self and returns self. In practice this\n        //
+    is often because the state has some internal data that requires\n        // processing
+    by ownership.\n        fn process_message(self, message: Message) -> Self {\n
+    \           match self { /* ... */ }\n        }\n    }\n    \n    struct Operations
+    {\n        ops: Mutex<HashMap<OperationId, OperationState>>,\n    }\n    \n    impl
+    Operations {\n        /// Process a message, updating the internal operation state
+    appropriately.\n        pub fn process(&self, id: &OperationId, message: Message)
+    {\n            // Obtain a lock on the HashMap.\n            let mut lock = self.ops.lock().unwrap();\n
+    \   \n            // Once the lock has been acquired, it's guaranteed that no
+    other\n            // threads have any kind of access to the data. So a `&mut`
+    reference\n            // can safely be handed to us.\n            // \n            //
+    This step is shown for pedagogical reasons. Generally, `ops` is not\n            //
+    obtained explicitly. Instead, lock.remove and lock.insert are used\n            //
+    directly as `lock` dereferences to the underlying HashMap.\n            let ops:
+    &mut HashMap<_, _> = &mut *lock;\n    \n            // Retrieve the element from
+    the map to process it.\n            let Some(state) = ops.remove(id) else {\n
+    \               // (return a not-found error here)\n            }\n            let
+    next_state = state.process_message(message);\n            ops.insert(id.clone(),
+    next_state);\n            \n            // At this point, lock is dropped, and
+    the mutex is available to other\n            // threads.\n        }\n    }\n\nThis
+    is a very typical use of mutexes: to guard one or more _invariants_ or _properties_
+    of some kind. These invariants are upheld while the mutex is unlocked. In this
+    case, the invariant being guarded is that `Operations::ops` has complete and up-to-date
+    tracking of all in-progress and completed operations.\n\nOf equal importance is
+    the fact that, while the mutex is held, the invariant is _temporarily violated_.
+    In order to process the message, we have to remove the state from the map, create
+    a new state, then put it back into the map. During this period, `Operations::ops`
+    is missing this one operation, so it no longer tracks all operations. But this
+    temporary violation is okay, because no other threads see this in-between state.
+    Before the mutex is released, this code is responsible for putting the operation
+    back into the map.\n\nIs it always true that the operation is put back into the
+    map? Unfortunately not always, in the presence of what I think of as _unexpected
+    errors_. Many practitioners draw a separation between two different kinds of errors
+    that a system can have. The terms _recoverable_ and _unrecoverable_ are sometimes
+    used for them, but I tend to prefer the following terms (see also [some discussion
+    by Andrew Gallant](https://burntsushi.net/unwrap/#what-about-recoverable-vs-unrecoverable-errors)):\n\n-
+    An _expected error_ is one that can occur in normal operation. For example, if
+    a user specifies a directory to write a file to, and that directory is not writable,
+    then that’s in the realm of expectations (maybe the user mistyped the directory,
+    for example).\n- An _unexpected error_ is one that cannot occur in normal operation.
+    Andrew presents the example of a fixed string literal that is processed as a regex.
+    A fixed literal baked into the program really ought to be valid as a regex, so
+    any issues are unexpected.\n\nGenerally, in Rust, expected errors are handled
+    via the `Result` type, and unexpected errors are handled by [panicking](https://doc.rust-lang.org/book/ch09-01-unrecoverable-errors-with-panic.html).
+    Now, there isn’t a firm requirement that things be this way.\n\n- For example,
+    some high-availability systems may choose to model unexpected errors via a `Result`-like
+    type (see [the `woah` crate](https://docs.rs/woah/) as an example).\n- Quick-and-dirty
+    scripts may choose to handle both expected and unexpected errors as panics.\n-
+    Panics can also be used for other purposes, e.g. to [cancel in-progress work in
+    synchronous Rust](https://sunshowers.io/posts/cancelling-async-rust/#cancellations-in-synchronous-rust).\n\nBut
+    in typical production-grade Rust, expected errors are `Result`s while unexpected
+    errors (and only unexpected errors) are panics. Lock poisoning is built around
+    this assumption.\n\n### What if a panic occurs?[#](#what-if-a-panic-occurs)\n\nConsider
+    what happens if a panic occurs in `OperationState::process_message`. This depends
+    in part on the build flags and surrounding code, so let’s look closely at all
+    the possibilities. In Rust, there are two ways to configure build flags on panic:\n\n-
+    The default is to _unwind_, or to walk up the stack and run cleanup code. With
+    unwinding, panics can also be _caught_ at a higher level: in the same thread with
+    [`catch_unwind`](https://doc.rust-lang.org/std/panic/fn.catch_unwind.html), or
+    in another thread via [`JoinHandle::join`](https://doc.rust-lang.org/std/thread/struct.JoinHandle.html#method.join).\n-
+    The alternative is to _abort_, which causes the whole proc"
+  error:
+  fetched_at: '2026-11-26T21:23:37Z'
+archived_at: '2026-11-26T21:23:37Z'
