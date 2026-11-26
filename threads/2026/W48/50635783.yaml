@@ -1,0 +1,218 @@
+---
+post:
+  id: '50635783'
+  title: Predicting LoRA size for any dataset
+  url: https://engram.com/blog/lora-size
+  hn_url: https://news.ycombinator.com/item?id=50635783
+  score: 110
+  author: ''
+  posted_at: '2026-11-24T22:34:29Z'
+  fetched_at: '2026-11-26T01:40:10Z'
+  article_url: https://engram.com/blog/lora-size
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T01:40:10Z'
+  raw_comment_count: 11
+comments:
+- id: '50644795'
+  parent_id: '50635783'
+  author: keel_dev
+  text: 'Great result. One question on the conservation finding: you show learning
+    X bits of SFT data costs roughly X bits of prior knowledge, validated on datasets
+    drawn from the base model&#x27;s distribution. Do you expect that 1:1 exchange
+    to hold for SFT data that is genuinely out-of-distribution — e.g. teaching new
+    domain knowledge rather than a format or style the model already &#x27;knows&#x27;?
+    In that regime the new information isn&#x27;t just reweighting existing knowledge,
+    so I&#x27;d guess the exchange rate could differ, or the capacity curve could
+    shift. Did any of your datasets probe that regime?'
+  score: 0
+  posted_at: '2026-11-25T17:16:56Z'
+- id: '50645338'
+  parent_id: '50635783'
+  author: hinkley
+  text: Fascinating, Quercus!
+  score: 0
+  posted_at: '2026-11-25T18:05:00Z'
+- id: '50645420'
+  parent_id: '50635783'
+  author: natsu529
+  text: |-
+    It&#x27;s super interesting.
+    i want to fit this for image-generation-model.
+  score: 0
+  posted_at: '2026-11-25T18:11:17Z'
+- id: '50645422'
+  parent_id: '50635783'
+  author: bee_rider
+  text: Are there related questions along the lines of “what elements could I add
+    to the dataset that would most increase the LoRA size.”<p>Is there a metric other
+    than size that can describe a LoRA’s… usefulness? Trueness to the original? (Is
+    trueness to the original a positive or negative in this context, anyway?). Then
+    maybe we can formulate questions about things like &lt;usefulness&gt;&#x2F;&lt;size&gt;.
+  score: 0
+  posted_at: '2026-11-25T18:11:22Z'
+- id: '50645749'
+  parent_id: '50635783'
+  author: augment_me
+  text: Memorizing a dataset =&#x2F;= learning a task.<p>Cross entropy of a finite
+    dataset measures signal + noise(redundancy, quirks, typos, etc)<p>If you have
+    10MB of math data, the underlying task of learning the reasoning pattern might
+    have low entropy and fit in a much lower LoRA rank, even though memorizing the
+    dataset requires more.<p>On any task like GSM, Math500, Openthought3 this would
+    just be massive overfitting.<p>Also they assume that the 2M-token context chunking
+    is independent but for example logs are usually not.<p>---<p>I think this is good
+    to point out, because the company seems to sell a solution to cram private company
+    wikis into the Lora adapters, so the measures are upper bounds in terms of info
+    due to their assumption of memorization.
+  score: 0
+  posted_at: '2026-11-25T18:36:04Z'
+- id: '50646196'
+  parent_id: '50635783'
+  author: NooneAtAll5
+  text: can someone explain how is this connected to a radio?
+  score: 0
+  posted_at: '2026-11-25T19:19:44Z'
+- id: '50646392'
+  parent_id: '50645749'
+  author: XTXinverseXTY
+  text: would &quot;Predicting LoRA size for any SFT dataset&quot; have been fairer?
+  score: 0
+  posted_at: '2026-11-25T19:35:26Z'
+- id: '50646449'
+  parent_id: '50646392'
+  author: augment_me
+  text: Not really, because again it conflates learning with memorization.<p>Better
+    titles could be:<p>Predicting the LoRA rank needed to overfit a dataset on Qwen-0.8B<p>or<p>How
+    much can a LoRA memorize?
+  score: 0
+  posted_at: '2026-11-25T19:39:38Z'
+- id: '50647336'
+  parent_id: '50646449'
+  author: XTXinverseXTY
+  text: "&gt; because again it conflates learning with memorization<p>Honestly I respectfully
+    disagree, the article doesn&#x27;t try to draw a distinction between task-relevant
+    bits vs noisy bits in its analysis. I think it&#x27;s worth appreciating that
+    classical theory can extrapolate so far<p>You raise a good point that in practice
+    we probably want to post-train for an end task later, but it&#x27;s considerably
+    harder to get a similarly general, straightforward result. And assessing the S&#x2F;N
+    of domain-specific data is arguably a harder problem (IIUC this is Engram&#x27;s
+    purported specialty)"
+  score: 0
+  posted_at: '2026-11-25T20:50:39Z'
+- id: '50647536'
+  parent_id: '50635783'
+  author: Samin100
+  text: The arithmetic coding widget halfway down the blog post is honestly really
+    great. I&#x27;m surprised I haven&#x27;t seen token probabilities expressed as
+    bits of entropy before this.
+  score: 0
+  posted_at: '2026-11-25T21:05:46Z'
+- id: '50647550'
+  parent_id: '50646196'
+  author: thomashabets2
+  text: Microsoft didn&#x27;t google &quot;LoRa&quot; before choosing the extremely
+    poor name &quot;LoRA&quot; for this completely unrelated thing.<p>Or maybe they
+    didn&#x27;t find anything, because they used bing?
+  score: 0
+  posted_at: '2026-11-25T21:06:49Z'
+article:
+  url: https://engram.com/blog/lora-size
+  title: Predicting LoRA size for any dataset
+  fetch_status: success
+  content: "> **TLDR:**\n> \n> - We develop a predictive theory of the capacity of
+    a LoRA adapter as a function of its rank.\n> - Unlike full-parameter fine-tuning,
+    LoRA learns a _decreasing_ amount per-parameter.\n> - Given an SFT dataset, we
+    can predict the LoRA size required to fit it.\n\nAt Engram, we train lots of models.
+    We train models for individual users and update them when information changes.
+    A major focus of our research is how to customize and adapt models efficiently
+    at scale.\n\nThis post focuses on LoRA. LoRA has become the predominant approach
+    for customizing models in industry. While there exists a large body of knowledge
+    on how to set the hyperparameters and train LoRA effectively, it’s still unclear
+    how to set LoRA’s rank. Although it’s agreed-upon that LoRA underperforms full-finetuning
+    on larger datasets, it’s not clear when this is the case. How big does a dataset
+    have to be to require a larger LoRA?\n\nIn practice, smaller LoRAs enjoy a number
+    of systems advantages, being lighter to load, faster to generate text from, and
+    easier to store on disk. For larger models, rank-1 can store quite a lot; some
+    datasets, like RL data, can be represented in a small number of bits and often
+    fit within a rank-one LoRA adapter (or smaller!).\n\nIn this post, we develop
+    a predictive theory and practical approach for sizing LoRA adapters to a new dataset.
+    The idea is simple: the size of the LoRA required depends on how many bits it
+    takes to encode the dataset under the base model. We use this idea to derive an
+    exact formula for how many bits a single LoRA adapter can learn as a function
+    of its rank.\n\nWe then extend our idea to measure the capacity of LoRA on full
+    transformers. Since theory can’t predict the nonlinear behavior of deep transformers,
+    we turn to an empirical solution: we generate synthetic datasets of exactly N
+    bits under the base model and train on them to measure LoRA’s capacity. Our capacity
+    predictions hold up on real datasets: across a variety of settings, we can accurately
+    determine the necessary rank of the adapter.\n\n**[[jump to main result ↓]](#figure-rank-vs-size)**\n\n##
+    Information theory and LLMs\n\nWe begin this post with a basic primer on the connection
+    between information theory and language modeling. Remember that our goal is to
+    find the smallest adapter that fits a given dataset. To do that, we need to measure
+    adapters and datasets in the same unit: bits.\n\n**Language modeling and Shannon**\n\nLanguage
+    models assign probabilities to strings:\n\npθ​(x)=i∏​pθ​(xi​∣x\\<i​)\n\nA language
+    model is, at its core, a text compressor: a model that assigns high probability
+    to data can encode it efficiently. And we’ve known this since the 1950s! By Shannon’s
+    source coding theorem, a model’s quality (its perplexity, or cross-entropy) corresponds
+    directly to its effectiveness as a compressor. The number of bits needed to encode
+    a string x under a model θ is its negative log-likelihood:\n\nbitsθ​(x)=−i∑​log2​pθ​(xi​∣x\\<i​)\n\nHere’s
+    an example of what it’s like to view training loss as _bits_. Given some fixed-size
+    training dataset, we can directly convert loss to bits learned by θ:\n\n![](/icon.svg?dpl=dpl_GCLvFwRSxoRUZRnsjhnQcLryLcr4)\nFigure
+    1: Loss Storage\n\nstoragetraining loss\n\n**Step 3,981** rank-6 LoRA, mlp[23]\n\n_As
+    a model’s loss drops, the amount it stores about the training data rises. We can
+    measure this exactly in bits._\n\n**Generating _exactly_ N bits using an LLM**\n\nTo
+    measure the capacity of LLMs being trained with adapters, we need to generate
+    data with a controllable number of bits. Prior work in this space creates data
+    of fixed size with random generative processes, like randomly generated tables
+    of facts or random strings of tokens.\n\nTo generate truly random data from an
+    LLM, we leverage a tool called arithmetic coding. Arithmetic coding gives us the
+    ability to transform probability distributions into codes; it represents the entire
+    code using a single floating point number in [0,1) that we can turn into a sequence
+    using pθ​.\n\nWe take this one step further. A pretrained open-source model like
+    Qwen or Inkling already provides likelihoods for text, so we can run arithmetic
+    coding in reverse: start from N random bits and decode them into text. The result
+    is a sample from pθ​ whose code length under the model is N bits. One can think
+    of this as an implementation of Neural Linguistic Steganography using randomly
+    selected codes.\n\nHere’s an example of arithmetic coding in use. The following
+    panel allows you to generate strings with exact bit counts under SmolLM2:\n\n![](/icon.svg?dpl=dpl_GCLvFwRSxoRUZRnsjhnQcLryLcr4)\nFigure
+    2: Decoding Bits into Text\n\n**SmolLM2-135M** · 23 tokens, code length 70.3 bits\n\nCode\n\n110001010100001111110010111001011101100100010001101111111101100100001\n\nText\n\nOnce
+    upon a time, there lived a brave little queen named Mina. She had many dreams
+    for her kingdom, but they were always won\n\n**“␣won”** token 23 of 23\n\n1. `␣finding``01100101010`0.04%\n2.
+    `␣noisy``1001101000··`0.04%\n3. `␣won``01100100001`0.04%\n4. `␣bound``01100011111`0.04%\n5.
+    `␣unclear``10010010000`0.04%\n\nCode lengths come out slightly longer than the
+    number of encoded bits because tokens are indivisible. In this example, `queen`
+    is worth eleven bits (surprising!), while `little` carries just two bits. Later
+    in this post we will generate many strings like this to build a dataset of exactly
+    known size, then train an adapter on it to measure how many bits it can learn.\n\n##
+    How much can LoRA store?\n\nGiven a matrix W to adapt, LoRA works by training
+    two matrices whose product is a low-rank update to W:\n\nW′=W+rα​BA,B∈Rm×r,A∈Rr×n\n\nHere
+    W is an m×n matrix being adapted and A and B are the matrices trained via LoRA.
+    Since r is often much smaller than m and n, the total number of parameters trained
+    by the LoRA is typically much smaller than training all of W.\n\nThe parameter
+    α is a rank-independent scaling factor; in this work, we fix α=256 to avoid conflating
+    rank with learning rate.\n\n### Sizing LoRA, in theory\n\nPrior work has estimated
+    that the capacity of full transformer training scales roughly linearly with parameter
+    count. We don’t intuitively expect this to be true with LoRA, since some dimensions
+    influence the model outputs more than others. Instead, we expect diminishing returns
+    to capacity as rank increases. This is exactly what we see in practice, and it
+    turns out we can predict the capacity curve quite cleanly using a simple statistical
+    model.\n\nSuppose we sample data from a model and then adapt one of its weight
+    matrices to memorize that data. How much can we expect to increase the log-likelihood
+    (and hence decrease the code length) with a rank-r adapter? To second-order, logpθ​(x)
+    looks like an inverted bowl in parameter space. How high we can climb on that
+    bowl can be determined from the gradient and Hessian at the point θ, and these
+    are both random functions of the training data x. Since the data is sampled from
+    pθ​, the statistics of the gradient and Hessian are determined by the Fisher information
+    matrix, which greatly simplifies the calculations.\n\nAfter some algebra, we find
+    that the capacity of a rank-r adapter is approximately,\n\nC(r)≈2ln21​E[i=1∑r​σi​(Z)2]&nbsp;bits,Z∈Rm×n,&nbsp;Zij​∼iidN(0,1)\n\nwhere
+    σi​(Z) is the i-th singular value of the random matrix Z. The capacity grows roughly
+    linearly at low rank,\n\nC(r)≈2ln2(m​+n​)2​⋅rfor&nbsp;r≪min(m,n),\n\nbut it plateaus
+    as the rank increases and the singular values decrease. At full rank, the capacity
+    is 2ln2mn​ bits, recovering a classical result from Wilks’ theorem in statistics.\n\nFor
+    an 800M parameter Qwen3.5 model, which has 512×1024 linear layers in its attention
+    value projections (v\\_proj), the theory predicts about 378k bits, or 0.48 bits-per-parameter
+    at full rank and 1.3-1.4 bits-per-parameter at low rank.\n\nWhen we measure capacity
+    using actual training, this prediction turns out to be quite accurate; C(r), the
+    blue curve, is accurate at every rank:\n\n![](/icon.svg?dpl=dpl_GCLvFwRSxoRUZRnsjhnQcLryLcr4)\nFigure
+    3: Theory"
+  error:
+  fetched_at: '2026-11-26T01:40:10Z'
+archived_at: '2026-11-26T01:40:12Z'

@@ -4,14 +4,11 @@ post:
   title: Why I wrote the BEAM book (2025)
   url: https://happihacking.com/blog/posts/2025/why_I_wrote_theBEAMBook/
   hn_url: https://news.ycombinator.com/item?id=50427107
-  score: 181
-  author: ''
+  score: 212
+  author: zenincognito
   posted_at: '2026-11-09T15:41:35Z'
-  fetched_at: '2026-11-11T21:46:49Z'
-  article_url: https://happihacking.com/blog/posts/2025/why_I_wrote_theBEAMBook/
-  article_fetch_status: success
-  article_fetched_at: '2026-11-11T13:43:59Z'
-  raw_comment_count: 43
+  fetched_at: '2026-11-26T01:40:17Z'
+  raw_comment_count: 48
 comments:
 - id: '50449210'
   parent_id: '50427107'
@@ -385,6 +382,87 @@ comments:
     userspace.
   score: 0
   posted_at: '2026-11-11T21:40:49Z'
+- id: '50460152'
+  parent_id: '50451535'
+  author: paradox460
+  text: Seriously<p>Even pre ai you could toss together a decent cache in about a
+    minute using ets or similar, and faster with a solution like cachex (which was
+    basically what you&#x27;d build yourself but packaged into a neat little bundle)
+  score: 0
+  posted_at: '2026-11-11T23:02:33Z'
+- id: '50461051'
+  parent_id: '50459089'
+  author: toast0
+  text: |-
+    I don&#x27;t have a <i>great</i> understanding of the beam opcodes, but something like this:<p><pre><code>    derp() -&gt;
+            A1 = get(a1),
+            A2 = get(a2),
+            A3 = get(a3),
+            A4 = get(a4),
+            A1 + A2 + A3 + A4.
+    </code></pre>
+    But go out to I dunno a million (you might want to raise your atom limit) and I think it&#x27;ll block a scheduler for a while. Beam Assembly for that is:<p><pre><code>    {function, derp, 0, 2}.
+          {label,1}.
+            {line,[{location,&quot;derp.erl&quot;,6}]}.
+            {func_info,{atom,derp},{atom,derp},0}.
+          {label,2}.
+            {bif,get,{f,0},[{atom,a1}],{x,0}}.
+            {bif,get,{f,0},[{atom,a2}],{x,1}}.
+            {bif,get,{f,0},[{atom,a3}],{x,2}}.
+            {bif,get,{f,0},[{atom,a4}],{x,3}}.
+            {line,[{location,&quot;derp.erl&quot;,11}]}.
+            {gc_bif,&#x27;+&#x27;,{f,0},4,[{x,0},{x,1}],{x,0}}.
+            {gc_bif,&#x27;+&#x27;,{f,0},4,[{tr,{x,0},{t_number,any}},{x,2}],{x,0}}.
+            {gc_bif,&#x27;+&#x27;,{f,0},4,[{tr,{x,0},{t_number,any}},{x,3}],{x,0}}.
+            return.
+    </code></pre>
+    I&#x27;m not 100%, but i don&#x27;t think think get(...) is charged any reductions, so it won&#x27;t yield. gc_bif potentially does garbage collection which does get charged reductions and BEAM can yield during gc.<p>I&#x27;m just adding at the end to do <i>something</i> with the values, so the compiler doesn&#x27;t ignore them. If you wanted to write BEAM assembly, you can probably make a terrible function there without nearly as much work. smallnum math doesn&#x27;t usually charge reductions from what I was seeing, so you could probably do something <i>almost</i> useful with that.
+  score: 0
+  posted_at: '2026-11-12T00:18:47Z'
+- id: '50465527'
+  parent_id: '50455628'
+  author: whizzter
+  text: Exactly, didn&#x27;t want to go into the details. I think a key point is that
+    back in the green-thread days they were kinda early on trying to do it and &quot;extra&quot;
+    native threads probably felt like makings things worse without benefit since single-core
+    CPU&#x27;s with little memory every extra &quot;real&quot; thread would cost.<p>The
+    C# async system iirc has &quot;blocking workers&quot;, ie extra threads that takes
+    care of blocking syscalls, so you&#x27;re limited by a queue of them &quot;waiting&quot;
+    for their respective &quot;async&quot; workload to finish but the rest of the
+    runtime can chug along concurrently, iirc Project Loom also adopted that, so you
+    have M:N for most code but some extra theads to take care of legacy codepaths
+    (that the Java ecosystem has rewritten a lot of things into pure Java helps since
+    native code calling is probably fairly &quot;obscure&quot; these days).
+  score: 0
+  posted_at: '2026-11-12T10:59:19Z'
+- id: '50465563'
+  parent_id: '50455200'
+  author: whizzter
+  text: Right, my point is that C10k solutions basically revolve around M:N threading
+    models where M being OS threads and N userspace threads, so from the view of the
+    OS&#x2F;Userspace boundary it&#x27;s cooperative since the OS does nothing for
+    the N userspace threads, only the M.<p>That the Erlang runtime hides it from the
+    developer, doesn&#x27;t mean that it isn&#x27;t cooperative. So yes, for the Erlang
+    programmer it&#x27;s preemtive but from an OS&#x2F;C standpoint it&#x27;s cooperative
+    (Like toast0 mentions in his sibling comment about NIF&#x27;s exposing the cooperative
+    nature of the runtime to programmers is telling about why it&#x27;s considered
+    &quot;complicated&quot; and not recommended practice).
+  score: 0
+  posted_at: '2026-11-12T11:04:32Z'
+- id: '50465577'
+  parent_id: '50454828'
+  author: whizzter
+  text: Yes I do remember, what I didn&#x27;t remember was what versions they were
+    used in and when it was abandoned.
+  score: 0
+  posted_at: '2026-11-12T11:06:07Z'
+- id: '50465773'
+  parent_id: '50460152'
+  author: thibaut_barrere
+  text: I wrote it pre-AI, using cachex!<p>It is open-source:<p><a href="https:&#x2F;&#x2F;github.com&#x2F;etalab&#x2F;transport-site&#x2F;tree&#x2F;master&#x2F;apps&#x2F;transport&#x2F;lib&#x2F;unlock"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;etalab&#x2F;transport-site&#x2F;tree&#x2F;master&#x2F;apps&#x2F;tr...</a>
+  score: 0
+  posted_at: '2026-11-12T11:39:01Z'
 article:
   url: https://happihacking.com/blog/posts/2025/why_I_wrote_theBEAMBook/
   title: Why I Wrote the BEAM Book
@@ -482,4 +560,4 @@ article:
     [Back to blog index.](/blog) Tip: open Reader settings (the sliders icon) to adjust font size and reading direction.
   error:
   fetched_at: '2026-11-11T13:43:59Z'
-archived_at: '2026-11-11T21:46:50Z'
+archived_at: '2026-11-26T01:40:28Z'

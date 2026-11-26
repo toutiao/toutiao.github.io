@@ -1,0 +1,417 @@
+---
+post:
+  id: '50647161'
+  title: 'Nfs2root: A 12-year-old pre-auth remote root in the Linux kernel''s NFS
+    server'
+  url: https://opensec.in/blog/nfs2root-cve-2026-99362
+  hn_url: https://news.ycombinator.com/item?id=50647161
+  score: 82
+  author: ''
+  posted_at: '2026-11-25T20:35:50Z'
+  fetched_at: '2026-11-26T01:40:09Z'
+  article_url: https://opensec.in/blog/nfs2root-cve-2026-99362
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T01:40:09Z'
+  raw_comment_count: 26
+comments:
+- id: '50647393'
+  parent_id: '50647161'
+  author: rvz
+  text: |-
+    Just wow. How was this achieved? Let&#x27;s see:<p>&gt; Pre-auth heap overflow in the Linux NFS server (nfsd)<p>&gt; Set it to the minimum and every slot&#x27;s buffer is zero bytes. nfsd4_sequence() then shrinks the reply buffer to that limit before it accepts the slot. Pad the request&#x27;s tag so the buffer fills right after the SEQUENCE opcode, and the encoder quits without flagging an error. The server believes SEQUENCE succeeded and caches the whole reply, headers and tag included, into a buffer with room for nothing.<p>Then it causes an out-of-bounds crash:<p><pre><code>   &gt;&gt; BUG: KASAN: slab-out-of-bounds in read_bytes_from_xdr_buf+0x1bc&#x2F;0x390
+       &gt;&gt; Write of size 80 at addr ffff888003a549cd
+       &gt;&gt; __asan_memcpy+0x38&#x2F;0x60
+       &gt;&gt; read_bytes_from_xdr_buf+0x1bc&#x2F;0x390
+       &gt;&gt; nfsd4_sequence_done+0x5b0&#x2F;0x810
+       &gt;&gt; nfs4svc_encode_compoundres+0x1bf&#x2F;0x240
+    </code></pre>
+    So yet another memory corruption issue that gives the attacker control of the execution and its possible to get root on the system and this is in the kernel itself so &quot;hardening&quot; does not remove the bug.<p>What a disaster.
+  score: 0
+  posted_at: '2026-11-25T20:55:06Z'
+- id: '50648259'
+  parent_id: '50647161'
+  author: Gigachad
+  text: Thankfully no one assumed NFS secure for the public internet anyway so this
+    should be minimally impactful. Also looks like it was patched upstream months
+    ago.<p>Still, just another example of why C code can’t be exposed to the internet.
+  score: 0
+  posted_at: '2026-11-25T22:06:28Z'
+- id: '50648351'
+  parent_id: '50648259'
+  author: svl7
+  text: Well... I&#x27;ve seen enough examples in the past years of how trivial it
+    is to get into bigger enterprise networks.Often solely with social engineering.
+    NFS is in use at various places internally in my experience. So this can end up
+    worse than anticipated if taken too lightly imo. Defense in depth...
+  score: 0
+  posted_at: '2026-11-25T22:14:04Z'
+- id: '50648352'
+  parent_id: '50647161'
+  author: gsich
+  text: no poc posted
+  score: 0
+  posted_at: '2026-11-25T22:14:05Z'
+- id: '50648356'
+  parent_id: '50648259'
+  author: asveikau
+  text: NFS in particular is an old protocol and authentication was bolted on later
+    in its long history.  It&#x27;s pretty common to configure it in a way that you
+    trust the client when they say they&#x27;re root.  This adds to the perception
+    that nobody would assume it&#x27;s safe to expose.
+  score: 0
+  posted_at: '2026-11-25T22:14:35Z'
+- id: '50648401'
+  parent_id: '50647393'
+  author: Bender
+  text: Not sure why your comment was [dead].  Vouched.
+  score: 0
+  posted_at: '2026-11-25T22:17:29Z'
+- id: '50648450'
+  parent_id: '50648259'
+  author: davrosthedalek
+  text: Isn&#x27;t this CVE-2026-99362? Because pretty much all of ubuntu installs
+    are affected.
+  score: 0
+  posted_at: '2026-11-25T22:21:49Z'
+- id: '50648471'
+  parent_id: '50648352'
+  author: snizovtsev
+  text: Claude is able to generate it in a few minutes if you have CVP. I do linux
+    kernel patching as my day job, poc for this CVE is 106 lines of python code in
+    my collection (1000+ ai-generated pocs since last month).
+  score: 0
+  posted_at: '2026-11-25T22:23:26Z'
+- id: '50648501'
+  parent_id: '50648450'
+  author: VorpalWay
+  text: I assume you mean &quot;all Ubuntu installs of NFS&quot; here. Your statement
+    could be misread by those who don&#x27;t know as &quot;all Ubuntu installs&quot;,
+    but NFS is not installed or turned on by default. I would expect very few installs
+    do overall (but of course all of them will in specific environments).
+  score: 0
+  posted_at: '2026-11-25T22:25:38Z'
+- id: '50648557'
+  parent_id: '50648450'
+  author: asveikau
+  text: Most ubuntu installs aren&#x27;t running NFS servers.<p>If someone sets up
+    an NFS server, they know what kind of risk they open themselves up to.
+  score: 0
+  posted_at: '2026-11-25T22:30:39Z'
+- id: '50648635'
+  parent_id: '50648351'
+  author: Gigachad
+  text: I’m not saying ignore this, but it’s not a run around hair on fire situation
+    like php2shell. Just update your servers as normal.
+  score: 0
+  posted_at: '2026-11-25T22:37:43Z'
+- id: '50648852'
+  parent_id: '50648471'
+  author: akersten
+  text: that&#x27;s great for the 8 people that have access to that
+  score: 0
+  posted_at: '2026-11-25T22:59:15Z'
+- id: '50648864'
+  parent_id: '50648259'
+  author: anthk
+  text: More than C, low level code for trivial userland daemons&#x2F;functions. I
+    remember WAV decoding functions on Win32 back in the day... in the kernel.
+  score: 0
+  posted_at: '2026-11-25T23:00:02Z'
+- id: '50648984'
+  parent_id: '50648401'
+  author: asdf88990
+  text: It is AI written.
+  score: 0
+  posted_at: '2026-11-25T23:11:24Z'
+- id: '50648990'
+  parent_id: '50648356'
+  author: chasil
+  text: NFSv3 assumes that uid&#x2F;gid synchronization is in place, and maps root
+    activity on the shared volume to some kind of nobody (unless the volume is exported
+    nosquash). The username is irrelevant; the uid controls access (AFAIK).<p>NFSv4
+    needs idmapd, which is a different beast altogether.
+  score: 0
+  posted_at: '2026-11-25T23:11:41Z'
+- id: '50649025'
+  parent_id: '50648557'
+  author: loeg
+  text: "&gt; If someone sets up an NFS server, they know what kind of risk they open
+    themselves up to.<p>I don&#x27;t think preauth RCE is an expected risk of setting
+    up NFS, actually."
+  score: 0
+  posted_at: '2026-11-25T23:14:36Z'
+- id: '50649071'
+  parent_id: '50648557'
+  author: chasil
+  text: The last time that I tried, you had to install the server package to get the
+    client to work on Ubuntu.<p>Then, you need to add volumes to &#x2F;etc&#x2F;exports
+    with allowed hostnames (with lots of parameters for access control).<p>I&#x27;m
+    assuming that anything disallowed by &#x2F;etc&#x2F;exports is not allowed, this
+    exploit included.
+  score: 0
+  posted_at: '2026-11-25T23:18:19Z'
+- id: '50649119'
+  parent_id: '50647161'
+  author: snvzz
+  text: Each such vuln a reminder that seL4[0] exists, and that Linux&#x27;s TCB isn&#x27;t
+    getting smaller anytime soon.<p>0. <a href="http:&#x2F;&#x2F;sel4.systems&#x2F;"
+    rel="nofollow">http:&#x2F;&#x2F;sel4.systems&#x2F;</a>
+  score: 0
+  posted_at: '2026-11-25T23:22:03Z'
+- id: '50649376'
+  parent_id: '50648852'
+  author: taspeotis
+  text: You can just ask for CVP, same with OpenAI TAC<p><a href="https:&#x2F;&#x2F;portal.anthropic.com&#x2F;programs&#x2F;cvp"
+    rel="nofollow">https:&#x2F;&#x2F;portal.anthropic.com&#x2F;programs&#x2F;cvp</a><p><a
+    href="https:&#x2F;&#x2F;chatgpt.com&#x2F;cyber" rel="nofollow">https:&#x2F;&#x2F;chatgpt.com&#x2F;cyber</a>
+  score: 0
+  posted_at: '2026-11-25T23:48:54Z'
+- id: '50649507'
+  parent_id: '50649025'
+  author: asveikau
+  text: It&#x27;s really not the most shocking thing in the world.  I&#x27;ve never
+    heard of anyone exposing the NFS port to the public internet intentionally, because
+    people who run NFS servers know this is not expected to be secure.
+  score: 0
+  posted_at: '2026-11-26T00:02:39Z'
+- id: '50649541'
+  parent_id: '50647161'
+  author: r3tr0
+  text: yeet can actually patch this via its XDP L7 programmable firewall<p><a href="https:&#x2F;&#x2F;github.com&#x2F;yeet-src&#x2F;pfw"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;yeet-src&#x2F;pfw</a><p>Here
+    is the specific rule. I just added and confirmed it. (can see the CI).<p><a href="https:&#x2F;&#x2F;github.com&#x2F;yeet-src&#x2F;pfw-rules&#x2F;blob&#x2F;53f78fc5823354f4ab0f7ec06800ce26b9f42282&#x2F;apps&#x2F;nfsd-session-cache.pfc"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;yeet-src&#x2F;pfw-rules&#x2F;blob&#x2F;53f78fc5823354f4a...</a><p>just
+    pull the repo w `pfw pull` then `pfw ls` and apply and you&#x27;re all set.
+  score: 0
+  posted_at: '2026-11-26T00:06:48Z'
+- id: '50649753'
+  parent_id: '50648852'
+  author: dmd
+  text: Wow, I&#x27;m one in 8? Cool!
+  score: 0
+  posted_at: '2026-11-26T00:31:43Z'
+- id: '50649867'
+  parent_id: '50648852'
+  author: snizovtsev
+  text: No, first level of CVP (defense) is available to almost everyone who pass
+    KYC identity check and has any track record of security findings.
+  score: 0
+  posted_at: '2026-11-26T00:43:48Z'
+- id: '50650035'
+  parent_id: '50649071'
+  author: davrosthedalek
+  text: I&#x27;m not so sure, it says pre-auth. Does anyone know?
+  score: 0
+  posted_at: '2026-11-26T01:06:17Z'
+- id: '50650054'
+  parent_id: '50649507'
+  author: davrosthedalek
+  text: "Not public internet, no, but open to internal networks. \nFor example: University
+    networks. Many installation with NFS shared home. Can people now get root on the
+    server? I&#x27;m not sure you need mounting rights on the server (i.e. a &#x2F;etc&#x2F;exports
+    entry) to exploit this."
+  score: 0
+  posted_at: '2026-11-26T01:08:18Z'
+- id: '50650061'
+  parent_id: '50648501'
+  author: davrosthedalek
+  text: Yes, should have been more precise.
+  score: 0
+  posted_at: '2026-11-26T01:09:14Z'
+article:
+  url: https://opensec.in/blog/nfs2root-cve-2026-99362
+  title: 'NFS2ROOT (CVE-2026-99362): pre-auth root in Linux nfsd | OpenSec'
+  fetch_status: success
+  content: |-
+    Port 2049 sits open on file servers, NAS appliances, build farms and Kubernetes storage nodes. Since 2014, the Linux kernel listening on it has let anyone who can reach it write into kernel memory before logging in. We pointed OpenSec's Antara at it. It came back with a root shell.
+
+    Pre-auth heap overflow in the Linux NFS server (nfsd)
+
+    Fixed in Linux 6.12.117, 6.18.61, 7.3.2 and 7.4-rc1. Update the kernel and reboot.
+
+    What you need to know
+
+    - What: a pre-auth heap overflow in the kernel's NFS server, nfsd.
+
+    - Who: any Linux host serving NFSv4.1 or 4.2 (the default) on a reachable tcp/2049.
+
+    - Impact: one TCP connection writes 61 bytes past a kernel heap object; chained, that gives a root shell.
+
+    - Now: patch and reboot. Until then, firewall tcp/2049.
+
+    Key facts
+
+    - Severity 9.8 Critical (AV:N/AC:L/PR:N/UI:N)
+
+    - Attack Remote, unauthenticated, tcp/2049
+
+    - Impact Kernel heap overflow → remote root shell
+
+    - Bug age 12 years, since Linux 3.16 (2014)
+
+    - Affected In-kernel nfsd with NFSv4.1 or 4.2
+
+    - Fixed in 6.12.117 · 6.18.61 · 7.3.2 · 7.4-rc1
+
+    ## One connection, no login#
+
+    The NFS server runs inside the kernel and parses network input before it knows who you are. CVE-2026-99362 lives in that gap: a client can shrink its reply cache to zero bytes, then make the server copy a full reply into it. The copy lands on the kernel heap, and the client picks most of the bytes.
+
+    How NFS2ROOT reaches a Linux NFS server: one unauthenticated TCP connection to port 2049
+
+    ## Twelve years in a few lines of C#
+
+    Timeline
+
+    - Mar 2014Commit 47ee52986472 narrows the reply buffer while handling SEQUENCE. It ships in Linux 3.16.
+
+    Commit 47ee52986472 narrows the reply buffer while handling SEQUENCE. It ships in Linux 3.16.
+
+    - 2014 to 202612 yearsEvery kernel since 3.16 carries it: LTS, distribution and appliance kernels.
+
+    12 yearsEvery kernel since 3.16 carries it: LTS, distribution and appliance kernels.
+
+    - 17 Aug 2026Jérémy Jean of ANSSI sends a fix upstream with a KASAN report.
+
+    Jérémy Jean of ANSSI sends a fix upstream with a KASAN report.
+
+    - 21 Sep 2026OpenSec's Antara flags the bug, scores it 9.8 and turns it into a root shell on its own.
+
+    OpenSec's Antara flags the bug, scores it 9.8 and turns it into a root shell on its own.
+
+    - 20 Nov 2026CVE-2026-99362 is published with fixes.
+
+    CVE-2026-99362 is published with fixes.
+
+    ## Watch it run#
+
+    A real run, end to end. Left: the victim's console. Right: our client on another machine, talking to the victim only over tcp/2049.
+
+    NFS2ROOT recording: an unauthenticated client gets a root shell on a Linux NFS server
+
+    The overflow. The kernel warns in nfsd4_check_resp_size, but the out-of-bounds copy has already happened.
+
+    Root. The attacker hangs up, and the victim's kernel runs our command: root, then uid=0(root), then power-off.
+
+    ## Root cause#
+
+    Each NFSv4.1 session slot caches its last reply, so a retried request is answered exactly once. The client decides how big that cache is.
+
+    Set it to the minimum and every slot's buffer is zero bytes. nfsd4_sequence() then shrinks the reply buffer to that limit before it accepts the slot. Pad the request's tag so the buffer fills right after the SEQUENCE opcode, and the encoder quits without flagging an error. The server believes SEQUENCE succeeded and caches the whole reply, headers and tag included, into a buffer with room for nothing.
+
+    KASAN report from the upstream fixtextCopy
+
+    BUG: KASAN: slab-out-of-bounds in read_bytes_from_xdr_buf+0x1bc/0x390 Write of size 80 at addr ffff888003a549cd __asan_memcpy+0x38/0x60 read_bytes_from_xdr_buf+0x1bc/0x390 nfsd4_sequence_done+0x5b0/0x810 nfs4svc_encode_compoundres+0x1bf/0x240
+
+    That is 80 bytes copied, 61 of them past the end of the heap object, 40 of them chosen by the client.
+
+    Inside NFS2ROOT: the reply is copied into a slot buffer with no room for it.
+
+    The fix checks that the reply fits before taking the slot, and makes the encoder report what it can't fit.
+
+    ## From overflow to root#
+
+    The exploit stays private. Each step is an ordinary NFS request:
+
+    - OverflowThe write corrupts the neighbouring slot's bookkeeping.
+
+    The write corrupts the neighbouring slot's bookkeeping.
+
+    - LeakA replay request returns 3.8 KB of kernel heap, and with it the KASLR slide.
+
+    A replay request returns 3.8 KB of kernel heap, and with it the KASLR slide.
+
+    - FreeA forged pointer makes the kernel free an object we choose.
+
+    A forged pointer makes the kernel free an object we choose.
+
+    - ReclaimWe refill that memory with a fake callback built from NFS client names.
+
+    We refill that memory with a fake callback built from NFS client names.
+
+    - TriggerWe hang up. nfsd calls the fake callback, and the kernel runs /bin/sh as root.
+
+    We hang up. nfsd calls the fake callback, and the kernel runs /bin/sh as root.
+
+    In the recording, that command is whoami; id; poweroff -f: the victim prints root, then uid=0(root), and switches itself off.
+
+    ## Found and proven by a machine#
+
+    Antara, OpenSec's white-box harness, flagged the nfsd reply-cache path, scored it 9.8, and built the leak, the arbitrary free and the root shell shown in the video by itself: end to end, with no human in the loop.
+
+    > Kernel hardening does not remove the overflow. Patch every host.
+
+    Kernel hardening does not remove the overflow. Patch every host.
+
+    ## Am I exposed?#
+
+    Tick what's true for your host. All four means exposed, today.
+
+    Am I exposed?
+
+    - KernelOlder than 6.12.117, 6.18.61, 7.3.2 or 7.4-rc1, with no distribution backportuname -r
+
+    - nfsd runningThe in-kernel NFS server is loadedlsmod | grep -w nfsd
+
+    - NFSv4.1 or 4.2 onThe list shows +4.1 or +4.2cat /proc/fs/nfsd/versions
+
+    - 2049 reachableListening on an address other than loopbackss -ltn 'sport = :2049'
+
+    ## What to do#
+
+    ### Patch and reboot#
+
+    On a distribution kernel, install the update that lists CVE-2026-99362.
+
+    ### Can't patch today? Close 2049#
+
+    Only the storage network may reach nfsdBashCopy
+
+    nft add rule inet filter input tcp dport 2049 ip saddr != 10.20.0.0/16 drop
+
+    ### Or turn off NFSv4.1 and 4.2#
+
+    /etc/nfs.confiniCopy
+
+    [nfsd] vers4.1=n vers4.2=n
+
+    Then restart nfs-server. This turns off pNFS and some 4.2 features.
+
+    ## Hunting for it#
+
+    The attack is valid NFS, so there is no network signature. Look for:
+
+    - Kernel warnings from nfsd4_check_resp_size, on every attempt, successful or not.
+
+    - Oopses with nfsd4_*, svc_* or call_usermodehelper* frames.
+
+    - Shells spawned by kernel workers on a file server.
+
+    - Bursts of short NFSv4.1 sessions from one source.
+
+    ## Disclosure#
+
+    We reported the bug to the NFSD maintainers and security@kernel.org on 22 September 2026 with the full remote-root exploit, and sent a patch the same day. CVE-2026-99362 was published with fixes on 20 November.
+
+    ## Credits#
+
+    - OpenSec Intelligence: found the bug with Antara, which escalated it to pre-auth root on its own, and reported it with the full exploit and a patch.
+
+    - Jérémy Jean (ANSSI): found it independently and wrote the upstream fix, 5d5a72e965c8 and 241848cc774e.
+
+    - Chuck Lever and Jeff Layton: the NFSD maintainers.
+
+    ## References#
+
+    - Introduced by 47ee52986472 (Linux 3.16)
+
+    - Patch thread
+
+    - OpenSec's patch submission
+
+    ## A clearer view of security.
+
+    Research, engineering notes, and updates from OpenSec.
+  error:
+  fetched_at: '2026-11-26T01:40:09Z'
+archived_at: '2026-11-26T01:40:12Z'

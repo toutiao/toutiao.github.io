@@ -1,0 +1,127 @@
+---
+post:
+  id: lo-7x2mrq
+  source: lobsters
+  title: Getting old Java phones online again
+  url: https://antcating.github.io/2026/11/23/getting-old-java-phones-online-again.html
+  hn_url: https://lobste.rs/s/7x2mrq
+  score: 12
+  author: akavel
+  posted_at: '2026-11-25T13:28:55Z'
+  fetched_at: '2026-11-26T01:40:12Z'
+  article_url: https://antcating.github.io/2026/11/23/getting-old-java-phones-online-again.html
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T01:40:16Z'
+  raw_comment_count: 1
+  tags:
+  - retrocomputing
+comments:
+- id: lo-kch1ay
+  parent_id: '0'
+  author: calvin
+  text: BT PAN is pretty annoying. Palm devices also used it IIRC, and the Treos didn't
+    have WiFi, so you were forced to use 2G or Bluetooth networking.
+  score: 2
+  posted_at: '2026-11-25T15:46:43Z'
+article:
+  url: https://antcating.github.io/2026/11/23/getting-old-java-phones-online-again.html
+  title: Getting old Java phones online again | Antcating’s Chaos Lab
+  fetch_status: success
+  content: "![Sony Ericsson S500i showing FrogFind](/assets/images/s500i/hero.jpg)\n_Sony
+    Ericsson S500i accessing FrogFind._\n\n## Background\n\nRecently, I bought a used
+    Sony Ericsson S500i – one of the most beautiful phones IMO. I vividly remember
+    getting online on this phone while away from home and downloading games from the
+    Sony Ericsson shop (and the exorbitant mobile data charges that came with it!).\n\nBut
+    when I tried using it again in 2026, I couldn’t connect to the mobile network.
+    Even though I had a SIM card compatible with the phone, 2G had been shut down
+    for some time, leaving no way to access the Internet over a mobile connection.\n\nUSB
+    wasn’t an option either. On many phones of this era, USB tethering was designed
+    to share the phone’s Internet connection with a computer, not the other way around.
+    But there is a way…\n\n## Getting online via Bluetooth\n\nBluetooth supports various
+    profiles, which define how devices use Bluetooth for specific purposes. One of
+    these is Personal Area Networking (PAN), which allows devices to communicate over
+    Bluetooth as if they were connected to an Ethernet network.\n\nPAN carries Ethernet
+    frames over Bluetooth, including IP traffic. This allows a device acting as a
+    PAN User (PANU) to access the Internet through another device acting as a Network
+    Access Point (NAP). The NAP forwards the traffic to the Internet, much like a
+    Wi-Fi hotspot, but over Bluetooth instead.\n\nAlthough Bluetooth PAN is much less
+    common nowadays, many devices still support the profile. One common use case was
+    sharing a phone’s mobile Internet connection with a laptop. But why not reverse
+    the direction? We can use a network-connected computer as a NAP and access the
+    Internet from an old Java phone, provided the phone supports PANU.\n\n### Setting
+    up Bluetooth NAP on Raspberry Pi 5\n\nFrom what I’ve seen on forums, many older
+    Sony Ericsson, Nokia, and other phones seem to **support PANU even if it is not
+    mentioned in the documentation**. I couldn’t find any confirmation for the S500i,
+    so I decided to give it a try by setting up a Bluetooth NAP and seeing whether
+    the phone could connect.\n\nI used Linux for this, but I’m sure you Windows and
+    Mac wizards can figure out how to make it work on your systems too.\n\n> Note:
+    After finishing this blog, I found out that there is a way to do the same thing
+    on Windows, see: [Getting old Java phones online again (Windows Edition)](/2026/11/23/getting-old-java-phones-online-again-windows.html).\n\nI
+    found an old guide showing how to get a Sony Ericsson K800i online over Bluetooth
+    using Debian Etch. While the basic idea still works, the guide relies on tools
+    and configurations that are long obsolete. I worked out a different approach using
+    modern BlueZ and NetworkManager, without the old scripts and manual network configuration.\n\nI
+    bought a Raspberry Pi 5 a few years ago to run small services at home, and it
+    turned out to be a great fit for this project. Raspberry Pi boards have had built-in
+    Bluetooth since the Raspberry Pi 3 Model B, so there’s no need for any additional
+    Bluetooth hardware.\n\nModern devices mostly don’t advertise the Bluetooth NAP
+    service by default, so the following steps show how to enable it explicitly.\n\n>
+    Note: This guide is written for Raspberry Pi OS based on Debian 13 (Trixie), but
+    I also tested the setup on my ThinkPad E14 running Arch Linux, and it worked there
+    too. It should work on any other Linux distribution with BlueZ and NetworkManager,
+    although package installation and service management may differ.\n\n1. Install
+    Bluez and NetworkManager (usually, installed by default). \n\n    sudo apt update\n
+    \    sudo apt install -y bluez network-manager\n\n2. Enable Bluetooth. \n\n    sudo
+    systemctl enable --now bluetooth\n\n3. Create a Bluetooth NAP profile and share
+    the Internet connection. \n\n    sudo nmcli connection add \\\n         type bluetooth
+    \\\n         con-name \"Bluetooth-NAP\" \\\n         ifname btnap0 \\\n         bluetooth.type
+    nap \\\n         ipv4.method shared \\\n         ipv6.method disabled\n\nThis
+    configuration enables IPv4 sharing through NetworkManager. The Raspberry Pi acts
+    as a gateway for devices connected over Bluetooth, assigning IP addresses and
+    forwarding their traffic to the Internet. It works with either an Ethernet or
+    Wi-Fi connection.\n\n4. Activate the created profile. \n\n    sudo nmcli connection
+    up \"Bluetooth-NAP\"\n\n5. (Optionally) Enable automatic activation on boot. \n\n
+    \   sudo nmcli connection modify \"Bluetooth-NAP\" connection.autoconnect yes\n\n6.
+    Verify that the NAP service is available.\n\n### Connecting the S500i\n\n1. Enable
+    Bluetooth on the phone and make it discoverable.\n\n2. Pair the Raspberry Pi with
+    the phone using bluetoothctl.\n\n### Accessing the Internet from a Java phone\n\nThis
+    part is phone-specific because it requires changing the phone’s Internet settings.
+    The menu names and available options may differ between models.\n\n1. Check that
+    the phone can discover the NAP service.\n\n2. Configure the phone’s Internet connection.\n\n3.
+    Test the connection.\n\n[![S500i displaying the Raspberry Pi's Network access
+    Bluetooth service](/assets/images/s500i/detail-nap-services.jpg)](/assets/images/s500i/nap-services.jpg)[![S500i
+    data accounts menu with a Bluetooth account for Raspberry Pi](/assets/images/s500i/detail-data-account.jpg)](/assets/images/s500i/data-account.jpg)\n_The
+    Raspberry Pi's Network access service and the corresponding Bluetooth data account._\n\n_Hooray!
+    We are on the net!_\n\n### Browsing the web on the Java phone\n\nYou can now go
+    and browse the Web. Well, at least a very small part of it.\n\nMost of the default
+    links in the Sony Ericsson browser no longer work, but, for example, good old
+    [frogfind.com](https://frogfind.com) works just fine.\n\nIf you want a more modern,
+    feature-rich alternative to the default browser, there is another option. By some
+    miracle, Opera still provides [download links](https://www.opera.com/download/mobile-versions)
+    ([archive](https://web.archive.org/web/20261116100558/https://www.opera.com/download/mobile-versions))
+    for Opera Mini 4.5 for Java phones on its official website, which is just incredible.
+    Even better, many of its default links still work and serve today’s news!\n\nUnlike
+    the Sony Ericsson’s built-in browser, Opera Mini 4.5 can also access modern HTTPS
+    websites through Opera’s proxy servers, which handle encryption and process webpages
+    before sending them to the phone. This makes a surprisingly large portion of the
+    modern web accessible, although many websites remain out of reach due to modern
+    web standards, the phone’s limited hardware, and, well, the web being the web.\n\n[![Sony
+    Ericsson S500i displaying xkcd #386 in Opera Mini](/assets/images/s500i/detail-xkcd-duty-calls.jpg)](/assets/images/s500i/xkcd-duty-calls.jpg)[![S500i
+    showing the HTTPS-only HTTP Minimal website](/assets/images/s500i/detail-https-test.jpg)](/assets/images/s500i/https-test.jpg)\n_Reading
+    xkcd #386, “Duty Calls” and accessing an HTTPS-only website using Opera Mini 4.5._\n\nEven
+    with Opera Mini (while it still works), browsing the modern web on a phone this
+    old is still pretty hit-or-miss. Fortunately, there are a couple of projects that
+    make life easier for old browsers:\n\n- [FrogFind](https://frogfind.com/about)
+    – simplifies modern webpages into basic HTML that vintage computers can handle.
+    It turns out to be pretty handy for an underpowered phone from almost 20 years
+    ago, too.\n\n- [ProtoWeb proxy](https://protoweb.org/about/) – takes a different
+    approach, bringing back websites from the mid-to-late 1990s through a proxy. Those
+    pages aren’t always convenient to navigate on the S500i’s tiny screen, but then
+    again, browsing the web on phones back then wasn’t exactly convenient either.
+    So it’s a pretty authentic experience!\n\n### And then there’s WAP!\n\nThere’s
+    another little corner of the web that’s still alive: a small community of enthusiasts
+    keeping old WAP websites running, serving WML pages designed for early mobile
+    browsers. These sites can still be browsed on compatible phones, without rely"
+  error:
+  fetched_at: '2026-11-26T01:40:16Z'
+archived_at: '2026-11-26T01:40:16Z'
