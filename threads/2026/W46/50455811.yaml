@@ -1,0 +1,561 @@
+---
+post:
+  id: '50455811'
+  title: 'Launch HN: Pomerado (YC F26) – Turn any website into an MCP for agents'
+  url:
+  hn_url: https://news.ycombinator.com/item?id=50455811
+  score: 65
+  author: alanjm23
+  posted_at: '2026-11-11T17:11:56Z'
+  fetched_at: '2026-11-26T11:59:19Z'
+  raw_comment_count: 55
+comments:
+- id: '50456039'
+  parent_id: '50455811'
+  author: hyperionultra
+  text: A wall of text. Just post video with a link to that wall of text for someone
+    who is on to read gened strings.
+  score: 0
+  posted_at: '2026-11-11T17:33:12Z'
+- id: '50456162'
+  parent_id: '50455811'
+  author: KallowayThayer
+  text: Curious how this handles session isolation and rate-limiting when converting
+    dynamic DOM heavy pages into MCPs.<p>If an agent hits a heavy SPA with infinite
+    scroll or aggressive bot protection, does Pomerado handle edge-caching or proxy-level
+    deduplication, or is it parsing raw DOM on every tool call?
+  score: 0
+  posted_at: '2026-11-11T17:43:48Z'
+- id: '50456357'
+  parent_id: '50456162'
+  author: alanjm23
+  text: Hi! Unlike traditional scrapers we don&#x27;t parse the entire DOM on every
+    tool call. Because we build custom integrations for every site, we can be more
+    targeted in our approach, like only checking specific fields.<p>We don&#x27;t
+    edge-cache or deduplicate calls, to give users live data.<p>For session isolation,
+    we give each worker its own browser, cookies, and IP to isolate user sessions
+    and prevent rate limiting.
+  score: 0
+  posted_at: '2026-11-11T17:57:51Z'
+- id: '50456425'
+  parent_id: '50455811'
+  author: shipsafestack
+  text: 'How do you handle credentials and sessions for sites behind a login, like
+    the bank and insurance portals you mention? Is the user&#x27;s password or session
+    cookie stored on your side, or does the generated MCP run against a session the
+    user keeps locally?<p>Related: page content is untrusted input that now flows
+    straight into an agent&#x27;s context. Do the deterministic tools return only
+    structured fields you&#x27;ve extracted, or can arbitrary page text (reviews,
+    messages, product descriptions) pass through? That seems like the main prompt-injection
+    surface for anything that can also perform actions like checkout.'
+  score: 0
+  posted_at: '2026-11-11T18:03:49Z'
+- id: '50456440'
+  parent_id: '50455811'
+  author: rahimnathwani
+  text: What are the main advantages compared with <a href="https:&#x2F;&#x2F;github.com&#x2F;mvanhorn&#x2F;cli-printing-press"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;mvanhorn&#x2F;cli-printing-press</a><p>The
+    obvious differences I can see are:<p>- generates an MCP server instead of a CLI<p>-
+    at &#x27;minting&#x27; time, uses OpenAI API keys, instead of coding agent subscription<p>-
+    tries to solve for a particular use case, instead of all the site provides
+  score: 0
+  posted_at: '2026-11-11T18:04:43Z'
+- id: '50456454'
+  parent_id: '50455811'
+  author: passive
+  text: Hmm, I&#x27;ve also built a self healing system for agents to get data from
+    various services. Do you have any sort of dashboard showing integration maintenance?
+  score: 0
+  posted_at: '2026-11-11T18:05:53Z'
+- id: '50456613'
+  parent_id: '50456454'
+  author: alanjm23
+  text: Great that you&#x27;re building as well, we think it&#x27;s a really interesting
+    space.<p>We don&#x27;t have a maintenance-specific dashboard. We do maintenance
+    at execution time, so the dashboard paradigm doesn&#x27;t apply as well. Instead
+    of proactively checking for site changes, we check at execution time and repair
+    integrations on-the-fly, when necessary.
+  score: 0
+  posted_at: '2026-11-11T18:20:13Z'
+- id: '50456767'
+  parent_id: '50456425'
+  author: alanjm23
+  text: For our hosted version, the session runs in our hosted browser. For the open
+    source, it runs on a local browser.<p>In the hosted version, users can choose
+    to pass logins at runtime or store them in our vault. Once a user logs in, we
+    keep their session as a Chrome profile and attach it to a sticky IP, so that they
+    stay logged in for longer.<p>Deterministic tools return only the structured fields,
+    and don&#x27;t parse the whole browser DOM. Since tools are deterministic, we
+    also reduce the risk of prompt injections.
+  score: 0
+  posted_at: '2026-11-11T18:30:48Z'
+- id: '50456925'
+  parent_id: '50456440'
+  author: am03
+  text: Printing Press is a great project! At a philosophical level, Pomerado is meant
+    to be more autonomous - it&#x27;s a standalone harness that you can run, and it&#x27;s
+    meant to require as little review as possible after the first request. If there
+    are questions about the site or intent, we have coding agents with application
+    context answer those questions.<p>We find this integrates into automated software
+    development workflows a lot better, and my Openclaw can basically create new MCPs
+    for me with little supervision required.<p>In terms of mechanisms, Pomerado uses
+    a mix of HTTP requests and generated Playwright code. Printing Press has a far
+    greater emphasis on making HTTP requests to the site&#x27;s backend. We&#x27;ve
+    found for some sites this latter approach can create issues around triggering
+    anti-bot and can fail for more complicated forms and writes, so we use Playwright
+    for those instances.<p>Pomerado&#x27;s approach to researching the website is
+    also a bit different - we solely focus on exploring the website itself, while
+    Printing Press has your agent explore the web for documentation, SDKs, etc. There&#x27;s
+    a tradeoff of prompt injection security vs convenience there. Because we try to
+    emphasize autonomous builds we limit the agent to the website for security.<p>A
+    big pain point for us with existing approaches was using them for cloud agents
+    (e.g., my Openclaw on my VPS). Cloud starts running into a lot of issues around
+    hosting, authentication, and anti-bot, which is why we started offering a free
+    hosted version of the open source, where we handle cloud browsers, proxy rotation,
+    credential storage, CAPTCHAs, etc.<p>We&#x27;re planning to roll out support for
+    CLIs down the line! And the PR for non-OpenAI models + codex exec is in the works
+    :)
+  score: 0
+  posted_at: '2026-11-11T18:44:04Z'
+- id: '50457065'
+  parent_id: '50455811'
+  author: trash_cat
+  text: This is useful but im asking myself what would stop OpenAI and Anthropic to
+    implement this natively tomorrow.
+  score: 0
+  posted_at: '2026-11-11T18:55:47Z'
+- id: '50457201'
+  parent_id: '50455811'
+  author: a_c
+  text: What does self healing mean here? And are you guys trying to be a more general
+    version of webMCP? Looks promising, congratulations on the launch!
+  score: 0
+  posted_at: '2026-11-11T19:10:17Z'
+- id: '50457395'
+  parent_id: '50455811'
+  author: bshafiq
+  text: 'Congrats on the launch! The approach of turning unstructured sites into deterministic
+    MCPs is really interesting, especially the self-healing maintenance jobs.<p>Curious
+    about the failure mode: what happens when a browser action fails or times out?
+    The agent will often just blindly retry the exact same MCP tool call with the
+    exact same arguments. Since the tool call itself returns a 200 OK, standard retry
+    counters miss it, and you just burn tokens while the browser keeps timing out
+    in the background.<p>Are you doing any payload&#x2F;state validation at the runtime
+    layer to hard-stop those cyclic failures before the next call, or does the Guardian
+    model handle that?'
+  score: 0
+  posted_at: '2026-11-11T19:28:02Z'
+- id: '50457450'
+  parent_id: '50457201'
+  author: alanjm23
+  text: Thanks! We self-heal integrations on-the-fly. So when an execution fails or
+    identifies a large site change, we have a repair agent that steps in and fixes
+    the deterministic tool.<p>Yep, I think the primary difference between us and WebMCP
+    is that Pomerado doesn&#x27;t require participation from the website owner. So
+    for WebMCP the site has to opt in, while Pomerado works on any site.
+  score: 0
+  posted_at: '2026-11-11T19:33:19Z'
+- id: '50457508'
+  parent_id: '50457065'
+  author: nswizzle31
+  text: Legal risk, right? For instance, Muse seemed so good because it just blatantly
+    disregarded anything the website owners tried to do to stop agents. Clearly they
+    didn’t care. I’m using whatever gets stuck the least.
+  score: 0
+  posted_at: '2026-11-11T19:37:46Z'
+- id: '50457567'
+  parent_id: '50455811'
+  author: dogscatstrees
+  text: "&gt; We’re ex-McKinsey<p>I see this often, qualifying ex-big consulting firm.
+    What does it imply? Could it be more specific?"
+  score: 0
+  posted_at: '2026-11-11T19:42:15Z'
+- id: '50457606'
+  parent_id: '50457395'
+  author: alanjm23
+  text: Thanks! When a browser action fails or times out, the repair agent should
+    step in to fix the integration and prevent retries from looping. There are also
+    a few conditions where we automatically kick off a repair without a failing job,
+    such as a streak of rejected inputs or site errors. This is to try and prevent
+    silent failures.
+  score: 0
+  posted_at: '2026-11-11T19:44:26Z'
+- id: '50457633'
+  parent_id: '50457567'
+  author: alanjm23
+  text: Hi! I was an ex-agent &#x2F; digital strategy consultant at McKinsey. Before
+    that I studied math and did classical ML research
+  score: 0
+  posted_at: '2026-11-11T19:46:18Z'
+- id: '50457720'
+  parent_id: '50455811'
+  author: matt3210
+  text: Too bad MCP server calls dont click ads
+  score: 0
+  posted_at: '2026-11-11T19:50:59Z'
+- id: '50457724'
+  parent_id: '50455811'
+  author: theturtletalks
+  text: I want to slap this on LinkedIn Sales Navigator, but some say it gets your
+    account banned if they detect using using the DOM or accessibility.
+  score: 0
+  posted_at: '2026-11-11T19:51:05Z'
+- id: '50457745'
+  parent_id: '50457065'
+  author: am03
+  text: Of course, there&#x27;s nothing preventing anyone from trying this idea as
+    well, but to us it&#x27;s a fairly different approach to browser use. There&#x27;s
+    some additional infrastructure around managing anti-bot and things like that which
+    bigger companies seem more hesitant to do. The token savings also cut fairly strongly
+    into their existing margins.
+  score: 0
+  posted_at: '2026-11-11T19:52:16Z'
+- id: '50457748'
+  parent_id: '50455811'
+  author: iqbal1980
+  text: Do you support oauth?
+  score: 0
+  posted_at: '2026-11-11T19:52:20Z'
+- id: '50457856'
+  parent_id: '50456613'
+  author: passive
+  text: I would still be interested to see metrics around the process. Overall throughput,
+    what&#x27;s the error rate, how many errors get turned into fixes, are certain
+    types of websites less stable?<p>My self healing project is very experimental,
+    so tracking and displaying these kinds of metrics are important to judging the
+    success of the experiment.
+  score: 0
+  posted_at: '2026-11-11T20:00:01Z'
+- id: '50457937'
+  parent_id: '50457748'
+  author: am03
+  text: We have some provisional support for signing into Google oauth on sites if
+    that&#x27;s what you mean! Still in beta though. Our MCPs themselves also have
+    an oauth option.
+  score: 0
+  posted_at: '2026-11-11T20:05:12Z'
+- id: '50457944'
+  parent_id: '50457724'
+  author: am03
+  text: Yep Linkedin is very touchy. We don&#x27;t have support yet, but something
+    we&#x27;re thinking about! Our top priority is making sure people don&#x27;t get
+    banned.
+  score: 0
+  posted_at: '2026-11-11T20:06:06Z'
+- id: '50458050'
+  parent_id: '50457724'
+  author: alanjm23
+  text: Hi! We don&#x27;t recommend using this on LinkedIn, we&#x27;re confident in
+    our tech but don&#x27;t want anyone to get banned. You could try Ploid?
+  score: 0
+  posted_at: '2026-11-11T20:14:54Z'
+- id: '50458497'
+  parent_id: '50455811'
+  author: thefourthchime
+  text: How do you get around bot detection? For example, if I pointed this at Amazon,
+    I don&#x27;t expect it would work.<p>But does it magically somehow?
+  score: 0
+  posted_at: '2026-11-11T20:51:27Z'
+- id: '50458671'
+  parent_id: '50455811'
+  author: gvieira
+  text: I built a self-healing scraper for arbitrary car dealership sites. Layout
+    changes were the easy part to heal; anti-bot was where it got hard. Curious how
+    your repair agent handles that.
+  score: 0
+  posted_at: '2026-11-11T21:07:41Z'
+- id: '50458747'
+  parent_id: '50457720'
+  author: alanwreath
+  text: The weight of this statement affects me directly.
+  score: 0
+  posted_at: '2026-11-11T21:13:38Z'
+- id: '50458946'
+  parent_id: '50457856'
+  author: am03
+  text: We&#x27;re seeing about a 2.2% error rate on runs, and 82% of those errors
+    get automatically resolved by our repair agents currently. The highest failure
+    rates seem to come on travel and automotive marketplaces, as they tend to have
+    more complex interfaces. By contrast we have near-zero error rates on retail.
+  score: 0
+  posted_at: '2026-11-11T21:28:18Z'
+- id: '50458965'
+  parent_id: '50458671'
+  author: am03
+  text: We have a lot of car dealership users actually! We have a custom stealth stack
+    in our free hosted version that addresses some of the more complex anti-bot elements,
+    including in-house CAPTCHA solvers, custom Chromium adjustments, etc. Generally
+    when we have repairs those have to do with site changes moreso than anti-bot itself.<p>Curious
+    if there are any particular sites you&#x27;ve had trouble with!
+  score: 0
+  posted_at: '2026-11-11T21:29:40Z'
+- id: '50458983'
+  parent_id: '50458497'
+  author: am03
+  text: Amazon does work! It&#x27;s actually one of our most used tools. We have a
+    custom stealth stack consisting of things like in-house CAPTCHA solvers, cloud
+    browsers, custom IPs, and adjustments to playwright that help us with matching
+    normal web traffic.<p>Would recommend you try it out, seeing is believing
+  score: 0
+  posted_at: '2026-11-11T21:30:47Z'
+- id: '50459003'
+  parent_id: '50458983'
+  author: thefourthchime
+  text: wow nice!
+  score: 0
+  posted_at: '2026-11-11T21:32:38Z'
+- id: '50459667'
+  parent_id: '50455811'
+  author: jrecyclebin
+  text: |-
+    Site must be slammed - but I&#x27;m interested bc I&#x27;m working on a similar thing. But my project (one aspect at least) is for expressing HTTP calls as MCP tools.<p>The format looks like this:<p><pre><code>  ---
+      [add-list-item] Add a new item to a list.
+      # Adjust the fields object to match your list&#x27;s actual columns.
+
+      $fields is object
+      POST https:&#x2F;&#x2F;graph.microsoft.com&#x2F;v1.0&#x2F;sites&#x2F;$site_id&#x2F;lists&#x2F;$list_id&#x2F;items
+      Authorization: Bearer $token
+      Content-Type: application&#x2F;json
+      {
+        &quot;fields&quot;: $fields
+      }
+
+      HTTP 201
+    </code></pre>
+    Been having a lot of fun with this, as I can pile up these integrations and make detailed MCPs quickly.
+  score: 0
+  posted_at: '2026-11-11T22:28:22Z'
+- id: '50459763'
+  parent_id: '50458946'
+  author: passive
+  text: Cool!<p>Thanks for sharing, I&#x27;ll definitely keep an eye on the project,
+    and maybe even explore relying on Pomerado to connect to certain data. :)
+  score: 0
+  posted_at: '2026-11-11T22:35:49Z'
+- id: '50460125'
+  parent_id: '50455811'
+  author: hkalbert71
+  text: One distinction worth measuring is transport success versus actual operation
+    success.<p>A tool can return HTTP 200 while making no useful progress. The agent
+    may then repeat the same call with identical arguments.<p>We&#x27;re exploring
+    this from an observability angle with KORA Doctor. It can flag repeated tool calls
+    using privacy-preserving fingerprints, but it doesn&#x27;t block live retries
+    or determine whether caching is safe.<p>Do your generated MCP tools expose operation-level
+    status or state-change evidence so external tools can distinguish a successful
+    repair from another no-op retry?
+  score: 0
+  posted_at: '2026-11-11T23:00:20Z'
+- id: '50461281'
+  parent_id: '50455811'
+  author: jeroenhd
+  text: Do you respect the wishes of sites and services that do not want the extra
+    load? How does one opt their online service out?
+  score: 0
+  posted_at: '2026-11-12T00:40:18Z'
+- id: '50461563'
+  parent_id: '50460125'
+  author: alanjm23
+  text: Hi! We have our tools try to confirm every write before they end. This can
+    be quite difficult in reality, so we do have a &quot;can&#x27;t tell&quot; state
+    as well that we&#x27;re trying to cut down on.
+  score: 0
+  posted_at: '2026-11-12T01:04:42Z'
+- id: '50461586'
+  parent_id: '50459667'
+  author: alanjm23
+  text: Makes sense, how do you manage sites with Akamai &#x2F; DataDome &#x2F; other
+    vendors? Would love to learn more
+  score: 0
+  posted_at: '2026-11-12T01:06:13Z'
+- id: '50461850'
+  parent_id: '50455811'
+  author: yan5xu
+  text: |-
+    i did it long long time ago
+    <a href="https:&#x2F;&#x2F;github.com&#x2F;epiral&#x2F;bb-browser" rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;epiral&#x2F;bb-browser</a>
+  score: 0
+  posted_at: '2026-11-12T01:34:03Z'
+- id: '50462361'
+  parent_id: '50461563'
+  author: hkalbert71
+  text: Thanks, that makes sense. Treating &quot;can&#x27;t tell&quot; as an explicit
+    outcome seems important, rather than counting an unconfirmed write as success.<p>Does
+    that state get returned to the calling agent as structured output, or does it
+    stay inside your repair workflow?<p>If it&#x27;s exposed, trace-based diagnostics
+    could distinguish verified writes, failed writes, and uncertain writes without
+    assuming HTTP 200 means success.
+  score: 0
+  posted_at: '2026-11-12T02:33:55Z'
+- id: '50463463'
+  parent_id: '50455811'
+  author: turbogen_app
+  text: How do you handle actions that take minutes rather than seconds? When I wrapped
+    a slow job API as MCP tools, the first version blocked until the job finished,
+    and some clients gave up long before that. What worked better was having the tool
+    wait for a bounded time and, if the job isn&#x27;t finished, return a job id plus
+    a separate status tool the agent can call later. Do your generated tools do something
+    similar for slow portal flows like a booking confirmation, or is everything expected
+    to finish inside one call?
+  score: 0
+  posted_at: '2026-11-12T05:37:21Z'
+- id: '50463906'
+  parent_id: '50455811'
+  author: yunuserturk
+  text: Hosting providers and cloudflare already block bots using bot lists. What
+    user-agent does their agent identify itself as? Does it follow robots.txt, or
+    is there a separate signal? What happens when it gets caught by cf&#x27;s bot
+    protection?
+  score: 0
+  posted_at: '2026-11-12T06:53:48Z'
+- id: '50464250'
+  parent_id: '50455811'
+  author: vkchap2
+  text: 'Congrats on the launch. One question from our own work (we build a tool that
+    finds hidden text in documents before an agent reads them): when you turn a page
+    into an API, what happens to text the page hides from people? Think display:none,
+    zero-size fonts, off-screen elements and HTML comments. Some sites now put instructions
+    aimed at agents in exactly those places.<p>Does the generated API pass that text
+    through to the agent, or only what a person would see on the page?'
+  score: 0
+  posted_at: '2026-11-12T07:52:41Z'
+- id: '50465546'
+  parent_id: '50457606'
+  author: bshafiq
+  text: Makes sense. But what happens if the repair agent itself gets stuck looping?<p>If
+    the MCP call returns a 200 OK while the underlying browser times out silently,
+    you&#x27;re just burning tokens. Are you using a deterministic state hash to hard-kill
+    the run, or relying entirely on the repair agent?
+  score: 0
+  posted_at: '2026-11-12T11:02:38Z'
+- id: '50466542'
+  parent_id: '50455811'
+  author: nightmoose
+  text: 'Interesting approach. Curious how you handle silent drift: the site changes,
+    your API still returns 200, but a field goes null or gets renamed. Do you validate
+    every response against the published schema before it reaches the agent, or only
+    re-generate when something hard-fails? In my pipelines the scary failures are
+    the ones that still return 200 and look fine.'
+  score: 0
+  posted_at: '2026-11-12T13:05:17Z'
+- id: '50468189'
+  parent_id: '50455811'
+  author: dionnam
+  text: "hahaha it really is interesting approach. \nBasically, you guys are making
+    crawler for all the websites.\nBut still, it might not be that useful if we need
+    to log in again all the time when we wanna use the api."
+  score: 0
+  posted_at: '2026-11-12T14:47:49Z'
+- id: '50468310'
+  parent_id: '50455811'
+  author: hank2000
+  text: MCPs are already often wildly inefficient. One thing I saw said the agent
+    had to process 8x tokens just to read the instructions vs the actual tool calls
+    it made.<p>I would imagine this makes wildly inefficient instructions? Yes usable.
+    But at what cost? Or am I wrong?
+  score: 0
+  posted_at: '2026-11-12T14:53:49Z'
+- id: '50479970'
+  parent_id: '50457395'
+  author: JerradBe
+  text: this failure mode is worse when the tool has a side effect in the real world.
+    we&#x27;ve had agents retry a call or a text because the tool returned 200 while
+    the action was still in flight, or had already happened. what happens is that
+    you burn tokens on the web and you annoy the same person twice on a phone. so
+    what the tool needs is an explicit state (queued &#x2F; in-flight &#x2F; done
+    &#x2F; failed), an idempotency key the agent has to pass back, and a way for later
+    events to arrive without a second invoke. if you just retry based on the HTTP
+    status, it probably won&#x27;t catch it.
+  score: 0
+  posted_at: '2026-11-13T08:07:36Z'
+- id: '50510026'
+  parent_id: '50455811'
+  author: alazsolutions
+  text: My worry would be compliance. On Salesforce projects, security teams approve
+    an integration user with narrow permissions and an audit log much sooner than
+    any kind of browser automation. Can the generated MCP run under a dedicated service
+    account and log every call? Then I could bring it to a client&#x27;s security
+    review.
+  score: 0
+  posted_at: '2026-11-15T19:48:15Z'
+- id: '50525364'
+  parent_id: '50455811'
+  author: BtoAgent
+  text: 'Congrats on the launch. Curious about the e-commerce side: do you see store
+    owners using Pomerado to make their own shops agent-readable, or is it mostly
+    consumers automating other people&#x27;s sites? From the owner&#x27;s side it&#x27;s
+    striking how often no API layer is needed at all - the catalog is already public,
+    just buried behind client-side rendering and lazy-loaded prices, and fixing that
+    gets you most of the way.'
+  score: 0
+  posted_at: '2026-11-16T23:55:59Z'
+- id: '50530546'
+  parent_id: '50455811'
+  author: Sky_Joy3
+  text: 'What if the “self-healing deterministic API” breaks the moment the site changes
+    its UI, auth flow, or bot-detection behavior in a way that the recorder can’t
+    generalize?<p>A few questions that would make this feel more real to an HN skeptic:
+    how do you handle CAPTCHAs, WebAuthn, rotating CSRF&#x2F;session tokens, and heavy
+    client-side rendering where the “button” is just state in JS? If the maintenance
+    job relies on another exploratory run, what’s the failure mode when the site actively
+    changes elements differently per user&#x2F;session?<p>Also: do you store&#x2F;retain
+    any derived secrets or long-lived tokens, and how do you prove to customers that
+    credentials or 2FA seeds aren’t ever surfaced to the coding agent? Finally, are
+    integrations versioned so downstream agent code can fail “gracefully” when the
+    schema changes?'
+  score: 0
+  posted_at: '2026-11-17T12:34:17Z'
+- id: '50552161'
+  parent_id: '50455811'
+  author: justmedric
+  text: 'Congrats on the launch. One question beyond credentials: what happens with
+    actions that can&#x27;t be undone, like submitting a claim or making a payment?
+    Is there a confirmation step where a person approves before the agent does it,
+    and is that approval logged somewhere? That&#x27;s usually where people hesitate
+    to give an agent access to a bank or insurance portal.'
+  score: 0
+  posted_at: '2026-11-18T21:10:13Z'
+- id: '50570382'
+  parent_id: '50456767'
+  author: kingefman1
+  text: 'One caveat on &quot;deterministic tools reduce the risk of prompt injections&quot;:
+    returning only structured fields does close the arbitrary-DOM channel, but any
+    field that holds text written by someone else (a review, a message subject, a
+    claim note, a payee name, a product description) is still an injection path. The
+    string lands in the agent&#x27;s context the same way page text would.<p>A few
+    things that help there: give those fields a schema with a max length and, where
+    you can, a pattern or enum, so a &quot;name&quot; can&#x27;t carry a paragraph.
+    Say in the tool description that the value is third-party data, not instructions.
+    And keep the tools that read separate from the tools that write, or put the irreversible
+    ones (payments, claim submissions) behind a human approval whatever the model
+    says, since that still holds if an injection does get through.<p>Curious whether
+    any of that happens at the schema level on your side, or whether it&#x27;s left
+    to the calling agent.'
+  score: 0
+  posted_at: '2026-11-20T05:04:13Z'
+- id: '50640453'
+  parent_id: '50455811'
+  author: primitiveai
+  text: I like the separation between deterministic sign-in and the agent-visible
+    workflow.<p>One thing I&#x27;d be interested in is the lifecycle after sign-in.
+    If the browser profile holds a live session, what is the revocation boundary?<p>Can
+    a user revoke one agent&#x27;s access without killing their own browser session?
+    Are TOTP seeds and derived session material independently protected?<p>Avoiding
+    model access to the password is a good start, but the live session is often the
+    more powerful credential.
+  score: 0
+  posted_at: '2026-11-25T09:49:39Z'
+- id: '50641638'
+  parent_id: '50455811'
+  author: mdutt2399
+  text: On the government sites you mention, it&#x27;s worth checking for an official
+    API before wrapping the front end. A lot of the US federal portals people end
+    up automating, SAM.gov, USAspending, SEC EDGAR, Grants.gov, have free JSON APIs
+    that are far more stable than their UIs, and the UIs do move, FPDS&#x27;s search
+    closed in February and beta.SAM got folded in before that. State and local procurement
+    portals and anything behind an agency login are where you actually need the wrapper.
+    How do you handle sites that explicitly refuse automated access, like the Senate&#x27;s
+    financial disclosure site, which started returning 403s to scripts recently?
+  score: 0
+  posted_at: '2026-11-25T12:45:01Z'
+article:
+archived_at: '2026-11-26T11:59:38Z'

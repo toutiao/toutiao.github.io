@@ -1,0 +1,131 @@
+---
+post:
+  id: lo-hge0sd
+  source: lobsters
+  title: Browser tabs as a container runtime
+  url: https://fzakaria.com/2026/11/25/browser-tabs-as-a-container-runtime
+  hn_url: https://lobste.rs/s/hge0sd
+  score: 11
+  author: mrw
+  posted_at: '2026-11-26T04:57:04Z'
+  fetched_at: '2026-11-26T11:59:08Z'
+  article_url: https://fzakaria.com/2026/11/25/browser-tabs-as-a-container-runtime
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T11:59:17Z'
+  raw_comment_count: 1
+  tags:
+  - ai
+  - browsers
+  - linux
+comments:
+- id: lo-dj9gmb
+  parent_id: '0'
+  author: trevorflowers
+  text: "Someone will fire up a kubernetes cluster in browser tabs and then the recursion
+    police will rappel in through the windows to bust them for crimes against hackery.
+    \U0001F639"
+  score: 3
+  posted_at: '2026-11-26T09:56:29Z'
+article:
+  url: https://fzakaria.com/2026/11/25/browser-tabs-as-a-container-runtime
+  title: Browser tabs as a container runtime | Farid Zakaria’s Blog
+  fetch_status: success
+  content: "> **tl;dr** [tabc](https://github.com/fzakaria/tabc) is a container runtime,
+    like runc, that runs each container in a Chromium tab.`docker run --runtime tabc
+    alpine` works and starts in under a second. On a Mac it needs ; Linux for everyone!\n\nDespite
+    my zealot love for [Nix](https://nixos.org), there is no denying the convenience
+    and ubiquity of Docker. Containers have become the standard unit of software deployment,
+    providing a consistent environment across different machines and simplifying the
+    management of dependencies.1Containers are not even a “real” thing within the
+    Linux kernel although there are [recent attempts](https://lore.kernel.org/all/20261019-cells-rfc-6f4c85415f29@toxicpanda.com/)
+    to formalize them as a kernel-level abstraction.&nbsp;\n\nDespite all the footguns
+    you can get yourself into by writing a non-reproducible Dockerfile, it was a still
+    a remarkable step forward in making software deployment more predictable and portable.\n\nNothing
+    has really challenged Docker’s dominance in the container space and it’s reliance
+    on Linux as the underlying platform. The absurdity of the situation has become
+    that developers on MacOS end up running a Linux virtual machine to simply run
+    containers.\n\nPeople, even the creator of Docker, believed a common runtime for
+    software isolation would have been a game-changer and that WebAssembly could have
+    played that role if it had existed earlier.\n\n> “If WASM+WASI existed in 2008,
+    we wouldn’t have needed to created Docker. That’s how important it is.” - [Solomon
+    Hykes, 2019](https://x.com/solomonstre/status/1111004913222324225)\n\nHere we
+    are, 7 years later, we still have Docker, and WebAssembly is mostly used for speeding
+    up web applications.\n\nIs there another way to achieve the same level of isolation
+    and portability without relying on the host being Linux?\n\nWhat if though Docker
+    ran its containers on WebAssembly instead of directly on the Linux kernel?\n\nWhat
+    if the isolation provided by the browser could replace the kernel-level isolation
+    that containers rely on?\n\nThis idea, the holy grail of running Linux in a browser
+    is not new. [JSLinux](https://bellard.org/jslinux/) did it in 2011, and [v86](https://github.com/copy/v86),
+    [WebVM](https://webvm.io) and [qemu-wasm](https://github.com/ktock/qemu-wasm)
+    are also attempts in the same direction. They all have their share of limitations:
+    32-bit only, performance issues, incomplete hardware emulation, that make them
+    impractical for general-purpose use.\n\n[unkernel](https://github.com/pithings/unkernel)
+    is a newly developed project by [Pooya Parsa](https://github.com/pithings) that
+    changes the economics of what is possible. unknernel compiles the Linux kernel
+    to WebAssembly, allowing it to run directly in the browser without relying on
+    traditional hardware emulation. Only your container’s own code goes through an
+    emulator, and everything else the kernel does runs at near native speed.\n\nIt
+    is now practical to run Linux containers directly in the browser, leveraging the
+    isolation provided by WebAssembly and the browser environment with acceptable
+    performance.\n\n[![A terminal. On Linux, docker run with the runtime set to tabc
+    prints Linux aarch64 from an x86-64 host. On a Mac, tabc run alpine prints Linux
+    aarch64, and a check for Docker, Colima, QEMU or Lima finds no VM running.](/assets/images/tabc-demo.webp)](/assets/images/tabc-demo.webp)\n\nThat
+    is a real `docker run`, on a real Docker daemon, starting a real Alpine image.
+    This works even on a Mac with no Docker installed and . \U0001F92F\n\nIn my [last
+    post](/2026/11/23/2035-came-early) I was inspired from Gary Bernhardt’s [The Birth
+    & Death of JavaScript](https://www.destroyallsoftware.com/talks/the-birth-and-death-of-javascript)
+    and its discussion of the evolution of software isolation.\n\nIn the talk, Bernhardt
+    imagines a project called METAL that moves the JavaScript VM into the kernel.
+    The VM already keeps programs apart, so the hardware no longer has to. Process
+    isolation becomes the VM’s job.\n\nWe did not need to move the VM into the kernel.
+    A browser tab is the VM Bernhardt imagined.\n\n## [§](#one-tab-per-container)One
+    tab per container\n\n[tabc](https://github.com/fzakaria/tabc) is a OCI container
+    runtime that runs each container in its own browser tab. That means you can use
+    it with Docker just like any other runtime.\n\nWhereas the default Docker runtime,
+    [runc](https://github.com/opencontainers/runc), starts your program as a process
+    on the host’s kernel, tabc leverages the browser as its execution environment,
+    running each container in a separate tab with its own instance of the Linux kernel
+    compiled to WebAssembly.2The tab boots [unkernel](https://github.com/pithings/unkernel),
+    and the “container” runs within it.&nbsp;\n\nThis is the part that I’m most excited
+    about: at no point does your container ever touch the host’s kernel and require
+    Linux. All tabc asks of the host is a browser, .\n\nThis is a complete rethinking
+    of the container stack on macOS. Docker on a Mac is a Linux virtual machine with
+    a nice installer. Docker Desktop, [Colima](https://github.com/abiosoft/colima),
+    OrbStack and Podman Machine all boot a Linux VM first. Even Apple’s own [container](https://github.com/apple/container)
+    tool boots a VM per container.\n\nIsn’t WebAssembly a virtual machine? Technically
+    yes, in the same way the JVM is: it runs code for a made-up CPU. The difference
+    is that it is all software. Nothing asks macOS for a hypervisor.\n\nOn Linux,
+    Docker pulls the image and hands it to tabc. A Mac with no Linux VM has no Docker
+    daemon to do that, so tabc run pulls the image itself.\n\n    $ tabc run -it alpine
+    sh\n    / # uname -sm\n    Linux aarch64\n\nWithout Linux and namespaces, what
+    is giving the container its isolation?\n\nThe browser! \U0001F4A1\n\nBrowsers
+    such as Chromium are an incredibly battle-tested sandbox, and we only use them
+    for web pages. \U0001F926 Rather than simply relying on the host kernel’s isolation
+    mechanisms, tabc leverages the browser’s sandbox to create an additional layer
+    of security.3Every container may also get a browser of its own, with its own profile,
+    so two containers share no process and no storage.&nbsp;\n\nStarting a container
+    in a browser tab is surprisingly fast, and most of the time is spent starting
+    the browser itself. On my Linux laptop4I ran fifteen runs of `echo hi` from an
+    Alpine bundle on a Ryzen 7 7840U.&nbsp; a container takes roughly 0.87 seconds
+    from command to exit. This startup cost can be eliminated by using your browser’s
+    already running instance via `--open` or `--link`, _more on that later_.\n\nUnkernel
+    has drastically improved the performance of running Linux in the browser but since
+    the processes themselves are still emulated, there can be some noticeable delay
+    for larger compute-heavy workloads.\n\n> **Aside** You can get a sense of the
+    performance impact on a lot of packages by visiting [https://trynix.dev](https://trynix.dev).
+    You have access to over 300,000 packages from [Nixpkgs](https://nixos.org/nixpkgs/)
+    that run directly in your browser using [Unkernel](https://unkernel.dev).\n\nAlthough
+    some of these slowdowns seem excessive, many workloads are still well within acceptable
+    limits for interactive use that let this go beyond trivial examples and novelty.\n\nDepending
+    on whether you have every container running in its own browser instance or sharing
+    tabs within a single browser, the memory overhead can be more dramatic. An idle
+    container costs ~540 MiB of host memory split between the tab that holds the guest,
+    the browser process, and helper processes.5For scale, [Firecracker](https://firecracker-microvm.github.io/)
+    quotes under 5 MiB of overhead per microVM and 125 ms to boot.&nbsp;\n\nNevertheless,
+    this overhead is acceptable for many interactive use cases where the convenience
+    of running containers in browser tabs outweighs the memory cost.\n\nDid you remember
+    when I said you can run this on MacOS !?\n\n> **Aside** The idea of a container
+    in WebAssembly was attempted before with [container2wasm](https://github.com/conta"
+  error:
+  fetched_at: '2026-11-26T11:59:17Z'
+archived_at: '2026-11-26T11:59:17Z'

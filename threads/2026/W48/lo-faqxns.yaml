@@ -1,0 +1,143 @@
+---
+post:
+  id: lo-faqxns
+  source: lobsters
+  title: The beauty of CSS mixins
+  url: https://patrickbrosset.com/articles/2026-11-25-the-beauty-of-css-mixins/
+  hn_url: https://lobste.rs/s/faqxns
+  score: 14
+  author: carlana
+  posted_at: '2026-11-26T01:02:17Z'
+  fetched_at: '2026-11-26T11:59:08Z'
+  article_url: https://patrickbrosset.com/articles/2026-11-25-the-beauty-of-css-mixins/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T11:59:17Z'
+  raw_comment_count: 2
+  tags:
+  - css
+comments:
+- id: lo-r4x1tw
+  parent_id: '0'
+  author: Diana
+  text: |-
+    I had been asking and fighting for mixins for a decade now.
+    I am so happy we finally got composition in CSS. This is the kind of stuff that give me back hope in software.
+    Thank you to everyone involved in bringing them to life.
+  score: 1
+  posted_at: '2026-11-26T07:35:14Z'
+- id: lo-vgyqhw
+  parent_id: '0'
+  author: fleebee
+  text: |-
+    The --mobile and --desktop mixins sound immediately useful to me.
+    I would like to set my own aliases for different screen sizes, but because CSS variables aren't allowed within media query declarations I'm not able to do so. Currently, I'm forced to write out @media (width < 768px) every time which is cumbersome and error-prone. If there is a workaround I'm not aware of it.
+    A quick web search tells me that there have been various motions over the years to make this possible in CSS but none have landed. Here's hoping maybe this one does.
+  score: 1
+  posted_at: '2026-11-26T11:41:51Z'
+article:
+  url: https://patrickbrosset.com/articles/2026-11-25-the-beauty-of-css-mixins/
+  title: Patrick  - The beauty of CSS mixins
+  fetch_status: success
+  content: "# The beauty of CSS mixins\n ![The beauty of CSS mixins](/assets/mixin-zen-garden.png)\n\nI've
+    been playing with CSS mixins recently, and I'm super excited about what this new
+    CSS construct will bring to the way we write CSS. I think the CSS we'll write
+    when CSS mixins are available will look very different from the CSS we write today.\n\n##
+    What's a mixin?\n\nIn its simplest form, a mixin is a named piece of CSS code
+    that you define once and can reuse elsewhere in a style sheet. In that sense,
+    it's very similar to a custom property (also known as a CSS variable) or a CSS
+    function.\n\nThe big difference is what mixins can hold:\n\n- A custom property
+    holds a single value (or part of a value).\n- A CSS function is similar: it can
+    only be used as part of a CSS property value.\n- A mixin, however, holds any number
+    of declarations, including nested rules.\n\nSo, instead of just returning the
+    value `red`, a mixin can return `background: red; color: white; border-radius:
+    2px;` all at once.\n\n## Why now?\n\nMy team at Microsoft is implementing mixins
+    in the Chromium open source project. They've covered a lot of ground, and we're
+    getting ready to ship this in Chromium-based browsers. Native CSS mixins are getting
+    very close!\n\nI can't wait for other browsers to catch up, so that we can all
+    use mixins in earnest.\n\n> CSS mixins are experimental. To try the code snippets
+    and demo in this article, use a recent Chromium browser, open `about://flags`,
+    and enable the **Experimental Web Platform features** flag.\n\n## Learn to use
+    mixins\n\nYou define a mixin with the `@mixin` rule, and you use it with `@apply`.
+    Mixin names start with two dashes, like custom properties.\n\nLet's define the
+    `--visually-hidden` mixin:\n\n    @mixin --visually-hidden {\n      position:
+    absolute;\n      width: 1px;\n      height: 1px;\n      overflow: hidden;\n      clip-path:
+    inset(50%);\n    }\n\nAnd now, let's use it somewhere else in our code:\n\n    .skip-link
+    {\n      @apply --visually-hidden;\n    }\n\nThat's all you need to do. The browser
+    will apply the mixin's declarations to the element as if they were written directly
+    in the element's style block, so it's exactly as if you had written:\n\n    .skip-link
+    {\n      position: absolute;\n      width: 1px;\n      height: 1px;\n      overflow:
+    hidden;\n      clip-path: inset(50%);\n    }\n\nExcept now, you have a nice little
+    reusable mixin that you can apply wherever you need it.\n\n## Mixin parameters\n\nThat's
+    not all, a mixin can take parameters, with optional types and default values too.
+    Consider this `--button` mixin:\n\n    @mixin --button(--bg <color>: royalblue,
+    --fg <color>: white) {\n      background: var(--bg);\n      color: var(--fg);\n
+    \     padding: .5em 1em;\n    \n      &:hover { background: color-mix(in oklch,
+    var(--bg), black 20%); }\n    }\n\nIt applies some colors and spacing to a button-like
+    element, checking that the supplied colors have the right type and falling back
+    to default values if needed. It even handles hover states automatically.\n\nYou
+    can use this mixin either with its default values or by passing your own arguments:\n\n
+    \   /* Using the default button styles. */\n    .primary { @apply --button; }\n
+    \   \n    /* Overriding one of the default button colors. */\n    .danger { @apply
+    --button(crimson); }\n    \n    /* Overriding both default button colors. */\n
+    \   .custom { @apply --button(palegreen, black); }\n\nIf you pass more arguments
+    than the mixin has parameters, the `@apply` does nothing.\n\n## Conditional mixins\n\nA
+    mixin can also hold conditional rules, such as `@media`, `@supports` and `@container`.\n\nFor
+    example, you can create a mixin that applies styles conditionally to the viewport
+    size:\n\n    @mixin --tablet-up {\n      background: lightgray;\n    \n      @media
+    (width >= 48rem) {\n        background: darkgray;\n      }\n    }\n\nThis becomes
+    even more powerful when combined with `@contents`. See the next section.\n\n##
+    Mixin contents\n\nArguments are not the only way to customize a mixin. A mixin
+    can also accept an entire block of CSS from the call site. Inside the mixin, `@contents`
+    marks the spot where that block goes.\n\nFor example, here's a `--card` mixin
+    that defines a couple of declarations and accepts a block of CSS from where the
+    mixin is used:\n\n    @mixin --card {\n      padding: 1rem;\n      border: 1px
+    solid;\n    \n      @contents;\n    }\n\nWhen calling the mixin, you can pass
+    other declarations inside a block, which will be inserted at the `@contents` location
+    within the mixin:\n\n    .note {\n      @apply --card {\n        background: lightyellow;\n
+    \     }\n    }\n\nHere, `.note` gets the padding and border from the mixin, and
+    then its own background, in the place where `@contents` appears.\n\n`@contents`
+    can have a fallback, which applies when the caller passes no block: `@contents
+    { background: white; }`. If the caller passes an empty block, `@apply --card {}`,
+    the fallback does not apply.\n\nThe ability to provide your own block of styles
+    when applying a mixin is very useful, for example when using a mixin as a condition.
+    Consider this mixin:\n\n    @mixin --if-dark-mode {\n      @media (prefers-color-scheme:
+    dark) {\n        @contents;\n      }\n    }\n\nYou can use it to define styles
+    that only apply in dark mode, while keeping the rest of your CSS unaffected. For
+    example:\n\n    .header {\n      background: white;\n      color: black;\n      \n
+    \     @apply --if-dark-mode {\n        background: black;\n        color: white;\n
+    \     }\n    }\n\nConditional mixins combined with `@contents` gives us something
+    we've been wanting for a long time: **named breakpoints** :\n\n    @mixin --mobile
+    {\n      @media (width < 40rem) {\n        @contents;\n      }\n    }\n    \n
+    \   @mixin --tablet {\n      @media (40rem <= width < 64rem) {\n        @contents;\n
+    \     }\n    }\n    \n    @mixin --desktop {\n      @media (width >= 64rem) {\n
+    \       @contents;\n      }\n    }\n\nThese mixins don't apply any styles of their
+    own, they just conditionally apply styles that are given to them depending on
+    the media query. This is great because we now have a way to give custom names
+    to a series of responsive design breakpoints that can be maintained in one place.\n\nLet's
+    use them here to see how clean our responsive design code can be:\n\n    .sidebar
+    {\n      @apply --mobile {\n        display: none;\n      }\n    \n      @apply
+    --tablet {\n        inline-size: 12rem;\n      }\n    \n      @apply --desktop
+    {\n        inline-size: 20rem;\n      }\n    }\n\n## Private variables\n\nFinally,
+    a mixin can keep private variables to itself, by declaring them in an `@private`
+    block. The element that applies the mixin can't see these variables:\n\n    @mixin
+    --gradient-text(--from: tomato, --to: gold) {\n      @private {\n        --angle:
+    90deg;\n      }\n      background: linear-gradient(var(--angle), var(--from),
+    var(--to));\n      background-clip: text;\n      color: transparent;\n    }\n\n##
+    An experiment: theming with mixins\n\nMixins are very versatile. You will find
+    many ways to use them, and I don't think there will be one good way and one bad
+    way to use them. Different teams will work out what works for them.\n\nIn this
+    section, I explored one way in which mixins might be used. I don't know if it
+    will make sense in a real project yet, but I found it interesting to try.\n\nImagine
+    a white-label website. You own the site and control its markup and default CSS.
+    But you also want your customers to be able to theme the site to match their brand.\n\nHere's
+    the idea:\n\n1. You write clean, semantic HTML, which contains all of the content.\n2.
+    You write the basic CSS for it. This is your white-label version. It has the basic
+    layout, the headers and the sidebars, but no strong colors, no animations, no
+    design direction.\n3. You apply _undefined_ mixins in all the logical places of
+    your site. For example, you apply a mixin at the overall page level, another one
+    in the header, another one for the sidebar, and so on. These mixins are not defined,
+    so they do nothing, and you continue to see the default look.\n4. You let customers
+    define the mixins. A customer's design is a style sheet that uses th"
+  error:
+  fetched_at: '2026-11-26T11:59:17Z'
+archived_at: '2026-11-26T11:59:18Z'

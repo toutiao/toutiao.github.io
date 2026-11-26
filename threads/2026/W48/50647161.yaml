@@ -5,14 +5,14 @@ post:
     server'
   url: https://opensec.in/blog/nfs2root-cve-2026-99362
   hn_url: https://news.ycombinator.com/item?id=50647161
-  score: 82
+  score: 159
   author: ''
   posted_at: '2026-11-25T20:35:50Z'
-  fetched_at: '2026-11-26T01:40:09Z'
+  fetched_at: '2026-11-26T11:59:03Z'
   article_url: https://opensec.in/blog/nfs2root-cve-2026-99362
   article_fetch_status: success
   article_fetched_at: '2026-11-26T01:40:09Z'
-  raw_comment_count: 26
+  raw_comment_count: 59
 comments:
 - id: '50647393'
   parent_id: '50647161'
@@ -218,6 +218,334 @@ comments:
   text: Yes, should have been more precise.
   score: 0
   posted_at: '2026-11-26T01:09:14Z'
+- id: '50650163'
+  parent_id: '50647161'
+  author: scottchiefbaker
+  text: This bug was patched several months ago. If you&#x27;ve been patching for
+    all the CVEs that have come out recently you&#x27;re probably already protected.
+    Per the end of the article here are the patched version of each Kernel branch:<p>6.12.117<p>6.18.61<p>7.3.2<p>7.4-rc1<p>This
+    is CVE-2026-99362
+  score: 0
+  posted_at: '2026-11-26T01:20:21Z'
+- id: '50650284'
+  parent_id: '50649119'
+  author: yjftsjthsd-h
+  text: How much does that help? My impression is that seL4 is great at what it does,
+    but what it does is so limited that to e.g. host NFS on it you&#x27;re just going
+    to run Linux in a VM at which point... I guess it depends on the details and your
+    threat model, but it feels like a long road back do the same place.
+  score: 0
+  posted_at: '2026-11-26T01:37:11Z'
+- id: '50650824'
+  parent_id: '50648259'
+  author: VladVladikoff
+  text: Too lazy to check but I would t be surprised if there’s plenty of open ports
+    on the internet for this protocol.
+  score: 0
+  posted_at: '2026-11-26T02:48:52Z'
+- id: '50650886'
+  parent_id: '50649541'
+  author: ranger_danger
+  text: Surely this must come with an unacceptable performance hit? I still need to
+    maintain 80% of my 10gb&#x2F;s link.
+  score: 0
+  posted_at: '2026-11-26T03:00:13Z'
+- id: '50651034'
+  parent_id: '50650886'
+  author: jrg95
+  text: Not too bad. I have benchmarks<p>You can try<p>`pfw metrics`<p>To see.<p>We
+    use a ton of clever JIT compilation techniques to lower code directly onto the
+    NIC
+  score: 0
+  posted_at: '2026-11-26T03:24:21Z'
+- id: '50651037'
+  parent_id: '50651034'
+  author: jrg95
+  text: I was measuring sub microsecond decision time
+  score: 0
+  posted_at: '2026-11-26T03:25:00Z'
+- id: '50651118'
+  parent_id: '50647161'
+  author: superkuh
+  text: |-
+    It really sounds like this is only NFS 4.1 and 4.2 and up(?). So my mitigation for right now (on distros that are out of support re: kernel) is simply to disable 4.1 and 4.2 protocol like the below (turn nfs-server off first),<p><pre><code>    $ echo &quot;-4.1 -4.2&quot; | sudo tee &#x2F;proc&#x2F;fs&#x2F;nfsd&#x2F;versions
+    </code></pre>
+    I am no security expert but for now this change, which is temporary and reverts on reboot, seems reasonable. Before I did this I checked if my clients used nfs 4.1 or 4.2 at all and only one computer on my network did and it has fine 3&#x2F;4 support. The vast majority of my nfs traffic is v3.
+  score: 0
+  posted_at: '2026-11-26T03:37:02Z'
+- id: '50651145'
+  parent_id: '50650163'
+  author: tredre3
+  text: Missing from the list is 7.0, which is used by Ubuntu 26.04 and everything
+    downstream. But presumably they&#x27;ve already patched it themselves.<p>One has
+    to wonder, however, why Canonical doesn&#x27;t stick to LTS kernels for their
+    LTS distro. They already offer the HWE kernel for those who need a more up-to-date
+    kernel (whose version is bumped twice a year I think).<p>Taking on the burden
+    of backporting patches themselves has to have become quite costly (and reckless)
+    in $CURRENTYEAR.
+  score: 0
+  posted_at: '2026-11-26T03:42:13Z'
+- id: '50651206'
+  parent_id: '50648356'
+  author: fn-mote
+  text: "&gt; It&#x27;s pretty common to configure it in a way that you trust the
+    client when they say they&#x27;re root<p>This is how you can tell you’re reading
+    a post from a Real Old Time hacker. Hasn’t been that way for a long time."
+  score: 0
+  posted_at: '2026-11-26T03:53:27Z'
+- id: '50651260'
+  parent_id: '50649753'
+  author: dada216
+  text: If he had a name, it&#x27;s long since been lost. He would have been known
+    only as a servant of evil. One of a number. ... One of nine.
+  score: 0
+  posted_at: '2026-11-26T04:02:27Z'
+- id: '50651452'
+  parent_id: '50649376'
+  author: saghm
+  text: Presumably &quot;ask&quot; means they can say no? Or else why even require
+    asking at all?
+  score: 0
+  posted_at: '2026-11-26T04:34:44Z'
+- id: '50651478'
+  parent_id: '50649867'
+  author: saghm
+  text: "&gt; has any track record of security findings<p>Given the pace of LLMs finding
+    vulnerabilities recently, how do you propose anyone will ever be able to establish
+    a track record in the future without already having access? You&#x27;re describing
+    a system where it&#x27;s literally impossible for anyone new to ever enter the
+    field (other than a privileged few who work for these AI companies I guess)"
+  score: 0
+  posted_at: '2026-11-26T04:38:27Z'
+- id: '50651596'
+  parent_id: '50647161'
+  author: aidenn0
+  text: I run my NFSv4 server behind spiped, so I think I&#x27;m safe here?
+  score: 0
+  posted_at: '2026-11-26T04:54:47Z'
+- id: '50651845'
+  parent_id: '50651206'
+  author: asveikau
+  text: I will take that as a compliment.
+  score: 0
+  posted_at: '2026-11-26T05:35:29Z'
+- id: '50652223'
+  parent_id: '50650035'
+  author: chasil
+  text: This is what I wrote and knew.<p><a href="https:&#x2F;&#x2F;www.linuxjournal.com&#x2F;content&#x2F;encrypting-nfsv4-stunnel-tls"
+    rel="nofollow">https:&#x2F;&#x2F;www.linuxjournal.com&#x2F;content&#x2F;encrypting-nfsv4-stunne...</a>
+  score: 0
+  posted_at: '2026-11-26T06:39:03Z'
+- id: '50652745'
+  parent_id: '50647161'
+  author: FranGro78
+  text: "&gt; Given enough eyeballs, all bugs are shallow<p>Obviously not written
+    with AI in mind, but certainly seems to be true with the many AI eyes on open
+    source at the moment.<p>Makes me wonder, is the access to the Windows source code
+    one could apply for still a thing? If so, anyone know if there are security firms
+    out there running the same kind of AI deep review for vulnerabilities against
+    it?<p>From my limited understanding, the NT kernel runs a lot less code at the
+    most privileged level (e.g. drivers), so perhaps that means the chances of finding
+    such escalation vulns are a lot less?<p>Micro-kernels have always been said to
+    have unsolvable performance problems vs monolithic ones, but have we perhaps entered
+    a time where we are willing to trade off speed for reduced risk? Maybe some orgs
+    running interpreted&#x2F;JIT&#x27;ed languages on Linux would be better served
+    rewriting in more performant ones whilst switching to micro-kernel style OSes,
+    ending up hopefully with at least performance parity to what they had before?<p>Rewriting
+    large swaths of the Linux kernel (and userspace?) in Rust may also be enough?<p>(Edited:
+    formatting)"
+  score: 0
+  posted_at: '2026-11-26T08:02:31Z'
+- id: '50652825'
+  parent_id: '50651452'
+  author: rendx
+  text: It&#x27;s a formality. They do it so they can claim to care.
+  score: 0
+  posted_at: '2026-11-26T08:10:47Z'
+- id: '50652962'
+  parent_id: '50651118'
+  author: gquere
+  text: Security was one of the most important features of NFSv4 over v3 (krb, ACLs,
+    end of blind UID trust...).
+  score: 0
+  posted_at: '2026-11-26T08:30:26Z'
+- id: '50652963'
+  parent_id: '50652745'
+  author: fock
+  text: unsolvable performance problems for people selling compute and ads (and a
+    small minority doing HPC) != performance problems in practice. If the impact was
+    that your browser now runs at half speed, skip the ads...
+  score: 0
+  posted_at: '2026-11-26T08:30:42Z'
+- id: '50652975'
+  parent_id: '50648471'
+  author: gsich
+  text: Then post it.
+  score: 0
+  posted_at: '2026-11-26T08:32:19Z'
+- id: '50652991'
+  parent_id: '50652745'
+  author: dathinab
+  text: "&gt; &gt; AI eyes on open source at the moment.<p>&gt; access to the Windows
+    source code one could apply for still a thing?<p>you don&#x27;t need it, it doesn&#x27;t
+    matter that much<p>modern AIs are _incredible_ good at decompiling &amp; reverse
+    engineering to a point where experts in the field have publicly stated it has
+    gotten better then them the &quot;groundwork&quot; (binary -&gt; some kind of
+    sourcode; at least in many &quot;standard&quot; cases)<p>the reason you mainly
+    see news about AI finding vulnerabilities in open source a huge observation bias.<p>Mainly:<p>=&gt;
+    if you non maliciously look for security issues to report &amp; publicize there
+    is a bug preference for OSS (for a variety of reasons)<p>=&gt; but if you maliciously
+    look for issues you can sell proprietary software is often much more interesting
+    (for a variety of reasons)<p>=&gt; due to Linux being a critical foundational
+    block for many huge companies there are probably many millions spend on tokens
+    to weed out security issues<p>=&gt; and for a proprietary code only the company
+    which owns is has a good legal foothold to run analysis on it, any even if they
+    find 1000 CVE worthy bugs, will they report them?? And will they have the same
+    insensitive to spend huge amount of tokens on this?? Probably not always. (It&#x27;s
+    not that other can&#x27;t run analysis, as mentioned decom&amp;reverse engineering
+    works super well. But companies threatening to sue you if you did so are not rare.
+    And that is no matter weather they have a legal basis for it or weather you reported
+    it in good will. Sadly being in the right doesn&#x27;t protect you from abuse
+    by through the legal system. Hence also why security researchers often prefer
+    OSS.)<p>So it you sum up, if people apply it to OSS it tends to be in the open,
+    if they apply it to closed source it often is not or less public.<p>BUT this means
+    the arguments &quot;against open source&quot; I have seen in some sources recently
+    really do not add up at all and to some degree it is even the opposite."
+  score: 0
+  posted_at: '2026-11-26T08:34:21Z'
+- id: '50653052'
+  parent_id: '50652975'
+  author: anonreplier
+  text: Why
+  score: 0
+  posted_at: '2026-11-26T08:43:29Z'
+- id: '50653196'
+  parent_id: '50652745'
+  author: dathinab
+  text: "&gt;  finding such escalation vulns are a lot less?<p>if you are supper nit-picky
+    about the definition of the class of vulnerability then yes<p>but if you look
+    at the relevant &quot;fallout&quot; an attacker can cause then it&#x27;s not a
+    good point for Windows as you often don&#x27;t need to actually get RCE in the
+    NT kernel at all to do all the damage you want to do.<p>Through yes I think the
+    Qubes and similar go in the right direction (VM sandbox everything). And micro
+    kernel which put most work into (sandboxed) user-space seem increasingly like
+    a &quot;insanely good&quot; idea. The &quot;speed tradeoffs&quot; are also often
+    not really a issue at all. (1)<p>But it also gets increasingly more clear that
+    trusting sandboxes is ... not always the best idea and the best thing to do is
+    to make sure no untrusted code run at all. Sure that often isn&#x27;t feasible.
+    But for servers there is an increasing case for systems which _can_ only run what
+    you ship and nothing else (2). Only problem is that is inherently in conflict
+    with JIT, scripting languages etc...<p>---<p>(1): Micro-Kernels have certain choke
+    points, but outside of some HPC-stuff they might not matter at all and&#x2F;or
+    can be worked around. E.g. Nintendo Switch might have slow hardware but isn&#x27;t
+    exactly inefficient in running games on that slow hardware, it has a micro kernel
+    (so has Switch 2). E.g. a surprising amount of web services are run in python
+    which is many magnitudes more a perf. drawback then what micro kernels impose.
+    And even many of the most common web services (e.g. node or java based) might
+    run fast (V8&#x2F;Java can be reasonable fast) but would work &quot;fine&quot;
+    even if they where 10%-50% slower (and for a lot of stuff we are speaking about
+    ~5% throughput perf. drawback in average, much less if perf. is mostly compute
+    in a small set of data and not moving data). And for LLM servers -5% throughput
+    (between GPU and service) might matter, but you could most likely find a way to
+    work around that, reducing it to a acceptable level not relevant compared to general
+    time spend in the GPU doing compute.<p>(2): As in: A lot of hardware protections
+    from read xor write memory to stuff which makes turning your code into gadgets
+    or ROP very hard. Then added on top something which makes sure only signed code
+    is loaded into executable memory. And make sure that all code is singed by the
+    OS or your own key. (And yes that only makes sense for headless systems you never
+    login like single service VMs (as it also implies there is no shell or any other
+    capability to run &quot;arbitrary scripts, even if by hand&quot;)."
+  score: 0
+  posted_at: '2026-11-26T09:03:00Z'
+- id: '50653264'
+  parent_id: '50653052'
+  author: gsich
+  text: To warrant the hype panic from the website.
+  score: 0
+  posted_at: '2026-11-26T09:11:56Z'
+- id: '50653305'
+  parent_id: '50649867'
+  author: nsbdhciebsbdhc
+  text: First level cvp generally won&#x27;t write exploit code. It barely does anything
+    different from vanilla.
+  score: 0
+  posted_at: '2026-11-26T09:19:18Z'
+- id: '50653401'
+  parent_id: '50651596'
+  author: rs_rs_rs_rs_rs
+  text: Depends, are you the only one using this nfs server?<p>Yes? You&#x27;re probably
+    safe.<p>No? You might want to patch this even if you trust the others that have
+    access to it.
+  score: 0
+  posted_at: '2026-11-26T09:32:35Z'
+- id: '50653435'
+  parent_id: '50652745'
+  author: guenthert
+  text: "&gt; Micro-kernels have always been said to have unsolvable performance problems
+    vs monolithic ones<p>I think that has been refuted by Jochen Liedtke&#x27;s work
+    (L3, then L4 micro kernels)."
+  score: 0
+  posted_at: '2026-11-26T09:37:52Z'
+- id: '50653517'
+  parent_id: '50653305'
+  author: snizovtsev
+  text: That&#x27;s not been my experience.
+  score: 0
+  posted_at: '2026-11-26T09:51:07Z'
+- id: '50653550'
+  parent_id: '50649507'
+  author: guenthert
+  text: Uh, I think part of the motivation for NFSv4 was the poor performance of NFSv3
+    over long distances (long fat pipes) across the Internet. But that was 20 years
+    ago, before cloud computing &#x2F; cloud storage became a thing.
+  score: 0
+  posted_at: '2026-11-26T09:55:11Z'
+- id: '50653618'
+  parent_id: '50650284'
+  author: guenthert
+  text: seL4 itself does (intentionally) little, as is typical for micro-kernels.  If
+    you run Linux in a VM atop of it for the NFS service, than that VM would be indeed
+    just as vulnerable.  The idea of micro-kernels however is, that services like
+    NFS would run unprivileged and get their own address space, so the damage would
+    be limited.  Now as to whether there exists a stand-alone NFS server for seL4
+    ...
+  score: 0
+  posted_at: '2026-11-26T10:05:00Z'
+- id: '50653652'
+  parent_id: '50651206'
+  author: mnw21cam
+  text: The root_squash option has been default since as long as I can remember.
+  score: 0
+  posted_at: '2026-11-26T10:08:29Z'
+- id: '50653668'
+  parent_id: '50648990'
+  author: KaiserPro
+  text: also you can nail on kerberos to actually enforce permissions if you&#x27;re
+    still just doing uid&#x2F;guid matching.<p>Still, getting root on your internal
+    fileserver isn&#x27;t great.
+  score: 0
+  posted_at: '2026-11-26T10:11:12Z'
+- id: '50653691'
+  parent_id: '50653550'
+  author: KaiserPro
+  text: "&gt; the poor performance of NFSv3 over long distances<p>Ooo now, thats a
+    good question. I used to work in VFX, and NFS was&#x2F;is the bread and butter
+    of file IO. We used to turn off v4 because it was slower over the LAN. If we were
+    doing long disntance we&#x27;d use aspera (or what ever opensource version we
+    could get our hands on) failing that we&#x27;d ship LTO5&#x2F;6 tapes.<p>From
+    a performance point of view, I know that v4 could do clustered servers natively.
+    As in &quot;HA&quot; for NFS servers (that did require clustered filesystem though....)<p>the
+    problem being was that you needed to fiddle about with auth to make it work, which
+    from my understanding caused performance issues. But, that was in 2014, and we
+    are many years ahead in CPU and memory speed now."
+  score: 0
+  posted_at: '2026-11-26T10:16:09Z'
+- id: '50653865'
+  parent_id: '50649376'
+  author: jeroenhd
+  text: I did, they said no.
+  score: 0
+  posted_at: '2026-11-26T10:46:20Z'
 article:
   url: https://opensec.in/blog/nfs2root-cve-2026-99362
   title: 'NFS2ROOT (CVE-2026-99362): pre-auth root in Linux nfsd | OpenSec'
@@ -414,4 +742,4 @@ article:
     Research, engineering notes, and updates from OpenSec.
   error:
   fetched_at: '2026-11-26T01:40:09Z'
-archived_at: '2026-11-26T01:40:12Z'
+archived_at: '2026-11-26T11:59:07Z'

@@ -1,0 +1,119 @@
+---
+post:
+  id: lo-9imhob
+  source: lobsters
+  title: Make the Plan a Value
+  url: https://jackkelly.name/blog/archives/2026/11/26/make_the_plan_a_value
+  hn_url: https://lobste.rs/s/9imhob
+  score: 12
+  author: jackdk
+  posted_at: '2026-11-26T00:12:06Z'
+  fetched_at: '2026-11-26T11:59:08Z'
+  article_url: https://jackkelly.name/blog/archives/2026/11/26/make_the_plan_a_value
+  article_fetch_status: success
+  article_fetched_at: '2026-11-26T11:59:16Z'
+  raw_comment_count: 0
+  tags:
+  - haskell
+comments: []
+article:
+  url: https://jackkelly.name/blog/archives/2026/11/26/make_the_plan_a_value/
+  title: Make the Plan a Value | Blog | jackkelly.name
+  fetch_status: success
+  content: "# Make the Plan a Value\n\n Posted on November 26, 2026 by Jack Kelly
+    \n Tags: [coding](../../../../../../blog/archives/coding/index.html \"All pages
+    tagged 'coding'.\"), [haskell](../../../../../../blog/archives/haskell/index.html
+    \"All pages tagged 'haskell'.\")\n\nI recently finished adding support for idempotency
+    tokens to`amazonka` (the unofficial Haskell AWS SDK), using the [client token
+    support provided by AWS](https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html).
+    Implementing this required making some fairly substantial changes to the generator,
+    the bespoke Haskell program that turns the service definitions in [`botocore`](https://github.com/boto/botocore/)
+    into cabal packages. `amazonka` is over a decade old, and the generator has evolved
+    as AWS have added new styles of APIs for their different services. Some services
+    return XML, some return JSON, some return raw bytes, some return additional information
+    in HTTP response headers, and so on. As a result, the generator’s logic had been
+    extended each time and had grown gnarly.\n\nTo untangle things, I resolved to
+    make one of my favourite programming moves, “make the plan a value” or “decide
+    what to do, and then do it”. This move decouples two parts of a program by introducing
+    an intermediate data structure (a “plan”, or a value of a “plan type”) describing
+    _what_ is to be done before any action is taken.\n\nI really like this pattern
+    because the “deciding what to do” part of a program is often more complicated
+    than the “doing” part. Separating the two often turns the “deciding” part into
+    a pure function that produces a plan, making test cases simpler to write. And
+    then if the “doing” phase is also complicated (because of remote API calls, rollbacks,
+    parallel execution, or whatever else), it’s more manageable because those complications
+    are not entangled with the planning logic. You also get to add a `--dry-run` flag
+    almost for free, which is [really useful for testing](https://henrikwarne.com/2026/01/31/in-praise-of-dry-run/).
+    (Henrik observes that testing for a`dryRun` variable everywhere pollutes the code
+    somewhat. I think if he split his code into a planning phase and consumed that
+    plan with either a “dry run” printer or a “real” executor, the inline checks that
+    he dislikes would disappear.)\n\nThis technique isn’t subtle or obscure. I’ve
+    seen it called [the plan-execute pattern](https://mmapped.blog/posts/29-plan-execute),
+    and the [“routing slip” enterprise integration pattern](https://www.enterpriseintegrationpatterns.com/patterns/messaging/RoutingTable.html)
+    is literally about centralising the decision logic before execution. I’ve previously
+    called it a [“tiny DSL”](../../../../../../blog/archives/2020/04/03/the_power_of_tiny_dsls/),
+    and Matt Parsons sells its benefits in his [Three Layer Haskell Cake](https://www.parsonsmatt.org/2018/03/22/three_layer_haskell_cake.html)
+    article:\n\n> Often times, a simple non-recursive sum type “command” suffices
+    as an interface between a pure function and an effectful one. A list of commands
+    adds a lot of flexibility without dramatically complicating things.\n\nHaving
+    resolved to introduce a plan type, how do we work it into a venerable program
+    like the Amazonka generator? For this part of the generator, it means separating
+    the analysis of the loaded service definitions from the generation of the `instance
+    AWSRequest`declarations. I did this by introducing a `Config` record of simple
+    data and a function`instanceD :: Config -> Decl ()` that builds Haskell code from
+    that config record.\n\nI found the generator’s logic too difficult to understand
+    and replace in a single change, so I replaced it incrementally using the [strangler
+    fig pattern](https://martinfowler.com/bliki/StranglerFigApplication.html). The
+    most complicated part of this change was response parsing, so I added to the `Config`
+    record an enumeration of ported response parsers, and a fall back to “do things
+    the old way” for everything else:\n\n    -- | How to generate the parser for AWS's
+    response to an API call.\n    data ResponseParser\n      = -- | Perform no parsing
+    and return an empty response. The response\n        -- constructor in 'responseType'
+    must take no arguments.\n        ParseNull\n      | -- | Parse the entire response
+    as JSON.\n        ParseAllJSON\n      | -- | Parse the entire response as XML,
+    with an optional wrapper.\n        ParseAllXML (Maybe Text)\n      | DoItTheOldWay\n\nOne
+    thing that makes Amazonka’s generator rewarding to hack on is that the service
+    bindings act as an extensive and automatic [golden test](https://cs-syd.eu/posts/2023-12-21-golden-tests)suite.
+    Any changes to the generated bindings show up in diffs, and so if there are no
+    diffs and the generator doesn’t crash, the change probably didn’t break anything.
+    This makes the process of replacing the entangled code relatively simple (not
+    easy):\n\n1. If there are no unmigrated code paths, `GOTO 9`.\n2. Identify the
+    least convoluted code path.\n3. Identify the service definitions that trigger
+    it.\n4. Characterise the botocore feature that these service definitions rely
+    on, and name it as a new constructor in`ResponseParser`.\n5. Replace the old code
+    path with calls to`error \"whoops this is still live\"`, so we crash if we try
+    to use the old path.\n6. Regenerate all the AWS service bindings, and think harder
+    if the generator throws the `\"whoops this is still live\"`error.\n7. If the generated
+    bindings look the same, remove the dead code path and everything that it relied
+    on (unused `let` bindings, parameters, etc.).\n8. `GOTO 1`.\n9. Remove the `DoItTheOldWay`
+    shim constructors.\n\nThe end result [worked well](https://github.com/brendanhay/amazonka/blob/546b030e38b12972bef6c39c68c439cd3e64c4aa/gen/src/Gen/Output/Operation/AWSRequest.hs#L33-L163)
+    and kept the individual commits readable (example: [factoring out status code
+    parsing](https://github.com/brendanhay/amazonka/commit/6638af1f9d15994c600086c16b3187ccb4a651b5)).
+    Adding the idempotency machinery was then[straightforward](https://github.com/brendanhay/amazonka/commit/fd0d2cff0b479132a76e8c56453907837cb436ca).\n\nThe
+    data types in the Amazonka example represent parameters to a Haskell code template,
+    but this refactoring also works for more expressive plan types, such as “tiny
+    DSLs”, “lists of commands”, or “free structures”. The trick is to keep a “do it
+    the old way” constructor in your plan type until the “old way” has been refactored
+    away.\n\nA well-chosen plan type introduces a [narrow waist](https://www.oilshell.org/blog/2022/02/diagrams.html)
+    that decouples producers and consumers of your plan type, and the most obvious
+    wins come from introducing alternate consumers of the plan: things like testability,
+    `--dry-run`, and simpler executors all follow from that. A less obvious benefit
+    is that you can also analyse and transform the plan itself. This is a great place
+    to add pre-execution sanity checks or access controls. I regret that [my tiny
+    DSLs post](../../../../../../blog/archives/2020/04/03/the_power_of_tiny_dsls/)
+    inverted a transformation by interpreting it as matrix multiplications and inverting
+    the result; it would have been simpler to provide an `invert :: [Transform] ->
+    [Transform]`function.\n\nIntroducing alternate producers of the plan type can
+    also pay off, but needs a bit more imagination:\n\n- Plans can be generated using
+    a property testing library. This is an automatic and thorough way to explore the
+    set of possible executions, and easier than trying to hand-craft pathological
+    input cases.\n- Alternate front ends (such as a new CLI, a new API version, or
+    a different request transport) can all be written against the same side-effectful
+    core.\n- The completeness of a plan producer (e.g.&nbsp;an API version) can also
+    be verified by property tests. Modern property testing libraries can declare coverage
+    thresholds that fail if unmet, and so can ensure that every constructor of the
+    plan type is reachable through the public interface.\n\n“Making the plan a value”
+    works well in any la"
+  error:
+  fetched_at: '2026-11-26T11:59:16Z'
+archived_at: '2026-11-26T11:59:17Z'

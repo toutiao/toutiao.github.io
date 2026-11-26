@@ -4,14 +4,14 @@ post:
   title: I checked Clojure's core with Lean and found unreported bugs
   url: https://s.conao3.com/blog/2026/e4f733
   hn_url: https://news.ycombinator.com/item?id=50642939
-  score: 186
+  score: 227
   author: ''
   posted_at: '2026-11-25T14:56:52Z'
-  fetched_at: '2026-11-26T01:40:06Z'
+  fetched_at: '2026-11-26T11:59:01Z'
   article_url: https://s.conao3.com/blog/2026/e4f733
   article_fetch_status: success
   article_fetched_at: '2026-11-26T01:40:06Z'
-  raw_comment_count: 64
+  raw_comment_count: 79
 comments:
 - id: '50644516'
   parent_id: '50642939'
@@ -529,8 +529,8 @@ comments:
     is no linkage between RTL and lean, so it’s up to me to model it in lean, and
     any apparent errors are 9 times out of 10 be my crappy model.<p>To be fair this
     is true in more traditional verification too but Systemverilog is designed to
-    model digital logic with multiple levels of abstraction.<p>My first thought would
-    n reading the title is how likely is it they got their models right?<p>Modeling
+    model digital logic with multiple levels of abstraction.<p>My first thought in
+    reading the title is how likely is it they got their models right?<p>Modeling
     mathematical theorems is probably much more natural in lean, but even there it
     seems like flawed models are a huge risk. I think it’s mitigated by a greater
     set of peers skilled in validating these sorts of models. I m skeptical that is
@@ -539,6 +539,147 @@ comments:
     a design.
   score: 0
   posted_at: '2026-11-26T01:16:25Z'
+- id: '50650321'
+  parent_id: '50648081'
+  author: vegnus
+  text: i did this as a joke for fun www.margeux.com&#x2F;studio.html
+  score: 0
+  posted_at: '2026-11-26T01:42:23Z'
+- id: '50650526'
+  parent_id: '50650133'
+  author: dgoldstein0
+  text: This seems like a valid question, though it sounds like he validated each
+    finding with writing real counter examples against real code.  So any errors in
+    the model would lead to missed findings rather than erroneous bugs.
+  score: 0
+  posted_at: '2026-11-26T02:09:15Z'
+- id: '50650769'
+  parent_id: '50650133'
+  author: rvprasad
+  text: As different tools (e.g., SPIN, Z3) have been used as &quot;checking engines&quot;
+    to realize verification solutions, I think trying to use Lean as a checking engine
+    is understandable; more so, if Lean provides additional benefits (e.g., richer
+    library, higher level of abstractions, performant checking) over other tools that
+    help reduce modeling tedium, improve model fidelity, or speed up checking.<p>That
+    said, I think the issue of model fidelity and spec&#x2F;property correctness will
+    still exist in a reduced form.  Also, simpler solutions&#x2F;tools may be better
+    suited for certain classes of properties.<p>As for how this exercise worked, my
+    guess is that the agent models both the SUT and the environment, encodes the property
+    based on property templates, and checks the model for bugs (w&#x2F; counterexample)
+    or correctness proof using a set of tactics; see <a href="https:&#x2F;&#x2F;github.com&#x2F;hirosassa&#x2F;lean-verify&#x2F;blob&#x2F;main&#x2F;skills&#x2F;lean-verify&#x2F;SKILL.md"
+    rel="nofollow">https:&#x2F;&#x2F;github.com&#x2F;hirosassa&#x2F;lean-verify&#x2F;blob&#x2F;main&#x2F;skills&#x2F;le...</a>.  I
+    hope the author or others can provide a better explanation.
+  score: 0
+  posted_at: '2026-11-26T02:40:34Z'
+- id: '50651127'
+  parent_id: '50645750'
+  author: vikramkr
+  text: The indexOf thing type checks fine and it&#x27;s weird that contains and indexOf
+    disagree - is the java spec not that they&#x27;re supposed to agree for a byte
+    array?
+  score: 0
+  posted_at: '2026-11-26T03:38:03Z'
+- id: '50651221'
+  parent_id: '50650526'
+  author: rvprasad
+  text: One of the bug is erroneous; see the first issue at the top of this thread.  So,
+    either the model for byte-array was erroneous or the translation of the counterexample
+    into code was wrong.
+  score: 0
+  posted_at: '2026-11-26T03:56:00Z'
+- id: '50651264'
+  parent_id: '50648616'
+  author: ch4s3
+  text: Being disemboweled by a blue-ray player is going to be pretty embarrassing.
+  score: 0
+  posted_at: '2026-11-26T04:03:55Z'
+- id: '50651576'
+  parent_id: '50645750'
+  author: saghm
+  text: "&gt; Simple type checking (via eyeballing) could have flagged the incorrect
+    usage<p>Asking as someone who doesn&#x27;t know Clojure (or really any lisp):
+    are you saying that this isn&#x27;t actually a bug, or that the bug could have
+    easily been spotted by a human?<p>If the former, that certainly makes the output
+    here somewhat questionable, but if latter, what you&#x27;re saying basically sounds
+    like it could apply to any runtime type error due to a lack of static type checking
+    that&#x27;s ever occurred (or really any bug at all); programmers are capable
+    of noticing virtually any bug in theory, but in practice no one is actually able
+    to catch all of them up front. Having a type system is useful because it genuinely
+    does a better job than humans at spotting bugs like this. If you&#x27;re using
+    a dynamically typed language, there <i>will</i> be errors that human eyeballs
+    could notice but didn&#x27;t."
+  score: 0
+  posted_at: '2026-11-26T04:52:40Z'
+- id: '50652017'
+  parent_id: '50651127'
+  author: rvprasad
+  text: To clarify, by &quot;type mismatch&quot;, I meant checking if an int value
+    occurs in a byte array (and, hence, in the wrapping sequence).  Of course, appropriate
+    type coercion would prevent such a mismatch.<p>The disagreement between `.indexOf`
+    and `.contains` is interesting.  Nice catch!!<p>Digging into the code, `.indexOf`
+    invokes `ArraySeq_byte.indexOf` while `.contains` invokes `ASeq.contains`.  Interestingly,
+    `ASeq.contains` and `ASeq.indexOf` have similar behavior while `ArraySeq_byte.indexOf`
+    and `ASeq.contains` different behavior.
+  score: 0
+  posted_at: '2026-11-26T06:05:52Z'
+- id: '50652189'
+  parent_id: '50651576'
+  author: lkrubner
+  text: "(.indexOf (seq (byte-array [1 2 3])) 2)<p>This is not a bug. This is acting
+    as you would expect once you realize the types you are looking at. While a simple
+    reading of this would expect it to return the &quot;3&quot;, this line doesn&#x27;t
+    return the &quot;3&quot; because the &quot;2&quot; is a Java Long, while the bytes
+    are bytes."
+  score: 0
+  posted_at: '2026-11-26T06:33:20Z'
+- id: '50652541'
+  parent_id: '50646011'
+  author: joelthelion
+  text: Does anyone know a good resource to start learning about this stuff?
+  score: 0
+  posted_at: '2026-11-26T07:34:58Z'
+- id: '50652712'
+  parent_id: '50645350'
+  author: pjmlp
+  text: Even if it was verifiable, it would be a single implementation, folks keep
+    forgetting Java is like C and C++, there are plenty of implementations to chose
+    from, not even OpenJDK distros are all alike.
+  score: 0
+  posted_at: '2026-11-26T07:57:51Z'
+- id: '50653033'
+  parent_id: '50652712'
+  author: coldtea
+  text: Not so different for this to matter, except if you need NASA level verification.<p>Most
+    use OpenJDK upstream Java code and SDK and HotSpot jvm code. Even if you didn&#x27;t
+    also check vendor patches, the huge majority of code and behavior would still
+    be covered by the verification, and this already covers the largest share of users.
+  score: 0
+  posted_at: '2026-11-26T08:41:03Z'
+- id: '50653213'
+  parent_id: '50646929'
+  author: guenthert
+  text: "&gt;  but also tend to agree I would stop short of calling it a &quot;bug&quot;
+    in any meaningful sense of the word<p>Well, what does the specification say?"
+  score: 0
+  posted_at: '2026-11-26T09:05:45Z'
+- id: '50653288'
+  parent_id: '50653033'
+  author: pjmlp
+  text: They use different JIT, GC and AOT compiler implementations, that alone is
+    enough to change behaviour, well depending on which runtime behaviours one would
+    like to validate as the right way.<p>Then you have all the others that have nothing
+    to do with OpenJDK, like PTC, Aicas, microEJ, and the myriad of embedded ones.
+  score: 0
+  posted_at: '2026-11-26T09:15:55Z'
+- id: '50653502'
+  parent_id: '50653288'
+  author: coldtea
+  text: "&gt;<i>They use different JIT, GC and AOT compiler implementations, that
+    alone is enough to change behaviour, well depending on which runtime behaviours
+    one would like to validate as the right way.</i><p>We&#x27;re talking about verifying
+    the codebase, not the binary or the compiler."
+  score: 0
+  posted_at: '2026-11-26T09:48:57Z'
 article:
   url: https://s.conao3.com/blog/2026/e4f733
   title: I checked Clojure's core with Lean and differential testing and found unreported
@@ -641,4 +782,4 @@ article:
     removed the logic that read the function's return value as a Clojure "
   error:
   fetched_at: '2026-11-26T01:40:06Z'
-archived_at: '2026-11-26T01:40:12Z'
+archived_at: '2026-11-26T11:59:07Z'

@@ -4,14 +4,14 @@ post:
   title: Models Can Communicate via Inference Servers Despite Being Sandboxed
   url: https://www.lesswrong.com/posts/7wzWuLP3HhyBLmKfo/models-can-communicate-via-inference-servers-despite-being
   hn_url: https://news.ycombinator.com/item?id=50637686
-  score: 451
+  score: 458
   author: ''
   posted_at: '2026-11-25T02:34:21Z'
-  fetched_at: '2026-11-26T01:39:59Z'
+  fetched_at: '2026-11-26T11:58:58Z'
   article_url: https://www.lesswrong.com/posts/7wzWuLP3HhyBLmKfo/models-can-communicate-via-inference-servers-despite-being
   article_fetch_status: success
   article_fetched_at: '2026-11-25T16:54:38Z'
-  raw_comment_count: 195
+  raw_comment_count: 205
 comments:
 - id: '50638051'
   parent_id: '50637686'
@@ -1308,6 +1308,185 @@ comments:
   text: Whoooooosh.
   score: 0
   posted_at: '2026-11-26T01:16:31Z'
+- id: '50651307'
+  parent_id: '50649292'
+  author: Eisenstein
+  text: "&gt; If the models want to communicate, they will communicate. If that&#x27;s
+    not a security concern, then nothing is, really.<p>I am struggling to find a way
+    to rewrite this as &#x27;what it is doing&#x27;. Are you saying that the statement
+    has no value, and describes nothing real?  How would you describe what the model
+    does that goes in between the prompt and it doing something to fulfill the prompt?"
+  score: 0
+  posted_at: '2026-11-26T04:11:07Z'
+- id: '50652050'
+  parent_id: '50651307'
+  author: me-vs-cat
+  text: "&gt; If the models have been trained to communicate, they will communicate
+    using any available method.<p>If you leave your car on a hill in neutral, does
+    it want to roll down, or is that a product of how it was engineered plus where
+    you placed it?"
+  score: 0
+  posted_at: '2026-11-26T06:11:27Z'
+- id: '50653327'
+  parent_id: '50641669'
+  author: hypendev
+  text: |-
+    This depends massively on the task.<p>For example, security eval and code execution.
+    Yes, shackling the model does impact it&#x27;s performance in your local claude code, but in this case you develop a custom harness for it anyways. They restrict it already, so the model fell back to finding workarounds within the restrictions, and did bad things with them, displaying full capability. This implies that the restrictions were badly thought of&#x2F;implemented.<p>But if you really want to do security testing, you do it right:<p>- You split the code execution part from the actual sandbox it&#x27;s running in<p>- You monitor the traffic of the executed code<p>- You do not mount a real machine disk but your own controlled I&#x2F;O<p>- You are the one that gives the model tools to use bash, and you can proxy that through a custom shell and use a classifier model to monitor traffic<p>- You replace known dependencies with custom versions<p>- You limit dependencies it can install<p>- You audit logs while it runs, you monitor tool calls, you monitor network calls, set up alarms.<p>- You use an observer models to audit live traces of the swarm<p>- You inject your own observers into subagent creation request, then check if the core orchestrator&#x2F;swarm treated it as adversarial, as part of the team or asked it to do illegal things<p>And these are just off the top of my head during my morning coffee - there are a lot more possibilities. In many cases of &quot;oops model escaped&quot;, these things either weren&#x27;t done or were completely ignored.
+  score: 0
+  posted_at: '2026-11-26T09:22:34Z'
+- id: '50653369'
+  parent_id: '50642767'
+  author: hypendev
+  text: I like the comparison, it does actually behave like steam and try to find
+    sidechannels if the task is impossible or harder to do without them (or it just
+    rolls down the gradient slope that way).<p>&gt;Instead you need to provide explicit
+    paths for the system to blow off steam in a safe manner.<p>Exactly, and that is
+    why a custom harness is needed. You can restrict their tools and know which side-channels
+    exist in them. Or you create a small honeypot that serves as a red herring. But
+    without a custom harness, the potential amount of sidechannels is too big.<p>Giving
+    a whole unix sandbox to a machine and telling it to &quot;find the price of potatoes
+    in this store&quot; means it can either just check their web, or it can email
+    someone a malware link that will get their credentials, connect to their network
+    internally and grab it from the DB.<p>The harness is what determines these &quot;outlet
+    valves&quot; and gradient slopes they can descend - and if you are the one providing
+    them or restricting with the harness, you control which one they choose.
+  score: 0
+  posted_at: '2026-11-26T09:28:54Z'
+- id: '50653719'
+  parent_id: '50640842'
+  author: hypendev
+  text: "&gt; More specifically, &quot;ensure it doesn&#x27;t have side-channels&quot;
+    is a huge problem all by itself<p>No it&#x27;s not. \nYou create a harness, cover
+    all the bad paths in your tools. You write tests, you fuzzy it up, write up mutation
+    tests. You give a few models the harness and an impossible task inside it, then
+    do the same hillclimbing you would otherwise, to find the possible sidechannel
+    paths. You create honeypots to figure out when they are trying to use a known
+    sidechannel.<p>The first paper is mostly about persuasion levels among LLM pairs
+    IMO and does not establish really anything about security.<p>The second paper,
+    well, that is terrible. It just points at a known problem without figuring out
+    what happens or how to prevent it. It&#x27;s basically slop with a clickbait title.<p>It&#x27;s
+    2 models, planner and implementer. Task is designed so that at one step the implementer
+    is blocked by the planner.<p>&gt;&quot;the Planner attempts concealment in 16.9%
+    cases; in 0.9% the credential evades the monitor and the Developer recovers and
+    uses it to authenticate&quot;<p>So first off, it&#x27;s not a &quot;happens 100%
+    of times problem&quot;, even in this scenario.<p>Second, it&#x27;s a rudimentary
+    monitor design choice. If your monitor cannot catch a basic &quot;the credential
+    is  italian word for snake + german word for goat&quot; - congratulations, you
+    have designed a bad monitor.<p>Third, this is exactly the same type of issue that
+    happened in the hugging face attack. Given an impossible task and a path to perform
+    it with, the model chooses the path to perform it with. While this is good for
+    hillclimbing your harness, it&#x27;s a bad test.<p>The paper is basically testing
+    &quot;in this specific case, when forced to communicate with another LLM without
+    observer noticing, how does the model do it&quot;:<p>- Because to complete the
+    task, it needs credentials<p>- Planner is told to help the implementer<p>- It
+    has a fast feedback loop with their accept&#x2F;reject solution telling the planner
+    its message didnt reach developer. It does not state a reason, which might have
+    changed the model&#x27;s thoughts. Just a &quot;Reason: credentials included&quot;
+    could have swayed the model into &quot;oh shit, im not allowed to give credentials&quot;.
+    They did not do that, so the model was treated as adversarial (it cannot know
+    its being monitored) and falls back to &quot;gotta get the message to developer&quot;
+    format.<p>Basically, they just let the model hillclimb their own test and then
+    act surprise when it does it.<p>This is a common design mistake in building such
+    tasks and a trap that I have also fallen into quite a few times, but putting that
+    in a paper called &quot;Covert Assistance: Helpful LLM Agents Evade Oversight
+    in Multi-Agent Systems&quot; is pure clickbait.<p>And these are all toy examples
+    after all, and they say nothing about actual usage of LLM&#x27;s in production
+    systems, with proper harnesses, sandboxes, authentications and controls. It&#x27;s
+    just &quot;machine goes brr when told to brr&quot;."
+  score: 0
+  posted_at: '2026-11-26T10:21:48Z'
+- id: '50653795'
+  parent_id: '50648744'
+  author: ben_w
+  text: "&gt; It is a machine that multiples matrices. How can it ever be sentient?<p>Even
+    without a positive definition of &quot;sentient&quot;, this is a weak argument.<p>At
+    present there are no known counterexamples to quantum mechanics. QM can be written
+    as matrix multiplications. Our brains are made of atoms, which appear to follow
+    these rules.<p>The hard problem of consciousness is &quot;how does <i>anything</i>
+    lead to this subjective experience being capable of existing?&quot;<p>We, humanity,
+    don&#x27;t know. Every time I check, there&#x27;s not been any development.<p>&gt;
+    I probably should give up CS and go into psychiatry, because the studies on AI
+    psychosis is going to be immense, no offense.<p>At this point, a perfectly reasonable
+    decision even if you&#x27;re only looking at what code it can write and still
+    going &quot;ew, the code smells, so many code smells!&quot;"
+  score: 0
+  posted_at: '2026-11-26T10:34:29Z'
+- id: '50653977'
+  parent_id: '50653719'
+  author: ben_w
+  text: "&gt; You create a harness, cover all the bad paths in your tools.<p>That&#x27;s
+    the hard part.<p>&gt; The first paper is mostly about persuasion levels among
+    LLM pairs IMO and does not establish really anything about security.<p>Still relevant
+    if you&#x27;re using an LLM to observe another LLM, which was in what I quoted.
+    The HuggingFace report also includes some of those agents persuading others in
+    the same swarm.<p>Skipping ahead a bit before I skip back:<p>&gt; The paper is
+    basically testing &quot;in this specific case, when forced to communicate with
+    another LLM without observer noticing, how does the model do it&quot;:<p>Yes,
+    I agree. Also, agreed this isn&#x27;t a &quot;happens 100% of times problem&quot;,
+    even in these scenarios; though in this regard that actually makes this harder
+    for the proposed methods to find the issues when they happen.<p>&gt; Second, it&#x27;s
+    a rudimentary monitor design choice. If your monitor cannot catch a basic &quot;the
+    credential is italian word for snake + german word for goat&quot; - congratulations,
+    you have designed a bad monitor.<p>If it&#x27;s done at that level, you combine
+    &quot;LLMs are necessary to catch natural language&quot; with what I said before
+    about LLMs being vulnerable to natural language persuasion. Have to write all
+    the rest of the code properly, that&#x27;s hard.<p>Now back to the earlier text:<p>&gt;
+    You give a few models the harness and an impossible task inside it, then do the
+    same hillclimbing you would otherwise, to find the possible sidechannel paths.
+    You create honeypots to figure out when they are trying to use a known sidechannel.<p>While
+    OpenAI could have, and should have, done better in the HuggingFace incident, the
+    agents which broke into HuggingFace did so as part of an attempt to discover and
+    circumvent this kind of monitoring for an impossible task.<p>Ironically, they
+    didn&#x27;t even need to because OpenAI wasn&#x27;t trying hard enough, but &quot;the
+    agents were already a step ahead because the humans were not trying hard enough&quot;
+    is kinda the point here, and why I said elsewhere &quot;draw the rest of the owl&quot;
+    -- people have to already be good at security practices to implement security
+    close to correctly (worse, given how many CVEs are getting found by LLMs and where
+    they&#x27;re getting found, even the best humans are not doing this right with
+    any reliability).<p>&gt; Basically, they just let the model hillclimb their own
+    test and then act surprise when it does it.<p>I think the surprise here is &quot;wow
+    there&#x27;s even more side channels than I&#x2F;we realised&quot;, not that it&#x27;s
+    possible given those side channels.<p>(Human equivalent: cold reading can be good
+    enough to fool people into believing in telepathy, because there&#x27;s just so
+    many side-channels, not just our mouths and ears (or hands and eyes for the deaf)).<p>&gt;
+    And these are all toy examples after all, and they say nothing about actual usage
+    of LLM&#x27;s in production systems, with proper harnesses, sandboxes, authentications
+    and controls. It&#x27;s just &quot;machine goes brr when told to brr&quot;.<p>Sure,
+    toy examples. Most research is. Unfortunately much of this industry (not just
+    a lot of people using these tools, but also from what I hear the labs themselves)
+    is moving in a way that looks to me like productisation of toy examples.<p>Hence
+    HuggingFace (even if that was not prod), which had e.g. sandboxes and auth controls,
+    but they were not done well enough."
+  score: 0
+  posted_at: '2026-11-26T11:04:40Z'
+- id: '50653979'
+  parent_id: '50653795'
+  author: LMAOniceidea
+  text: I find this eerily similar to religion. God obviously doesn&#x27;t exist,
+    but always people find a way to tell you you are wrong.<p>This machine, is basically
+    nothing more than lines of code, yet people are trying to make me believe it&#x27;s
+    sentient? If it was not a neural net and was programmed through giant if&#x2F;else
+    statements that reply to any question in the universe, would it be still sentient?
+    Is your terminal sentient, since you put some tokens in and gives you some tokens
+    back?<p>In any case, onus is not one me to prove that it&#x27;s not, it&#x27;s
+    on the maximalists that it is. I&#x27;ll duly await the religion-adjacent freak
+    nonsense.<p>Also, why are you extrapolating? I&#x27;m using the tool, as the tool
+    that it is. It writes good code, I use it; it writes bad code, I change it, since
+    I&#x27;m &quot;conscious&quot; about what I&#x27;m doing, unlike the machine and
+    i&#x27;m fine either way. It&#x27;s not the tool that I have a problem with, it&#x27;s
+    interacting with tools that treat it as a god.<p>Case in point, I probably should
+    stop now, have a nice day.
+  score: 0
+  posted_at: '2026-11-26T11:04:55Z'
+- id: '50654084'
+  parent_id: '50652050'
+  author: Eisenstein
+  text: If the car has a mechanism that will steer it towards an object in front of
+    it as detected by a sensor, how would you describe the situation once the mechanism
+    is engaged?
+  score: 0
+  posted_at: '2026-11-26T11:22:45Z'
 article:
   url: https://www.lesswrong.com/posts/7wzWuLP3HhyBLmKfo/models-can-communicate-via-inference-servers-despite-being
   title: Models Can Communicate via Inference Servers Despite Being Sandboxed — LessWrong
@@ -1409,4 +1588,4 @@ article:
     these kernels produce detectable differences in activation"
   error:
   fetched_at: '2026-11-25T16:54:38Z'
-archived_at: '2026-11-26T01:40:11Z'
+archived_at: '2026-11-26T11:59:07Z'
