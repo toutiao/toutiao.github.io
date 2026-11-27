@@ -5,14 +5,14 @@ post:
   title: In defense of lock poisoning in Rust (2025)
   url: https://sunshowers.io/posts/on-poisoning/
   hn_url: https://lobste.rs/s/wpylec
-  score: 27
+  score: 30
   author: m0th
   posted_at: '2026-11-26T11:51:23Z'
-  fetched_at: '2026-11-27T07:12:18Z'
+  fetched_at: '2026-11-27T18:44:23Z'
   article_url: https://sunshowers.io/posts/on-poisoning/
   article_fetch_status: success
-  article_fetched_at: '2026-11-27T07:12:19Z'
-  raw_comment_count: 15
+  article_fetched_at: '2026-11-27T18:44:29Z'
+  raw_comment_count: 16
   tags:
   - rust
 comments:
@@ -22,7 +22,7 @@ comments:
   text: |-
     This was previously posted a year ago: https://sunshowers.io/posts/on-poisoning/
     But I wanted to resubmit it because I found it a compelling counter-argument to https://lobste.rs/s/sj2pkv/abolish_lock_poisoning
-  score: 7
+  score: 9
   posted_at: '2026-11-26T11:51:23Z'
 - id: lo-zcuoev
   parent_id: '0'
@@ -47,7 +47,7 @@ comments:
     I think we should both get Poison<T> and make std::sync::poison::Mutex's lock panic on poison tbh
 
     See my post from a day ago about why this would be a pretty terrible outcome.
-  score: 3
+  score: 5
   posted_at: '2026-11-26T18:49:55Z'
 - id: lo-qryyec
   parent_id: '0'
@@ -58,7 +58,7 @@ comments:
     The answer depends on a bunch of things, but in general (and especially in library code) that is indeed what I’m suggesting. For instance, this critical section in parity-db is quite large. Reasoning about whether it’s unwind-safe seems very difficult to me; this is exactly the kind of code that mutex poisoning does well to guard against.
 
     The picking of parity-db's commit_raw function quite interesting here because it shows exactly the type of failure that I also mentioned in my blog post: early returns. That function uses ? after taking a critical section so you have early returns in that function while the mutex is held for error handling. In fact the only case I can find in this function of leaving broken state behind is from that error handling and not from panics!
-  score: 8
+  score: 11
   posted_at: '2026-11-26T19:05:13Z'
 - id: lo-vtukia
   parent_id: '0'
@@ -83,7 +83,7 @@ comments:
 
     In that light, I see the Poison<T> approach to be the best compromise for today’s world. I can see why rust, focused as it was on correctness l, went with the poison model instead of the posix deadlock model or other language’s silent unlock approach, but the profileration of multithreading (esp at such a high level to the point we are using it in the web stack) has led to a change in the way people write multithreaded code and the nature of what it’s being used for. Now you have it protecting shared resources that aren’t just task/algorithm-specific and far too removed from the rest of the code to know how to handle poisoning; the cases where you are writing carefully designed multithreaded algorithms (like the libraries in the examples in the posts in this back-and-forth series, for instance) are the minority and would know to opt-into it, but rust has gone from a systems programming language to being used by the masses for pretty much anything and everything at all ends of the spectrum and the ergonomics of the defaults should change – so long as existing editions preserve their behavior and new editions continue to provide a way to opt into poisoning. A separate Poison<T> type actually increases the tools available in the proverbial tool belt for correctness-first programming over just having it always on but only for mutexes.
     One last comment: I see concerns voiced about people not knowing or not realizing or not being sufficiently provoked into using Poison<T> by default, but I think that’s a weak argument: software correctness is an ongoing effort, no one writes perfect code in a new environment/language, especially if they didn’t know to look into what the lock does on panic to begin with, and we all live and learn. But writing .lock().unwrap() is also just not a big deal TM in the grand scheme of things!
-  score: 7
+  score: 15
   posted_at: '2026-11-26T21:25:18Z'
 - id: lo-egou6l
   parent_id: '0'
@@ -92,7 +92,7 @@ comments:
     when everyone not interested in (properly or improperly) handling poison does .lock().unwrap() or .lock().expect() today
 
     But everybody who does that, realizes sooner or later that they need to do .lock().unwrap_or_else(|poison| poison.into_inner()). That's also what the standard library does!
-  score: 1
+  score: 3
   posted_at: '2026-11-26T21:36:30Z'
 - id: lo-lvicnd
   parent_id: '0'
@@ -101,7 +101,7 @@ comments:
     I wish I had a crystal ball that could give me statistics on what people are actually doing and correlate it with whether or not they know what they’re doing or not.
     Swallowing poisons seems the worst of any world for the average use case; imho it should be used as sparingly and judiciously as catch_unwind should be (read: not is) used.  In fact, less sparingly: if code at api boundaries catches panics in external code that doesn’t affect its own internal state (such as a task scheduler), then no poisoning takes place to begin with.
     The only reason to run without panic = abort - if you’re not agonizingly writing panic-safe and poison-safe multithreaded code - would be to allow important drop impls in non-pure functions run to clean up or roll back their work in panic-safe contexts. Your average app or webapp author is not benefiting from learning this “one cool trick” to “recover” from a poisoned mutex (and they’re not even calling clear_poison() so they’re not even doing that right). It’s right up there with turning assert() failures into a warning message in release mode!
-  score: 2
+  score: 3
   posted_at: '2026-11-26T22:10:07Z'
 - id: lo-6fvgac
   parent_id: '0'
@@ -109,7 +109,7 @@ comments:
   text: |-
     Well I can tell you that in 15 years of Rust I have only ever been bitten by the poison system and not once saved. And in that post, I showed you some examples of other projects and the general trend towards not using poisoning.
     YMMV but really I do not know of a lot of evidence that supports that poisoning helps in any capacity but I have plenty of evidence that it creates unstable services.
-  score: 3
+  score: 5
   posted_at: '2026-11-26T22:57:46Z'
 - id: lo-81axw4
   parent_id: '0'
@@ -118,7 +118,7 @@ comments:
     I've read the posts in their original order, and thought that abolish_lock_poisoning was the counter-argument :)
     but poison-or-not is a false dichotomy. In an ideal case it's still only a partial solution that doesn't help against divergence via ?, return or (in case of async mutexes) cancelled .await.
     It would be more effective to have linear/unforgettable types, or switch from a Mutex to types that only allow transactional all-or-nothing updates. Even then you can still get bitten by mutable state elsewhere (protocols, files on disk, atomics), so there's no way to escape the need to have proper drop guards for pretty much everything all the time.
-  score: 2
+  score: 3
   posted_at: '2026-11-27T02:07:08Z'
 - id: lo-cxfkoq
   parent_id: '0'
@@ -135,7 +135,7 @@ comments:
     But everybody who does that, realizes sooner or later that they need to do .lock().unwrap_or_else(|poison| poison.into_inner()).
 
     That's assuming that people want to ignore panics from other threads though
-  score: 1
+  score: 2
   posted_at: '2026-11-27T06:46:35Z'
 - id: lo-9vtguz
   parent_id: '0'
@@ -158,6 +158,14 @@ comments:
     and then have code written against 2030 using a 2027 library annotate the type as std::sync::poison::Mutex? (in case it was unclear, mt initial comment wasn't suggesting removing the current Mutex completely)
   score: 1
   posted_at: '2026-11-27T06:55:02Z'
+- id: lo-ztthfw
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    That, I think could be possible, given that it's morally equivalent to moving things into or out of the prelude.
+    I thought you were talking about removal from access or rustdoc visiblity, equivalent to what would be ideal for the two deprecated methods on Error.
+  score: 2
+  posted_at: '2026-11-27T08:35:45Z'
 article:
   url: https://sunshowers.io/posts/on-poisoning/
   title: In defense of lock poisoning in Rust · sunshowers
@@ -260,4 +268,4 @@ article:
     The alternative is to _abort_, which causes the whole proc"
   error:
   fetched_at: '2026-11-26T21:23:37Z'
-archived_at: '2026-11-27T07:12:20Z'
+archived_at: '2026-11-27T18:44:30Z'

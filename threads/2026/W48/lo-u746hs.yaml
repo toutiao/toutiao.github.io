@@ -1,0 +1,79 @@
+---
+post:
+  id: lo-u746hs
+  source: lobsters
+  title: The State of Allocators in 2026 - Finally Stabilised
+  url: https://cetra3.github.io/blog/state-of-allocators-2026-finally-stabilised/
+  hn_url: https://lobste.rs/s/u746hs
+  score: 11
+  author: fanf
+  posted_at: '2026-11-27T16:09:11Z'
+  fetched_at: '2026-11-27T18:44:23Z'
+  article_url: https://cetra3.github.io/blog/state-of-allocators-2026-finally-stabilised/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-27T18:44:26Z'
+  raw_comment_count: 0
+  tags:
+  - rust
+comments: []
+article:
+  url: https://cetra3.github.io/blog/state-of-allocators-2026-finally-stabilised/
+  title: The State of Allocators in 2026 - Finally Stabilised!
+  fetch_status: success
+  content: |-
+    It's only been a couple of months since the last article, and I am pleased to see that, after 10 years of limbo, allocators have finally been stabilised! While it feels like the never type did steal a bit of thunder, rust 1.100 was nonetheless a monumental release. Congratulations on the team that shepherded this through.
+
+    So, now we have an MVP of the allocator API, what can we do with it? What does it get us besides closer feature parity with other system languages like C++ & Zig?
+
+    In this article I'll step through a few use cases that might be handy to the layman rust programmer, so hopefully you can see the benefit.
+
+    ## Allocators can adjust when memory is freed
+
+    This was one of the leading cases for custom allocation. Dropping in rust is not free. There has been prior art in actually moving memory to a dedicated thread to Drop highly nested structures. This is actually only half a solution. You're still paying for the deallocation call costs, just it's not in the hot path anymore.
+
+    Instead, what if we knew that we would have a period of time in our code, where we're going to allocate a lot of stuff, do something with it, and then free everything? A good example of this is a web request, or a database query.
+
+    A request comes in, fills in some data structures, and then when the request finishes, the memory isn't needed anymore so it's dropped. This sort of "burst" pattern of allocation, where you allocate a lot up front, and then tear things down all at once at the end, is quite common.
+
+    For this we can use a bump allocator: reserve a big block of memory, and allocate from that, rather than paying the cost of talking to the system allocator for every allocation. Think of it like the BufReader and BufWriter of std io, rather than make repeated syscalls to fetch data, we can buffer that data in a big block, so that we can reduce the overhead considerably.
+
+    You want more memory? Just check if the size fits in our block, return that slice, increment our counter (bump!), and we're done. We can add more blocks as well, if we run out. This makes allocations very cheap, we don't need to keep much state around besides from a counter.
+
+    The downsides of this approach is when we come to deallocate memory. We don't keep track around where individual allocations are made. However, this actually solves our drop takes a long time problem, since we can just deallocate everything all at once.
+
+    Essentially if the impl of the bump allocator is:
+
+    const SIZE: usize = 32 * 1024 * 1024; const LAYOUT: Layout = Layout::new::<[u8; SIZE]>(); struct Bump { // one big 32MiB block from the global allocator data: NonNull<u8>, // how much of it we've handed out used: Cell<usize>, } impl Bump { fn new() -> Self { let data = Global.allocate(LAYOUT).expect("out of memory").cast::<u8>(); Bump { data, used: Cell::new(0) } } } impl Drop for Bump { fn drop(&mut self) { // hand the whole block back in one go unsafe { Global.deallocate(self.data, LAYOUT) } } } unsafe impl Allocator for &Bump { fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> { // where we are in memory let data = self.data.as_ptr(); // how much we've used of `data` already let used = self.used.get(); // given the requested alignment, how many bytes do we need past `data` + `used` let alignment_padding = data.wrapping_add(used).align_offset(layout.align()); let start = used + alignment_padding; let end = start + layout.size(); if end <= SIZE { // bump! self.used.set(end); let ptr = unsafe { NonNull::new_unchecked(data.add(start)) }; return Ok(NonNull::slice_from_raw_parts(ptr, layout.size())); } // an actual bump allocator would grab another block here Err(AllocError) } unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) { // deliberately a no-op! } }
+
+    Then we can use it like so:
+
+    struct Node<'a> { value: u64, parent: Option<&'a Node<'a>>, } // our bump allocator let bump = Bump::new(); // leak here gives us a ref tied to the arena, the memory still goes when we drop our allocator let mut leaf: &Node = Box::leak(Box::new_in(Node { value: 0, parent: None }, &bump)); for i in 1..1_000_000 { leaf = Box::leak(Box::new_in(Node { value: i, parent: Some(leaf) }, &bump)); } // this takes virtually no time at all! drop(bump);
+
+    There are a few tradeoffs for doing things like this in a bump allocator, and not every allocation is going to benefit. Hence why it's important to be able to adjust our allocation strategy locally rather than just globally. However, an astute reader might notice that, if we are bumping large swathes of memory, this is going to possibly cause our memory usage to increase considerably. Well, that brings us to our next section: memory accounting.
+
+    ## Allocators can let us know how much memory they're using
+
+    The next challenge that can be solved by custom allocators is knowing how much memory particular sections of code is being used. I.e, memory accounting. The key here is that, we can use existing allocators, and sprinkle in some extra bookkeeping to keep a pretty accurate ledger.
+
+    There are a number of use cases that accounting can shape the behaviour of code. Say you have a cache of objects, and you want to set a threshold above which, we start evicting entries. Or say you want to do an external sort, but you don't know how big your data structures are at the start, but you want to use up as much memory as possible. Or maybe you are wanting to place a limit on a code sandbox, because it's sharing resources with other sandboxes.
+
+    What you can do is wrap an allocator, with a custom accounting layer, and use this to drive your decisions. I.e, here is a very trivial example:
+
+    struct AccountedAllocator<A: Allocator> { inner: A, allocated: AtomicUsize, } impl<A: Allocator> AccountedAllocator<A> { fn new(inner: A) -> Self { Self { inner, allocated: AtomicUsize::new(0) } } fn allocated(&self) -> usize { self.allocated.load(Ordering::Relaxed) } } unsafe impl<A: Allocator> Allocator for &AccountedAllocator<A> { fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> { // pass the allocation through, and count it if it succeeded let ptr = self.inner.allocate(layout)?; self.allocated.fetch_add(layout.size(), Ordering::Relaxed); Ok(ptr) } unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) { unsafe { self.inner.deallocate(ptr, layout) }; self.allocated.fetch_sub(layout.size(), Ordering::Relaxed); } }
+
+    Then we can wrap the global allocator, and see how much our cache is using:
+
+    let accounted = AccountedAllocator::new(Global); let mut cache: Vec<u8, _> = Vec::new_in(&accounted); cache.extend_from_slice(&[0; 1024]); // cache is using 1024 bytes println!("cache is using {} bytes", accounted.allocated()); cache.extend_from_slice(&[0; 4096]); // cache is using 5120 bytes println!("cache is using {} bytes", accounted.allocated()); drop(cache); // cache is using 0 bytes println!("cache is using {} bytes", accounted.allocated());
+
+    ### Shameless Plug: the Thresher crate
+
+    Now, a single atomic, while is great for an example, does have some perf overhead. So, one of the crates that I have created, while keeping in mind performance, is thresher: an accounting allocator with a callback on threshold. It uses a combined "local" task/thread and "global" counter to avoid atomic contention, feeding back in every 64KiB of allocation.
+
+    thresher gets its name from the cutest shark: the Thresher Shark.
+
+    Now, what you can do with thresher is, use it to trigger callbacks when allocations are hit:
+
+    let thresher = Thresher::new(); thresher.set_callback_threshold(100 * 1024 * 1024); thresher.set_callback(|allocation| { println!("Threshold reached! Allocated: {} bytes", allocation); }); // This is what we're adding to our vec each loop let bytes = vec![0u8; 10 * 1024 * 1024]; // The vec allocates through the handle, so its buffer counts towards the // threshold. `bytes` above uses the global allocator and is not counted let mut vec = Vec::<u8, _>::new_in(thresher.handle()); for i in 0..10
+  error:
+  fetched_at: '2026-11-27T18:44:26Z'
+archived_at: '2026-11-27T18:44:26Z'
