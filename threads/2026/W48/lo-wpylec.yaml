@@ -5,14 +5,14 @@ post:
   title: In defense of lock poisoning in Rust (2025)
   url: https://sunshowers.io/posts/on-poisoning/
   hn_url: https://lobste.rs/s/wpylec
-  score: 20
+  score: 27
   author: m0th
   posted_at: '2026-11-26T11:51:23Z'
-  fetched_at: '2026-11-26T21:23:34Z'
+  fetched_at: '2026-11-27T07:12:18Z'
   article_url: https://sunshowers.io/posts/on-poisoning/
   article_fetch_status: success
-  article_fetched_at: '2026-11-26T21:23:37Z'
-  raw_comment_count: 6
+  article_fetched_at: '2026-11-27T07:12:19Z'
+  raw_comment_count: 15
   tags:
   - rust
 comments:
@@ -22,7 +22,7 @@ comments:
   text: |-
     This was previously posted a year ago: https://sunshowers.io/posts/on-poisoning/
     But I wanted to resubmit it because I found it a compelling counter-argument to https://lobste.rs/s/sj2pkv/abolish_lock_poisoning
-  score: 6
+  score: 7
   posted_at: '2026-11-26T11:51:23Z'
 - id: lo-zcuoev
   parent_id: '0'
@@ -30,7 +30,7 @@ comments:
   text: |-
     I think we should both get Poison<T> and make std::sync::poison::Mutex's lock panic on poison tbh
     I wonder if std::sync::Mutex should be removed in favour of users choosing explicitly if they want poisoning or not tho
-  score: 1
+  score: 2
   posted_at: '2026-11-26T17:48:25Z'
 - id: lo-apgieq
   parent_id: '0'
@@ -58,17 +58,106 @@ comments:
     The answer depends on a bunch of things, but in general (and especially in library code) that is indeed what I’m suggesting. For instance, this critical section in parity-db is quite large. Reasoning about whether it’s unwind-safe seems very difficult to me; this is exactly the kind of code that mutex poisoning does well to guard against.
 
     The picking of parity-db's commit_raw function quite interesting here because it shows exactly the type of failure that I also mentioned in my blog post: early returns. That function uses ? after taking a critical section so you have early returns in that function while the mutex is held for error handling. In fact the only case I can find in this function of leaving broken state behind is from that error handling and not from panics!
-  score: 3
+  score: 8
   posted_at: '2026-11-26T19:05:13Z'
 - id: lo-vtukia
   parent_id: '0'
   author: mqudsi
-  text: I don’t see any benefit to keeping poisoning but making lock() panic when
-    everyone not interested in (properly or improperly) handling poison does .lock().unwrap()
-    or .lock().expect() today. In addition to always taking the slow path, it is just
-    churn for the sake of churn.
+  text: |-
+    I don’t see any benefit to keeping poisoning but making lock() panic when everyone not interested in (properly or improperly) handling poison does .lock().unwrap() or .lock().expect() today. In addition to always taking the slow path, it is just churn for the sake of churn.
+    Edit: this is not an endorsement of letting lock() silently continue on poison!
   score: 1
   posted_at: '2026-11-26T20:37:42Z'
+- id: lo-cjt1um
+  parent_id: '0'
+  author: mqudsi
+  text: |-
+    It seems like there aren’t any dinosaurs posting  about their pre-rust experiences with mutex poisoning, possible because it really means “I was writing framework-free multithreaded or IPC win32 code back in the day,” which rules out a good chunk of the Unix greybeards in the crowd.
+    Windows, by virtue of having going with multi-threading over fork/exec from the start, was probably the most common example of lock poisoning in the wild. Calls to WaitForSingleObject/WaitForMultipleObjects could (and would) return WAIT_ABANDONED if the thread (or process, in the case of kernel objects placed in shared memory pages) were killed while holding the (kernel mode) mutex lock.
+
+    the lock would be obtained by the calling thread (exclusive access, slow) but would not return a success; pretty similar to how rust does it now
+    the lock didn’t have a sticky poisoned state, iirc it was the responsibility of whoever first unlocked it to let everything else know
+    there was no “unwinding” or anything so you had to manually propagate poison state or a shutdown if you didn’t feel equipped to handle the poison
+    that said, multithreading was far more niche and specialized than it is now, and you used it (relatively) fairly sparingly given the ergonomics. Combining its specialized nature with the lack of panics/structured exception handling, people were more deliberate in writing poison-safe code. I could be misremembering but I seem to recall that I wrote much more code to reset state and recover from poisoning than I did to propagate poison and abort the app. That could also be the nature of the code I was writing at the time, though!
+    an important distinction is that, on Windows and specifically with kernel muted objects rather than user space critical sections, a poison could be because a thread or a process aborted. You obviously need to handle them differently in most cases; whereas rust mutexes are strictly userland and so an argument could be made to not afford the dev with an opportunity to handle that.
+
+    In that light, I see the Poison<T> approach to be the best compromise for today’s world. I can see why rust, focused as it was on correctness l, went with the poison model instead of the posix deadlock model or other language’s silent unlock approach, but the profileration of multithreading (esp at such a high level to the point we are using it in the web stack) has led to a change in the way people write multithreaded code and the nature of what it’s being used for. Now you have it protecting shared resources that aren’t just task/algorithm-specific and far too removed from the rest of the code to know how to handle poisoning; the cases where you are writing carefully designed multithreaded algorithms (like the libraries in the examples in the posts in this back-and-forth series, for instance) are the minority and would know to opt-into it, but rust has gone from a systems programming language to being used by the masses for pretty much anything and everything at all ends of the spectrum and the ergonomics of the defaults should change – so long as existing editions preserve their behavior and new editions continue to provide a way to opt into poisoning. A separate Poison<T> type actually increases the tools available in the proverbial tool belt for correctness-first programming over just having it always on but only for mutexes.
+    One last comment: I see concerns voiced about people not knowing or not realizing or not being sufficiently provoked into using Poison<T> by default, but I think that’s a weak argument: software correctness is an ongoing effort, no one writes perfect code in a new environment/language, especially if they didn’t know to look into what the lock does on panic to begin with, and we all live and learn. But writing .lock().unwrap() is also just not a big deal TM in the grand scheme of things!
+  score: 7
+  posted_at: '2026-11-26T21:25:18Z'
+- id: lo-egou6l
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    when everyone not interested in (properly or improperly) handling poison does .lock().unwrap() or .lock().expect() today
+
+    But everybody who does that, realizes sooner or later that they need to do .lock().unwrap_or_else(|poison| poison.into_inner()). That's also what the standard library does!
+  score: 1
+  posted_at: '2026-11-26T21:36:30Z'
+- id: lo-lvicnd
+  parent_id: '0'
+  author: mqudsi
+  text: |-
+    I wish I had a crystal ball that could give me statistics on what people are actually doing and correlate it with whether or not they know what they’re doing or not.
+    Swallowing poisons seems the worst of any world for the average use case; imho it should be used as sparingly and judiciously as catch_unwind should be (read: not is) used.  In fact, less sparingly: if code at api boundaries catches panics in external code that doesn’t affect its own internal state (such as a task scheduler), then no poisoning takes place to begin with.
+    The only reason to run without panic = abort - if you’re not agonizingly writing panic-safe and poison-safe multithreaded code - would be to allow important drop impls in non-pure functions run to clean up or roll back their work in panic-safe contexts. Your average app or webapp author is not benefiting from learning this “one cool trick” to “recover” from a poisoned mutex (and they’re not even calling clear_poison() so they’re not even doing that right). It’s right up there with turning assert() failures into a warning message in release mode!
+  score: 2
+  posted_at: '2026-11-26T22:10:07Z'
+- id: lo-6fvgac
+  parent_id: '0'
+  author: mitsuhiko
+  text: |-
+    Well I can tell you that in 15 years of Rust I have only ever been bitten by the poison system and not once saved. And in that post, I showed you some examples of other projects and the general trend towards not using poisoning.
+    YMMV but really I do not know of a lot of evidence that supports that poisoning helps in any capacity but I have plenty of evidence that it creates unstable services.
+  score: 3
+  posted_at: '2026-11-26T22:57:46Z'
+- id: lo-81axw4
+  parent_id: '0'
+  author: kornel
+  text: |-
+    I've read the posts in their original order, and thought that abolish_lock_poisoning was the counter-argument :)
+    but poison-or-not is a false dichotomy. In an ideal case it's still only a partial solution that doesn't help against divergence via ?, return or (in case of async mutexes) cancelled .await.
+    It would be more effective to have linear/unforgettable types, or switch from a Mutex to types that only allow transactional all-or-nothing updates. Even then you can still get bitten by mutable state elsewhere (protocols, files on disk, atomics), so there's no way to escape the need to have proper drop guards for pretty much everything all the time.
+  score: 2
+  posted_at: '2026-11-27T02:07:08Z'
+- id: lo-cxfkoq
+  parent_id: '0'
+  author: realkc
+  text: I don't see why rust couldn't remove identifiers across edition boundaries,
+    if rust 2030 decided to remove std::sync::Mutex from that edition onwards, code
+    written against previous editions would still be compilable
+  score: 1
+  posted_at: '2026-11-27T06:43:53Z'
+- id: lo-wekq8h
+  parent_id: '0'
+  author: realkc
+  text: |-
+    But everybody who does that, realizes sooner or later that they need to do .lock().unwrap_or_else(|poison| poison.into_inner()).
+
+    That's assuming that people want to ignore panics from other threads though
+  score: 1
+  posted_at: '2026-11-27T06:46:35Z'
+- id: lo-9vtguz
+  parent_id: '0'
+  author: ssokolow
+  text: |-
+    Because code written against previous editions may expose std::sync::Mutex in its function signatures in ways that require you to be able to locally name it when interacting with them. (eg. Functions which take a std::sync::Mutex as one of their arguments or which return it, requiring it to be nameable in case you run into one of those "please annotate the type" errors.)
+    ...not that it matters. I'm just the messenger. "Editions can't remove things from std's API surface" has been "word of Godupstream" for at least a decade now.
+    Heck, this property in a different guise (different major versions of the same library) is why one of the classic places Rust's friendly errors needed improvement was "Expected foo::Bar but you tried to pass foo::Bar".
+  score: 1
+  posted_at: '2026-11-27T06:47:05Z'
+- id: lo-eoo30g
+  parent_id: '0'
+  author: realkc
+  text: |-
+    Why couldn't the hypothetical Rust 2030 have
+    // in sync.rs
+    #[in_editions_before("2030)] // hypotetjical syntax
+    pub use poison::Mutex;
+
+    and then have code written against 2030 using a 2027 library annotate the type as std::sync::poison::Mutex? (in case it was unclear, mt initial comment wasn't suggesting removing the current Mutex completely)
+  score: 1
+  posted_at: '2026-11-27T06:55:02Z'
 article:
   url: https://sunshowers.io/posts/on-poisoning/
   title: In defense of lock poisoning in Rust · sunshowers
@@ -171,4 +260,4 @@ article:
     The alternative is to _abort_, which causes the whole proc"
   error:
   fetched_at: '2026-11-26T21:23:37Z'
-archived_at: '2026-11-26T21:23:37Z'
+archived_at: '2026-11-27T07:12:20Z'

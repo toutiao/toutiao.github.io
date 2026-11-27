@@ -1,0 +1,317 @@
+---
+post:
+  id: '50470445'
+  title: AWS Lambda Web Functions keep billing memory ~7 minutes after the last request
+  url: https://www.easel.sh/blog/lambda-web-functions-idle-memory
+  hn_url: https://news.ycombinator.com/item?id=50470445
+  score: 83
+  author: seanw265
+  posted_at: '2026-11-12T16:59:26Z'
+  fetched_at: '2026-11-27T07:12:26Z'
+  raw_comment_count: 31
+comments:
+- id: '50470698'
+  parent_id: '50470445'
+  author: hoppp
+  text: Isn&#x27;t that a configurable parameter?
+  score: 0
+  posted_at: '2026-11-12T17:15:39Z'
+- id: '50470712'
+  parent_id: '50470698'
+  author: ceejayoz
+  text: Yes. Buried several paragraphs past the headline is a note saying &quot;AWS
+    documents this behavior.&quot;<p>This is marketing for a Lambda competitor.
+  score: 0
+  posted_at: '2026-11-12T17:16:11Z'
+- id: '50470830'
+  parent_id: '50470445'
+  author: catlifeonmars
+  text: Does the ~7 minutes get amortized over sustained load (due to container reuse)?
+    I feel like the article doesn’t consider the shape of the traffic and workloads
+    in its analysis of why lambda is not a good fit.
+  score: 0
+  posted_at: '2026-11-12T17:24:06Z'
+- id: '50470849'
+  parent_id: '50470712'
+  author: stymaar
+  text: What&#x27;s the default though? Because if the 7min thing happen with default
+    settings, then it&#x27;s definitely blog post worthy.
+  score: 0
+  posted_at: '2026-11-12T17:25:11Z'
+- id: '50470855'
+  parent_id: '50470712'
+  author: Hnrobert42
+  text: Hmm. Are you sure? The article says AWS documents the behavior, but there
+    is no way to configure it. They tried forcing an early shutdown, but that caused
+    AWS to record an error event.
+  score: 0
+  posted_at: '2026-11-12T17:25:35Z'
+- id: '50470866'
+  parent_id: '50470698'
+  author: seanw265
+  text: Not as far as I can tell. Web Functions let you configure concurrency, maximum
+    environment count, and request rate limits, but there&#x27;s no setting for how
+    long an environment stays alive after its last request. The configurable timeout
+    applies to individual requests, not the environment itself.<p>I measured between
+    5 and 7 minutes of idle time (after the last request had ended) across six environments.
+    I was able to cut this short by exiting the process myself, but AWS records this
+    as a runtime error so IMO it&#x27;s not suitable to rely on in production.<p>Here&#x27;s
+    the AWS scaling documentation. I&#x27;m happy to be corrected if I missed anything.<p><a
+    href="https:&#x2F;&#x2F;docs.aws.amazon.com&#x2F;lambda&#x2F;latest&#x2F;dg&#x2F;web-functions-scaling.html"
+    rel="nofollow">https:&#x2F;&#x2F;docs.aws.amazon.com&#x2F;lambda&#x2F;latest&#x2F;dg&#x2F;web-functions-s...</a>
+  score: 0
+  posted_at: '2026-11-12T17:26:15Z'
+- id: '50470923'
+  parent_id: '50470445'
+  author: netik
+  text: This a bit of a “yeah, so?” Statement.<p>You can configure teardown and minimum
+    workers, and with a busy site, most of the time requests aren’t going to stop
+    enough for this to matter.
+  score: 0
+  posted_at: '2026-11-12T17:29:50Z'
+- id: '50470989'
+  parent_id: '50470712'
+  author: seanw265
+  text: What&#x27;s documented is that memory is billed for as long as the environment
+    is active. What&#x27;s not documented is how long those environments actually
+    remain alive after their last request, and there&#x27;s no configurable idle timeout.<p>And
+    for context, Easel.sh is an alternative to Vercel, not AWS. Easel actually uses
+    traditional Lambda as part of its core infrastructure. I was hoping Web Functions
+    could replace some of the custom infrastructure we&#x27;d built on top of it,
+    but the idle-memory billing made it a poor fit for our workload.<p>I thought the
+    findings were worth sharing.
+  score: 0
+  posted_at: '2026-11-12T17:33:20Z'
+- id: '50471047'
+  parent_id: '50470923'
+  author: seanw265
+  text: 'Yes for sure, if your web function is very active this is less of an issue.
+    But not every workload fits that mold.<p>Also: afaict idle time before teardown
+    is not configurable.'
+  score: 0
+  posted_at: '2026-11-12T17:36:21Z'
+- id: '50471273'
+  parent_id: '50470830'
+  author: seanw265
+  text: 'In general I think the answer to your question is yes. If you have sustained
+    load, the environment will often be reused. When that happens, there is little
+    “idle” time that you’re billed for.<p>I don’t mean to imply that Lambda Web Functions
+    are a bad fit for every workload, just that they are a bad fit for <i>our</i>
+    workload as a result of this behavior.<p>Edit: I made an update to the post to
+    hopefully clarify this.'
+  score: 0
+  posted_at: '2026-11-12T17:50:54Z'
+- id: '50471808'
+  parent_id: '50470445'
+  author: perpil
+  text: 'It isn&#x27;t clear what you mean by this: &quot;The cold-start comparison
+    has only two paired samples&quot; Are you saying these results are based on a
+    sample size of 2 coldstarts? If so, that&#x27;s way too small to draw any conclusions.  I
+    don&#x27;t know whether the web functions fleet is currently homogeneous, but
+    I know that for ARM, the event functions fleet has a mix of Graviton2&#x2F;3&#x2F;4
+    of varying percentages.  You probably need a sample size of at least 100 for each
+    cpu generation to see trends.<p>It&#x27;s not documented but if you make one request
+    with event functions, the Lambda runtime lives for about 7 minutes before it&#x27;s
+    reaped. I assume this is why the Web Function bills you for about 7 minutes of
+    memory, it needs to hold that memory while it&#x27;s running in case another request
+    comes in.  If you have a lot of rarely invoked functions, it is cheaper to use
+    Lambda Event Functions.  There you&#x27;ll pay for GB&#x2F;s for the duration
+    of your function.<p>For Event Functions with node, your best possible E2E coldstart
+    time with an AWS service call is sub 500 ms <a href="https:&#x2F;&#x2F;speedrun.nobackspacecrew.com&#x2F;blog&#x2F;2025&#x2F;07&#x2F;21&#x2F;the-fastest-node-22-lambda-coldstart-configuration.html"
+    rel="nofollow">https:&#x2F;&#x2F;speedrun.nobackspacecrew.com&#x2F;blog&#x2F;2025&#x2F;07&#x2F;21&#x2F;the-fas...</a>
+    I have not benchmarked web functions yet, but if they are running on the same
+    infrastructure, I would assume the lower limit is similar.'
+  score: 0
+  posted_at: '2026-11-12T18:25:03Z'
+- id: '50472304'
+  parent_id: '50470445'
+  author: psanford
+  text: How does this compare to what gcp cloudrun does?
+  score: 0
+  posted_at: '2026-11-12T18:55:24Z'
+- id: '50472338'
+  parent_id: '50470445'
+  author: nickphx
+  text: My, what a beautiful bike shed you have there.
+  score: 0
+  posted_at: '2026-11-12T18:57:06Z'
+- id: '50472540'
+  parent_id: '50471273'
+  author: Onavo
+  text: Vercel&#x27;s Fluid Compute (probably built on the same underlying stack given
+    that AWS is their investor) has a much more &quot;correct&quot; behavior
+  score: 0
+  posted_at: '2026-11-12T19:08:37Z'
+- id: '50472607'
+  parent_id: '50471047'
+  author: torginus
+  text: I&#x27;m pretty sure if you quit your lambda process the container will just
+    shut down. You can do that after returning from the handler.
+  score: 0
+  posted_at: '2026-11-12T19:12:49Z'
+- id: '50472679'
+  parent_id: '50472607'
+  author: seanw265
+  text: That is true for traditional Lambda Event Functions, but this post concerns
+    the newly released Lambda Web Functions.<p>And you <i>can</i> exit Web Functions
+    early, but AWS records it as a failure and I can’t say what would happen to requests
+    in flight but haven’t reached your function yet. It’s not something I was comfortable
+    relying on.
+  score: 0
+  posted_at: '2026-11-12T19:17:21Z'
+- id: '50472704'
+  parent_id: '50470445'
+  author: bilalq
+  text: I&#x27;m actually really happy to see that the function remains active for
+    5-7 minutes after the last request. This gives a healthy amount of time to flush
+    telemetry, send error reports, etc. This was one of my biggest worries. The small
+    1 second window on SIGTERM events didn&#x27;t feel like enough.
+  score: 0
+  posted_at: '2026-11-12T19:18:45Z'
+- id: '50473068'
+  parent_id: '50472304'
+  author: hnav
+  text: Historically cloudrun containers didn&#x27;t get torn down immediately but
+    stopped getting scheduled on the CPU once the ingress went idle. You&#x27;d only
+    get billed for active time. Since 2021 you can have opt for always-on containers.
+  score: 0
+  posted_at: '2026-11-12T19:42:59Z'
+- id: '50473568'
+  parent_id: '50470445'
+  author: jedberg
+  text: Lambda is built for the generic case.  Amazon was kind enough to open source
+    firecracker, which is what they built Lambda on.  If you want to run workloads
+    that are more specific than what Lambda supports, it&#x27;s pretty straightforward
+    to use firecracker to build your own optimized Lambda.
+  score: 0
+  posted_at: '2026-11-12T20:18:15Z'
+- id: '50473596'
+  parent_id: '50473068'
+  author: vrosas
+  text: Correct. The instance stays alive but you only get billed for the time it&#x27;s
+    actively handling the request&#x2F;job.
+  score: 0
+  posted_at: '2026-11-12T20:19:53Z'
+- id: '50473688'
+  parent_id: '50473568'
+  author: otterley
+  text: "&gt; it&#x27;s pretty straightforward to use firecracker to build your own
+    optimized Lambda<p>I take it, then, that you&#x27;ve successfully accomplished
+    this yourself in production?"
+  score: 0
+  posted_at: '2026-11-12T20:25:46Z'
+- id: '50473706'
+  parent_id: '50471273'
+  author: otterley
+  text: Did you speak with the service team before making a decision to evacuate?
+    What did they say about it?
+  score: 0
+  posted_at: '2026-11-12T20:26:56Z'
+- id: '50473733'
+  parent_id: '50470445'
+  author: vrosas
+  text: I still wonder why people use lambda over something like GCP&#x27;s cloud
+    run, although based on my conversations with peers that come from AWS shops they&#x27;ve
+    been living in Amazon&#x27;s world so long they don&#x27;t even know it exists.
+  score: 0
+  posted_at: '2026-11-12T20:28:46Z'
+- id: '50473976'
+  parent_id: '50473688'
+  author: jedberg
+  text: Yes. We built a cloud that was 10x more efficient than lambda for durable
+    workloads.<p><a href="https:&#x2F;&#x2F;docs.dbos.dev&#x2F;conductor&#x2F;reference&#x2F;dbos-cloud&#x2F;deploying-to-cloud"
+    rel="nofollow">https:&#x2F;&#x2F;docs.dbos.dev&#x2F;conductor&#x2F;reference&#x2F;dbos-cloud&#x2F;deployi...</a>
+  score: 0
+  posted_at: '2026-11-12T20:43:03Z'
+- id: '50474043'
+  parent_id: '50473568'
+  author: seanw265
+  text: Yes, that&#x27;s exactly what we did.<p><a href="https:&#x2F;&#x2F;www.easel.sh"
+    rel="nofollow">https:&#x2F;&#x2F;www.easel.sh</a> runs on it.
+  score: 0
+  posted_at: '2026-11-12T20:47:32Z'
+- id: '50474191'
+  parent_id: '50471808'
+  author: seanw265
+  text: Yes, the sample was two cold starts. The warm request benchmarks used 100
+    samples per route.<p>You raise a good point about the hardware generations. I
+    would like to do a larger sample, though I&#x27;m not so concerned about benchmarking
+    each cpu separately since deployers can&#x27;t control the hardware their functions
+    run on.<p>IMO your thought about the idle lifetime is plausible. But the distinction
+    between  how Event and Web functions handle idle time (outside of billing) is
+    that Event functions are frozen after the invocation completes. No code can execute
+    while frozen. Whereas Web functions stay alive during that entire period. They
+    can do anything they want after the invocation completes and before they are shut
+    down.<p>I confirmed this by logging heartbeats during the idle period.<p>Thanks
+    for your thoughtful comment.
+  score: 0
+  posted_at: '2026-11-12T20:59:07Z'
+- id: '50474759'
+  parent_id: '50473733'
+  author: pjmlp
+  text: Usually most companies marry themselves with a specific cloud provider, the
+    whole value proposition is buying into the provider ecosystem.<p>If you do everything
+    agnostic, it is hardly any cheaper than running everything on prem, as per the
+    amount of infrastructure people required.
+  score: 0
+  posted_at: '2026-11-12T21:45:14Z'
+- id: '50475017'
+  parent_id: '50474191'
+  author: perpil
+  text: '&gt; I would like to do a larger sample, though I&#x27;m not so concerned
+    about benchmarking each cpu separately since deployers can&#x27;t control the
+    hardware their functions run on.<p>Yes, if you run at least 100 coldstarts and
+    ignore the hardware, you&#x27;ll get a good real world representation.  I usually
+    execute the function every 8 minutes for a day so I get a good sample size.  If
+    you&#x27;re curious to see the difference that hardware makes on coldstart times,
+    I have a recent writeup here: <a href="https:&#x2F;&#x2F;speedrun.nobackspacecrew.com&#x2F;blog&#x2F;2026&#x2F;10&#x2F;15&#x2F;shrinking-the-llrt-binary-size.html#coldstart-latency"
+    rel="nofollow">https:&#x2F;&#x2F;speedrun.nobackspacecrew.com&#x2F;blog&#x2F;2026&#x2F;10&#x2F;15&#x2F;shrinki...</a><p>&gt;
+    But the distinction between how Event and Web functions handle idle time (outside
+    of billing) is that Event functions are frozen after the invocation completes.
+    No code can execute while frozen. Whereas Web functions stay alive during that
+    entire period. They can do anything they want after the invocation completes and
+    before they are shut down.<p>Yes this is correct. I got the impression you weren&#x27;t
+    trying to do any extra work after the request which is why I was suggesting that
+    event functions would be cheaper for use cases that are mostly coldstarts.'
+  score: 0
+  posted_at: '2026-11-12T22:08:03Z'
+- id: '50478473'
+  parent_id: '50473733'
+  author: inkyoto
+  text: Organisations do not purchase service A from the cloud platform X and service
+    B from the cloud platform Y. They choose X or Y, sometimes both (if the organisation
+    is large and the business case justifies it), and invest into that platform.<p>GCP
+    is also not the easiest to onboard with, which is how Google appears to roll in
+    general.<p>On the technical side, AWS Lambda is more feature rich, mature, offers
+    extensive configuration controls and really excels at granular, <i>event source
+    type agnostic</i>, event-driven execution and its integration with the wider AWS
+    ecosystem.<p>Cloud Run functions are more skewed towards HTTP based workloads,
+    although, since it integrates with Eventarc, at least some feature parity with
+    AWS Lambda should be expected. Cloud Run services are closer to AWS Fargate rather
+    than the Lambda, but not everyone has (or wants) a container to run.<p>The extensive
+    amount of publicly available knowledge on AWS Lambda should not be discounted,
+    either. Google Cloud Run functions and services are just not as widely known and
+    discussed.
+  score: 0
+  posted_at: '2026-11-13T04:48:34Z'
+- id: '50482519'
+  parent_id: '50470445'
+  author: tanerakdemir
+  text: One day, our customer told us that there was a problem on their system but
+    couldn&#x27;t find it. We checked all traces in the time range and we saw that
+    the db pool size is insufficient for the request rate so some request hit the
+    time out. Our customer has increased the size and the problem has been solved.
+  score: 0
+  posted_at: '2026-11-13T12:24:33Z'
+- id: '50483399'
+  parent_id: '50470830'
+  author: imtringued
+  text: The article is terrible at conveying the intent of the author.<p>When you
+    perform six requests simultaneously, lambda will start six concurrent instances
+    to process your requests as quickly as possible and then let them be idle for
+    seven minutes.<p>This makes lambda more expensive than just having a single server
+    that runs all the time.
+  score: 0
+  posted_at: '2026-11-13T13:45:36Z'
+article:
+archived_at: '2026-11-27T07:12:43Z'
