@@ -1,0 +1,218 @@
+---
+post:
+  id: lo-8djplv
+  source: lobsters
+  title: So, I rewrote my game in C3
+  url: https://www.madrigalgames.com/blog/so-i-rewrote-my-game-in-c3/
+  hn_url: https://lobste.rs/s/8djplv
+  score: 21
+  author: nemin
+  posted_at: '2026-11-28T09:19:47Z'
+  fetched_at: '2026-11-28T15:12:06Z'
+  article_url: https://www.madrigalgames.com/blog/so-i-rewrote-my-game-in-c3/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-28T15:12:07Z'
+  raw_comment_count: 11
+  tags:
+  - games
+  - zig
+comments:
+- id: lo-ikglwx
+  parent_id: '0'
+  author: gignico
+  text: |-
+    That meant the memory model needed to be the same (no GC, no RAII)
+
+    I’ve never used Zig nor C3 but if there’s anybody here that did, can you explain what’s wrong with RAII and how does Zig code manage resources consistently without it?
+  score: 3
+  posted_at: '2026-11-28T10:01:08Z'
+- id: lo-zwtlvh
+  parent_id: '0'
+  author: hmry
+  text: |-
+    The most common criticism I have heard from people who prefer Zig/C/C3/Odin/etc is that constructors and destructors/RAII encourage writing your code in terms of constructing/processing data a single object at a time, while it would be more efficient to handle whole arrays and use ZII (zero-is-initialization i.e. having each object have a default state that is all zero bytes).
+    Another criticism is that RAII encourages using global heap allocators, when arenas that are tied to some semantic scope of the program (like per-frame, per-request, per-file, etc.) would be faster.
+    (Personally, I can definitely see how it could encourage the "default" to be a certain way. Although a common conclusion is "and that's why languages with RAII are unworkable" and I can't agree with that, I think it's still totally possible to write code like that in a language with RAII.)
+    It reminds me of the famous "impedance mismatch" from OOP languages, where the efficient way used by databases is to store all data as dumb structs in flat arrays, but the OOP way wants you to have them grouped into smart objects that have behavior, and so some people invent ORMs to map between the two while other people say you should just give up on using OOP for that.
+  score: 17
+  posted_at: '2026-11-28T10:44:56Z'
+- id: lo-quasxn
+  parent_id: '0'
+  author: Miaourt
+  text: |-
+    I guess one could argue that RAII like in Rust make memory management less explicit and you might shoot yourself in the foot in some hot path by forgetting something something do allocate. Same with implicit Drop when you leave a scope.
+    In Zig, imho the usual way to make consistent ressources management is to use defer/errdefer. Or use a bump allocator and call free once everything is done.
+    idk 'bout C3 nor C++'s RAII, but must be similar.
+  score: 1
+  posted_at: '2026-11-28T10:47:10Z'
+- id: lo-nymoov
+  parent_id: '0'
+  author: qiu
+  text: |-
+    A common issue that I observed in many C++ codebases is that a lot of code gets injected by the language at the end of each scope. While that's not inherent to RAII, it encourages these types of patterns. An extreme example of this would be expensive destructors that are ran by accident in tight loops. While this is fixable without ditching RAII entirely, in languages like Zig or C3 a mistake like this is less likely from my perspective.
+
+    how does Zig code manage resources consistently without it?
+
+    The go-to solution is including the resource management explicitly in your architecture. For games the popular approach is using object pools and/or arena allocators, while other software like TigerBeetle (a financial database), allocates all resources upfront for better predictability.
+  score: 1
+  posted_at: '2026-11-28T11:19:03Z'
+- id: lo-czwtlv
+  parent_id: '0'
+  author: rtpg
+  text: |-
+    RAII for game stuff and other soft real time stuff can be annoying because you end up allocating and deallocating a bunch when a lot of times you could “just” do nothing or reuse memory slots or whatever
+    You can do arenas in rust of course but it’s a bunch of futzing about to get to similar levels of safety as zig so if you don’t want the ceremony and don’t care to prove correctness… zig will probably lead to terser code all around
+  score: 3
+  posted_at: '2026-11-28T11:43:45Z'
+- id: lo-9j3dqz
+  parent_id: '0'
+  author: zetashift
+  text: |-
+    I wonder which of these "better C's" will gain more popularity, there are quite a few of them popping up with bigger non-trivial projects.
+
+    They even added a form of incremental-compilation, but it doesn’t remove the long LLVM linking times.
+
+    I keep being surpised at reports where the main bottleneck isn't the compiler but some LLVM interaction phase.
+  score: 5
+  posted_at: '2026-11-28T11:58:22Z'
+- id: lo-kaolcq
+  parent_id: '0'
+  author: sph
+  text: |-
+    Funny, I watched this guy’s Youtube channel yesterday when he announced he was switching away from WebGPU to NVRHI, and I didn’t expect another major tech change like switching languages.
+    Oh well, if he’s having fun it’s all good :) I enjoyed C3 when I tried it a while ago, then the language dev figured out his real audience isn’t C developers, so the language will now try to be its own thing rather than a small layer on top of C. Looking forward to see if it can carve a niche that’s becoming quickly saturated (Jai, Odin, Zig, maybe Nim?)
+  score: 1
+  posted_at: '2026-11-28T12:14:48Z'
+- id: lo-ftaipj
+  parent_id: '0'
+  author: gavinmorrow
+  text: Rust just stabilized the Allocator API! I think that may make arenas easier?
+    (I haven’t been following this super closely, so I may be wrong.)
+  score: 4
+  posted_at: '2026-11-28T12:20:03Z'
+- id: lo-pxaqhd
+  parent_id: '0'
+  author: trenchant
+  text: Seems like it would be easier to fix the Zig experience on Windows than to
+    rewrite the game but I guess C is remotely close enough to Zig.
+  score: 1
+  posted_at: '2026-11-28T14:27:27Z'
+- id: lo-cfsqlq
+  parent_id: '0'
+  author: drs
+  text: For me, the "better C" is called C++. Obviously there are problems with C++
+    too but the fact that I can take 95 to 99% of C code and just compile it with
+    a C++ compiler is why for me. I can slowly adopt a minimal C++ style where the
+    C code needs clarity.
+  score: 1
+  posted_at: '2026-11-28T14:32:32Z'
+- id: lo-pq6zx5
+  parent_id: '0'
+  author: hjvt
+  text: There's defer and errdefer, but it is basically "you're a big smart Real Programmer™,
+    you won't make a simple mistake like forgetting to free a resource".
+  score: 1
+  posted_at: '2026-11-28T14:42:21Z'
+article:
+  url: https://www.madrigalgames.com/blog/so-i-rewrote-my-game-in-c3/
+  title: Madrigal Games
+  fetch_status: success
+  content: "[\n\n](https://www.madrigalgames.com/)\n\n[![](https://www.madrigalgames.com/images/blog/27_so_i_rewrote_my_game_in_c3/title_image.png)](#)\n\n>
+    If you are wondering, I wrote this myself with my own two hands. Writing is a
+    nice way to organize my thoughts, I should do it more.\n\nOver the past few months
+    I’ve been working on rewriting [Traction Point](https://store.steampowered.com/app/1485840/Traction_Point/
+    \"Traction Point on Steam\") in [C3](https://c3-lang.org/ \"The C3 programming
+    language\"). All the [Zig](https://ziglang.org/ \"The Zig programming language\")
+    code in the game has been replaced with C3, and the modding SDK will follow when
+    the next playtest version is released. Why, you ask? Well, ever since I made it
+    possible to [hot-reload](https://www.madrigalgames.com/blog/how-i-made-my-zig-gameplay-code-hot-reloadable/
+    \"How I made my Zig gameplay code hot reloadable\") the game code, it has become
+    an integral part of my workflow for developing the game. Want to tweak a UI element?
+    Make the change and hot-reload the code while the game is running, and it shows
+    up. An animation needing a longer ease-in? Hot-reload and you will see it in seconds.
+    Need a temporary print in the code to isolate a bug in the state of the game?
+    Hot-reload.\n\nThe problem with Zig is that building code on Windows is _sloooow_.
+    These days Zig has a self-hosted backend which compiles code relatively quickly,
+    at least in debug mode, but unfortunately it’s not yet available on Windows. They
+    even added a form of incremental-compilation, but it doesn’t remove the long LLVM
+    linking times. To give you an idea of what I am talking about, a full build of
+    the Traction Point debug configuration, at a little over 100k LoC of Zig, takes
+    around **24s**. Changing a single line and rebuilding, with a warm cache, takes
+    over **15s**. C3 compiles the full game, without caching, in about **3s**. I’ve
+    seen it be as fast as **2.6s**. Now, this is podracing! It will probably get a
+    bit slower before the game is done, as more code is added, but I am sure you can
+    see the benefits here.\n\n### What is C3 anyway?\n\n[C3](https://c3-lang.org/
+    \"The C3 programming language\") is not as widely known as other modern systems
+    programming languages, but it fits the project perfectly. I wanted a language
+    that could act almost as a drop-in replacement for Zig. That meant the memory
+    model needed to be the same (no GC, no RAII), it needed to compile to WASM (for
+    mod support), it needed to be fast (obviously, we are making a game here), and
+    it needed to compile quickly. Preferrably it also would be somewhat easy for other
+    people to pick up, and while I am personally quite fond of the Zig syntax, going
+    with a C-derived language like C3 makes a lot of sense for attracting modders
+    in the future.\n\n> **Q:** _But what about Odin, Rust, Jai or HotNewLanguage™?_
+    \ \n> **A:** Yes, some of those might have fit the bill too, but I went with C3.\n\nFor
+    my purposes, Zig and C3 were similar enough that almost all of the concepts used
+    in the code could be ported over one-to-one, and I could do an almost mechanical
+    translation of the code, which I think was the only way this port was ever going
+    to happen. Let’s see what the new code looks like, by grabbing a few pieces from
+    a random game component:\n\n    struct WireRendererComponent @Component(\"means.WireRendererComponent\")\n
+    \   {\n    \tGameObjectComponent context;\n    \n    \tRenderObject renderObject;\n
+    \   \tCurvePath3D curvePath;\n    \n    \tuint pointCount;\n    \n    \t// Exposed
+    properties:\n    \tWireRendererGeometryMode geometryMode @Exposed(WireRendererGeometryMode.CURVE_PATH_3D);\n
+    \   \tAllocString curveDataBlockName @Exposed(\"\");\n    \tuint curveSampleResolution
+    @Exposed(16);\n    \tAllocString point0Object @Exposed(\"\");\n    \tAllocString
+    point1Object @Exposed(\"\");\n    \tAllocString materialRef @ExposedResourceRef(ResourceTypeID.MATERIAL,
+    \"\");\n    }\n    \n    // ...\n    \n    fn void WireRendererComponent.createVisualCurvePath(&self)\n
+    \   {\n    \tRendererPtr renderer = self.context.getRenderer();\n    \tSceneNodePtr
+    parentNode = {};\n    \tbool createDedicatedNode = false;\n    \tGameObjectPtr
+    gameObject = self.context.getGameObject();\n    \n    \tself.pointCount = self.curveSampleResolution;\n
+    \   \n    \tMeshGeometryPtr geometry = mesh_geometry::newGeometry();\n    \tdefer
+    geometry.deinit();\n    \n    \tMeshGeometryLodLevelPtr lod0 = geometry.addLodLevel();\n
+    \   \tMeshGeometrySubMeshPtr subMesh = lod0.addSubMesh(VERTEX_FORMAT_TYPE);\n
+    \   \n    \tself.generateIndicesCurvePath(subMesh);\n    \tself.generateGeometryCurvePath(subMesh);\n
+    \   \n    \tMeshSource meshSource =\n    \t{\n    \t\t.kind = MeshSourceKind.MESH_GEOMETRY_IMMUTABLE,\n
+    \   \t\t.meshGeometry = geometry\n    \t};\n    \n    \tself.renderObject.init(\n
+    \   \t\trenderer,\n    \t\tRenderObjectInstanceType.IMMOVABLE,\n    \t\tmeshSource,\n
+    \   \t\tself.materialRef.str(),\n    \t\tparentNode,\n    \t\tcreateDedicatedNode,\n
+    \   \t\tgameObject);\n    }\n\nC3 supports annotations, both built-in and user-specified,
+    and we are using a few above. Tagging a struct with @Component now makes the game
+    engine treat it as a game object component. Exposed properties, ie. fields you
+    want to show up in the level editor inspector, are just normal fields with @Exposed
+    (or one of its variants) at the end, and the engine handles the rest. Overall,
+    the code is pretty similar to C#, or even C++. The most obvious new thing is probably
+    the fn at the start of the function signature.\n\nYou can see that C3 supports
+    defer just like Zig, so much of the lifetime management and scoping was just a
+    straight copy-paste. In fact, much of the code inside createVisualCurvePath()
+    is _literally_ the same as it is in Zig. C3 is also similar to Zig in the sense
+    that it is explicit about many things. There is no RAII, but C3 offers temporary
+    memory pools as a built-in thing, which is nice. Also, you can overload operators
+    for things like math types, so we can do stuff like this:\n\n    // If we have
+    turned to roughly face the target point, or turned almost 180 degrees, we are
+    done.\n    Vec3 vehicleToTarget = (self.targetPoint - currentPosition).normalized();\n
+    \   bool reverseTurnComplete = vehicleToTarget.dot(currentForwardDir) > THRESHOLD
+    || angleDiff < -THRESHOLD;\n\n### How was the porting done?\n\nTo be honest, I
+    can’t imagine a better codebase than Traction Point for doing a rewrite like this.
+    Some of you might remember that we already [took a look at C3 almost a year ago](https://www.youtube.com/watch?v=x_Bv5l2qpxI
+    \"Game modding SDK for the C3 language\") during a live stream. I’d been experimenting
+    with making it possible to mod the game in different languages by compiling the
+    mods to WASM and running them in a WebAssembly runtime. Thanks to this, one could
+    already do some basic things in C3 back then, and it served as an excellent starting
+    point for the porting work.\n\nThe first order of business was to expand the modding
+    SDK for C3 enough to build and run the [flying scout example mod](https://github.com/MadrigalGames/TractionPointModding/tree/main/ExampleMods/flyingscout/code_c3/src
+    \"Flying scout example mod code\"). I can’t stress enough what a luxury it is
+    to be able to continue running the game, while porting more and more of it to
+    a new language, and testing that new functionality in a mod. I was able to port
+    almost all of the game engine’s APIs over to C3 while keeping the Zig version
+    running. Only when the most tricky binding issues were resolved did I start porting
+    the actual game code over to C3.\n\nThe Traction Point game code is a dll loaded
+    by the game engine, which itself is written in C++. Because of this, I needed
+    to start by replicating the entire dll interface to the game engine in C3, since
+    otherwise the engine would reject the dll outright. However, once the API was
+    in place I could simply take one system at a time and port it over from Zig. I
+    even did some of it [live on stream](https://www.youtube.com/live/BoIVk1y7frQ
+    \"Porting my game to C3! - C++/C#/C3 Gamedev Live\")! I gave myself a hard limit
+    though: The game data could not be touch"
+  error:
+  fetched_at: '2026-11-28T15:12:07Z'
+archived_at: '2026-11-28T15:12:07Z'
