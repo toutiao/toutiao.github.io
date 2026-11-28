@@ -1,0 +1,120 @@
+---
+post:
+  id: lo-amjski
+  source: lobsters
+  title: Why optimistic updates are corrosive
+  url: https://datastar-instant-intent.ndyg.cross.stream/corrosive/
+  hn_url: https://lobste.rs/s/amjski
+  score: 17
+  author: TeddyDD
+  posted_at: '2026-11-27T20:01:50Z'
+  fetched_at: '2026-11-28T03:08:22Z'
+  article_url: https://datastar-instant-intent.ndyg.cross.stream/corrosive/
+  article_fetch_status: success
+  article_fetched_at: '2026-11-28T03:08:24Z'
+  raw_comment_count: 8
+  tags:
+  - web
+comments:
+- id: lo-2pkzzy
+  parent_id: '0'
+  author: altano
+  text: Now that's a URL
+  score: 2
+  posted_at: '2026-11-27T22:20:17Z'
+- id: lo-rl0wg0
+  parent_id: '0'
+  author: TeddyDD
+  text: This one is even better but I won't be spamming submissions on the same topic.
+  score: 5
+  posted_at: '2026-11-28T00:05:52Z'
+- id: lo-wlnkob
+  parent_id: '0'
+  author: jo3_l
+  text: |-
+    Very interesting! I'm not a UI/UX person but the arguments and examples are convincing to me: it seems reasonable that when an pending state can be indicated naturally in the UI, then one should prefer that over an optimistic update. That said, introducing a pending state does not always seem possible without complicating the UI. For instance, consider the upvote button on Lobsters: how would one clearly indicate a pending state in this case?
+    Tangentially, I wonder what the history of optimistic UI updates is. Who originally popularized the pattern?
+  score: 1
+  posted_at: '2026-11-28T00:24:30Z'
+- id: lo-dcwis8
+  parent_id: '0'
+  author: TeddyDD
+  text: 'Also not an UX guy but simplest solution that come to my mind would be one
+    or more of the following: a color coding (yellow or filled gray instead of red)
+    consistently used all over the website, subtle animation (replace arrow with small
+    spinner?), changing state to disabled, tooltip. For me the benefit outweighs some
+    ui complexity.'
+  score: 2
+  posted_at: '2026-11-28T01:07:41Z'
+- id: lo-rlhdwo
+  parent_id: '0'
+  author: ThinkChaos
+  text: Color coding only is not great as it's not accessible to color blind people.
+    That's why their examples have a dedicated icon for the in-progress state.
+  score: 1
+  posted_at: '2026-11-28T01:14:20Z'
+- id: lo-ouomki
+  parent_id: '0'
+  author: TeddyDD
+  text: 'Pattern then. Filled triangle: confirmed, hatched - in flight. Could be used
+    for "Post" button etc. Color was just one of options I provided as example solution,
+    I imagine UX person would figure something out.'
+  score: 1
+  posted_at: '2026-11-28T01:16:29Z'
+- id: lo-q0ky4n
+  parent_id: '0'
+  author: gavinmorrow
+  text: I often read lobsters on the subway where the network is unreliable, and I
+    have often wished for an in-progress state so I would know whether my upvote actually
+    went through! It’s very low stakes and lobsters is generally very responsive so
+    I usually assume it did, but it’d be nice to know for sure. I don’t know exactly
+    what such an in-progress state would look like, but I wish it existed.
+  score: 3
+  posted_at: '2026-11-28T01:42:12Z'
+- id: lo-wp3nax
+  parent_id: '0'
+  author: romshark
+  text: Author of that linked post here :) (apparently my account's too new to post
+    it here yet). Feel free to engage.
+  score: 1
+  posted_at: '2026-11-28T02:33:47Z'
+article:
+  url: https://datastar-instant-intent.ndyg.cross.stream/corrosive/
+  title: Why optimistic updates are corrosive
+  fetch_status: success
+  content: "[![The thread on X. Ben, @ben_codez: Sounds like you're making the terminology
+    up! Makes sense though. No self respecting dev would show the user a booking had
+    succeeded before server verification. We're probably agreeing and arguing semantics.
+    Ben: To be clear, I was talking about stuff like \"liking a post\" or displaying
+    the users's post before the server has come back and said \"ok\". (It can retry
+    silently). Andy Gayton, @cablelounger: this is corrosive. Ben: What is corrosive?](/static/thread.png?v=9b706ca3)](/static/thread.png?v=9b706ca3)\n\nI
+    was having an X [conversation](https://x.com/ben_codez/status/2126084141187846347)
+    with [@ben\\_codez](https://x.com/ben_codez), and they asked: why is showing an
+    update as succeeded, before the underlying operation has actually succeeded, corrosive?\n\nIt's
+    corrosive because it normalizes software that is plainly broken and doesn't respect
+    our users. If a user flips a switch, and sees it flip, and then comes back, and
+    the switch is unflipped, the software is broken. How can you operate software
+    that doesn't do what you request it to do? It erodes trust.\n\n## Ben's position\n\nI
+    made a chart of what I understand to be Ben's position on communicating with their
+    users.\n\n1. **\"Booking confirmed\"** shown before the server checks the seat\n\n2.
+    \n### Ben's line\n\n**Your like shows as done** before the server says \"ok\"\n\nBen:
+    \"liking a post\", \"(It can retry silently).\"\n\nIf the user closes the tab
+    before the server has it, their like is lost and the user is never told.\n\n3.
+    \n### Instant intent show only what is known to be true\n\n**Your post shows greyed
+    out** until the server says \"ok\"\n\nBen: \"Right!\", to a post shown \"greyed
+    out maybe, to indicate it wasn't committed\".\n\n## Demo\n\nBut in addition to
+    that, it's actually _easier_ to make software that doesn't lie to your users.
+    You can skip all the reconciliation machinery that's required to create UI that
+    communicates to users that the change they thought had gone through had indeed
+    not gone through.\n\nHere's a quick demo of using instant intent to communicate
+    the state toggling a switch e.g. a like button.\n\n### Client-side affordances\n\nWhen
+    you click the switch, the client shows the button as pressed straight away and
+    sends the click to the server. The switch takes no more clicks while it's pressed,
+    and if there's no answer within half a second, it starts to blink. The client
+    then won't update until the server answers with the reconciled HTML view, which
+    Datastar morphs in place.\n\nExperiment with different latencies and taking it
+    offline, to see how the interaction feels under different scenarios.\n\nThe pressed
+    and blinking look is the same CSS the seats use, on the[main page](/)."
+  error:
+  fetched_at: '2026-11-28T03:08:24Z'
+archived_at: '2026-11-28T03:08:24Z'
